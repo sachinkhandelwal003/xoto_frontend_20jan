@@ -31,10 +31,17 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const token = localStorage.getItem('token');
-    if (token) {  // ✅ only show toast if logged in
-      const errorMessage = error.response?.data?.message || 'Something went wrong';
-      showToast(errorMessage, 'error');
-    }
+    if (token) {
+  const errorMessage = error.response?.data?.message || 'Something went wrong';
+
+  // ❌ suppress ONLY upgrade-limit message
+  if (errorMessage?.toLowerCase().includes('generate more images')) {
+    return Promise.reject(error);
+  }
+
+  showToast(errorMessage, 'error');
+}
+
     return Promise.reject(error);
   }
 );
