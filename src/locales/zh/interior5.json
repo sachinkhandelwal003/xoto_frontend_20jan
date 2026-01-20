@@ -1,0 +1,15 @@
+{
+  "showcase": {
+    "title": "探索我们精心打造的",
+    "subtitle": "梦想空间",
+    "description": "我们的作品集展示了我们打造非凡空间、重新定义可持续生活的热情。"
+  },
+  "projects": {
+    "kitchen": "现代模块化厨房",
+    "kitchenLocation": "加利福尼亚，海滨",
+    "penthouse": "极简顶层公寓",
+    "penthouseLocation": "迪拜码头，阿联酋",
+    "villa": "托斯卡纳风格别墅",
+    "villaLocation": "比佛利山庄，美国"
+  }
+}

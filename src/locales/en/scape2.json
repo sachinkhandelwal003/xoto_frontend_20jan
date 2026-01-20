@@ -1,0 +1,54 @@
+{
+  "heading": "Our Services Portfolio",
+  "services": {
+    "hardscape": {
+      "title": "Hardscape",
+      "items": [
+        "Paving (interlock, tiles, stone)",
+        "Pergolas & gazebos",
+        "Decking (Wood, WPC, Composite)",
+        "Boundary walls & fencing  Retaining walls",
+        "Outdoor kitchens & BBQ stations",
+        "Water features (fountains, waterfalls)"
+      ]
+    },
+    "softscape": {
+      "title": "Softscape",
+      "items": [
+        "Paving (interlock, tiles, stone)",
+        "Soil preparation & levelling",
+        "Plantation (trees, shrubs, groundcover)",
+        "Grass/lawn installation (natural & artificial) Flower beds & vertical gardens",
+        "Mulching & soil amendments",
+        "Seasonal planting & color themes"
+      ]
+    },
+    "pool": {
+      "title": "Swimming Pools",
+      "items": [
+        "Pool design & construction Jacuzzis & spas",
+        "Reflecting pools & koi ponds Filtration & circulation systems"
+      ]
+    },
+    "other": {
+      "title": "Other Solutions",
+      "items": [
+        "Umbrellas",
+        "Decking",
+        "Gazebos",
+        "Planters",
+        "Flooring",
+        "BBQ",
+        "Pots & fountains"
+      ]
+      
+    },
+    "builder": {
+      "title": "Bring your vision to life with our interactive builder",
+      "description": "Upload your space or choose a template and get instant AI-powered previews.",
+      "button": "Take a first step"
+    }
+    
+  }
+  
+}

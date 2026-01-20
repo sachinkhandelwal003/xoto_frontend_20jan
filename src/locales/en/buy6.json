@@ -1,0 +1,47 @@
+{
+  "heading": "What Our Clients Say",
+  "items": [
+    {
+      "title": "Found amazing place",
+      "text": "RentBro made it so easy for me to settle in a new city, with fair pricing and an amazing neighborhood. Highly recommended.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Smooth experience",
+      "text": "The entire renting process was smooth and transparent. RentBro saved me a lot of time.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Great support",
+      "text": "Customer support was responsive and helpful throughout the process.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Worth every penny",
+      "text": "Fair pricing and genuine listings. I felt confident choosing RentBro.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Stress-free move",
+      "text": "Moving to a new city felt effortless thanks to RentBro.",
+      "name": "Punit",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Amazing neighborhood!",
+      "text": "The neighborhood recommendations were spot on. Loved the experience.",
+      "name": "Harsh",
+      "location": "HSR Layout, Bangalore",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    }
+  ]
+}

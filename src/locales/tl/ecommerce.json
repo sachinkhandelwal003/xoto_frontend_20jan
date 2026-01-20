@@ -1,0 +1,38 @@
+{
+  "hero": {
+    "title": "Baguhin ang Iyong Living Space",
+    "subtitle": "AI-curated na koleksyon ng kasangkapan.",
+    "explore": "Tingnan ang Koleksyon",
+    "vendor": "Maging Vendor"
+  },
+  "ar": {
+    "title": "Subukan Bago Bumili gamit ang AR",
+    "desc": "Tingnan ang kasangkapan sa iyong espasyo."
+  },
+  "cards": {
+    "arScan": { "title": "AR Room Scan", "desc": "I-scan ang kwarto gamit ang phone.", "btn": "Simulan ang Scan" },
+    "virtual": { "title": "Virtual Staging", "desc": "Tingnan ang furniture gamit ang AI.", "btn": "Subukan" },
+    "fit": { "title": "Tamang Sukat", "desc": "Suriin ang sukat bago bumili.", "btn": "Suriin" }
+  },
+  "how": {
+    "title": "Paano Ito Gumagana",
+    "step1": { "number": "1", "title": "I-scan ang Kwarto", "desc": "I-capture ang espasyo." },
+    "step2": { "number": "2", "title": "Pumili ng Furniture", "desc": "Mula sa mga koleksyon." },
+    "step3": { "number": "3", "title": "AR Preview", "desc": "Live na tingnan." }
+  },
+  "demo": {
+    "title": "AR Demo Video",
+    "desc": "Panoorin kung paano gumagana",
+    "btn": "I-play"
+  },
+  "experience": {
+    "alt": "Modernong sala na may kasangkapang XOTO",
+    "title": {
+      "prefix": "",
+      "brand": "XOTO",
+      "suffix": "Experience"
+    },
+    "subtitle": "Kung saan nagtatagpo ang inobasyon at kaginhawaan. AI-driven na disenyo para sa inspiradong espasyo.",
+    "cta": "Tuklasin ang XOTO Collection"
+  }
+}

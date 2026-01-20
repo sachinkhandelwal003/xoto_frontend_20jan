@@ -1,0 +1,21 @@
+{
+  "heading": "رابطہ کی معلومات",
+  "email": {
+    "title": "ای میل کریں",
+    "subtitle": "ہم سے رابطہ کریں",
+    "primary": "sales.support@xoto.ae",
+    "secondary": "info@xoto.ae",
+    "note": "ہم جلد جواب دیں گے"
+  },
+  "address": {
+    "title": "پتہ",
+    "line1": "1616، پارک لین ٹاور، بزنس بے، دبئی",
+    "country": "متحدہ عرب امارات"
+  },
+  "phone": {
+    "title": "فون",
+    "number": "+971 50 918 0967",
+    "timing": "پیر–ہفتہ | 9AM–6PM"
+  },
+  "map": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3610.5326639711025!2d55.2618832!3d25.1852532"
+}

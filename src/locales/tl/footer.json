@@ -1,0 +1,56 @@
+{
+  "company": {
+    "slogan": "Isang pinag-isang ecosystem na lumilikha ng <br/> panghabambuhay na halaga ng ari-arian.",
+    "description": "Nasusukat. Pinapagana ng AI. Magaang sa asset."
+  },
+  "titles": {
+    "offerings": "Aming Mga Serbisyo",
+    "resources": "Partner Ecosystem",
+    "knowledge": "Tungkol sa Amin",
+    "location": "Mga Lokasyon",
+    "email": "Email"
+  },
+  "offerings": [
+    { "label": "Landscaping", "path": "/landscaping" },
+    { "label": "Interiors", "path": "/services/interior" },
+    { "label": "Upa", "path": "/marketplace" },
+    { "label": "Bumili", "path": "/marketplace" },
+    { "label": "Magbenta", "path": "/marketplace" },
+    { "label": "Mortgage", "path": "/mortgage/services" },
+    { "label": "Maintenance", "path": "" }
+  ],
+  "resources": [
+    { "label": "Strategic Alliance", "path": "/login" },
+    { "label": "Business Associates", "path": "/login" },
+    { "label": "Execution Partners", "path": "/login" },
+    { "label": "Developers", "path": "/" },
+    { "label": "Financial Institutions", "path": "/" }
+  ],
+  "knowledge": [
+    { "label": "Knowledge Centre", "path": "/about" },
+    { "label": "Our Sustainability Focus", "path": "/about" },
+   
+    { "label": "Submit Feedback", "path": "/about" },
+    { "label": "Makipag-ugnayan", "path": "/contact" },
+    { "label": "Patakaran sa Privacy", "path": "/about" },
+    { "label": "Mga Tuntunin ng Paggamit", "path": "/about" }
+  ],
+  "locations": " UAE | Saudi Arabia",
+  "email": {
+    "labels": {
+      "partners": "Para sa Mga Partner",
+      "customers": "Para sa Mga Customer"
+    },
+    "partners": "connect@xoto.ae",
+    "customers": "care@xoto.ae"
+  },
+  "social": [
+    { "name": "Facebook", "url": "#" },
+    { "name": "Instagram", "url": "#" },
+    { "name": "Twitter", "url": "#" },
+    { "name": "LinkedIn", "url": "#" }
+  ],
+  "bottom": {
+    "copyright": "©2021 XOTO. Lahat ng karapatan ay nakalaan"
+  }
+}

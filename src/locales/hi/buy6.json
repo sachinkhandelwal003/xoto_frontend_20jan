@@ -1,0 +1,47 @@
+{
+  "heading": "हमारे ग्राहक क्या कहते हैं",
+  "items": [
+    {
+      "title": "शानदार जगह मिली",
+      "text": "RentBro ने नए शहर में बसना बेहद आसान बना दिया। सही कीमत और बेहतरीन इलाका मिला।",
+      "name": "शुभम",
+      "location": "पुणे, महाराष्ट्र",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "बेहद आसान अनुभव",
+      "text": "पूरा रेंटिंग प्रोसेस सरल और पूरी तरह पारदर्शी था।",
+      "name": "शुभम",
+      "location": "पुणे, महाराष्ट्र",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "बेहतरीन सपोर्ट",
+      "text": "कस्टमर सपोर्ट हर समय मददगार और तुरंत उपलब्ध रहा।",
+      "name": "शुभम",
+      "location": "पुणे, महाराष्ट्र",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "पूरी तरह भरोसेमंद",
+      "text": "सही कीमत और भरोसेमंद लिस्टिंग ने निर्णय आसान बना दिया।",
+      "name": "शुभम",
+      "location": "पुणे, महाराष्ट्र",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "बिना तनाव का अनुभव",
+      "text": "नए शहर में शिफ्ट होना RentBro की वजह से आसान और तनावमुक्त हो गया।",
+      "name": "पुनीत",
+      "location": "पुणे, महाराष्ट्र",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "शानदार इलाका!",
+      "text": "इलाके को लेकर मिली सलाह बिल्कुल सटीक और उपयोगी थी।",
+      "name": "हर्ष",
+      "location": "एचएसआर लेआउट, बेंगलुरु",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    }
+  ]
+}

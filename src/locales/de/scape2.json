@@ -1,0 +1,51 @@
+{
+  "heading": "Unser Service-Portfolio",
+  "services": {
+    "hardscape": {
+      "title": "Hardscape",
+      "items": [
+        "Pflasterarbeiten (Verbundstein, Fliesen, Naturstein)",
+        "Pergolen & Pavillons",
+        "Terrassenbeläge (Holz, WPC, Verbundmaterial)",
+        "Grenzmauern & Zäune, Stützmauern",
+        "Outdoor-Küchen & BBQ-Stationen",
+        "Wasserelemente (Brunnen, Wasserfälle)"
+      ]
+    },
+    "softscape": {
+      "title": "Softscape",
+      "items": [
+        "Pflasterarbeiten (Verbundstein, Fliesen, Naturstein)",
+        "Bodenvorbereitung & Nivellierung",
+        "Bepflanzung (Bäume, Sträucher, Bodendecker)",
+        "Rasenverlegung (natürlich & künstlich), Blumenbeete & vertikale Gärten",
+        "Mulchen & Bodenverbesserung",
+        "Saisonale Bepflanzung & Farbkonzepte"
+      ]
+    },
+    "pool": {
+      "title": "Schwimmbäder",
+      "items": [
+        "Pooldesign & Bau, Whirlpools & Spas",
+        "Spiegelbecken & Koiteiche, Filter- & Zirkulationssysteme"
+      ]
+    },
+    "other": {
+      "title": "Weitere Lösungen",
+      "items": [
+        "Sonnenschirme",
+        "Terrassenbeläge",
+        "Pavillons",
+        "Pflanzgefäße",
+        "Bodenbeläge",
+        "BBQ",
+        "Töpfe & Brunnen"
+      ]
+    },
+    "builder": {
+      "title": "Erwecken Sie Ihre Vision mit unserem interaktiven Builder zum Leben",
+      "description": "Laden Sie Ihren Raum hoch oder wählen Sie eine Vorlage und erhalten Sie sofort KI-gestützte Vorschauen.",
+      "button": "Ersten Schritt machen"
+    }
+  }
+}

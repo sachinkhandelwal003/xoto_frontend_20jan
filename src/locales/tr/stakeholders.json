@@ -1,0 +1,109 @@
+{
+  "title": "Her Paydaş İçin Tasarlandı",
+  "subtitle": "Platformumuz, gayrimenkul ekosistemindeki farklı paydaşlara özel çözümler sunar",
+  "cta": "Kayıt Ol",
+  "tabs": {
+    "businessAssociates": {
+      "heading": "İş Ortakları",
+      "qa": [
+        {
+          "question": "Kimler?",
+          "answer": "Emlak danışmanları, brokerlar ve ağ ortakları."
+        },
+        {
+          "question": "Onlar için ne var?",
+          "answer": [
+            "Basitleştirilmiş müşteri yönetimi",
+            "Yapay zekâ destekli içgörüler",
+            "Daha hızlı anlaşma kapanışları"
+          ]
+        },
+        {
+          "question": "Neden XOTO?",
+          "answer": "Eksiksiz bir emlak ekosistemiyle dönüşüm ve geliri artırın."
+        }
+      ]
+    },
+    "executionPartner": {
+      "heading": "Uygulama Ortakları",
+      "qa": [
+        {
+          "question": "Kimler?",
+          "answer": "Müteahhitler, peyzajcılar, iç mimarlar ve proje yöneticileri."
+        },
+        {
+          "question": "Onlar için ne var?",
+          "answer": [
+            "Gerçek zamanlı görev ataması",
+            "Şeffaf ilerleme takibi",
+            "Sorunsuz proje koordinasyonu"
+          ]
+        },
+        {
+          "question": "Neden XOTO?",
+          "answer": "Projeleri verimli yönetin ve nitelikli müşterilerle bağlantı kurun."
+        }
+      ]
+    },
+    "strategicAlliances": {
+      "heading": "Stratejik İttifaklar",
+      "qa": [
+        {
+          "question": "Kimler?",
+          "answer": "İş birliği yapmak ve pazarı genişletmek isteyen işletmeler."
+        },
+        {
+          "question": "Onlar için ne var?",
+          "answer": [
+            "Büyüme odaklı entegre ekosistem",
+            "Yeni pazarlara ve ortaklıklara erişim"
+          ]
+        },
+        {
+          "question": "Neden XOTO?",
+          "answer": "Tek bir platformla pazar varlığınızı ve gelirinizi hızlandırın."
+        }
+      ]
+    },
+    "developers": {
+      "heading": "Geliştiriciler",
+      "qa": [
+        {
+          "question": "Kimler?",
+          "answer": "Alıcılar ve pazar içgörüleri arayan gayrimenkul geliştiricileri."
+        },
+        {
+          "question": "Onlar için ne var?",
+          "answer": [
+            "Önceden nitelikli alıcılara erişim",
+            "Veriye dayalı hızlandırılmış satışlar"
+          ]
+        },
+        {
+          "question": "Neden XOTO?",
+          "answer": "Yapay zekâ destekli verilerle satışları hızlandırın."
+        }
+      ]
+    },
+    "financialInstitution": {
+      "heading": "Finansal Kurumlar",
+      "qa": [
+        {
+          "question": "Kimler?",
+          "answer": "Bankalar, mortgage sağlayıcıları ve kredi kuruluşları."
+        },
+        {
+          "question": "Onlar için ne var?",
+          "answer": [
+            "Mortgage dönüşümlerinde artış",
+            "Entegre gayrimenkul ve finansman ekosistemi"
+          ]
+        },
+        {
+          "question": "Neden XOTO?",
+          "answer": "Sorunsuz müşteri deneyimi sunarak finansal geliri artırın."
+        }
+      ]
+    }
+  }
+}

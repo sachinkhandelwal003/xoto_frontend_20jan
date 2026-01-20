@@ -1,0 +1,25 @@
+{
+  "heroTitle": "Where Dreams Meet Doorsteps",
+  "heroSub": "Find, Sell & Finance Your Dream Home Smarter, Faster, Easier",
+
+  "formTitle": "Discover, Decide, Deal",
+  "formSub": "All in One Place",
+
+  "firstName": "First Name*",
+  "lastName": "Last Name*",
+  "email": "Email Address*",
+  "countryCode": "Code*",
+  "phone": "Phone Number*",
+
+  "country": "Country*",
+  "lookingFor": "Looking for*",
+  "city": "Preferred City*",
+  "budget": "Budget* (e.g. 1.5 Cr or AED 2M)",
+
+  "submit": "Submit Now",
+  "submitting": "Submitting...",
+
+  "success": "Thank you! We'll contact you very soon",
+  "error": "Please fill in all fields",
+  "genericError": "Something went wrong. Please try again."
+}

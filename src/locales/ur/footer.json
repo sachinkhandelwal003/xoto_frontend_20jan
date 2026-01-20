@@ -1,0 +1,56 @@
+{
+  "company": {
+    "slogan": "زندگی بھر کی پراپرٹی ویلیو بنانے والا <br/> ایک متحد ماحولیاتی نظام۔",
+    "description": "قابلِ توسیع۔ AI سے تقویت یافتہ۔ اثاثہ جاتی ہلکا۔"
+  },
+  "titles": {
+    "offerings": "ہماری خدمات",
+    "resources": "پارٹنر ایکو سسٹم",
+    "knowledge": "ہمارے بارے میں",
+    "location": "مقامات",
+    "email": "ای میل"
+  },
+  "offerings": [
+    { "label": "لینڈ اسکیپنگ", "path": "/landscaping" },
+    { "label": "انٹیریئرز", "path": "/services/interior" },
+    { "label": "کرایہ", "path": "/marketplace" },
+    { "label": "خریدیں", "path": "/marketplace" },
+    { "label": "بیچیں", "path": "/marketplace" },
+    { "label": "ہوم لون", "path": "/mortgage/services" },
+    { "label": "مینٹیننس", "path": "" }
+  ],
+  "resources": [
+    { "label": "اسٹریٹجک الائنس", "path": "/login" },
+    { "label": "بزنس ایسوسی ایٹس", "path": "/login" },
+    { "label": "ایگزیکیوشن پارٹنرز", "path": "/login" },
+    { "label": "ڈیولپرز", "path": "/" },
+    { "label": "مالیاتی ادارے", "path": "/" }
+  ],
+  "knowledge": [
+    { "label": "نالج سینٹر", "path": "/about" },
+    { "label": "ہماری پائیداری", "path": "/about" },
+    { "label": "فوکس", "path": "/about" },
+    { "label": "اپنی رائے دیں", "path": "/about" },
+    { "label": "ہم سے رابطہ کریں", "path": "/contact" },
+    { "label": "رازداری کی پالیسی", "path": "/about" },
+    { "label": "استعمال کی شرائط", "path": "/about" }
+  ],
+  "locations": "بھارت | متحدہ عرب امارات | سعودی عرب",
+  "email": {
+    "labels": {
+      "partners": "پارٹنرز کے لیے",
+      "customers": "صارفین کے لیے"
+    },
+    "partners": "connect@xoto.ae",
+    "customers": "care@xoto.ae"
+  },
+  "social": [
+    { "name": "فیس بک", "url": "#" },
+    { "name": "انسٹاگرام", "url": "#" },
+    { "name": "ٹوئٹر", "url": "#" },
+    { "name": "لنکڈ اِن", "url": "#" }
+  ],
+  "bottom": {
+    "copyright": "©2021 XOTO۔ جملہ حقوق محفوظ ہیں"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "title": "Our Partner Ecosystem",
+  "cards": {
+    "commonDesc": "Elite Contractors Network",
+    "business": {
+      "title": "Business Associates"
+    },
+    "contractors": {
+      "title": "Contractors"
+    },
+    "execution": {
+      "title": "Execution Partner"
+    },
+    "strategic": {
+      "title": "Strategic Alliances"
+    },
+    "developers": {
+      "title": "Developers"
+    },
+    "financial": {
+      "title": "Financial Institutions"
+    }
+  }
+}

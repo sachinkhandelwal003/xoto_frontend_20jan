@@ -1,0 +1,21 @@
+{
+  "heading": "Informations de contact",
+  "email": {
+    "title": "Envoyez-nous un email",
+    "subtitle": "Contactez-nous à",
+    "primary": "sales.support@xoto.ae",
+    "secondary": "info@xoto.ae",
+    "note": "Nous répondrons rapidement"
+  },
+  "address": {
+    "title": "Adresse",
+    "line1": "1616, Parklane Tower, Business Bay, Dubaï",
+    "country": "EAU"
+  },
+  "phone": {
+    "title": "Téléphone",
+    "number": "+971 50 918 0967",
+    "timing": "Lun–Sam | 9h–18h"
+  },
+  "map": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3610.5326639711025!2d55.2618832!3d25.1852532"
+}

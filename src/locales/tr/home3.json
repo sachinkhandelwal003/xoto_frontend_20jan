@@ -1,0 +1,33 @@
+{
+  "title": "Herkes İçin Tasarlandı",
+
+  "customers": {
+    "title": "Müşteriler",
+    "desc": "Evinizi ve açık alanlarınızı yapay zekâ destekli, zahmetsiz peyzaj ve yenileme çözümleriyle yeniden hayal edin."
+  },
+
+  "business": {
+    "title": "İş Ortakları",
+    "desc": "Gayrimenkul ağınızı güçlendirin — müşteri yönetimini kolaylaştıran, dönüşümleri artıran ve anlaşmaları hızlandıran AI araçları."
+  },
+
+  "execution": {
+    "title": "Uygulama Ortakları",
+    "desc": "Görev paylaşımları, ilerleme takibi ve ekip koordinasyonunu gerçek zamanlı kolaylaştırarak projeleri daha verimli teslim edin."
+  },
+
+  "alliances": {
+    "title": "Stratejik İttifaklar",
+    "desc": "Büyüme odaklı entegre ekosistemimizle pazar erişiminizi genişletin."
+  },
+
+  "developers": {
+    "title": "Geliştiriciler",
+    "desc": "Ön onaylı alıcılara erişin ve veri odaklı içgörülerle satışlarınızı hızlandırın."
+  },
+
+  "finance": {
+    "title": "Finansal Kurumlar",
+    "desc": "Entegre gayrimenkul ve finans çözümleriyle mortgage dönüşümlerini artırın."
+  }
+}

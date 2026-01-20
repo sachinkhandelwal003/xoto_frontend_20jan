@@ -1,0 +1,12 @@
+{
+  "title": "Notre écosystème de partenaires",
+  "cards": {
+    "commonDesc": "Réseau d’entrepreneurs d’élite",
+    "business": { "title": "Associés Commerciaux" },
+    "contractors": { "title": "Entrepreneurs" },
+    "execution": { "title": "Partenaires d’Exécution" },
+    "strategic": { "title": "Alliances Stratégiques" },
+    "developers": { "title": "Développeurs" },
+    "financial": { "title": "Institutions Financières" }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "heading": {
+    "title": "Top Immobilienangebote",
+    "subtitle": "Entdecken Sie exklusive Immobilien mit dem besten Preis-Leistungs-Verhältnis in Dubais Premium-Lagen."
+  },
+  "modal": {
+    "title": "Besichtigung vereinbaren",
+    "subtitle": "Geben Sie Ihre Daten ein und wir organisieren eine private Besichtigung!"
+  },
+  "form": {
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "email": "E-Mail-Adresse",
+    "phone": "Telefonnummer",
+    "occupation": "Beruf",
+    "location": "Bevorzugte Lage / Gemeinde",
+    "contactTitle": "Wie sollen wir Sie kontaktieren?",
+    "contact": {
+      "call": "Telefonanruf",
+      "whatsapp": "WhatsApp",
+      "email": "E-Mail"
+    },
+    "marketing": "Ich stimme dem Erhalt von Newslettern und Marketingmitteilungen zu.",
+    "terms": "Ich akzeptiere die Allgemeinen Geschäftsbedingungen und die Datenschutzrichtlinie."
+  },
+  "actions": {
+    "submit": "Besichtigung vereinbaren",
+    "loading": "Besichtigung wird geplant..."
+  },
+  "card": {
+    "bed": "Schlafzimmer",
+    "bath": "Bad",
+    "schedule": "Besichtigung planen"
+  },
+  "toast": {
+    "success": "Besichtigung geplant! Wir melden uns bald bei Ihnen.",
+    "error": "Termin konnte nicht geplant werden. Bitte erneut versuchen."
+  }
+}

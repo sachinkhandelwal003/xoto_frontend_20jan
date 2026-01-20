@@ -1,0 +1,39 @@
+{
+  "heading": {
+    "title": "Ofertas Inmobiliarias Destacadas",
+    "subtitle": "Descubra propiedades exclusivas con la mejor relación calidad-precio en las ubicaciones premium de Dubái."
+  },
+  "modal": {
+    "title": "Programar Visita",
+    "subtitle": "Completa tus datos y organizaremos una visita privada para ti"
+  },
+  "form": {
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "email": "Correo electrónico",
+    "phone": "Número de teléfono",
+    "occupation": "Ocupación",
+    "location": "Ubicación preferida / Comunidad",
+    "contactTitle": "¿Cómo debemos contactarte?",
+    "contact": {
+      "call": "Llamada",
+      "whatsapp": "WhatsApp",
+      "email": "Correo"
+    },
+    "marketing": "Acepto recibir comunicaciones de marketing y boletines digitales.",
+    "terms": "Acepto los Términos y Condiciones y la Política de Privacidad."
+  },
+  "actions": {
+    "submit": "Programar Visita",
+    "loading": "Programando visita..."
+  },
+  "card": {
+    "bed": "Habitación",
+    "bath": "Baño",
+    "schedule": "Programar Visita"
+  },
+  "toast": {
+    "success": "¡Visita programada! Nos pondremos en contacto pronto.",
+    "error": "No se pudo programar la visita. Inténtalo de nuevo."
+  }
+}

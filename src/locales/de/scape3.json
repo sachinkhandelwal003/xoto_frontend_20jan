@@ -1,0 +1,25 @@
+{
+  "heading": "Beratung buchen",
+  "description": "Ein einfaches Formular, um sich mit XOTO-Experten für eine maßgeschneiderte Landschaftsplanung zu verbinden.",
+  "form": {
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "email": "E-Mail-Adresse",
+    "message": "Ihre Nachricht",
+    "submit": "Kostenlose Beratung buchen",
+    "submitting": "Anfrage wird gesendet..."
+  },
+  "validation": {
+    "firstName": "Vorname ist erforderlich",
+    "lastName": "Nachname ist erforderlich",
+    "email": "Gültige E-Mail-Adresse erforderlich",
+    "mobile": "Mobilnummer muss mindestens 8 Ziffern haben",
+    "message": "Nachricht ist erforderlich"
+  },
+  "success": {
+    "title": "Vielen Dank!",
+    "text": "Ihre Beratungsanfrage wurde erfolgreich übermittelt."
+  },
+  "error": "Übermittlung fehlgeschlagen",
+  "privacy": "Wir respektieren Ihre Privatsphäre. Ihre Daten sind bei uns sicher."
+}

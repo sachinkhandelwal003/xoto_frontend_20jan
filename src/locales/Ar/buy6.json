@@ -1,0 +1,47 @@
+{
+  "heading": "ماذا يقول عملاؤنا",
+  "items": [
+    {
+      "title": "وجدت مكانًا رائعًا",
+      "text": "جعل RentBro الاستقرار في مدينة جديدة أمرًا سهلاً للغاية، مع أسعار عادلة وحي رائع. أنصح به بشدة.",
+      "name": "شوبهام",
+      "location": "بيون، ماهاراشترا",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "تجربة سلسة",
+      "text": "كانت عملية الإيجار بالكامل سلسة وشفافة. وفر عليّ RentBro الكثير من الوقت.",
+      "name": "شوبهام",
+      "location": "بيون، ماهاراشترا",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "دعم رائع",
+      "text": "كان دعم العملاء سريع الاستجابة ومتعاونًا طوال العملية.",
+      "name": "شوبهام",
+      "location": "بيون، ماهاراشترا",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "يستحق كل قرش",
+      "text": "أسعار عادلة وإعلانات موثوقة. شعرت بالثقة عند اختيار RentBro.",
+      "name": "شوبهام",
+      "location": "بيون، ماهاراشترا",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "انتقال بدون توتر",
+      "text": "الانتقال إلى مدينة جديدة كان سهلاً بفضل RentBro.",
+      "name": "بونيت",
+      "location": "بيون، ماهاراشترا",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "حي مذهل!",
+      "text": "كانت توصيات الأحياء دقيقة للغاية. أحببت التجربة.",
+      "name": "هارش",
+      "location": "HSR Layout، بنغالور",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    }
+  ]
+}

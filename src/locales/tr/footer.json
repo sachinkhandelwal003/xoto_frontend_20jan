@@ -1,0 +1,56 @@
+{
+  "company": {
+    "slogan": "Ömür boyu gayrimenkul değeri yaratan <br/> birleşik bir ekosistem.",
+    "description": "Ölçeklenebilir. Yapay zekâ destekli. Hafif varlık yapısı."
+  },
+  "titles": {
+    "offerings": "Hizmetlerimiz",
+    "resources": "Partner Ekosistemi",
+    "knowledge": "Hakkımızda",
+    "location": "Lokasyonlar",
+    "email": "E-posta"
+  },
+  "offerings": [
+    { "label": "Peyzaj", "path": "/landscaping" },
+    { "label": "İç Mekanlar", "path": "/services/interior" },
+    { "label": "Kiralama", "path": "/marketplace" },
+    { "label": "Satın Al", "path": "/marketplace" },
+    { "label": "Sat", "path": "/marketplace" },
+    { "label": "Konut Kredileri", "path": "/mortgage/services" },
+    { "label": "Bakım", "path": "" }
+  ],
+  "resources": [
+    { "label": "Stratejik Ortaklık", "path": "/login" },
+    { "label": "İş Ortakları", "path": "/login" },
+    { "label": "Uygulama Ortakları", "path": "/login" },
+    { "label": "Geliştiriciler", "path": "/" },
+    { "label": "Finansal Kurumlar", "path": "/" }
+  ],
+  "knowledge": [
+    { "label": "Bilgi Merkezi", "path": "/about" },
+    { "label": "Sürdürülebilirliğimiz Odak", "path": "/about" },
+    
+    { "label": "Geri Bildirim Gönder", "path": "/about" },
+    { "label": "Bize Ulaşın", "path": "/contact" },
+    { "label": "Gizlilik Politikası", "path": "/about" },
+    { "label": "Kullanım Şartları", "path": "/about" }
+  ],
+  "locations": " BAE | Suudi Arabistan",
+  "email": {
+    "labels": {
+      "partners": "Partnerler için",
+      "customers": "Müşteriler için"
+    },
+    "partners": "connect@xoto.ae",
+    "customers": "care@xoto.ae"
+  },
+  "social": [
+    { "name": "Facebook", "url": "#" },
+    { "name": "Instagram", "url": "#" },
+    { "name": "Twitter", "url": "#" },
+    { "name": "LinkedIn", "url": "#" }
+  ],
+  "bottom": {
+    "copyright": "©2021 XOTO. Tüm hakları saklıdır"
+  }
+}

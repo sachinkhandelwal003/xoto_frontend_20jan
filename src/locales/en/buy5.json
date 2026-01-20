@@ -1,0 +1,31 @@
+{
+  "heading": {
+    "title": "Explore Properties"
+  },
+  "card": {
+    "bed": "Bed",
+    "bath": "Bath"
+  },
+  "actions": {
+    "schedule": "Schedule Visit",
+    "viewMore": "View More",
+    "submit": "Schedule Property Visit",
+    "loading": "Scheduling Visit..."
+  },
+  "modal": {
+    "title": "Schedule Property Visit",
+    "subtitle": "Fill in your details and we'll arrange a private viewing for you!"
+  },
+  "form": {
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Your Email Address",
+    "phone": "Phone Number (e.g. 501234567)",
+    "occupation": "Your Occupation",
+    "location": "Preferred Location / Community"
+  },
+  "toast": {
+    "success": "Visit scheduled! We'll contact you shortly.",
+    "error": "Failed to schedule visit. Try again."
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "hero": {
+    "titleDesktop": "आज ही XOTO\nपार्टनर इकोसिस्टम\nसे जुड़ें",
+    "titleMobile": "आज ही XOTO पार्टनर\nइकोसिस्टम से जुड़ें"
+  },
+
+  "form": {
+    "firstName": {
+      "label": "पहला नाम",
+      "placeholder": "पहला नाम दर्ज करें"
+    },
+    "lastName": {
+      "label": "अंतिम नाम",
+      "placeholder": "अंतिम नाम दर्ज करें"
+    },
+    "email": {
+      "label": "ईमेल पता",
+      "placeholder": "ईमेल दर्ज करें"
+    },
+    "company": {
+      "label": "कंपनी का नाम",
+      "placeholder": "कंपनी का नाम दर्ज करें"
+    },
+    "phone": {
+      "label": "संपर्क नंबर",
+      "placeholder": "नंबर दर्ज करें"
+    },
+    "message": {
+      "label": "संदेश",
+      "placeholder": "अपना संदेश लिखें"
+    },
+
+    "stakeholder": {
+      "label": "स्टेकहोल्डर",
+      "select": "चुनें",
+      "business": "बिज़नेस एसोसिएट",
+      "execution": "एक्ज़ीक्यूशन पार्टनर",
+      "developer": "डेवलपर",
+      "investor": "निवेशक"
+    },
+
+    "submit": "सबमिट करें",
+    "submitting": "सबमिट हो रहा है..."
+  },
+
+  "toast": {
+    "success": "धन्यवाद! आपका पार्टनर अनुरोध भेज दिया गया है।",
+    "error": "सबमिट नहीं हो पाया। कृपया पुनः प्रयास करें।",
+    "invalid": "कृपया सभी फ़ील्ड सही से भरें"
+  }
+}

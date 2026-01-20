@@ -1,0 +1,34 @@
+{
+  "title": "Pag-usapan ang Iyong Interior Project",
+  "description": "Makipag-ugnayan sa aming mga eksperto at buuin ang iyong pangarap na espasyo.",
+  "imageAlt": "Background ng konsultasyon sa interior",
+
+  "form": {
+    "firstName": "Pangalan",
+    "lastName": "Apelyido",
+    "email": "Email",
+    "mobile": "Numero ng telepono",
+    "message": "Iyong mensahe"
+  },
+
+  "buttons": {
+    "submit": "Isumite",
+    "submitting": "Ipinapadala..."
+  },
+
+  "errors": {
+    "firstName": "Ilagay ang pangalan",
+    "lastName": "Ilagay ang apelyido",
+    "email": "Ilagay ang tamang email",
+    "mobile": "Ilagay ang tamang numero",
+    "message": "Ilagay ang mensahe",
+    "submit": "May error sa pagpapadala"
+  },
+
+  "success": {
+    "title": "Tagumpay!",
+    "message": "Makikipag-ugnayan sa iyo ang aming team."
+  },
+
+  "privacy": "Pinoprotektahan namin ang iyong impormasyon."
+}

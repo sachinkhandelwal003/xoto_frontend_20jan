@@ -1,0 +1,16 @@
+{
+  "homeDesign": {
+    "title1": "Ihr Raum,",
+    "title2": "sofort neu definiert.",
+    "description": "Laden Sie Ihren Villen-Grundriss hoch und lassen Sie Xoto AI beeindruckende Außen- und Designoptionen erstellen — perfekt abgestimmt auf Ihren Geschmack.",
+    "cta": "Jetzt kostenlose Schätzung erhalten",
+    "hotspots": {
+      "exterior": "Außenbereich-Upgrade",
+      "interior": "Innenraum-Transformation",
+      "furniture": "Intelligenter Möbeltausch",
+      "landscaping": "Landschaftsgestaltung",
+      "image": "Bildoptimierung",
+      "virtual": "Virtuelles Designstudio"
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "heading": "Отзывы наших клиентов",
+  "items": [
+    {
+      "title": "Нашел отличное жилье",
+      "text": "RentBro значительно упростил переезд в новый город.",
+      "name": "Шубхам",
+      "location": "Пуна, Махараштра",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Плавный процесс",
+      "text": "Весь процесс аренды прошёл быстро и понятно.",
+      "name": "Шубхам",
+      "location": "Пуна, Махараштра",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Отличная поддержка",
+      "text": "Служба поддержки всегда была на связи.",
+      "name": "Шубхам",
+      "location": "Пуна, Махараштра",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Стоит своих денег",
+      "text": "Честные цены и надежные объявления.",
+      "name": "Шубхам",
+      "location": "Пуна, Махараштра",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Переезд без стресса",
+      "text": "Переезд прошёл легко и быстро.",
+      "name": "Пунит",
+      "location": "Пуна, Махараштра",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Отличный район!",
+      "text": "Рекомендации по району были идеальными.",
+      "name": "Харш",
+      "location": "HSR Layout, Бангалор",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    }
+  ]
+}

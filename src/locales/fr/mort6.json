@@ -1,0 +1,32 @@
+{
+    "hero": {
+      "title": "Prêt à commencer votre prêt immobilier ?",
+      "subtitle": "Commencez votre demande aujourd’hui et obtenez une pré-approbation en 48 heures.",
+      "primaryCta": "Obtenir une pré-approbation",
+      "secondaryCta": "Parler à un expert"
+    },
+    "form": {
+      "heading": "Découvrez, décidez et finalisez – tout en un seul endroit.",
+  
+      "firstName": "Prénom",
+      "lastName": "Nom de famille",
+  
+      "email": "Adresse e-mail",
+      "phone": "Numéro",
+  
+      "lookingFor": "Je cherche",
+      "select": "Sélectionner",
+  
+      "city": "Ville préférée",
+      "budget": "Budget",
+  
+      "submit": "Obtenir une pré-approbation",
+  
+      "options": {
+        "homeLoan": "Prêt immobilier",
+        "refinance": "Refinancement",
+        "personalLoan": "Prêt personnel"
+      }
+    }
+  }
+  

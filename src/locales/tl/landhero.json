@@ -1,0 +1,15 @@
+{
+  "hero": {
+    "title": "Binabago ang mga tahanan gamit ang premium",
+    "subtitle": "outdoor solutions"
+  },
+  "services": {
+    "design": "Landscape design at pagpapatupad",
+    "hardscape": "Hardscaping at surface works",
+    "outdoor": "Outdoor structures at living spaces",
+    "pool": "Swimming pools at water features"
+  },
+  "cta": {
+    "estimate": "Kumuha ng libreng pagtataya"
+  }
+}

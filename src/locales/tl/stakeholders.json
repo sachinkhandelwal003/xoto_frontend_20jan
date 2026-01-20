@@ -1,0 +1,109 @@
+{
+  "title": "Ginawa para sa Bawat Stakeholder",
+  "subtitle": "Ang aming platform ay nagsisilbi sa iba’t ibang stakeholder ng real estate ecosystem gamit ang angkop na mga solusyon",
+  "cta": "Mag-sign Up",
+  "tabs": {
+    "businessAssociates": {
+      "heading": "Mga Business Associate",
+      "qa": [
+        {
+          "question": "Sino?",
+          "answer": "Mga real estate agent, broker, at network partner."
+        },
+        {
+          "question": "Ano ang makukuha nila?",
+          "answer": [
+            "Pinadaling pamamahala ng kliyente",
+            "Mga insight na pinapagana ng AI",
+            "Mas mabilis na pagsasara ng deal"
+          ]
+        },
+        {
+          "question": "Bakit XOTO?",
+          "answer": "Palakihin ang conversion at kita gamit ang isang kumpletong property ecosystem."
+        }
+      ]
+    },
+    "executionPartner": {
+      "heading": "Execution Partners",
+      "qa": [
+        {
+          "question": "Sino?",
+          "answer": "Mga contractor, landscaper, interior designer, at project manager."
+        },
+        {
+          "question": "Ano ang makukuha nila?",
+          "answer": [
+            "Real-time na task allocation",
+            "Transparent na pagsubaybay ng progreso",
+            "Maayos na koordinasyon ng proyekto"
+          ]
+        },
+        {
+          "question": "Bakit XOTO?",
+          "answer": "Mahusay na pamahalaan ang mga proyekto at kumonekta sa mga kwalipikadong kliyente."
+        }
+      ]
+    },
+    "strategicAlliances": {
+      "heading": "Strategic Alliances",
+      "qa": [
+        {
+          "question": "Sino?",
+          "answer": "Mga negosyong nais makipagtulungan at palawakin ang merkado."
+        },
+        {
+          "question": "Ano ang makukuha nila?",
+          "answer": [
+            "Integrated na ecosystem na nakatuon sa paglago",
+            "Access sa mga bagong merkado at partnership"
+          ]
+        },
+        {
+          "question": "Bakit XOTO?",
+          "answer": "Pabilisin ang presensya sa merkado at kita gamit ang isang platform."
+        }
+      ]
+    },
+    "developers": {
+      "heading": "Mga Developer",
+      "qa": [
+        {
+          "question": "Sino?",
+          "answer": "Mga property developer na naghahanap ng buyer at market insight."
+        },
+        {
+          "question": "Ano ang makukuha nila?",
+          "answer": [
+            "Access sa mga pre-qualified buyer",
+            "Data-driven na mas mabilis na benta"
+          ]
+        },
+        {
+          "question": "Bakit XOTO?",
+          "answer": "Mas mabilis na magsara ng deal at i-optimize ang sales gamit ang AI."
+        }
+      ]
+    },
+    "financialInstitution": {
+      "heading": "Financial Institution",
+      "qa": [
+        {
+          "question": "Sino?",
+          "answer": "Mga bangko, mortgage provider, at lending institution."
+        },
+        {
+          "question": "Ano ang makukuha nila?",
+          "answer": [
+            "Mas mataas na mortgage conversion",
+            "Pinagsamang property at financing ecosystem"
+          ]
+        },
+        {
+          "question": "Bakit XOTO?",
+          "answer": "Magbigay ng seamless na karanasan sa customer habang pinapataas ang kita sa financing."
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "title": "Mag-book ng Konsultasyon",
+  "description": "Isang simpleng form para makipag-ugnayan sa XOTO experts para sa personalized interior design advice.",
+  "form": {
+    "firstName": "Pangalan",
+    "lastName": "Apelyido",
+    "email": "Email Address",
+    "mobile": "Numero ng Telepono",
+    "message": "Iyong Mensahe"
+  },
+  "buttons": {
+    "submit": "Mag-book ng Libreng Konsultasyon",
+    "submitting": "Isinusumite..."
+  },
+  "privacy": "Iginagalang namin ang iyong privacy. Ligtas ang iyong impormasyon."
+}

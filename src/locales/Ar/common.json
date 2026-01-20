@@ -1,0 +1,21 @@
+{
+  "nav": {
+    "home": "الصفحة الرئيسية",
+    "homeUpgrade": "تحديث المنزل",
+    "landscaping": "تنسيق الحدائق",
+    "interiors": "التصميم الداخلي",
+    "homeOwnership": "ملكية المنازل",
+    "mortgages": "الرهون العقارية",
+    "properties": "العقارات",
+    "store": "متجر Xoto",
+    "knowledgeHub": "مركز المعرفة",
+    "blogs": "المدونات",
+    "caseStudies": "دراسات الحالة",
+    "training": "التدريب",
+    "ecosystem": "منظومة الشركاء",
+    "about": "من نحن",
+    "contact": "اتصل بنا",
+    "login": "تسجيل الدخول",
+    "tagline": "مدعوم بالذكاء الاصطناعي. مستوحى منك."
+  }
+}

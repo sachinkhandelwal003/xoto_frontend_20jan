@@ -1,0 +1,22 @@
+{
+  "title": "Neden XOTO ile Ortak Olmalısınız",
+  "featureLabel": "Özellik {{id}}",
+  "features": {
+    "1": {
+      "title": "Hepsi Bir Arada Platform",
+      "desc": "Müşterilerle sorunsuz şekilde bağlantı kurun."
+    },
+    "2": {
+      "title": "Yapay Zekâ Destekli Araçlar",
+      "desc": "İş akışlarını sadeleştirin, ilerlemeyi takip edin ve gelir fırsatlarını keşfedin."
+    },
+    "3": {
+      "title": "İşinizi Büyütün",
+      "desc": "Erişiminizi genişletin, anlaşmaları hızlandırın ve kazancı en üst düzeye çıkarın."
+    },
+    "4": {
+      "title": "Şeffaflık ve Kontrol",
+      "desc": "Projeler, potansiyel müşteriler ve müşteri etkileşimleri üzerinde tam görünürlük."
+    }
+  }
+}

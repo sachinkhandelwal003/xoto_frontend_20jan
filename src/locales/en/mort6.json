@@ -1,0 +1,33 @@
+{
+    "hero": {
+      "title": "Ready to get your mortgage started?",
+      "subtitle": "Start your application today and get pre-approved in 48 hours.",
+      "primaryCta": "Get Pre-Approved Now",
+      "secondaryCta": "Talk to an Expert"
+    },
+    
+      "form": {
+        "heading": "Discover, Decide, and Deal – All in One Place.",
+    
+        "firstName": "First Name",
+        "lastName": "Last Name",
+    
+        "email": "Email address",
+        "phone": "Phone Number",
+    
+        "lookingFor": "I am Looking to",
+            "select": "Select an option", 
+
+        "city": "Preferred City",
+        "budget": "Budget",
+    
+        "submit": "Get Pre-Approved Now",
+    
+        "options": {
+          "homeLoan": "Home Loan",
+          "refinance": "Refinance",
+          "personalLoan": "Personal Loan"
+        }
+    }
+  }
+  

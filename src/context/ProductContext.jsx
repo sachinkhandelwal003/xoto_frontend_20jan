@@ -1,0 +1,36 @@
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import axios from 'axios';
+
+const ProductContext = createContext();
+
+export const ProductProvider = ({ children }) => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchAllProducts = async () => {
+    setLoading(true);
+    try {
+      // Tera exact API endpoint
+      const res = await axios.get('https://xoto.ae/api/products/get-all-products?page=1&limit=20');
+      if (res.data.success) {
+        setProducts(res.data.data.products);
+      }
+    } catch (error) {
+      console.error("API Fetch Error", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllProducts();
+  }, []);
+
+  return (
+    <ProductContext.Provider value={{ products, loading, fetchAllProducts }}>
+      {children}
+    </ProductContext.Provider>
+  );
+};
+
+export const useProducts = () => useContext(ProductContext);

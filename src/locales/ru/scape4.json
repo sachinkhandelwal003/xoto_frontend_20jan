@@ -1,0 +1,16 @@
+{
+  "heading": "EcoSmart Жизнь",
+  "description": "В XOTO EcoSmart Living означает создание ландшафтов с балансом красоты, устойчивости и технологий.",
+  "subheading": "Как мы это реализуем",
+  "features": {
+    "smartIrrigation": {
+      "title": "Умный Полив",
+      "text": "Сенсорные системы полива для экономии воды."
+    },
+    "solarLighting": "Солнечное Освещение",
+    "lowWaterPlant": "Растения с Низким Потреблением Воды",
+    "ecoMaterials": "Экологичные Материалы",
+    "automatedControl": "Автоматизированное Управление",
+    "futureReady": "Дизайн Будущего"
+  }
+}

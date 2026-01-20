@@ -1,0 +1,34 @@
+{
+  "title": "快速咨询",
+  "description": "需要快速回复？请填写以下信息。",
+
+  "form": {
+    "firstName": "名字",
+    "lastName": "姓氏",
+    "email": "电子邮件",
+    "mobile": "手机号码",
+    "message": "您的留言"
+  },
+
+  "buttons": {
+    "submit": "提交咨询",
+    "submitting": "提交中..."
+  },
+
+  "privacy": "我们尊重您的隐私。",
+
+  "validation": {
+    "firstName": "请输入名字",
+    "lastName": "请输入姓氏",
+    "email": "请输入有效邮箱",
+    "mobile": "至少8位数字",
+    "message": "请输入留言"
+  },
+
+  "notification": {
+    "successTitle": "谢谢！",
+    "successMessage": "您的咨询已成功提交。",
+    "errorTitle": "错误",
+    "errorMessage": "发生错误，请重试。"
+  }
+}

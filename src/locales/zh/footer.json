@@ -1,0 +1,56 @@
+{
+  "company": {
+    "slogan": "打造终身房地产价值的 <br/> 统一生态系统。",
+    "description": "可扩展。AI 驱动。轻资产。"
+  },
+  "titles": {
+    "offerings": "我们的服务",
+    "resources": "合作伙伴生态",
+    "knowledge": "关于我们",
+    "location": "地区",
+    "email": "电子邮件"
+  },
+  "offerings": [
+    { "label": "景观设计", "path": "/landscaping" },
+    { "label": "室内设计", "path": "/services/interior" },
+    { "label": "租赁", "path": "/marketplace" },
+    { "label": "购买", "path": "/marketplace" },
+    { "label": "出售", "path": "/marketplace" },
+    { "label": "按揭贷款", "path": "/mortgage/services" },
+    { "label": "维护", "path": "" }
+  ],
+  "resources": [
+    { "label": "战略联盟", "path": "/login" },
+    { "label": "商业伙伴", "path": "/login" },
+    { "label": "执行合作伙伴", "path": "/login" },
+    { "label": "开发商", "path": "/" },
+    { "label": "金融机构", "path": "/" }
+  ],
+  "knowledge": [
+    { "label": "知识中心", "path": "/about" },
+    { "label": "我们的可持续性 重点", "path": "/about" },
+    { "label": "", "path": "/about" },
+    { "label": "提交反馈", "path": "/about" },
+    { "label": "联系我们", "path": "/contact" },
+    { "label": "隐私政策", "path": "/about" },
+    { "label": "使用条款", "path": "/about" }
+  ],
+  "locations": " 阿联酋 | 沙特阿拉伯",
+  "email": {
+    "labels": {
+      "partners": "合作伙伴",
+      "customers": "客户"
+    },
+    "partners": "connect@xoto.ae",
+    "customers": "care@xoto.ae"
+  },
+  "social": [
+    { "name": "脸书", "url": "#" },
+    { "name": "Instagram", "url": "#" },
+    { "name": "Twitter", "url": "#" },
+    { "name": "LinkedIn", "url": "#" }
+  ],
+  "bottom": {
+    "copyright": "©2021 XOTO。保留所有权利"
+  }
+}

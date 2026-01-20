@@ -1,0 +1,37 @@
+{
+  "title": "Book a Free Consultation",
+  "description": "Connect with our experts to get the best interior design solutions tailored to your needs.",
+
+  "imageAlt": "Interior design consultation",
+
+  "form": {
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email Address",
+    "mobile": "Mobile Number",
+    "message": "Your Message"
+  },
+
+  "buttons": {
+    "submit": "Submit",
+    "submitting": "Submitting..."
+  },
+
+  "privacy": "We respect your privacy and will never share your details.",
+
+  "success": {
+    "title": "Submission Successful",
+    "message": "Thank you! Our team will contact you shortly."
+  },
+
+  "errors": {
+    "validationTitle": "Validation Error",
+    "submitTitle": "Submission Failed",
+    "firstName": "Please enter your first name.",
+    "lastName": "Please enter your last name.",
+    "email": "Please enter a valid email address.",
+    "mobile": "Please enter a valid mobile number.",
+    "message": "Please enter your message.",
+    "submit": "Something went wrong. Please try again."
+  }
+}

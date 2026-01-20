@@ -1,0 +1,21 @@
+{
+  "heading": "संपर्क जानकारी",
+  "email": {
+    "title": "ईमेल करें",
+    "subtitle": "हमसे संपर्क करें",
+    "primary": "sales.support@xoto.ae",
+    "secondary": "info@xoto.ae",
+    "note": "हम शीघ्र उत्तर देंगे"
+  },
+  "address": {
+    "title": "पता",
+    "line1": "1616, पार्कलेन टॉवर, बिजनेस बे, दुबई",
+    "country": "यूएई"
+  },
+  "phone": {
+    "title": "फ़ोन",
+    "number": "+971 50 918 0967",
+    "timing": "सोम–शनि | 9AM–6PM"
+  },
+  "map": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3610.5326639711025!2d55.2618832!3d25.1852532"
+}

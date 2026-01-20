@@ -1,0 +1,31 @@
+{
+  "heading": {
+    "title": "Mülkleri Keşfet"
+  },
+  "card": {
+    "bed": "Yatak Odası",
+    "bath": "Banyo"
+  },
+  "actions": {
+    "schedule": "Ziyaret Planla",
+    "viewMore": "Daha Fazla",
+    "submit": "Ziyaret Planla",
+    "loading": "Ziyaret planlanıyor..."
+  },
+  "modal": {
+    "title": "Ziyaret Planla",
+    "subtitle": "Bilgilerinizi girin, sizinle iletişime geçelim."
+  },
+  "form": {
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "email": "E-posta",
+    "phone": "Telefon Numarası",
+    "occupation": "Meslek",
+    "location": "Tercih Edilen Konum"
+  },
+  "toast": {
+    "success": "Ziyaret planlandı! Yakında iletişime geçeceğiz.",
+    "error": "Ziyaret planlanamadı."
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "heading": "اطلاعات تماس",
+  "email": {
+    "title": "ایمیل",
+    "subtitle": "با ما در تماس باشید",
+    "primary": "sales.support@xoto.ae",
+    "secondary": "info@xoto.ae",
+    "note": "به‌زودی پاسخ می‌دهیم"
+  },
+  "address": {
+    "title": "آدرس",
+    "line1": "1616، برج پارک لین، بیزینس بی، دبی",
+    "country": "امارات متحده عربی"
+  },
+  "phone": {
+    "title": "تلفن",
+    "number": "+971 50 918 0967",
+    "timing": "دوشنبه–شنبه | 9AM–6PM"
+  },
+  "map": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3610.5326639711025!2d55.2618832!3d25.1852532"
+}

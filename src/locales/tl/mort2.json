@@ -1,0 +1,18 @@
+{
+    "title": "Planuhin ang Iyong Home Loan nang may Kumpiyansa",
+    "modes": {
+      "borrow": "Magkano ang maaari kong hiramin?",
+      "estimate": "Tantya ng buwanang bayad",
+      "check": "Pagsusuri ng kakayahang magbayad"
+    },
+    "imageAlt": "Larawan ng home loan",
+    "features": {
+      "1": { "label": "Tampok 1", "title": "Halaga ng Ari-arian" },
+      "2": { "label": "Tampok 2", "title": "Paunang Bayad" },
+      "3": { "label": "Tampok 3", "title": "Panahon ng Loan" },
+      "4": { "label": "Tampok 4", "title": "Pinakamataas na Loan" }
+    },
+    "cta": "Kumuha ng Pre-Approval",
+    "disclaimer": "Ang mga pagtataya ay gabay lamang. Ang huling mga termino ay nakabatay sa pag-apruba ng kredito."
+  }
+  

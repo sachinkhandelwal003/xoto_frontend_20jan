@@ -1,0 +1,77 @@
+{
+  "title": "Für jeden Stakeholder entwickelt",
+  "subtitle": "Unsere Plattform bedient unterschiedliche Akteure im Immobilien-Ökosystem mit maßgeschneiderten Lösungen",
+  "cta": "Registrieren",
+  "tabs": {
+    "businessAssociates": {
+      "heading": "Geschäftspartner",
+      "qa": [
+        { "question": "Wer?", "answer": "Immobilienmakler, Broker und Netzwerkpartner." },
+        {
+          "question": "Was bringt es ihnen?",
+          "answer": ["Vereinfachtes Kundenmanagement", "KI-gestützte Einblicke", "Schnellere Abschlüsse"]
+        },
+        {
+          "question": "Warum XOTO?",
+          "answer": "Maximieren Sie Konversionen und Umsatz mit einem vollständigen Immobilien-Ökosystem."
+        }
+      ]
+    },
+    "executionPartner": {
+      "heading": "Ausführungspartner",
+      "qa": [
+        { "question": "Wer?", "answer": "Bauunternehmer, Landschaftsgestalter, Innenarchitekten und Projektmanager." },
+        {
+          "question": "Was bringt es ihnen?",
+          "answer": ["Echtzeit-Aufgabenverteilung", "Transparente Fortschrittsverfolgung", "Nahtlose Projektkoordination"]
+        },
+        {
+          "question": "Warum XOTO?",
+          "answer": "Projekte effizient verwalten und mit qualifizierten Kunden verbinden."
+        }
+      ]
+    },
+    "strategicAlliances": {
+      "heading": "Strategische Allianzen",
+      "qa": [
+        { "question": "Wer?", "answer": "Unternehmen, die Kooperation und Markterweiterung suchen." },
+        {
+          "question": "Was bringt es ihnen?",
+          "answer": ["Integriertes wachstumsorientiertes Ökosystem", "Zugang zu neuen Märkten und Partnerschaften"]
+        },
+        {
+          "question": "Warum XOTO?",
+          "answer": "Marktpräsenz und Umsatz über eine einzige Plattform beschleunigen."
+        }
+      ]
+    },
+    "developers": {
+      "heading": "Projektentwickler",
+      "qa": [
+        { "question": "Wer?", "answer": "Immobilienentwickler auf der Suche nach Käufern und Markteinblicken." },
+        {
+          "question": "Was bringt es ihnen?",
+          "answer": ["Zugang zu vorqualifizierten Käufern", "Datenbasierte Verkaufsbeschleunigung"]
+        },
+        {
+          "question": "Warum XOTO?",
+          "answer": "Abschlüsse schneller erzielen und Verkaufsstrategien mit KI optimieren."
+        }
+      ]
+    },
+    "financialInstitution": {
+      "heading": "Finanzinstitute",
+      "qa": [
+        { "question": "Wer?", "answer": "Banken, Hypothekenanbieter und Kreditinstitute." },
+        {
+          "question": "Was bringt es ihnen?",
+          "answer": ["Höhere Hypotheken-Konversionen", "Integriertes Immobilien- und Finanzierungsökosystem"]
+        },
+        {
+          "question": "Warum XOTO?",
+          "answer": "Nahtlose Kundenerlebnisse schaffen und Finanzierungserlöse steigern."
+        }
+      ]
+    }
+  }
+}

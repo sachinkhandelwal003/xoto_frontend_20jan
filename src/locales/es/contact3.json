@@ -1,0 +1,34 @@
+{
+  "title": "Consulta rápida",
+  "description": "¿Necesita respuestas rápidas? Deje sus datos abajo.",
+
+  "form": {
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "email": "Correo electrónico",
+    "mobile": "Número de móvil",
+    "message": "Tu mensaje"
+  },
+
+  "buttons": {
+    "submit": "Enviar consulta",
+    "submitting": "Enviando..."
+  },
+
+  "privacy": "Respetamos tu privacidad.",
+
+  "validation": {
+    "firstName": "El nombre es obligatorio",
+    "lastName": "El apellido es obligatorio",
+    "email": "Correo válido requerido",
+    "mobile": "Mínimo 8 dígitos",
+    "message": "El mensaje es obligatorio"
+  },
+
+  "notification": {
+    "successTitle": "¡Gracias!",
+    "successMessage": "Tu consulta fue enviada correctamente.",
+    "errorTitle": "Error",
+    "errorMessage": "Algo salió mal."
+  }
+}

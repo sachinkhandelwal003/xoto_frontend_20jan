@@ -1,0 +1,47 @@
+{
+  "heading": "客户的评价",
+  "items": [
+    {
+      "title": "找到了理想的住所",
+      "text": "RentBro 让我在新城市安顿下来变得非常简单。",
+      "name": "舒巴姆",
+      "location": "浦那，马哈拉施特拉邦",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "流程顺畅",
+      "text": "整个租房过程快速又透明。",
+      "name": "舒巴姆",
+      "location": "浦那，马哈拉施特拉邦",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "优质服务",
+      "text": "客服团队非常专业且乐于助人。",
+      "name": "舒巴姆",
+      "location": "浦那，马哈拉施特拉邦",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "物有所值",
+      "text": "价格合理，房源可靠。",
+      "name": "舒巴姆",
+      "location": "浦那，马哈拉施特拉邦",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "无压力搬家",
+      "text": "搬到新城市的体验非常轻松。",
+      "name": "普尼特",
+      "location": "浦那，马哈拉施特拉邦",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "社区环境很好！",
+      "text": "社区推荐非常准确。",
+      "name": "哈什",
+      "location": "HSR 区，班加罗尔",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    }
+  ]
+}

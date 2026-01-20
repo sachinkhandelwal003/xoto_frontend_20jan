@@ -1,0 +1,34 @@
+{
+  "title": "Besprechen Sie Ihr Interior-Projekt",
+  "description": "Sprechen Sie mit unseren Experten und verwirklichen Sie Ihr Trauminterieur.",
+  "imageAlt": "Innenarchitektur Beratung Hintergrund",
+
+  "form": {
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "email": "E-Mail",
+    "mobile": "Mobilnummer",
+    "message": "Ihre Nachricht"
+  },
+
+  "buttons": {
+    "submit": "Absenden",
+    "submitting": "Wird gesendet..."
+  },
+
+  "errors": {
+    "firstName": "Bitte Vornamen eingeben",
+    "lastName": "Bitte Nachnamen eingeben",
+    "email": "Bitte gültige E-Mail eingeben",
+    "mobile": "Bitte gültige Mobilnummer eingeben",
+    "message": "Bitte Nachricht eingeben",
+    "submit": "Fehler beim Absenden"
+  },
+
+  "success": {
+    "title": "Erfolg!",
+    "message": "Unser Team wird Sie bald kontaktieren."
+  },
+
+  "privacy": "Ihre Daten sind sicher und werden nicht weitergegeben."
+}

@@ -1,0 +1,40 @@
+{
+  "title": { "line1": "Formulario de", "line2": "Colaboración" },
+  "subtitle": {
+    "line1": "¿Interesado en colaborar con XOTO?",
+    "line2": "Cuéntanos más sobre tu negocio o proyecto."
+  },
+  "form": {
+    "organization": "Nombre de la organización",
+    "email": "Correo electrónico",
+    "partnerType": "Tipo de socio",
+    "proposal": "Descripción de la propuesta"
+  },
+  "placeholders": {
+    "organization": "Ingrese el nombre de la organización",
+    "email": "Ingrese el correo electrónico",
+    "proposal": "Describa su propuesta"
+  },
+  "options": {
+    "select": "Seleccione el tipo de socio",
+    "business": "Asociados comerciales",
+    "execution": "Socio de ejecución",
+    "alliance": "Alianzas estratégicas",
+    "developers": "Desarrolladores",
+    "finance": "Institución financiera"
+  },
+  "buttons": { "submit": "Enviar" },
+  "chat": {
+    "title": "Chat Xobia (Ayuda AI 24/7)",
+    "description": "¿Tiene una pregunta? Xobia está disponible 24/7.",
+    "button": "Chatear con Xobia"
+  },
+  "validation": {
+    "organization": "El nombre de la organización es obligatorio.",
+    "emailRequired": "El correo electrónico es obligatorio.",
+    "emailInvalid": "Ingrese un correo electrónico válido.",
+    "partnerType": "El tipo de socio es obligatorio.",
+    "proposal": "La descripción es obligatoria."
+  },
+  "notification": { "success": "¡Formulario enviado con éxito!" }
+}

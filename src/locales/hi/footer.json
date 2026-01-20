@@ -1,0 +1,56 @@
+{
+  "company": {
+    "slogan": "जीवनभर की संपत्ति मूल्य बनाने वाला <br/> एकीकृत इकोसिस्टम।",
+    "description": "स्केलेबल। AI-संचालित। एसेट-लाइट।"
+  },
+  "titles": {
+    "offerings": "हमारी सेवाएं",
+    "resources": "पार्टनर इकोसिस्टम",
+    "knowledge": "हमारे बारे में",
+    "location": "स्थान",
+    "email": "ईमेल"
+  },
+  "offerings": [
+    { "label": "लैंडस्केपिंग", "path": "/landscaping" },
+    { "label": "इंटीरियर्स", "path": "/services/interior" },
+    { "label": "किराया", "path": "/marketplace" },
+    { "label": "खरीदें", "path": "/marketplace" },
+    { "label": "बेचें", "path": "/marketplace" },
+    { "label": "होम लोन", "path": "/mortgage/services" },
+    { "label": "मेंटेनेंस", "path": "" }
+  ],
+  "resources": [
+    { "label": "रणनीतिक साझेदारी", "path": "/login" },
+    { "label": "बिज़नेस एसोसिएट्स", "path": "/login" },
+    { "label": "एक्ज़ीक्यूशन पार्टनर्स", "path": "/login" },
+    { "label": "डेवलपर्स", "path": "/" },
+    { "label": "वित्तीय संस्थान", "path": "/" }
+  ],
+  "knowledge": [
+    { "label": "नॉलेज सेंटर", "path": "/about" },
+    { "label": "हमारी सस्टेनेबिलिटी फोकस", "path": "/about" },
+    
+    { "label": "फीडबैक दें", "path": "/about" },
+    { "label": "संपर्क करें", "path": "/contact" },
+    { "label": "प्राइवेसी पॉलिसी", "path": "/about" },
+    { "label": "उपयोग की शर्तें", "path": "/about" }
+  ],
+  "locations": "भारत | यूएई | सऊदी अरब",
+  "email": {
+    "labels": {
+      "partners": "पार्टनर्स के लिए",
+      "customers": "ग्राहकों के लिए"
+    },
+    "partners": "connect@xoto.ae",
+    "customers": "care@xoto.ae"
+  },
+  "social": [
+    { "name": "फेसबुक", "url": "#" },
+    { "name": "इंस्टाग्राम", "url": "#" },
+    { "name": "ट्विटर", "url": "#" },
+    { "name": "लिंक्डइन", "url": "#" }
+  ],
+  "bottom": {
+    "copyright": "©2021 XOTO. सर्वाधिकार सुरक्षित"
+  }
+}

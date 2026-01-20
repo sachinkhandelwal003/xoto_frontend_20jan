@@ -1,0 +1,25 @@
+{
+  "heroTitle": "Kung Saan Nagiging Tahanan ang mga Pangarap",
+  "heroSub": "Maghanap, magbenta at mag-finance ng bahay nang mas madali",
+
+  "formTitle": "Tuklasin, Magpasya, Isara",
+  "formSub": "Lahat sa Isang Lugar",
+
+  "firstName": "Pangalan*",
+  "lastName": "Apelyido*",
+  "email": "Email address*",
+  "countryCode": "Code*",
+  "phone": "Numero ng telepono*",
+
+  "country": "Bansa*",
+  "lookingFor": "Hinahanap*",
+  "city": "Gustong lungsod*",
+  "budget": "Badyet*",
+
+  "submit": "Isumite",
+  "submitting": "Ipinapadala...",
+
+  "success": "Salamat! Kokontakin ka namin sa lalong madaling panahon",
+  "error": "Pakiusap punan ang lahat ng field",
+  "genericError": "May naganap na error. Subukan muli."
+}

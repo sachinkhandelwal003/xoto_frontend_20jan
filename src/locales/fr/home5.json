@@ -1,0 +1,18 @@
+{
+  "title": "Confiance & Présence",
+
+  "cards": {
+    "card1": {
+      "title": "Aménagement paysager",
+      "desc": "Réinventez votre maison et vos extérieurs grâce à des solutions d’aménagement et d’amélioration alimentées par l’IA."
+    },
+    "card2": {
+      "title": "Revente",
+      "desc": "Réinventez votre maison grâce à des solutions simples et alimentées par l’IA."
+    },
+    "card3": {
+      "title": "Location",
+      "desc": "Transformez votre espace grâce à des solutions d'amélioration alimentées par l’IA."
+    }
+  }
+}

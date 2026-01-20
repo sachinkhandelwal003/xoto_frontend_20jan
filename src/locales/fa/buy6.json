@@ -1,0 +1,47 @@
+{
+  "heading": "مشتریان ما چه می‌گویند",
+  "items": [
+    {
+      "title": "یک مکان عالی پیدا کردم",
+      "text": "RentBro اسکان در یک شهر جدید را با قیمت‌های منصفانه و محله‌ای عالی بسیار آسان کرد. کاملاً توصیه می‌کنم.",
+      "name": "شوبهام",
+      "location": "پونا، ماهاراشترا",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "تجربه‌ای روان",
+      "text": "کل فرآیند اجاره شفاف و بدون دردسر بود. RentBro زمان زیادی برای من صرفه‌جویی کرد.",
+      "name": "شوبهام",
+      "location": "پونا، ماهاراشترا",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "پشتیبانی عالی",
+      "text": "پشتیبانی مشتریان در تمام مراحل پاسخگو و کمک‌کننده بود.",
+      "name": "شوبهام",
+      "location": "پونا، ماهاراشترا",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "کاملاً ارزشش را داشت",
+      "text": "قیمت‌های منصفانه و آگهی‌های معتبر. با اطمینان RentBro را انتخاب کردم.",
+      "name": "شوبهام",
+      "location": "پونا، ماهاراشترا",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "جابجایی بدون استرس",
+      "text": "جابجایی به شهر جدید به لطف RentBro بسیار آسان بود.",
+      "name": "پونیت",
+      "location": "پونا، ماهاراشترا",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "محله‌ای فوق‌العاده!",
+      "text": "پیشنهادهای محله بسیار دقیق بودند. تجربه را دوست داشتم.",
+      "name": "هارش",
+      "location": "HSR Layout، بنگلور",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    }
+  ]
+}

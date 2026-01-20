@@ -1,0 +1,51 @@
+{
+  "hero": {
+    "titleDesktop": "立即加入\nXOTO 合作伙伴\n生态系统",
+    "titleMobile": "加入 XOTO\n合作伙伴生态系统"
+  },
+
+  "form": {
+    "firstName": {
+      "label": "名字",
+      "placeholder": "请输入名字"
+    },
+    "lastName": {
+      "label": "姓氏",
+      "placeholder": "请输入姓氏"
+    },
+    "email": {
+      "label": "电子邮箱",
+      "placeholder": "请输入邮箱"
+    },
+    "company": {
+      "label": "公司名称",
+      "placeholder": "请输入公司名称"
+    },
+    "phone": {
+      "label": "联系电话",
+      "placeholder": "请输入号码"
+    },
+    "message": {
+      "label": "留言",
+      "placeholder": "请输入您的留言"
+    },
+
+    "stakeholder": {
+      "label": "合作伙伴类型",
+      "select": "请选择",
+      "business": "商业合作伙伴",
+      "execution": "执行合作伙伴",
+      "developer": "开发商",
+      "investor": "投资人"
+    },
+
+    "submit": "提交",
+    "submitting": "提交中..."
+  },
+
+  "toast": {
+    "success": "谢谢！您的合作请求已发送。",
+    "error": "提交失败，请重试。",
+    "invalid": "请正确填写所有字段"
+  }
+}

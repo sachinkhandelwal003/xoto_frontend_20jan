@@ -1,0 +1,25 @@
+{
+  "heroTitle": "Là où les Rêves Deviennent Réalité",
+  "heroSub": "Trouvez, vendez et financez votre maison intelligemment",
+
+  "formTitle": "Découvrir, Décider, Conclure",
+  "formSub": "Tout en un seul endroit",
+
+  "firstName": "Prénom*",
+  "lastName": "Nom*",
+  "email": "Adresse e-mail*",
+  "countryCode": "Indicatif*",
+  "phone": "Numéro de téléphone*",
+
+  "country": "Pays*",
+  "lookingFor": "Recherche*",
+  "city": "Ville préférée*",
+  "budget": "Budget*",
+
+  "submit": "Envoyer",
+  "submitting": "Envoi...",
+
+  "success": "Merci ! Nous vous contacterons très bientôt",
+  "error": "Veuillez remplir tous les champs",
+  "genericError": "Une erreur est survenue. Veuillez réessayer."
+}

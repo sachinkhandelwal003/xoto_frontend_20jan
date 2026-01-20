@@ -1,0 +1,21 @@
+{
+  "heading": "ਸੰਪਰਕ ਜਾਣਕਾਰੀ",
+  "email": {
+    "title": "ਈਮੇਲ ਕਰੋ",
+    "subtitle": "ਸਾਡੇ ਨਾਲ ਸੰਪਰਕ ਕਰੋ",
+    "primary": "sales.support@xoto.ae",
+    "secondary": "info@xoto.ae",
+    "note": "ਅਸੀਂ ਜਲਦੀ ਜਵਾਬ ਦੇਵਾਂਗੇ"
+  },
+  "address": {
+    "title": "ਪਤਾ",
+    "line1": "1616, ਪਾਰਕਲੇਨ ਟਾਵਰ, ਬਿਜ਼ਨਸ ਬੇ, ਦੁਬਈ",
+    "country": "ਯੂਏਈ"
+  },
+  "phone": {
+    "title": "ਫ਼ੋਨ",
+    "number": "+971 50 918 0967",
+    "timing": "ਸੋਮ–ਸ਼ਨੀ | 9AM–6PM"
+  },
+  "map": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3610.5326639711025!2d55.2618832!3d25.1852532"
+}

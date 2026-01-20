@@ -1,0 +1,56 @@
+{
+  "company": {
+    "slogan": "Ein vereintes Ökosystem zur Schaffung <br/> lebenslangen Immobilienwerts.",
+    "description": "Skalierbar. KI-gestützt. Asset-light."
+  },
+  "titles": {
+    "offerings": "Unsere Leistungen",
+    "resources": "Partner-Ökosystem",
+    "knowledge": "Über uns",
+    "location": "Standorte",
+    "email": "E-Mail"
+  },
+  "offerings": [
+    { "label": "Landschaftsbau", "path": "/landscaping" },
+    { "label": "Innenausbau", "path": "/services/interior" },
+    { "label": "Vermietung", "path": "/marketplace" },
+    { "label": "Kaufen", "path": "/marketplace" },
+    { "label": "Verkaufen", "path": "/marketplace" },
+    { "label": "Hypotheken", "path": "/mortgage/services" },
+    { "label": "Wartung", "path": "" }
+  ],
+  "resources": [
+    { "label": "Strategische Allianz", "path": "/login" },
+    { "label": "Geschäftspartner", "path": "/login" },
+    { "label": "Ausführungspartner", "path": "/login" },
+    { "label": "Entwickler", "path": "/" },
+    { "label": "Finanzinstitute", "path": "/" }
+  ],
+  "knowledge": [
+    { "label": "Wissenszentrum", "path": "/about" },
+    { "label": "Unsere Nachhaltigkeit Fokus", "path": "/about" },
+    
+    { "label": "Feedback senden", "path": "/about" },
+    { "label": "Kontakt", "path": "/contact" },
+    { "label": "Datenschutz", "path": "/about" },
+    { "label": "Nutzungsbedingungen", "path": "/about" }
+  ],
+  "locations": " VAE | Saudi-Arabien",
+  "email": {
+    "labels": {
+      "partners": "Für Partner",
+      "customers": "Für Kunden"
+    },
+    "partners": "connect@xoto.ae",
+    "customers": "care@xoto.ae"
+  },
+  "social": [
+    { "name": "Facebook", "url": "#" },
+    { "name": "Instagram", "url": "#" },
+    { "name": "Twitter", "url": "#" },
+    { "name": "LinkedIn", "url": "#" }
+  ],
+  "bottom": {
+    "copyright": "©2021 XOTO. Alle Rechte vorbehalten"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "heading": "Was unsere Kunden sagen",
+  "items": [
+    {
+      "title": "Tolle Unterkunft gefunden",
+      "text": "RentBro hat den Umzug in eine neue Stadt extrem erleichtert.",
+      "name": "Schubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Reibungsloser Ablauf",
+      "text": "Der gesamte Prozess war transparent und schnell.",
+      "name": "Schubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Großartiger Support",
+      "text": "Der Kundenservice war jederzeit hilfsbereit.",
+      "name": "Schubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Jeden Cent wert",
+      "text": "Faire Preise und vertrauenswürdige Angebote.",
+      "name": "Schubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Stressfreier Umzug",
+      "text": "Der Umzug war völlig unkompliziert.",
+      "name": "Punit",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Tolle Umgebung!",
+      "text": "Die Wohngegend war perfekt ausgewählt.",
+      "name": "Harsch",
+      "location": "HSR-Viertel, Bengaluru",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    }
+  ]
+}

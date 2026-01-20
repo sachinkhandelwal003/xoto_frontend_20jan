@@ -1,0 +1,40 @@
+{
+  "title": { "line1": "Form ng", "line2": "Pakikipagtulungan" },
+  "subtitle": {
+    "line1": "Interesado bang makipag-partner sa XOTO?",
+    "line2": "Ikwento ang iyong negosyo o proyekto."
+  },
+  "form": {
+    "organization": "Pangalan ng organisasyon",
+    "email": "Email ng kontak",
+    "partnerType": "Uri ng partner",
+    "proposal": "Paglalarawan ng panukala"
+  },
+  "placeholders": {
+    "organization": "Ilagay ang pangalan ng organisasyon",
+    "email": "Ilagay ang email",
+    "proposal": "Ilarawan ang panukala"
+  },
+  "options": {
+    "select": "Piliin ang uri ng partner",
+    "business": "Business Associates",
+    "execution": "Execution Partner",
+    "alliance": "Strategic Alliances",
+    "developers": "Developers",
+    "finance": "Financial Institution"
+  },
+  "buttons": { "submit": "Isumite" },
+  "chat": {
+    "title": "Xobia Chat (24/7 AI Tulong)",
+    "description": "May tanong ka ba? Laging handa si Xobia.",
+    "button": "Makipag-chat kay Xobia"
+  },
+  "validation": {
+    "organization": "Kinakailangan ang pangalan ng organisasyon.",
+    "emailRequired": "Kinakailangan ang email.",
+    "emailInvalid": "Maglagay ng tamang email.",
+    "partnerType": "Kinakailangan ang uri ng partner.",
+    "proposal": "Kinakailangan ang paglalarawan."
+  },
+  "notification": { "success": "Matagumpay na naisumite ang form!" }
+}

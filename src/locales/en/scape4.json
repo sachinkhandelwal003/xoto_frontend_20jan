@@ -1,0 +1,16 @@
+{
+  "heading": "EcoSmart Living",
+  "description": "At XOTO, EcoSmart Living means creating landscapes that balance beauty, sustainability, and technology.",
+  "subheading": "How We Make It Happen",
+  "features": {
+    "smartIrrigation": {
+      "title": "Smart Irrigation",
+      "text": "Sensor-based irrigation systems that reduce water consumption."
+    },
+    "solarLighting": "Solar Lighting",
+    "lowWaterPlant": "Low Water Plants",
+    "ecoMaterials": "Eco-friendly Materials",
+    "automatedControl": "Automated Control",
+    "futureReady": "Future-ready Design"
+  }
+}

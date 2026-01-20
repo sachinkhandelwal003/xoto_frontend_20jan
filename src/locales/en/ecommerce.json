@@ -1,0 +1,34 @@
+{
+  "hero": {
+    "title": "Redefine Your Living Space",
+    "subtitle": "AI-curated furniture collections that blend style, comfort, and functionality.",
+    "explore": "Explore Collections",
+    "vendor": "Become a Vendor"
+  },
+  "ar": {
+    "title": "Try Before You Buy with AR Preview",
+    "desc": "Visualize furniture in your space before purchasing."
+  },
+  "cards": {
+    "arScan": { "title": "AR Room Scan", "desc": "Scan your room in 3D using your phone camera.", "btn": "Start Scanning" },
+    "virtual": { "title": "Virtual Staging", "desc": "Preview furniture styles with AI suggestions.", "btn": "Try Virtual Staging" },
+    "fit": { "title": "Precision Fit", "desc": "Check exact measurements before buying.", "btn": "Check Fit" }
+  },
+  "how": {
+    "title": "How It Works",
+    "step1": { "number": "1", "title": "Scan Your Room", "desc": "Capture your space using your phone." },
+    "step2": { "number": "2", "title": "Browse Furniture", "desc": "Choose from curated collections." },
+    "step3": { "number": "3", "title": "Preview in AR", "desc": "See furniture in real time." }
+  },
+  "demo": { "title": "AR Demo Video", "desc": "Watch how it works", "btn": "Play Demo" },
+  "experience": {
+    "alt": "Modern living room with XOTO furniture",
+    "title": {
+      "prefix": "The",
+      "brand": "XOTO",
+      "suffix": "Experience"
+    },
+    "subtitle": "Where innovation meets comfort. Our AI-driven designs create spaces that inspire.",
+    "cta": "Discover XOTO Collection"
+  }
+}

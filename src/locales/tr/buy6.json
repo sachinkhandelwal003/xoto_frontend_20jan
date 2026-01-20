@@ -1,0 +1,47 @@
+{
+  "heading": "Müşterilerimiz Ne Diyor",
+  "items": [
+    {
+      "title": "Harika bir yer buldum",
+      "text": "RentBro yeni bir şehre taşınmamı çok kolaylaştırdı.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Sorunsuz deneyim",
+      "text": "Kiralama süreci çok hızlı ve şeffaftı.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Harika destek",
+      "text": "Destek ekibi her zaman yardımcı oldu.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Parasına değer",
+      "text": "Uygun fiyatlar ve güvenilir ilanlar.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Stressiz taşınma",
+      "text": "Yeni bir şehre taşınmak çok kolay oldu.",
+      "name": "Punit",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Harika mahalle!",
+      "text": "Mahalle önerileri mükemmeldi.",
+      "name": "Harsh",
+      "location": "HSR Layout, Bangalore",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    }
+  ]
+}

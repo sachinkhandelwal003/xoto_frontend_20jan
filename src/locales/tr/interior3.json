@@ -1,0 +1,16 @@
+{
+  "title": "Danışmanlık Al",
+  "description": "XOTO uzmanlarıyla bağlantı kurarak kişiye özel iç tasarım danışmanlığı alın.",
+  "form": {
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "email": "E-posta adresi",
+    "mobile": "Cep telefonu",
+    "message": "Mesajınız"
+  },
+  "buttons": {
+    "submit": "Ücretsiz Danışmanlık Al",
+    "submitting": "Gönderiliyor..."
+  },
+  "privacy": "Gizliliğinize saygı duyuyoruz. Bilgileriniz güvende."
+}

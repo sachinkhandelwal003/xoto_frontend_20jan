@@ -1,0 +1,39 @@
+{
+  "heading": {
+    "title": "热门房产推荐",
+    "subtitle": "探索迪拜高端地段中最具价值的独家房产。"
+  },
+  "modal": {
+    "title": "预约看房",
+    "subtitle": "填写您的信息，我们将为您安排私人看房"
+  },
+  "form": {
+    "firstName": "名字",
+    "lastName": "姓氏",
+    "email": "电子邮箱",
+    "phone": "电话号码",
+    "occupation": "职业",
+    "location": "首选位置 / 社区",
+    "contactTitle": "我们如何联系您？",
+    "contact": {
+      "call": "电话",
+      "whatsapp": "WhatsApp",
+      "email": "邮箱"
+    },
+    "marketing": "我同意接收营销和新闻通讯。",
+    "terms": "我同意条款和隐私政策。"
+  },
+  "actions": {
+    "submit": "预约看房",
+    "loading": "正在预约..."
+  },
+  "card": {
+    "bed": "卧室",
+    "bath": "浴室",
+    "schedule": "预约看房"
+  },
+  "toast": {
+    "success": "预约成功！我们将尽快联系您。",
+    "error": "预约失败，请重试。"
+  }
+}

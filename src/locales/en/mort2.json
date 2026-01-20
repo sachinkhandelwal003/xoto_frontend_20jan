@@ -1,0 +1,18 @@
+{
+    "title": "Plan Your Mortgage with Confidence",
+    "modes": {
+      "borrow": "How Much Can I Borrow?",
+      "estimate": "Monthly Payment Estimate",
+      "check": "Affordability Check"
+    },
+    "imageAlt": "Mortgage Illustration",
+    "features": {
+      "1": { "label": "Feature 1", "title": "Property Value" },
+      "2": { "label": "Feature 2", "title": "Down Payment" },
+      "3": { "label": "Feature 3", "title": "Term" },
+      "4": { "label": "Feature 4", "title": "Max Loan Output" }
+    },
+    "cta": "Get Pre-Approved",
+    "disclaimer": "Estimates are indicative. Final terms subject to credit approval."
+  }
+  

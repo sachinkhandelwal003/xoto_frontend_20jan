@@ -1,0 +1,18 @@
+{
+  "title": "Confianza y Presencia",
+
+  "cards": {
+    "card1": {
+      "title": "Paisajismo",
+      "desc": "Reimagina tu hogar y exteriores con soluciones de jardinería y mejoras impulsadas por IA, sin esfuerzo."
+    },
+    "card2": {
+      "title": "Reventa",
+      "desc": "Reimagina tu hogar con soluciones impulsadas por IA, sin complicaciones."
+    },
+    "card3": {
+      "title": "Alquiler",
+      "desc": "Reimagina tu espacio con soluciones de mejora impulsadas por IA, sin esfuerzo."
+    }
+  }
+}

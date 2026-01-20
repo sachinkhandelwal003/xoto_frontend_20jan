@@ -1,0 +1,51 @@
+{
+  "heading": "Hizmet Portföyümüz",
+  "services": {
+    "hardscape": {
+      "title": "Hardscape",
+      "items": [
+        "Zemin kaplama (kilit taşı, fayans, taş)",
+        "Pergolalar ve kamelyalar",
+        "Decking (Ahşap, WPC, Kompozit)",
+        "Sınır duvarları, çitler ve istinat duvarları",
+        "Açık hava mutfakları ve BBQ alanları",
+        "Su öğeleri (fıskiyeler, şelaleler)"
+      ]
+    },
+    "softscape": {
+      "title": "Softscape",
+      "items": [
+        "Zemin kaplama (kilit taşı, fayans, taş)",
+        "Toprak hazırlığı ve tesviye",
+        "Bitkilendirme (ağaçlar, çalılar, yer örtücüler)",
+        "Çim kurulumu (doğal ve yapay), çiçek yatakları ve dikey bahçeler",
+        "Malçlama ve toprak iyileştirme",
+        "Mevsimsel dikim ve renk temaları"
+      ]
+    },
+    "pool": {
+      "title": "Yüzme Havuzları",
+      "items": [
+        "Havuz tasarımı ve yapımı, jakuziler ve spa",
+        "Yansıtma havuzları ve koi göletleri, filtrasyon sistemleri"
+      ]
+    },
+    "other": {
+      "title": "Diğer Çözümler",
+      "items": [
+        "Şemsiyeler",
+        "Decking",
+        "Kamelyalar",
+        "Saksılar",
+        "Zemin kaplamaları",
+        "BBQ",
+        "Saksılar ve fıskiyeler"
+      ]
+    },
+    "builder": {
+      "title": "Etkileşimli oluşturucumuzla hayalinizi gerçeğe dönüştürün",
+      "description": "Alanınızı yükleyin veya bir şablon seçin ve anında AI destekli önizlemeler alın.",
+      "button": "İlk adımı at"
+    }
+  }
+}

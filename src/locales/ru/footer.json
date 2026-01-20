@@ -1,0 +1,56 @@
+{
+  "company": {
+    "slogan": "Единая экосистема, создающая <br/> пожизненную ценность недвижимости.",
+    "description": "Масштабируемая. На базе ИИ. Легкая по активам."
+  },
+  "titles": {
+    "offerings": "Наши услуги",
+    "resources": "Партнерская экосистема",
+    "knowledge": "О нас",
+    "location": "Локации",
+    "email": "Электронная почта"
+  },
+  "offerings": [
+    { "label": "Ландшафтный дизайн", "path": "/landscaping" },
+    { "label": "Интерьеры", "path": "/services/interior" },
+    { "label": "Аренда", "path": "/marketplace" },
+    { "label": "Купить", "path": "/marketplace" },
+    { "label": "Продать", "path": "/marketplace" },
+    { "label": "Ипотека", "path": "/mortgage/services" },
+    { "label": "Обслуживание", "path": "" }
+  ],
+  "resources": [
+    { "label": "Стратегический альянс", "path": "/login" },
+    { "label": "Бизнес-партнеры", "path": "/login" },
+    { "label": "Партнеры по реализации", "path": "/login" },
+    { "label": "Девелоперы", "path": "/" },
+    { "label": "Финансовые институты", "path": "/" }
+  ],
+  "knowledge": [
+    { "label": "Центр знаний", "path": "/about" },
+    { "label": "Наша устойчивость Фокус", "path": "/about" },
+
+    { "label": "Оставить отзыв", "path": "/about" },
+    { "label": "Связаться с нами", "path": "/contact" },
+    { "label": "Политика конфиденциальности", "path": "/about" },
+    { "label": "Условия использования", "path": "/about" }
+  ],
+  "locations": " ОАЭ | Саудовская Аравия",
+  "email": {
+    "labels": {
+      "partners": "Для партнеров",
+      "customers": "Для клиентов"
+    },
+    "partners": "connect@xoto.ae",
+    "customers": "care@xoto.ae"
+  },
+  "social": [
+    { "name": "Facebook", "url": "#" },
+    { "name": "Instagram", "url": "#" },
+    { "name": "Twitter", "url": "#" },
+    { "name": "LinkedIn", "url": "#" }
+  ],
+  "bottom": {
+    "copyright": "©2021 XOTO. Все права защищены"
+  }
+}

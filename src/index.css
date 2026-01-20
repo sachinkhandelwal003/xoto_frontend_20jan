@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@import "swiper/css";
+@import "swiper/css/navigation";
+@import "tw-animate-css";
+
+/* ---- Custom Theme Variables ---- */
+@theme {
+  --color-body: #F2EBF7;
+  --color-text: #000000;
+
+  /* Brand Palette */
+  --color-primary: #5C039B;  /* purple */
+  --color-grey: #547593;     /* blue */
+  --color-black: #020202;    /* green */
+
+  --color-secondary: #64EF0A;
+  --color-green-tertiary: #69ED1F;
+  --color-green-light: #56EA1B;
+  --color-green-accent: #58E526;
+
+  --color-text-primary: #03A4F4;     /* blue */
+  --color-text-secondary: #5C039B;   /* purple */
+  --color-text-dark: #020202;        /* black */
+  --color-text-white: #FFFFFF;       /* white */ 
+  --color-text-green: #64EF0A;       /* green */
+
+  /* Buttons */
+  --color-btn-primary: #03A4F4;    /* blue */
+  --color-btn-secondary: #5C039B;   /* purple */
+  --color-btn-dark: #020202;      /* black */
+  --color-btn-gradient: linear-gradient(90deg, #63C117, #32C882, #69ED1F);
+  --color-gradient--btn-blue-green: linear-gradient(90deg, var(--color-text-primary), var(--color-text-green));
+  --color-hoverbtn: #0997ad;
+
+  /* Custom Accent */
+  --color-customOrange: #D67A56;
+}
+
+/* ---- Global Dark Mode Variant ---- */
+@custom-variant dark (&:is(.dark *));
+
+
+/* ---- Reusable Global Gradient Button ---- */
+@layer components {
+ .heading-light {
+  @apply font-sans font-semibold
+         text-[31px]                                   /* Mobile font size */
+         leading-[40px]                                /* Mobile line height */
+         text-white                                    /* Color (var(--color-text-white)) */
+         sm:text-[clamp(1.75rem,6vw,3.75rem)]          /* Responsive scale text */
+         sm:leading-[clamp(2.25rem,8vw,4.75rem)]       /* Responsive scale LH */
+         lg:text-[60px]                                /* Desktop font size */
+         lg:leading-[76px];                            /* Desktop line height */
+}
+
+.heading-dark-1 {
+  @apply font-sans font-semibold
+         text-[31px]                                   /* Mobile font size */
+         leading-[38px]                                /* Mobile line height */
+         tracking-[-0.03em]                            /* -3% letter spacing */
+         text-[color:var(--color-text-primary)]        /* Text color */
+         sm:text-[clamp(1.9rem,6vw,3.75rem)]           /* Responsive scaling */
+         sm:leading-[clamp(2.2rem,7vw,4.2rem)]         /* Responsive LH */
+         lg:text-[60px]                                /* Desktop size */
+         lg:leading-[55px];                            /* Desktop line height */
+}
+
+.paragraph-light {
+  @apply font-sans font-semibold
+         text-[14px] leading-[20px]         /* MOBILE */
+         sm:text-[18px] sm:leading-[26px]   /* Tablet */
+         md:text-[20px] md:leading-[28px]   /* Smoother scaling */
+         lg:text-[24px] lg:leading-[30px];  /* DESKTOP (matches original) */
+}
+
+.paragraph-light-1 {
+    font-size: 24px;
+    line-height: 33px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.button-text {
+  @apply  font-sans
+         text-[14px] leading-[20px]   /* MOBILE DEFAULT */
+         sm:text-[18px] sm:leading-[26px]   /* Optional mid-size for tablets */
+         md:text-[22px] md:leading-[30px]   /* Optional smooth step */
+         lg:text-[24px] lg:leading-[24px];  /* DESKTOP MATCHING YOUR OLD VALUES */
+}
+
+ .paragraph-dark {
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 24px;
+    /* font-weight: 600; */
+    font-family: 'DM Sans', sans-serif;
+}
+.card-heading {
+    font-size: 34px;
+    line-height: 32px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    
+}
+.card-heading-1 {
+    font-size: 60px;
+    line-height: 48px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: -0.03em;
+}
+.heading-light-1 {
+    font-size: 50px;
+    line-height: 76px;
+    font-weight: 800;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--color-text-white);
+  }
+
+ 
+
+
+ .main-gradient-color {
+    background: linear-gradient(180deg, #5C039B 0%, #1F0135 100%);
+
+}
+ .banner-gradient-color {
+  background: linear-gradient(180deg, #03A4F4 0%, #5C039B 100%);
+}
+ .banner-gradient-color1 {
+  background: linear-gradient(180deg, #5C039B 0%, #03A4F4 100%);
+}
+
+  .btn-gradient {
+    @apply text-white font-semibold px-6 py-3 rounded-full transition-all duration-300 ease-in-out shadow-md;
+    background: var(--color-gradient--btn-blue-green);
+  }
+
+
+  .btn-gradient:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+  }
+
+  .btn-outline {
+    @apply border-2 font-semibold rounded-full transition-all duration-300 ease-in-out;
+    border-color: var(--color-text-secondary);
+    color: var(--color-text-secondary);
+  }
+
+  .btn-outline:hover {
+    background-color: var(--color-text-secondary);
+    color: var(--color-text-white);
+  }
+
+  .tag-new {
+    background: var(--color-gradient--btn-blue-green);
+    color: var(--color-text-white);
+  }
+
+  .tag-sale {
+    background-color: var(--color-text-secondary);
+    color: var(--color-text-white);
+  }
+}
+
+
+@import "tailwindcss";
+
+@theme {
+  /* Keyframes define karein */
+  @keyframes slide-from-bottom {
+    0% {
+      transform: translateY(100vh); /* Viewport ke bilkul niche se */
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0); /* Apni original jagah par */
+      opacity: 1;
+    }
+  }
+
+  /* Animation class name assign karein */
+  --animate-come-up: slide-from-bottom 2.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}

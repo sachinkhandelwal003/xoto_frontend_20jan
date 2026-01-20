@@ -1,0 +1,16 @@
+{
+  "title": "预约咨询",
+  "description": "通过一个简单的表单与 XOTO 专家联系，获取定制化室内设计建议。",
+  "form": {
+    "firstName": "名字",
+    "lastName": "姓氏",
+    "email": "电子邮箱",
+    "mobile": "手机号码",
+    "message": "您的留言"
+  },
+  "buttons": {
+    "submit": "预约免费咨询",
+    "submitting": "正在提交..."
+  },
+  "privacy": "我们尊重您的隐私，您的信息是安全的。"
+}

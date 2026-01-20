@@ -1,0 +1,21 @@
+{
+  "nav": {
+    "home": "होम",
+    "homeUpgrade": "होम अपग्रेड",
+    "landscaping": "लैंडस्केपिंग",
+    "interiors": "इंटीरियर्स",
+    "homeOwnership": "घर का स्वामित्व",
+    "mortgages": "होम लोन",
+    "properties": "प्रॉपर्टीज़",
+    "store": "Xoto स्टोर",
+    "knowledgeHub": "नॉलेज हब",
+    "blogs": "ब्लॉग्स",
+    "caseStudies": "केस स्टडीज़",
+    "training": "प्रशिक्षण",
+    "ecosystem": "पार्टनर इकोसिस्टम",
+    "about": "हमारे बारे में",
+    "contact": "संपर्क करें",
+    "login": "लॉगिन",
+    "tagline": "AI द्वारा संचालित। आपके लिए प्रेरित।"
+  }
+}

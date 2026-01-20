@@ -1,0 +1,16 @@
+{
+  "homeDesign": {
+    "title1": "Alanınız,",
+    "title2": "Anında Yeniden Tanımlansın.",
+    "description": "Villa planınızı yükleyin, Xoto AI tarzınıza özel dış ve iç tasarım seçenekleri oluştursun.",
+    "cta": "Ücretsiz Teklif Al",
+    "hotspots": {
+      "exterior": "Dış Mekan Yenileme",
+      "interior": "İç Mekan Dönüşümü",
+      "furniture": "Akıllı Mobilya Değişimi",
+      "landscaping": "Peyzaj",
+      "image": "Görsel İyileştirme",
+      "virtual": "Sanal Tasarım Stüdyosu"
+    }
+  }
+}

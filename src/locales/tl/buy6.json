@@ -1,0 +1,47 @@
+{
+  "heading": "Sinasabi ng Aming mga Kliyente",
+  "items": [
+    {
+      "title": "Nakahanap ng magandang tirahan",
+      "text": "Pinadali ng RentBro ang paglipat ko sa bagong lungsod.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Maayos na karanasan",
+      "text": "Mabilis at malinaw ang buong proseso.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Magandang suporta",
+      "text": "Palaging handang tumulong ang support team.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Sulit ang bayad",
+      "text": "Makatarungang presyo at mapagkakatiwalaang listings.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Walang stress na paglipat",
+      "text": "Napakadaling lumipat sa bagong lungsod.",
+      "name": "Punit",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Magandang komunidad!",
+      "text": "Tamang-tama ang mga rekomendasyon sa lugar.",
+      "name": "Harsh",
+      "location": "HSR Layout, Bangalore",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    }
+  ]
+}

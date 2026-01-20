@@ -1,0 +1,31 @@
+{
+  "heading": {
+    "title": "探索房产"
+  },
+  "card": {
+    "bed": "卧室",
+    "bath": "浴室"
+  },
+  "actions": {
+    "schedule": "预约参观",
+    "viewMore": "查看更多",
+    "submit": "预约参观",
+    "loading": "正在预约..."
+  },
+  "modal": {
+    "title": "预约房产参观",
+    "subtitle": "填写您的信息，我们将尽快联系您。"
+  },
+  "form": {
+    "firstName": "名",
+    "lastName": "姓",
+    "email": "电子邮箱",
+    "phone": "电话号码",
+    "occupation": "职业",
+    "location": "首选位置"
+  },
+  "toast": {
+    "success": "预约成功！我们将尽快联系您。",
+    "error": "预约失败，请重试。"
+  }
+}

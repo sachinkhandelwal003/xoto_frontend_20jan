@@ -1,0 +1,33 @@
+{
+  "title": "Built For Everyone",
+
+  "customers": {
+    "title": "Customers",
+    "desc": "Reimagine your home and outdoors with effortless, AI-powered landscaping and upgrade solutions."
+  },
+
+  "business": {
+    "title": "Business Associates",
+    "desc": "Reimagine your home and outdoors with effortless, AI-powered landscaping and upgrade solutions."
+  },
+
+  "execution": {
+    "title": "Execution Partner",
+    "desc": "Reimagine your home and outdoors with effortless, AI-powered landscaping and upgrade solutions."
+  },
+
+  "alliances": {
+    "title": "Strategic Alliances",
+    "desc": "Reimagine your home and outdoors with effortless, AI-powered landscaping and upgrade solutions."
+  },
+
+  "developers": {
+    "title": "Developers",
+    "desc": "Reimagine your home and outdoors with effortless, AI-powered landscaping and upgrade solutions."
+  },
+
+  "finance": {
+    "title": "Financial Institutions",
+    "desc": "Reimagine your home and outdoors with effortless, AI-powered landscaping and upgrade solutions."
+  }
+}

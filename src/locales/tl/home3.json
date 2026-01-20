@@ -1,0 +1,33 @@
+{
+  "title": "Ginawa Para sa Lahat",
+
+  "customers": {
+    "title": "Mga Customer",
+    "desc": "Baguhin ang iyong tahanan at outdoor space gamit ang madali at AI-powered na landscaping at upgrade solutions."
+  },
+
+  "business": {
+    "title": "Business Associates",
+    "desc": "Bigyan ng lakas ang iyong real estate network gamit ang AI-driven tools para mapadali ang client management, mapataas ang lead conversion, at mapabilis ang pag-close ng deal."
+  },
+
+  "execution": {
+    "title": "Execution Partner",
+    "desc": "I-deliver ang mga proyekto nang mahusay gamit ang real-time task allocation, transparent progress, at tuloy-tuloy na koordinasyon sa landscaping, real estate, at financing workflows."
+  },
+
+  "alliances": {
+    "title": "Strategic Alliances",
+    "desc": "Makipagsosyo sa XOTO upang mapalawak ang presensya sa merkado gamit ang integrated at growth-focused ecosystem."
+  },
+
+  "developers": {
+    "title": "Developers",
+    "desc": "Kumuha ng pre-qualified buyers at mapabilis ang sales sa tulong ng data-driven insights."
+  },
+
+  "finance": {
+    "title": "Financial Institutions",
+    "desc": "Palakasin ang mortgage conversions gamit ang integrated property at financing solutions."
+  }
+}

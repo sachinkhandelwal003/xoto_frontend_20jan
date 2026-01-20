@@ -1,0 +1,16 @@
+{
+  "heading": "EcoSmart Yaşam",
+  "description": "XOTO'da EcoSmart Living, güzellik, sürdürülebilirlik ve teknolojiyi dengeleyen peyzajlar oluşturmak demektir.",
+  "subheading": "Bunu Nasıl Yapıyoruz",
+  "features": {
+    "smartIrrigation": {
+      "title": "Akıllı Sulama",
+      "text": "Su tasarrufu sağlayan sensör tabanlı sulama sistemleri."
+    },
+    "solarLighting": "Güneş Aydınlatması",
+    "lowWaterPlant": "Az Su Tüketen Bitkiler",
+    "ecoMaterials": "Çevre Dostu Malzemeler",
+    "automatedControl": "Otomatik Kontrol",
+    "futureReady": "Geleceğe Hazır Tasarım"
+  }
+}

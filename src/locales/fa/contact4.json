@@ -1,0 +1,40 @@
+{
+  "title": { "line1": "فرم", "line2": "همکاری و مشارکت" },
+  "subtitle": {
+    "line1": "مایل به همکاری با XOTO هستید؟",
+    "line2": "درباره کسب‌وکار یا پروژه خود بیشتر بگویید."
+  },
+  "form": {
+    "organization": "نام سازمان",
+    "email": "ایمیل تماس",
+    "partnerType": "نوع شریک",
+    "proposal": "توضیحات پیشنهاد"
+  },
+  "placeholders": {
+    "organization": "نام سازمان را وارد کنید",
+    "email": "ایمیل را وارد کنید",
+    "proposal": "توضیحات پیشنهاد را بنویسید"
+  },
+  "options": {
+    "select": "نوع شریک را انتخاب کنید",
+    "business": "همکاران تجاری",
+    "execution": "شریک اجرایی",
+    "alliance": "اتحادهای استراتژیک",
+    "developers": "توسعه‌دهندگان",
+    "finance": "مؤسسه مالی"
+  },
+  "buttons": { "submit": "ارسال" },
+  "chat": {
+    "title": "چت Xobia (پشتیبانی AI 24/7)",
+    "description": "سوالی دارید؟ Xobia همیشه در دسترس است.",
+    "button": "چت با Xobia"
+  },
+  "validation": {
+    "organization": "نام سازمان الزامی است.",
+    "emailRequired": "ایمیل الزامی است.",
+    "emailInvalid": "ایمیل معتبر وارد کنید.",
+    "partnerType": "نوع شریک الزامی است.",
+    "proposal": "توضیحات پیشنهاد الزامی است."
+  },
+  "notification": { "success": "فرم با موفقیت ارسال شد!" }
+}

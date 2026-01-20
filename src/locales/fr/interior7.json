@@ -1,0 +1,31 @@
+{
+  "heading": "Habitat EcoSmart – Intérieurs",
+  "description": "Chez XOTO, EcoSmart Living signifie concevoir des intérieurs qui allient harmonieusement style, durabilité et technologies intelligentes. Chaque espace est pensé pour être écoénergétique, respectueux de l’environnement et résolument moderne.",
+  "subheading": "Comment Nous Donnons Vie au Concept",
+  "features": {
+    "smartClimate": {
+      "title": "Contrôle Climatique Intelligent",
+      "text": "Systèmes automatisés de régulation de la température et de la ventilation pour optimiser les économies d’énergie."
+    },
+    "lighting": {
+      "title": "Éclairage LED et Solaire",
+      "text": "Solutions d’éclairage ambiant à faible consommation pour l’ensemble de l’habitat."
+    },
+    "materials": {
+      "title": "Matériaux Durables",
+      "text": "Bois, pierre et finitions écologiques à faible empreinte carbone."
+    },
+    "water": {
+      "title": "Équipements Économes en Eau",
+      "text": "Robinetterie, douches et appareils modernes conçus pour réduire la consommation d’eau."
+    },
+    "automation": {
+      "title": "Gestion Domotique",
+      "text": "Pilotage de l’éclairage, du climat et des équipements via application mobile ou commande vocale."
+    },
+    "future": {
+      "title": "Intérieurs Prêts pour l’Avenir",
+      "text": "Designs flexibles et modulaires, prêts à intégrer les technologies vertes de demain."
+    }
+  }
+}

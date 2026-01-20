@@ -1,0 +1,38 @@
+{
+  "hero": {
+    "title": "Definieren Sie Ihren Wohnraum neu",
+    "subtitle": "KI-kuratierte Möbelkollektionen.",
+    "explore": "Kollektionen Entdecken",
+    "vendor": "Verkäufer Werden"
+  },
+  "ar": {
+    "title": "Vor dem Kauf mit AR testen",
+    "desc": "Sehen Sie Möbel in Ihrem Raum."
+  },
+  "cards": {
+    "arScan": { "title": "AR Raum-Scan", "desc": "Scannen Sie den Raum mit dem Handy.", "btn": "Scan Starten" },
+    "virtual": { "title": "Virtuelle Einrichtung", "desc": "Möbel mit KI-Vorschlägen ansehen.", "btn": "Jetzt Testen" },
+    "fit": { "title": "Perfekte Passform", "desc": "Maße vor dem Kauf prüfen.", "btn": "Passform Prüfen" }
+  },
+  "how": {
+    "title": "So Funktioniert Es",
+    "step1": { "number": "1", "title": "Raum Scannen", "desc": "Raum erfassen." },
+    "step2": { "number": "2", "title": "Möbel Auswählen", "desc": "Aus Kollektionen wählen." },
+    "step3": { "number": "3", "title": "AR Vorschau", "desc": "Live ansehen." }
+  },
+  "demo": {
+    "title": "AR Demo Video",
+    "desc": "So funktioniert es",
+    "btn": "Abspielen"
+  },
+  "experience": {
+    "alt": "Modernes Wohnzimmer mit XOTO-Möbeln",
+    "title": {
+      "prefix": "Das",
+      "brand": "XOTO",
+      "suffix": "Erlebnis"
+    },
+    "subtitle": "Wo Innovation auf Komfort trifft. KI-Designs, die Räume inspirieren.",
+    "cta": "XOTO Kollektion Entdecken"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "heading": "EcoSmart na Pamumuhay – Interiores",
+  "description": "Sa XOTO, ang EcoSmart Living para sa interiors ay nangangahulugang pagdidisenyo ng mga tahanan na pinagsasama ang istilo, sustainability, at makabagong smart technology. Ang bawat espasyo ay maingat na binubuo upang maging energy-efficient, environment-friendly, at natural na moderno.",
+  "subheading": "Paano Namin Ito Isinasakatuparan",
+  "features": {
+    "smartClimate": {
+      "title": "Smart Climate Control",
+      "text": "Awtomatikong sistema ng pagkontrol sa temperatura at bentilasyon para sa mas epektibong pagtitipid ng enerhiya."
+    },
+    "lighting": {
+      "title": "LED at Solar na Ilaw",
+      "text": "Mga solusyon sa ambient lighting na mababa ang konsumo ng enerhiya sa buong tahanan."
+    },
+    "materials": {
+      "title": "Sustainable na Materyales",
+      "text": "Eco-friendly na kahoy, bato, at mga finishing na may mababang carbon footprint."
+    },
+    "water": {
+      "title": "Water-Efficient na Fixtures",
+      "text": "Modernong gripo, shower, at appliances na idinisenyo upang bawasan ang paggamit ng tubig."
+    },
+    "automation": {
+      "title": "Automated Home Management",
+      "text": "Madaling kontrol ng ilaw, klima, at appliances gamit ang mobile app o voice commands."
+    },
+    "future": {
+      "title": "Handa sa Hinaharap na Interiores",
+      "text": "Mga flexible at modular na disenyo na handang umangkop sa mga paparating na green technologies."
+    }
+  }
+}

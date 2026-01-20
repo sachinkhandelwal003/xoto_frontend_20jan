@@ -1,0 +1,22 @@
+{
+  "title": "Warum Partner von XOTO werden",
+  "featureLabel": "Funktion {{id}}",
+  "features": {
+    "1": {
+      "title": "All-in-One-Plattform",
+      "desc": "Verbinden Sie sich nahtlos mit Kunden."
+    },
+    "2": {
+      "title": "KI-gestützte Tools",
+      "desc": "Optimieren Sie Workflows, verfolgen Sie Fortschritte und entdecken Sie Umsatzchancen."
+    },
+    "3": {
+      "title": "Wachsen Sie mit Ihrem Unternehmen",
+      "desc": "Erweitern Sie Ihre Reichweite, beschleunigen Sie Abschlüsse und maximieren Sie Erträge."
+    },
+    "4": {
+      "title": "Transparenz & Kontrolle",
+      "desc": "Volle Übersicht über Projekte, Leads und Kundeninteraktionen."
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "title": "Notre portefeuille de services",
+  "services": {
+    "kitchen": "Cuisines modulaires",
+    "wardrobe": "Placards modulaires",
+    "electrical": "Travaux électriques",
+    "civil": "Travaux de construction",
+    "lighting": "Éclairage",
+    "wall": "Design mural, peinture et papier peint",
+    "frushing": "Ameublement intérieur",
+    "falsi": "Faux plafond"
+  }
+}

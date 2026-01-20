@@ -1,0 +1,36 @@
+{
+  "title": "Wachsen. Verdienen. XOTO ist Ihr All-in-One-Immobilien-Ökosystem.",
+  "ctaButton": "Sprechen Sie noch heute mit unserem Team",
+
+  "modal": {
+    "title": "Team-Anfrageformular"
+  },
+
+  "form": {
+    "name": "Name",
+    "namePlaceholder": "Ihr Name",
+    "email": "E-Mail",
+    "emailPlaceholder": "Ihre E-Mail-Adresse",
+    "phone": "Telefonnummer",
+    "phonePlaceholder": "Telefonnummer eingeben",
+    "inquiry": "Art der Anfrage",
+    "select": "Anfragetyp auswählen",
+    "options": [
+      "Immobilie kaufen",
+      "Immobilie verkaufen",
+      "Immobilie mieten",
+      "Immobilieninvestition",
+      "Immobilienverwaltung",
+      "Immobilienbewertung",
+      "Sonstige Anfrage"
+    ],
+    "message": "Nachricht",
+    "messagePlaceholder": "Wie können wir Ihnen helfen?",
+    "submit": "Anfrage senden"
+  },
+
+  "toast": {
+    "error": "Bitte füllen Sie alle erforderlichen Felder aus.",
+    "success": "Vielen Dank, {{name}}!\nIhre Anfrage zum Thema {{inquiryType}} wurde gesendet.\nDas XOTO-Team wird Sie bald kontaktieren."
+  }
+}

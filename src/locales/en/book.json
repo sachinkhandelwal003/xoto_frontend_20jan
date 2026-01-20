@@ -1,0 +1,35 @@
+{
+  "title": "Get a Free Interior Consultation",
+  "description": "Our experts help you design beautiful, functional spaces tailored to your lifestyle and budget.",
+
+  "imageAlt": "Interior design consultation background",
+
+  "form": {
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email Address",
+    "mobile": "Mobile Number",
+    "message": "Tell us about your project"
+  },
+
+  "buttons": {
+    "submit": "Request Consultation",
+    "submitting": "Submitting..."
+  },
+
+  "privacy": "By submitting this form, you agree to be contacted by our team regarding your inquiry.",
+
+  "success": {
+    "title": "Request Submitted",
+    "message": "Thank you! Our interior expert will contact you shortly."
+  },
+
+  "errors": {
+    "firstName": "Please enter your first name.",
+    "lastName": "Please enter your last name.",
+    "email": "Please enter a valid email address.",
+    "mobile": "Please enter a valid mobile number.",
+    "message": "Please describe your project.",
+    "submit": "Something went wrong. Please try again later."
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "title": "Ang aming partner ecosystem",
+  "cards": {
+    "commonDesc": "Elite Contractors Network",
+    "business": { "title": "Mga Business Associate" },
+    "contractors": { "title": "Mga Contractor" },
+    "execution": { "title": "Execution Partner" },
+    "strategic": { "title": "Strategic Alliances" },
+    "developers": { "title": "Mga Developer" },
+    "financial": { "title": "Financial Institutions" }
+  }
+}

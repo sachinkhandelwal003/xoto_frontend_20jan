@@ -1,0 +1,29 @@
+{
+    "title": {
+      "line1": "Your Mortgage,",
+      "line2": "Simplified in 4 Steps"
+    },
+    "steps": {
+      "1": {
+        "label": "STEP 01",
+        "title": "Consultation & Pre-Check",
+        "desc": "We assess your finances and suggest options."
+      },
+      "2": {
+        "label": "STEP 02",
+        "title": "Offer Comparison",
+        "desc": "Multiple lenders evaluated for best fit."
+      },
+      "3": {
+        "label": "STEP 03",
+        "title": "Select & Apply",
+        "desc": "Choose your offer, we handle documentation."
+      },
+      "4": {
+        "label": "STEP 04",
+        "title": "Approval & Disbursement",
+        "desc": "Funds released with our support."
+      }
+    }
+  }
+  

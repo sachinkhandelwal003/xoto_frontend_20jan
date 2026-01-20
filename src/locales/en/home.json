@@ -1,0 +1,17 @@
+{
+  "hero": {
+    "title1": "Redefining Living",
+    "title2": "From Landscapes to Homes",
+    "description": "Discover AI-powered designs and curated properties that elevate every corner of your world.",
+    "buttons": {
+      "design": "Design My Space",
+      "explore": "Explore Homes"
+    },
+    "features": [
+      { "line1": "One Stop", "line2": "Solution" },
+      { "line1": "Faster Turn", "line2": "Around Time" },
+      { "line1": "Professional", "line2": "Teams" },
+      { "line1": "PAN UAE", "line2": "Presence" }
+    ]
+  }
+}

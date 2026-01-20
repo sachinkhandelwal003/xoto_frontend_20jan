@@ -1,0 +1,18 @@
+{
+    "title": "Planen Sie Ihre Hypothek mit Zuversicht",
+    "modes": {
+      "borrow": "Wie viel kann ich leihen?",
+      "estimate": "Monatliche Zahlungsübersicht",
+      "check": "Finanzielle Tragbarkeit prüfen"
+    },
+    "imageAlt": "Hypothekenillustration",
+    "features": {
+      "1": { "label": "Funktion 1", "title": "Immobilienwert" },
+      "2": { "label": "Funktion 2", "title": "Anzahlung" },
+      "3": { "label": "Funktion 3", "title": "Laufzeit" },
+      "4": { "label": "Funktion 4", "title": "Maximaler Kreditbetrag" }
+    },
+    "cta": "Vorabgenehmigung erhalten",
+    "disclaimer": "Die Schätzungen sind unverbindlich. Endgültige Bedingungen vorbehaltlich der Bonitätsprüfung."
+  }
+  

@@ -1,0 +1,34 @@
+{
+  "title": "Hızlı Talep",
+  "description": "Hızlı cevap mı istiyorsunuz? Bilgilerinizi bırakın.",
+
+  "form": {
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "email": "E-posta",
+    "mobile": "Telefon numarası",
+    "message": "Mesajınız"
+  },
+
+  "buttons": {
+    "submit": "Talep Gönder",
+    "submitting": "Gönderiliyor..."
+  },
+
+  "privacy": "Gizliliğinize saygı duyuyoruz.",
+
+  "validation": {
+    "firstName": "Ad gerekli",
+    "lastName": "Soyad gerekli",
+    "email": "Geçerli e-posta girin",
+    "mobile": "En az 8 rakam",
+    "message": "Mesaj gerekli"
+  },
+
+  "notification": {
+    "successTitle": "Teşekkürler!",
+    "successMessage": "Talebiniz başarıyla gönderildi.",
+    "errorTitle": "Hata",
+    "errorMessage": "Bir hata oluştu."
+  }
+}

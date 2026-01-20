@@ -1,0 +1,17 @@
+{
+  "hero": {
+    "title1": "Redefiniendo la vida",
+    "title2": "De paisajes a hogares",
+    "description": "Descubre diseños impulsados por IA y propiedades seleccionadas que elevan cada rincón de tu mundo.",
+    "buttons": {
+      "design": "Diseñar mi espacio",
+      "explore": "Explorar hogares"
+    },
+    "features": [
+      { "line1": "Solución", "line2": "Integral" },
+      { "line1": "Tiempos de", "line2": "Entrega más rápidos" },
+      { "line1": "Equipos", "line2": "Profesionales" },
+      { "line1": "Presencia en", "line2": "todo EAU" }
+    ]
+  }
+}

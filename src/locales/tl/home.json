@@ -1,0 +1,17 @@
+{
+  "hero": {
+    "title1": "Isang Panibagong Kahulugan ng Pamumuhay",
+    "title2": "Mula sa Mga Landscape hanggang sa Mga Tahanan",
+    "description": "Tuklasin ang AI-powered designs at piling mga property na nagbibigay-halaga sa bawat sulok ng iyong mundo.",
+    "buttons": {
+      "design": "I-Design ang Aking Space",
+      "explore": "Tuklasin ang Mga Bahay"
+    },
+    "features": [
+      { "line1": "Isang Hinto", "line2": "na Solusyon" },
+      { "line1": "Mas Mabilis", "line2": "na Turnaround" },
+      { "line1": "Propesyonal", "line2": "na Mga Team" },
+      { "line1": "Pang-UAE", "line2": "Saklaw" }
+    ]
+  }
+}

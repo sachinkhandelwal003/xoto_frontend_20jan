@@ -1,0 +1,24 @@
+{
+  "title": "اکوسیستم شرکای ما",
+  "cards": {
+    "commonDesc": "شبکه پیمانکاران برتر",
+    "business": {
+      "title": "همکاران تجاری"
+    },
+    "contractors": {
+      "title": "پیمانکاران"
+    },
+    "execution": {
+      "title": "شریک اجرایی"
+    },
+    "strategic": {
+      "title": "اتحادهای استراتژیک"
+    },
+    "developers": {
+      "title": "توسعه‌دهندگان"
+    },
+    "financial": {
+      "title": "مؤسسات مالی"
+    }
+  }
+}

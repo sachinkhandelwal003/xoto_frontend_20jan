@@ -1,0 +1,22 @@
+{
+  "heading": "客户怎么说",
+  "cards": {
+    "title1": "找到了理想的地方",
+    "title2": "很棒的社区！",
+    "title3": "很棒的地方",
+    "text": "RentBro 让在新城市安顿下来变得非常容易。"
+  },
+  "names": {
+    "shubham": "舒巴姆",
+    "punit": "普尼特",
+    "harsh": "哈什",
+    "jaiMathur": "贾伊·马图尔",
+    "madhur": "马杜尔",
+    "avn": "阿文",
+    "sam": "山姆"
+  },
+  "locations": {
+    "pune": "浦那，马哈拉施特拉邦",
+    "bangalore": "班加罗尔 HSR 区"
+  }
+}

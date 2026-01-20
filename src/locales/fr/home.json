@@ -1,0 +1,29 @@
+{
+  "hero": {
+    "title1": "Redéfinir l'habitat",
+    "title2": "Des paysages aux maisons",
+    "description": "Découvrez des conceptions propulsées par l'IA et des propriétés sélectionnées qui mettent en valeur chaque espace de votre monde.",
+    "buttons": {
+      "design": "Concevoir mon espace",
+      "explore": "Explorer les maisons"
+    },
+    "features": [
+      {
+        "line1": "Solution",
+        "line2": "tout-en-un"
+      },
+      {
+        "line1": "Délai",
+        "line2": "plus rapide"
+      },
+      {
+        "line1": "Équipes",
+        "line2": "professionnelles"
+      },
+      {
+        "line1": "Présence",
+        "line2": "PAN ÉAU"
+      }
+    ]
+  }
+}

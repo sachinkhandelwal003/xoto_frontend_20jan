@@ -1,0 +1,71 @@
+{
+  "hero": {
+    "title": {
+      "line1": "Transformando la forma en que",
+      "line2": "Alquilas, compras y vendes tu hogar."
+    },
+    "buttons": {
+      "rent": "Alquilar una casa",
+      "find": "Buscar una casa",
+      "sell": "Vender una casa"
+    }
+  },
+
+  "modal": {
+    "tabs": {
+      "buy": "Comprar",
+      "sell": "Vender"
+    },
+    "buy": {
+      "title": "Encuentra la casa de tus sueños",
+      "desc": "Dinos qué estás buscando y nuestros expertos se pondrán en contacto contigo."
+    },
+    "sell": {
+      "title": "Vende tu propiedad",
+      "desc": "Comparte los detalles de tu propiedad y obtén el mejor valor de mercado."
+    }
+  },
+
+  "form": {
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "email": "Dirección de correo electrónico",
+    "phone": "Número de móvil",
+    "bedrooms": "Número de dormitorios",
+
+    "preferredContactTitle": "Método de contacto preferido",
+
+    "contact": {
+      "call": "Llamada telefónica",
+      "whatsapp": "WhatsApp",
+      "email": "Correo electrónico"
+    },
+
+    "sell": {
+      "listing_type": "Tipo de anuncio (por ejemplo: Apartamento)",
+      "city": "Ciudad",
+      "area": "Zona",
+      "project_name": "Nombre del proyecto",
+      "bedroom_config": "Configuración de dormitorios (por ejemplo: 2 BHK)",
+      "price": "Precio (AED)",
+      "description": "Cuéntanos más sobre tu propiedad (opcional)"
+    },
+
+    "submit": {
+      "buy": "Enviar solicitud de compra",
+      "sell": "Enviar solicitud de venta"
+    },
+
+    "processing": "Procesando..."
+  },
+
+  "checkbox": {
+    "marketing": "Acepto recibir boletines y comunicaciones de marketing a través de medios digitales y entiendo que puedo darme de baja en cualquier momento.",
+    "terms": "He leído, comprendido y acepto los Términos y Condiciones y la Política de Privacidad de Xoto. *"
+  },
+
+  "toast": {
+    "success": "¡Gracias {{name}}! Tu información se ha enviado correctamente.",
+    "error": "Algo salió mal. Por favor, inténtalo de nuevo."
+  }
+}

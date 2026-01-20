@@ -1,0 +1,31 @@
+{
+  "heading": "EcoSmart Yaşam – İç Mekanlar",
+  "description": "XOTO’da EcoSmart Living, stil, sürdürülebilirlik ve akıllı teknolojiyi bir araya getiren yaşam alanları tasarlamak anlamına gelir. İç mekanlarımız; enerji verimliliği, çevre dostu çözümler ve zamansız modern tasarım anlayışıyla özenle kurgulanır.",
+  "subheading": "Bunu Nasıl Hayata Geçiriyoruz",
+  "features": {
+    "smartClimate": {
+      "title": "Akıllı İklim Kontrolü",
+      "text": "Enerji tasarrufu sağlamak için otomatik sıcaklık ve havalandırma sistemleri."
+    },
+    "lighting": {
+      "title": "LED ve Güneş Aydınlatması",
+      "text": "Ev genelinde düşük enerji tüketimli, konforlu aydınlatma çözümleri."
+    },
+    "materials": {
+      "title": "Sürdürülebilir Malzemeler",
+      "text": "Düşük karbon ayak izine sahip çevre dostu ahşap, taş ve yüzeyler."
+    },
+    "water": {
+      "title": "Su Tasarruflu Armatürler",
+      "text": "Su tüketimini azaltmaya yardımcı olan modern armatür ve ekipmanlar."
+    },
+    "automation": {
+      "title": "Otomatik Ev Yönetimi",
+      "text": "Aydınlatma, iklim ve ev cihazlarının uygulama veya sesli komutla kontrolü."
+    },
+    "future": {
+      "title": "Geleceğe Hazır İç Mekanlar",
+      "text": "Yeni nesil yeşil teknolojilere uyum sağlayan esnek ve modüler tasarımlar."
+    }
+  }
+}

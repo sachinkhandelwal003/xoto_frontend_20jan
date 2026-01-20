@@ -1,0 +1,51 @@
+{
+  "hero": {
+    "titleDesktop": "Join the XOTO \nPartner Ecosystem \nToday",
+    "titleMobile": "Join the XOTO Partner \nEcosystem Today"
+  },
+
+  "form": {
+    "firstName": {
+      "label": "First Name",
+      "placeholder": "Enter first name"
+    },
+    "lastName": {
+      "label": "Last Name",
+      "placeholder": "Enter last name"
+    },
+    "email": {
+      "label": "Email Address",
+      "placeholder": "Enter email address"
+    },
+    "company": {
+      "label": "Company",
+      "placeholder": "Enter company name"
+    },
+    "phone": {
+      "label": "Contact Number",
+      "placeholder": "Enter number"
+    },
+    "message": {
+      "label": "Message",
+      "placeholder": "Enter your message"
+    },
+
+    "stakeholder": {
+      "label": "Stakeholder",
+      "select": "Select stakeholder type",
+      "business": "Business Associate",
+      "execution": "Execution Partner",
+      "developer": "Developer",
+      "investor": "Investor"
+    },
+
+    "submit": "Submit Now",
+    "submitting": "Submitting..."
+  },
+
+  "toast": {
+    "success": "Thank you! Your partnership request has been sent.",
+    "error": "Failed to submit. Please try again.",
+    "invalid": "Please fill all fields correctly"
+  }
+}

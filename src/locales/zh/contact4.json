@@ -1,0 +1,40 @@
+{
+  "title": { "line1": "合作", "line2": "伙伴表单" },
+  "subtitle": {
+    "line1": "有兴趣与 XOTO 合作吗？",
+    "line2": "告诉我们您的业务或项目。"
+  },
+  "form": {
+    "organization": "组织名称",
+    "email": "联系邮箱",
+    "partnerType": "合作伙伴类型",
+    "proposal": "方案描述"
+  },
+  "placeholders": {
+    "organization": "输入组织名称",
+    "email": "输入邮箱",
+    "proposal": "描述您的方案"
+  },
+  "options": {
+    "select": "选择合作伙伴类型",
+    "business": "商业伙伴",
+    "execution": "执行伙伴",
+    "alliance": "战略联盟",
+    "developers": "开发商",
+    "finance": "金融机构"
+  },
+  "buttons": { "submit": "提交" },
+  "chat": {
+    "title": "Xobia 聊天（24/7 AI 帮助）",
+    "description": "有问题吗？Xobia 全天候在线。",
+    "button": "与 Xobia 聊天"
+  },
+  "validation": {
+    "organization": "组织名称是必填项。",
+    "emailRequired": "邮箱是必填项。",
+    "emailInvalid": "请输入有效邮箱。",
+    "partnerType": "合作伙伴类型必填。",
+    "proposal": "方案描述必填。"
+  },
+  "notification": { "success": "表单提交成功！" }
+}

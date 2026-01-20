@@ -1,0 +1,17 @@
+{
+  "hero": {
+    "title1": "Yaşamı Yeniden Tanımlayın",
+    "title2": "Peyzajdan Evlerine",
+    "description": "Dünyanızın her köşesini yükselten yapay zeka destekli tasarımları ve seçilmiş mülkleri keşfedin.",
+    "buttons": {
+      "design": "Alanımı Tasarla",
+      "explore": "Evleri Keşfet"
+    },
+    "features": [
+      { "line1": "Tek Noktadan", "line2": "Çözüm" },
+      { "line1": "Daha Hızlı", "line2": "Teslim Süresi" },
+      { "line1": "Profesyonel", "line2": "Ekipler" },
+      { "line1": "Tüm BAE", "line2": "Geneli" }
+    ]
+  }
+}

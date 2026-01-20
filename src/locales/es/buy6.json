@@ -1,0 +1,47 @@
+{
+  "heading": "Lo que dicen nuestros clientes",
+  "items": [
+    {
+      "title": "Encontré un lugar increíble",
+      "text": "RentBro hizo que mudarme a una nueva ciudad fuera muy fácil, con precios justos y un vecindario excelente.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Experiencia fluida",
+      "text": "Todo el proceso de alquiler fue rápido y transparente.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Gran soporte",
+      "text": "El equipo de soporte fue muy útil durante todo el proceso.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Vale la pena",
+      "text": "Precios justos y anuncios confiables.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Mudanza sin estrés",
+      "text": "Mudarse a una nueva ciudad fue muy sencillo.",
+      "name": "Punit",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "¡Excelente vecindario!",
+      "text": "Las recomendaciones del área fueron perfectas.",
+      "name": "Harsh",
+      "location": "HSR Layout, Bangalore",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    }
+  ]
+}

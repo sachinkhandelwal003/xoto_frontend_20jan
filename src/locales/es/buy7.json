@@ -1,0 +1,25 @@
+{
+  "heroTitle": "Donde los Sueños Encuentran su Hogar",
+  "heroSub": "Encuentra, vende y financia tu casa de forma más inteligente",
+
+  "formTitle": "Descubre, Decide, Cierra",
+  "formSub": "Todo en un solo lugar",
+
+  "firstName": "Nombre*",
+  "lastName": "Apellido*",
+  "email": "Correo electrónico*",
+  "countryCode": "Código*",
+  "phone": "Número de teléfono*",
+
+  "country": "País*",
+  "lookingFor": "Buscando*",
+  "city": "Ciudad preferida*",
+  "budget": "Presupuesto*",
+
+  "submit": "Enviar",
+  "submitting": "Enviando...",
+
+  "success": "¡Gracias! Nos pondremos en contacto pronto",
+  "error": "Por favor completa todos los campos",
+  "genericError": "Algo salió mal. Inténtalo de nuevo."
+}

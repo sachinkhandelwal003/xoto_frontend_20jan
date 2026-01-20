@@ -1,0 +1,18 @@
+{
+  "title": "Güven ve Varlık",
+
+  "cards": {
+    "card1": {
+      "title": "Peyzaj",
+      "desc": "Evinizi ve dış alanlarınızı AI destekli yenileme çözümleriyle yeniden tasarlayın."
+    },
+    "card2": {
+      "title": "İkinci El Satış",
+      "desc": "Evinizi zahmetsiz, yapay zekâ destekli çözümlerle yeniden hayal edin."
+    },
+    "card3": {
+      "title": "Kiralama",
+      "desc": "Alanınızı AI destekli yenileme çözümleriyle dönüştürün."
+    }
+  }
+}

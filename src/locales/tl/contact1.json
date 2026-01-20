@@ -1,0 +1,21 @@
+{
+  "heading": "Impormasyon sa Pakikipag-ugnayan",
+  "email": {
+    "title": "Mag-email sa Amin",
+    "subtitle": "Makipag-ugnayan sa amin sa",
+    "primary": "sales.support@xoto.ae",
+    "secondary": "info@xoto.ae",
+    "note": "Agad kaming tutugon"
+  },
+  "address": {
+    "title": "Address",
+    "line1": "1616, Parklane Tower, Business Bay, Dubai",
+    "country": "UAE"
+  },
+  "phone": {
+    "title": "Telepono",
+    "number": "+971 50 918 0967",
+    "timing": "Lun–Sab | 9AM–6PM"
+  },
+  "map": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3610.5326639711025!2d55.2618832!3d25.1852532"
+}

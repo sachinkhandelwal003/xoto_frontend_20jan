@@ -1,0 +1,17 @@
+{
+  "hero": {
+    "title1": "Wohnen neu definiert",
+    "title2": "Von Landschaften zu Wohnräumen",
+    "description": "Entdecken Sie KI-gestützte Designs und kuratierte Immobilien, die jeden Bereich Ihrer Welt aufwerten.",
+    "buttons": {
+      "design": "Meinen Raum gestalten",
+      "explore": "Häuser erkunden"
+    },
+    "features": [
+      { "line1": "One-Stop", "line2": "Lösung" },
+      { "line1": "Schnellere", "line2": "Abwicklung" },
+      { "line1": "Professionelle", "line2": "Teams" },
+      { "line1": "PAN VAE", "line2": "Präsenz" }
+    ]
+  }
+}

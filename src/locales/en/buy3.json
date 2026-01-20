@@ -1,0 +1,41 @@
+{
+  "heading": {
+    "title": "Hot Property Deals",
+    "subtitle": "Discover exclusive properties with the best value in Dubai's premium locations."
+  },
+  "modal": {
+    "title": "Schedule Property Visit",
+    "subtitle": "Fill in your details and we'll arrange a private viewing for you!"
+  },
+  "form": {
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "occupation": "Your Occupation",
+    "location": "Preferred Location / Community",
+    "contactTitle": "How should we contact you?",
+    "contact": {
+      "call": "Phone Call",
+      "whatsapp": "WhatsApp",
+      "email": "Email"
+    },
+    "marketing": "I agree to receive newsletters and marketing communications via digital media, and understand I can unsubscribe at any time.",
+    "terms": "I accept the Terms & Conditions and Privacy Policy."
+  },
+  "actions": {
+    "submit": "Schedule Property Visit",
+    "loading": "Scheduling Visit..."
+  },
+  "card": {
+    "bed": "Bed",
+    "bath": "Bath",
+    "schedule": "Schedule Visit"
+  },
+  "toast": {
+    "success": "Visit scheduled! We'll contact you shortly.",
+    "error": "Failed to schedule visit. Try again."
+  }
+
+
+}

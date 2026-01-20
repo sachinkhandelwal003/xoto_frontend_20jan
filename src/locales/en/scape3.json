@@ -1,0 +1,31 @@
+{
+  "title": "Book Consultation",
+  "description": "One simple form to connect with XOTO experts for tailored landscape planning.",
+
+  "placeholders": {
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email Address",
+    "mobile": "Mobile Number",
+    "message": "Your Message"
+  },
+
+  "submit": "Book Free Consultation",
+  "submitting": "Submitting Request...",
+
+  "validation": {
+    "firstName": "First name is required",
+    "lastName": "Last name is required",
+    "email": "Valid email is required",
+    "mobile": "Mobile number must be at least 8 digits",
+    "message": "Message is required"
+  },
+
+  "success": {
+    "title": "Thank You!",
+    "message": "Your consultation request has been submitted successfully."
+  },
+
+  "error": "Submission failed",
+  "privacy": "We respect your privacy. Your information is safe with us."
+}

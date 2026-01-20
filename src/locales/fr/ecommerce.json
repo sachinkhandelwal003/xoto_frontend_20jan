@@ -1,0 +1,38 @@
+{
+  "hero": {
+    "title": "Redéfinissez Votre Espace de Vie",
+    "subtitle": "Collections de meubles sélectionnées par IA.",
+    "explore": "Explorer les Collections",
+    "vendor": "Devenir Vendeur"
+  },
+  "ar": {
+    "title": "Essayez avant d’acheter avec l’AR",
+    "desc": "Visualisez les meubles dans votre espace."
+  },
+  "cards": {
+    "arScan": { "title": "Scan AR de la Pièce", "desc": "Scannez votre pièce avec le téléphone.", "btn": "Démarrer le Scan" },
+    "virtual": { "title": "Mise en Scène Virtuelle", "desc": "Visualisez avec l’aide de l’IA.", "btn": "Essayer" },
+    "fit": { "title": "Ajustement Précis", "desc": "Vérifiez les dimensions.", "btn": "Vérifier" }
+  },
+  "how": {
+    "title": "Comment Ça Marche",
+    "step1": { "number": "1", "title": "Scanner la Pièce", "desc": "Capturez l’espace." },
+    "step2": { "number": "2", "title": "Choisir le Mobilier", "desc": "Sélectionnez une collection." },
+    "step3": { "number": "3", "title": "Aperçu AR", "desc": "Visualisation en temps réel." }
+  },
+  "demo": {
+    "title": "Vidéo Démo AR",
+    "desc": "Regardez comment ça marche",
+    "btn": "Lire"
+  },
+  "experience": {
+    "alt": "Salon moderne avec des meubles XOTO",
+    "title": {
+      "prefix": "L’expérience",
+      "brand": "XOTO",
+      "suffix": ""
+    },
+    "subtitle": "Là où l’innovation rencontre le confort. Des designs IA qui inspirent vos espaces.",
+    "cta": "Découvrir la Collection XOTO"
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "title": "Conçu pour chaque partie prenante",
+  "subtitle": "Notre plateforme sert les différents acteurs de l’écosystème immobilier avec des solutions adaptées",
+  "cta": "S’inscrire",
+  "tabs": {
+    "businessAssociates": {
+      "heading": "Associés commerciaux",
+      "qa": [
+        {
+          "question": "Qui ?",
+          "answer": "Agents immobiliers, courtiers et partenaires de réseau."
+        },
+        {
+          "question": "Quels sont les avantages ?",
+          "answer": [
+            "Gestion simplifiée des clients",
+            "Analyses basées sur l’IA",
+            "Clôture des transactions plus rapide"
+          ]
+        },
+        {
+          "question": "Pourquoi XOTO ?",
+          "answer": "Maximisez les conversions et les revenus grâce à un écosystème immobilier complet."
+        }
+      ]
+    },
+    "executionPartner": {
+      "heading": "Partenaires d’exécution",
+      "qa": [
+        {
+          "question": "Qui ?",
+          "answer": "Entrepreneurs, paysagistes, designers d’intérieur et chefs de projet."
+        },
+        {
+          "question": "Quels sont les avantages ?",
+          "answer": [
+            "Attribution des tâches en temps réel",
+            "Suivi transparent de l’avancement",
+            "Coordination fluide des projets"
+          ]
+        },
+        {
+          "question": "Pourquoi XOTO ?",
+          "answer": "Gérez efficacement les projets et connectez-vous à des clients qualifiés."
+        }
+      ]
+    },
+    "strategicAlliances": {
+      "heading": "Alliances stratégiques",
+      "qa": [
+        {
+          "question": "Qui ?",
+          "answer": "Entreprises cherchant à collaborer et à étendre leur présence sur le marché."
+        },
+        {
+          "question": "Quels sont les avantages ?",
+          "answer": [
+            "Écosystème intégré axé sur la croissance",
+            "Accès à de nouveaux marchés et partenariats"
+          ]
+        },
+        {
+          "question": "Pourquoi XOTO ?",
+          "answer": "Accélérez votre présence sur le marché et vos revenus via une seule plateforme."
+        }
+      ]
+    },
+    "developers": {
+      "heading": "Développeurs",
+      "qa": [
+        {
+          "question": "Qui ?",
+          "answer": "Promoteurs immobiliers à la recherche d’acheteurs et d’analyses de marché."
+        },
+        {
+          "question": "Quels sont les avantages ?",
+          "answer": [
+            "Accès à des acheteurs préqualifiés",
+            "Ventes accélérées grâce aux données"
+          ]
+        },
+        {
+          "question": "Pourquoi XOTO ?",
+          "answer": "Concluez des ventes plus rapidement et optimisez votre stratégie grâce à l’IA."
+        }
+      ]
+    },
+    "financialInstitution": {
+      "heading": "Institutions financières",
+      "qa": [
+        {
+          "question": "Qui ?",
+          "answer": "Banques, prêteurs hypothécaires et institutions de crédit."
+        },
+        {
+          "question": "Quels sont les avantages ?",
+          "answer": [
+            "Augmentation des conversions hypothécaires",
+            "Écosystème intégré immobilier et financement"
+          ]
+        },
+        {
+          "question": "Pourquoi XOTO ?",
+          "answer": "Offrez une expérience client fluide tout en augmentant les revenus financiers."
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "hero": {
+    "title": "重新定义您的生活空间",
+    "subtitle": "AI 精选家具系列。",
+    "explore": "浏览系列",
+    "vendor": "成为卖家"
+  },
+  "ar": {
+    "title": "AR 预览，先试后买",
+    "desc": "购买前在您的空间中查看家具。"
+  },
+  "cards": {
+    "arScan": { "title": "AR 房间扫描", "desc": "使用手机扫描房间。", "btn": "开始扫描" },
+    "virtual": { "title": "虚拟摆放", "desc": "通过 AI 查看家具效果。", "btn": "立即体验" },
+    "fit": { "title": "精准匹配", "desc": "购买前检查尺寸。", "btn": "检查匹配" }
+  },
+  "how": {
+    "title": "如何使用",
+    "step1": { "number": "1", "title": "扫描房间", "desc": "用手机拍摄空间。" },
+    "step2": { "number": "2", "title": "选择家具", "desc": "从精选系列中选择。" },
+    "step3": { "number": "3", "title": "AR 预览", "desc": "实时查看家具效果。" }
+  },
+  "demo": {
+    "title": "AR 演示视频",
+    "desc": "观看使用方式",
+    "btn": "播放"
+  },
+  "experience": {
+    "alt": "配有 XOTO 家具的现代客厅",
+    "title": {
+      "prefix": "",
+      "brand": "XOTO",
+      "suffix": "体验"
+    },
+    "subtitle": "创新与舒适的结合。我们的 AI 设计打造灵感空间。",
+    "cta": "探索 XOTO 系列"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "company": {
+    "slogan": "ਜ਼ਿੰਦਗੀ ਭਰ ਦੀ ਜਾਇਦਾਦ ਮੁੱਲ ਬਣਾਉਣ ਵਾਲਾ <br/> ਇੱਕ ਇਕਜੁੱਟ ਇਕੋਸਿਸਟਮ।",
+    "description": "ਸਕੇਲੇਬਲ। AI ਨਾਲ ਸੰਚਾਲਿਤ। ਐਸੈੱਟ-ਲਾਈਟ।"
+  },
+  "titles": {
+    "offerings": "ਸਾਡੀਆਂ ਸੇਵਾਵਾਂ",
+    "resources": "ਭਾਗੀਦਾਰ ਇਕੋਸਿਸਟਮ",
+    "knowledge": "ਸਾਡੇ ਬਾਰੇ",
+    "location": "ਸਥਾਨ",
+    "email": "ਈਮੇਲ"
+  },
+  "offerings": [
+    { "label": "ਲੈਂਡਸਕੇਪਿੰਗ", "path": "/landscaping" },
+    { "label": "ਇੰਟੀਰੀਅਰ", "path": "/services/interior" },
+    { "label": "ਕਿਰਾਇਆ", "path": "/marketplace" },
+    { "label": "ਖਰੀਦੋ", "path": "/marketplace" },
+    { "label": "ਵੇਚੋ", "path": "/marketplace" },
+    { "label": "ਹੋਮ ਲੋਨ", "path": "/mortgage/services" },
+    { "label": "ਰਖ-ਰਖਾਵ", "path": "" }
+  ],
+  "resources": [
+    { "label": "रणਨੀਤਿਕ ਭਾਈਚਾਰਾ", "path": "/login" },
+    { "label": "ਕਾਰੋਬਾਰੀ ਸਾਥੀ", "path": "/login" },
+    { "label": "ਐਗਜ਼ੀਕਿਊਸ਼ਨ ਭਾਈਚਾਰੇ", "path": "/login" },
+    { "label": "ਡਿਵੈਲਪਰ", "path": "/" },
+    { "label": "ਵਿੱਤੀ ਸੰਸਥਾਵਾਂ", "path": "/" }
+  ],
+  "knowledge": [
+    { "label": "ਨੋਲਜ ਸੈਂਟਰ", "path": "/about" },
+    { "label": "ਸਾਡੀ ਟਿਕਾਊਤਾ ਫੋਕਸ", "path": "/about" },
+    
+    { "label": "ਫੀਡਬੈਕ ਭੇਜੋ", "path": "/about" },
+    { "label": "ਸੰਪਰਕ ਕਰੋ", "path": "/contact" },
+    { "label": "ਪਰਾਈਵੇਸੀ ਨੀਤੀ", "path": "/about" },
+    { "label": "ਵਰਤੋਂ ਦੀਆਂ ਸ਼ਰਤਾਂ", "path": "/about" }
+  ],
+  "locations": " UAE | ਸਾਊਦੀ ਅਰਬ",
+  "email": {
+    "labels": {
+      "partners": "ਭਾਗੀਦਾਰਾਂ ਲਈ",
+      "customers": "ਗਾਹਕਾਂ ਲਈ"
+    },
+    "partners": "connect@xoto.ae",
+    "customers": "care@xoto.ae"
+  },
+  "social": [
+    { "name": "ਫੇਸਬੁੱਕ", "url": "#" },
+    { "name": "ਇੰਸਟਾਗ੍ਰਾਮ", "url": "#" },
+    { "name": "ਟਵਿੱਟਰ", "url": "#" },
+    { "name": "ਲਿੰਕਡਇਨ", "url": "#" }
+  ],
+  "bottom": {
+    "copyright": "©2021 XOTO. ਸਾਰੇ ਅਧਿਕਾਰ ਰਾਖਵੇਂ ਹਨ"
+  }
+}

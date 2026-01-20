@@ -1,0 +1,21 @@
+{
+  "heading": "Контактная информация",
+  "email": {
+    "title": "Электронная почта",
+    "subtitle": "Свяжитесь с нами",
+    "primary": "sales.support@xoto.ae",
+    "secondary": "info@xoto.ae",
+    "note": "Мы быстро ответим"
+  },
+  "address": {
+    "title": "Адрес",
+    "line1": "1616, Parklane Tower, Business Bay, Дубай",
+    "country": "ОАЭ"
+  },
+  "phone": {
+    "title": "Телефон",
+    "number": "+971 50 918 0967",
+    "timing": "Пн–Сб | 9:00–18:00"
+  },
+  "map": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3610.5326639711025!2d55.2618832!3d25.1852532"
+}

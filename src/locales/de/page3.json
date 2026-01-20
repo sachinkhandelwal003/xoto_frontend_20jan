@@ -1,0 +1,34 @@
+{
+  "hero": {
+    "title": "Entdecken Sie die Zukunft des Wohnens — smarter, grüner und KI-gestützt.",
+    "subtitle": "Ihr Zentrum für Einblicke in PropTech, Nachhaltigkeit und intelligentes Design & Bauwesen.",
+    "buttons": {
+      "categories": "Kategorien durchsuchen",
+      "ai": "Xobia AI fragen"
+    }
+  },
+  "blogs": {
+    "title": "Neueste Blogs & Artikel",
+    "readMore": "Mehr lesen",
+    "loadMore": "Mehr laden",
+    "1": { "date": "04. November 2024", "title": "Erkundung luxuriöser Immobilienmärkte" },
+    "2": { "date": "16. Juli 2024", "title": "Leitfaden zum Immobilienkauf in Metropolen" },
+    "3": { "date": "04. November 2024", "title": "Umweltfreundliche Praktiken im Wohnimmobilienmarkt" },
+    "4": { "date": "20. September 2024", "title": "Renovierung historischer Immobilien im modernen Stil" },
+    "5": { "date": "04. November 2024", "title": "Erkundung luxuriöser Immobilienmärkte" },
+    "6": { "date": "16. Juli 2024", "title": "Leitfaden zum Immobilienkauf in Metropolen" },
+    "7": { "date": "04. November 2024", "title": "Erkundung luxuriöser Immobilienmärkte" },
+    "8": { "date": "16. Juli 2024", "title": "Leitfaden zum Immobilienkauf in Metropolen" }
+  },
+  "search": {
+    "placeholder": "ARTIKEL SUCHEN ..."
+  },
+  "categories": {
+    "title": "Einblicke, die modernes Wohnen neu definieren",
+    "subtitle": "Von smarter Landschaftsgestaltung bis zu nachhaltigem Design — Trends und Innovationen für die Zukunft des Wohnens in den VAE.",
+    "1": "Landschaftstrends & Smart Homes",
+    "2": "KI & PropTech",
+    "3": "Hausfinanzierung vereinfacht",
+    "4": "Nachhaltiges Leben in den VAE"
+  }
+}

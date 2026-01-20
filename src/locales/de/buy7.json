@@ -1,0 +1,25 @@
+{
+  "heroTitle": "Wo Träume Wirklichkeit werden",
+  "heroSub": "Finden, verkaufen und finanzieren Sie Ihr Traumhaus – smarter, schneller, einfacher",
+
+  "formTitle": "Entdecken, Entscheiden, Abschließen",
+  "formSub": "Alles an einem Ort",
+
+  "firstName": "Vorname*",
+  "lastName": "Nachname*",
+  "email": "E-Mail-Adresse*",
+  "countryCode": "Vorwahl*",
+  "phone": "Telefonnummer*",
+
+  "country": "Land*",
+  "lookingFor": "Ich suche*",
+  "city": "Bevorzugte Stadt*",
+  "budget": "Budget* (z. B. 1,5 Cr oder 2 Mio. AED)",
+
+  "submit": "Jetzt absenden",
+  "submitting": "Wird gesendet...",
+
+  "success": "Vielen Dank! Wir werden Sie sehr bald kontaktieren",
+  "error": "Bitte füllen Sie alle Felder aus",
+  "genericError": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
+}

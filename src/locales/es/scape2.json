@@ -1,0 +1,51 @@
+{
+  "heading": "Nuestro Portafolio de Servicios",
+  "services": {
+    "hardscape": {
+      "title": "Hardscape",
+      "items": [
+        "Pavimentación (adoquines, baldosas, piedra)",
+        "Pérgolas y gazebos",
+        "Decking (madera, WPC, compuesto)",
+        "Muros perimetrales y cercas, muros de contención",
+        "Cocinas exteriores y estaciones BBQ",
+        "Elementos de agua (fuentes, cascadas)"
+      ]
+    },
+    "softscape": {
+      "title": "Softscape",
+      "items": [
+        "Pavimentación (adoquines, baldosas, piedra)",
+        "Preparación y nivelación del suelo",
+        "Plantación (árboles, arbustos, cubresuelos)",
+        "Instalación de césped (natural y artificial), parterres y jardines verticales",
+        "Acolchado y mejora del suelo",
+        "Plantación estacional y temas de color"
+      ]
+    },
+    "pool": {
+      "title": "Piscinas",
+      "items": [
+        "Diseño y construcción de piscinas, jacuzzis y spas",
+        "Piscinas reflectantes y estanques koi, sistemas de filtración y circulación"
+      ]
+    },
+    "other": {
+      "title": "Otras Soluciones",
+      "items": [
+        "Sombrillas",
+        "Decking",
+        "Gazebos",
+        "Maceteros",
+        "Pavimentos",
+        "BBQ",
+        "Macetas y fuentes"
+      ]
+    },
+    "builder": {
+      "title": "Da vida a tu visión con nuestro constructor interactivo",
+      "description": "Sube tu espacio o elige una plantilla y obtén vistas previas instantáneas impulsadas por IA.",
+      "button": "Da el primer paso"
+    }
+  }
+}

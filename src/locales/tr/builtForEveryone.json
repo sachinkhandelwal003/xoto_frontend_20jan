@@ -1,0 +1,12 @@
+{
+  "title": "İş Ortağı Ekosistemimiz",
+  "cards": {
+    "commonDesc": "Elit Yüklenici Ağı",
+    "business": { "title": "İş Ortakları" },
+    "contractors": { "title": "Yükleniciler" },
+    "execution": { "title": "Uygulama Ortakları" },
+    "strategic": { "title": "Stratejik İttifaklar" },
+    "developers": { "title": "Geliştiriciler" },
+    "financial": { "title": "Finansal Kurumlar" }
+  }
+}

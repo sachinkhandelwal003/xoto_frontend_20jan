@@ -1,0 +1,25 @@
+{
+  "heading": "Réserver une consultation",
+  "description": "Un formulaire simple pour entrer en contact avec les experts XOTO pour une planification paysagère personnalisée.",
+  "form": {
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Adresse e-mail",
+    "message": "Votre message",
+    "submit": "Réserver une consultation gratuite",
+    "submitting": "Envoi en cours..."
+  },
+  "validation": {
+    "firstName": "Le prénom est requis",
+    "lastName": "Le nom est requis",
+    "email": "Adresse e-mail valide requise",
+    "mobile": "Le numéro doit comporter au moins 8 chiffres",
+    "message": "Le message est requis"
+  },
+  "success": {
+    "title": "Merci !",
+    "text": "Votre demande de consultation a été envoyée avec succès."
+  },
+  "error": "Échec de l’envoi",
+  "privacy": "Nous respectons votre vie privée. Vos informations sont en sécurité."
+}

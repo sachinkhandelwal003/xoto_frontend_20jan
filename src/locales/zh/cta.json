@@ -1,0 +1,36 @@
+{
+  "title": "成长。盈利。XOTO 是您的一站式房地产生态系统。",
+  "ctaButton": "立即与我们的团队沟通",
+
+  "modal": {
+    "title": "团队咨询表"
+  },
+
+  "form": {
+    "name": "姓名",
+    "namePlaceholder": "请输入您的姓名",
+    "email": "电子邮箱",
+    "emailPlaceholder": "请输入您的邮箱",
+    "phone": "电话号码",
+    "phonePlaceholder": "请输入电话号码",
+    "inquiry": "咨询类型",
+    "select": "请选择咨询类型",
+    "options": [
+      "购买房产",
+      "出售房产",
+      "租赁房产",
+      "房地产投资",
+      "物业管理",
+      "房产估值",
+      "其他咨询"
+    ],
+    "message": "留言",
+    "messagePlaceholder": "我们如何帮助您？",
+    "submit": "提交咨询"
+  },
+
+  "toast": {
+    "error": "请填写所有必填字段。",
+    "success": "感谢您，{{name}}！\n您的“{{inquiryType}}”咨询已成功提交。\nXOTO 团队将尽快与您联系。"
+  }
+}

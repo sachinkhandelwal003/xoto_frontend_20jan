@@ -1,0 +1,40 @@
+{
+  "title": { "line1": "Форма", "line2": "Партнёрства" },
+  "subtitle": {
+    "line1": "Хотите сотрудничать с XOTO?",
+    "line2": "Расскажите нам о вашем бизнесе или проекте."
+  },
+  "form": {
+    "organization": "Название организации",
+    "email": "Контактный email",
+    "partnerType": "Тип партнёра",
+    "proposal": "Описание предложения"
+  },
+  "placeholders": {
+    "organization": "Введите название организации",
+    "email": "Введите email",
+    "proposal": "Опишите предложение"
+  },
+  "options": {
+    "select": "Выберите тип партнёра",
+    "business": "Бизнес-партнёры",
+    "execution": "Партнёр по исполнению",
+    "alliance": "Стратегические альянсы",
+    "developers": "Девелоперы",
+    "finance": "Финансовая организация"
+  },
+  "buttons": { "submit": "Отправить" },
+  "chat": {
+    "title": "Чат Xobia (AI помощь 24/7)",
+    "description": "Есть вопрос? Xobia доступна круглосуточно.",
+    "button": "Чат с Xobia"
+  },
+  "validation": {
+    "organization": "Название организации обязательно.",
+    "emailRequired": "Email обязателен.",
+    "emailInvalid": "Введите корректный email.",
+    "partnerType": "Тип партнёра обязателен.",
+    "proposal": "Описание обязательно."
+  },
+  "notification": { "success": "Форма успешно отправлена!" }
+}

@@ -1,0 +1,51 @@
+{
+  "heading": "Notre Portefeuille de Services",
+  "services": {
+    "hardscape": {
+      "title": "Hardscape",
+      "items": [
+        "Pavage (interlock, carreaux, pierre)",
+        "Pergolas et kiosques",
+        "Terrasses (bois, WPC, composite)",
+        "Murs de clôture et de soutènement",
+        "Cuisines extérieures et espaces BBQ",
+        "Éléments aquatiques (fontaines, cascades)"
+      ]
+    },
+    "softscape": {
+      "title": "Softscape",
+      "items": [
+        "Pavage (interlock, carreaux, pierre)",
+        "Préparation et nivellement du sol",
+        "Plantation (arbres, arbustes, couvre-sol)",
+        "Installation de gazon (naturel et artificiel), massifs et jardins verticaux",
+        "Paillage et amélioration du sol",
+        "Plantations saisonnières et thèmes de couleurs"
+      ]
+    },
+    "pool": {
+      "title": "Piscines",
+      "items": [
+        "Conception et construction de piscines, jacuzzis et spas",
+        "Bassins réfléchissants et étangs à carpes koi, systèmes de filtration"
+      ]
+    },
+    "other": {
+      "title": "Autres Solutions",
+      "items": [
+        "Parasols",
+        "Terrasses",
+        "Kiosques",
+        "Bacs à plantes",
+        "Revêtements de sol",
+        "BBQ",
+        "Pots et fontaines"
+      ]
+    },
+    "builder": {
+      "title": "Donnez vie à votre vision avec notre constructeur interactif",
+      "description": "Téléchargez votre espace ou choisissez un modèle et obtenez des aperçus instantanés alimentés par l’IA.",
+      "button": "Faire le premier pas"
+    }
+  }
+}

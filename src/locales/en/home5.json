@@ -1,0 +1,18 @@
+{
+  "title": "Trust & Presence",
+
+  "cards": {
+    "card1": {
+      "title": "Landscaping",
+      "desc": "Reimagine your home and outdoors with effortless, AI-powered landscaping and upgrade solutions."
+    },
+    "card2": {
+      "title": "Resale",
+      "desc": "Reimagine your home with effortless, AI-powered solutions."
+    },
+    "card3": {
+      "title": "Rental",
+      "desc": "Reimagine your space with effortless, AI-powered upgrade solutions."
+    }
+  }
+}

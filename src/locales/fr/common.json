@@ -1,0 +1,21 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "homeUpgrade": "Amélioration de la Maison",
+    "landscaping": "Aménagement Paysager",
+    "interiors": "Intérieurs",
+    "homeOwnership": "Propriété Immobilière",
+    "mortgages": "Prêts Immobiliers",
+    "properties": "Propriétés",
+    "store": "Boutique Xoto",
+    "knowledgeHub": "Centre de Connaissances",
+    "blogs": "Blogs",
+    "caseStudies": "Études de Cas",
+    "training": "Formation",
+    "ecosystem": "Écosystème Partenaire",
+    "about": "À Propos",
+    "contact": "Contactez-nous",
+    "login": "Connexion",
+    "tagline": "Propulsé par l’IA. Inspiré par vous."
+  }
+}

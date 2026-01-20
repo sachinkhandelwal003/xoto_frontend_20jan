@@ -1,0 +1,47 @@
+{
+  "heading": "Ce que disent nos clients",
+  "items": [
+    {
+      "title": "J’ai trouvé un endroit incroyable",
+      "text": "RentBro a rendu mon installation dans une nouvelle ville très simple.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Expérience fluide",
+      "text": "Le processus de location était clair et rapide.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Excellent support",
+      "text": "Le service client était toujours disponible.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Excellent rapport qualité-prix",
+      "text": "Des prix équitables et des annonces fiables.",
+      "name": "Shubham",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Déménagement sans stress",
+      "text": "Changer de ville a été très facile.",
+      "name": "Punit",
+      "location": "Pune, Maharashtra",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    },
+    {
+      "title": "Quartier incroyable !",
+      "text": "Les recommandations de quartier étaient parfaites.",
+      "name": "Harsh",
+      "location": "HSR Layout, Bangalore",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+    }
+  ]
+}

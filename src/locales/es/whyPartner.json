@@ -1,0 +1,22 @@
+{
+  "title": "¿Por qué asociarse con XOTO?",
+  "featureLabel": "Función {{id}}",
+  "features": {
+    "1": {
+      "title": "Plataforma todo en uno",
+      "desc": "Conéctate con los clientes de forma fluida."
+    },
+    "2": {
+      "title": "Herramientas impulsadas por IA",
+      "desc": "Optimiza flujos de trabajo, sigue el progreso y descubre oportunidades de ingresos."
+    },
+    "3": {
+      "title": "Haz crecer tu negocio",
+      "desc": "Amplía tu alcance, acelera acuerdos y maximiza ganancias."
+    },
+    "4": {
+      "title": "Transparencia y control",
+      "desc": "Visibilidad total de proyectos, leads e interacciones con clientes."
+    }
+  }
+}

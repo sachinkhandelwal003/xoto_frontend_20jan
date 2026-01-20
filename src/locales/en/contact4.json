@@ -1,0 +1,47 @@
+{
+  "title": {
+    "line1": "Partner &",
+    "line2": "Collaboration Form"
+  },
+  "subtitle": {
+    "line1": "Interested in collaborating with XOTO?",
+    "line2": "Tell us more about your business or project."
+  },
+  "form": {
+    "organization": "Organization Name",
+    "email": "Contact Email",
+    "partnerType": "Partner Type",
+    "proposal": "Describe Your Proposal"
+  },
+  "placeholders": {
+    "organization": "Enter Organization Name",
+    "email": "Enter Email",
+    "proposal": "Describe Your Proposal"
+  },
+  "options": {
+    "select": "Select Partner Type",
+    "business": "Business Associates",
+    "execution": "Execution Partner",
+    "alliance": "Strategic Alliances",
+    "developers": "Developers",
+    "finance": "Financial Institution"
+  },
+  "buttons": {
+    "submit": "Submit Now"
+  },
+  "chat": {
+    "title": "Xobia Chat (24/7 AI Help)",
+    "description": "Have a question right now? Xobia, our AI assistant, is available 24/7 to guide you through product details, support requests, or general inquiries — anytime you need.",
+    "button": "Chat With Xobia"
+  },
+  "validation": {
+    "organization": "Organization Name is required.",
+    "emailRequired": "Email is required.",
+    "emailInvalid": "Enter a valid email.",
+    "partnerType": "Partner Type is required.",
+    "proposal": "Proposal description is required."
+  },
+  "notification": {
+    "success": "Form Submitted Successfully!"
+  }
+}

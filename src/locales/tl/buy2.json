@@ -1,0 +1,25 @@
+{
+  "heading": {
+    "title": "Ano ang iyong hinahanap",
+    "subtitle": "Gagabayan ka ng Xobia sa iyong perpektong paglalakbay sa ari-arian gamit ang mga personalisadong rekomendasyon."
+  },
+  "buttons": {
+    "rent": "Umarkila ng Bahay",
+    "buy": "Bumili ng Bahay",
+    "sell": "Magbenta ng Bahay"
+  },
+  "tabs": {
+    "rent": {
+      "title": "Umarkila ng Bahay",
+      "text": "Piniling mga paupahan na may flexible na terms, beripikadong listahan at matatalinong rekomendasyon."
+    },
+    "buy": {
+      "title": "Bumili ng Bahay",
+      "text": "Tuklasin ang mga premium na bahay na may detalyadong impormasyon, AI-guided na rekomendasyon at beripikadong nagbebenta."
+    },
+    "sell": {
+      "title": "Magbenta ng Bahay",
+      "text": "Ilista ang iyong ari-arian nang madali gamit ang tulong ng eksperto, valuation insights at malawak na abot ng mga mamimili."
+    }
+  }
+}

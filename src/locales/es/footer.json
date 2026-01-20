@@ -1,0 +1,56 @@
+{
+  "company": {
+    "slogan": "Un ecosistema unificado que crea <br/> valor inmobiliario de por vida.",
+    "description": "Escalable. Impulsado por IA. Ligero en activos."
+  },
+  "titles": {
+    "offerings": "Nuestros servicios",
+    "resources": "Ecosistema de socios",
+    "knowledge": "Sobre nosotros",
+    "location": "Ubicaciones",
+    "email": "Correo electrónico"
+  },
+  "offerings": [
+    { "label": "Paisajismo", "path": "/landscaping" },
+    { "label": "Interiores", "path": "/services/interior" },
+    { "label": "Alquiler", "path": "/marketplace" },
+    { "label": "Comprar", "path": "/marketplace" },
+    { "label": "Vender", "path": "/marketplace" },
+    { "label": "Hipotecas", "path": "/mortgage/services" },
+    { "label": "Mantenimiento", "path": "" }
+  ],
+  "resources": [
+    { "label": "Alianza estratégica", "path": "/login" },
+    { "label": "Socios comerciales", "path": "/login" },
+    { "label": "Socios de ejecución", "path": "/login" },
+    { "label": "Desarrolladores", "path": "/" },
+    { "label": "Instituciones financieras", "path": "/" }
+  ],
+  "knowledge": [
+    { "label": "Centro de conocimiento", "path": "/about" },
+    { "label": "Nuestra sostenibilidad Enfoque", "path": "/about" },
+    
+    { "label": "Enviar comentarios", "path": "/about" },
+    { "label": "Contáctanos", "path": "/contact" },
+    { "label": "Política de privacidad", "path": "/about" },
+    { "label": "Términos de uso", "path": "/about" }
+  ],
+  "locations": " EAU | Arabia Saudita",
+  "email": {
+    "labels": {
+      "partners": "Para socios",
+      "customers": "Para clientes"
+    },
+    "partners": "connect@xoto.ae",
+    "customers": "care@xoto.ae"
+  },
+  "social": [
+    { "name": "Facebook", "url": "#" },
+    { "name": "Instagram", "url": "#" },
+    { "name": "Twitter", "url": "#" },
+    { "name": "LinkedIn", "url": "#" }
+  ],
+  "bottom": {
+    "copyright": "©2021 XOTO. Todos los derechos reservados"
+  }
+}

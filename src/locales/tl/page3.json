@@ -1,0 +1,61 @@
+{
+  "hero": {
+    "title": "Tuklasin ang Hinaharap ng Pamumuhay — Mas Matalino, Mas Luntian, at Pinapagana ng AI.",
+    "subtitle": "Ang iyong sentro para sa mga kaalaman tungkol sa PropTech, napapanatiling estratehiya, at matalinong disenyo at konstruksyon.",
+    "buttons": {
+      "categories": "Tingnan ang mga Kategorya",
+      "ai": "Magtanong sa Xobia AI"
+    }
+  },
+
+  "blogs": {
+    "title": "Pinakabagong Mga Blog at Artikulo",
+    "readMore": "Magbasa Pa",
+    "loadMore": "Mag-load Pa",
+    "1": {
+      "date": "Nobyembre 04, 2024",
+      "title": "Paggalugad sa mga Luxury Real Estate Market"
+    },
+    "2": {
+      "date": "Hulyo 16, 2024",
+      "title": "Gabay sa Pagbili ng Real Estate sa mga Metropolitan Area"
+    },
+    "3": {
+      "date": "Nobyembre 04, 2024",
+      "title": "Mga Eco-Friendly na Praktis sa Residential Real Estate"
+    },
+    "4": {
+      "date": "Setyembre 20, 2024",
+      "title": "Pag-renovate ng mga Makasaysayang Ari-arian sa Makabagong Paraan"
+    },
+    "5": {
+      "date": "Nobyembre 04, 2024",
+      "title": "Paggalugad sa mga Luxury Real Estate Market"
+    },
+    "6": {
+      "date": "Hulyo 16, 2024",
+      "title": "Gabay sa Pagbili ng Real Estate sa mga Metropolitan Area"
+    },
+    "7": {
+      "date": "Nobyembre 04, 2024",
+      "title": "Paggalugad sa mga Luxury Real Estate Market"
+    },
+    "8": {
+      "date": "Hulyo 16, 2024",
+      "title": "Gabay sa Pagbili ng Real Estate sa mga Metropolitan Area"
+    }
+  },
+
+  "search": {
+    "placeholder": "MAGHANAP NG MGA ARTIKULO ..."
+  },
+
+  "categories": {
+    "title": "Tuklasin ang mga Kaalamang Muling Tinutukoy ang Makabagong Pamumuhay",
+    "subtitle": "Mula sa smart landscaping hanggang sa napapanatiling disenyo — mga trend at inobasyon na humuhubog sa hinaharap ng mga tahanan sa UAE.",
+    "1": "Mga Trend sa Landscaping at Smart Homes",
+    "2": "AI at PropTech",
+    "3": "Pinadaling Home Financing",
+    "4": "Napapanatiling Pamumuhay sa UAE"
+  }
+}

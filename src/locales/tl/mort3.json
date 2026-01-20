@@ -1,0 +1,29 @@
+{
+    "title": {
+      "line1": "Ang Iyong Home Loan,",
+      "line2": "pinadali sa 4 na hakbang"
+    },
+    "steps": {
+      "1": {
+        "label": "HAKBANG 01",
+        "title": "Konsultasyon at Paunang Pagsusuri",
+        "desc": "Sinusuri namin ang iyong pananalapi at nagmumungkahi ng opsyon."
+      },
+      "2": {
+        "label": "HAKBANG 02",
+        "title": "Paghahambing ng Alok",
+        "desc": "Sinusuri ang maraming nagpapautang para sa pinakamahusay na akma."
+      },
+      "3": {
+        "label": "HAKBANG 03",
+        "title": "Pumili at Mag-apply",
+        "desc": "Piliin ang alok, kami ang bahala sa dokumentasyon."
+      },
+      "4": {
+        "label": "HAKBANG 04",
+        "title": "Pag-apruba at Paglabas ng Pondo",
+        "desc": "Paglabas ng pondo na may aming suporta."
+      }
+    }
+  }
+  

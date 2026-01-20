@@ -1,0 +1,36 @@
+{
+  "title": "Crece. Gana. XOTO es tu ecosistema inmobiliario todo en uno.",
+  "ctaButton": "Habla con nuestro equipo hoy",
+
+  "modal": {
+    "title": "Formulario de consulta al equipo"
+  },
+
+  "form": {
+    "name": "Nombre",
+    "namePlaceholder": "Tu nombre",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "Tu correo electrónico",
+    "phone": "Número de teléfono",
+    "phonePlaceholder": "Introduce el número",
+    "inquiry": "Tipo de consulta",
+    "select": "Selecciona el tipo de consulta",
+    "options": [
+      "Compra de propiedad",
+      "Venta de propiedad",
+      "Alquiler de propiedad",
+      "Inversión inmobiliaria",
+      "Gestión de propiedades",
+      "Valoración de propiedades",
+      "Otra consulta"
+    ],
+    "message": "Mensaje",
+    "messagePlaceholder": "¿Cómo podemos ayudarte?",
+    "submit": "Enviar consulta"
+  },
+
+  "toast": {
+    "error": "Por favor, completa todos los campos obligatorios.",
+    "success": "Gracias, {{name}}!\nTu consulta sobre {{inquiryType}} ha sido enviada.\nEl equipo de XOTO se pondrá en contacto contigo pronto."
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "title": "Built for Every Stakeholder",
+  "subtitle": "One platform serving every role in the real estate ecosystem",
+  "cta": "Get Started",
+  "tabs": {
+    "businessAssociates": {
+      "heading": "Business Associates",
+      "qa": [
+        {
+          "question": "Who?",
+          "answer": "Real estate agents, brokers, and channel partners."
+        },
+        {
+          "question": "What do they gain?",
+          "answer": [
+            "Centralized lead management",
+            "AI-driven insights",
+            "Faster deal closures"
+          ]
+        },
+        {
+          "question": "Why XOTO?",
+          "answer": "Increase conversions and revenue through a unified ecosystem."
+        }
+      ]
+    },
+    "executionPartner": {
+      "heading": "Execution Partners",
+      "qa": [
+        {
+          "question": "Who?",
+          "answer": "Contractors, landscapers, interior designers, project managers."
+        },
+        {
+          "question": "What do they gain?",
+          "answer": [
+            "Real-time task allocation",
+            "Transparent progress tracking",
+            "Seamless collaboration"
+          ]
+        },
+        {
+          "question": "Why XOTO?",
+          "answer": "Deliver projects faster with verified demand."
+        }
+      ]
+    },
+    "strategicAlliances": {
+      "heading": "Strategic Alliances",
+      "qa": [
+        {
+          "question": "Who?",
+          "answer": "Brands and enterprises seeking expansion."
+        },
+        {
+          "question": "What do they gain?",
+          "answer": [
+            "Shared growth ecosystem",
+            "Access to new markets"
+          ]
+        },
+        {
+          "question": "Why XOTO?",
+          "answer": "Scale partnerships without operational friction."
+        }
+      ]
+    },
+    "developers": {
+      "heading": "Developers",
+      "qa": [
+        {
+          "question": "Who?",
+          "answer": "Real estate developers and builders."
+        },
+        {
+          "question": "What do they gain?",
+          "answer": [
+            "Pre-qualified buyers",
+            "Faster sales velocity"
+          ]
+        },
+        {
+          "question": "Why XOTO?",
+          "answer": "Sell smarter using real buyer intelligence."
+        }
+      ]
+    },
+    "financialInstitution": {
+      "heading": "Financial Institutions",
+      "qa": [
+        {
+          "question": "Who?",
+          "answer": "Banks, lenders, mortgage providers."
+        },
+        {
+          "question": "What do they gain?",
+          "answer": [
+            "Higher loan conversions",
+            "Integrated property financing flow"
+          ]
+        },
+        {
+          "question": "Why XOTO?",
+          "answer": "Monetize demand with seamless financing journeys."
+        }
+      ]
+    }
+  }
+}

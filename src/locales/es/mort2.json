@@ -1,0 +1,18 @@
+{
+    "title": "Planifica tu hipoteca con confianza",
+    "modes": {
+      "borrow": "¿Cuánto puedo pedir prestado?",
+      "estimate": "Estimación de pago mensual",
+      "check": "Evaluación de asequibilidad"
+    },
+    "imageAlt": "Ilustración de hipoteca",
+    "features": {
+      "1": { "label": "Función 1", "title": "Valor de la propiedad" },
+      "2": { "label": "Función 2", "title": "Pago inicial" },
+      "3": { "label": "Función 3", "title": "Plazo" },
+      "4": { "label": "Función 4", "title": "Monto máximo del préstamo" }
+    },
+    "cta": "Obtener preaprobación",
+    "disclaimer": "Las estimaciones son indicativas. Los términos finales están sujetos a aprobación crediticia."
+  }
+  

@@ -1,0 +1,33 @@
+{
+  "title": "Für alle gemacht",
+
+  "customers": {
+    "title": "Kunden",
+    "desc": "Gestalten Sie Ihr Zuhause und den Außenbereich neu – mit mühelosen, KI-gestützten Landschafts- und Upgrade-Lösungen."
+  },
+
+  "business": {
+    "title": "Geschäftspartner",
+    "desc": "Stärken Sie Ihr Immobiliennetzwerk mit KI-gestützten Tools, die Kundenmanagement vereinfachen, die Lead-Konvertierung steigern und Abschlüsse beschleunigen."
+  },
+
+  "execution": {
+    "title": "Ausführungspartner",
+    "desc": "Liefern Sie Projekte effizient mit Echtzeit-Aufgabenzuweisung, transparentem Fortschrittstracking und nahtloser Koordination über Landschaftsbau, Immobilien und Finanzierung."
+  },
+
+  "alliances": {
+    "title": "Strategische Allianzen",
+    "desc": "Kooperieren Sie mit XOTO, um Ihre Marktpräsenz durch ein integriertes, wachstumsorientiertes Ökosystem zu erweitern."
+  },
+
+  "developers": {
+    "title": "Entwickler",
+    "desc": "Greifen Sie auf vorqualifizierte Käufer zu und beschleunigen Sie Verkäufe mit datengesteuerten Einblicken."
+  },
+
+  "finance": {
+    "title": "Finanzinstitute",
+    "desc": "Steigern Sie Hypothekenabschlüsse durch integrierte Immobilien- und Finanzierungslösungen."
+  }
+}

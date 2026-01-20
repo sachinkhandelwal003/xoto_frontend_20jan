@@ -1,0 +1,15 @@
+{
+  "hero": {
+    "title": "Transforming Homes With Premium",
+    "subtitle": "Outdoor Solutions"
+  },
+  "services": {
+    "design": "Landscape Design & Execution",
+    "hardscape": "Hardscaping & Surface Works",
+    "outdoor": "Outdoor Structures & Living Spaces",
+    "pool": "Swimming Pools & Water Features"
+  },
+  "cta": {
+    "estimate": "Get a free estimate"
+  }
+}

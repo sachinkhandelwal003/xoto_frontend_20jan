@@ -1,0 +1,25 @@
+{
+  "heading": "预约咨询",
+  "description": "一个简单的表单，用于与 XOTO 专家联系，进行定制化景观规划。",
+  "form": {
+    "firstName": "名字",
+    "lastName": "姓氏",
+    "email": "电子邮箱",
+    "message": "您的留言",
+    "submit": "预约免费咨询",
+    "submitting": "正在提交..."
+  },
+  "validation": {
+    "firstName": "名字为必填项",
+    "lastName": "姓氏为必填项",
+    "email": "请输入有效的邮箱地址",
+    "mobile": "手机号至少需要 8 位数字",
+    "message": "留言不能为空"
+  },
+  "success": {
+    "title": "谢谢！",
+    "text": "您的咨询请求已成功提交。"
+  },
+  "error": "提交失败",
+  "privacy": "我们尊重您的隐私，您的信息是安全的。"
+}

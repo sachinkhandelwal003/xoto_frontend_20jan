@@ -1,0 +1,34 @@
+{
+  "title": "Mabilis na Pagtatanong",
+  "description": "Kailangan ng mabilis na sagot? Iwan ang iyong detalye.",
+
+  "form": {
+    "firstName": "Pangalan",
+    "lastName": "Apelyido",
+    "email": "Email",
+    "mobile": "Numero ng telepono",
+    "message": "Iyong mensahe"
+  },
+
+  "buttons": {
+    "submit": "Ipadala",
+    "submitting": "Ipinapadala..."
+  },
+
+  "privacy": "Iginagalang namin ang iyong privacy.",
+
+  "validation": {
+    "firstName": "Kinakailangan ang pangalan",
+    "lastName": "Kinakailangan ang apelyido",
+    "email": "Maglagay ng tamang email",
+    "mobile": "Hindi bababa sa 8 digit",
+    "message": "Kinakailangan ang mensahe"
+  },
+
+  "notification": {
+    "successTitle": "Salamat!",
+    "successMessage": "Matagumpay na naipadala.",
+    "errorTitle": "Error",
+    "errorMessage": "May naganap na error."
+  }
+}

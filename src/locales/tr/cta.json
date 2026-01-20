@@ -1,0 +1,36 @@
+{
+  "title": "Büyüyün. Kazanın. XOTO, hepsi bir arada emlak ekosisteminizdir.",
+  "ctaButton": "Bugün ekibimizle iletişime geçin",
+
+  "modal": {
+    "title": "Ekip Talep Formu"
+  },
+
+  "form": {
+    "name": "İsim",
+    "namePlaceholder": "Adınız",
+    "email": "E-posta",
+    "emailPlaceholder": "E-posta adresiniz",
+    "phone": "Telefon Numarası",
+    "phonePlaceholder": "Numarayı girin",
+    "inquiry": "Talep Türü",
+    "select": "Talep türünü seçin",
+    "options": [
+      "Gayrimenkul Satın Alma",
+      "Gayrimenkul Satma",
+      "Gayrimenkul Kiralama",
+      "Emlak Yatırımı",
+      "Gayrimenkul Yönetimi",
+      "Gayrimenkul Değerleme",
+      "Diğer Talep"
+    ],
+    "message": "Mesaj",
+    "messagePlaceholder": "Size nasıl yardımcı olabiliriz?",
+    "submit": "Talebi Gönder"
+  },
+
+  "toast": {
+    "error": "Lütfen tüm gerekli alanları doldurun.",
+    "success": "Teşekkürler {{name}}!\n{{inquiryType}} talebiniz gönderildi.\nXOTO ekibi yakında sizinle iletişime geçecektir."
+  }
+}

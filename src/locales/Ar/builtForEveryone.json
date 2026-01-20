@@ -1,0 +1,24 @@
+{
+  "title": "نظام شركاءنا الشبكي",
+  "cards": {
+    "commonDesc": "شبكة المقاولين النخبة",
+    "business": {
+      "title": "شركاء الأعمال"
+    },
+    "contractors": {
+      "title": "المقاولون"
+    },
+    "execution": {
+      "title": "شريك التنفيذ"
+    },
+    "strategic": {
+      "title": "التحالفات الاستراتيجية"
+    },
+    "developers": {
+      "title": "المطورون"
+    },
+    "financial": {
+      "title": "المؤسسات المالية"
+    }
+  }
+}

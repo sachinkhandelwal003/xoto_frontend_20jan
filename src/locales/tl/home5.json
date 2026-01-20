@@ -1,0 +1,18 @@
+{
+  "title": "Tiwala at Presensya",
+
+  "cards": {
+    "card1": {
+      "title": "Landscaping",
+      "desc": "Baguhin ang iyong tahanan at outdoor space gamit ang AI-powered landscaping at upgrade solutions."
+    },
+    "card2": {
+      "title": "Resale",
+      "desc": "Bagong anyo para sa iyong tahanan gamit ang AI-powered solutions."
+    },
+    "card3": {
+      "title": "Rental",
+      "desc": "Baguhin ang iyong space gamit ang AI-powered upgrade solutions."
+    }
+  }
+}

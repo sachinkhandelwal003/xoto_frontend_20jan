@@ -1,0 +1,39 @@
+{
+  "heading": {
+    "title": "Mainit na Property Deals",
+    "subtitle": "Tuklasin ang mga eksklusibong property na may pinakamagandang halaga sa mga premium na lokasyon ng Dubai."
+  },
+  "modal": {
+    "title": "Mag-iskedyul ng Pagbisita",
+    "subtitle": "Ilagay ang iyong detalye at aayusin namin ang pribadong viewing"
+  },
+  "form": {
+    "firstName": "Pangalan",
+    "lastName": "Apelyido",
+    "email": "Email address",
+    "phone": "Numero ng telepono",
+    "occupation": "Trabaho",
+    "location": "Preferred na lokasyon / komunidad",
+    "contactTitle": "Paano ka namin kokontakin?",
+    "contact": {
+      "call": "Tawag",
+      "whatsapp": "WhatsApp",
+      "email": "Email"
+    },
+    "marketing": "Sumasang-ayon akong makatanggap ng marketing at newsletter.",
+    "terms": "Tinatanggap ko ang mga tuntunin at patakaran sa privacy."
+  },
+  "actions": {
+    "submit": "Mag-iskedyul ng Pagbisita",
+    "loading": "Inaayos ang pagbisita..."
+  },
+  "card": {
+    "bed": "Silid-tulugan",
+    "bath": "Banyo",
+    "schedule": "Mag-iskedyul ng Pagbisita"
+  },
+  "toast": {
+    "success": "Naka-iskedyul ang pagbisita! Makikipag-ugnayan kami sa iyo.",
+    "error": "Hindi ma-iskedyul ang pagbisita. Subukan muli."
+  }
+}
