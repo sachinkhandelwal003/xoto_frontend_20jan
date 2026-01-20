@@ -134,12 +134,43 @@ const LeadGenerationModal = ({
         }
       }
     } catch (error) {
-      notification.error({
-        message: "Authentication Failed",
-        description:
-          error?.response?.data?.message || "Something went wrong",
-      });
-    } finally {
+  const data = error?.response?.data;
+
+  // Case 1: validation errors array exists
+  if (Array.isArray(data?.errors)) {
+  const fieldErrors = {};
+  data.errors.forEach(err => {
+    const field = err.field?.split(".")[0]; // mobile.number → mobile
+    fieldErrors[field] = err.message;
+  });
+
+  form.setFields(
+    Object.entries(fieldErrors).map(([name, message]) => ({
+      name,
+      errors: [message],
+    }))
+  );
+  return;
+}
+// 2️⃣ SIGN IN → show error BELOW mobile input
+if (activeTab === "signin") {
+  form.setFields([
+    {
+      name: "mobile",
+      errors: [data?.message || "Mobile number not recognized"],
+    },
+  ]);
+  return;
+}
+
+
+  // Case 2: fallback
+  notification.error({
+    message: "Authentication Failed",
+    description: data?.message || "Something went wrong",
+  });
+}
+ finally {
       setIsSubmitting(false);
     }
   };
@@ -218,12 +249,12 @@ const LeadGenerationModal = ({
 
           {/* ================= RIGHT PANEL ================= */}
           <div className="lg:w-7/12 p-8 lg:p-12 relative">
-            <button
+            {/* <button
               onClick={onCancel}
               className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-700"
             >
               <X />
-            </button>
+            </button> */}
 
             <Title level={2}>
               {activeTab === "signin" ? "Welcome Back" : "Create Account"}

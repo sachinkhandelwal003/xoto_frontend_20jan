@@ -187,16 +187,24 @@ const AITools = () => {
 
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden lg:block fixed top-0 left-0 h-screen w-20 hover:w-64 bg-white border-r border-gray-200 z-30 transition-all duration-300 group">
-        <div className="h-20 flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-700 rounded-xl flex items-center justify-center text-white shadow-md shrink-0">
-              <BrainCircuit size={24} />
-            </div>
-            <span className="font-bold text-2xl tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-              xoto
-            </span>
-          </div>
-        </div>
+      
+<div className="h-20 flex items-center justify-center">
+  {/* Gap ko 0 karein jab hover na ho, taaki icon center me rahe */}
+  <div className="flex items-center gap-0 group-hover:gap-3 transition-all duration-300">
+    
+    {/* Icon Container */}
+    <div className="w-10 h-10 bg-purple-700 rounded-xl flex items-center justify-center text-white shadow-md shrink-0">
+      <BrainCircuit size={24} />
+    </div>
+
+    {/* Text Label */}
+    {/* w-0 aur overflow-hidden add kiya taaki bina hover ke ye space na le */}
+    <span className="font-bold text-2xl tracking-tight opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 whitespace-nowrap">
+      xoto
+    </span>
+    
+  </div>
+</div>
 
         <nav className="px-3 flex flex-col gap-1.5">
           <div onClick={() => navigate('/')} className="flex items-center gap-4 px-3 py-3 rounded-xl hover:bg-gray-50 cursor-pointer text-gray-600">
@@ -228,14 +236,20 @@ const AITools = () => {
           </div>
         </nav>
 
-        <div className="absolute bottom-6 left-3 right-3">
-          <button className="w-full bg-gray-900 hover:bg-black text-white py-3 rounded-xl font-medium flex items-center justify-center gap-2">
-            <LogOut size={20} className="shrink-0" />
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-              Log Out
-            </span>
-          </button>
-        </div>
+       {/* Log Out Button Section */}
+{/* <div className="absolute bottom-6 left-3 right-3">
+  <button className="w-full bg-gray-900 hover:bg-black text-white py-3 rounded-xl font-medium flex items-center justify-center gap-0 group-hover:gap-2 transition-all duration-300">
+    
+    <LogOut size={20} className="shrink-0" />
+    
+ 
+    <span className="opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 whitespace-nowrap">
+      Log Out
+    </span>
+    
+  </button>
+</div> */}
+
       </aside>
 
       {/* MAIN CONTENT */}

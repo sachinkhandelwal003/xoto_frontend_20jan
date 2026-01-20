@@ -70,6 +70,12 @@ import UploadDocuments from "./components/homepage/UploadDocuments";
 import ProductRequirementsEdit from "./components/homepage/ProductRequirementsEdit";
 import MyApplications from "./components/homepage/MyApplications";
 
+import DeveloperDashboard from "./components/ecommerce/B2C/developerdashboard";
+import DeveloperPropertyManagement from "./components/ecommerce/B2C/developerpropertymanagement";
+import DeveloperRegistration from "./components/ecommerce/B2C/developerregistration";
+import DeveloperSidebar from "./components/ecommerce/B2C/developersidebar";
+import RegistrationAgency from "./components/ecommerce/B2C/registrationagency";
+
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -206,11 +212,24 @@ function App() {
               <Route path="/explore" element={<Page3 />} />
               <Route path="/contact" element={<Page />} />
               <Route path="/quotation" element={<Quotation />} />
-              <Route path="/ecommerce" element={<MainEcommercePage />} />
-              <Route path="/ecommerce/b2c" element={<HomeB2C />} />
-              <Route path="/ecommerce/seller" element={<SellerPage />} />
-              <Route path="/ecommerce/seller/b2b" element={<Sellerb2b />} />
-              <Route path="/ecommerce/b2b" element={<HomeB2B />} />
+           <Route path="/ecommerce" element={<MainEcommercePage />} />
+<Route path="/ecommerce/b2c" element={<HomeB2C />} />
+
+{/* ✅ Developer Routes */}
+<Route path="/developer/dashboard" element={<DeveloperDashboard />} />
+<Route
+  path="/developer/property-management"
+  element={<DeveloperPropertyManagement />}
+/>
+<Route path="/developer/registration" element={<DeveloperRegistration />} />
+<Route path="/developer/sidebar" element={<DeveloperSidebar />} />
+
+{/* ✅ Agency Route */}
+<Route path="/agency/registration" element={<RegistrationAgency />} />
+
+<Route path="/ecommerce/seller" element={<SellerPage />} />
+<Route path="/ecommerce/seller/b2b" element={<Sellerb2b />} />
+<Route path="/ecommerce/b2b" element={<HomeB2B />} />
               <Route path="/ecommerce/cart" element={<CartPage />} />
               <Route path="/ecommerce/filter" element={<ProductFilterPage />} />
               <Route path="/ecommerce/product/:id" element={<Productdetails />} />
