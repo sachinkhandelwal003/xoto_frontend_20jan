@@ -583,7 +583,7 @@ const CreateDeveloper = () => {
                         name="phone_number" 
                         label="Phone Number" 
                         rules={[
-                          { required: true, message: 'Phone number is required' },
+                          { required: false, message: 'Phone number is required' },
                           {
                             validator: (_, value) => {
                               if (!value) return Promise.resolve();
