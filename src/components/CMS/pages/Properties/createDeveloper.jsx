@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios'; 
 import {
   Button, Modal, Form, Input, Popconfirm, Card, Table,
-  Typography, Avatar, Row, Col, Statistic, Space, Divider, message, notification, Tooltip, Grid, Switch
+  Typography, Avatar, Row, Col, Statistic, Space, Divider, message, notification, Tooltip, Grid, Switch, Upload
 } from 'antd';
 import {
   PlusOutlined, UserOutlined, MailOutlined, PhoneOutlined,
   DeleteOutlined, EditOutlined, SearchOutlined, UsergroupAddOutlined, GlobalOutlined, 
-  CheckOutlined, CloseOutlined, LockOutlined, HomeOutlined, EnvironmentOutlined, LinkOutlined, FileTextOutlined, NumberOutlined
+  CheckOutlined, CloseOutlined, LockOutlined, HomeOutlined, EnvironmentOutlined, LinkOutlined, NumberOutlined, LoadingOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -22,6 +22,7 @@ const THEME = {
 
 const CreateDeveloper = () => {
   const BASE_URL = "https://xoto.ae/api/property"; 
+  const UPLOAD_URL = "https://xoto.ae/api/upload"; 
   
   const screens = useBreakpoint();
 
@@ -33,6 +34,10 @@ const CreateDeveloper = () => {
   const [pageSize, setPageSize] = useState(10);
   const [searchText, setSearchText] = useState('');
   
+  // --- Upload States ---
+  const [imageUrl, setImageUrl] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null); 
   const [form] = Form.useForm();
@@ -75,7 +80,6 @@ const CreateDeveloper = () => {
       });
       const dev = response.data?.data || response.data;
       if (dev) {
-        // Updated to set ALL fields
         form.setFieldsValue({
           name: dev.name,
           email: dev.email,
@@ -90,6 +94,12 @@ const CreateDeveloper = () => {
           reraNumber: dev.reraNumber,
           logo: dev.logo
         });
+        
+        // Prefill image preview
+        if (dev.logo) {
+            setImageUrl(dev.logo);
+        }
+
         setEditingId(id);
         setModalVisible(true);
       }
@@ -104,7 +114,6 @@ const CreateDeveloper = () => {
   const handleSave = async (values) => {
     setLoading(true);
     try {
-      // Create payload with ALL fields
       const payload = {
         name: values.name,
         email: values.email,
@@ -117,8 +126,7 @@ const CreateDeveloper = () => {
         city: values.city || "",
         address: values.address || "",
         reraNumber: values.reraNumber || "",
-        logo: values.logo || "",
-        // Note: isVerifiedByAdmin is NOT updated here, only via toggle
+        logo: values.logo || "", // Ab ye sirf String URL hoga
       };
 
       let response;
@@ -127,7 +135,6 @@ const CreateDeveloper = () => {
           params: { id: editingId }
         });
       } else {
-        // Default verified status for new ones can be handled by backend or added here if needed
         response = await axios.post(`${BASE_URL}/create-developer`, payload);
       }
       
@@ -141,22 +148,23 @@ const CreateDeveloper = () => {
         fetchDevelopers(currentPage, pageSize);
       }
     } catch (err) {
-      message.error(err.response?.data?.message || "Failed to save developer details.");
+      // Error message ko better handle kiya hai taaki validation error dikhe
+      const errorMsg = err.response?.data?.message || err.message || "Failed to save developer details.";
+      message.error(errorMsg);
+      console.error("Save Error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // --- 4. QUICK STATUS TOGGLE (From Table Only) ---
+  // --- 4. QUICK STATUS TOGGLE ---
   const handleStatusToggle = async (record, checked) => {
     setActionLoading(record._id || record.id);
     try {
-      // Re-sending necessary fields plus the new status
       const payload = {
-        ...record, // Spread existing record data
+        ...record, 
         isVerifiedByAdmin: checked
       };
-      // Remove _id from payload if it exists inside record to avoid duplication conflicts
       delete payload._id; 
 
       await axios.post(`${BASE_URL}/edit-developer`, payload, {
@@ -189,31 +197,101 @@ const CreateDeveloper = () => {
     }
   };
 
+  // --- 6. IMAGE UPLOAD HANDLER (FIXED FOR YOUR API RESPONSE) ---
+  const handleImageUpload = async (options) => {
+    const { file, onSuccess, onError } = options;
+    setUploadLoading(true);
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file); 
+
+        const response = await axios.post(UPLOAD_URL, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        // *** FIX IS HERE ***
+        // Aapka response structure hai: { success: true, file: { url: "..." } }
+        // Isliye hume 'response.data.file.url' access karna hai.
+        const uploadedUrl = response.data?.file?.url;
+
+        if (uploadedUrl) {
+            setImageUrl(uploadedUrl); // Preview update
+            
+            // Hidden input mein sirf String URL set kar rahe hain
+            form.setFieldsValue({ logo: uploadedUrl }); 
+            
+            message.success("Logo uploaded successfully!");
+            onSuccess("Ok");
+        } else {
+            console.error("API Response structure invalid:", response.data);
+            throw new Error("Could not find image URL in response");
+        }
+    } catch (err) {
+        console.error("Upload error:", err);
+        message.error("Failed to upload image.");
+        onError({ err });
+    } finally {
+        setUploadLoading(false);
+    }
+  };
+
+  const beforeUpload = (file) => {
+    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp';
+    if (!isJpgOrPng) {
+      message.error('You can only upload JPG/PNG/WEBP file!');
+    }
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error('Image must be smaller than 2MB!');
+    }
+    return isJpgOrPng && isLt2M;
+  };
+
   const closeModal = () => {
     setModalVisible(false);
     setEditingId(null);
+    setImageUrl(null); 
     form.resetFields();
   };
 
-  const columns = [
+  const uploadButton = (
+    <div>
+      {uploadLoading ? <LoadingOutlined /> : <PlusOutlined />}
+      <div style={{ marginTop: 8 }}>Upload</div>
+    </div>
+  );
+const columns = [
     {
       title: 'Developer Name',
       dataIndex: 'name',
       key: 'name',
       fixed: screens.md ? 'left' : false, 
-      width: 200,
+      width: 250, // Width thodi badha di taaki bada logo fit aaye
       render: (text, record) => (
         <Space>
-          <Avatar size="small" src={record.logo} icon={<UserOutlined />} style={{ backgroundColor: record.isVerifiedByAdmin ? THEME.success : THEME.primary }} />
+          {/* UPDATED LOGO STYLE HERE */}
+          <Avatar 
+            shape="square"  // Circle hatakar Square kiya
+            size={50}       // Size bada kiya (pixels mein)
+            src={record.logo} 
+            icon={<UserOutlined />} 
+            style={{ 
+              backgroundColor: record.isVerifiedByAdmin ? THEME.success : THEME.primary,
+              borderRadius: '10px', // Thoda rounded effect dene ke liye
+              border: '1px solid #f0f0f0' // Optional: Light border for better look
+            }} 
+          />
           <div>
-            <Text strong>{text}</Text>
+            <Text strong style={{ fontSize: '15px' }}>{text}</Text>
             {record.isVerifiedByAdmin && (
-               <div className="text-[10px] text-green-600 leading-none">Verified</div>
+               <div className="text-[10px] text-green-600 leading-none mt-1">Verified</div>
             )}
           </div>
         </Space>
       ),
     },
+    // ... baaki columns same rahenge
     {
       title: 'Email',
       dataIndex: 'email',
@@ -234,7 +312,6 @@ const CreateDeveloper = () => {
          </div>
       ),
     },
-    // --- STATUS TOGGLE IS HERE ONLY ---
     {
       title: 'Verified',
       dataIndex: 'isVerifiedByAdmin',
@@ -299,6 +376,7 @@ const CreateDeveloper = () => {
           icon={<PlusOutlined />} 
           onClick={() => {
               setEditingId(null);
+              setImageUrl(null);
               form.resetFields();
               setModalVisible(true);
           }}
@@ -363,7 +441,7 @@ const CreateDeveloper = () => {
         footer={null}
         centered
         destroyOnClose
-        width={screens.xs ? '95%' : 700} // Increased width for more fields
+        width={screens.xs ? '95%' : 700}
       >
         <Divider style={{ margin: '10px 0 25px 0' }} />
         <Form 
@@ -399,7 +477,37 @@ const CreateDeveloper = () => {
 
           <Divider style={{ margin: '10px 0 20px 0' }} />
 
-          {/* SECTION 2: CONTACT & LOCATION */}
+          {/* SECTION 2: LOGO UPLOAD */}
+          <Text strong className="text-gray-500 block mb-3 uppercase text-xs">Developer Logo</Text>
+          <Row gutter={16}>
+             <Col span={24}>
+                 <Form.Item label="Upload Logo" tooltip="Supports JPG, PNG, WEBP (< 2MB)">
+                     {/* Hidden input to hold URL string for Form Submission */}
+                     <Form.Item name="logo" noStyle>
+                        <Input type="hidden" />
+                     </Form.Item>
+
+                     <Upload
+                        name="file"
+                        listType="picture-card"
+                        className="avatar-uploader"
+                        showUploadList={false}
+                        customRequest={handleImageUpload}
+                        beforeUpload={beforeUpload}
+                     >
+                        {imageUrl ? (
+                           <img src={imageUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        ) : (
+                           uploadButton
+                        )}
+                     </Upload>
+                 </Form.Item>
+             </Col>
+          </Row>
+
+          <Divider style={{ margin: '10px 0 20px 0' }} />
+
+          {/* SECTION 3: CONTACT & LOCATION */}
           <Text strong className="text-gray-500 block mb-3 uppercase text-xs">Contact & Location</Text>
           <Row gutter={16}>
             <Col xs={8} md={6}>
@@ -432,17 +540,12 @@ const CreateDeveloper = () => {
 
           <Divider style={{ margin: '10px 0 20px 0' }} />
 
-          {/* SECTION 3: ADDITIONAL INFO */}
+          {/* SECTION 4: ADDITIONAL INFO */}
           <Text strong className="text-gray-500 block mb-3 uppercase text-xs">Additional Info</Text>
           <Row gutter={16}>
             <Col span={24}>
                 <Form.Item name="websiteUrl" label="Website URL">
                     <Input prefix={<LinkOutlined />} placeholder="https://example.com" />
-                </Form.Item>
-            </Col>
-            <Col span={24}>
-                <Form.Item name="logo" label="Logo URL">
-                    <Input prefix={<FileTextOutlined />} placeholder="https://image-url.com/logo.png" />
                 </Form.Item>
             </Col>
             <Col span={24}>
