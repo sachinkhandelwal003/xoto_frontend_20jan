@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios'; 
 import {
   Button, Modal, Form, Input, Popconfirm, Card, Table,
-  Typography, Avatar, Row, Col, Statistic, Space, Divider, message, notification, Tooltip, Grid, Switch, Upload
+  Typography, Avatar, Row, Col, Statistic, Space, Divider, message, notification, Tooltip, Grid, Switch, Upload, Select
 } from 'antd';
 import {
   PlusOutlined, UserOutlined, MailOutlined, PhoneOutlined,
@@ -13,12 +13,22 @@ import {
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 const { TextArea } = Input;
+const { Option } = Select;
 
 const THEME = {
   primary: "#7c3aed", 
   success: "#10b981",
   error: "#ef4444",
 };
+
+// Defined Country Codes
+const COUNTRY_CODES = [
+  { code: '+971', country: 'UAE', flag: '🇦🇪' },
+  { code: '+91', country: 'IND', flag: '🇮🇳' },
+  { code: '+1', country: 'USA', flag: '🇺🇸' },
+  { code: '+44', country: 'UK', flag: '🇬🇧' },
+  { code: '+966', country: 'KSA', flag: '🇸🇦' },
+];
 
 const CreateDeveloper = () => {
   const BASE_URL = "https://xoto.ae/api/property"; 
@@ -84,7 +94,7 @@ const CreateDeveloper = () => {
           name: dev.name,
           email: dev.email,
           phone_number: dev.phone_number,
-          country_code: dev.country_code || '+91',
+          country_code: dev.country_code || '+971', // Default to UAE if missing
           password: dev.password,
           description: dev.description,
           websiteUrl: dev.websiteUrl,
@@ -126,7 +136,7 @@ const CreateDeveloper = () => {
         city: values.city || "",
         address: values.address || "",
         reraNumber: values.reraNumber || "",
-        logo: values.logo || "", // Ab ye sirf String URL hoga
+        logo: values.logo || "", 
       };
 
       let response;
@@ -148,10 +158,8 @@ const CreateDeveloper = () => {
         fetchDevelopers(currentPage, pageSize);
       }
     } catch (err) {
-      // Error message ko better handle kiya hai taaki validation error dikhe
       const errorMsg = err.response?.data?.message || err.message || "Failed to save developer details.";
       message.error(errorMsg);
-      console.error("Save Error:", err);
     } finally {
       setLoading(false);
     }
@@ -197,7 +205,7 @@ const CreateDeveloper = () => {
     }
   };
 
-  // --- 6. IMAGE UPLOAD HANDLER (FIXED FOR YOUR API RESPONSE) ---
+  // --- 6. IMAGE UPLOAD HANDLER ---
   const handleImageUpload = async (options) => {
     const { file, onSuccess, onError } = options;
     setUploadLoading(true);
@@ -210,21 +218,14 @@ const CreateDeveloper = () => {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
 
-        // *** FIX IS HERE ***
-        // Aapka response structure hai: { success: true, file: { url: "..." } }
-        // Isliye hume 'response.data.file.url' access karna hai.
-        const uploadedUrl = response.data?.file?.url;
+        const uploadedUrl = response.data?.file?.url || response.data?.url; 
 
         if (uploadedUrl) {
-            setImageUrl(uploadedUrl); // Preview update
-            
-            // Hidden input mein sirf String URL set kar rahe hain
-            form.setFieldsValue({ logo: uploadedUrl }); 
-            
+            setImageUrl(uploadedUrl); // Show preview
+            form.setFieldsValue({ logo: uploadedUrl }); // Set hidden form value
             message.success("Logo uploaded successfully!");
             onSuccess("Ok");
         } else {
-            console.error("API Response structure invalid:", response.data);
             throw new Error("Could not find image URL in response");
         }
     } catch (err) {
@@ -261,25 +262,25 @@ const CreateDeveloper = () => {
       <div style={{ marginTop: 8 }}>Upload</div>
     </div>
   );
-const columns = [
+
+  const columns = [
     {
       title: 'Developer Name',
       dataIndex: 'name',
       key: 'name',
       fixed: screens.md ? 'left' : false, 
-      width: 250, // Width thodi badha di taaki bada logo fit aaye
+      width: 250,
       render: (text, record) => (
         <Space>
-          {/* UPDATED LOGO STYLE HERE */}
           <Avatar 
-            shape="square"  // Circle hatakar Square kiya
-            size={50}       // Size bada kiya (pixels mein)
+            shape="square"
+            size={50}
             src={record.logo} 
             icon={<UserOutlined />} 
             style={{ 
-              backgroundColor: record.isVerifiedByAdmin ? THEME.success : THEME.primary,
-              borderRadius: '10px', // Thoda rounded effect dene ke liye
-              border: '1px solid #f0f0f0' // Optional: Light border for better look
+                backgroundColor: record.isVerifiedByAdmin ? THEME.success : THEME.primary,
+                borderRadius: '10px',
+                border: '1px solid #f0f0f0' 
             }} 
           />
           <div>
@@ -291,7 +292,6 @@ const columns = [
         </Space>
       ),
     },
-    // ... baaki columns same rahenge
     {
       title: 'Email',
       dataIndex: 'email',
@@ -448,7 +448,7 @@ const columns = [
             form={form} 
             layout="vertical" 
             onFinish={handleSave} 
-            initialValues={{ country_code: '+91' }}
+            initialValues={{ country_code: '+971' }} 
         >
           {/* SECTION 1: ACCOUNT DETAILS */}
           <Text strong className="text-gray-500 block mb-3 uppercase text-xs">Account Details</Text>
@@ -482,7 +482,6 @@ const columns = [
           <Row gutter={16}>
              <Col span={24}>
                  <Form.Item label="Upload Logo" tooltip="Supports JPG, PNG, WEBP (< 2MB)">
-                     {/* Hidden input to hold URL string for Form Submission */}
                      <Form.Item name="logo" noStyle>
                         <Input type="hidden" />
                      </Form.Item>
@@ -507,17 +506,88 @@ const columns = [
 
           <Divider style={{ margin: '10px 0 20px 0' }} />
 
-          {/* SECTION 3: CONTACT & LOCATION */}
+          {/* SECTION 3: CONTACT & LOCATION (UPDATED STRICT VALIDATION) */}
           <Text strong className="text-gray-500 block mb-3 uppercase text-xs">Contact & Location</Text>
           <Row gutter={16}>
-            <Col xs={8} md={6}>
+            
+            <Col xs={8} md={7}>
               <Form.Item name="country_code" label="Code">
-                <Input prefix={<GlobalOutlined />} readOnly style={{ backgroundColor: '#f5f5f5' }} />
+                <Select style={{ width: '100%' }}>
+                  {COUNTRY_CODES.map((item) => (
+                    <Option key={item.code} value={item.code}>
+                      {item.flag} {item.code}
+                    </Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
-            <Col xs={16} md={18}>
-              <Form.Item name="phone_number" label="Phone Number" rules={[{ required: true }]}>
-                <Input prefix={<PhoneOutlined />} placeholder="9876543210" maxLength={15} />
+
+            {/* Strict Validation & Dynamic MaxLength */}
+            <Col xs={16} md={17}>
+              <Form.Item 
+                noStyle 
+                shouldUpdate={(prev, current) => prev.country_code !== current.country_code}
+              >
+                {({ getFieldValue }) => {
+                   const code = getFieldValue('country_code') || '+971';
+                   let maxLen = 15;
+                   let placeholder = "Mobile Number";
+
+                   // Define constraints based on country
+                   if (code === '+971') { maxLen = 9; placeholder = "50xxxxxxx (9 digits)"; }
+                   if (code === '+91') { maxLen = 10; placeholder = "98xxxxxxxx (10 digits)"; }
+
+                   return (
+                     <Form.Item 
+                        name="phone_number" 
+                        label="Phone Number" 
+                        rules={[
+                          { required: true, message: 'Phone number is required' },
+                          {
+                            validator: (_, value) => {
+                              if (!value) return Promise.resolve();
+                              
+                              if (code === '+971') {
+                                // Exactly 9 digits
+                                if (!/^\d{9}$/.test(value)) {
+                                  return Promise.reject(new Error('UAE number must be exactly 9 digits'));
+                                }
+                                // Optional: Ensure it starts with 5 (common for UAE mobile)
+                                if (!value.startsWith('5')) {
+                                   return Promise.reject(new Error('UAE mobile usually starts with 5'));
+                                }
+                              } else if (code === '+91') {
+                                // Exactly 10 digits
+                                if (!/^\d{10}$/.test(value)) {
+                                  return Promise.reject(new Error('India number must be exactly 10 digits'));
+                                }
+                              } else {
+                                // Generic
+                                if (!/^\d{7,15}$/.test(value)) {
+                                   return Promise.reject(new Error('Invalid phone format'));
+                                }
+                              }
+                              return Promise.resolve();
+                            }
+                          }
+                        ]}
+                     >
+                        <Input 
+                          prefix={<PhoneOutlined />} 
+                          type="number" // Restricts keyboard to numbers
+                          maxLength={maxLen} // Prevents typing more characters
+                          placeholder={placeholder}
+                          style={{ width: '100%' }}
+                          onInput={(e) => {
+                             // Force constraint on type="number" which sometimes ignores maxLength
+                             if (e.target.value.length > maxLen) {
+                                e.target.value = e.target.value.slice(0, maxLen);
+                             }
+                          }}
+                        />
+                     </Form.Item>
+                   );
+                }}
               </Form.Item>
             </Col>
             
@@ -528,7 +598,7 @@ const columns = [
             </Col>
             <Col xs={24} md={12}>
                 <Form.Item name="city" label="City">
-                    <Input prefix={<EnvironmentOutlined />} placeholder="Los Angeles" />
+                    <Input prefix={<EnvironmentOutlined />} placeholder="Dubai" />
                 </Form.Item>
             </Col>
             <Col span={24}>
