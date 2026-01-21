@@ -47,8 +47,8 @@ const CreateDeveloper = () => {
   // --- Upload & Preview States ---
   const [imageUrl, setImageUrl] = useState(null);
   const [uploadLoading, setUploadLoading] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false); // For Modal
-  const [previewImage, setPreviewImage] = useState('');  // For Modal Image
+  const [previewOpen, setPreviewOpen] = useState(false); 
+  const [previewImage, setPreviewImage] = useState('');
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null); 
@@ -238,15 +238,14 @@ const CreateDeveloper = () => {
     }
   };
 
-  // --- PREVIEW & REMOVE HANDLERS ---
   const handlePreview = (e) => {
-    e.stopPropagation(); // Prevent opening upload dialog
+    e.stopPropagation(); 
     setPreviewImage(imageUrl);
     setPreviewOpen(true);
   };
 
   const handleRemoveImage = (e) => {
-    e.stopPropagation(); // Prevent opening upload dialog
+    e.stopPropagation(); 
     setImageUrl(null);
     form.setFieldsValue({ logo: '' });
   };
@@ -286,17 +285,31 @@ const CreateDeveloper = () => {
       width: 250,
       render: (text, record) => (
         <Space>
+          {/* LOGIC UPDATE:
+             - Agar Logo hai: Image show karo.
+             - Agar Logo nahi hai: Name ka First Letter (Capitalized) show karo.
+          */}
           <Avatar 
             shape="square"
             size={50}
             src={record.logo} 
-            icon={<UserOutlined />} 
+            // Removed icon={<UserOutlined />} so letter can show up
             style={{ 
                 backgroundColor: record.isVerifiedByAdmin ? THEME.success : THEME.primary,
                 borderRadius: '10px',
-                border: '1px solid #f0f0f0' 
+                border: '1px solid #f0f0f0',
+                fontSize: '24px', // Letter bada dikhane ke liye
+                fontWeight: 'bold',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
             }} 
-          />
+          >
+             {/* Fallback to First Letter if no logo */}
+             {record.logo ? null : record.name?.charAt(0).toUpperCase()}
+          </Avatar>
+
           <div>
             <Text strong style={{ fontSize: '15px' }}>{text}</Text>
             {record.isVerifiedByAdmin && (
@@ -491,7 +504,7 @@ const CreateDeveloper = () => {
 
           <Divider style={{ margin: '10px 0 20px 0' }} />
 
-          {/* SECTION 2: LOGO UPLOAD (UPDATED HOVER ACTIONS) */}
+          {/* SECTION 2: LOGO UPLOAD (WITH HOVER PREVIEW/DELETE) */}
           <Text strong className="text-gray-500 block mb-3 uppercase text-xs">Developer Logo</Text>
           <Row gutter={16}>
              <Col span={24}>
@@ -511,17 +524,15 @@ const CreateDeveloper = () => {
                      >
                         {imageUrl ? (
                            <div className="relative w-full h-full group overflow-hidden rounded-lg">
-                              {/* 1. Main Image */}
+                              {/* Main Image */}
                               <img src={imageUrl} alt="logo" className="w-full h-full object-contain" />
                               
-                              {/* 2. Hover Overlay */}
+                              {/* Hover Overlay with Eye & Trash Icons */}
                               <div className="absolute inset-0 bg-black/50 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                 {/* Preview Icon */}
                                  <EyeOutlined 
                                     className="text-white text-lg hover:text-blue-400 cursor-pointer" 
                                     onClick={handlePreview} 
                                  />
-                                 {/* Delete Icon */}
                                  <DeleteOutlined 
                                     className="text-white text-lg hover:text-red-400 cursor-pointer" 
                                     onClick={handleRemoveImage} 
@@ -572,7 +583,7 @@ const CreateDeveloper = () => {
                         name="phone_number" 
                         label="Phone Number" 
                         rules={[
-                          { required: false, message: 'Phone number is required' },
+                          { required: true, message: 'Phone number is required' },
                           {
                             validator: (_, value) => {
                               if (!value) return Promise.resolve();
