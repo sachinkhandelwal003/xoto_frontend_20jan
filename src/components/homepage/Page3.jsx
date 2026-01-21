@@ -99,10 +99,21 @@ const Page3 = () => {
 
       {/* HERO SECTION */}
       <section className="relative w-full bg-cover bg-center min-h-[500px] flex items-center justify-center text-white" style={{ backgroundImage: `url(${Picture})` }}>
-        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="absolute inset-0 "></div>
         <div className="relative z-10 text-center px-6">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold leading-snug">{t("hero.title")}</h1>
         </div>
+          <div className="absolute bottom-0 left-0 w-72 h-12 bg-[var(--color-body)] z-[3] clip-left-shape" />
+      <div className="absolute bottom-0 right-0 w-72 h-12 bg-[var(--color-body)] z-[3] clip-right-shape" />
+
+      <style>{`
+        .clip-left-shape {
+          clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
+        }
+        .clip-right-shape {
+          clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
+        }
+      `}</style>
       </section>
 
       {/* BLOG LIST */}

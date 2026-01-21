@@ -116,7 +116,7 @@ const ProductGrid = ({
   }
 
   return (
-    <div className={`p-6 ${showFilters ? "" : "w-full"}`}>
+    <div className={`p-6  ${showFilters ? "" : "w-full"} `}>
       {/* Header - responsive stacking */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-gray-200 gap-4">
         <div>

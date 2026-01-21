@@ -749,90 +749,84 @@ const handleCountryChange = (code) => {
 
       case 3:
         return (
-          <motion.div {...variants} className="py-10">
-            <div className="max-w-3xl mx-auto">
+       <motion.div {...variants} className="py-10">
+  <div className="max-w-3xl mx-auto">
+    <Title level={3} className="text-center mb-8">
+      Project Details
+    </Title>
 
-              <Title level={3} className="text-center mb-8">
-                Project Details
-              </Title>
+    <Card className="rounded-xl shadow-sm">
+      {/* Condition: Agar questions hain aur unki length 0 se zyada hai */}
+      {questions && questions.length > 0 ? (
+        <Form layout="vertical" className="space-y-6">
+          {questions.map((q) => (
+            <Form.Item key={q._id} label={q.question} required={false}>
+              {/* TEXT */}
+              {q.questionType === "text" && (
+                <Input
+                  value={answers[q._id] || ""}
+                  onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                  placeholder="Enter value"
+                />
+              )}
 
-              <Card className="rounded-xl shadow-sm">
-                <Form
-                  layout="vertical"
-                  className="space-y-6"
+              {/* NUMBER */}
+              {q.questionType === "number" && (
+                <Input
+                  type="number"
+                  value={answers[q._id] || ""}
+                  onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                  placeholder="Enter number"
+                  min={q.minValue || 0}
+                  max={q.maxValue || undefined}
+                />
+              )}
+
+              {/* YES / NO */}
+              {q.questionType === "yesorno" && (
+                <Radio.Group
+                  value={answers[q._id]}
+                  onChange={(e) => handleAnswerChange(q._id, e.target.value)}
                 >
-                  {questions.map((q) => (
-                    <Form.Item
-                      key={q._id}
-                      label={q.question}
-                      required={false}
-                    >
-                      {/* TEXT */}
-                      {q.questionType === "text" && (
-                        <Input
-                          value={answers[q._id] || ""}
-                          onChange={e =>
-                            handleAnswerChange(q._id, e.target.value)
-                          }
-                          placeholder="Enter value"
-                        />
-                      )}
+                  <Space>
+                    {q.options?.map((opt) => (
+                      <Radio key={opt._id} value={opt.title}>
+                        {opt.title}
+                      </Radio>
+                    ))}
+                  </Space>
+                </Radio.Group>
+              )}
 
-                      {/* NUMBER */}
-                      {q.questionType === "number" && (
-                        <Input
-                          type="number"
-                          value={answers[q._id] || ""}
-                          onChange={e =>
-                            handleAnswerChange(q._id, e.target.value)
-                          }
-                          placeholder="Enter number"
-                          min={q.minValue || 0}
-                          max={q.maxValue || undefined}
-                        />
-                      )}
-
-                      {/* YES / NO */}
-                      {q.questionType === "yesorno" && (
-                        <Radio.Group
-                          value={answers[q._id]}
-                          onChange={e =>
-                            handleAnswerChange(q._id, e.target.value)
-                          }
-                        >
-                          <Space>
-                            {q.options.map(opt => (
-                              <Radio key={opt._id} value={opt.title}>
-                                {opt.title}
-                              </Radio>
-                            ))}
-                          </Space>
-                        </Radio.Group>
-                      )}
-
-                      {/* OPTIONS */}
-                      {q.questionType === "options" && (
-                        <Radio.Group
-                          value={answers[q._id]}
-                          onChange={e =>
-                            handleAnswerChange(q._id, e.target.value)
-                          }
-                        >
-                          <Space direction="vertical">
-                            {q.options.map(opt => (
-                              <Radio key={opt._id} value={opt.title}>
-                                {opt.title}
-                              </Radio>
-                            ))}
-                          </Space>
-                        </Radio.Group>
-                      )}
-                    </Form.Item>
-                  ))}
-                </Form>
-              </Card>
-            </div>
-          </motion.div>
+              {/* OPTIONS */}
+              {q.questionType === "options" && (
+                <Radio.Group
+                  value={answers[q._id]}
+                  onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                >
+                  <Space direction="vertical">
+                    {q.options?.map((opt) => (
+                      <Radio key={opt._id} value={opt.title}>
+                        {opt.title}
+                      </Radio>
+                    ))}
+                  </Space>
+                </Radio.Group>
+              )}
+            </Form.Item>
+          ))}
+        </Form>
+      ) : (
+        /* Agar data nahi hai toh ye dikhega */
+        <div className="text-center py-6">
+          <p className="text-lg font-bold text-gray-400 m-0">
+            No Question Available
+          </p>
+        </div>
+      )}
+    </Card>
+  </div>
+</motion.div>
         );
 
       case 4:
