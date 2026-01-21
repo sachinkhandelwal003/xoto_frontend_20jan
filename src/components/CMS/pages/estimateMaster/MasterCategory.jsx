@@ -3,7 +3,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Card, Button, Space, Tag, Tooltip, Spin,
   Typography, Popconfirm, Input, Form, Modal, message,
-  Row, Col, Statistic, Breadcrumb, Divider, Select, Switch
+  Row, Col, Statistic, Breadcrumb, Divider, Select, Switch,
+  InputNumber // <--- IMPORTED InputNumber
 } from 'antd';
 import {
   PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined,
@@ -75,7 +76,7 @@ const MasterCategory = () => {
         page, 
         limit, 
         search: searchTerm || undefined,
-        active: showTrash ? 'false' : undefined // Basic trash filtering logic
+        active: showTrash ? 'false' : undefined 
       };
 
       let response;
@@ -244,117 +245,153 @@ const MasterCategory = () => {
 
     return (
       <Modal title={`Add New ${level.slice(0, -1)}`} open={createModalOpen} onCancel={() => setCreateModalOpen(false)} footer={null} centered destroyOnClose>
-        <Form
-  form={form}
-  layout="vertical"
-  onFinish={onSubmit} 
-  style={{ marginTop: '16px' }}
->
-  {level === 'categories' ? (
-    <Form.Item
-      name="name"
-      label="Category Type"
-      rules={[{ required: true }]}
-    >
-      <Input />
-    </Form.Item>
-  ) : (
-    <Form.Item
-      name="label"
-      label="Name"
-      rules={[{ required: true }]}
-    >
-      <Input />
-    </Form.Item>
-  )}
+        <Form form={form} layout="vertical" onFinish={onSubmit} style={{ marginTop: '16px' }}>
+          {level === 'categories' ? (
+            <Form.Item name="name" label="Category Type" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
+          ) : (
+            <Form.Item name="label" label="Name" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
+          )}
 
-  {/* New Base Rate Field */}
-{level === 'types' && (
-  <Form.Item
-    name="baseRatePerSqFt"
-    label="Base Rate per Sq. Ft"
-    rules={[{ required: true }]}
-    extra="For example, if the minimum total charge is $1000 for 100 sq. ft, enter 10 ($/sq. ft). "
-  >
-    <Input type="number" addonAfter="$/sq. ft" />
-  </Form.Item>
-)}
+          {/* Create Modal - USING INPUTNUMBER */}
+          {level === 'types' && (
+            <Form.Item
+              name="baseRatePerSqFt"
+              label="Base Rate per Sq. Ft"
+              rules={[{ required: true }]}
+              extra="For example, if the minimum total charge is $1000 for 100 sq. ft, enter 10 ($/sq. ft)."
+            >
+              {/* Using InputNumber for strict number input */}
+              <InputNumber style={{ width: '100%' }} placeholder="Enter rate" />
+            </Form.Item>
+          )}
 
+          <Form.Item name="description" label="Description">
+            <TextArea rows={3} />
+          </Form.Item>
 
-  <Form.Item name="description" label="Description">
-    <TextArea rows={3} />
-  </Form.Item>
-
-
-
-  <div style={{ display: 'flex', justifyContent: 'end', gap: '8px' }}>
-    <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
-    <Button
-      type="primary"
-      htmlType="submit"
-      loading={saving}
-      style={{ background: THEME.primary }}
-    >
-      Save Changes
-    </Button>
-  </div>
-</Form>
-
+          <div style={{ display: 'flex', justifyContent: 'end', gap: '8px' }}>
+            <Button onClick={() => setCreateModalOpen(false)}>Cancel</Button>
+            <Button type="primary" htmlType="submit" loading={saving} style={{ background: THEME.primary }}>
+              Save Changes
+            </Button>
+          </div>
+        </Form>
       </Modal>
     );
   };
 
-  // --- EDIT MODAL ---
-  const EditModal = () => {
+  // --- EDIT MODAL (UPDATED) ---
+ const EditModal = () => {
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
       if (selectedItem) {
+        console.log("🔥 EDIT MODAL ITEM:", selectedItem);
+        
         form.setFieldsValue({
           name: selectedItem.name,
           label: selectedItem.label,
           description: selectedItem.description,
           isActive: selectedItem.isActive !== false,
-          order: selectedItem.order || 0
+          order: selectedItem.order || 0,
+          baseEstimationValueUnit: selectedItem.baseEstimationValueUnit ?? 0
         });
       }
-    }, [selectedItem]);
+    }, [selectedItem, form]);
 
     const onUpdate = async (values) => {
       setSaving(true);
       try {
-        let url = `${API_BASE}/${selectedItem._id}`;
-        if (level === 'subcategories') url = `${API_BASE}/${parentCategory}/subcategories/${selectedItem._id}`;
-        if (level === 'types') url = `${API_BASE}/${parentCategory}/subcategories/${parentSubcategory}/types/${selectedItem._id}`;
+        // 👇 CORRECTED URL CONSTRUCTION
+        let url = `${API_BASE}/${selectedItem._id}`; // Default for Root Category
+
+        if (level === 'subcategories') {
+            // Use ID from item if available (safer), otherwise fallback to state
+            const catId = selectedItem.category?._id || selectedItem.category || parentCategory;
+            url = `${API_BASE}/${catId}/subcategories/${selectedItem._id}`;
+        }
+        
+        if (level === 'types') {
+            // Ensure we use the exact parent IDs associated with this Type
+            const catId = selectedItem.category?._id || selectedItem.category || parentCategory;
+            const subCatId = selectedItem.subcategory?._id || selectedItem.subcategory || parentSubcategory;
+            
+            // Matches: /api/estimate/master/category/:catId/subcategories/:subCatId/types/:typeId
+            url = `${API_BASE}/${catId}/subcategories/${subCatId}/types/${selectedItem._id}`;
+        }
+
+        console.log("🚀 EXECUTE PUT API:", url); 
+        console.log("📤 Payload:", values);
 
         await apiService.put(url, values);
         message.success('Updated successfully!');
         setEditModalOpen(false);
         fetchData();
-      } catch (err) { message.error('Update failed'); } 
+      } catch (err) { 
+        console.error("Update Error:", err);
+        message.error('Update failed'); 
+      } 
       finally { setSaving(false); }
     };
 
     return (
-      <Modal title={`Edit ${level.slice(0, -1)}`} open={editModalOpen} onCancel={() => setEditModalOpen(false)} footer={null} centered destroyOnClose>
+      <Modal 
+        title={`Edit ${level.slice(0, -1)}`} 
+        open={editModalOpen} 
+        onCancel={() => setEditModalOpen(false)} 
+        footer={null} 
+        centered 
+        destroyOnClose
+      >
         <Form form={form} layout="vertical" onFinish={onUpdate} style={{ marginTop: '16px' }}>
+          
           {level === 'categories' ? (
-            <Form.Item name="name" label="Category Type" rules={[{ required: true }]}><Input /></Form.Item>
+            <Form.Item name="name" label="Category Type" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
           ) : (
-            <Form.Item name="label" label="Name" rules={[{ required: true }]}><Input /></Form.Item>
+            <Form.Item name="label" label="Name" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
           )}
-          <Form.Item name="description" label="Description"><TextArea rows={3} /></Form.Item>
+          
+          <Form.Item name="description" label="Description">
+            <TextArea rows={3} />
+          </Form.Item>
+
           <Row gutter={16}>
-             <Col span={12}><Form.Item name="isActive" label="Status" valuePropName="checked"><Switch checkedChildren="Active" unCheckedChildren="Inactive" /></Form.Item></Col>
-             <Col span={12}><Form.Item name="order" label="Sort Order"><Input type="number" /></Form.Item></Col>
+            <Col span={8}>
+              <Form.Item 
+                name="baseEstimationValueUnit" 
+                label="Base Unit"
+              >
+                 <InputNumber style={{ width: '100%' }} placeholder="0" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="order" label="Sort Order">
+                <InputNumber style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="isActive" label="Status" valuePropName="checked">
+                <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
+              </Form.Item>
+            </Col>
           </Row>
-          <div style={{ display: 'flex', justifyContent: 'end', gap: '8px' }}>
+
+          <div style={{ display: 'flex', justifyContent: 'end', gap: '8px', marginTop: '10px' }}>
             <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={saving} style={{ background: THEME.primary }}>Save Changes</Button>
+            <Button type="primary" htmlType="submit" loading={saving} style={{ background: THEME.primary }}>
+              Save Changes
+            </Button>
           </div>
         </Form>
-        
       </Modal>
     );
   };
@@ -400,8 +437,7 @@ const MasterCategory = () => {
         <CustomTable columns={columns} data={data} loading={loading} totalItems={pagination.totalItems} currentPage={pagination.currentPage} onPageChange={fetchData} />
       </Card>
 
-   <CreateModal key={level} />
-
+      <CreateModal key={level} />
       <EditModal />
 
       {/* Details View */}
@@ -412,6 +448,10 @@ const MasterCategory = () => {
             <p><Text type="secondary">Display Name:</Text> <br /> <Text strong>{selectedItem.name || selectedItem.label}</Text></p>
             <p><Text type="secondary">Description:</Text> <br /> <Text>{selectedItem.description || 'N/A'}</Text></p>
             <p><Text type="secondary">Current Level:</Text> <br /> <Tag color="purple">{level.toUpperCase()}</Tag></p>
+            {/* Display Base Unit in Details if available - Checks both keys */}
+            {(selectedItem.base_unit || selectedItem.baseRatePerSqFt) !== undefined && (
+                 <p><Text type="secondary">Base Unit:</Text> <br /> <Text strong>{selectedItem.baseRatePerSqFt ?? selectedItem.base_unit}</Text></p>
+            )}
           </div>
         )}
       </Modal>

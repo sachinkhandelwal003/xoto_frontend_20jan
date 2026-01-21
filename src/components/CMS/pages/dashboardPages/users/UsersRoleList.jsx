@@ -43,29 +43,38 @@ const { Title, Text } = Typography;
 
 // --- THEME CONFIGURATION ---
 const THEME = {
-  primary: "#722ed1", // Purple
-  secondary: "#1890ff", // Blue
+  primary: "#722ed1",
+  secondary: "#1890ff",
   success: "#52c41a",
   warning: "#faad14",
   error: "#ff4d4f",
   bgLight: "#f9f0ff",
 };
 
+// --- COUNTRY DATA CONFIGURATION ---
+// len: The EXACT number of digits required for that country
+const COUNTRY_CODES = [
+  { code: 'AE', dial: '+971', flag: '🇦🇪', len: 9, name: 'UAE' },
+  { code: 'IN', dial: '+91', flag: '🇮🇳', len: 10, name: 'India' },
+  { code: 'US', dial: '+1', flag: '🇺🇸', len: 10, name: 'USA' },
+  { code: 'GB', dial: '+44', flag: '🇬🇧', len: 10, name: 'UK' },
+  { code: 'SA', dial: '+966', flag: '🇸🇦', len: 9, name: 'Saudi Arabia' },
+  { code: 'QA', dial: '+974', flag: '🇶🇦', len: 8, name: 'Qatar' },
+];
+
 const UsersRoleList = () => {
   const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState([]); // Only Supervisor & Accountant
+  const [roles, setRoles] = useState([]); 
   const [loading, setLoading] = useState(false);
   const [totalUsers, setTotalUsers] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   
-  // Filters & State
   const [activeTab, setActiveTab] = useState('all'); 
   const [searchText, setSearchText] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
 
-  // --- STATS CALCULATION ---
   const stats = useMemo(() => {
     return {
       total: totalUsers,
@@ -109,7 +118,6 @@ const UsersRoleList = () => {
     }
   };
 
-  // --- EFFECTS ---
   useEffect(() => {
     fetchRoles();
     fetchUsers(1, 10, 'all');
@@ -122,11 +130,9 @@ const UsersRoleList = () => {
     return () => clearTimeout(timer);
   }, [activeTab, searchText]);
 
-  // --- HANDLERS ---
   const handleTabChange = (key) => {
     setActiveTab(key);
     setCurrentPage(1);
-    // API Call is handled by useEffect on activeTab change
   };
 
   const handlePageChange = (page, pageSize) => {
@@ -159,11 +165,13 @@ const UsersRoleList = () => {
       return;
     }
 
+    const fullMobile = `${values.country_code}${values.mobile}`;
+
     try {
       await apiService.post('/users/register', {
         name: { first_name: values.first_name, last_name: values.last_name },
         email: values.email,
-        mobile: values.mobile,
+        mobile: fullMobile, 
         password: values.password,
         confirm_password: values.confirm_password,
         role: values.role,
@@ -277,7 +285,6 @@ const UsersRoleList = () => {
     },
   ];
 
-  // --- TAB ITEMS CONFIGURATION ---
   const tabItems = [
     {
       key: 'all',
@@ -298,10 +305,30 @@ const UsersRoleList = () => {
     }))
   ];
 
+  // --- COUNTRY SELECTOR COMPONENT (DEFAULT UAE) ---
+  const prefixSelector = (
+    <Form.Item name="country_code" noStyle initialValue="+971">
+      <Select 
+        style={{ width: 90 }} 
+        popupMatchSelectWidth={false}
+        optionLabelProp="label"
+      >
+        {COUNTRY_CODES.map(country => (
+          <Option key={country.code} value={country.dial} label={country.dial}>
+            <Space>
+              <span>{country.flag}</span>
+              <span>{country.name} ({country.dial})</span>
+            </Space>
+          </Option>
+        ))}
+      </Select>
+    </Form.Item>
+  );
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       
-      {/* 1. Header & Stats */}
+      {/* Header & Stats */}
       <div className="mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
@@ -344,12 +371,8 @@ const UsersRoleList = () => {
         </Row>
       </div>
 
-      {/* 2. Main Content Card */}
-      <Card 
-        bordered={false} 
-        className="shadow-md rounded-lg"
-        bodyStyle={{ padding: 0 }}
-      >
+      {/* Main Table */}
+      <Card bordered={false} className="shadow-md rounded-lg" bodyStyle={{ padding: 0 }}>
         <div className="p-4 border-b border-gray-100 bg-white rounded-t-lg">
             <Input 
                 prefix={<SearchOutlined className="text-gray-400" />}
@@ -361,7 +384,6 @@ const UsersRoleList = () => {
             />
         </div>
 
-        {/* --- TABS USING 'items' PROP --- */}
         <Tabs
             activeKey={activeTab}
             onChange={handleTabChange}
@@ -384,7 +406,7 @@ const UsersRoleList = () => {
         </div>
       </Card>
 
-      {/* 3. Create User Modal */}
+      {/* Create User Modal */}
       <Modal
         title={
             <div className="flex items-center gap-2 text-xl font-bold text-gray-800">
@@ -424,16 +446,49 @@ const UsersRoleList = () => {
                 </Form.Item>
             </Col>
             <Col span={12}>
+                {/* --- DYNAMIC MOBILE FIELD VALIDATION --- */}
+                {/* We use shouldUpdate to re-render this specific Form.Item when country_code changes */}
                 <Form.Item
-                    name="mobile"
-                    label="Mobile Number"
-                    rules={[
-                    { required: true },
-                    { len: 10, message: 'Must be 10 digits' },
-                    { pattern: /^[6-9]\d{9}$/, message: 'Invalid Indian mobile' },
-                    ]}
+                  noStyle
+                  shouldUpdate={(prevValues, currentValues) => prevValues.country_code !== currentValues.country_code}
                 >
-                    <Input prefix={<PhoneOutlined className="text-gray-400" />} maxLength={10} size="large" placeholder="9876543210" />
+                  {({ getFieldValue }) => {
+                    const countryDial = getFieldValue('country_code') || '+971'; // Default UAE
+                    const country = COUNTRY_CODES.find(c => c.dial === countryDial);
+                    const requiredLen = country ? country.len : 10; // Default 10 if not found
+
+                    return (
+                        <Form.Item
+                            name="mobile"
+                            label="Mobile Number"
+                            rules={[
+                                { required: true, message: 'Please enter mobile number' },
+                                {
+                                    validator: (_, value) => {
+                                        if (!value) return Promise.resolve();
+                                        // 1. Check for non-digits
+                                        if (!/^\d+$/.test(value)) {
+                                            return Promise.reject(new Error('Only digits allowed'));
+                                        }
+                                        // 2. Strict length check
+                                        if (value.length !== requiredLen) {
+                                            return Promise.reject(new Error(`${country?.name || 'This country'} requires exactly ${requiredLen} digits`));
+                                        }
+                                        return Promise.resolve();
+                                    }
+                                }
+                            ]}
+                        >
+                            <Input 
+                                addonBefore={prefixSelector} 
+                                style={{ width: '100%' }} 
+                                size="large" 
+                                placeholder={`${requiredLen} digits`} 
+                                maxLength={requiredLen} // <--- PREVENTS TYPING MORE THAN ALLOWED
+                            />
+                        </Form.Item>
+                    );
+                  }}
                 </Form.Item>
             </Col>
           </Row>
