@@ -7,7 +7,7 @@ import {
 import {
   PlusOutlined, UserOutlined, MailOutlined, PhoneOutlined,
   DeleteOutlined, EditOutlined, SearchOutlined, UsergroupAddOutlined, GlobalOutlined, 
-  CheckOutlined, CloseOutlined, LockOutlined, HomeOutlined, EnvironmentOutlined, LinkOutlined, NumberOutlined, LoadingOutlined
+  CheckOutlined, CloseOutlined, LockOutlined, HomeOutlined, EnvironmentOutlined, LinkOutlined, NumberOutlined, LoadingOutlined, EyeOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -44,9 +44,11 @@ const CreateDeveloper = () => {
   const [pageSize, setPageSize] = useState(10);
   const [searchText, setSearchText] = useState('');
   
-  // --- Upload States ---
+  // --- Upload & Preview States ---
   const [imageUrl, setImageUrl] = useState(null);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false); 
+  const [previewImage, setPreviewImage] = useState('');
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null); 
@@ -94,7 +96,7 @@ const CreateDeveloper = () => {
           name: dev.name,
           email: dev.email,
           phone_number: dev.phone_number,
-          country_code: dev.country_code || '+971', // Default to UAE if missing
+          country_code: dev.country_code || '+971', 
           password: dev.password,
           description: dev.description,
           websiteUrl: dev.websiteUrl,
@@ -105,7 +107,6 @@ const CreateDeveloper = () => {
           logo: dev.logo
         });
         
-        // Prefill image preview
         if (dev.logo) {
             setImageUrl(dev.logo);
         }
@@ -221,8 +222,8 @@ const CreateDeveloper = () => {
         const uploadedUrl = response.data?.file?.url || response.data?.url; 
 
         if (uploadedUrl) {
-            setImageUrl(uploadedUrl); // Show preview
-            form.setFieldsValue({ logo: uploadedUrl }); // Set hidden form value
+            setImageUrl(uploadedUrl); 
+            form.setFieldsValue({ logo: uploadedUrl });
             message.success("Logo uploaded successfully!");
             onSuccess("Ok");
         } else {
@@ -235,6 +236,18 @@ const CreateDeveloper = () => {
     } finally {
         setUploadLoading(false);
     }
+  };
+
+  const handlePreview = (e) => {
+    e.stopPropagation(); 
+    setPreviewImage(imageUrl);
+    setPreviewOpen(true);
+  };
+
+  const handleRemoveImage = (e) => {
+    e.stopPropagation(); 
+    setImageUrl(null);
+    form.setFieldsValue({ logo: '' });
   };
 
   const beforeUpload = (file) => {
@@ -272,17 +285,31 @@ const CreateDeveloper = () => {
       width: 250,
       render: (text, record) => (
         <Space>
+          {/* LOGIC UPDATE:
+             - Agar Logo hai: Image show karo.
+             - Agar Logo nahi hai: Name ka First Letter (Capitalized) show karo.
+          */}
           <Avatar 
             shape="square"
             size={50}
             src={record.logo} 
-            icon={<UserOutlined />} 
+            // Removed icon={<UserOutlined />} so letter can show up
             style={{ 
                 backgroundColor: record.isVerifiedByAdmin ? THEME.success : THEME.primary,
                 borderRadius: '10px',
-                border: '1px solid #f0f0f0' 
+                border: '1px solid #f0f0f0',
+                fontSize: '24px', // Letter bada dikhane ke liye
+                fontWeight: 'bold',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
             }} 
-          />
+          >
+             {/* Fallback to First Letter if no logo */}
+             {record.logo ? null : record.name?.charAt(0).toUpperCase()}
+          </Avatar>
+
           <div>
             <Text strong style={{ fontSize: '15px' }}>{text}</Text>
             {record.isVerifiedByAdmin && (
@@ -477,7 +504,7 @@ const CreateDeveloper = () => {
 
           <Divider style={{ margin: '10px 0 20px 0' }} />
 
-          {/* SECTION 2: LOGO UPLOAD */}
+          {/* SECTION 2: LOGO UPLOAD (WITH HOVER PREVIEW/DELETE) */}
           <Text strong className="text-gray-500 block mb-3 uppercase text-xs">Developer Logo</Text>
           <Row gutter={16}>
              <Col span={24}>
@@ -493,9 +520,25 @@ const CreateDeveloper = () => {
                         showUploadList={false}
                         customRequest={handleImageUpload}
                         beforeUpload={beforeUpload}
+                        disabled={uploadLoading}
                      >
                         {imageUrl ? (
-                           <img src={imageUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                           <div className="relative w-full h-full group overflow-hidden rounded-lg">
+                              {/* Main Image */}
+                              <img src={imageUrl} alt="logo" className="w-full h-full object-contain" />
+                              
+                              {/* Hover Overlay with Eye & Trash Icons */}
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                 <EyeOutlined 
+                                    className="text-white text-lg hover:text-blue-400 cursor-pointer" 
+                                    onClick={handlePreview} 
+                                 />
+                                 <DeleteOutlined 
+                                    className="text-white text-lg hover:text-red-400 cursor-pointer" 
+                                    onClick={handleRemoveImage} 
+                                 />
+                              </div>
+                           </div>
                         ) : (
                            uploadButton
                         )}
@@ -506,7 +549,7 @@ const CreateDeveloper = () => {
 
           <Divider style={{ margin: '10px 0 20px 0' }} />
 
-          {/* SECTION 3: CONTACT & LOCATION (UPDATED STRICT VALIDATION) */}
+          {/* SECTION 3: CONTACT & LOCATION */}
           <Text strong className="text-gray-500 block mb-3 uppercase text-xs">Contact & Location</Text>
           <Row gutter={16}>
             
@@ -522,7 +565,6 @@ const CreateDeveloper = () => {
               </Form.Item>
             </Col>
 
-            {/* Strict Validation & Dynamic MaxLength */}
             <Col xs={16} md={17}>
               <Form.Item 
                 noStyle 
@@ -533,7 +575,6 @@ const CreateDeveloper = () => {
                    let maxLen = 15;
                    let placeholder = "Mobile Number";
 
-                   // Define constraints based on country
                    if (code === '+971') { maxLen = 9; placeholder = "50xxxxxxx (9 digits)"; }
                    if (code === '+91') { maxLen = 10; placeholder = "98xxxxxxxx (10 digits)"; }
 
@@ -542,27 +583,23 @@ const CreateDeveloper = () => {
                         name="phone_number" 
                         label="Phone Number" 
                         rules={[
-                          { required: true, message: 'Phone number is required' },
+                          { required: false, message: 'Phone number is required' },
                           {
                             validator: (_, value) => {
                               if (!value) return Promise.resolve();
                               
                               if (code === '+971') {
-                                // Exactly 9 digits
                                 if (!/^\d{9}$/.test(value)) {
                                   return Promise.reject(new Error('UAE number must be exactly 9 digits'));
                                 }
-                                // Optional: Ensure it starts with 5 (common for UAE mobile)
                                 if (!value.startsWith('5')) {
                                    return Promise.reject(new Error('UAE mobile usually starts with 5'));
                                 }
                               } else if (code === '+91') {
-                                // Exactly 10 digits
                                 if (!/^\d{10}$/.test(value)) {
                                   return Promise.reject(new Error('India number must be exactly 10 digits'));
                                 }
                               } else {
-                                // Generic
                                 if (!/^\d{7,15}$/.test(value)) {
                                    return Promise.reject(new Error('Invalid phone format'));
                                 }
@@ -574,12 +611,11 @@ const CreateDeveloper = () => {
                      >
                         <Input 
                           prefix={<PhoneOutlined />} 
-                          type="number" // Restricts keyboard to numbers
-                          maxLength={maxLen} // Prevents typing more characters
+                          type="number" 
+                          maxLength={maxLen} 
                           placeholder={placeholder}
                           style={{ width: '100%' }}
                           onInput={(e) => {
-                             // Force constraint on type="number" which sometimes ignores maxLength
                              if (e.target.value.length > maxLen) {
                                 e.target.value = e.target.value.slice(0, maxLen);
                              }
@@ -638,6 +674,17 @@ const CreateDeveloper = () => {
             </Button>
           </div>
         </Form>
+      </Modal>
+
+      {/* --- PREVIEW MODAL --- */}
+      <Modal 
+        open={previewOpen} 
+        title="Logo Preview" 
+        footer={null} 
+        onCancel={() => setPreviewOpen(false)}
+        centered
+      >
+        <img alt="logo-preview" style={{ width: '100%' }} src={previewImage} />
       </Modal>
     </div>
   );
