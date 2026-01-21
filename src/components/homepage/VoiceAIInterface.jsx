@@ -126,7 +126,7 @@ const styles = {
   container: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#ffffff", 
     color: "#333",
     fontFamily: "'Inter', sans-serif",
     display: "flex",
