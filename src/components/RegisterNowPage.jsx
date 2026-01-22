@@ -1,26 +1,25 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { User, Mail, Phone, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Form, Input, Select, Button, message, notification } from "antd"; // notification add kiya
+import { Form, Input, Select, Button, message, notification } from "antd";
 import { apiService } from "../manageApi/utils/custom.apiservice";
 import { AuthContext } from "../manageApi/context/AuthContext";
+import { Country } from "country-state-city"; // Import Library
 
 const { Option } = Select;
 
-/* ================= COUNTRY CONFIG ================= */
-
-const COUNTRY_PHONE_RULES = {
-  "+91": { label: "India", digits: 10 },
-  "+971": { label: "UAE", digits: 9 },
-  "+966": { label: "Saudi Arabia", digits: 9 },
-  "+1": { label: "USA / Canada", digits: 10 },
+/* ================= PHONE RULES ================= */
+// Define strict length rules by ISO Code
+const PHONE_LENGTH_RULES = {
+  "AE": 9,  // UAE
+  "IN": 10, // India
+  "SA": 9,  // Saudi Arabia
+  "US": 10, // USA
+  "CA": 10, // Canada
+  "GB": 10, // UK
+  "AU": 9,  // Australia
 };
-
-const countryCodes = Object.keys(COUNTRY_PHONE_RULES).map((code) => ({
-  value: code,
-  label: `${code} ${COUNTRY_PHONE_RULES[code].label}`,
-}));
 
 /* ================= COMPONENT ================= */
 
@@ -35,24 +34,47 @@ const RegisterNowPage = () => {
     formState: { errors },
   } = useForm({ mode: "onBlur" });
 
-  const [countryCode, setCountryCode] = useState("+971");
+  // Default to UAE (AE)
+  const [countryIso, setCountryIso] = useState("AE"); 
   const [mobileNumber, setMobileNumber] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Memoized Country Data
+  const countryOptions = useMemo(() => {
+    const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"];
+    return Country.getAllCountries().map((country) => ({
+      name: country.name,
+      code: country.phonecode,
+      iso: country.isoCode,
+    })).sort((a, b) => {
+      const aPriority = priorityIsoCodes.includes(a.iso);
+      const bPriority = priorityIsoCodes.includes(b.iso);
+      if (aPriority && !bPriority) return -1;
+      if (!aPriority && bPriority) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, []);
 
   /* ================= SUBMIT ================= */
 
   const onSubmit = async (data) => {
-    const requiredDigits = COUNTRY_PHONE_RULES[countryCode].digits;
+    // 1. Get required length based on selected ISO
+    const requiredDigits = PHONE_LENGTH_RULES[countryIso] || 10; 
 
+    // 2. Strict Length Validation
     if (mobileNumber.length !== requiredDigits) {
-      return message.error(
-        `Please enter a valid ${requiredDigits}-digit mobile number`
-      );
+        // Get country name for error message
+        const cName = countryOptions.find(c => c.iso === countryIso)?.name || "Selected Country";
+        return message.error(`${cName} numbers must be exactly ${requiredDigits} digits`);
     }
 
     if (data.password !== data.confirmPassword) {
       return message.error("Passwords do not match");
     }
+
+    // Get phone code from ISO
+    const selectedCountryData = Country.getCountryByCode(countryIso);
+    const finalCountryCode = selectedCountryData ? `+${selectedCountryData.phonecode}` : "+971";
 
     const signupPayload = {
       name: {
@@ -63,7 +85,7 @@ const RegisterNowPage = () => {
       password: data.password,
       confirm_password: data.confirmPassword,
       mobile: {
-        country_code: countryCode,
+        country_code: finalCountryCode,
         number: String(mobileNumber),
       },
       comingFromAiPage: true,
@@ -78,7 +100,7 @@ const RegisterNowPage = () => {
       // 2️⃣ AUTO LOGIN (AuthContext)
       await login("/users/login/customer", {
         mobile: {
-          country_code: countryCode,
+          country_code: finalCountryCode,
           number: String(mobileNumber),
         },
       });
@@ -102,11 +124,9 @@ const RegisterNowPage = () => {
 
         // --- 2. Map ALL errors to fields (Red Border) ---
         apiError.errors.forEach((errObj) => {
-          // Logic to extract simple field name (e.g., "name.first_name" -> "first_name")
           const parts = errObj.field?.split(".");
           let fieldName = parts?.length > 1 ? parts[parts.length - 1] : parts?.[0];
 
-          // Edge Case: Backend "mobile.number" sends "number", but frontend expects "mobileNumber"
           if (fieldName === "number" || errObj.field === "mobile.number") {
             fieldName = "mobileNumber";
           }
@@ -245,26 +265,43 @@ const RegisterNowPage = () => {
               />
             </Form.Item>
 
-            {/* MOBILE */}
+            {/* MOBILE WITH DYNAMIC COUNTRY & FLAGS */}
             <Form.Item
-              label={`Mobile Number (${COUNTRY_PHONE_RULES[countryCode].digits} digits)`}
+              label={`Mobile Number (${PHONE_LENGTH_RULES[countryIso] || 15} digits)`}
               required
               validateStatus={errors.mobileNumber && "error"}
               help={errors.mobileNumber?.message}
             >
               <div className="flex gap-3">
+                {/* Antd Select with Flags */}
                 <Select
                   size="large"
-                  value={countryCode}
+                  value={countryIso}
                   onChange={(val) => {
-                    setCountryCode(val);
-                    setMobileNumber("");
+                    setCountryIso(val);
+                    setMobileNumber(""); // Clear number on country change
                   }}
-                  className="w-[150px]"
+                  className="w-[140px] custom-select-register"
+                  showSearch
+                  optionFilterProp="children"
+                  filterOption={(input, option) => 
+                    option.children.props?.children[1]?.props?.children[1]?.toLowerCase().includes(input.toLowerCase()) || 
+                    option.value.includes(input)
+                  }
+                  dropdownMatchSelectWidth={300}
                 >
-                  {countryCodes.map((c) => (
-                    <Option key={c.value} value={c.value}>
-                      {c.label}
+                  {countryOptions.map((item) => (
+                    <Option key={item.iso} value={item.iso}>
+                      <div className="flex items-center">
+                        <img 
+                          src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`} 
+                          srcSet={`https://flagcdn.com/w40/${item.iso.toLowerCase()}.png 2x`} 
+                          width="20" 
+                          alt={item.name} 
+                          style={{ marginRight: 8, borderRadius: 2, objectFit: 'cover' }} 
+                        />
+                        <span>+{item.code}</span>
+                      </div>
                     </Option>
                   ))}
                 </Select>
@@ -277,8 +314,8 @@ const RegisterNowPage = () => {
                   onChange={(e) =>
                     setMobileNumber(e.target.value.replace(/\D/g, ""))
                   }
-                  placeholder={`Enter ${COUNTRY_PHONE_RULES[countryCode].digits}-digit number`}
-                  maxLength={COUNTRY_PHONE_RULES[countryCode].digits}
+                  placeholder={`Enter digits`}
+                  maxLength={PHONE_LENGTH_RULES[countryIso] || 15}
                 />
               </div>
             </Form.Item>
@@ -321,7 +358,6 @@ const RegisterNowPage = () => {
             {/* CTA */}
             <div className="pt-4">
               <Button
-                // type="primary"
                 htmlType="submit"
                 loading={loading}
                 block
@@ -346,6 +382,16 @@ const RegisterNowPage = () => {
           </Form>
         </div>
       </div>
+
+      {/* Styles for Antd Select */}
+      <style jsx global>{`
+        .custom-select-register .ant-select-selector {
+          border-radius: 0.5rem !important; 
+          height: 40px !important;
+          display: flex !important;
+          align-items: center !important;
+        }
+      `}</style>
     </div>
   );
 };
