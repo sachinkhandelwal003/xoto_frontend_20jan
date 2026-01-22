@@ -35,14 +35,51 @@ export default function Consultation() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // ... inside your Consultation component
+
   const handleCountryCode = (value) => {
-    setFormData((prev) => ({ ...prev, country_code: value }));
+    // We update the code and also trim the existing number 
+    // in case the new country allows fewer digits
+    const lengthMap = {
+      "+91": 10, "+971": 9, "+966": 9, "+1": 10, "+44": 10, "+61": 9
+    };
+    const limit = lengthMap[value] || 15;
+    
+    setFormData((prev) => ({ 
+      ...prev, 
+      country_code: value,
+      number: prev.number.slice(0, limit) // Auto-trim on country change
+    }));
   };
 
   const handleNumber = (e) => {
-    const value = e.target.value.replace(/\D/g, "").slice(0, 15);
-    setFormData((prev) => ({ ...prev, number: value }));
+    // 1. Get numbers only
+    const value = e.target.value.replace(/\D/g, "");
+
+    // 2. Define strict limits per country code
+    const lengthMap = {
+      "+91": 10,   // India
+      "+971": 9,    // UAE
+      "+966": 9,    // KSA
+      "+1": 10,     // US
+      "+44": 10,    // UK
+      "+61": 9      // AU
+    };
+
+    // 3. Look up the limit using formData.country_code
+    // We use your state key "country_code"
+    const maxLength = lengthMap[formData.country_code] || 15;
+
+    // 4. Slice the input strictly
+    const validatedValue = value.slice(0, maxLength);
+
+    setFormData((prev) => ({ 
+      ...prev, 
+      number: validatedValue 
+    }));
   };
+
+// ... rest of your code stays exactly the same
 
   const openNotification = (type, title, description) => {
     api[type]({

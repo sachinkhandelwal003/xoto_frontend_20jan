@@ -43,7 +43,11 @@ export default function HeroSection() {
     desired_bedrooms: "",
     preferred_contact: "whatsapp",
   });
-
+const lengthMap = {
+    "+971": 9,  // UAE
+    "+91": 10,  // India
+    "+7": 10,   // Russia (Standard mobile is 10)
+  };
   const [sellForm, setSellForm] = useState({
     first_name: "",
     last_name: "",
@@ -65,11 +69,21 @@ export default function HeroSection() {
     setOpenModal(true);
   };
 
-  const handleBuyChange = (e) => {
+ const handleBuyChange = (e) => {
     const { name, value } = e.target;
     if (name === "mobile") {
       const numericValue = value.replace(/\D/g, "");
-      setBuyForm((prev) => ({ ...prev, [name]: numericValue }));
+      // Get limit based on current country_code in buyForm
+      const limit = lengthMap[buyForm.country_code] || 15;
+      setBuyForm((prev) => ({ ...prev, [name]: numericValue.slice(0, limit) }));
+    } else if (name === "country_code") {
+      // When country changes, trim the existing number if it's too long
+      const newLimit = lengthMap[value] || 15;
+      setBuyForm((prev) => ({ 
+        ...prev, 
+        [name]: value, 
+        mobile: prev.mobile.slice(0, newLimit) 
+      }));
     } else {
       setBuyForm((prev) => ({ ...prev, [name]: value }));
     }
@@ -79,7 +93,17 @@ export default function HeroSection() {
     const { name, value } = e.target;
     if (name === "mobile") {
       const numericValue = value.replace(/\D/g, "");
-      setSellForm((prev) => ({ ...prev, [name]: numericValue }));
+      // Get limit based on current country_code in sellForm
+      const limit = lengthMap[sellForm.country_code] || 15;
+      setSellForm((prev) => ({ ...prev, [name]: numericValue.slice(0, limit) }));
+    } else if (name === "country_code") {
+      // When country changes, trim the existing number if it's too long
+      const newLimit = lengthMap[value] || 15;
+      setSellForm((prev) => ({ 
+        ...prev, 
+        [name]: value, 
+        mobile: prev.mobile.slice(0, newLimit) 
+      }));
     } else {
       setSellForm((prev) => ({ ...prev, [name]: value }));
     }
