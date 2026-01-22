@@ -1,14 +1,12 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useMemo } from "react";
 import {
   Sparkles,
-  X,
   User,
   Mail,
   Lock,
-  ArrowRight,
   CheckCircle2,
-  MapPin,
   Smartphone,
+  MapPin, 
 } from "lucide-react";
 import {
   Button,
@@ -20,22 +18,23 @@ import {
   ConfigProvider,
   Typography,
 } from "antd";
+import { Country, State, City } from "country-state-city";
 import { AuthContext } from "../../manageApi/context/AuthContext";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
 
 const { Option } = Select;
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
 const BRAND_PURPLE = "#5C039B";
 const BRAND_PURPLE_DARK = "#4a027d";
 
-/* ================= PHONE RULES ================= */
-const PHONE_RULES = {
-  "+971": { digits: 9, country: "UAE" },
-  "+91": { digits: 10, country: "India" },
-  "+1": { digits: 10, country: "USA" },
-  "+44": { digits: 10, country: "UK" },
-  "+966": { digits: 9, country: "Saudi Arabia" },
+const PHONE_LENGTH_RULES = {
+  "971": 9,  // UAE
+  "91": 10,  // India
+  "1": 10,   // USA
+  "44": 10,  // UK
+  "966": 9,  // Saudi
+  "61": 9,   // Australia
 };
 
 const LeadGenerationModal = ({
@@ -50,32 +49,86 @@ const LeadGenerationModal = ({
 
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [countryCode, setCountryCode] = useState("+971");
+  const [countryCode, setCountryCode] = useState("971");
 
-  /* ================= COUNTRY SELECT ================= */
+  // Location States
+  const [countriesList] = useState(Country.getAllCountries());
+  const [statesList, setStatesList] = useState([]);
+  const [citiesList, setCitiesList] = useState([]);
+
+  /* ================= PREPARE MOBILE CODES DATA ================= */
+  const phoneCodesData = useMemo(() => {
+    const priorityIsoCodes = ["AE", "IN", "US", "GB", "SA"]; 
+    
+    return Country.getAllCountries().map((country) => ({
+      name: country.name,
+      code: country.phonecode,
+      iso: country.isoCode,
+      // Note: Hum flag emoji nahi, ab image use karenge render ke time
+    })).sort((a, b) => {
+      const aPriority = priorityIsoCodes.includes(a.iso);
+      const bPriority = priorityIsoCodes.includes(b.iso);
+      if (aPriority && !bPriority) return -1;
+      if (!aPriority && bPriority) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, []);
+
+  /* ================= HANDLERS ================= */
+  const handleLocationCountryChange = (isoCode) => {
+    const updatedStates = State.getStatesOfCountry(isoCode);
+    setStatesList(updatedStates);
+    setCitiesList([]);
+    form.setFieldsValue({ state: undefined, city: undefined });
+  };
+
+  const handleLocationStateChange = (stateCode) => {
+    const countryCodeVal = form.getFieldValue("location_country");
+    const updatedCities = City.getCitiesOfState(countryCodeVal, stateCode);
+    setCitiesList(updatedCities);
+    form.setFieldsValue({ city: undefined });
+  };
+
+  /* ================= 🔴 UPDATED PREFIX SELECTOR (WITH IMAGES) ================= */
   const prefixSelector = (
-    <Form.Item name="country_code" noStyle>
+    <Form.Item name="country_code" noStyle initialValue="971">
       <Select
-        value={countryCode}
-        style={{ width: 100 }}
+        style={{ width: 110 }}
         bordered={false}
-        dropdownMatchSelectWidth={false}
-        className="font-medium text-gray-700"
+        showSearch
+        dropdownMatchSelectWidth={320}
+        optionFilterProp="children"
         onChange={(val) => {
           setCountryCode(val);
           form.setFieldsValue({ mobile: "" });
+          form.validateFields(['mobile']);
         }}
+        filterOption={(input, option) => 
+          // Search by Name or Code
+          option.children[1]?.props?.children[1]?.toLowerCase().includes(input.toLowerCase()) || 
+          option.value.includes(input)
+        }
       >
-        <Option value="+971">🇦🇪 +971</Option>
-        <Option value="+91">🇮🇳 +91</Option>
-        <Option value="+1">🇺🇸 +1</Option>
-        <Option value="+44">🇬🇧 +44</Option>
-        <Option value="+966">🇸🇦 +966</Option>
+        {phoneCodesData.map((item) => (
+          <Option key={item.iso} value={item.code}>
+            <div className="flex items-center">
+              {/* Flag Image from CDN */}
+              <img 
+                src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`} 
+                srcSet={`https://flagcdn.com/w40/${item.iso.toLowerCase()}.png 2x`}
+                width="20" 
+                alt={item.name} 
+                style={{ marginRight: 8, borderRadius: 2, objectFit: 'cover' }}
+              />
+              <span>+{item.code}</span>
+            </div>
+          </Option>
+        ))}
       </Select>
     </Form.Item>
   );
 
-  /* ================= SUBMIT ================= */
+  /* ================= SUBMIT HANDLER ================= */
   const handleSubmit = async (values) => {
     setIsSubmitting(true);
 
@@ -85,105 +138,60 @@ const LeadGenerationModal = ({
         number: values.mobile.toString(),
       };
 
-      /* ---------- SIGN IN ---------- */
       if (activeTab === "signin") {
-        const loginData = await login("/users/login/customer", {
-          mobile: mobilePayload,
-        });
-
+        const loginData = await login("/users/login/customer", { mobile: mobilePayload });
         onAuthSuccess?.(loginData);
         onCancel();
-      }
+      } else {
+        const selectedCountryData = Country.getCountryByCode(values.location_country);
+        const countryName = selectedCountryData ? selectedCountryData.name : "";
+        const selectedStateData = State.getStateByCodeAndCountry(values.state, values.location_country);
+        const stateName = selectedStateData ? selectedStateData.name : values.state;
 
-      /* ---------- SIGN UP ---------- */
-      else {
         const payload = {
-          name: {
-            first_name: values.first_name,
-            last_name: values.last_name,
-          },
+          name: { first_name: values.first_name, last_name: values.last_name },
           email: values.email,
           comingFromAiPage: true,
           mobile: mobilePayload,
-          location: {
-            country: PHONE_RULES[values.country_code].country,
-            state: values.state,
-            city: values.city,
-            address: "",
-          },
+          location: { country: countryName, state: stateName, city: values.city, address: "" },
         };
 
-        const response = await apiService.post(
-          "/users/signup/customer",
-          payload
-        );
+        const response = await apiService.post("/users/signup/customer", payload);
 
         if (response?.success) {
-          notification.success({
-            message: "Account Created",
-            description: "Logging you in automatically...",
-          });
-
-          const loginData = await login("/users/login/customer", {
-            mobile: mobilePayload,
-          });
-
+          notification.success({ message: "Account Created", description: "Logging you in..." });
+          const loginData = await login("/users/login/customer", { mobile: mobilePayload });
           onAuthSuccess?.(loginData);
           onCancel();
           form.resetFields();
         }
       }
     } catch (error) {
-  const data = error?.response?.data;
-
-  // Case 1: validation errors array exists
-  if (Array.isArray(data?.errors)) {
-  const fieldErrors = {};
-  data.errors.forEach(err => {
-    const field = err.field?.split(".")[0]; // mobile.number → mobile
-    fieldErrors[field] = err.message;
-  });
-
-  form.setFields(
-    Object.entries(fieldErrors).map(([name, message]) => ({
-      name,
-      errors: [message],
-    }))
-  );
-  return;
-}
-// 2️⃣ SIGN IN → show error BELOW mobile input
-if (activeTab === "signin") {
-  form.setFields([
-    {
-      name: "mobile",
-      errors: [data?.message || "Mobile number not recognized"],
-    },
-  ]);
-  return;
-}
-
-
-  // Case 2: fallback
-  notification.error({
-    message: "Authentication Failed",
-    description: data?.message || "Something went wrong",
-  });
-}
- finally {
+        // Error Handling Same as before
+        const data = error?.response?.data;
+        if (Array.isArray(data?.errors) && data.errors.length > 0) {
+            const fieldErrors = data.errors.map((err) => {
+                const parts = err.field?.split(".");
+                const fieldName = parts?.length > 1 ? parts[parts.length - 1] : parts?.[0];
+                return { name: fieldName, errors: [err.message] };
+            });
+            form.setFields(fieldErrors);
+        } else if (activeTab === "signin") {
+            form.setFields([{ name: "mobile", errors: [data?.message || "Error"] }]);
+        } else {
+            notification.error({ message: "Failed", description: data?.message || "Error" });
+        }
+    } finally {
       setIsSubmitting(false);
     }
   };
 
+  const getRequiredLength = () => PHONE_LENGTH_RULES[countryCode] || 15;
+
   return (
     <ConfigProvider
       theme={{
-        token: {
-          colorPrimary: BRAND_PURPLE,
-          borderRadius: 12,
-          controlHeight: 45,
-          fontFamily: "'Inter', sans-serif",
-        },
+        token: { colorPrimary: BRAND_PURPLE, borderRadius: 12, controlHeight: 45, fontFamily: "'Inter', sans-serif" },
       }}
     >
       <Modal
@@ -193,121 +201,42 @@ if (activeTab === "signin") {
         width={fullscreen ? "100vw" : 1000}
         centered={!fullscreen}
         closable={!fullscreen}
-        bodyStyle={{
-          padding: 0,
-          borderRadius: fullscreen ? 0 : "24px",
-          height: fullscreen ? "100vh" : "auto",
-          overflow: "hidden",
-        }}
-        maskStyle={{
-          backdropFilter: "blur(8px)",
-          background: "rgba(0,0,0,0.6)",
-        }}
+        bodyStyle={{ padding: 0, borderRadius: fullscreen ? 0 : "24px", height: fullscreen ? "100vh" : "auto", overflow: "hidden" }}
+        maskStyle={{ backdropFilter: "blur(8px)", background: "rgba(0,0,0,0.6)" }}
       >
         <div className="flex flex-col lg:flex-row min-h-[600px] bg-white">
-          {/* ================= LEFT PANEL ================= */}
+          
+          {/* Left Panel */}
           <div className="lg:w-5/12 relative hidden lg:flex flex-col justify-between p-10 text-white overflow-hidden bg-gray-900">
             <div className="absolute inset-0 z-0">
-              <img
-                src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop"
-                alt="bg"
-                className="w-full h-full object-cover opacity-60"
-              />
+              <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop" alt="bg" className="w-full h-full object-cover opacity-60" />
               <div className="absolute inset-0 bg-gradient-to-br from-purple-900/90 to-black/80" />
             </div>
-
             <div className="relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 mb-8">
-                <Sparkles className="text-purple-300 w-7 h-7" />
-              </div>
-
-              <h2 className="text-4xl font-extrabold mb-4">
-                Design Your <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-pink-200">
-                  Dream Space
-                </span>
-              </h2>
-
-              <p className="text-purple-100/80">
-                AI-powered landscape design in seconds.
-              </p>
-            </div>
-
-            <div className="relative z-10 space-y-4">
-              {[
-                "Unlimited AI Generations",
-                "High-Resolution Downloads",
-                "Save Your Designs",
-              ].map((item) => (
-                <div key={item} className="flex items-center gap-3">
-                  <CheckCircle2 className="text-green-400" size={16} />
-                  <span>{item}</span>
-                </div>
-              ))}
+              <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 mb-8"><Sparkles className="text-purple-300 w-7 h-7" /></div>
+              <h2 className="text-4xl font-extrabold mb-4">Design Your <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-pink-200">Dream Space</span></h2>
+              <p className="text-purple-100/80">AI-powered landscape design in seconds.</p>
             </div>
           </div>
 
-          {/* ================= RIGHT PANEL ================= */}
+          {/* Right Panel */}
           <div className="lg:w-7/12 p-8 lg:p-12 relative">
-            {/* <button
-              onClick={onCancel}
-              className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-700"
-            >
-              <X />
-            </button> */}
+            <Title level={2}>{activeTab === "signin" ? "Welcome Back" : "Create Account"}</Title>
 
-            <Title level={2}>
-              {activeTab === "signin" ? "Welcome Back" : "Create Account"}
-            </Title>
-
-            {/* Tabs */}
             <div className="flex p-1.5 bg-gray-100 rounded-xl my-6">
-              <button
-                onClick={() => {
-                  setActiveTab("signin");
-                  form.resetFields();
-                }}
-                className={`flex-1 py-3 rounded-lg ${
-                  activeTab === "signin" && "bg-white shadow"
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("signup");
-                  form.resetFields();
-                }}
-                className={`flex-1 py-3 rounded-lg ${
-                  activeTab === "signup" && "bg-white shadow"
-                }`}
-              >
-                Create Account
-              </button>
+              <button onClick={() => { setActiveTab("signin"); form.resetFields(); }} className={`flex-1 py-3 rounded-lg ${activeTab === "signin" && "bg-white shadow"}`}>Sign In</button>
+              <button onClick={() => { setActiveTab("signup"); form.resetFields(); }} className={`flex-1 py-3 rounded-lg ${activeTab === "signup" && "bg-white shadow"}`}>Create Account</button>
             </div>
 
-            <Form
-              form={form}
-              layout="vertical"
-              initialValues={{ country_code: "+971" }}
-              onFinish={handleSubmit}
-            >
+            <Form form={form} layout="vertical" initialValues={{ country_code: "971" }} onFinish={handleSubmit}>
+              
               {activeTab === "signup" && (
                 <>
-                  <Form.Item name="first_name" rules={[{ required: true }]}>
-                    <Input prefix={<User />} placeholder="First Name" />
-                  </Form.Item>
-
-                  <Form.Item name="last_name" rules={[{ required: true }]}>
-                    <Input placeholder="Last Name" />
-                  </Form.Item>
-
-                  <Form.Item
-                    name="email"
-                    rules={[{ required: true, type: "email" }]}
-                  >
-                    <Input prefix={<Mail />} placeholder="Email" />
-                  </Form.Item>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Form.Item name="first_name" rules={[{ required: true, message: 'Required' }]}><Input prefix={<User size={18} className="text-gray-400"/>} placeholder="First Name" /></Form.Item>
+                    <Form.Item name="last_name" rules={[{ required: true, message: 'Required' }]}><Input placeholder="Last Name" /></Form.Item>
+                  </div>
+                  <Form.Item name="email" rules={[{ required: true, type: "email", message: 'Invalid Email' }]}><Input prefix={<Mail size={18} className="text-gray-400"/>} placeholder="Email" /></Form.Item>
                 </>
               )}
 
@@ -315,56 +244,56 @@ if (activeTab === "signin") {
                 label="Mobile Number"
                 name="mobile"
                 rules={[
-                  { required: true },
-                  {
-                    pattern: new RegExp(
-                      `^[0-9]{${PHONE_RULES[countryCode].digits}}$`
-                    ),
-                    message: `Enter ${PHONE_RULES[countryCode].digits} digit number`,
-                  },
+                  { required: true, message: 'Required' },
+                  () => ({
+                    validator(_, value) {
+                      if (!value) return Promise.resolve();
+                      const exactLength = PHONE_LENGTH_RULES[countryCode];
+                      if (exactLength) {
+                        if (value.length !== exactLength) return Promise.reject(new Error(`Enter exactly ${exactLength} digits`));
+                        return Promise.resolve();
+                      }
+                      if (value.length < 7 || value.length > 15) return Promise.reject(new Error("7-15 digits required"));
+                      return Promise.resolve();
+                    },
+                  }),
                 ]}
               >
                 <Input
                   addonBefore={prefixSelector}
-                  prefix={<Smartphone />}
-                  maxLength={PHONE_RULES[countryCode].digits}
-                  onChange={(e) =>
-                    form.setFieldsValue({
-                      mobile: e.target.value.replace(/\D/g, ""),
-                    })
-                  }
+                  prefix={<Smartphone size={18} className="text-gray-400"/>}
+                  maxLength={getRequiredLength()}
+                  placeholder="50 123 4567"
+                  onChange={(e) => form.setFieldsValue({ mobile: e.target.value.replace(/\D/g, "") })}
                 />
               </Form.Item>
 
               {activeTab === "signup" && (
                 <>
-                  <Form.Item name="state" rules={[{ required: true }]}>
-                    <Input prefix={<MapPin />} placeholder="State / Emirate" />
+                  <Form.Item name="location_country" rules={[{ required: true, message: "Required" }]}>
+                    <Select placeholder="Select Country" showSearch optionFilterProp="children" onChange={handleLocationCountryChange} filterOption={(input, option) => option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}>
+                      {countriesList.map((country) => (
+                        <Option key={country.isoCode} value={country.isoCode}>{country.name}</Option>
+                      ))}
+                    </Select>
                   </Form.Item>
-
-                  <Form.Item name="city" rules={[{ required: true }]}>
-                    <Input placeholder="City" />
-                  </Form.Item>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Form.Item name="state" rules={[{ required: true, message: "Required" }]}>
+                      <Select placeholder="State" showSearch optionFilterProp="children" onChange={handleLocationStateChange} disabled={!statesList.length} filterOption={(input, option) => option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}>
+                        {statesList.map((state) => <Option key={state.isoCode} value={state.isoCode}>{state.name}</Option>)}
+                      </Select>
+                    </Form.Item>
+                    <Form.Item name="city" rules={[{ required: true, message: "Required" }]}>
+                      <Select placeholder="City" showSearch optionFilterProp="children" disabled={!citiesList.length} filterOption={(input, option) => option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}>
+                        {citiesList.map((city) => <Option key={city.name} value={city.name}>{city.name}</Option>)}
+                      </Select>
+                    </Form.Item>
+                  </div>
                 </>
               )}
 
-              <Button
-                type="primary"
-                htmlType="submit"
-                block
-                loading={isSubmitting}
-                className="h-14 mt-4"
-                style={{
-                  background: `linear-gradient(135deg, ${BRAND_PURPLE}, ${BRAND_PURPLE_DARK})`,
-                  border: "none",
-                }}
-              >
-                {activeTab === "signin" ? "Sign In" : "Create Account"}
-              </Button>
-
-              <div className="mt-4 text-xs text-gray-400 flex items-center justify-center gap-1">
-                <Lock size={12} /> 256-bit SSL Encrypted
-              </div>
+              <Button type="primary" htmlType="submit" block loading={isSubmitting} className="h-14 mt-4" style={{ background: `linear-gradient(135deg, ${BRAND_PURPLE}, ${BRAND_PURPLE_DARK})`, border: "none" }}>{activeTab === "signin" ? "Sign In" : "Create Account"}</Button>
+              <div className="mt-4 text-xs text-gray-400 flex items-center justify-center gap-1"><Lock size={12} /> 256-bit SSL Encrypted</div>
             </Form>
           </div>
         </div>

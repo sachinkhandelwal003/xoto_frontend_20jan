@@ -34,7 +34,7 @@
       "label": "Stakeholder",
       "select": "Select stakeholder type",
       "business": "Business Associate",
-      "execution": "Execution Partner",
+      "execution": "Execution Partners",
       "developer": "Developer",
       "investor": "Investor"
     },

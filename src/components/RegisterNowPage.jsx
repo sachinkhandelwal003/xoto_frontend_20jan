@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { User, Mail, Phone, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Form, Input, Select, Button, message } from "antd";
+import { Form, Input, Select, Button, message, notification } from "antd"; // notification add kiya
 import { apiService } from "../manageApi/utils/custom.apiservice";
 import { AuthContext } from "../manageApi/context/AuthContext";
 
@@ -90,12 +90,25 @@ const RegisterNowPage = () => {
       const apiError = err?.response?.data;
 
       // Handle structured validation errors from backend
-      if (apiError?.errors && Array.isArray(apiError.errors)) {
+      if (apiError?.errors && Array.isArray(apiError.errors) && apiError.errors.length > 0) {
+        
+        // --- 1. Show ONLY the 0 index error in Toast ---
+        const firstError = apiError.errors[0];
+        notification.error({
+          message: "Validation Failed",
+          description: firstError.message,
+          duration: 4,
+        });
+
+        // --- 2. Map ALL errors to fields (Red Border) ---
         apiError.errors.forEach((errObj) => {
-          let fieldName = errObj.field;
-          
-          if (fieldName === "mobile.number") {
-            fieldName = "mobileNumber"; 
+          // Logic to extract simple field name (e.g., "name.first_name" -> "first_name")
+          const parts = errObj.field?.split(".");
+          let fieldName = parts?.length > 1 ? parts[parts.length - 1] : parts?.[0];
+
+          // Edge Case: Backend "mobile.number" sends "number", but frontend expects "mobileNumber"
+          if (fieldName === "number" || errObj.field === "mobile.number") {
+            fieldName = "mobileNumber";
           }
 
           setError(fieldName, {
@@ -106,6 +119,7 @@ const RegisterNowPage = () => {
         return; 
       }
 
+      // Check for account existence error
       if (
         apiError?.message?.toLowerCase().includes("already") ||
         apiError?.message?.toLowerCase().includes("exists")
@@ -115,10 +129,14 @@ const RegisterNowPage = () => {
         return;
       }
 
+      // Fallback Generic Error
       if (apiError?.message && apiError.message !== "Validation failed") {
-          message.error(apiError.message);
+          notification.error({
+            message: "Registration Failed",
+            description: apiError.message,
+          });
       } else if (!apiError?.errors) {
-          message.error("Registration failed");
+          message.error("Registration failed. Please try again.");
       }
       
     } finally {

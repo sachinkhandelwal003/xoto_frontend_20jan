@@ -16,10 +16,7 @@ import PersistLogin from "./manageApi/context/PersistLogin";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-// src/main.jsx mein
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
-import "./index.css"; // Tailwind v4 file
+
 // import i18n from "./components/herosection/i18n";
 
 // import "./i18n";

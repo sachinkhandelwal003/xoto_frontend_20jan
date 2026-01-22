@@ -306,6 +306,7 @@ const CreateDeveloper = () => {
                 justifyContent: 'center',
               height: '50px',
               width: '80px',
+              
             }} 
           >
              {/* Fallback to First Letter if no logo */}

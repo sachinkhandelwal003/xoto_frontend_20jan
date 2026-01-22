@@ -65,18 +65,3 @@ clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 
 
-@theme {
-  /* Agar koi custom colors ya fonts hain toh yahan dalien */
-  --color-brand-purple: #5C039B;
-}
-
-/* Slick Slider Error Fix */
-/* Agar Slick slider ke fonts nahi mil rahe, toh unhe disable ya path fix karein */
-.slick-loading .slick-list {
-    background: #fff url('/assets/ajax-loader.gif') center center no-repeat;
-}
-
-/* ENOENT error fix karne ke liye manually ye add karein agar icon missing hai */
-.slick-prev:before, .slick-next:before {
-    font-family: 'slick'; /* Ensure font path is correct in your public folder */
-}
