@@ -303,7 +303,9 @@ const CreateDeveloper = () => {
                 color: '#fff',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+              height: '50px',
+              width: '80px',
             }} 
           >
              {/* Fallback to First Letter if no logo */}
@@ -583,7 +585,7 @@ const CreateDeveloper = () => {
                         name="phone_number" 
                         label="Phone Number" 
                         rules={[
-                          { required: false, message: 'Phone number is required' },
+                          { required: false, message: 'Phone number is required'  },
                           {
                             validator: (_, value) => {
                               if (!value) return Promise.resolve();
@@ -593,7 +595,8 @@ const CreateDeveloper = () => {
                                   return Promise.reject(new Error('UAE number must be exactly 9 digits'));
                                 }
                                 if (!value.startsWith('5')) {
-                                   return Promise.reject(new Error('UAE mobile usually starts with 5'));
+                                   return Promise.reject(new Error('UAE  mobile usually starts with 5'));
+                                   
                                 }
                               } else if (code === '+91') {
                                 if (!/^\d{10}$/.test(value)) {
