@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Form,
   Input,
@@ -11,7 +11,8 @@ import {
   Checkbox,
   Typography,
   message,
-  Spin
+  Spin,
+  Space
 } from 'antd';
 import {
   UserOutlined,
@@ -25,6 +26,10 @@ import {
 } from '@ant-design/icons';
 import { useForm, Controller } from 'react-hook-form';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
+
+// --- NEW IMPORTS ---
+import CountryList from 'country-list-with-dial-code-and-flag';
+import { Country, State, City } from 'country-state-city';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -44,6 +49,8 @@ const SellerPage = () => {
     handleSubmit,
     trigger,
     setError,
+    watch,
+    setValue,
     formState: { errors }
   } = useForm({
     mode: 'onChange',
@@ -51,6 +58,50 @@ const SellerPage = () => {
       mobile: { country_code: '+971' }
     }
   });
+
+  // --- DYNAMIC DATA HOOKS ---
+  
+  // 1. Mobile Country Codes
+  const mobileCountryOptions = useMemo(() => CountryList.getAll().map(c => ({
+     value: c.dial_code,
+     label: `${c.flag} ${c.dial_code} (${c.code})`
+  })), []);
+
+  // 2. Location Cascading Logic
+  const watchStoreCountry = watch('store_details.country'); // Stores ISO Code (e.g., 'AE')
+  const watchStoreState = watch('store_details.state');     // Stores ISO Code (e.g., 'DU')
+
+  const locationCountries = useMemo(() => Country.getAllCountries().map(c => ({
+      label: `${c.flag} ${c.name}`,
+      value: c.isoCode
+  })), []);
+
+  const availableStates = useMemo(() => {
+      if (!watchStoreCountry) return [];
+      return State.getStatesOfCountry(watchStoreCountry).map(s => ({
+          label: s.name,
+          value: s.isoCode
+      }));
+  }, [watchStoreCountry]);
+
+  const availableCities = useMemo(() => {
+      if (!watchStoreCountry || !watchStoreState) return [];
+      return City.getCitiesOfState(watchStoreCountry, watchStoreState).map(c => ({
+          label: c.name,
+          value: c.name // Cities don't usually have ISOs in this lib, using name is safe
+      }));
+  }, [watchStoreCountry, watchStoreState]);
+
+  // Reset logic for location
+  useEffect(() => {
+      setValue('store_details.state', undefined);
+      setValue('store_details.city', undefined);
+  }, [watchStoreCountry, setValue]);
+
+  useEffect(() => {
+      setValue('store_details.city', undefined);
+  }, [watchStoreState, setValue]);
+
 
   const businessTypes = [
     { label: 'Individual / Sole Proprietor', value: 'Individual / Sole Proprietor' },
@@ -61,15 +112,6 @@ const SellerPage = () => {
     { label: 'Non-profit Organization', value: 'Non-profit Organization' }
   ];
 
-  const countries = [
-    { label: 'United Arab Emirates', value: 'United Arab Emirates' },
-    { label: 'India', value: 'India' },
-    { label: 'United States', value: 'United States' },
-    { label: 'United Kingdom', value: 'United Kingdom' },
-    { label: 'Canada', value: 'Canada' },
-    { label: 'Australia', value: 'Australia' }
-  ];
-
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -77,11 +119,12 @@ const SellerPage = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await apiService.get('/categories');
-      const categoryData = response.data || response;
-      if (categoryData.categories) {
-        const categoryOptions = categoryData.categories.map(category => ({
-          label: category.parent ? `${category.name} (${category.parent.name})` : category.name,
+      // Updated API Endpoint
+      const response = await apiService.get('/products/get-all-category?page=1&limit=200');
+      
+      if (response.success && Array.isArray(response.data)) {
+        const categoryOptions = response.data.map(category => ({
+          label: category.name,
           value: category._id
         }));
         setCategories(categoryOptions);
@@ -104,7 +147,7 @@ const SellerPage = () => {
     } else if (currentStep === 1) {
       fieldsToValidate = ['store_details.store_name', 'store_details.store_type', 'store_details.categories'];
     } else if (currentStep === 2) {
-      fieldsToValidate = ['registration.pan_number', 'store_details.store_address', 'store_details.city', 'store_details.country', 'store_details.pincode', 'meta.agreed_to_terms'];
+      fieldsToValidate = ['registration.pan_number', 'store_details.store_address', 'store_details.city', 'store_details.state', 'store_details.country', 'store_details.pincode', 'meta.agreed_to_terms'];
     }
 
     const result = await trigger(fieldsToValidate);
@@ -115,12 +158,14 @@ const SellerPage = () => {
 
   const handleBack = () => {
     if (currentStep === 0) {
-      // First step se back → browser history se previous page par le jao
       window.history.back();
     } else {
       setCurrentStep(prev => prev - 1);
     }
   };
+
+  const filterOption = (input, option) =>
+    (option?.label ?? '').toLowerCase().includes(input.toLowerCase());
 
   const onSubmit = async (data) => {
     if (data.password !== data.confirmPassword) {
@@ -131,12 +176,22 @@ const SellerPage = () => {
     setSubmitting(true);
     setApiErrors({});
 
+    // --- DATA CONVERSION (ISO -> NAMES) ---
+    const countryObj = Country.getAllCountries().find(c => c.isoCode === data.store_details?.country);
+    const countryName = countryObj ? countryObj.name : data.store_details?.country;
+
+    let stateName = data.store_details?.state;
+    if (countryObj && data.store_details?.state) {
+        const stateObj = State.getStatesOfCountry(countryObj.isoCode).find(s => s.isoCode === data.store_details.state);
+        stateName = stateObj ? stateObj.name : data.store_details.state;
+    }
+
     const payload = {
       first_name: data.first_name,
       last_name: data.last_name,
       email: data.email,
       mobile: {
-        country_code: data.mobile?.country_code || '+91',
+        country_code: data.mobile?.country_code || '+971',
         number: data.mobile?.number || ''
       },
       password: data.password,
@@ -146,8 +201,12 @@ const SellerPage = () => {
         store_description: data.store_details?.store_description || '',
         store_type: data.store_details?.store_type,
         store_address: data.store_details?.store_address,
-        city: data.store_details?.city,
-        country: data.store_details?.country,
+        
+        // Send Names to Backend
+        city: data.store_details?.city, 
+        state: stateName,
+        country: countryName,
+        
         pincode: data.store_details?.pincode,
         categories: data.store_details?.categories || []
       },
@@ -265,6 +324,7 @@ const SellerPage = () => {
             <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 20px 40px rgba(0,0,0,0.2)', background: '#fff' }} bodyStyle={{ padding: 40 }}>
               <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
                 <Spin spinning={submitting}>
+                  
                   {/* Step 0: Personal Information */}
                   {currentStep === 0 && (
                     <>
@@ -288,25 +348,41 @@ const SellerPage = () => {
                         <Controller name="email" control={control} rules={{ required: 'Required', pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' } }} render={({ field }) => <Input size="large" {...field} />} />
                       </Form.Item>
 
-                      <Row gutter={16}>
-                        <Col span={6}>
-                          <Form.Item label="Code">
-                            <Controller name="mobile.country_code" control={control} render={({ field }) => (
-                              <Select size="large" {...field}>
-                                <Select.Option value="+971">+971 (AE)</Select.Option>
-                                <Select.Option value="+91">+91 (IN)</Select.Option>
-                                <Select.Option value="+1">+1 (US)</Select.Option>
-                                <Select.Option value="+44">+44 (UK)</Select.Option>
-                              </Select>
-                            )} />
-                          </Form.Item>
-                        </Col>
-                        <Col span={18}>
-                          <Form.Item label="Phone Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message || apiErrors['mobile.number']}>
-                            <Controller name="mobile.number" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
-                          </Form.Item>
-                        </Col>
-                      </Row>
+                      {/* --- MOBILE NUMBER WITH FLAGS --- */}
+                      <Form.Item label="Mobile Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message}>
+                        <Space.Compact style={{ width: '100%' }}>
+                            <Controller
+                                name="mobile.country_code"
+                                control={control}
+                                rules={{ required: 'Code required' }}
+                                render={({ field }) => (
+                                    <Select 
+                                        {...field} 
+                                        size="large" 
+                                        style={{ width: '30%', minWidth: '120px' }}
+                                        options={mobileCountryOptions}
+                                        showSearch
+                                        optionFilterProp="label"
+                                        filterOption={filterOption}
+                                        placeholder="Code"
+                                    />
+                                )}
+                            />
+                            <Controller
+                                name="mobile.number"
+                                control={control}
+                                rules={{ required: 'Number required' }}
+                                render={({ field }) => (
+                                    <Input 
+                                        {...field} 
+                                        size="large" 
+                                        style={{ width: '70%' }} 
+                                        placeholder="501234567"
+                                    />
+                                )}
+                            />
+                        </Space.Compact>
+                      </Form.Item>
 
                       <Row gutter={16}>
                         <Col span={12}>
@@ -339,9 +415,19 @@ const SellerPage = () => {
                         )} />
                       </Form.Item>
 
+                      {/* --- DYNAMIC CATEGORIES --- */}
                       <Form.Item label="Categories" required validateStatus={errors.store_details?.categories ? 'error' : ''} help={errors.store_details?.categories?.message}>
                         <Controller name="store_details.categories" control={control} rules={{ required: 'Select at least one category' }} render={({ field }) => (
-                          <Select mode="multiple" size="large" loading={loading} options={categories} optionFilterProp="label" {...field} />
+                          <Select 
+                            mode="multiple" 
+                            size="large" 
+                            loading={loading} 
+                            options={categories} 
+                            optionFilterProp="label" 
+                            filterOption={filterOption}
+                            placeholder="Select business categories"
+                            {...field} 
+                          />
                         )} />
                       </Form.Item>
 
@@ -376,21 +462,60 @@ const SellerPage = () => {
                         <Controller name="store_details.store_address" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
                       </Form.Item>
 
+                      {/* --- CASCADING LOCATION --- */}
                       <Row gutter={16}>
-                        <Col span={8}>
-                          <Form.Item label="City" required validateStatus={errors.store_details?.city ? 'error' : ''} help={errors.store_details?.city?.message}>
-                            <Controller name="store_details.city" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
-                          </Form.Item>
-                        </Col>
-                        <Col span={8}>
+                        <Col span={12}>
                           <Form.Item label="Country" required validateStatus={errors.store_details?.country ? 'error' : ''} help={errors.store_details?.country?.message}>
                             <Controller name="store_details.country" control={control} rules={{ required: 'Required' }} render={({ field }) => (
-                              <Select size="large" options={countries} {...field} />
+                              <Select 
+                                size="large" 
+                                showSearch
+                                options={locationCountries} 
+                                optionFilterProp="label"
+                                filterOption={filterOption}
+                                placeholder="Select Country"
+                                {...field} 
+                              />
                             )} />
                           </Form.Item>
                         </Col>
-                        <Col span={8}>
-                          <Form.Item label="PO" required validateStatus={errors.store_details?.pincode ? 'error' : ''} help={errors.store_details?.pincode?.message}>
+                        <Col span={12}>
+                          <Form.Item label="State/Province" required validateStatus={errors.store_details?.state ? 'error' : ''} help={errors.store_details?.state?.message}>
+                            <Controller name="store_details.state" control={control} rules={{ required: 'Required' }} render={({ field }) => (
+                              <Select 
+                                size="large" 
+                                showSearch
+                                options={availableStates}
+                                disabled={!watchStoreCountry}
+                                optionFilterProp="label"
+                                filterOption={filterOption}
+                                placeholder="Select State"
+                                {...field} 
+                              />
+                            )} />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+                      
+                      <Row gutter={16}>
+                        <Col span={12}>
+                          <Form.Item label="City" required validateStatus={errors.store_details?.city ? 'error' : ''} help={errors.store_details?.city?.message}>
+                            <Controller name="store_details.city" control={control} rules={{ required: 'Required' }} render={({ field }) => (
+                              <Select 
+                                size="large" 
+                                showSearch
+                                options={availableCities}
+                                disabled={!watchStoreState}
+                                optionFilterProp="label"
+                                filterOption={filterOption}
+                                placeholder="Select City"
+                                {...field} 
+                              />
+                            )} />
+                          </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                          <Form.Item label="PO Box" required validateStatus={errors.store_details?.pincode ? 'error' : ''} help={errors.store_details?.pincode?.message}>
                             <Controller name="store_details.pincode" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
                           </Form.Item>
                         </Col>
@@ -411,7 +536,7 @@ const SellerPage = () => {
                     </>
                   )}
 
-                  {/* Buttons Section - Back button always visible */}
+                  {/* Buttons Section */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32, paddingTop: 24, borderTop: '1px solid #f0f0f0' }}>
                     <Button size="large" onClick={handleBack} icon={<ArrowLeftOutlined />}>
                       Back

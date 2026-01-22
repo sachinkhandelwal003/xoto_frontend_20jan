@@ -1,6 +1,5 @@
-
 /* src/components/freelancers/Registration.jsx */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   User, Mail, Phone, Lock, Briefcase, Wrench,
@@ -8,30 +7,28 @@ import {
 } from "lucide-react";
 import {
   Form, Input, Select, Button, Checkbox, message, Spin,
-  Row, Col, Card, Typography
+  Space, Typography
 } from "antd";
-import { motion } from "framer-motion";
 import registerimage from "../../assets/img/registergarden.jpg";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
 
-const { Option } = Select;
-const { Title, Text } = Typography;
+// --- Libraries ---
+import CountryList from 'country-list-with-dial-code-and-flag';
+import { Country, State, City } from 'country-state-city';
 
-// Static options
-const countryCodes = [
-  { value: "+91", label: "+91 India" },
-  { value: "+971", label: "+971 UAE" },
-  { value: "+966", label: "+966 Saudi Arabia" },
-  { value: "+1", label: "+1 USA/Canada" },
-];
+const { Option } = Select;
+const { Title } = Typography;
+
 const experienceOptions = Array.from({ length: 11 }, (_, i) => ({
   value: i,
   label: i === 0 ? "Less than 1 year" : `${i} year${i > 1 ? "s" : ""}`,
 })).concat({ value: 15, label: "15 years" }, { value: 20, label: "20+ years" });
+
 const paymentOptions = [
   { value: "Cash", label: "Cash" },
   { value: "Bank Transfer", label: "Bank Transfer" },
 ];
+
 const languageOptions = [
   { value: "english", label: "English" },
   { value: "arabic", label: "Arabic" },
@@ -39,40 +36,63 @@ const languageOptions = [
   { value: "french", label: "French" },
 ];
 
-const locationData = {
-  "UAE": {
-    states: ["Abu Dhabi", "Dubai", "Sharjah", "Ajman", "Ras Al Khaimah", "Fujairah", "Umm Al Quwain"],
-    cities: {
-      "Abu Dhabi": ["Abu Dhabi City", "Al Ain", "Madinat Zayed"],
-      "Dubai": ["Dubai", "Jebel Ali", "Hatta"],
-      "Sharjah": ["Sharjah", "Khor Fakkan", "Kalba"],
-      "Ajman": ["Ajman"],
-      "Ras Al Khaimah": ["Ras Al Khaimah City", "Al Jazirah Al Hamra"],
-      "Fujairah": ["Fujairah City", "Dibba Al-Fujairah"],
-      "Umm Al Quwain": ["Umm Al Quwain"]
-    }
-  },
-  "India": {
-    states: ["Delhi", "Maharashtra", "Karnataka", "Tamil Nadu"],
-    cities: {
-      "Delhi": ["New Delhi", "Dwarka"],
-      "Maharashtra": ["Mumbai", "Pune"],
-      "Karnataka": ["Bangalore", "Mysore"],
-      "Tamil Nadu": ["Chennai", "Coimbatore"]
-    }
-  }
-};
-
 const Registration = () => {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState({
     subcategories: true,
-    types: {}, // per service index
+    types: {},
     submitting: false,
   });
   const [success, setSuccess] = useState(false);
+
+  // --- Mobile State ---
   const [countryCode, setCountryCode] = useState("+971");
   const [mobileNumber, setMobileNumber] = useState("");
+  const mobileCountryOptions = useMemo(() => CountryList.getAll(), []);
+
+  // --- React Hook Form ---
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    trigger,
+    watch,
+    register, // Added register for manual fields
+    formState: { errors },
+  } = useForm({ mode: "onChange" });
+
+  // --- Register Mobile Field Manually ---
+  useEffect(() => {
+    register("mobile_number", { 
+        required: "Mobile number is required",
+        minLength: { value: 7, message: "Number is too short" } 
+    });
+  }, [register]);
+
+  const watchCountry = watch("country");
+  const watchState = watch("state");
+
+  const locationCountries = useMemo(() => Country.getAllCountries(), []);
+
+  const availableStates = useMemo(() => {
+    if (!watchCountry) return [];
+    return State.getStatesOfCountry(watchCountry);
+  }, [watchCountry]);
+
+  const availableCities = useMemo(() => {
+    if (!watchCountry || !watchState) return [];
+    return City.getCitiesOfState(watchCountry, watchState);
+  }, [watchCountry, watchState]);
+
+  useEffect(() => {
+    setValue("state", null);
+    setValue("city", null);
+  }, [watchCountry, setValue]);
+
+  useEffect(() => {
+    setValue("city", null);
+  }, [watchState, setValue]);
+
   const [services, setServices] = useState([{
     subcategoryId: "",
     types: [],
@@ -80,48 +100,9 @@ const Registration = () => {
     unit: "per job"
   }]);
   const [selectedLanguages, setSelectedLanguages] = useState([]);
-  const [apiErrors, setApiErrors] = useState({});
-
-  // Dynamic data
   const [subcategories, setSubcategories] = useState([]);
-  const [typesMap, setTypesMap] = useState({}); // { [serviceIndex]: [{value, label}] }
+  const [typesMap, setTypesMap] = useState({});
 
-  // Location
-  const [availableStates, setAvailableStates] = useState(locationData["UAE"]?.states || []);
-  const [availableCities, setAvailableCities] = useState([]);
-
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    trigger,
-    watch,
-    formState: { errors },
-  } = useForm({ mode: "onChange" });
-
-  const watchCountry = watch("country", "UAE");
-  const watchState = watch("state");
-
-  // Location effects
-  useEffect(() => {
-    if (watchCountry && locationData[watchCountry]) {
-      setAvailableStates(locationData[watchCountry].states);
-      setValue("state", "");
-      setValue("city", "");
-      setAvailableCities([]);
-    }
-  }, [watchCountry, setValue]);
-
-  useEffect(() => {
-    if (watchCountry && watchState && locationData[watchCountry]?.cities[watchState]) {
-      setAvailableCities(locationData[watchCountry].cities[watchState]);
-      setValue("city", "");
-    } else {
-      setAvailableCities([]);
-    }
-  }, [watchCountry, watchState, setValue]);
-
-  // --- API FETCHING (EXACT SAME AS GardenCalculator) ---
   useEffect(() => {
     const initFetch = async () => {
       try {
@@ -138,22 +119,15 @@ const Registration = () => {
     initFetch();
   }, []);
 
-  // Fetch types when subcategory selected
   const fetchTypes = async (subcategoryId, serviceIndex) => {
     if (!subcategoryId) return;
-
     const sub = subcategories.find(s => s._id === subcategoryId);
     if (!sub?.category) return;
-
     setLoading(prev => ({ ...prev, types: { ...prev.types, [serviceIndex]: true } }));
-
     try {
       const res = await apiService.get(`/estimate/master/category/${sub.category}/subcategories/${subcategoryId}/types`);
       if (res.success) {
-        const formatted = (res.data || []).map(item => ({
-          value: item._id,
-          label: item.label
-        }));
+        const formatted = (res.data || []).map(item => ({ value: item._id, label: item.label }));
         setTypesMap(prev => ({ ...prev, [serviceIndex]: formatted }));
       }
     } catch (err) {
@@ -163,59 +137,42 @@ const Registration = () => {
     }
   };
 
-  // Handle card click - select subcategory
   const handleSubcategorySelect = (serviceIndex, subcategoryId) => {
     const newServices = [...services];
     newServices[serviceIndex].subcategoryId = subcategoryId;
     newServices[serviceIndex].types = [];
     setServices(newServices);
-
     fetchTypes(subcategoryId, serviceIndex);
   };
 
-  // Handle types selection
   const handleTypesSelect = (serviceIndex, selectedTypes) => {
     const newServices = [...services];
     newServices[serviceIndex].types = selectedTypes;
     setServices(newServices);
   };
 
-  // Service management
   const addService = () => {
-    setServices(prev => [...prev, {
-      subcategoryId: "",
-      types: [],
-      description: "",
-      unit: "per job"
-    }]);
+    setServices(prev => [...prev, { subcategoryId: "", types: [], description: "", unit: "per job" }]);
   };
 
   const removeService = (index) => {
     setServices(prev => prev.filter((_, i) => i !== index));
-    setTypesMap(prev => {
-      const newMap = { ...prev };
-      delete newMap[index];
-      const reindexed = {};
-      Object.keys(newMap).forEach(k => {
-        const newKey = k > index ? k - 1 : k;
-        reindexed[newKey] = newMap[k];
-      });
-      return reindexed;
-    });
   };
 
-  // Navigation
+  // --- FIXED NEXT FUNCTION ---
   const next = async () => {
     const fields = step === 0
-      ? ["first_name", "last_name", "email", "password", "confirmPassword"]
+      ? ["first_name", "last_name", "email", "password", "confirmPassword", "mobile_number"] // Added mobile_number
       : ["experience_years", "bio", "country", "state", "city"];
+    
+    // This triggers validation. If invalid, errors appear in the UI automatically.
     const ok = await trigger(fields);
+    
     if (ok) setStep(s => s + 1);
   };
 
   const back = () => setStep(s => s - 1);
 
-  // Submit
   const onSubmit = async (data) => {
     if (data.password !== data.confirmPassword) {
       return message.error("Passwords do not match");
@@ -226,11 +183,12 @@ const Registration = () => {
     if (services.some(s => !s.subcategoryId || s.types.length === 0 || !s.description)) {
       return message.error("Please complete all service fields");
     }
-    if (!data.country || !data.state || !data.city) {
-      return message.error("Please select country, state, and city");
-    }
 
     setLoading(prev => ({ ...prev, submitting: true }));
+
+    const countryName = locationCountries.find(c => c.isoCode === data.country)?.name || data.country;
+    const stateName = availableStates.find(s => s.isoCode === data.state)?.name || data.state;
+    const cityName = data.city; 
 
     const payload = {
       email: data.email,
@@ -239,7 +197,7 @@ const Registration = () => {
       name: { first_name: data.first_name, last_name: data.last_name },
       mobile: { country_code: countryCode, number: mobileNumber.replace(/\D/g, "") },
       is_mobile_verified: true,
-      location: { country: data.country, state: data.state, city: data.city },
+      location: { country: countryName, state: stateName, city: cityName },
       professional: {
         experience_years: Number(data.experience_years),
         bio: data.bio,
@@ -260,18 +218,17 @@ const Registration = () => {
     try {
       await apiService.post("/freelancer", payload);
       setSuccess(true);
-      message.success("Registration successful! Awaiting admin approval.");
+      message.success("Registration successful!");
     } catch (err) {
       const res = err.response?.data;
-      if (res?.errors?.length) {
-        message.error(res.errors[0].message);
-      } else {
-        message.error(res?.message || "Registration failed");
-      }
+      message.error(res?.message || "Registration failed");
     } finally {
       setLoading(prev => ({ ...prev, submitting: false }));
     }
   };
+
+  const filterOption = (input, option) =>
+    (option?.label ?? '').toLowerCase().includes(input.toLowerCase());
 
   if (success) {
     return (
@@ -282,10 +239,7 @@ const Registration = () => {
             <Check className="w-12 h-12 text-purple-600" />
           </div>
           <h1 className="text-3xl font-bold mb-4">Registration Successful!</h1>
-          <p className="text-gray-600 mb-8">
-            Your request has been sent to the <strong>Super-Admin</strong>.<br />
-            You will receive an email once approved.
-          </p>
+          <p className="text-gray-600 mb-8">Your request has been sent to the <strong>Super-Admin</strong>.</p>
           <a href="/login" className="inline-flex items-center gap-2 bg-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-purple-700 transition">
             Go to Login <ArrowRight className="w-5 h-5" />
           </a>
@@ -327,14 +281,51 @@ const Registration = () => {
                   <Form.Item label="Email" required validateStatus={errors.email ? "error" : ""} help={errors.email?.message}>
                     <Controller name="email" control={control} rules={{ required: "Required", pattern: { value: /^\S+@\S+$/i, message: "Invalid email" } }} render={({ field }) => <Input prefix={<Mail />} size="large" {...field} />} />
                   </Form.Item>
-                  <Form.Item label="Mobile Number" required>
-                    <div className="flex gap-3">
-                      <Select value={countryCode} onChange={setCountryCode} style={{ width: 140 }} size="large">
-                        {countryCodes.map(c => <Option key={c.value} value={c.value}>{c.label}</Option>)}
-                      </Select>
-                      <Input prefix={<Phone />} value={mobileNumber} onChange={e => setMobileNumber(e.target.value.replace(/\D/g, ""))} placeholder="501234567" size="large" style={{ flex: 1 }} />
-                    </div>
+
+                  {/* --- FIXED: Mobile Number with validation below --- */}
+                  <Form.Item 
+                    label="Mobile Number" 
+                    required 
+                    validateStatus={errors.mobile_number ? "error" : ""} 
+                    help={errors.mobile_number?.message} // Checks the registered field error
+                  >
+                    <Space.Compact style={{ width: '100%' }}>
+                        <Select
+                            showSearch
+                            value={countryCode}
+                            onChange={setCountryCode}
+                            style={{ width: '30%', minWidth: '120px' }}
+                            placeholder="Code"
+                            size="large"
+                            optionFilterProp="label"
+                            filterOption={filterOption}
+                        >
+                            {mobileCountryOptions.map((country, index) => (
+                                <Option
+                                    key={`${country.code}-${index}`} 
+                                    value={country.dial_code}
+                                    label={`${country.name} ${country.dial_code}`}
+                                >
+                                    <span>{country.flag} {country.dial_code}</span>
+                                </Option>
+                            ))}
+                        </Select>
+                        <Input 
+                            prefix={<Phone size={16} />} 
+                            value={mobileNumber} 
+                            onChange={e => {
+                                const val = e.target.value.replace(/\D/g, "");
+                                setMobileNumber(val);
+                                // IMPORTANT: Update the hook form validation manually
+                                setValue("mobile_number", val, { shouldValidate: true });
+                            }}
+                            placeholder="501234567" 
+                            size="large" 
+                            style={{ width: '70%' }} 
+                        />
+                    </Space.Compact>
                   </Form.Item>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Form.Item label="Password" required validateStatus={errors.password ? "error" : ""} help={errors.password?.message}>
                       <Controller name="password" control={control} rules={{ required: "Required", minLength: { value: 6, message: "Min 6 characters" } }} render={({ field }) => <Input.Password prefix={<Lock />} size="large" {...field} />} />
@@ -363,29 +354,71 @@ const Registration = () => {
                   <Form.Item label="Professional Bio" required validateStatus={errors.bio ? "error" : ""} help={errors.bio?.message}>
                     <Controller name="bio" control={control} rules={{ required: "Required", minLength: { value: 10, message: "Min 10 chars" } }} render={({ field }) => <Input.TextArea rows={5} size="large" {...field} />} />
                   </Form.Item>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Country */}
                     <Form.Item label="Country" required validateStatus={errors.country ? "error" : ""} help={errors.country?.message}>
                       <Controller name="country" control={control} rules={{ required: "Required" }} render={({ field }) => (
-                        <Select size="large" placeholder="Select country" {...field}>
-                          {Object.keys(locationData).map(c => <Option key={c} value={c}>{c}</Option>)}
+                        <Select 
+                            {...field} 
+                            size="large" 
+                            placeholder="Select country" 
+                            showSearch
+                            optionFilterProp="label"
+                            filterOption={filterOption}
+                        >
+                          {locationCountries.map(c => (
+                             <Option key={c.isoCode} value={c.isoCode} label={c.name}>
+                                {c.flag} {c.name}
+                             </Option>
+                          ))}
                         </Select>
                       )} />
                     </Form.Item>
+
+                    {/* State */}
                     <Form.Item label="State/Emirate" required validateStatus={errors.state ? "error" : ""} help={errors.state?.message}>
                       <Controller name="state" control={control} rules={{ required: "Required" }} render={({ field }) => (
-                        <Select size="large" placeholder="Select state" {...field} disabled={!watchCountry}>
-                          {availableStates.map(s => <Option key={s} value={s}>{s}</Option>)}
+                        <Select 
+                            {...field} 
+                            size="large" 
+                            placeholder={!watchCountry ? "Select Country first" : "Select State"} 
+                            disabled={!watchCountry}
+                            showSearch
+                            optionFilterProp="label"
+                            filterOption={filterOption}
+                        >
+                          {availableStates.map(s => (
+                             <Option key={s.isoCode} value={s.isoCode} label={s.name}>
+                                {s.name}
+                             </Option>
+                          ))}
                         </Select>
                       )} />
                     </Form.Item>
+
+                    {/* City */}
                     <Form.Item label="City" required validateStatus={errors.city ? "error" : ""} help={errors.city?.message}>
                       <Controller name="city" control={control} rules={{ required: "Required" }} render={({ field }) => (
-                        <Select size="large" placeholder="Select city" {...field} disabled={!watchState}>
-                          {availableCities.map(c => <Option key={c} value={c}>{c}</Option>)}
+                        <Select 
+                            {...field} 
+                            size="large" 
+                            placeholder={!watchState ? "Select State first" : "Select City"} 
+                            disabled={!watchState}
+                            showSearch
+                            optionFilterProp="label"
+                            filterOption={filterOption}
+                        >
+                          {availableCities.map(c => (
+                             <Option key={c.name} value={c.name} label={c.name}>
+                                {c.name}
+                             </Option>
+                          ))}
                         </Select>
                       )} />
                     </Form.Item>
                   </div>
+
                   <div className="flex justify-between mt-8">
                     <Button size="large" onClick={back}><ChevronLeft /> Back</Button>
                     <Button type="primary" size="large" onClick={next} style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}>
@@ -395,6 +428,7 @@ const Registration = () => {
                 </>
               )}
 
+              {/* ... Step 2 and rest of code remains the same ... */}
               {step === 2 && (
                 <Spin spinning={loading.submitting}>
                   {services.map((service, index) => (
@@ -406,46 +440,42 @@ const Registration = () => {
                       )}
                       <Title level={3} className="mb-8">Service {index + 1}</Title>
 
-                      {/* Card-based Subcategory Selection */}
-               <Form.Item label="What service do you offer?" required>
-          <Select
-            size="large"
-            placeholder="Select a service category"
-            value={service.subcategoryId || undefined}
-            onChange={(value) => handleSubcategorySelect(index, value)}
-            loading={loading.subcategories}
-            showSearch
-            optionFilterProp="children"
-            className="w-full"
-          >
-            {subcategories.map(sub => (
-              <Option key={sub._id} value={sub._id}>
-                {sub.label}
-              </Option>
-            ))}
-          </Select>
-        </Form.Item>
-                      {/* Specializations */}
+                      <Form.Item label="What service do you offer?" required>
+                        <Select
+                          size="large"
+                          placeholder="Select a service category"
+                          value={service.subcategoryId || undefined}
+                          onChange={(value) => handleSubcategorySelect(index, value)}
+                          loading={loading.subcategories}
+                          showSearch
+                          optionFilterProp="children"
+                          className="w-full"
+                        >
+                          {subcategories.map(sub => (
+                            <Option key={sub._id} value={sub._id}>
+                              {sub.label}
+                            </Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+
                       {service.subcategoryId && (
-                        <>
-                          <Form.Item label="Specializations (Multiple)" required className="mb-6">
-                            <Select
-                              mode="multiple"
-                              loading={loading.types[index]}
-                              value={service.types}
-                              onChange={(vals) => handleTypesSelect(index, vals)}
-                              placeholder="Select your specializations"
-                              size="large"
-                            >
-                              {(typesMap[index] || []).map(t => (
-                                <Option key={t.value} value={t.value}>{t.label}</Option>
-                              ))}
-                            </Select>
-                          </Form.Item>
-                        </>
+                        <Form.Item label="Specializations (Multiple)" required className="mb-6">
+                          <Select
+                            mode="multiple"
+                            loading={loading.types[index]}
+                            value={service.types}
+                            onChange={(vals) => handleTypesSelect(index, vals)}
+                            placeholder="Select your specializations"
+                            size="large"
+                          >
+                            {(typesMap[index] || []).map(t => (
+                              <Option key={t.value} value={t.value}>{t.label}</Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
                       )}
 
-                      {/* Description */}
                       <Form.Item label="Service Description" required>
                         <Input.TextArea
                           rows={4}
