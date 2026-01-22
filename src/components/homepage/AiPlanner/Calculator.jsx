@@ -76,8 +76,6 @@ const reverseGeocode = async (lat, lng) => {
 const MapPicker = ({ coords, onChange }) => {
   const [position, setPosition] = useState(coords.lat && coords.lng ? [coords.lat, coords.lng] : [25.2048, 55.2708]);
 
-
-
   useEffect(() => {
     if (coords.lat && coords.lng) {
       setPosition([coords.lat, coords.lng]);
@@ -147,28 +145,28 @@ const Calculator = () => {
   const [selectedImages, setSelectedImages] = useState([]);
 
   const handlePhoneChange = (e) => {
-  const value = e.target.value.replace(/\D/g, ""); // numbers only
-  const rule = COUNTRY_PHONE_RULES[countryCode];
+    const value = e.target.value.replace(/\D/g, ""); // numbers only
+    const rule = COUNTRY_PHONE_RULES[countryCode];
 
-  if (!rule) return;
+    if (!rule) return;
 
-  if (value.length > rule.digits) return; // block extra digits
+    if (value.length > rule.digits) return; // block extra digits
 
-  setPhone(value);
+    setPhone(value);
 
-  if (value.length < rule.digits) {
-    setPhoneError(`Phone number must be ${rule.digits} digits`);
-  } else {
+    if (value.length < rule.digits) {
+      setPhoneError(`Phone number must be ${rule.digits} digits`);
+    } else {
+      setPhoneError("");
+    }
+  };
+
+
+  const handleCountryChange = (code) => {
+    setCountryCode(code);
+    setPhone(""); // reset phone on country change
     setPhoneError("");
-  }
-};
-
-
-const handleCountryChange = (code) => {
-  setCountryCode(code);
-  setPhone(""); // reset phone on country change
-  setPhoneError("");
-};
+  };
 
 
   const toggleImageSelect = (img) => {
@@ -233,17 +231,17 @@ const handleCountryChange = (code) => {
   ];
 
   const COUNTRY_PHONE_RULES = {
-  "+971": { country: "UAE", digits: 9 },
-  "+91": { country: "India", digits: 10 },
-  "+966": { country: "KSA", digits: 9 },
-  "+974": { country: "Qatar", digits: 8 },
-  "+968": { country: "Oman", digits: 8 },
-  "+973": { country: "Bahrain", digits: 8 },
-  "+965": { country: "Kuwait", digits: 8 },
-  "+92": { country: "Pakistan", digits: 10 },
-  "+44": { country: "UK", digits: 10 },
-  "+1": { country: "USA/Canada", digits: 10 },
-};
+    "+971": { country: "UAE", digits: 9 },
+    "+91": { country: "India", digits: 10 },
+    "+966": { country: "KSA", digits: 9 },
+    "+974": { country: "Qatar", digits: 8 },
+    "+968": { country: "Oman", digits: 8 },
+    "+973": { country: "Bahrain", digits: 8 },
+    "+965": { country: "Kuwait", digits: 8 },
+    "+92": { country: "Pakistan", digits: 10 },
+    "+44": { country: "UK", digits: 10 },
+    "+1": { country: "USA/Canada", digits: 10 },
+  };
 
   // --- API FETCHING ---
   useEffect(() => {
@@ -460,13 +458,7 @@ const handleCountryChange = (code) => {
       return;
     }
 
-    // if (!selectedPackage) {
-    //   message.error("Please select a package");
-    //   return;
-    // }
-
     setLoading(prev => ({ ...prev, submitting: true }));
-
 
 
     // Get selected type and subcategory details
@@ -527,32 +519,53 @@ const handleCountryChange = (code) => {
 
 
   const handleNext = () => {
-    console.log("activeSteeeeeeeeeeeeeeeeeeeppppppppppppppppp", activeStep)
-    if (activeStep == 5) {
-      navigate("/")
+    console.log("Current Step:", activeStep);
+    
+    // Finish Navigation
+    if (activeStep === 5) {
+      navigate("/");
+      return;
     }
 
+    // Step 3 Validation: Ensure all questions are answered
+    if (activeStep === 3) {
+      const isFormValid = questions.every((q) => {
+        const val = answers[q._id];
+        // Check for undefined, null, or empty string. 
+        // We allow '0' (number) or boolean false if relevant, but typically text is string.
+        return val !== undefined && val !== null && val !== "";
+      });
 
+      if (!isFormValid) {
+        // ✅ CHANGE HERE: Message ko object banakar styles pass kiye hain
+        message.error({
+          content: "Please answer all the questions to proceed!",
+          style: {
+            fontSize: '20px',      // Text bada karne ke liye
+            marginTop: '15vh',     // Thoda niche dikhane ke liye (optional)
+            padding: '15px 25px',  // Box ka size bada karne ke liye
+            borderRadius: '12px',  // Corners round karne ke liye
+            lineHeight: '1.5'      // Text spacing ke liye
+          },
+          duration: 3, // Kitni der tak dikhega (seconds)
+        });
+        return; // Stop here, do not increment step
+      }
+    }
+
+    // Submit Trigger
     if (activeStep > 3) {
       onFinalSubmit();
       return;
     }
 
-    setActiveStep(prev => prev + 1);
+    // Default: Go to next step
+    setActiveStep((prev) => prev + 1);
   };
 
   const handleBack = () => setActiveStep(prev => prev - 1);
 
   const validateStep = () => {
-    // switch (activeStep) {
-    //   case 0: return !!coords.lat;
-    //   case 1: return !!selectedSubcategory;
-    //   case 2: return !!selectedType;
-    //   case 3: return areaSqFt >= 100;
-    //   case 4: return !!selectedPackage;
-    //   case 5: return firstName.trim() && lastName.trim() && email.trim() && phone.trim();
-    //   default: return true;
-    // }
     return true;
   };
 
@@ -698,55 +711,6 @@ const handleCountryChange = (code) => {
           </motion.div>
         );
 
-      // case 3:
-      //   return (
-      //     <motion.div {...variants} className="max-w-lg mx-auto py-10">
-      //       <Title level={2} className="text-center mb-10">Project Area</Title>
-      //       <Card className="rounded-[3rem] shadow-2xl overflow-hidden border-none">
-      //         <div className="p-12 text-center text-white" style={{ background: BRAND_PURPLE }}>
-      //           <Text className="text-purple-200 uppercase tracking-widest text-xs font-bold">Total Footprint</Text>
-      //           <div className="text-7xl font-bold my-4">{areaSqFt.toLocaleString()}</div>
-      //           <Text className="text-lg opacity-80">Square Feet</Text>
-      //         </div>
-      //         <div className="p-12 bg-white">
-      //           <Row gutter={24}>
-      //             <Col span={12}>
-      //               <Text strong className="text-gray-400 text-xs uppercase">Length (ft)</Text>
-      //               <Input
-      //                 size="large"
-      //                 type="number"
-      //                 value={length}
-      //                 onChange={e => setLength(e.target.value)}
-      //                 className="mt-3 h-14 rounded-2xl border-gray-100"
-      //                 placeholder="Enter length"
-      //                 min="1"
-      //               />
-      //             </Col>
-      //             <Col span={12}>
-      //               <Text strong className="text-gray-400 text-xs uppercase">Width (ft)</Text>
-      //               <Input
-      //                 size="large"
-      //                 type="number"
-      //                 value={width}
-      //                 onChange={e => setWidth(e.target.value)}
-      //                 className="mt-3 h-14 rounded-2xl border-gray-100"
-      //                 placeholder="Enter width"
-      //                 min="1"
-      //               />
-      //             </Col>
-      //           </Row>
-      //           {areaSqFt > 0 && (
-      //             <div className="mt-6 text-center">
-      //               <Text type={areaSqFt < 100 ? "danger" : "success"}>
-      //                 Minimum area required: 100 sqft (Current: {areaSqFt} sqft)
-      //               </Text>
-      //             </div>
-      //           )}
-      //         </div>
-      //       </Card>
-      //     </motion.div>
-      //   );
-
       case 3:
         return (
           <motion.div {...variants} className="py-10">
@@ -765,7 +729,10 @@ const handleCountryChange = (code) => {
                     <Form.Item
                       key={q._id}
                       label={q.question}
-                      required={false}
+                      required={true}
+                      validateStatus={answers[q._id] ? "success" : "error"}
+                      // ✅ CHANGE HERE: Updated the error message text
+                      help={answers[q._id] ? null : "Please provide an answer to proceed."}
                     >
                       {/* TEXT */}
                       {q.questionType === "text" && (
@@ -775,6 +742,7 @@ const handleCountryChange = (code) => {
                             handleAnswerChange(q._id, e.target.value)
                           }
                           placeholder="Enter value"
+                          status={!answers[q._id] ? "error" : ""}
                         />
                       )}
 
@@ -789,6 +757,7 @@ const handleCountryChange = (code) => {
                           placeholder="Enter number"
                           min={q.minValue || 0}
                           max={q.maxValue || undefined}
+                          status={!answers[q._id] ? "error" : ""}
                         />
                       )}
 
@@ -872,13 +841,6 @@ const handleCountryChange = (code) => {
                         ({length}ft × {width}ft)
                       </Text>
                     </div>
-                    {/* <Divider className="border-purple-400 opacity-30" /> */}
-                    {/* <div className="p-5 bg-white/10 rounded-2xl flex items-center justify-between border border-white/10">
-                      <Text className="text-white">Tier Selection</Text>
-                      <Tag color="gold" className="m-0 border-none font-bold px-3">
-                        {selectedPkg?.name || 'Not selected'}
-                      </Tag>
-                    </div> */}
                   </div>
                 </div>
               </Col>
@@ -923,56 +885,44 @@ const handleCountryChange = (code) => {
                     </div>
 
                     <div>
-                       <Text strong className="block mb-2">Contact Number *</Text>
+                      <Text strong className="block mb-2">Contact Number *</Text>
 
-  <Row gutter={8}>
-    <Col span={8}>
-      <Select
-        value={countryCode}
-        onChange={handleCountryChange}
-        className="w-full"
-        size="large"
-      >
-        {countryCodes.map(code => (
-          <Option key={code.value} value={code.value}>
-            {code.label}
-          </Option>
-        ))}
-      </Select>
-    </Col>
+                      <Row gutter={8}>
+                        <Col span={8}>
+                          <Select
+                            value={countryCode}
+                            onChange={handleCountryChange}
+                            className="w-full"
+                            size="large"
+                          >
+                            {countryCodes.map(code => (
+                              <Option key={code.value} value={code.value}>
+                                {code.label}
+                              </Option>
+                            ))}
+                          </Select>
+                        </Col>
 
-    <Col span={16}>
-      <Input
-        size="large"
-        value={phone}
-        onChange={handlePhoneChange}
-        placeholder={`Enter ${COUNTRY_PHONE_RULES[countryCode]?.digits || ""} digit number`}
-        prefix={<PhoneFilled />}
-        maxLength={COUNTRY_PHONE_RULES[countryCode]?.digits}
-        status={phoneError ? "error" : ""}
-        className="rounded-xl h-14"
-      />
-    </Col>
-  </Row>
+                        <Col span={16}>
+                          <Input
+                            size="large"
+                            value={phone}
+                            onChange={handlePhoneChange}
+                            placeholder={`Enter ${COUNTRY_PHONE_RULES[countryCode]?.digits || ""} digit number`}
+                            prefix={<PhoneFilled />}
+                            maxLength={COUNTRY_PHONE_RULES[countryCode]?.digits}
+                            status={phoneError ? "error" : ""}
+                            className="rounded-xl"
+                          />
+                        </Col>
+                      </Row>
 
-  {phoneError && (
-    <Text type="danger" className="text-xs mt-1 block">
-      {phoneError}
-    </Text>
-  )}
+                      {phoneError && (
+                        <Text type="danger" className="text-xs mt-1 block">
+                          {phoneError}
+                        </Text>
+                      )}
                     </div>
-                    {/* 
-                    <Button
-                      type="primary"
-                      onClick={onFinalSubmit}
-                      loading={loading.submitting}
-                      block
-                      className="h-16 rounded-2xl text-lg mt-4 border-none shadow-xl"
-                      style={{ backgroundColor: BRAND_PURPLE }}
-                      disabled={!firstName || !lastName || !email || !phone}
-                    >
-                      Generate My Quotation
-                    </Button> */}
                   </div>
                 </Card>
               </Col>
@@ -985,9 +935,9 @@ const handleCountryChange = (code) => {
         return (
           <motion.div {...variants} className="text-center ">
             {/* RESPONSIVE DISCLAIMER */}
-<div className="max-w-5xl mx-auto mb-8 px-4">
-  <div
-    className="
+            <div className="max-w-5xl mx-auto mb-8 px-4">
+              <div
+                className="
       flex flex-col sm:flex-row
       items-start sm:items-center
       gap-3 sm:gap-4
@@ -999,24 +949,24 @@ const handleCountryChange = (code) => {
       rounded-2xl
       shadow-sm
     "
-  >
-    {/* Icon */}
-    <div className="flex-shrink-0">
-      <EnvironmentOutlined className="text-red-500 text-xl sm:text-2xl" />
-    </div>
+              >
+                {/* Icon */}
+                <div className="flex-shrink-0">
+                  <EnvironmentOutlined className="text-red-500 text-xl sm:text-2xl" />
+                </div>
 
-    {/* Text */}
-    <div className="text-left">
-      <Text className="block font-semibold text-red-700 text-sm sm:text-base">
-       DISCLAIMER:
-      </Text>
-      <Text className="block text-xs sm:text-sm text-red-600 leading-relaxed">
-        This estimate is meant to give you a rough idea of costs. The final amount
-        may change once details are finalized and the site is reviewed.
-      </Text>
-    </div>
-  </div>
-</div>
+                {/* Text */}
+                <div className="text-left">
+                  <Text className="block font-semibold text-red-700 text-sm sm:text-base">
+                    DISCLAIMER:
+                  </Text>
+                  <Text className="block text-xs sm:text-sm text-red-600 leading-relaxed">
+                    This estimate is meant to give you a rough idea of costs. The final amount
+                    may change once details are finalized and the site is reviewed.
+                  </Text>
+                </div>
+              </div>
+            </div>
             <div className="bg-white p-16 rounded-[4rem] shadow-2xl inline-block border border-gray-50">
               <SmileOutlined style={{ color: BRAND_PURPLE, fontSize: '5rem' }} className="mb-8" />
               <Title level={1} style={{ color: BRAND_PURPLE }} className="m-0">Valuation Ready</Title>
@@ -1055,7 +1005,7 @@ const handleCountryChange = (code) => {
                       {/* Overlay */}
                       <div
                         className={`absolute inset-0 bg-black/40 flex items-center justify-center
-              ${isSelected ? "opacity-100" : "opacity-0 hover:opacity-100"}
+             ${isSelected ? "opacity-100" : "opacity-0 hover:opacity-100"}
             `}
                       >
                         <span className="text-white text-lg font-semibold">
@@ -1163,7 +1113,7 @@ const handleCountryChange = (code) => {
               <div key={i} className={`flex items-center gap-3 transition-colors ${i <= activeStep ? 'text-black' : 'text-gray-300'}`}>
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all
-                    ${i === activeStep ? 'text-white border-transparent' :
+                  ${i === activeStep ? 'text-white border-transparent' :
                       i < activeStep ? 'bg-green-50 text-green-600 border-green-100' : 'border-gray-100'}`}
                   style={{ backgroundColor: i === activeStep ? BRAND_PURPLE : '' }}
                 >

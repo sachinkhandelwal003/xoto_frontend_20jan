@@ -400,47 +400,58 @@ const LeadsList = () => {
     </Card>
   );
 
-  const MapDisplay = ({ location }) => {
-    if (!location || !location.lat || !location.lng) {
-      return (
-        <div className="flex items-center justify-center h-40 bg-gray-100 rounded border">
-          <Text type="secondary">No location coordinates available</Text>
-        </div>
-      );
-    }
-
-    const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${location.lat},${location.lng}&zoom=15&size=600x300&markers=color:red%7Clabel:L%7C${location.lat},${location.lng}&key=YOUR_GOOGLE_MAPS_API_KEY`;
-    const googleMapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
-
+const MapDisplay = ({ location }) => {
+  // 1. Validation Check
+  if (!location || !location.lat || !location.lng) {
     return (
-      <div className="relative">
-        <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">
-          <img 
-            src={staticMapUrl} 
-            alt="Location Map" 
-            className="w-full h-auto rounded border"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = `https://via.placeholder.com/600x300/cccccc/666666?text=${encodeURIComponent(`Map: ${location.lat}, ${location.lng}`)}`;
-            }}
-          />
-        </a>
-        <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white text-xs p-1 rounded">
-          📍 {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-        </div>
-        <Button 
-          type="link" 
-          size="small"
-          icon={<CompassOutlined />}
-          className="absolute top-2 right-2 bg-white"
-          href={googleMapsUrl}
-          target="_blank"
-        >
-          Open in Maps
-        </Button>
+      <div className="flex items-center justify-center h-40 bg-gray-100 rounded border">
+        <Text type="secondary">No location coordinates available</Text>
       </div>
     );
-  };
+  }
+
+// ⚠️ IMPORTANT: Yahan apni ASLI API Key dalein.
+  const GOOGLE_MAPS_API_KEY = "AIzaSyD_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"; 
+
+  // 1. Static Map Image URL (Frontend pe image dikhane ke liye)
+  const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${location.lat},${location.lng}&zoom=15&size=600x300&markers=color:red%7Clabel:L%7C${location.lat},${location.lng}&key=${GOOGLE_MAPS_API_KEY}`;
+  
+  // 2. ✅ FIXED: Accurate Google Maps Link URL
+  // Ye URL kisi bhi device (Mobile/Desktop) par accurate pin drop karega.
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`;
+
+  return (
+    <div className="relative">
+      <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">
+        <img 
+          src={staticMapUrl} 
+          alt="Location Map" 
+          className="w-full h-auto rounded border"
+          onError={(e) => {
+            // Agar API Key galat ho ya quota full ho, toh placeholder dikhayein
+            e.target.onerror = null;
+            e.target.src = `https://via.placeholder.com/600x300/cccccc/666666?text=${encodeURIComponent(`Map: ${Number(location.lat).toFixed(4)}, ${Number(location.lng).toFixed(4)}`)}`;
+          }}
+        />
+      </a>
+
+      <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white text-xs p-1 rounded">
+        📍 {Number(location.lat).toFixed(4)}, {Number(location.lng).toFixed(4)}
+      </div>
+
+      <Button 
+        type="default" 
+        size="small"
+        icon={<CompassOutlined />}
+        className="absolute top-2 right-2 shadow-md"
+        href={googleMapsUrl}
+        target="_blank"
+      >
+        Open in Maps
+      </Button>
+    </div>
+  );
+};
 
   // --- INITIAL FETCH WITH REF FIX ---
   useEffect(() => {
@@ -578,8 +589,13 @@ const LeadsList = () => {
                                 <Descriptions.Item label="Package">
                                     <Tag color="gold">{viewDetailsModal.data.package?.name}</Tag>
                                 </Descriptions.Item>
-                                <Descriptions.Item label="Price">{formatCurrency(viewDetailsModal.data.package?.price)}</Descriptions.Item>
-                            </Descriptions>
+<Descriptions.Item label="Estimated Amount">
+    {formatCurrency(
+        viewDetailsModal.data.estimated_amount || 
+        viewDetailsModal.data.package?.price || 
+        0
+    )}
+</Descriptions.Item>                            </Descriptions>
                             <div className="mt-4 p-3 bg-purple-50 rounded border border-purple-100">
                                 <div className="text-xs text-purple-600 font-bold uppercase mb-2">Area Dimensions</div>
                                 <div className="flex justify-between text-center">
