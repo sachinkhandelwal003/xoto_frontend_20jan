@@ -119,12 +119,23 @@ const SellerPage = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      // Updated API Endpoint
-      const response = await apiService.get('/products/get-all-category?page=1&limit=200');
+      // Updated API endpoint as per your requirement
+      const response = await apiService.get('/products/get-all-category?limit=100');
       
-      if (response.success && Array.isArray(response.data)) {
-        const categoryOptions = response.data.map(category => ({
+      // Standardizing response data access
+      const categoryData = response.data?.data || response.data || response;
+      
+      if (Array.isArray(categoryData)) {
+        const categoryOptions = categoryData.map(category => ({
+          // Using label/value format for Ant Design Select
           label: category.name,
+          value: category._id
+        }));
+        setCategories(categoryOptions);
+      } else if (categoryData.categories) {
+        // Fallback for your previous structure
+        const categoryOptions = categoryData.categories.map(category => ({
+          label: category.parent ? `${category.name} (${category.parent.name})` : category.name,
           value: category._id
         }));
         setCategories(categoryOptions);
@@ -536,7 +547,6 @@ const SellerPage = () => {
                     </>
                   )}
 
-                  {/* Buttons Section */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32, paddingTop: 24, borderTop: '1px solid #f0f0f0' }}>
                     <Button size="large" onClick={handleBack} icon={<ArrowLeftOutlined />}>
                       Back

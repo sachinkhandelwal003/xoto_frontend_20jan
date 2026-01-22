@@ -107,7 +107,7 @@ export default function Footer() {
        <div className="absolute right-2 top-12 flex flex-col gap-[14px]">
   {/* --- WhatsApp Button --- */}
   <div
-    onClick={() => window.open("https://wa.me/919785408712", "_blank")}
+    onClick={() => window.open("https://wa.me/+971509180967", "_blank")}
     className="w-[53px] h-[53px] rounded-full bg-[#03A4F4] flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
   >
     <img src={whatsappIcon} alt="WhatsApp" className="w-[32px] h-[32px]" />

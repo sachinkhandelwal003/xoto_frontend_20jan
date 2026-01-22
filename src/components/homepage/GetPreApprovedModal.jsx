@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { FiX, FiChevronDown } from "react-icons/fi";
-// 1. Import toast and Toaster
 import toast, { Toaster } from "react-hot-toast";
 
 export default function GetPreApprovedModal({ open, onClose }) {
@@ -44,26 +43,37 @@ export default function GetPreApprovedModal({ open, onClose }) {
   };
 
   const handleSubmit = async () => {
-    // 2. Changed alert to toast.error
-    if (!form.name || !form.phone || !form.email || !form.terms) {
+    if (!form.name.trim() || !form.phone || !form.email || !form.terms) {
       toast.error("Please fill all required fields.");
       return;
     }
 
+    const submittedEmails = JSON.parse(localStorage.getItem("submitted_leads") || "[]");
+    if (submittedEmails.includes(form.email.toLowerCase().trim())) {
+      toast.error("You already have created a lead within last 30 days . So please try after some days");
+      return;
+    }
+
     setLoading(true);
-    const nameParts = form.name.trim().split(" ");
+
+    // FIX: Properly splitting name and ensuring last_name is never just a space
+    const nameParts = form.name.trim().split(/\s+/);
     const first_name = nameParts[0];
-    const last_name = nameParts.slice(1).join(" ") || " ";
+    // If user provides only one name, we use first_name as last_name to satisfy API requirements
+    const last_name = nameParts.length > 1 ? nameParts.slice(1).join(" ") : first_name;
 
     const payload = {
       type: "mortgage",
       lead_sub_type: "pre_approval",
-      name: { first_name, last_name },
+      name: { 
+        first_name: first_name, 
+        last_name: last_name 
+      },
       mobile: {
         country_code: COUNTRY_CONFIG[country].code,
         number: form.phone,
       },
-      email: form.email,
+      email: form.email.toLowerCase().trim(),
       has_property: form.foundProperty === "Yes",
       preferred_city: form.location,
       preferred_contact: form.contact[0]?.toLowerCase() || "whatsapp",
@@ -84,11 +94,17 @@ export default function GetPreApprovedModal({ open, onClose }) {
       const result = text ? JSON.parse(text) : {};
 
       if (response.ok) {
-        // 3. Success Toast
+        const updatedEmails = [...submittedEmails, form.email.toLowerCase().trim()];
+        localStorage.setItem("submitted_leads", JSON.stringify(updatedEmails));
+
         toast.success("Success! Lead Created.");
-        setTimeout(() => onClose(), 1500); // Small delay so they see the success toast
+        setTimeout(() => onClose(), 1500);
       } else {
-        toast.error(result.message || "Something went wrong");
+        if (response.status === 400 || result.message?.toLowerCase().includes("already")) {
+          toast.error("You already have created a lead within last 30 days . So please try after some days");
+        } else {
+          toast.error(result.message || result.error?.message || "Something went wrong");
+        }
       }
     } catch (error) {
       console.error("API Error:", error);
@@ -100,11 +116,9 @@ export default function GetPreApprovedModal({ open, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 overflow-y-auto">
-      {/* 4. Toaster component (doesn't affect UI layout) */}
       <Toaster position="top-center" reverseOrder={false} />
       
       <div className="flex min-h-screen items-center justify-center p-4">
-        {/* ... Rest of your UI code remains exactly the same ... */}
         <div className="relative w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden text-black max-h-[95vh] md:max-h-none">
           <div className="absolute inset-0 bg-gradient-to-br from-[#f4f1ff] via-white to-[#e9fbff]" />
           <div className="relative bg-white rounded-3xl px-5 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10 overflow-y-auto">

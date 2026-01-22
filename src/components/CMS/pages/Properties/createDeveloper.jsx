@@ -2,23 +2,33 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios'; 
 import {
   Button, Modal, Form, Input, Popconfirm, Card, Table,
-  Typography, Avatar, Row, Col, Statistic, Space, Divider, message, notification, Tooltip, Grid, Switch, Upload
+  Typography, Avatar, Row, Col, Statistic, Space, Divider, message, notification, Tooltip, Grid, Switch, Upload, Select
 } from 'antd';
 import {
   PlusOutlined, UserOutlined, MailOutlined, PhoneOutlined,
   DeleteOutlined, EditOutlined, SearchOutlined, UsergroupAddOutlined, GlobalOutlined, 
-  CheckOutlined, CloseOutlined, LockOutlined, HomeOutlined, EnvironmentOutlined, LinkOutlined, NumberOutlined, LoadingOutlined
+  CheckOutlined, CloseOutlined, LockOutlined, HomeOutlined, EnvironmentOutlined, LinkOutlined, NumberOutlined, LoadingOutlined, EyeOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 const { TextArea } = Input;
+const { Option } = Select;
 
 const THEME = {
   primary: "#7c3aed", 
   success: "#10b981",
   error: "#ef4444",
 };
+
+// Defined Country Codes
+const COUNTRY_CODES = [
+  { code: '+971', country: 'UAE', flag: '🇦🇪' },
+  { code: '+91', country: 'IND', flag: '🇮🇳' },
+  { code: '+1', country: 'USA', flag: '🇺🇸' },
+  { code: '+44', country: 'UK', flag: '🇬🇧' },
+  { code: '+966', country: 'KSA', flag: '🇸🇦' },
+];
 
 const CreateDeveloper = () => {
   const BASE_URL = "https://xoto.ae/api/property"; 
@@ -34,9 +44,11 @@ const CreateDeveloper = () => {
   const [pageSize, setPageSize] = useState(10);
   const [searchText, setSearchText] = useState('');
   
-  // --- Upload States ---
+  // --- Upload & Preview States ---
   const [imageUrl, setImageUrl] = useState(null);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false); 
+  const [previewImage, setPreviewImage] = useState('');
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null); 
@@ -84,7 +96,7 @@ const CreateDeveloper = () => {
           name: dev.name,
           email: dev.email,
           phone_number: dev.phone_number,
-          country_code: dev.country_code || '+91',
+          country_code: dev.country_code || '+971', 
           password: dev.password,
           description: dev.description,
           websiteUrl: dev.websiteUrl,
@@ -95,7 +107,6 @@ const CreateDeveloper = () => {
           logo: dev.logo
         });
         
-        // Prefill image preview
         if (dev.logo) {
             setImageUrl(dev.logo);
         }
@@ -126,7 +137,7 @@ const CreateDeveloper = () => {
         city: values.city || "",
         address: values.address || "",
         reraNumber: values.reraNumber || "",
-        logo: values.logo || "", // Ab ye sirf String URL hoga
+        logo: values.logo || "", 
       };
 
       let response;
@@ -148,10 +159,8 @@ const CreateDeveloper = () => {
         fetchDevelopers(currentPage, pageSize);
       }
     } catch (err) {
-      // Error message ko better handle kiya hai taaki validation error dikhe
       const errorMsg = err.response?.data?.message || err.message || "Failed to save developer details.";
       message.error(errorMsg);
-      console.error("Save Error:", err);
     } finally {
       setLoading(false);
     }
@@ -197,7 +206,7 @@ const CreateDeveloper = () => {
     }
   };
 
-  // --- 6. IMAGE UPLOAD HANDLER (FIXED FOR YOUR API RESPONSE) ---
+  // --- 6. IMAGE UPLOAD HANDLER ---
   const handleImageUpload = async (options) => {
     const { file, onSuccess, onError } = options;
     setUploadLoading(true);
@@ -210,21 +219,14 @@ const CreateDeveloper = () => {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
 
-        // *** FIX IS HERE ***
-        // Aapka response structure hai: { success: true, file: { url: "..." } }
-        // Isliye hume 'response.data.file.url' access karna hai.
-        const uploadedUrl = response.data?.file?.url;
+        const uploadedUrl = response.data?.file?.url || response.data?.url; 
 
         if (uploadedUrl) {
-            setImageUrl(uploadedUrl); // Preview update
-            
-            // Hidden input mein sirf String URL set kar rahe hain
-            form.setFieldsValue({ logo: uploadedUrl }); 
-            
+            setImageUrl(uploadedUrl); 
+            form.setFieldsValue({ logo: uploadedUrl });
             message.success("Logo uploaded successfully!");
             onSuccess("Ok");
         } else {
-            console.error("API Response structure invalid:", response.data);
             throw new Error("Could not find image URL in response");
         }
     } catch (err) {
@@ -234,6 +236,18 @@ const CreateDeveloper = () => {
     } finally {
         setUploadLoading(false);
     }
+  };
+
+  const handlePreview = (e) => {
+    e.stopPropagation(); 
+    setPreviewImage(imageUrl);
+    setPreviewOpen(true);
+  };
+
+  const handleRemoveImage = (e) => {
+    e.stopPropagation(); 
+    setImageUrl(null);
+    form.setFieldsValue({ logo: '' });
   };
 
   const beforeUpload = (file) => {
@@ -261,27 +275,43 @@ const CreateDeveloper = () => {
       <div style={{ marginTop: 8 }}>Upload</div>
     </div>
   );
-const columns = [
+
+  const columns = [
     {
       title: 'Developer Name',
       dataIndex: 'name',
       key: 'name',
       fixed: screens.md ? 'left' : false, 
-      width: 250, // Width thodi badha di taaki bada logo fit aaye
+      width: 250,
       render: (text, record) => (
         <Space>
-          {/* UPDATED LOGO STYLE HERE */}
+          {/* LOGIC UPDATE:
+             - Agar Logo hai: Image show karo.
+             - Agar Logo nahi hai: Name ka First Letter (Capitalized) show karo.
+          */}
           <Avatar 
-            shape="square"  // Circle hatakar Square kiya
-            size={50}       // Size bada kiya (pixels mein)
+            shape="square"
+            size={50}
             src={record.logo} 
-            icon={<UserOutlined />} 
+            // Removed icon={<UserOutlined />} so letter can show up
             style={{ 
-              backgroundColor: record.isVerifiedByAdmin ? THEME.success : THEME.primary,
-              borderRadius: '10px', // Thoda rounded effect dene ke liye
-              border: '1px solid #f0f0f0' // Optional: Light border for better look
+                backgroundColor: record.isVerifiedByAdmin ? THEME.success : THEME.primary,
+                borderRadius: '10px',
+                border: '1px solid #f0f0f0',
+                fontSize: '24px', // Letter bada dikhane ke liye
+                fontWeight: 'bold',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              height: '50px',
+              width: '80px',
             }} 
-          />
+          >
+             {/* Fallback to First Letter if no logo */}
+             {record.logo ? null : record.name?.charAt(0).toUpperCase()}
+          </Avatar>
+
           <div>
             <Text strong style={{ fontSize: '15px' }}>{text}</Text>
             {record.isVerifiedByAdmin && (
@@ -291,7 +321,6 @@ const columns = [
         </Space>
       ),
     },
-    // ... baaki columns same rahenge
     {
       title: 'Email',
       dataIndex: 'email',
@@ -448,7 +477,7 @@ const columns = [
             form={form} 
             layout="vertical" 
             onFinish={handleSave} 
-            initialValues={{ country_code: '+91' }}
+            initialValues={{ country_code: '+971' }} 
         >
           {/* SECTION 1: ACCOUNT DETAILS */}
           <Text strong className="text-gray-500 block mb-3 uppercase text-xs">Account Details</Text>
@@ -477,12 +506,11 @@ const columns = [
 
           <Divider style={{ margin: '10px 0 20px 0' }} />
 
-          {/* SECTION 2: LOGO UPLOAD */}
+          {/* SECTION 2: LOGO UPLOAD (WITH HOVER PREVIEW/DELETE) */}
           <Text strong className="text-gray-500 block mb-3 uppercase text-xs">Developer Logo</Text>
           <Row gutter={16}>
              <Col span={24}>
                  <Form.Item label="Upload Logo" tooltip="Supports JPG, PNG, WEBP (< 2MB)">
-                     {/* Hidden input to hold URL string for Form Submission */}
                      <Form.Item name="logo" noStyle>
                         <Input type="hidden" />
                      </Form.Item>
@@ -494,9 +522,25 @@ const columns = [
                         showUploadList={false}
                         customRequest={handleImageUpload}
                         beforeUpload={beforeUpload}
+                        disabled={uploadLoading}
                      >
                         {imageUrl ? (
-                           <img src={imageUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                           <div className="relative w-full h-full group overflow-hidden rounded-lg">
+                              {/* Main Image */}
+                              <img src={imageUrl} alt="logo" className="w-full h-full object-contain" />
+                              
+                              {/* Hover Overlay with Eye & Trash Icons */}
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                 <EyeOutlined 
+                                    className="text-white text-lg hover:text-blue-400 cursor-pointer" 
+                                    onClick={handlePreview} 
+                                 />
+                                 <DeleteOutlined 
+                                    className="text-white text-lg hover:text-red-400 cursor-pointer" 
+                                    onClick={handleRemoveImage} 
+                                 />
+                              </div>
+                           </div>
                         ) : (
                            uploadButton
                         )}
@@ -510,14 +554,79 @@ const columns = [
           {/* SECTION 3: CONTACT & LOCATION */}
           <Text strong className="text-gray-500 block mb-3 uppercase text-xs">Contact & Location</Text>
           <Row gutter={16}>
-            <Col xs={8} md={6}>
+            
+            <Col xs={8} md={7}>
               <Form.Item name="country_code" label="Code">
-                <Input prefix={<GlobalOutlined />} readOnly style={{ backgroundColor: '#f5f5f5' }} />
+                <Select style={{ width: '100%' }}>
+                  {COUNTRY_CODES.map((item) => (
+                    <Option key={item.code} value={item.code}>
+                      {item.flag} {item.code}
+                    </Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
-            <Col xs={16} md={18}>
-              <Form.Item name="phone_number" label="Phone Number" rules={[{ required: true }]}>
-                <Input prefix={<PhoneOutlined />} placeholder="9876543210" maxLength={15} />
+
+            <Col xs={16} md={17}>
+              <Form.Item 
+                noStyle 
+                shouldUpdate={(prev, current) => prev.country_code !== current.country_code}
+              >
+                {({ getFieldValue }) => {
+                   const code = getFieldValue('country_code') || '+971';
+                   let maxLen = 15;
+                   let placeholder = "Mobile Number";
+
+                   if (code === '+971') { maxLen = 9; placeholder = "50xxxxxxx (9 digits)"; }
+                   if (code === '+91') { maxLen = 10; placeholder = "98xxxxxxxx (10 digits)"; }
+
+                   return (
+                     <Form.Item 
+                        name="phone_number" 
+                        label="Phone Number" 
+                        rules={[
+                          { required: false, message: 'Phone number is required'  },
+                          {
+                            validator: (_, value) => {
+                              if (!value) return Promise.resolve();
+                              
+                              if (code === '+971') {
+                                if (!/^\d{9}$/.test(value)) {
+                                  return Promise.reject(new Error('UAE number must be exactly 9 digits'));
+                                }
+                                if (!value.startsWith('5')) {
+                                   return Promise.reject(new Error('UAE  mobile usually starts with 5'));
+                                   
+                                }
+                              } else if (code === '+91') {
+                                if (!/^\d{10}$/.test(value)) {
+                                  return Promise.reject(new Error('India number must be exactly 10 digits'));
+                                }
+                              } else {
+                                if (!/^\d{7,15}$/.test(value)) {
+                                   return Promise.reject(new Error('Invalid phone format'));
+                                }
+                              }
+                              return Promise.resolve();
+                            }
+                          }
+                        ]}
+                     >
+                        <Input 
+                          prefix={<PhoneOutlined />} 
+                          type="number" 
+                          maxLength={maxLen} 
+                          placeholder={placeholder}
+                          style={{ width: '100%' }}
+                          onInput={(e) => {
+                             if (e.target.value.length > maxLen) {
+                                e.target.value = e.target.value.slice(0, maxLen);
+                             }
+                          }}
+                        />
+                     </Form.Item>
+                   );
+                }}
               </Form.Item>
             </Col>
             
@@ -528,7 +637,7 @@ const columns = [
             </Col>
             <Col xs={24} md={12}>
                 <Form.Item name="city" label="City">
-                    <Input prefix={<EnvironmentOutlined />} placeholder="Los Angeles" />
+                    <Input prefix={<EnvironmentOutlined />} placeholder="Dubai" />
                 </Form.Item>
             </Col>
             <Col span={24}>
@@ -568,6 +677,17 @@ const columns = [
             </Button>
           </div>
         </Form>
+      </Modal>
+
+      {/* --- PREVIEW MODAL --- */}
+      <Modal 
+        open={previewOpen} 
+        title="Logo Preview" 
+        footer={null} 
+        onCancel={() => setPreviewOpen(false)}
+        centered
+      >
+        <img alt="logo-preview" style={{ width: '100%' }} src={previewImage} />
       </Modal>
     </div>
   );
