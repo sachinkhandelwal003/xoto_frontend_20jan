@@ -4,9 +4,7 @@ import {
   User,
   Mail,
   Lock,
-  CheckCircle2,
   Smartphone,
-  MapPin, 
 } from "lucide-react";
 import {
   Button,
@@ -64,7 +62,6 @@ const LeadGenerationModal = ({
       name: country.name,
       code: country.phonecode,
       iso: country.isoCode,
-      // Note: Hum flag emoji nahi, ab image use karenge render ke time
     })).sort((a, b) => {
       const aPriority = priorityIsoCodes.includes(a.iso);
       const bPriority = priorityIsoCodes.includes(b.iso);
@@ -89,7 +86,7 @@ const LeadGenerationModal = ({
     form.setFieldsValue({ city: undefined });
   };
 
-  /* ================= 🔴 UPDATED PREFIX SELECTOR (WITH IMAGES) ================= */
+  /* ================= PREFIX SELECTOR ================= */
   const prefixSelector = (
     <Form.Item name="country_code" noStyle initialValue="971">
       <Select
@@ -100,6 +97,8 @@ const LeadGenerationModal = ({
         optionFilterProp="children"
         onChange={(val) => {
           setCountryCode(val);
+          // Explicitly updating form value to stay synced
+          form.setFieldsValue({ country_code: val });
           form.setFieldsValue({ mobile: "" });
           form.validateFields(['mobile']);
         }}
@@ -128,13 +127,17 @@ const LeadGenerationModal = ({
     </Form.Item>
   );
 
-  /* ================= SUBMIT HANDLER ================= */
+  /* ================= SUBMIT HANDLER (FIXED) ================= */
   const handleSubmit = async (values) => {
     setIsSubmitting(true);
 
     try {
+      // FIX: Ensure Country Code has '+' prefix
+      const rawCode = values.country_code ? values.country_code.toString() : "971";
+      const formattedCode = rawCode.startsWith("+") ? rawCode : `+${rawCode}`;
+
       const mobilePayload = {
-        country_code: values.country_code,
+        country_code: formattedCode, // Sends +971 instead of 971
         number: values.mobile.toString(),
       };
 
@@ -167,7 +170,6 @@ const LeadGenerationModal = ({
         }
       }
     } catch (error) {
-        // Error Handling Same as before
         const data = error?.response?.data;
         if (Array.isArray(data?.errors) && data.errors.length > 0) {
             const fieldErrors = data.errors.map((err) => {

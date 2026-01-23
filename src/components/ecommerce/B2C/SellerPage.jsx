@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Form,
   Input,
@@ -21,13 +21,17 @@ import {
   ArrowLeftOutlined,
   ArrowRightOutlined,
   SafetyOutlined,
-  CheckCircleFilled
+  CheckCircleFilled,
+  EnvironmentOutlined
 } from '@ant-design/icons';
 import { useForm, Controller } from 'react-hook-form';
+import { Country, State, City } from 'country-state-city';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
+const { Option } = Select;
 
 const SellerPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -37,20 +41,64 @@ const SellerPage = () => {
   const [success, setSuccess] = useState(false);
   const [apiErrors, setApiErrors] = useState({});
 
-  const themeColor = 'var(--color-primary)';
+  // States for Address Logic
+  const [statesList, setStatesList] = useState([]);
+  const [citiesList, setCitiesList] = useState([]);
+
+  const themeColor = 'var(--color-primary)'; // Ensure this CSS variable exists or replace with hex code like #1890ff
 
   const {
     control,
-    handleSubmit,
     trigger,
     setError,
+    watch,
+    setValue,
+    handleSubmit, // Add handleSubmit here
+    getValues,     // Add getValues here
     formState: { errors }
   } = useForm({
     mode: 'onChange',
     defaultValues: {
-      mobile: { country_code: '+971' }
+      mobile: { country_code: '+971' },
+      store_details: { country: 'AE' }
     }
   });
+
+  // Watchers for dependency logic
+  const selectedCountry = watch('store_details.country');
+  const selectedState = watch('store_details.state');
+
+  // Load States when Country changes
+  useEffect(() => {
+    if (selectedCountry) {
+      const updatedStates = State.getStatesOfCountry(selectedCountry);
+      setStatesList(updatedStates);
+    } else {
+      setStatesList([]);
+    }
+  }, [selectedCountry]);
+
+  // Load Cities when State changes
+  useEffect(() => {
+    if (selectedState && selectedCountry) {
+      const updatedCities = City.getCitiesOfState(selectedCountry, selectedState);
+      setCitiesList(updatedCities);
+    } else {
+      setCitiesList([]);
+    }
+  }, [selectedState, selectedCountry]);
+
+  // Prepare Phone Codes with Flag Images Data
+  const countryPhoneData = useMemo(() => {
+    const allCountries = Country.getAllCountries();
+    return allCountries.map(c => ({
+      iso: c.isoCode.toLowerCase(), // Needed for FlagCDN url
+      name: c.name,
+      phone: `+${c.phonecode}`,
+      value: `+${c.phonecode}`,
+      searchStr: `${c.name} ${c.phonecode}` // Custom search string
+    }));
+  }, []);
 
   const businessTypes = [
     { label: 'Individual / Sole Proprietor', value: 'Individual / Sole Proprietor' },
@@ -61,15 +109,6 @@ const SellerPage = () => {
     { label: 'Non-profit Organization', value: 'Non-profit Organization' }
   ];
 
-  const countries = [
-    { label: 'United Arab Emirates', value: 'United Arab Emirates' },
-    { label: 'India', value: 'India' },
-    { label: 'United States', value: 'United States' },
-    { label: 'United Kingdom', value: 'United Kingdom' },
-    { label: 'Canada', value: 'Canada' },
-    { label: 'Australia', value: 'Australia' }
-  ];
-
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -77,21 +116,16 @@ const SellerPage = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      // Updated API endpoint as per your requirement
       const response = await apiService.get('/products/get-all-category?limit=100');
-      
-      // Standardizing response data access
       const categoryData = response.data?.data || response.data || response;
       
       if (Array.isArray(categoryData)) {
         const categoryOptions = categoryData.map(category => ({
-          // Using label/value format for Ant Design Select
           label: category.name,
           value: category._id
         }));
         setCategories(categoryOptions);
       } else if (categoryData.categories) {
-        // Fallback for your previous structure
         const categoryOptions = categoryData.categories.map(category => ({
           label: category.parent ? `${category.name} (${category.parent.name})` : category.name,
           value: category._id
@@ -114,9 +148,17 @@ const SellerPage = () => {
     if (currentStep === 0) {
       fieldsToValidate = ['first_name', 'last_name', 'email', 'mobile.country_code', 'mobile.number', 'password', 'confirmPassword'];
     } else if (currentStep === 1) {
-      fieldsToValidate = ['store_details.store_name', 'store_details.store_type', 'store_details.categories'];
+      fieldsToValidate = ['store_details.store_name', 'store_details.store_type', 'store_details.categories', 'store_details.store_description'];
     } else if (currentStep === 2) {
-      fieldsToValidate = ['registration.pan_number', 'store_details.store_address', 'store_details.city', 'store_details.country', 'store_details.pincode', 'meta.agreed_to_terms'];
+      fieldsToValidate = [
+        'registration.pan_number', 
+        'store_details.store_address', 
+        'store_details.country', 
+        'store_details.state', 
+        'store_details.city', 
+        'store_details.pincode', 
+        'meta.agreed_to_terms'
+      ];
     }
 
     const result = await trigger(fieldsToValidate);
@@ -142,12 +184,16 @@ const SellerPage = () => {
     setSubmitting(true);
     setApiErrors({});
 
+    // Convert ISO codes to Names for backend readability
+    const countryObj = Country.getCountryByCode(data.store_details.country);
+    const stateObj = State.getStateByCodeAndCountry(data.store_details.state, data.store_details.country);
+    
     const payload = {
       first_name: data.first_name,
       last_name: data.last_name,
       email: data.email,
       mobile: {
-        country_code: data.mobile?.country_code || '+91',
+        country_code: data.mobile?.country_code,
         number: data.mobile?.number || ''
       },
       password: data.password,
@@ -157,8 +203,9 @@ const SellerPage = () => {
         store_description: data.store_details?.store_description || '',
         store_type: data.store_details?.store_type,
         store_address: data.store_details?.store_address,
+        country: countryObj ? countryObj.name : data.store_details?.country,
+        state: stateObj ? stateObj.name : data.store_details?.state, 
         city: data.store_details?.city,
-        country: data.store_details?.country,
         pincode: data.store_details?.pincode,
         categories: data.store_details?.categories || []
       },
@@ -187,8 +234,14 @@ const SellerPage = () => {
         setApiErrors(errorMap);
 
         const firstErrorField = res.errors[0].field;
-        const el = document.querySelector(`[name="${firstErrorField}"]`);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        // Logic to jump to the step with error
+        if(firstErrorField.includes('store_details.country') || firstErrorField.includes('registration')) {
+            setCurrentStep(2);
+        } else if (firstErrorField.includes('store_details')) {
+            setCurrentStep(1);
+        } else {
+            setCurrentStep(0);
+        }
 
         message.error(`Please fix ${res.errors.length} error(s).`);
       } else {
@@ -276,6 +329,7 @@ const SellerPage = () => {
             <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 20px 40px rgba(0,0,0,0.2)', background: '#fff' }} bodyStyle={{ padding: 40 }}>
               <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
                 <Spin spinning={submitting}>
+                  
                   {/* Step 0: Personal Information */}
                   {currentStep === 0 && (
                     <>
@@ -300,21 +354,77 @@ const SellerPage = () => {
                       </Form.Item>
 
                       <Row gutter={16}>
-                        <Col span={6}>
-                          <Form.Item label="Code">
-                            <Controller name="mobile.country_code" control={control} render={({ field }) => (
-                              <Select size="large" {...field}>
-                                <Select.Option value="+971">+971 (AE)</Select.Option>
-                                <Select.Option value="+91">+91 (IN)</Select.Option>
-                                <Select.Option value="+1">+1 (US)</Select.Option>
-                                <Select.Option value="+44">+44 (UK)</Select.Option>
-                              </Select>
-                            )} />
+                        <Col span={8}>
+                          <Form.Item label="Code" required>
+                            <Controller 
+                              name="mobile.country_code" 
+                              control={control} 
+                              rules={{ required: 'Required' }} 
+                              render={({ field }) => (
+                                <Select 
+                                  size="large" 
+                                  showSearch
+                                  optionFilterProp="children" 
+                                  filterOption={(input, option) => 
+                                    (option['data-search'] || "").toLowerCase().includes(input.toLowerCase())
+                                  }
+                                  {...field}
+                                >
+                                  {countryPhoneData.map((country, index) => (
+                                    <Option 
+                                      key={`${country.iso}-${index}`} 
+                                      value={country.value}
+                                      data-search={country.searchStr} 
+                                    >
+                                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <img 
+                                          src={`https://flagcdn.com/w20/${country.iso}.png`} 
+                                          srcSet={`https://flagcdn.com/w40/${country.iso}.png 2x`}
+                                          width="20" 
+                                          alt={country.name} 
+                                          style={{ marginRight: 8, borderRadius: 2 }} 
+                                        />
+                                        <span>{country.phone}</span>
+                                        <span style={{ color: '#999', fontSize: '12px', marginLeft: '6px' }}>
+                                           ({country.iso.toUpperCase()})
+                                        </span>
+                                      </div>
+                                    </Option>
+                                  ))}
+                                </Select>
+                              )} 
+                            />
                           </Form.Item>
                         </Col>
-                        <Col span={18}>
+                        <Col span={16}>
                           <Form.Item label="Phone Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message || apiErrors['mobile.number']}>
-                            <Controller name="mobile.number" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
+                            <Controller 
+                              name="mobile.number" 
+                              control={control} 
+                              rules={{ 
+                                required: 'Required', 
+                                validate: (value) => {
+                                  const countryCode = getValues('mobile.country_code');
+                                  if(!countryCode) return "Select code first";
+
+                                  const fullNumber = `${countryCode}${value}`;
+                                  const phoneNumber = parsePhoneNumberFromString(fullNumber);
+
+                                  return (phoneNumber && phoneNumber.isValid()) || `Invalid length for ${countryCode}`;
+                                }
+                              }} 
+                              render={({ field }) => (
+                                <Input 
+                                  size="large" 
+                                  placeholder="e.g. 501234567"
+                                  maxLength={15}
+                                  {...field} 
+                                  onChange={(e) => {
+                                    field.onChange(e.target.value.replace(/\D/g, ""));
+                                  }}
+                                />
+                              )} 
+                            />
                           </Form.Item>
                         </Col>
                       </Row>
@@ -368,44 +478,114 @@ const SellerPage = () => {
                   {currentStep === 2 && (
                     <>
                       <Title level={4} style={{ marginBottom: 24, color: '#333' }}>
-                        <FileTextOutlined style={{ color: themeColor }} /> Business Details
+                        <FileTextOutlined style={{ color: themeColor }} /> Business & Address
                       </Title>
                       <Row gutter={16}>
                         <Col span={12}>
-                          <Form.Item label="TRN Number" required validateStatus={errors.registration?.pan_number ? 'error' : ''} help={errors.registration?.pan_number?.message}>
-                            <Controller name="registration.pan_number" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
+                          <Form.Item label="TRN Number (PAN)" required validateStatus={errors.registration?.pan_number ? 'error' : ''} help={errors.registration?.pan_number?.message}>
+                            <Controller name="registration.pan_number" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" placeholder="Enter TRN/PAN" {...field} />} />
                           </Form.Item>
                         </Col>
                         <Col span={12}>
-                          <Form.Item label="VAT (Optional)">
-                            <Controller name="registration.gstin" control={control} render={({ field }) => <Input size="large" {...field} />} />
+                          <Form.Item label="VAT/GSTIN (Optional)">
+                            <Controller name="registration.gstin" control={control} render={({ field }) => <Input size="large" placeholder="Enter VAT/GSTIN" {...field} />} />
                           </Form.Item>
                         </Col>
                       </Row>
 
-                      <Form.Item label="Address" required validateStatus={errors.store_details?.store_address ? 'error' : ''} help={errors.store_details?.store_address?.message}>
-                        <Controller name="store_details.store_address" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
+                      <Form.Item label="Street Address" required validateStatus={errors.store_details?.store_address ? 'error' : ''} help={errors.store_details?.store_address?.message}>
+                        <Controller name="store_details.store_address" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" prefix={<EnvironmentOutlined className='text-gray-400'/>} {...field} />} />
                       </Form.Item>
 
+                      {/* --- DYNAMIC ADDRESS SECTION --- */}
                       <Row gutter={16}>
-                        <Col span={8}>
-                          <Form.Item label="City" required validateStatus={errors.store_details?.city ? 'error' : ''} help={errors.store_details?.city?.message}>
-                            <Controller name="store_details.city" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
-                          </Form.Item>
-                        </Col>
-                        <Col span={8}>
+                        <Col span={12}>
                           <Form.Item label="Country" required validateStatus={errors.store_details?.country ? 'error' : ''} help={errors.store_details?.country?.message}>
-                            <Controller name="store_details.country" control={control} rules={{ required: 'Required' }} render={({ field }) => (
-                              <Select size="large" options={countries} {...field} />
+                            <Controller 
+                                name="store_details.country" 
+                                control={control} 
+                                rules={{ required: 'Required' }} 
+                                render={({ field }) => (
+                                <Select 
+                                    size="large" 
+                                    showSearch 
+                                    optionFilterProp="children"
+                                    filterOption={(input, option) => option.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0}
+                                    onChange={(val) => {
+                                        field.onChange(val);
+                                        setValue('store_details.state', undefined); // Reset State
+                                        setValue('store_details.city', undefined); // Reset City
+                                    }}
+                                    value={field.value}
+                                >
+                                    {Country.getAllCountries().map(country => (
+                                        <Option key={country.isoCode} value={country.isoCode}>{country.name}</Option>
+                                    ))}
+                                </Select>
                             )} />
                           </Form.Item>
                         </Col>
-                        <Col span={8}>
-                          <Form.Item label="PO" required validateStatus={errors.store_details?.pincode ? 'error' : ''} help={errors.store_details?.pincode?.message}>
+
+                        <Col span={12}>
+                          <Form.Item label="State / Province" required validateStatus={errors.store_details?.state ? 'error' : ''} help={errors.store_details?.state?.message}>
+                            <Controller 
+                                name="store_details.state" 
+                                control={control} 
+                                rules={{ required: 'Required' }} 
+                                render={({ field }) => (
+                                <Select 
+                                    size="large" 
+                                    showSearch 
+                                    disabled={!statesList.length}
+                                    optionFilterProp="children"
+                                    filterOption={(input, option) => option.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0}
+                                    onChange={(val) => {
+                                        field.onChange(val);
+                                        setValue('store_details.city', undefined); // Reset City
+                                    }}
+                                    value={field.value}
+                                >
+                                    {statesList.map(state => (
+                                        <Option key={state.isoCode} value={state.isoCode}>{state.name}</Option>
+                                    ))}
+                                </Select>
+                            )} />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+
+                      <Row gutter={16}>
+                        <Col span={12}>
+                           <Form.Item label="City" required validateStatus={errors.store_details?.city ? 'error' : ''} help={errors.store_details?.city?.message}>
+                            <Controller 
+                                name="store_details.city" 
+                                control={control} 
+                                rules={{ required: 'Required' }} 
+                                render={({ field }) => (
+                                citiesList.length > 0 ? (
+                                    <Select 
+                                        size="large" 
+                                        showSearch
+                                        optionFilterProp="children"
+                                        {...field}
+                                    >
+                                        {citiesList.map(city => (
+                                            <Option key={city.name} value={city.name}>{city.name}</Option>
+                                        ))}
+                                    </Select>
+                                ) : (
+                                    <Input size="large" {...field} />
+                                )
+                            )} />
+                          </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                          <Form.Item label="Zip / PO Code" required validateStatus={errors.store_details?.pincode ? 'error' : ''} help={errors.store_details?.pincode?.message}>
                             <Controller name="store_details.pincode" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
                           </Form.Item>
                         </Col>
                       </Row>
+                       {/* --- END ADDRESS SECTION --- */}
 
                       <Form.Item validateStatus={errors.meta?.agreed_to_terms ? 'error' : ''} help={errors.meta?.agreed_to_terms?.message}>
                         <Controller
