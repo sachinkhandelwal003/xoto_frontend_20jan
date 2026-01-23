@@ -50,7 +50,7 @@ const interElements = [
 ];
 
 const roomTypes = [
-  { value: 'living', label: 'Living Room', img: 'https://gstatic.ideal.house/interior/Home/Living_Room.webp'   },
+  { value: 'living', label: 'Living Room', img: 'https://gstatic.ideal.house/interior/Home/Living_Room.webp'    },
   { value: 'bedroom', label: 'Bedroom', img: 'https://gstatic.ideal.house/interior/Home/Bed_Room.webp' },
   { value: 'kitchen', label: 'Kitchen', img: 'https://gstatic.ideal.house/interior/Home/Kitchen.webp' },
   { value: 'bathroom', label: 'Bathroom', img: 'https://gstatic.ideal.house/interior/Home/Bath_Room.webp' },
@@ -126,6 +126,7 @@ const ComingSoon = () => {
       return;
     }
 
+    // Yahan se error toast hta diya hai double error bachane ke liye
     if (!isCustomerLoggedIn) {
       setShowAuthModal(true);
       return;
@@ -207,20 +208,11 @@ const ComingSoon = () => {
 
       const resData = response;
 
-      // --- EXACT LOGIC FROM AIPLANNER ---
+      // --- LIMIT CHECK ---
       if (resData.status === false && resData.aiImageGeneration === false) {
         setIsGenerating(false);
-        // setUpgradeMessage(resData.message || "Limit reached. Upgrade to continue.");
         setShowUpgradeModal(true);
         return; 
-      }
-
-      // Check standard failure
-      if (resData?.status === false) {
-        setUpgradeMessage(resData.message || 'Upgrade required');
-        setShowUpgradeModal(true);
-        setIsGenerating(false);
-        return;
       }
 
       // Success
@@ -253,19 +245,27 @@ const ComingSoon = () => {
     } catch (error) {
       console.error('Generation failed:', error);
       
-      // --- EXACT LOGIC FROM AIPLANNER FOR ERRORS ---
       const errRes = error.response?.data;
-      if (errRes && (errRes.aiImageGeneration === false || errRes.status === false)) {
-         setIsGenerating(false);
-        //  setUpgradeMessage(errRes.message || "Please upgrade to generate more images.");
-         setShowUpgradeModal(true);
-         return;
+
+      // --- TARGET LOGIC: ERROR 500 CUSTOMER NOT FOUND ---
+      if (errRes?.error?.message === "Customer not found") {
+        setIsGenerating(false); // Background loader band
+        notification.error({
+          message: 'Account Required',
+          description: errRes.error.message, // "Customer not found"
+        });
+        setShowAuthModal(true); // Hand to hand modal open
+        return;
       }
 
-      notification.error({
-        message: 'Generation failed',
-        description: 'Please try again later.',
-      });
+      // Baaki upgrade limit check
+      if (errRes && (errRes.aiImageGeneration === false || errRes.status === false)) {
+          setIsGenerating(false);
+          setShowUpgradeModal(true);
+          return;
+      }
+
+      // "Something went wrong" wala generic error hta diya hai
       setIsGenerating(false);
     } finally {
       clearInterval(interval);
@@ -563,7 +563,7 @@ const ComingSoon = () => {
       {/* MODALS */}
       <LeadGenerationModal visible={showAuthModal} onCancel={() => setShowAuthModal(false)} onAuthSuccess={handleAuthSuccess} />
 
-      {/* --- EXACT REPLICA OF AIPLANNER UPGRADE MODAL --- */}
+      {/* --- UPGRADE MODAL --- */}
       <Modal
         open={showUpgradeModal}
         footer={null}
@@ -747,22 +747,5 @@ const ComingSoon = () => {
     </div>
   );
 };
-
-<style jsx>{`
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: var(--color-primary);
-    border-radius: 9999px;
-  }
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-primary) transparent;
-  }
-`}</style>
 
 export default ComingSoon;
