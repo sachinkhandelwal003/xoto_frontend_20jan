@@ -26,10 +26,14 @@ import {
   EnvironmentOutlined
 } from '@ant-design/icons';
 import { useForm, Controller } from 'react-hook-form';
+<<<<<<< HEAD
 // Unified Import
 import { Country, State, City } from 'country-state-city';
+=======
+
+>>>>>>> 398573f010932fafd4d19a2a9c7340eb92e9bab6
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
-import { apiService } from '../../../manageApi/utils/custom.apiservice';
+import { apiService } from '../../../manageApi/utils/custom.apiservice'; 
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -56,7 +60,12 @@ const SellerPage = () => {
     setError,
     watch,
     setValue,
+<<<<<<< HEAD
     getValues,
+=======
+    handleSubmit, // Add handleSubmit here
+    getValues,     // Add getValues here
+>>>>>>> 398573f010932fafd4d19a2a9c7340eb92e9bab6
     formState: { errors }
   } = useForm({
     mode: 'onChange',
@@ -66,6 +75,7 @@ const SellerPage = () => {
     }
   });
 
+<<<<<<< HEAD
   // --- 1. PHONE CODES DATA (From country-state-city) ---
   const countryPhoneData = useMemo(() => {
     const allCountries = Country.getAllCountries();
@@ -79,6 +89,9 @@ const SellerPage = () => {
   }, []);
 
   // --- 2. LOCATION LOGIC ---
+=======
+  // Watchers for dependency logic
+>>>>>>> 398573f010932fafd4d19a2a9c7340eb92e9bab6
   const selectedCountry = watch('store_details.country');
   const selectedState = watch('store_details.state');
 
@@ -105,6 +118,20 @@ const SellerPage = () => {
     }
   }, [selectedState, selectedCountry]);
 
+<<<<<<< HEAD
+=======
+  // Prepare Phone Codes with Flag Images Data
+  const countryPhoneData = useMemo(() => {
+    const allCountries = Country.getAllCountries();
+    return allCountries.map(c => ({
+      iso: c.isoCode.toLowerCase(), // Needed for FlagCDN url
+      name: c.name,
+      phone: `+${c.phonecode}`,
+      value: `+${c.phonecode}`,
+      searchStr: `${c.name} ${c.phonecode}` // Custom search string
+    }));
+  }, []);
+>>>>>>> 398573f010932fafd4d19a2a9c7340eb92e9bab6
 
   const businessTypes = [
     { label: 'Individual / Sole Proprietor', value: 'Individual / Sole Proprietor' },
@@ -190,7 +217,11 @@ const SellerPage = () => {
     setSubmitting(true);
     setApiErrors({});
 
+<<<<<<< HEAD
     // Convert ISO codes to Names for Backend
+=======
+    // Convert ISO codes to Names for backend readability
+>>>>>>> 398573f010932fafd4d19a2a9c7340eb92e9bab6
     const countryObj = Country.getCountryByCode(data.store_details.country);
     const stateObj = State.getStateByCodeAndCountry(data.store_details.state, data.store_details.country);
     
@@ -362,6 +393,7 @@ const SellerPage = () => {
                         <Controller name="email" control={control} rules={{ required: 'Required', pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' } }} render={({ field }) => <Input size="large" {...field} />} />
                       </Form.Item>
 
+<<<<<<< HEAD
                       {/* --- MOBILE FIELD WITH STRICT VALIDATION --- */}
                       <Form.Item label="Mobile Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message}>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
@@ -421,6 +453,83 @@ const SellerPage = () => {
                             </div>
                         </div>
                       </Form.Item>
+=======
+                      <Row gutter={16}>
+                        <Col span={8}>
+                          <Form.Item label="Code" required>
+                            <Controller 
+                              name="mobile.country_code" 
+                              control={control} 
+                              rules={{ required: 'Required' }} 
+                              render={({ field }) => (
+                                <Select 
+                                  size="large" 
+                                  showSearch
+                                  optionFilterProp="children" 
+                                  filterOption={(input, option) => 
+                                    (option['data-search'] || "").toLowerCase().includes(input.toLowerCase())
+                                  }
+                                  {...field}
+                                >
+                                  {countryPhoneData.map((country, index) => (
+                                    <Option 
+                                      key={`${country.iso}-${index}`} 
+                                      value={country.value}
+                                      data-search={country.searchStr} 
+                                    >
+                                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <img 
+                                          src={`https://flagcdn.com/w20/${country.iso}.png`} 
+                                          srcSet={`https://flagcdn.com/w40/${country.iso}.png 2x`}
+                                          width="20" 
+                                          alt={country.name} 
+                                          style={{ marginRight: 8, borderRadius: 2 }} 
+                                        />
+                                        <span>{country.phone}</span>
+                                        <span style={{ color: '#999', fontSize: '12px', marginLeft: '6px' }}>
+                                           ({country.iso.toUpperCase()})
+                                        </span>
+                                      </div>
+                                    </Option>
+                                  ))}
+                                </Select>
+                              )} 
+                            />
+                          </Form.Item>
+                        </Col>
+                        <Col span={16}>
+                          <Form.Item label="Phone Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message || apiErrors['mobile.number']}>
+                            <Controller 
+                              name="mobile.number" 
+                              control={control} 
+                              rules={{ 
+                                required: 'Required', 
+                                validate: (value) => {
+                                  const countryCode = getValues('mobile.country_code');
+                                  if(!countryCode) return "Select code first";
+
+                                  const fullNumber = `${countryCode}${value}`;
+                                  const phoneNumber = parsePhoneNumberFromString(fullNumber);
+
+                                  return (phoneNumber && phoneNumber.isValid()) || `Invalid length for ${countryCode}`;
+                                }
+                              }} 
+                              render={({ field }) => (
+                                <Input 
+                                  size="large" 
+                                  placeholder="e.g. 501234567"
+                                  maxLength={15}
+                                  {...field} 
+                                  onChange={(e) => {
+                                    field.onChange(e.target.value.replace(/\D/g, ""));
+                                  }}
+                                />
+                              )} 
+                            />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+>>>>>>> 398573f010932fafd4d19a2a9c7340eb92e9bab6
 
                       <Row gutter={16}>
                         <Col span={12}>
