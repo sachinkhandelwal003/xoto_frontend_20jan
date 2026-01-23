@@ -4,7 +4,7 @@ import {
   Card, Button, Space, Tag, Tooltip, Spin,
   Typography, Popconfirm, Input, Form, Modal, message,
   Row, Col, Statistic, Breadcrumb, Divider, Select, Switch,
-  InputNumber // <--- IMPORTED InputNumber
+  InputNumber
 } from 'antd';
 import {
   PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined,
@@ -31,6 +31,12 @@ const THEME = {
 };
 
 const API_BASE = '/estimate/master/category';
+
+// --- HELPER FUNCTION FOR CAPITALIZATION ---
+const capitalizeFirstLetter = (string) => {
+  if (!string) return '';
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
 
 const MasterCategory = () => {
   // Navigation State
@@ -176,8 +182,15 @@ const MasterCategory = () => {
                 {level === 'types' && <TagsOutlined style={{ fontSize: '18px', color: THEME.warning }} />}
             </div>
             <div>
-              <div style={{ fontWeight: 600, color: '#262626' }}>{record.name || record.label}</div>
-              {record.description && <Text type="secondary" style={{ fontSize: '12px' }}>{record.description}</Text>}
+              {/* Added Capitalization for Display */}
+              <div style={{ fontWeight: 600, color: '#262626' }}>
+                {capitalizeFirstLetter(record.name || record.label)}
+              </div>
+              {record.description && (
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  {capitalizeFirstLetter(record.description)}
+                </Text>
+              )}
             </div>
           </div>
         ),
@@ -247,16 +260,25 @@ const MasterCategory = () => {
       <Modal title={`Add New ${level.slice(0, -1)}`} open={createModalOpen} onCancel={() => setCreateModalOpen(false)} footer={null} centered destroyOnClose>
         <Form form={form} layout="vertical" onFinish={onSubmit} style={{ marginTop: '16px' }}>
           {level === 'categories' ? (
-            <Form.Item name="name" label="Category Type" rules={[{ required: true }]}>
+            <Form.Item 
+                name="name" 
+                label="Category Type" 
+                rules={[{ required: true }]}
+                normalize={(value) => capitalizeFirstLetter(value)} // Capitalize on input
+            >
               <Input />
             </Form.Item>
           ) : (
-            <Form.Item name="label" label="Name" rules={[{ required: true }]}>
+            <Form.Item 
+                name="label" 
+                label="Name" 
+                rules={[{ required: true }]}
+                normalize={(value) => capitalizeFirstLetter(value)} // Capitalize on input
+            >
               <Input />
             </Form.Item>
           )}
 
-          {/* Create Modal - USING INPUTNUMBER */}
           {level === 'types' && (
             <Form.Item
               name="baseRatePerSqFt"
@@ -264,12 +286,15 @@ const MasterCategory = () => {
               rules={[{ required: true }]}
               extra="For example, if the minimum total charge is $1000 for 100 sq. ft, enter 10 ($/sq. ft)."
             >
-              {/* Using InputNumber for strict number input */}
               <InputNumber style={{ width: '100%' }} placeholder="Enter rate" />
             </Form.Item>
           )}
 
-          <Form.Item name="description" label="Description">
+          <Form.Item 
+            name="description" 
+            label="Description"
+            normalize={(value) => capitalizeFirstLetter(value)} // Capitalize Description too
+          >
             <TextArea rows={3} />
           </Form.Item>
 
@@ -291,8 +316,6 @@ const MasterCategory = () => {
 
     useEffect(() => {
       if (selectedItem) {
-        console.log("🔥 EDIT MODAL ITEM:", selectedItem);
-        
         form.setFieldsValue({
           name: selectedItem.name,
           label: selectedItem.label,
@@ -307,26 +330,18 @@ const MasterCategory = () => {
     const onUpdate = async (values) => {
       setSaving(true);
       try {
-        // 👇 CORRECTED URL CONSTRUCTION
         let url = `${API_BASE}/${selectedItem._id}`; // Default for Root Category
 
         if (level === 'subcategories') {
-            // Use ID from item if available (safer), otherwise fallback to state
             const catId = selectedItem.category?._id || selectedItem.category || parentCategory;
             url = `${API_BASE}/${catId}/subcategories/${selectedItem._id}`;
         }
         
         if (level === 'types') {
-            // Ensure we use the exact parent IDs associated with this Type
             const catId = selectedItem.category?._id || selectedItem.category || parentCategory;
             const subCatId = selectedItem.subcategory?._id || selectedItem.subcategory || parentSubcategory;
-            
-            // Matches: /api/estimate/master/category/:catId/subcategories/:subCatId/types/:typeId
             url = `${API_BASE}/${catId}/subcategories/${subCatId}/types/${selectedItem._id}`;
         }
-
-        console.log("🚀 EXECUTE PUT API:", url); 
-        console.log("📤 Payload:", values);
 
         await apiService.put(url, values);
         message.success('Updated successfully!');
@@ -351,16 +366,30 @@ const MasterCategory = () => {
         <Form form={form} layout="vertical" onFinish={onUpdate} style={{ marginTop: '16px' }}>
           
           {level === 'categories' ? (
-            <Form.Item name="name" label="Category Type" rules={[{ required: true }]}>
+            <Form.Item 
+                name="name" 
+                label="Category Type" 
+                rules={[{ required: true }]}
+                normalize={(value) => capitalizeFirstLetter(value)} // Capitalize on Edit
+            >
               <Input />
             </Form.Item>
           ) : (
-            <Form.Item name="label" label="Name" rules={[{ required: true }]}>
+            <Form.Item 
+                name="label" 
+                label="Name" 
+                rules={[{ required: true }]}
+                normalize={(value) => capitalizeFirstLetter(value)} // Capitalize on Edit
+            >
               <Input />
             </Form.Item>
           )}
           
-          <Form.Item name="description" label="Description">
+          <Form.Item 
+            name="description" 
+            label="Description"
+            normalize={(value) => capitalizeFirstLetter(value)}
+          >
             <TextArea rows={3} />
           </Form.Item>
 
@@ -404,8 +433,8 @@ const MasterCategory = () => {
           <Title level={3} style={{ margin: 0 }}>Category Architecture</Title>
           <Breadcrumb separator=">">
             <Breadcrumb.Item onClick={() => { setLevel('categories'); setParentCategory(null); setSelectedCategory(null); }} style={{ cursor: 'pointer' }}><HomeOutlined /> Root</Breadcrumb.Item>
-            {selectedCategory && <Breadcrumb.Item onClick={() => { setLevel('subcategories'); setParentSubcategory(null); }} style={{ cursor: 'pointer' }}>{selectedCategory.name}</Breadcrumb.Item>}
-            {selectedSubcategory && <Breadcrumb.Item>{selectedSubcategory.label}</Breadcrumb.Item>}
+            {selectedCategory && <Breadcrumb.Item onClick={() => { setLevel('subcategories'); setParentSubcategory(null); }} style={{ cursor: 'pointer' }}>{capitalizeFirstLetter(selectedCategory.name)}</Breadcrumb.Item>}
+            {selectedSubcategory && <Breadcrumb.Item>{capitalizeFirstLetter(selectedSubcategory.label)}</Breadcrumb.Item>}
           </Breadcrumb>
         </Space>
         <Space>
@@ -445,8 +474,8 @@ const MasterCategory = () => {
         {selectedItem && (
           <div style={{ padding: '8px 0' }}>
             <p><Text type="secondary">ID:</Text> <br /> <Text strong>{selectedItem._id}</Text></p>
-            <p><Text type="secondary">Display Name:</Text> <br /> <Text strong>{selectedItem.name || selectedItem.label}</Text></p>
-            <p><Text type="secondary">Description:</Text> <br /> <Text>{selectedItem.description || 'N/A'}</Text></p>
+            <p><Text type="secondary">Display Name:</Text> <br /> <Text strong>{capitalizeFirstLetter(selectedItem.name || selectedItem.label)}</Text></p>
+            <p><Text type="secondary">Description:</Text> <br /> <Text>{capitalizeFirstLetter(selectedItem.description) || 'N/A'}</Text></p>
             <p><Text type="secondary">Current Level:</Text> <br /> <Tag color="purple">{level.toUpperCase()}</Tag></p>
             {/* Display Base Unit in Details if available - Checks both keys */}
             {(selectedItem.base_unit || selectedItem.baseRatePerSqFt) !== undefined && (

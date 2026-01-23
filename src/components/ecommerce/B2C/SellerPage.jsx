@@ -12,7 +12,8 @@ import {
   Typography,
   message,
   Spin,
-  Space
+  Space,
+  notification // Ensure notification is imported
 } from 'antd';
 import {
   UserOutlined,
@@ -23,15 +24,11 @@ import {
   ArrowRightOutlined,
   SafetyOutlined,
   CheckCircleFilled,
-  EnvironmentOutlined
+  EnvironmentOutlined,
+  SafetyCertificateOutlined 
 } from '@ant-design/icons';
 import { useForm, Controller } from 'react-hook-form';
-<<<<<<< HEAD
-// Unified Import
 import { Country, State, City } from 'country-state-city';
-=======
-
->>>>>>> 398573f010932fafd4d19a2a9c7340eb92e9bab6
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { apiService } from '../../../manageApi/utils/custom.apiservice'; 
 
@@ -51,6 +48,12 @@ const SellerPage = () => {
   const [statesList, setStatesList] = useState([]);
   const [citiesList, setCitiesList] = useState([]);
 
+  // --- OTP STATES ---
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [enteredOtp, setEnteredOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+
   const themeColor = 'var(--color-primary)'; 
 
   const {
@@ -60,12 +63,7 @@ const SellerPage = () => {
     setError,
     watch,
     setValue,
-<<<<<<< HEAD
     getValues,
-=======
-    handleSubmit, // Add handleSubmit here
-    getValues,     // Add getValues here
->>>>>>> 398573f010932fafd4d19a2a9c7340eb92e9bab6
     formState: { errors }
   } = useForm({
     mode: 'onChange',
@@ -75,8 +73,7 @@ const SellerPage = () => {
     }
   });
 
-<<<<<<< HEAD
-  // --- 1. PHONE CODES DATA (From country-state-city) ---
+  // --- 1. PHONE CODES DATA ---
   const countryPhoneData = useMemo(() => {
     const allCountries = Country.getAllCountries();
     return allCountries.map(c => ({
@@ -89,9 +86,6 @@ const SellerPage = () => {
   }, []);
 
   // --- 2. LOCATION LOGIC ---
-=======
-  // Watchers for dependency logic
->>>>>>> 398573f010932fafd4d19a2a9c7340eb92e9bab6
   const selectedCountry = watch('store_details.country');
   const selectedState = watch('store_details.state');
 
@@ -100,9 +94,6 @@ const SellerPage = () => {
     if (selectedCountry) {
       const updatedStates = State.getStatesOfCountry(selectedCountry);
       setStatesList(updatedStates);
-      // Optional: Clear state/city if user changes country manually
-      // setValue('store_details.state', undefined);
-      // setValue('store_details.city', undefined);
     } else {
       setStatesList([]);
     }
@@ -118,20 +109,6 @@ const SellerPage = () => {
     }
   }, [selectedState, selectedCountry]);
 
-<<<<<<< HEAD
-=======
-  // Prepare Phone Codes with Flag Images Data
-  const countryPhoneData = useMemo(() => {
-    const allCountries = Country.getAllCountries();
-    return allCountries.map(c => ({
-      iso: c.isoCode.toLowerCase(), // Needed for FlagCDN url
-      name: c.name,
-      phone: `+${c.phonecode}`,
-      value: `+${c.phonecode}`,
-      searchStr: `${c.name} ${c.phonecode}` // Custom search string
-    }));
-  }, []);
->>>>>>> 398573f010932fafd4d19a2a9c7340eb92e9bab6
 
   const businessTypes = [
     { label: 'Individual / Sole Proprietor', value: 'Individual / Sole Proprietor' },
@@ -175,10 +152,69 @@ const SellerPage = () => {
 
   const steps = ['Personal', 'Store', 'Business'];
 
+  // --- OTP HANDLERS ---
+  const handleSendOtp = async () => {
+    const countryCode = getValues('mobile.country_code');
+    const number = getValues('mobile.number');
+
+    if (!countryCode || !number) {
+        message.error("Please enter a valid mobile number first.");
+        return;
+    }
+
+    setOtpLoading(true);
+    try {
+        const payload = {
+            country_code: countryCode,
+            phone_number: number
+        };
+        await apiService.post("/otp/send-otp", payload);
+        message.success("OTP sent successfully!");
+        setOtpSent(true);
+        setOtpVerified(false);
+    } catch (error) {
+        const errMsg = error?.response?.data?.message || "Failed to send OTP";
+        notification.error({ message: "OTP Error", description: errMsg });
+    } finally {
+        setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!enteredOtp) {
+        message.error("Please enter the OTP");
+        return;
+    }
+    setOtpLoading(true);
+    try {
+        const payload = {
+            country_code: getValues('mobile.country_code'),
+            phone_number: getValues('mobile.number'),
+            otp: enteredOtp
+        };
+        await apiService.post("/otp/verify-otp", payload);
+        message.success("Mobile Verified Successfully!");
+        setOtpVerified(true);
+        setOtpSent(false); // Hide OTP input
+    } catch (error) {
+        notification.error({
+            message: "Verification Failed",
+            description: error?.response?.data?.message || "Invalid OTP"
+        });
+    } finally {
+        setOtpLoading(false);
+    }
+  };
+
+
   const handleNext = async () => {
     let fieldsToValidate = [];
 
     if (currentStep === 0) {
+      if (!otpVerified) {
+          message.error("Please verify your mobile number to continue.");
+          return;
+      }
       fieldsToValidate = ['first_name', 'last_name', 'email', 'mobile.country_code', 'mobile.number', 'password', 'confirmPassword'];
     } else if (currentStep === 1) {
       fieldsToValidate = ['store_details.store_name', 'store_details.store_type', 'store_details.categories', 'store_details.store_description'];
@@ -214,14 +250,15 @@ const SellerPage = () => {
       return;
     }
 
+    if (!otpVerified) {
+        message.error("Mobile number not verified.");
+        setCurrentStep(0);
+        return;
+    }
+
     setSubmitting(true);
     setApiErrors({});
 
-<<<<<<< HEAD
-    // Convert ISO codes to Names for Backend
-=======
-    // Convert ISO codes to Names for backend readability
->>>>>>> 398573f010932fafd4d19a2a9c7340eb92e9bab6
     const countryObj = Country.getCountryByCode(data.store_details.country);
     const stateObj = State.getStateByCodeAndCountry(data.store_details.state, data.store_details.country);
     
@@ -262,7 +299,10 @@ const SellerPage = () => {
     } catch (err) {
       const res = err.response?.data;
 
-      if (res?.errors && Array.isArray(res.errors)) {
+      // --- STRICT ERROR DISPLAY LOGIC (Same as RegisterNowPage) ---
+      if (res?.errors && Array.isArray(res.errors) && res.errors.length > 0) {
+        
+        // 1. Map ALL errors to fields (so input borders turn red)
         const errorMap = {};
         res.errors.forEach(e => {
           errorMap[e.field] = e.message;
@@ -270,17 +310,25 @@ const SellerPage = () => {
         });
         setApiErrors(errorMap);
 
-        const firstErrorField = res.errors[0].field;
-        // Logic to jump to the step with error
-        if(firstErrorField.includes('store_details.country') || firstErrorField.includes('registration')) {
+        // 2. Get the 0th Index Error
+        const firstError = res.errors[0];
+
+        // 3. Jump to the Step containing the error
+        if(firstError.field.includes('store_details.country') || firstError.field.includes('registration')) {
             setCurrentStep(2);
-        } else if (firstErrorField.includes('store_details')) {
+        } else if (firstError.field.includes('store_details')) {
             setCurrentStep(1);
         } else {
             setCurrentStep(0);
         }
 
-        message.error(`Please fix ${res.errors.length} error(s).`);
+        // 4. Show the 0th index error message in Notification
+        notification.error({
+            message: "Validation Error",
+            description: firstError.message, // Shows exact message from backend
+            duration: 5,
+        });
+
       } else {
         message.error(res?.message || "Registration failed. Please try again.");
       }
@@ -393,143 +441,131 @@ const SellerPage = () => {
                         <Controller name="email" control={control} rules={{ required: 'Required', pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' } }} render={({ field }) => <Input size="large" {...field} />} />
                       </Form.Item>
 
-<<<<<<< HEAD
-                      {/* --- MOBILE FIELD WITH STRICT VALIDATION --- */}
-                      <Form.Item label="Mobile Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message}>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
-                            {/* Country Code */}
-                            <div style={{ width: '120px' }}>
-                                <Controller
-                                    name="mobile.country_code"
-                                    control={control}
-                                    rules={{ required: 'Required' }}
-                                    render={({ field }) => (
-                                        <Select 
-                                            {...field} 
-                                            showSearch
-                                            optionFilterProp="children"
-                                            filterOption={(input, option) => (option['data-search'] || "").toLowerCase().includes(input.toLowerCase())}
-                                            className="custom-select-seller"
-                                            style={{ width: '100%', height: '42px' }}
-                                        >
-                                            {countryPhoneData.map((country, index) => (
-                                                <Option key={`${country.iso}-${index}`} value={country.value} data-search={country.searchStr}>
-                                                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                                                        <img src={`https://flagcdn.com/w20/${country.iso}.png`} width="20" alt={country.name} style={{ marginRight: 6 }} />
-                                                        <span>{country.phone}</span>
-                                                    </div>
-                                                </Option>
-                                            ))}
-                                        </Select>
-                                    )} 
-                                />
-                            </div>
-                            
-                            {/* Phone Input */}
-                            <div style={{ flex: 1 }}>
-                                <Controller
-                                    name="mobile.number"
-                                    control={control}
-                                    rules={{ 
-                                        required: 'Required',
-                                        validate: (value) => {
-                                            const countryCode = getValues('mobile.country_code');
-                                            if(!countryCode) return "Select code";
-                                            const fullNumber = `${countryCode}${value}`;
-                                            const phoneNumber = parsePhoneNumberFromString(fullNumber);
-                                            return (phoneNumber && phoneNumber.isValid()) || "Invalid length";
-                                        }
-                                    }}
-                                    render={({ field }) => (
-                                        <input 
-                                            {...field}
-                                            className={inputClass}
-                                            placeholder="501234567"
-                                            style={{ width: '100%' }}
-                                            onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
-                                        />
-                                    )} 
-                                />
-                            </div>
-                        </div>
-                      </Form.Item>
-=======
-                      <Row gutter={16}>
-                        <Col span={8}>
-                          <Form.Item label="Code" required>
-                            <Controller 
-                              name="mobile.country_code" 
-                              control={control} 
-                              rules={{ required: 'Required' }} 
-                              render={({ field }) => (
-                                <Select 
-                                  size="large" 
-                                  showSearch
-                                  optionFilterProp="children" 
-                                  filterOption={(input, option) => 
-                                    (option['data-search'] || "").toLowerCase().includes(input.toLowerCase())
-                                  }
-                                  {...field}
-                                >
-                                  {countryPhoneData.map((country, index) => (
-                                    <Option 
-                                      key={`${country.iso}-${index}`} 
-                                      value={country.value}
-                                      data-search={country.searchStr} 
+                      {/* --- MOBILE FIELD WITHOUT BORDER BOX --- */}
+                      <div className="mb-4">
+                        <Form.Item label="Mobile Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message} style={{marginBottom: 0}}>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                                {/* Country Code */}
+                                <div style={{ width: '120px' }}>
+                                    <Controller
+                                        name="mobile.country_code"
+                                        control={control}
+                                        rules={{ required: 'Required' }}
+                                        render={({ field }) => (
+                                            <Select 
+                                                {...field} 
+                                                showSearch
+                                                disabled={otpVerified || otpSent} 
+                                                optionFilterProp="children"
+                                                filterOption={(input, option) => (option['data-search'] || "").toLowerCase().includes(input.toLowerCase())}
+                                                className="custom-select-seller"
+                                                style={{ width: '100%', height: '42px' }}
+                                            >
+                                                {countryPhoneData.map((country, index) => (
+                                                    <Option key={`${country.iso}-${index}`} value={country.value} data-search={country.searchStr}>
+                                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                            <img src={`https://flagcdn.com/w20/${country.iso}.png`} width="20" alt={country.name} style={{ marginRight: 6 }} />
+                                                            <span>{country.phone}</span>
+                                                        </div>
+                                                    </Option>
+                                                ))}
+                                            </Select>
+                                        )} 
+                                    />
+                                </div>
+                                
+                                {/* Phone Input */}
+                                <div style={{ flex: 1 }}>
+                                    <Controller
+                                        name="mobile.number"
+                                        control={control}
+                                        rules={{ 
+                                            required: 'Required',
+                                            validate: (value) => {
+                                                const countryCode = getValues('mobile.country_code');
+                                                if(!countryCode) return "Select code";
+                                                const fullNumber = `${countryCode}${value}`;
+                                                const phoneNumber = parsePhoneNumberFromString(fullNumber);
+                                                return (phoneNumber && phoneNumber.isValid()) || "Invalid length";
+                                            }
+                                        }}
+                                        render={({ field }) => (
+                                            <input 
+                                                {...field}
+                                                className={inputClass}
+                                                placeholder="501234567"
+                                                disabled={otpVerified || otpSent} 
+                                                style={{ width: '100%' }}
+                                                onChange={(e) => {
+                                                    field.onChange(e.target.value.replace(/\D/g, ""));
+                                                    setOtpSent(false); 
+                                                    setOtpVerified(false);
+                                                }}
+                                            />
+                                        )} 
+                                    />
+                                </div>
+
+                                {/* Send OTP Button */}
+                                {!otpVerified && !otpSent && (
+                                    <Button 
+                                        type="primary" 
+                                        style={{ height: '42px', backgroundColor: '#333', borderColor: '#333' }}
+                                        onClick={handleSendOtp}
+                                        loading={otpLoading}
                                     >
-                                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                                        <img 
-                                          src={`https://flagcdn.com/w20/${country.iso}.png`} 
-                                          srcSet={`https://flagcdn.com/w40/${country.iso}.png 2x`}
-                                          width="20" 
-                                          alt={country.name} 
-                                          style={{ marginRight: 8, borderRadius: 2 }} 
-                                        />
-                                        <span>{country.phone}</span>
-                                        <span style={{ color: '#999', fontSize: '12px', marginLeft: '6px' }}>
-                                           ({country.iso.toUpperCase()})
-                                        </span>
-                                      </div>
-                                    </Option>
-                                  ))}
-                                </Select>
-                              )} 
-                            />
-                          </Form.Item>
-                        </Col>
-                        <Col span={16}>
-                          <Form.Item label="Phone Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message || apiErrors['mobile.number']}>
-                            <Controller 
-                              name="mobile.number" 
-                              control={control} 
-                              rules={{ 
-                                required: 'Required', 
-                                validate: (value) => {
-                                  const countryCode = getValues('mobile.country_code');
-                                  if(!countryCode) return "Select code first";
+                                        Send OTP
+                                    </Button>
+                                )}
 
-                                  const fullNumber = `${countryCode}${value}`;
-                                  const phoneNumber = parsePhoneNumberFromString(fullNumber);
+                                {/* Change Number Button */}
+                                {otpSent && !otpVerified && (
+                                    <Button 
+                                        danger 
+                                        style={{ height: '42px' }}
+                                        onClick={() => { setOtpSent(false); setEnteredOtp(""); }}
+                                    >
+                                        Change
+                                    </Button>
+                                )}
+                            </div>
+                        </Form.Item>
 
-                                  return (phoneNumber && phoneNumber.isValid()) || `Invalid length for ${countryCode}`;
-                                }
-                              }} 
-                              render={({ field }) => (
-                                <Input 
-                                  size="large" 
-                                  placeholder="e.g. 501234567"
-                                  maxLength={15}
-                                  {...field} 
-                                  onChange={(e) => {
-                                    field.onChange(e.target.value.replace(/\D/g, ""));
-                                  }}
-                                />
-                              )} 
-                            />
-                          </Form.Item>
-                        </Col>
-                      </Row>
->>>>>>> 398573f010932fafd4d19a2a9c7340eb92e9bab6
+                        {/* OTP Input Section */}
+                        {otpSent && !otpVerified && (
+                            <div style={{ marginTop: 16, display: 'flex', gap: 8, animation: 'fadeIn 0.3s ease' }}>
+                                <div style={{ flex: 1 }}>
+                                    <Input 
+                                        size="large"
+                                        placeholder="Enter 6-digit OTP"
+                                        prefix={<SafetyCertificateOutlined style={{ color: themeColor }}/>} 
+                                        value={enteredOtp}
+                                        onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ""))}
+                                        maxLength={6}
+                                    />
+                                    <Text type="secondary" style={{ fontSize: 12, marginLeft: 4 }}>
+                                        OTP sent to {getValues('mobile.country_code')} {getValues('mobile.number')}
+                                    </Text>
+                                </div>
+                                <Button 
+                                    type="primary" 
+                                    size="large" 
+                                    onClick={handleVerifyOtp} 
+                                    loading={otpLoading}
+                                    style={{ background: themeColor, borderColor: themeColor }}
+                                >
+                                    Verify
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* Verified Success Message */}
+                        {otpVerified && (
+                            <div style={{ marginTop: 8, color: '#52c41a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <CheckCircleFilled /> Mobile Number Verified
+                            </div>
+                        )}
+                      </div>
 
                       <Row gutter={16}>
                         <Col span={12}>
@@ -747,10 +783,9 @@ const SellerPage = () => {
         </Row>
       </div>
 
-      {/* FIXED CSS FOR SELLER PAGE PHONE INPUT */}
       <style jsx global>{`
         .custom-select-seller .ant-select-selector {
-          border-radius: 0.375rem !important;
+          border-radius: 0.375rem !important; 
           border-color: #d1d5db !important;
           height: 42px !important;
           display: flex !important;
@@ -763,6 +798,10 @@ const SellerPage = () => {
         .custom-select-seller.ant-select-focused .ant-select-selector {
           border-color: #a855f7 !important;
           box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2) !important;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
