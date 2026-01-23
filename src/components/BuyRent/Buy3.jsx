@@ -1,15 +1,7 @@
-// src/components/property/Property.jsx
-import React, { useState, useEffect } from "react";
-import {
-  X,
-  User,
-  Mail,
-  Phone,
-  Globe,
-  Briefcase,
-  MapPin,
-} from "lucide-react";
-import { notification } from "antd";
+import React, { useState, useEffect, useMemo } from "react";
+import { X, User, Mail, Phone, Globe, Briefcase, MapPin } from "lucide-react";
+import { notification, Select } from "antd"; // Antd Select
+import { Country, State, City } from "country-state-city"; // Location Package
 import { apiService } from "../../manageApi/utils/custom.apiservice";
 import { useTranslation } from "react-i18next";
 import bgImage from "../../assets/img/buy3bg.png";
@@ -19,11 +11,11 @@ import Squareicon from "../../assets/img/buy/Square Meters.png";
 import favoriteicon from "../../assets/img/buy/Favorited.png";
 import popularicon from "../../assets/img/buy/Group 860.png";
 
-// Country wise digit limits
-const lengthMap = {
-  "+971": 9,  // UAE
-  "+91": 10,  // India
-  "+7": 10,   // Russia
+const { Option } = Select;
+
+// 1. Strict Phone Length Rules
+const PHONE_LENGTH_RULES = {
+  "971": 9, "91": 10, "966": 9, "1": 10, "44": 10, "61": 9,
 };
 
 const Property = () => {
@@ -34,22 +26,40 @@ const Property = () => {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [api, contextHolder] = notification.useNotification();
 
-  const countryCodes = [
-    { code: "+971", country: "UAE" },
-    { code: "+91", country: "IN" },
-    { code: "+7", country: "RU" },
-  ];
-
+  // 2. Form State (Added location fields)
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
     email: "",
-    country_code: "+971", // Default Dubai
+    country_code: "971", 
     mobile: "",
     occupation: "",
-    location: "",
+    location_country: null,
+    state: null,
+    city: null,
     preferred_contact: "whatsapp",
   });
+
+  const [errors, setErrors] = useState({});
+
+  // 3. Location Data States
+  const [countriesList] = useState(Country.getAllCountries());
+  const [statesList, setStatesList] = useState([]);
+  const [citiesList, setCitiesList] = useState([]);
+
+  // 4. Memoized Phone Country Codes
+  const phoneCountryOptions = useMemo(() => {
+    const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"];
+    return Country.getAllCountries().map((country) => ({
+      name: country.name, code: country.phonecode, iso: country.isoCode,
+    })).sort((a, b) => {
+      const aPriority = priorityIsoCodes.includes(a.iso);
+      const bPriority = priorityIsoCodes.includes(b.iso);
+      if (aPriority && !bPriority) return -1;
+      if (!aPriority && bPriority) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, []);
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -84,55 +94,99 @@ const Property = () => {
     fetchProperties();
   }, []);
 
+  // --- HANDLERS ---
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
-    if (name === "mobile") {
-      const numericValue = value.replace(/\D/g, ""); // Remove non-digits
-      const maxLength = lengthMap[formData.country_code] || 10;
-      
-      // Strict length typing prevention
-      if (numericValue.length <= maxLength) {
-        setFormData((prev) => ({ ...prev, [name]: numericValue }));
-      }
-    } else if (name === "country_code") {
-      // Clear mobile when country changes to avoid length mismatch
-      setFormData((prev) => ({ ...prev, [name]: value, mobile: "" }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const handleCountryCodeChange = (value) => {
+    const limit = PHONE_LENGTH_RULES[value] || 15;
+    setFormData((prev) => ({ ...prev, country_code: value, mobile: prev.mobile.slice(0, limit) }));
+  };
+
+  const handlePhoneChange = (e) => {
+    const value = e.target.value.replace(/\D/g, "");
+    const maxLength = PHONE_LENGTH_RULES[formData.country_code] || 15;
+    const validatedValue = value.slice(0, maxLength);
+    setFormData((prev) => ({ ...prev, mobile: validatedValue }));
+    if (errors.mobile) setErrors((prev) => ({ ...prev, mobile: "" }));
+  };
+
+  // Location Handlers
+  const handleLocationCountryChange = (isoCode) => {
+    const updatedStates = State.getStatesOfCountry(isoCode);
+    setStatesList(updatedStates);
+    setCitiesList([]);
+    setFormData((prev) => ({ ...prev, location_country: isoCode, state: null, city: null }));
+    if (errors.location_country) setErrors((prev) => ({ ...prev, location_country: "" }));
+  };
+
+  const handleLocationStateChange = (stateCode) => {
+    const updatedCities = City.getCitiesOfState(formData.location_country, stateCode);
+    setCitiesList(updatedCities);
+    setFormData((prev) => ({ ...prev, state: stateCode, city: null }));
+    if (errors.state) setErrors((prev) => ({ ...prev, state: "" }));
+  };
+
+  const handleLocationCityChange = (cityName) => {
+    setFormData((prev) => ({ ...prev, city: cityName }));
+    if (errors.city) setErrors((prev) => ({ ...prev, city: "" }));
   };
 
   const openNotification = (type, title, description) => {
-    api[type]({
-      message: title,
-      description: description,
-      placement: "topRight",
-    });
+    api[type]({ message: title, description: description, placement: "topRight" });
+  };
+
+  // --- VALIDATION & SUBMIT ---
+
+  const validateForm = () => {
+    let newErrors = {};
+    let isValid = true;
+
+    if (!formData.first_name.trim()) { newErrors.first_name = "Required"; isValid = false; }
+    if (!formData.last_name.trim()) { newErrors.last_name = "Required"; isValid = false; }
+    if (!formData.email.trim()) { newErrors.email = "Required"; isValid = false; }
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) { newErrors.email = "Invalid email"; isValid = false; }
+
+    const requiredLength = PHONE_LENGTH_RULES[formData.country_code];
+    if (!formData.mobile.trim()) { newErrors.mobile = "Required"; isValid = false; }
+    else if (requiredLength && formData.mobile.length !== requiredLength) {
+      newErrors.mobile = `Enter ${requiredLength} digits`;
+      isValid = false;
+    }
+
+    if (!formData.occupation.trim()) { newErrors.occupation = "Required"; isValid = false; }
+    if (!formData.location_country) { newErrors.location_country = "Country Required"; isValid = false; }
+    if (!formData.state) { newErrors.state = "State Required"; isValid = false; }
+    if (citiesList.length > 0 && !formData.city) { newErrors.city = "City Required"; isValid = false; }
+
+    setErrors(newErrors);
+    return isValid;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Final Validation: Digits must match the required length
-    const requiredLength = lengthMap[formData.country_code];
-    if (formData.mobile.length !== requiredLength) {
-      openNotification(
-        "error", 
-        "Validation Error", 
-        `Mobile number must be exactly ${requiredLength} digits for ${formData.country_code}`
-      );
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
+
+    // Resolve Names
+    const countryName = Country.getCountryByCode(formData.location_country)?.name || "";
+    const stateName = State.getStateByCodeAndCountry(formData.state, formData.location_country)?.name || formData.state;
+    const finalLocationString = `${formData.city || stateName}, ${stateName}, ${countryName}`;
+
     const payload = {
       type: "schedule_visit",
       name: { first_name: formData.first_name.trim(), last_name: formData.last_name.trim() },
       mobile: { country_code: formData.country_code, number: formData.mobile },
       email: formData.email.toLowerCase().trim(),
       occupation: formData.occupation,
-      location: formData.location,
+      location: finalLocationString,
+      city: formData.city, 
+      preferred_city: formData.city || stateName,
       preferred_contact: formData.preferred_contact,
     };
 
@@ -142,9 +196,10 @@ const Property = () => {
         openNotification("success", "Request Submitted", t("toast.success"));
         setOpenModal(false);
         setFormData({
-          first_name: "", last_name: "", email: "", country_code: "+971",
-          mobile: "", occupation: "", location: "", preferred_contact: "whatsapp",
+          first_name: "", last_name: "", email: "", country_code: "971", mobile: "",
+          occupation: "", location_country: null, state: null, city: null, preferred_contact: "whatsapp",
         });
+        setErrors({});
       }
     } catch (err) {
       openNotification("error", "Submission Failed", err.response?.data?.message || t("toast.error"));
@@ -210,69 +265,125 @@ const Property = () => {
 
             <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar">
               <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                
+                {/* Name */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="relative">
-                    <input name="first_name" value={formData.first_name} onChange={handleChange} placeholder={t("form.firstName")} required className="premium-input pl-12" />
+                    <input name="first_name" value={formData.first_name} onChange={handleChange} placeholder={t("form.firstName")} className={`premium-input pl-12 ${errors.first_name ? 'border-red-500 bg-red-50' : ''}`} />
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600"><User size={20} /></div>
+                    {errors.first_name && <p className="text-red-500 text-xs mt-1 absolute">{errors.first_name}</p>}
                   </div>
                   <div className="relative">
-                    <input name="last_name" value={formData.last_name} onChange={handleChange} placeholder={t("form.lastName")} required className="premium-input pl-12" />
+                    <input name="last_name" value={formData.last_name} onChange={handleChange} placeholder={t("form.lastName")} className={`premium-input pl-12 ${errors.last_name ? 'border-red-500 bg-red-50' : ''}`} />
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600"><User size={20} /></div>
+                    {errors.last_name && <p className="text-red-500 text-xs mt-1 absolute">{errors.last_name}</p>}
                   </div>
                 </div>
 
                 <div className="relative">
-                  <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder={t("form.email")} required className="premium-input pl-12" />
+                  <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder={t("form.email")} className={`premium-input pl-12 ${errors.email ? 'border-red-500 bg-red-50' : ''}`} />
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600"><Mail size={20} /></div>
+                  {errors.email && <p className="text-red-500 text-xs mt-1 absolute">{errors.email}</p>}
                 </div>
 
-                {/* Country Code & Mobile Logic */}
+                {/* Phone & Country Code */}
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative w-full sm:w-32">
-                    <select
-                      name="country_code"
-                      value={formData.country_code}
-                      onChange={handleChange}
-                      className="premium-input pl-10 pr-2 appearance-none cursor-pointer"
+                  <div className="relative w-full sm:w-32 h-[50px]">
+                    <Select
+                        value={formData.country_code}
+                        onChange={handleCountryCodeChange}
+                        showSearch
+                        optionFilterProp="children"
+                        filterOption={(input, option) => option.children.props?.children[1]?.props?.children[1]?.toLowerCase().includes(input.toLowerCase()) || option.value.includes(input)}
+                        className="w-full h-full custom-select-property"
+                        dropdownMatchSelectWidth={300}
                     >
-                      {countryCodes.map((item) => (
-                        <option key={item.code} value={item.code}>{item.code}</option>
-                      ))}
-                    </select>
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-600 pointer-events-none"><Globe size={18} /></div>
+                        {phoneCountryOptions.map((item) => (
+                        <Option key={item.iso} value={item.code}>
+                            <div className="flex items-center">
+                            <img src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`} srcSet={`https://flagcdn.com/w40/${item.iso.toLowerCase()}.png 2x`} width="20" alt={item.name} style={{ marginRight: 8, borderRadius: 2 }} />
+                            <span>+{item.code}</span>
+                            </div>
+                        </Option>
+                        ))}
+                    </Select>
                   </div>
 
                   <div className="relative flex-1">
-                    <input
-                      name="mobile"
-                      type="text"
-                      inputMode="numeric"
-                      value={formData.mobile}
-                      onChange={handleChange}
-                      placeholder={`${t("form.phone")} (${lengthMap[formData.country_code]} digits)`}
-                      required
-                      className="premium-input pl-12"
-                    />
+                    <input name="mobile" type="text" inputMode="numeric" value={formData.mobile} onChange={handlePhoneChange} placeholder={`${t("form.phone")} (${PHONE_LENGTH_RULES[formData.country_code] || 15} digits)`} className={`premium-input pl-12 h-[50px] ${errors.mobile ? 'border-red-500 bg-red-50' : ''}`} />
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600"><Phone size={20} /></div>
+                    {errors.mobile && <p className="text-red-500 text-xs mt-1 absolute bottom-[-18px]">{errors.mobile}</p>}
                   </div>
                 </div>
 
+                {/* Occupation */}
                 <div className="relative">
-                  <input name="occupation" value={formData.occupation} onChange={handleChange} placeholder={t("form.occupation")} required className="premium-input pl-12" />
+                  <input name="occupation" value={formData.occupation} onChange={handleChange} placeholder={t("form.occupation")} className={`premium-input pl-12 ${errors.occupation ? 'border-red-500 bg-red-50' : ''}`} />
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600"><Briefcase size={20} /></div>
+                  {errors.occupation && <p className="text-red-500 text-xs mt-1 absolute">{errors.occupation}</p>}
                 </div>
 
-                <div className="relative">
-                  <input name="location" value={formData.location} onChange={handleChange} placeholder={t("form.location")} required className="premium-input pl-12" />
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600"><MapPin size={20} /></div>
+                {/* Location Dropdowns */}
+                <div className="space-y-4">
+                    {/* Country */}
+                    <div className="relative">
+                        <Select
+                            placeholder="Select Country"
+                            showSearch
+                            optionFilterProp="children"
+                            onChange={handleLocationCountryChange}
+                            filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}
+                            className={`w-full custom-select-property ${errors.location_country ? "border-red-500 rounded-[0.75rem]" : ""}`}
+                            dropdownMatchSelectWidth={false}
+                        >
+                            {countriesList.map((country) => (
+                                <Option key={country.isoCode} value={country.isoCode}>{country.name}</Option>
+                            ))}
+                        </Select>
+                        {errors.location_country && <p className="text-red-500 text-xs mt-3 absolute">{errors.location_country}</p>}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 md:mt-6 p-3">
+                        {/* State */}
+                        <div className="relative">
+                            <Select
+                                placeholder="Select State"
+                                showSearch
+                                optionFilterProp="children"
+                                onChange={handleLocationStateChange}
+                                disabled={!statesList.length}
+                                filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}
+                                className={`w-full custom-select-property ${errors.state ? "border-red-500 rounded-[0.75rem]" : ""}`}
+                            >
+                                {statesList.map((state) => (
+                                    <Option key={state.isoCode} value={state.isoCode}>{state.name}</Option>
+                                ))}
+                            </Select>
+                            {errors.state && <p className="text-red-500 text-xs mt-2 absolute">{errors.state}</p>}
+                        </div>
+
+                        {/* City */}
+                        <div className="relative">
+                            <Select
+                                placeholder="Select City"
+                                showSearch
+                                optionFilterProp="children"
+                                onChange={handleLocationCityChange}
+                                disabled={!citiesList.length}
+                                filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}
+                                className={`w-full custom-select-property ${errors.city ? "border-red-500 rounded-[0.75rem]" : ""}`}
+                            >
+                                {citiesList.map((city) => (
+                                    <Option key={city.name} value={city.name}>{city.name}</Option>
+                                ))}
+                            </Select>
+                            {errors.city && <p className="text-red-500 text-xs mt-3 absolute">{errors.city}</p>}
+                        </div>
+                    </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-purple-600 to-violet-600 text-white py-4 md:py-5 rounded-xl text-lg font-bold hover:shadow-xl hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
-                >
-                  {loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : t("actions.submit")}
+                <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-purple-600 to-violet-600 text-white py-4 md:py-5 rounded-xl text-lg font-bold hover:shadow-xl hover:scale-[1.01] transition-all flex items-center justify-center gap-2">
+                 {loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : t("actions.submit")}
                 </button>
               </form>
             </div>
@@ -280,7 +391,8 @@ const Property = () => {
         </div>
       )}
 
-      <style jsx>{`
+      {/* Global CSS for Antd Select */}
+      <style jsx global>{`
         .premium-input {
           width: 100%;
           padding: 0.8rem 1rem 0.8rem 3rem;
@@ -301,6 +413,25 @@ const Property = () => {
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f3e8ff; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #9333ea; border-radius: 4px; }
+
+        /* Antd Select Styles */
+        .custom-select-property .ant-select-selector {
+          border-radius: 0.75rem !important; 
+          border: 2px solid #e9d5ff !important; 
+          height: 100% !important;
+          min-height: 50px !important; 
+          display: flex !important;
+          align-items: center !important;
+          padding-left: 12px !important;
+          box-shadow: none !important;
+        }
+        .custom-select-property .ant-select-selector:hover {
+          border-color: #9333ea !important;
+        }
+        .custom-select-property.ant-select-focused .ant-select-selector {
+          border-color: #9333ea !important;
+          box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.1) !important;
+        }
       `}</style>
     </>
   );

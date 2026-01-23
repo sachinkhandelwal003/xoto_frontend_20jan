@@ -21,7 +21,7 @@
   "options": {
     "select": "Select Partner Type",
     "business": "Business Associates",
-    "execution": "Execution Partner",
+    "execution": "Execution Partners",
     "alliance": "Strategic Alliances",
     "developers": "Developers",
     "finance": "Financial Institution"
