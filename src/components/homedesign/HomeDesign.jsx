@@ -61,7 +61,7 @@ const hotspots = [
   {
     key: "exterior",
     icon: exterior,
-    link: "/",
+    link: "/aiPlanner/exterior",
     position:
       "top-[16%] right-[18%] sm:top-[10%] sm:right-[12%] lg:top-[12%] lg:right-[18%]",
   },
@@ -75,7 +75,7 @@ const hotspots = [
   {
     key: "furniture",
     icon: smart,
-    link: "/",
+    link: "/aiPlanner/furniture",
     position:
       "bottom-[34%] right-[2%] sm:bottom-[28%] sm:right-[8%] lg:bottom-[32%] lg:right-[12%]",
   },
@@ -89,14 +89,14 @@ const hotspots = [
   {
     key: "image",
     icon: image,
-    link: "/",
+    link: "/aiPlanner/image",
     position:
       "bottom-[30%] left-[-2%] sm:bottom-[30%] sm:left-[8%] lg:bottom-[28%] lg:left-[-2%]",
   },
   {
     key: "virtual",
     icon: virtual,
-    link: "/",
+    link: "/aiPlanner/virtual",
     position:
       "top-[36%] left-[-1%] sm:top-[30%] sm:left-[8%] lg:top-[38%] lg:left-[6%]",
   },

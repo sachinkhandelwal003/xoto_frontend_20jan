@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { 
   UserOutlined, 
   ArrowLeftOutlined, 
@@ -16,11 +16,11 @@ import {
   ConfigProvider,
   Select
 } from 'antd';
-// import { motion } from 'framer-motion'; // Unused in provided code, but kept if you need it
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../manageApi/context/AuthContext.jsx';
 import { toast } from 'react-toastify';
 import styled from 'styled-components';
+import { Country } from 'country-state-city'; // Import Library
 
 // Assets
 import loginimage from '../../assets/img/one.png';
@@ -28,16 +28,17 @@ import logoNew from '../../assets/img/logoNew.png';
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
+const { Option } = Select;
 
-/* ---------------- COUNTRY CONFIG ---------------- */
-
-const COUNTRY_CONFIG = {
-  AE: { label: 'UAE', code: '+971', digits: 9 },
-  IN: { label: 'India', code: '+91', digits: 10 },
-  SA: { label: 'Saudi Arabia', code: '+966', digits: 9 },
-  US: { label: 'USA / Canada', code: '+1', digits: 10 },
-  UK: { label: 'UK', code: '+44', digits: 10 },
-  AU: { label: 'Australia', code: '+61', digits: 9 },
+/* ---------------- PHONE LENGTH RULES ---------------- */
+const PHONE_LENGTH_RULES = {
+  "AE": 9,  // UAE
+  "IN": 10, // India
+  "SA": 9,  // Saudi Arabia
+  "US": 10, // USA
+  "CA": 10, // Canada
+  "GB": 10, // UK
+  "AU": 9,  // Australia
 };
 
 /* ---------------- STYLED COMPONENTS ---------------- */
@@ -85,14 +86,30 @@ const CustomerLogin = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
-  // ✅ DEFAULT COUNTRY = UAE
-  const [country, setCountry] = useState('AE');
+  // ✅ DEFAULT COUNTRY ISO CODE (UAE)
+  const [countryIso, setCountryIso] = useState('AE');
 
   const hasRedirected = useRef(false);
   const { login, isAuthenticated, user, token } = useContext(AuthContext);
   const navigate = useNavigate();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+
+  // Memoized Country Data
+  const countryOptions = useMemo(() => {
+    const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"];
+    return Country.getAllCountries().map((country) => ({
+      name: country.name,
+      code: country.phonecode,
+      iso: country.isoCode,
+    })).sort((a, b) => {
+      const aPriority = priorityIsoCodes.includes(a.iso);
+      const bPriority = priorityIsoCodes.includes(b.iso);
+      if (aPriority && !bPriority) return -1;
+      if (!aPriority && bPriority) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, []);
 
   /* ---------------- AUTH SUCCESS EFFECT ---------------- */
 
@@ -115,10 +132,15 @@ const CustomerLogin = () => {
 
   const onFinish = async (values) => {
     setLoading(true);
+    
+    // Get phone code dynamically based on selected ISO
+    const selectedCountryData = Country.getCountryByCode(countryIso);
+    const phoneCode = selectedCountryData ? `+${selectedCountryData.phonecode}` : '+971';
+
     try {
       await login('/users/login/customer', {
         mobile: {
-          country_code: COUNTRY_CONFIG[country].code,
+          country_code: phoneCode,
           number: values.mobile,
         },
       });
@@ -168,7 +190,7 @@ const CustomerLogin = () => {
 
                   {/* --- BACK BUTTON SECTION --- */}
                   <div
-                    onClick={() => navigate('/')} // ✅ UPDATED: Navigates to Home
+                    onClick={() => navigate('/')}
                     style={{
                       position: 'absolute',
                       left: 0,
@@ -214,13 +236,14 @@ const CustomerLogin = () => {
                         validator(_, value) {
                           if (!value) return Promise.resolve();
 
-                          const digits = COUNTRY_CONFIG[country].digits;
-                          const regex = new RegExp(`^\\d{${digits}}$`);
+                          // Dynamic Length Validation
+                          const requiredDigits = PHONE_LENGTH_RULES[countryIso] || 10;
+                          const regex = new RegExp(`^\\d{${requiredDigits}}$`);
 
                           return regex.test(value)
                             ? Promise.resolve()
                             : Promise.reject(
-                                new Error(`Enter a valid ${digits}-digit number`)
+                                new Error(`Enter a valid ${requiredDigits}-digit number`)
                               );
                         },
                       }),
@@ -229,23 +252,34 @@ const CustomerLogin = () => {
                     <Input
                       addonBefore={
                         <Select
-                          value={country}
-                          style={{ width: 140 }}
+                          value={countryIso}
+                          style={{ width: 100 }}
                           onChange={(val) => {
-                            setCountry(val);
-                            form.setFieldsValue({ mobile: '' });
+                            setCountryIso(val);
+                            form.setFieldsValue({ mobile: '' }); // Clear input on country change
                           }}
+                          dropdownMatchSelectWidth={300}
+                          optionLabelProp="label"
                         >
-                          {Object.entries(COUNTRY_CONFIG).map(([key, c]) => (
-                            <Select.Option key={key} value={key}>
-                              {c.label} ({c.code})
-                            </Select.Option>
+                          {countryOptions.map((item) => (
+                            <Option key={item.iso} value={item.iso} label={`+${item.code}`}>
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <img
+                                  src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`}
+                                  srcSet={`https://flagcdn.com/w40/${item.iso.toLowerCase()}.png 2x`}
+                                  width="20"
+                                  alt={item.name}
+                                  style={{ marginRight: 8, borderRadius: 2 }}
+                                />
+                                <span style={{ color: '#555' }}>{item.name} (+{item.code})</span>
+                              </div>
+                            </Option>
                           ))}
                         </Select>
                       }
                       prefix={<MobileOutlined />}
-                      placeholder={`Mobile Number (${COUNTRY_CONFIG[country].digits} digits)`}
-                      maxLength={COUNTRY_CONFIG[country].digits}
+                      placeholder={`Mobile Number`}
+                      maxLength={PHONE_LENGTH_RULES[countryIso] || 15}
                       style={{ height: 50, borderRadius: 12 }}
                     />
                   </Form.Item>
