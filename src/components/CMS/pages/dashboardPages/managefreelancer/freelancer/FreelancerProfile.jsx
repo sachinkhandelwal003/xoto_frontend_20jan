@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { apiService } from "../../../../../../manageApi/utils/custom.apiservice"; // Adjust path as needed
-import { showToast } from "../../../../../../manageApi/utils/toast"; // Adjust path as needed
+import { apiService } from "../../../../../../manageApi/utils/custom.apiservice"; 
+import { showToast } from "../../../../../../manageApi/utils/toast"; 
 import {
   FaArrowLeft,
-  FaBuilding,
   FaPhone,
   FaEnvelope,
   FaBox,
   FaServicestack,
-  FaBriefcase,
-  FaLanguage,
-  FaMoneyBill,
-  FaIdCard,
   FaMapMarkerAlt,
   FaUserCheck,
   FaAward,
@@ -50,14 +45,24 @@ import {
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
-// Define base URL for images
+// Define base URL for local images only
 const BASE_URL = "http://localhost:5000";
+
+// --- HELPER: Handle S3 URLs vs Local Paths ---
+const getImageUrl = (path) => {
+  if (!path) return "";
+  if (path.startsWith("http") || path.startsWith("https")) {
+    return path; // Return S3/External URL as is
+  }
+  // Remove leading slash if present to avoid double slashes
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+  return `${BASE_URL}/${cleanPath}`;
+};
 
 const FreelancerProfile = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Get freelancerId from Query Params (?freelancerId=...)
   const params = new URLSearchParams(location.search);
   const freelancerId = params.get("freelancerId");
 
@@ -74,7 +79,6 @@ const FreelancerProfile = () => {
   const [reason, setReason] = useState("");
   const [suggestion, setSuggestion] = useState("");
 
-  // Theme Config
   const theme = {
     primary: "#7e22ce",
     primaryLight: "#a855f7",
@@ -85,7 +89,6 @@ const FreelancerProfile = () => {
     cardBg: "#ffffff",
   };
 
-  // --- API Calls ---
   const fetchFreelancer = async () => {
     if (!freelancerId) return;
     setLoading(true);
@@ -132,29 +135,22 @@ const FreelancerProfile = () => {
       });
       
       if (response.success) {
-        showToast(
-          `Document ${isApproving ? "approved" : "rejected"} successfully`,
-          "success"
-        );
-        
+        showToast(`Document ${isApproving ? "approved" : "rejected"} successfully`, "success");
         setVerificationModalOpen(false);
-        fetchFreelancer(); // Refresh data
+        fetchFreelancer();
       } else {
         showToast(response.message || "Failed to update document", "error");
       }
     } catch (error) {
       console.error(error);
-      showToast(
-        error.response?.data?.message || "Failed to update document",
-        "error"
-      );
+      showToast(error.response?.data?.message || "Failed to update document", "error");
     } finally {
       setVerifyingDoc(null);
     }
   };
 
   const downloadDocument = (path) => {
-    window.open(`${BASE_URL}/${path}`, "_blank");
+    window.open(getImageUrl(path), "_blank");
   };
 
   const openImageModal = (document) => {
@@ -167,7 +163,6 @@ const FreelancerProfile = () => {
     setSelectedDocument(null);
   };
 
-  // --- Status Config ---
   const statusConfig = {
     0: { color: "#f59e0b", label: "Pending", icon: <FaClock /> },
     1: { color: "#10b981", label: "Approved", icon: <FaRegCheckCircle /> },
@@ -229,14 +224,13 @@ const FreelancerProfile = () => {
           >
             <Row gutter={[24, 24]} align="middle">
               <Col xs={24} md={4} className="text-center md:text-left">
+                {/* --- PROFILE IMAGE with S3 Support --- */}
                 <Avatar
                   size={120}
-                  src={freelancer.profile_image ? `${BASE_URL}/${freelancer.profile_image}` : undefined}
-                  className="border-4 border-white/30 shadow-lg"
-                  icon={<FaUserCheck />}
-                >
-                  {fullName.charAt(0)}
-                </Avatar>
+                  src={getImageUrl(freelancer.profile_image)}
+                  className="border-4 border-white/30 shadow-lg bg-white"
+                  icon={<FaUserCheck className="text-gray-400"/>}
+                />
               </Col>
               
               <Col xs={24} md={12} className="text-white text-center md:text-left">
@@ -300,7 +294,6 @@ const FreelancerProfile = () => {
                     ))}
                   </Space>
                 </Descriptions.Item>
-                <Descriptions.Item label="Pincode">{freelancer.location?.pincode || "N/A"}</Descriptions.Item>
                 <Descriptions.Item label="Joined">
                   {freelancer.meta?.created_at ? new Date(freelancer.meta.created_at).toLocaleDateString() : "N/A"}
                 </Descriptions.Item>
@@ -313,7 +306,6 @@ const FreelancerProfile = () => {
                 <Descriptions.Item label="Availability">
                   <Tag color="blue">{freelancer.professional?.availability || "Not specified"}</Tag>
                 </Descriptions.Item>
-               
                 <Descriptions.Item label="Bio">
                   <Paragraph ellipsis={{ rows: 3, expandable: true }}>
                     {freelancer.professional?.bio || "No bio provided"}
@@ -322,45 +314,23 @@ const FreelancerProfile = () => {
               </Descriptions>
             </Card>
 
-  <Card
-  title={
-    <span>
-      Location
-    </span>
-  }
-  className="shadow-sm"
->
-  <Descriptions column={1} size="small">
-    {/* Availability */}
- 
-
-    {/* Location */}
-    <Descriptions.Item >
-      {freelancer.location ? (
-        <div className="flex flex-col gap-1">
-          <span>
-            <strong>City:</strong>{" "}
-            {freelancer.location.city || "—"}
-          </span>
-          <span>
-            <strong>State:</strong>{" "}
-            {freelancer.location.state || "—"}
-          </span>
-          <span>
-            <strong>Country:</strong>{" "}
-            {freelancer.location.country || "—"}
-          </span>
-          <span>
-            <strong>PO Box:</strong>{" "}
-            {freelancer.location.po_box || "—"}
-          </span>
-        </div>
-      ) : (
-        <Tag color="default">Location not provided</Tag>
-      )}
-    </Descriptions.Item>
-  </Descriptions>
-</Card>
+            {/* Location */}
+            <Card title={<span> Location</span>} className="shadow-sm">
+              <Descriptions column={1} size="small">
+                <Descriptions.Item >
+                  {freelancer.location ? (
+                    <div className="flex flex-col gap-1">
+                      <span><strong>City:</strong> {freelancer.location.city || "—"}</span>
+                      <span><strong>State:</strong> {freelancer.location.state || "—"}</span>
+                      <span><strong>Country:</strong> {freelancer.location.country || "—"}</span>
+                      <span><strong>PO Box:</strong> {freelancer.location.po_box || "—"}</span>
+                    </div>
+                  ) : (
+                    <Tag color="default">Location not provided</Tag>
+                  )}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
 
             {/* Payment */}
             <Card title={<span> Payment Details</span>} className="shadow-sm">
@@ -382,82 +352,52 @@ const FreelancerProfile = () => {
           <Space direction="vertical" className="w-full" size="large">
             
             {/* Services */}
-           <Card
-  title={
-    <span>
-      Services Offered
-    </span>
-  }
-  className="shadow-sm"
->
-  {freelancer.services_offered?.length > 0 ? (
-    freelancer.services_offered.map((service) => (
-      <Card
-        key={service._id}
-        type="inner"
-        className="mb-4 bg-gray-50 border-gray-200"
-      >
-        {/* Service Header */}
-        <Title level={5} className="m-0 text-purple-800">
-          {service.category?.label || "Unnamed Service"}
-        </Title>
+            <Card title={<span>Services Offered</span>} className="shadow-sm">
+              {freelancer.services_offered?.length > 0 ? (
+                freelancer.services_offered.map((service) => (
+                  <Card key={service._id} type="inner" className="mb-4 bg-gray-50 border-gray-200">
+                    <Title level={5} className="m-0 text-purple-800">{service.category?.label || "Unnamed Service"}</Title>
+                    <Paragraph className="text-gray-600 mb-3">{service.description || "No description provided"}</Paragraph>
 
-        {/* Service Description */}
-        <Paragraph className="text-gray-600 mb-3">
-          {service.description || "No description provided"}
-        </Paragraph>
+                    {service.subcategories?.length > 0 ? (
+                      <div className="space-y-2">
+                        {service.subcategories.map((sub) => (
+                          <div key={sub._id} className="flex justify-between items-center bg-white p-3 rounded border">
+                            <Text strong>{sub.type?.label || "Unnamed Sub-Service"}</Text>
+                            <Tag color="green" className="text-sm px-3 py-1">
+                              {freelancer.payment?.preferred_currency?.symbol || "$"} {sub.price_range || "Not set"} {sub.unit ? `/ ${sub.unit}` : ""}
+                            </Tag>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Text type="secondary">No sub-services added</Text>
+                    )}
 
-        {/* Sub-Services */}
-        {service.subcategories?.length > 0 ? (
-          <div className="space-y-2">
-            {service.subcategories.map((sub) => (
-              <div
-                key={sub._id}
-                className="flex justify-between items-center bg-white p-3 rounded border"
-              >
-                {/* Sub-service name */}
-                <Text strong>
-                  {sub.type?.label || "Unnamed Sub-Service"}
-                </Text>
-
-                {/* Pricing */}
-                <Tag color="green" className="text-sm px-3 py-1">
-                  {freelancer.payment?.preferred_currency?.symbol || "$"}{" "}
-                  {sub.price_range || "Not set"}{" "}
-                  {sub.unit ? `/ ${sub.unit}` : ""}
-                </Tag>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <Text type="secondary">No sub-services added</Text>
-        )}
-
-        {/* Service Images */}
-        {service.images?.length > 0 && (
-          <div className="flex gap-2 mt-4">
-            {service.images.slice(0, 3).map((img, i) => (
-              <Image
-                key={i}
-                width={70}
-                height={70}
-                src={`${BASE_URL}/${img}`}
-                className="rounded border"
-                alt="Service"
-              />
-            ))}
-          </div>
-        )}
-      </Card>
-    ))
-  ) : (
-    <Empty description="No Services Listed" />
-  )}
-</Card>
-
+                    {/* Service Images S3 Support */}
+                    {service.images?.length > 0 && (
+                      <div className="flex gap-2 mt-4">
+                        {service.images.slice(0, 3).map((img, i) => (
+                          <Image
+                            key={i}
+                            width={70}
+                            height={70}
+                            src={getImageUrl(img)}
+                            className="rounded border"
+                            alt="Service"
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                ))
+              ) : (
+                <Empty description="No Services Listed" />
+              )}
+            </Card>
 
             {/* Documents (Admin Verification) */}
-            <Card title={<span> Documents & Verification</span>} className="shadow-sm">
+            <Card title={<span>Documents & Verification</span>} className="shadow-sm">
               <Row gutter={[16, 16]}>
                 {freelancer.documents?.map((doc) => (
                   <Col xs={24} sm={12} key={doc._id}>
@@ -470,9 +410,21 @@ const FreelancerProfile = () => {
                         />
                       </div>
                       
-                      <Space className="w-full justify-between mt-4">
+                      {/* Document Preview Thumbnail */}
+                      <div className="bg-gray-100 h-32 flex items-center justify-center rounded mb-3 overflow-hidden cursor-pointer" onClick={() => openImageModal(doc)}>
+                         <Image 
+                            src={getImageUrl(doc.path)} 
+                            preview={false} 
+                            height="100%" 
+                            width="100%" 
+                            style={{objectFit: 'cover'}}
+                            fallback="https://via.placeholder.com/300x200?text=Document+File"
+                         />
+                      </div>
+
+                      <Space className="w-full justify-between">
                         <Space>
-                          <Tooltip title="View">
+                          <Tooltip title="View Full">
                             <Button size="small" icon={<EyeOutlined />} onClick={() => openImageModal(doc)} />
                           </Tooltip>
                           <Tooltip title="Download">
@@ -492,19 +444,11 @@ const FreelancerProfile = () => {
                           </Space>
                         )}
                         
-                        {/* Show rejection reason if rejected */}
-                        {doc.reason && (
-                          <div className="text-xs text-red-500">
-                            Reason: {doc.reason}
-                          </div>
-                        )}
+                        {doc.reason && <div className="text-xs text-red-500">Reason: {doc.reason}</div>}
                       </Space>
                       
                       <div className="text-xs text-gray-400 mt-2 text-right">
                         Uploaded: {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString() : "N/A"}
-                        {doc.verified_at && (
-                          <div>Verified: {new Date(doc.verified_at).toLocaleDateString()}</div>
-                        )}
                       </div>
                     </Card>
                   </Col>
@@ -521,19 +465,15 @@ const FreelancerProfile = () => {
                     <Col xs={24} md={12} key={idx}>
                       <Card hoverable className="h-full" 
                         cover={item.images?.[0] && (
-                          <img alt="portfolio" src={`${BASE_URL}/${item.images[0]}`} className="h-40 object-cover" />
+                          <img alt="portfolio" src={getImageUrl(item.images[0])} className="h-40 object-cover" />
                         )}
                       >
                         <Card.Meta 
                           title={item.title || "Untitled Project"}
                           description={
                             <div>
-                              <Text type="secondary" className="text-xs">
-                                {item.category?.name || "Uncategorized"} - {item.subcategory?.name || "No subcategory"}
-                              </Text>
-                              <Paragraph ellipsis={{ rows: 2 }} className="mt-1 mb-0">
-                                {item.description || "No description"}
-                              </Paragraph>
+                              <Text type="secondary" className="text-xs">{item.category?.name || "Uncategorized"} - {item.subcategory?.name || "No subcategory"}</Text>
+                              <Paragraph ellipsis={{ rows: 2 }} className="mt-1 mb-0">{item.description || "No description"}</Paragraph>
                             </div>
                           }
                         />
@@ -550,11 +490,11 @@ const FreelancerProfile = () => {
 
       {/* --- MODALS --- */}
       
-      {/* Image Preview */}
+      {/* Image Preview Modal using S3 URL */}
       <Modal open={imageViewerOpen} onCancel={closeImageModal} footer={null} width={800} centered>
         {selectedDocument && (
           <img 
-            src={`${BASE_URL}/${selectedDocument.path}`} 
+            src={getImageUrl(selectedDocument.path)} 
             alt="Document" 
             style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain' }} 
             onError={(e) => {
