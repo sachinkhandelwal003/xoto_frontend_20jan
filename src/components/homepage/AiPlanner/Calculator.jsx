@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Button,
@@ -28,7 +28,6 @@ import {
   CheckOutlined,
   CompassOutlined,
   EnvironmentFilled,
-  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
@@ -125,7 +124,6 @@ const Calculator = () => {
   const navigate = useNavigate();
 
   const [activeStep, setActiveStep] = useState(0);
-  const [form] = Form.useForm();
   const [estimationValue, setEstimationValue] = useState(0);
 
   const [subcategories, setSubcategories] = useState([]);
@@ -160,14 +158,16 @@ const Calculator = () => {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
 
-  // ✅ NEW: step 3 missing field highlight
+  // ✅ Step 3 missing field highlight
   const [step3Errors, setStep3Errors] = useState({});
 
-  // ✅ NEW: toast lock (one toast at a time)
+  // ✅ toast lock (one toast at a time)
   const [toastLock, setToastLock] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
 
-  const showLockedToast = (text = "Please fill the required field to continue.") => {
+  const showLockedToast = (
+    text = "Please fill the required field to continue."
+  ) => {
     if (toastLock) return;
     setToastLock(true);
 
@@ -301,6 +301,8 @@ const Calculator = () => {
 
         if (res.success) {
           setQuestions(res.data || []);
+          setAnswers({}); // optional reset answers on type change
+          setStep3Errors({});
         }
       } catch (error) {
         message.error("Error loading questions");
@@ -349,7 +351,9 @@ const Calculator = () => {
 
   // Get location
   const handleGetLocation = () => {
-    if (!navigator.geolocation) return message.error("Geolocation not supported");
+    if (!navigator.geolocation)
+      return message.error("Geolocation not supported");
+
     setLoading((prev) => ({ ...prev, submitting: true, geocoding: true }));
 
     navigator.geolocation.getCurrentPosition(
@@ -383,12 +387,20 @@ const Calculator = () => {
           });
           message.warning("Location detected but address details unavailable");
         } finally {
-          setLoading((prev) => ({ ...prev, submitting: false, geocoding: false }));
+          setLoading((prev) => ({
+            ...prev,
+            submitting: false,
+            geocoding: false,
+          }));
         }
       },
       () => {
         message.error("Location access denied");
-        setLoading((prev) => ({ ...prev, submitting: false, geocoding: false }));
+        setLoading((prev) => ({
+          ...prev,
+          submitting: false,
+          geocoding: false,
+        }));
       }
     );
   };
@@ -478,6 +490,10 @@ const Calculator = () => {
       message.error("Please enter your phone number");
       return;
     }
+    if (phoneError) {
+      message.error("Please enter a valid phone number");
+      return;
+    }
 
     setLoading((prev) => ({ ...prev, submitting: true }));
 
@@ -526,7 +542,9 @@ const Calculator = () => {
         message.error(response.message || "Submission failed");
       }
     } catch (err) {
-      message.error(err.response?.data?.message || "Submission failed. Please try again.");
+      message.error(
+        err.response?.data?.message || "Submission failed. Please try again."
+      );
     } finally {
       setLoading((prev) => ({ ...prev, submitting: false }));
     }
@@ -534,6 +552,8 @@ const Calculator = () => {
 
   // ✅ Step 3 validation with scroll + focus + toast lock
   const validateStep3 = () => {
+    if (!questions || questions.length === 0) return false;
+
     const missing = questions.find((q) => {
       const val = answers[q._id];
       return val === undefined || val === null || val === "";
@@ -541,13 +561,9 @@ const Calculator = () => {
 
     if (!missing) return true;
 
-    // ✅ highlight only missing field
     setStep3Errors({ [missing._id]: true });
-
-    // ✅ locked toast (no spam)
     showLockedToast("Please fill the required field to continue.");
 
-    // ✅ scroll + focus
     setTimeout(() => {
       const el = document.getElementById(`q-${missing._id}`);
       if (el) {
@@ -560,62 +576,40 @@ const Calculator = () => {
   };
 
   const handleNext = () => {
-    // Finish
+    // last page finish -> home
     if (activeStep === 5) {
       navigate("/");
       return;
     }
 
-  // 2. Step 3 Validation: Check if questions exist AND if they are answered
-  if (activeStep === 3) {
-    // Pehle check karein ki questions hain bhi ya nahi
-    if (!questions || questions.length === 0) {
-      message.warning("No questions available to answer. Cannot proceed.");
-      return; 
+    // Step 3 validation
+    if (activeStep === 3) {
+      const ok = validateStep3();
+      if (!ok) return;
     }
 
-    // Phir check karein ki saare answered hain ya nahi
-    const isFormValid = questions.every((q) => {
-      const val = answers[q._id];
-      return val !== undefined && val !== null && val !== "";
-    });
-
-    if (!isFormValid) {
-      message.error({
-        content: "Please answer all the questions to proceed!",
-        style: {
-          fontSize: '20px',
-          marginTop: '15vh',
-          padding: '15px 25px',
-          borderRadius: '12px',
-          lineHeight: '1.5'
-        },
-        duration: 3,
-      });
+    // Step 4 -> submit
+    if (activeStep === 4) {
+      onFinalSubmit();
       return;
     }
-  }
 
-  // 3. Submit Trigger
-  if (activeStep > 3) {
-    onFinalSubmit();
-    return;
-  }
+    // next
+    setActiveStep((prev) => prev + 1);
+  };
 
-  // 4. Default: Go to next step
-  setActiveStep((prev) => prev + 1);
-};
+  const handleBack = () => {
+    if (activeStep === 0) return;
+    setActiveStep((prev) => prev - 1);
+  };
 
-  const handleBack = () => setActiveStep((prev) => prev - 1);
-
- const validateStep = () => {
-  // Agar Step 3 (Estimate Questions) par hain aur koi question nahi mila
-  if (activeStep === 3 && (!questions || questions.length === 0)) {
-    return false;
-  }
-  return true;
-};
-
+  const validateStep = () => {
+    // disable Continue only when step3 has no questions
+    if (activeStep === 3 && (!questions || questions.length === 0)) {
+      return false;
+    }
+    return true;
+  };
 
   // --- UI COMPONENTS ---
   const SelectionCard = ({ item, isSelected, onClick, colorClass }) => (
@@ -624,7 +618,11 @@ const Calculator = () => {
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={`relative h-full p-6 rounded-3xl cursor-pointer transition-all border-2
-        ${isSelected ? `bg-purple-50 shadow-xl` : "border-gray-100 bg-white hover:border-gray-200"}`}
+        ${
+          isSelected
+            ? `bg-purple-50 shadow-xl`
+            : "border-gray-100 bg-white hover:border-gray-200"
+        }`}
       style={{ borderColor: isSelected ? BRAND_PURPLE : "transparent" }}
     >
       {isSelected && <Badge.Ribbon text="Selected" color={BRAND_PURPLE} />}
@@ -652,10 +650,16 @@ const Calculator = () => {
     switch (activeStep) {
       case 0:
         return (
-          <motion.div {...variants} className="text-center py-10">
+          <motion.div
+            initial={variants.initial}
+            animate={variants.animate}
+            exit={variants.exit}
+            className="text-center py-10"
+          >
             <div className="mb-6 inline-block p-6 rounded-full bg-purple-50">
               <CompassOutlined style={{ color: BRAND_PURPLE, fontSize: "3rem" }} />
             </div>
+
             <Title level={2}>Locate Your Address</Title>
             <Text className="text-lg text-gray-400 block mb-10">
               We use GPS coordinates for accurate site analysis. Click on the map to adjust your
@@ -707,10 +711,15 @@ const Calculator = () => {
 
       case 1:
         return (
-          <motion.div {...variants}>
+          <motion.div
+            initial={variants.initial}
+            animate={variants.animate}
+            exit={variants.exit}
+          >
             <Title level={2} className="text-center mb-10">
               What are we designing?
             </Title>
+
             <Row gutter={[24, 24]}>
               {[...subcategories].reverse().map((sub) => (
                 <Col xs={24} sm={12} md={8} key={sub._id} className="p-10">
@@ -728,10 +737,15 @@ const Calculator = () => {
 
       case 2:
         return (
-          <motion.div {...variants}>
+          <motion.div
+            initial={variants.initial}
+            animate={variants.animate}
+            exit={variants.exit}
+          >
             <Title level={2} className="text-center mb-10">
               Select Your Aesthetic Style
             </Title>
+
             {loading.types ? (
               <div className="text-center py-20">
                 <Spin size="large" />
@@ -753,132 +767,120 @@ const Calculator = () => {
           </motion.div>
         );
 
-
-    case 3:
-  return (
-    <motion.div {...variants} className="py-10">
-      <div className="max-w-3xl mx-auto">
-        <Title level={3} className="text-center mb-8">
-          Project Details
-        </Title>
+      case 3:
+        return (
+          <motion.div
+            initial={variants.initial}
+            animate={variants.animate}
+            exit={variants.exit}
+            className="py-10"
+          >
+            <div className="max-w-3xl mx-auto">
+              <Title level={3} className="text-center mb-8">
+                Project Details
+              </Title>
 
               <Card className="rounded-xl shadow-sm">
-                <Form
-                  layout="vertical"
-                  className="space-y-6"
-                  requiredMark={true} // ✅ only star
-                >
-                  {questions.map((q) => {
-                    const isError = !!step3Errors[q._id];
+                {loading.questions ? (
+                  <div className="py-20 text-center">
+                    <Spin size="large" />
+                  </div>
+                ) : questions && questions.length > 0 ? (
+                  <Form layout="vertical" className="space-y-6" requiredMark={true}>
+                    {questions.map((q) => {
+                      const isError = !!step3Errors[q._id];
 
-                    return (
-                      <Form.Item
-                        key={q._id}
-                        label={q.question}
-                        required={true} // ✅ star show
-                        validateStatus={isError ? "error" : ""}
-                        help={isError ? "This field is required." : null}
-                      >
-                        {/* TEXT */}
-                        {q.questionType === "text" && (
-                          <Input
-                            id={`q-${q._id}`}
-                            value={answers[q._id] || ""}
-                            onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                            placeholder="Enter value"
-                            status={isError ? "error" : ""}
-                          />
-                        )}
+                      return (
+                        <Form.Item
+                          key={q._id}
+                          label={q.question}
+                          required={true}
+                          validateStatus={isError ? "error" : ""}
+                          help={isError ? "This field is required." : null}
+                        >
+                          {/* TEXT */}
+                          {q.questionType === "text" && (
+                            <Input
+                              id={`q-${q._id}`}
+                              value={answers[q._id] || ""}
+                              onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                              placeholder="Enter value"
+                              status={isError ? "error" : ""}
+                            />
+                          )}
 
-                        {/* NUMBER */}
-                        {q.questionType === "number" && (
-                          <Input
-                            id={`q-${q._id}`}
-                            type="number"
-                            value={answers[q._id] || ""}
-                            onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                            placeholder="Enter number"
-                            min={q.minValue || 0}
-                            max={q.maxValue || undefined}
-                            status={isError ? "error" : ""}
-                          />
-                        )}
+                          {/* NUMBER */}
+                          {q.questionType === "number" && (
+                            <Input
+                              id={`q-${q._id}`}
+                              type="number"
+                              value={answers[q._id] || ""}
+                              onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                              placeholder="Enter number"
+                              min={q.minValue || 0}
+                              max={q.maxValue || undefined}
+                              status={isError ? "error" : ""}
+                            />
+                          )}
 
-                        {/* YES / NO */}
-                        {q.questionType === "yesorno" && (
-                          <Radio.Group
-                            value={answers[q._id]}
-                            onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                          >
-                            <Space>
-                              {q.options.map((opt) => (
-                                <Radio key={opt._id} value={opt.title}>
-                                  {opt.title}
-                                </Radio>
-                              ))}
-                            </Space>
-                          </Radio.Group>
-                        )}
+                          {/* YES / NO */}
+                          {q.questionType === "yesorno" && (
+                            <Radio.Group
+                              value={answers[q._id]}
+                              onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                            >
+                              <Space>
+                                {q.options?.map((opt) => (
+                                  <Radio key={opt._id} value={opt.title}>
+                                    {opt.title}
+                                  </Radio>
+                                ))}
+                              </Space>
+                            </Radio.Group>
+                          )}
 
-                        {/* OPTIONS */}
-                        {q.questionType === "options" && (
-                          <Radio.Group
-                            value={answers[q._id]}
-                            onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                          >
-                            <Space direction="vertical">
-                              {q.options.map((opt) => (
-                                <Radio key={opt._id} value={opt.title}>
-                                  {opt.title}
-                                </Radio>
-                              ))}
-                            </Space>
-                          </Radio.Group>
-                        )}
-                      </Form.Item>
-                    );
-                  })}
-                </Form>
+                          {/* OPTIONS */}
+                          {q.questionType === "options" && (
+                            <Radio.Group
+                              value={answers[q._id]}
+                              onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                            >
+                              <Space direction="vertical">
+                                {q.options?.map((opt) => (
+                                  <Radio key={opt._id} value={opt.title}>
+                                    {opt.title}
+                                  </Radio>
+                                ))}
+                              </Space>
+                            </Radio.Group>
+                          )}
+                        </Form.Item>
+                      );
+                    })}
+                  </Form>
+                ) : (
+                  <div className="py-20 text-center">
+                    <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
+                      NO QUESTIONS AVAILABLE
+                    </h2>
+                    <p className="text-gray-500 mt-2 font-semibold">
+                      Please select another style/service or try again later.
+                    </p>
+                  </div>
+                )}
               </Card>
             </div>
           </motion.div>
         );
-        <Card className="rounded-xl shadow-sm">
-          {/* ✅ Check agar questions hain */}
-          {questions && questions.length > 0 ? (
-            <Form layout="vertical" className="space-y-6">
-              {questions.map((q) => (
-                <Form.Item
-                  key={q._id}
-                  label={q.question}
-                  required={true}
-                  validateStatus={answers[q._id] ? "success" : "error"}
-                  help={answers[q._id] ? null : "Please provide an answer to proceed."}
-                >
-                  {/* ... saare inputs (text, number, options) yahan rahenge ... */}
-                  {/* (Baki code same rahega) */}
-                </Form.Item>
-              ))}
-            </Form>
-          ) : (
-            /* ✅ BOLD EMPTY STATE */
-            <div className="py-20 text-center">
-              <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
-                NO QUESTIONS AVAILABLE
-              </h2>
-              {/* <p className="text-gray-500 mt-2 font-semibold">
-                Bhai, abhi koi sawal nahi mile.
-              </p> */}
-            </div>
-          )}
-        </Card>
-      </div>
-    </motion.div>
-  );
 
       case 4:
         return (
-          <motion.div {...variants} className="max-w-5xl mx-auto">
+          <motion.div
+            initial={variants.initial}
+            animate={variants.animate}
+            exit={variants.exit}
+            className="max-w-5xl mx-auto"
+          >
             <Row gutter={48}>
               <Col xs={24} lg={10}>
                 <div
@@ -1000,7 +1002,12 @@ const Calculator = () => {
 
       case 5:
         return (
-          <motion.div {...variants} className="text-center">
+          <motion.div
+            initial={variants.initial}
+            animate={variants.animate}
+            exit={variants.exit}
+            className="text-center"
+          >
             <div className="bg-white p-16 rounded-[4rem] shadow-2xl inline-block border border-gray-50">
               <SmileOutlined
                 style={{ color: BRAND_PURPLE, fontSize: "5rem" }}
@@ -1009,6 +1016,7 @@ const Calculator = () => {
               <Title level={1} style={{ color: BRAND_PURPLE }} className="m-0">
                 Valuation Ready
               </Title>
+
               <div className="my-12">
                 <Text className="text-gray-400 uppercase tracking-widest block mb-3">
                   Estimated Investment Range
@@ -1055,6 +1063,7 @@ const Calculator = () => {
                 >
                   {i < activeStep ? <CheckOutlined /> : i + 1}
                 </div>
+
                 <span
                   className={`text-xs font-bold uppercase tracking-tighter ${
                     i === activeStep ? "opacity-100" : "opacity-50"
@@ -1062,6 +1071,7 @@ const Calculator = () => {
                 >
                   {s.title}
                 </span>
+
                 {i < steps.length - 1 && <div className="w-4 h-[2px] bg-gray-100" />}
               </div>
             ))}
@@ -1077,7 +1087,9 @@ const Calculator = () => {
 
       <div className="max-w-7xl mx-auto mt-16 px-6">
         <AnimatePresence mode="wait">
-          <div key={activeStep}>{StepRenderer()}</div>
+          <div key={activeStep}>
+            <StepRenderer />
+          </div>
         </AnimatePresence>
       </div>
 
@@ -1102,7 +1114,11 @@ const Calculator = () => {
                     Progress
                   </Text>
                   <Text strong style={{ color: BRAND_PURPLE }}>
-                    {Math.min(Math.round(((activeStep + 1) / steps.length) * 100), 100)}% Complete
+                    {Math.min(
+                      Math.round(((activeStep + 1) / steps.length) * 100),
+                      100
+                    )}
+                    % Complete
                   </Text>
                 </div>
               )}
