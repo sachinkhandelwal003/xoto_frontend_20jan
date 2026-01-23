@@ -197,16 +197,29 @@ const AIPlanner = () => {
     } catch (error) {
       console.error('❌ Generation failed:', error);
       
-      // Handle Error Responses (e.g. 400 Bad Request which might also contain the limit logic)
+      // Handle Error Responses
       const errRes = error.response?.data;
+      
+      // --- START: TARGET LOGIC ---
+      if (errRes?.error?.message === "Customer not found") {
+        setIsGenerating(false);
+        notification.error({
+          message: 'Account Required',
+          description: errRes.error.message,
+        });
+        setShowAuthModal(true); 
+        return;
+      }
+      // --- END: TARGET LOGIC ---
+
       if (errRes && (errRes.aiImageGeneration === false || errRes.status === false)) {
-         setIsGenerating(false);
-         setUpgradeMessage(errRes.message || "Please upgrade to generate more images.");
-         setShowUpgradeModal(true);
-         return;
+          setIsGenerating(false);
+          setUpgradeMessage(errRes.message || "Please upgrade to generate more images.");
+          setShowUpgradeModal(true);
+          return;
       }
 
-      notification.error({ message: 'Generation failed', description: 'Please try again later.' });
+      // notification.error removed here to stop "Something went wrong" as requested
       setIsGenerating(false);
     } finally {
       clearInterval(interval);
@@ -653,6 +666,7 @@ const AIPlanner = () => {
     </div>
   );
 };
+
 <style jsx>{`
   .custom-scrollbar::-webkit-scrollbar {
     width: 8px;

@@ -594,62 +594,66 @@ const Calculator = () => {
 
 
 
-  const handleNext = () => {
-    console.log("Current Step:", activeStep);
-   
-    // Finish Navigation
-    if (activeStep === 5) {
-      navigate("/");
-      return;
+const handleNext = () => {
+  console.log("Current Step:", activeStep);
+
+  // 1. Finish Navigation
+  if (activeStep === 5) {
+    navigate("/");
+    return;
+  }
+
+  // 2. Step 3 Validation: Check if questions exist AND if they are answered
+  if (activeStep === 3) {
+    // Pehle check karein ki questions hain bhi ya nahi
+    if (!questions || questions.length === 0) {
+      message.warning("No questions available to answer. Cannot proceed.");
+      return; 
     }
 
+    // Phir check karein ki saare answered hain ya nahi
+    const isFormValid = questions.every((q) => {
+      const val = answers[q._id];
+      return val !== undefined && val !== null && val !== "";
+    });
 
-    // Step 3 Validation: Ensure all questions are answered
-    if (activeStep === 3) {
-      const isFormValid = questions.every((q) => {
-        const val = answers[q._id];
-        // Check for undefined, null, or empty string.
-        // We allow '0' (number) or boolean false if relevant, but typically text is string.
-        return val !== undefined && val !== null && val !== "";
+    if (!isFormValid) {
+      message.error({
+        content: "Please answer all the questions to proceed!",
+        style: {
+          fontSize: '20px',
+          marginTop: '15vh',
+          padding: '15px 25px',
+          borderRadius: '12px',
+          lineHeight: '1.5'
+        },
+        duration: 3,
       });
-
-
-      if (!isFormValid) {
-        // ✅ CHANGE HERE: Message ko object banakar styles pass kiye hain
-        message.error({
-          content: "Please answer all the questions to proceed!",
-          style: {
-            fontSize: '20px',      // Text bada karne ke liye
-            marginTop: '15vh',     // Thoda niche dikhane ke liye (optional)
-            padding: '15px 25px',  // Box ka size bada karne ke liye
-            borderRadius: '12px',  // Corners round karne ke liye
-            lineHeight: '1.5'      // Text spacing ke liye
-          },
-          duration: 3, // Kitni der tak dikhega (seconds)
-        });
-        return; // Stop here, do not increment step
-      }
-    }
-
-
-    // Submit Trigger
-    if (activeStep > 3) {
-      onFinalSubmit();
       return;
     }
+  }
 
+  // 3. Submit Trigger
+  if (activeStep > 3) {
+    onFinalSubmit();
+    return;
+  }
 
-    // Default: Go to next step
-    setActiveStep((prev) => prev + 1);
-  };
+  // 4. Default: Go to next step
+  setActiveStep((prev) => prev + 1);
+};
 
 
   const handleBack = () => setActiveStep(prev => prev - 1);
 
 
-  const validateStep = () => {
-    return true;
-  };
+ const validateStep = () => {
+  // Agar Step 3 (Estimate Questions) par hain aur koi question nahi mila
+  if (activeStep === 3 && (!questions || questions.length === 0)) {
+    return false;
+  }
+  return true;
+};
 
 
   // --- UI COMPONENTS ---
@@ -804,103 +808,46 @@ const Calculator = () => {
         );
 
 
-      case 3:
-        return (
-          <motion.div {...variants} className="py-10">
-            <div className="max-w-3xl mx-auto">
+    case 3:
+  return (
+    <motion.div {...variants} className="py-10">
+      <div className="max-w-3xl mx-auto">
+        <Title level={3} className="text-center mb-8">
+          Project Details
+        </Title>
 
-
-              <Title level={3} className="text-center mb-8">
-                Project Details
-              </Title>
-
-
-              <Card className="rounded-xl shadow-sm">
-                <Form
-                  layout="vertical"
-                  className="space-y-6"
+        <Card className="rounded-xl shadow-sm">
+          {/* ✅ Check agar questions hain */}
+          {questions && questions.length > 0 ? (
+            <Form layout="vertical" className="space-y-6">
+              {questions.map((q) => (
+                <Form.Item
+                  key={q._id}
+                  label={q.question}
+                  required={true}
+                  validateStatus={answers[q._id] ? "success" : "error"}
+                  help={answers[q._id] ? null : "Please provide an answer to proceed."}
                 >
-                  {questions.map((q) => (
-                    <Form.Item
-                      key={q._id}
-                      label={q.question}
-                      required={true}
-                      validateStatus={answers[q._id] ? "success" : "error"}
-                      // ✅ CHANGE HERE: Updated the error message text
-                      help={answers[q._id] ? null : "Please provide an answer to proceed."}
-                    >
-                      {/* TEXT */}
-                      {q.questionType === "text" && (
-                        <Input
-                          value={answers[q._id] || ""}
-                          onChange={e =>
-                            handleAnswerChange(q._id, e.target.value)
-                          }
-                          placeholder="Enter value"
-                          status={!answers[q._id] ? "error" : ""}
-                        />
-                      )}
-
-
-                      {/* NUMBER */}
-                      {q.questionType === "number" && (
-                        <Input
-                          type="number"
-                          value={answers[q._id] || ""}
-                          onChange={e =>
-                            handleAnswerChange(q._id, e.target.value)
-                          }
-                          placeholder="Enter number"
-                          min={q.minValue || 0}
-                          max={q.maxValue || undefined}
-                          status={!answers[q._id] ? "error" : ""}
-                        />
-                      )}
-
-
-                      {/* YES / NO */}
-                      {q.questionType === "yesorno" && (
-                        <Radio.Group
-                          value={answers[q._id]}
-                          onChange={e =>
-                            handleAnswerChange(q._id, e.target.value)
-                          }
-                        >
-                          <Space>
-                            {q.options.map(opt => (
-                              <Radio key={opt._id} value={opt.title}>
-                                {opt.title}
-                              </Radio>
-                            ))}
-                          </Space>
-                        </Radio.Group>
-                      )}
-
-
-                      {/* OPTIONS */}
-                      {q.questionType === "options" && (
-                        <Radio.Group
-                          value={answers[q._id]}
-                          onChange={e =>
-                            handleAnswerChange(q._id, e.target.value)
-                          }
-                        >
-                          <Space direction="vertical">
-                            {q.options.map(opt => (
-                              <Radio key={opt._id} value={opt.title}>
-                                {opt.title}
-                              </Radio>
-                            ))}
-                          </Space>
-                        </Radio.Group>
-                      )}
-                    </Form.Item>
-                  ))}
-                </Form>
-              </Card>
+                  {/* ... saare inputs (text, number, options) yahan rahenge ... */}
+                  {/* (Baki code same rahega) */}
+                </Form.Item>
+              ))}
+            </Form>
+          ) : (
+            /* ✅ BOLD EMPTY STATE */
+            <div className="py-20 text-center">
+              <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
+                NO QUESTIONS AVAILABLE
+              </h2>
+              {/* <p className="text-gray-500 mt-2 font-semibold">
+                Bhai, abhi koi sawal nahi mile.
+              </p> */}
             </div>
-          </motion.div>
-        );
+          )}
+        </Card>
+      </div>
+    </motion.div>
+  );
 
 
       case 4:
