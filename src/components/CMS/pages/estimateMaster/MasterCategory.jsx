@@ -3,8 +3,17 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Card, Button, Space, Tag, Tooltip,
   Typography, Popconfirm, Input, Form, Modal, message,
+<<<<<<< HEAD
   Row, Col, Statistic, Breadcrumb, Select, Switch,
   InputNumber 
+=======
+  Row, Col, Statistic, Breadcrumb, Divider, Select, Switch,
+<<<<<<< HEAD
+  InputNumber
+=======
+  InputNumber 
+>>>>>>> ef1184f210278df5efcd57f4c8025cc118030e83
+>>>>>>> 6abdf530651d4c53ea4b2824f12f2d9f271ed06e
 } from 'antd';
 import {
   PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined,
@@ -19,10 +28,9 @@ import { apiService } from '../../../../manageApi/utils/custom.apiservice';
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-// --- THEME CONFIGURATION ---
 const THEME = {
-  primary: "#722ed1", // Purple
-  secondary: "#1890ff", // Blue
+  primary: "#722ed1",
+  secondary: "#1890ff",
   success: "#52c41a",
   warning: "#faad14",
   error: "#ff4d4f",
@@ -32,32 +40,34 @@ const THEME = {
 
 const API_BASE = '/estimate/master/category';
 
+// --- HELPER FUNCTION FOR CAPITALIZATION ---
+const capitalizeFirstLetter = (string) => {
+  if (!string) return '';
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
+
 const MasterCategory = () => {
-  // Navigation State
   const [level, setLevel] = useState('categories'); 
   const [parentCategory, setParentCategory] = useState(null);
   const [parentSubcategory, setParentSubcategory] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
-  // Data State
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showTrash, setShowTrash] = useState(false);
 
   const [pagination, setPagination] = useState({
     currentPage: 1,
-    itemsPerPage: 10,
+    itemsPerPage: 100, // Locked to 100
     totalItems: 0,
   });
 
-  // Modal States
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
-  // Stats Calculation
   const stats = useMemo(() => {
     return {
       total: pagination.totalItems,
@@ -66,14 +76,19 @@ const MasterCategory = () => {
     };
   }, [data, pagination.totalItems]);
 
-  // Fetch data based on current level
-  const fetchData = useCallback(async (page = 1, limit = 10) => {
+  const fetchData = useCallback(async (page = 1, limit = 100) => {
     setLoading(true);
     try {
+      const forcedLimit = 100; // Always request 100 items
       let url = API_BASE;
       const params = { 
         page, 
+<<<<<<< HEAD
         limit, 
+=======
+        limit: forcedLimit, 
+        search: searchTerm || undefined,
+>>>>>>> 6abdf530651d4c53ea4b2824f12f2d9f271ed06e
         active: showTrash ? 'false' : undefined 
       };
 
@@ -81,20 +96,23 @@ const MasterCategory = () => {
       if (level === 'subcategories') {
         url = `${API_BASE}/${parentCategory}/subcategories`;
         response = await apiService.get(url, params);
-        setData(response.data || []);
+        setData(response.data || response.subcategories || []);
       } else if (level === 'types') {
         url = `${API_BASE}/${parentCategory}/subcategories/${parentSubcategory}/types`;
+        // 🔥 Added params here so limit 100 works for types too
         response = await apiService.get(url, params);
-        setData(response.data || []);
+        const typeData = response.data || response.types || response; 
+        setData(Array.isArray(typeData) ? typeData : []);
       } else {
+        // 🔥 Added params here for categories too
         response = await apiService.get(url, params);
         setData(response.categories || response.data || []);
       }
 
       setPagination({
         currentPage: response.pagination?.page || page,
-        itemsPerPage: response.pagination?.limit || limit,
-        totalItems: response.pagination?.total || response.data?.length || response.categories?.length || 0,
+        itemsPerPage: forcedLimit, 
+        totalItems: response.pagination?.total || (Array.isArray(response.data) ? response.data.length : 0) || (Array.isArray(response.categories) ? response.categories.length : 0) || 0,
       });
     } catch (err) {
       message.error('Failed to load data');
@@ -105,10 +123,10 @@ const MasterCategory = () => {
   }, [level, parentCategory, parentSubcategory, showTrash]);
 
   useEffect(() => {
-    fetchData(pagination.currentPage, pagination.itemsPerPage);
+    fetchData(pagination.currentPage, 100);
   }, [fetchData]);
 
-  // Reset page when level changes
+  // Reset page to 1 when navigating levels
   useEffect(() => {
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   }, [level, parentCategory, parentSubcategory]);
@@ -123,10 +141,9 @@ const MasterCategory = () => {
       let url = `${API_BASE}/${id}`;
       if (level === 'subcategories') url = `${API_BASE}/${parentCategory}/subcategories/${id}`;
       if (level === 'types') url = `${API_BASE}/${parentCategory}/subcategories/${parentSubcategory}/types/${id}`;
-
       await apiService.delete(url);
       message.success('Deactivated successfully');
-      fetchData();
+      fetchData(1);
     } catch (err) {
       message.error('Operation failed');
     }
@@ -158,7 +175,7 @@ const MasterCategory = () => {
 
   // ✅ FIXED: Dynamic Key for Columns based on Level
   const columns = useMemo(() => {
-    const cols = [
+    return [
       {
         title: level === 'categories' ? 'Category Name' : level === 'subcategories' ? 'Subcategory' : 'Type',
         // ✅ CHANGE: Categories use 'name', others use 'label'
@@ -176,8 +193,15 @@ const MasterCategory = () => {
                 {level === 'types' && <TagsOutlined style={{ fontSize: '18px', color: THEME.warning }} />}
             </div>
             <div>
-              <div style={{ fontWeight: 600, color: '#262626' }}>{record.name || record.label}</div>
-              {record.description && <Text type="secondary" style={{ fontSize: '12px' }}>{record.description}</Text>}
+              {/* Added Capitalization for Display */}
+              <div style={{ fontWeight: 600, color: '#262626' }}>
+                {capitalizeFirstLetter(record.name || record.label)}
+              </div>
+              {record.description && (
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  {capitalizeFirstLetter(record.description)}
+                </Text>
+              )}
             </div>
           </div>
         ),
@@ -211,16 +235,14 @@ const MasterCategory = () => {
               <Button size="small" icon={<EyeOutlined />} onClick={() => { setSelectedItem(record); setDetailsOpen(true); }} />
             </Tooltip>
             <Popconfirm title="Deactivate this item?" onConfirm={() => handleDelete(record._id)}>
-               <Button size="small" danger icon={<DeleteOutlined />} />
+                <Button size="small" danger icon={<DeleteOutlined />} />
             </Popconfirm>
           </Space>
         ),
       },
     ];
-    return cols;
   }, [level]);
 
-  // --- CREATE MODAL ---
   const CreateModal = () => {
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
@@ -229,16 +251,14 @@ const MasterCategory = () => {
       setSaving(true);
       try {
         let url = API_BASE;
-        let payload = values;
-
         if (level === 'subcategories') url = `${API_BASE}/${parentCategory}/subcategories`;
         if (level === 'types') url = `${API_BASE}/${parentCategory}/subcategories/${parentSubcategory}/types`;
 
-        await apiService.post(url, payload);
+        await apiService.post(url, values);
         message.success('Created successfully!');
         setCreateModalOpen(false);
         form.resetFields();
-        fetchData(1);
+        fetchData(1); 
       } catch (err) { message.error('Create failed'); } 
       finally { setSaving(false); }
     };
@@ -247,11 +267,21 @@ const MasterCategory = () => {
       <Modal title={`Add New ${level.slice(0, -1)}`} open={createModalOpen} onCancel={() => setCreateModalOpen(false)} footer={null} centered destroyOnClose>
         <Form form={form} layout="vertical" onFinish={onSubmit} style={{ marginTop: '16px' }}>
           {level === 'categories' ? (
-            <Form.Item name="name" label="Category Type" rules={[{ required: true }]}>
+            <Form.Item 
+                name="name" 
+                label="Category Type" 
+                rules={[{ required: true }]}
+                normalize={(value) => capitalizeFirstLetter(value)} // Capitalize on input
+            >
               <Input />
             </Form.Item>
           ) : (
-            <Form.Item name="label" label="Name" rules={[{ required: true }]}>
+            <Form.Item 
+                name="label" 
+                label="Name" 
+                rules={[{ required: true }]}
+                normalize={(value) => capitalizeFirstLetter(value)} // Capitalize on input
+            >
               <Input />
             </Form.Item>
           )}
@@ -261,13 +291,17 @@ const MasterCategory = () => {
               name="baseRatePerSqFt"
               label="Base Rate per Sq. Ft"
               rules={[{ required: true }]}
-              extra="For example, if the minimum total charge is $1000 for 100 sq. ft, enter 10 ($/sq. ft)."
+              extra="Example: Enter 10 ($/sq. ft)."
             >
               <InputNumber style={{ width: '100%' }} placeholder="Enter rate" />
             </Form.Item>
           )}
 
-          <Form.Item name="description" label="Description">
+          <Form.Item 
+            name="description" 
+            label="Description"
+            normalize={(value) => capitalizeFirstLetter(value)} // Capitalize Description too
+          >
             <TextArea rows={3} />
           </Form.Item>
 
@@ -282,8 +316,12 @@ const MasterCategory = () => {
     );
   };
 
+<<<<<<< HEAD
   // --- EDIT MODAL ---
  const EditModal = () => {
+=======
+  const EditModal = () => {
+>>>>>>> 6abdf530651d4c53ea4b2824f12f2d9f271ed06e
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
 
@@ -303,61 +341,77 @@ const MasterCategory = () => {
     const onUpdate = async (values) => {
       setSaving(true);
       try {
+<<<<<<< HEAD
         let url = `${API_BASE}/${selectedItem._id}`; 
+=======
+<<<<<<< HEAD
+        let url = `${API_BASE}/${selectedItem._id}`; // Default for Root Category
+>>>>>>> 6abdf530651d4c53ea4b2824f12f2d9f271ed06e
 
+=======
+        let url = `${API_BASE}/${selectedItem._id}`;
+>>>>>>> ef1184f210278df5efcd57f4c8025cc118030e83
         if (level === 'subcategories') {
             const catId = selectedItem.category?._id || selectedItem.category || parentCategory;
             url = `${API_BASE}/${catId}/subcategories/${selectedItem._id}`;
         }
-        
         if (level === 'types') {
             const catId = selectedItem.category?._id || selectedItem.category || parentCategory;
             const subCatId = selectedItem.subcategory?._id || selectedItem.subcategory || parentSubcategory;
             url = `${API_BASE}/${catId}/subcategories/${subCatId}/types/${selectedItem._id}`;
         }
+<<<<<<< HEAD
 
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> ef1184f210278df5efcd57f4c8025cc118030e83
+>>>>>>> 6abdf530651d4c53ea4b2824f12f2d9f271ed06e
         await apiService.put(url, values);
         message.success('Updated successfully!');
         setEditModalOpen(false);
-        fetchData();
-      } catch (err) { 
-        console.error("Update Error:", err);
-        message.error('Update failed'); 
-      } 
+        fetchData(pagination.currentPage);
+      } catch (err) { message.error('Update failed'); } 
       finally { setSaving(false); }
     };
 
     return (
-      <Modal 
-        title={`Edit ${level.slice(0, -1)}`} 
-        open={editModalOpen} 
-        onCancel={() => setEditModalOpen(false)} 
-        footer={null} 
-        centered 
-        destroyOnClose
-      >
+      <Modal title={`Edit ${level.slice(0, -1)}`} open={editModalOpen} onCancel={() => setEditModalOpen(false)} footer={null} centered destroyOnClose>
         <Form form={form} layout="vertical" onFinish={onUpdate} style={{ marginTop: '16px' }}>
-          
           {level === 'categories' ? (
-            <Form.Item name="name" label="Category Type" rules={[{ required: true }]}>
+            <Form.Item 
+                name="name" 
+                label="Category Type" 
+                rules={[{ required: true }]}
+                normalize={(value) => capitalizeFirstLetter(value)} // Capitalize on Edit
+            >
               <Input />
             </Form.Item>
           ) : (
-            <Form.Item name="label" label="Name" rules={[{ required: true }]}>
+            <Form.Item 
+                name="label" 
+                label="Name" 
+                rules={[{ required: true }]}
+                normalize={(value) => capitalizeFirstLetter(value)} // Capitalize on Edit
+            >
               <Input />
             </Form.Item>
           )}
+<<<<<<< HEAD
           
+          <Form.Item 
+            name="description" 
+            label="Description"
+            normalize={(value) => capitalizeFirstLetter(value)}
+          >
+=======
           <Form.Item name="description" label="Description">
+>>>>>>> ef1184f210278df5efcd57f4c8025cc118030e83
             <TextArea rows={3} />
           </Form.Item>
-
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item 
-                name="baseEstimationValueUnit" 
-                label="Base Unit"
-              >
+              <Form.Item name="baseEstimationValueUnit" label="Base Unit">
                  <InputNumber style={{ width: '100%' }} placeholder="0" />
               </Form.Item>
             </Col>
@@ -372,7 +426,6 @@ const MasterCategory = () => {
               </Form.Item>
             </Col>
           </Row>
-
           <div style={{ display: 'flex', justifyContent: 'end', gap: '8px', marginTop: '10px' }}>
             <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
             <Button type="primary" htmlType="submit" loading={saving} style={{ background: THEME.primary }}>
@@ -386,14 +439,13 @@ const MasterCategory = () => {
 
   return (
     <div style={{ padding: '24px', background: '#f5f7fa', minHeight: '100vh' }}>
-      {/* Header & Breadcrumb */}
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <Space direction="vertical" size={4}>
           <Title level={3} style={{ margin: 0 }}>Category Architecture</Title>
           <Breadcrumb separator=">">
             <Breadcrumb.Item onClick={() => { setLevel('categories'); setParentCategory(null); setSelectedCategory(null); }} style={{ cursor: 'pointer' }}><HomeOutlined /> Root</Breadcrumb.Item>
-            {selectedCategory && <Breadcrumb.Item onClick={() => { setLevel('subcategories'); setParentSubcategory(null); }} style={{ cursor: 'pointer' }}>{selectedCategory.name}</Breadcrumb.Item>}
-            {selectedSubcategory && <Breadcrumb.Item>{selectedSubcategory.label}</Breadcrumb.Item>}
+            {selectedCategory && <Breadcrumb.Item onClick={() => { setLevel('subcategories'); setParentSubcategory(null); }} style={{ cursor: 'pointer' }}>{capitalizeFirstLetter(selectedCategory.name)}</Breadcrumb.Item>}
+            {selectedSubcategory && <Breadcrumb.Item>{capitalizeFirstLetter(selectedSubcategory.label)}</Breadcrumb.Item>}
           </Breadcrumb>
         </Space>
         <Space>
@@ -402,27 +454,33 @@ const MasterCategory = () => {
         </Space>
       </div>
 
-      {/* Stats */}
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
         {[{ t: 'Total', v: stats.total, c: THEME.primary, i: <AppstoreOutlined /> }, { t: 'Active', v: stats.active, c: THEME.success, i: <DatabaseOutlined /> }, { t: 'Trash/Inactive', v: stats.trashed, c: THEME.error, i: <RestOutlined /> }].map((s, idx) => (
           <Col xs={24} sm={8} key={idx}>
             <Card bordered={false} style={{ borderRadius: '12px', borderBottom: `3px solid ${s.c}` }}>
-              <Statistic title={s.t} value={s.v} prefix={s.i} valueStyle={{ color: '#262626' }} />
+              <Statistic title={s.t} value={s.v} prefix={s.i} />
             </Card>
           </Col>
         ))}
       </Row>
 
+<<<<<<< HEAD
       {/* Table Card */}
       <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }} bodyStyle={{ padding: 0 }}>
         
         {/* Buttons Toolbar (Search removed because it's in CustomTable) */}
         <div style={{ padding: '16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+=======
+      <Card bordered={false} style={{ borderRadius: '12px' }} bodyStyle={{ padding: 0 }}>
+        <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between' }}>
+          <Input prefix={<SearchOutlined />} placeholder="Search entries..." style={{ width: 320 }} onChange={e => setSearchTerm(e.target.value)} allowClear />
+>>>>>>> 6abdf530651d4c53ea4b2824f12f2d9f271ed06e
           <Space>
             <Button type={showTrash ? 'primary' : 'default'} danger={showTrash} icon={<RestOutlined />} onClick={() => setShowTrash(!showTrash)}>{showTrash ? 'Hide Trash' : 'View Trash'}</Button>
-            <Button icon={<ReloadOutlined />} onClick={() => fetchData()} />
+            <Button icon={<ReloadOutlined />} onClick={() => fetchData(1)} />
           </Space>
         </div>
+<<<<<<< HEAD
 
         {/* KEY PROP ADDED HERE: 
             Isse jab bhi aap folder (category/subcategory) change karenge, 
@@ -436,19 +494,28 @@ const MasterCategory = () => {
             totalItems={data.length} 
             currentPage={pagination.currentPage} 
             onPageChange={(page) => fetchData(page)} 
+=======
+        <CustomTable 
+          columns={columns} 
+          data={data} 
+          loading={loading} 
+          totalItems={pagination.totalItems} 
+          currentPage={pagination.currentPage} 
+          pageSize={100} // 🔥 Force table to show 100 rows
+          onPageChange={(p, l) => fetchData(p, 100)} 
+>>>>>>> 6abdf530651d4c53ea4b2824f12f2d9f271ed06e
         />
       </Card>
 
-      <CreateModal key={level} />
-      <EditModal />
+      <CreateModal key={`create-${level}`} />
+      <EditModal key={`edit-${selectedItem?._id}`} />
 
-      {/* Details View */}
       <Modal title="Detailed View" open={detailsOpen} onCancel={() => setDetailsOpen(false)} footer={<Button onClick={() => setDetailsOpen(false)}>Close</Button>} centered>
         {selectedItem && (
           <div style={{ padding: '8px 0' }}>
             <p><Text type="secondary">ID:</Text> <br /> <Text strong>{selectedItem._id}</Text></p>
-            <p><Text type="secondary">Display Name:</Text> <br /> <Text strong>{selectedItem.name || selectedItem.label}</Text></p>
-            <p><Text type="secondary">Description:</Text> <br /> <Text>{selectedItem.description || 'N/A'}</Text></p>
+            <p><Text type="secondary">Display Name:</Text> <br /> <Text strong>{capitalizeFirstLetter(selectedItem.name || selectedItem.label)}</Text></p>
+            <p><Text type="secondary">Description:</Text> <br /> <Text>{capitalizeFirstLetter(selectedItem.description) || 'N/A'}</Text></p>
             <p><Text type="secondary">Current Level:</Text> <br /> <Tag color="purple">{level.toUpperCase()}</Tag></p>
             {(selectedItem.base_unit || selectedItem.baseRatePerSqFt) !== undefined && (
                  <p><Text type="secondary">Base Unit:</Text> <br /> <Text strong>{selectedItem.baseRatePerSqFt ?? selectedItem.base_unit}</Text></p>
