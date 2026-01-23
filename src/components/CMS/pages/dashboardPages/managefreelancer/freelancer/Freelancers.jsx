@@ -39,13 +39,13 @@ import {
   StopOutlined,
   UserAddOutlined,
   CreditCardOutlined,
+  UndoOutlined // Imported for Reversing decisions
 } from "@ant-design/icons";
 import moment from "moment";
 import { apiService } from "../../../../../../manageApi/utils/custom.apiservice";
 import CustomTable from "../../../custom/CustomTable";
 
 const { TextArea } = Input;
-const { TabPane } = Tabs;
 const { Title, Text } = Typography;
 
 // --- THEME CONFIGURATION ---
@@ -120,7 +120,7 @@ const Freelancers = () => {
   const [showRateCardModal, setShowRateCardModal] = useState(false);
   const [rateCardData, setRateCardData] = useState([]);
   const [rateCardFreelancerName, setRateCardFreelancerName] = useState("");
-  const [rateCardCurrency, setRateCardCurrency] = useState(""); // ✅ Added Currency State
+  const [rateCardCurrency, setRateCardCurrency] = useState("");
 
   // Status mapping for API
   const statusMap = { 
@@ -281,7 +281,6 @@ const Freelancers = () => {
       navigate(`/dashboard/${roleSlug}/freelancer?freelancerId=${freelancer._id}`)
   };
 
-  // --- HANDLE VIEW RATE CARD ---
  const handleViewRateCard = (record) => {
   const rows = [];
 
@@ -448,8 +447,9 @@ const Freelancers = () => {
                 </Tooltip>
             )}
 
-            {activeTab === "pending" && perm.canApprove && (
-              <Tooltip title="Approve">
+            {/* --- APPROVE BUTTON (Visible in Pending or Rejected tabs) --- */}
+            {(activeTab === "pending" || activeTab === "rejected") && perm.canApprove && (
+              <Tooltip title={activeTab === 'rejected' ? "Re-Approve" : "Approve"}>
                 <Popconfirm
                   title="Approve Freelancer"
                   description="Are you sure you want to approve this freelancer?"
@@ -462,7 +462,7 @@ const Freelancers = () => {
                     type="primary"
                     size="small"
                     shape="circle"
-                    icon={<CheckOutlined />}
+                    icon={activeTab === 'rejected' ? <UndoOutlined /> : <CheckOutlined />} // Use Undo icon for re-approving
                     style={{ backgroundColor: THEME.success, borderColor: THEME.success }}
                     loading={actionLoading === record._id}
                   />
@@ -470,8 +470,9 @@ const Freelancers = () => {
               </Tooltip>
             )}
 
-            {activeTab === "pending" && perm.canReject && (
-              <Tooltip title="Reject">
+            {/* --- REJECT BUTTON (Visible in Pending or Approved tabs) --- */}
+            {(activeTab === "pending" || activeTab === "approved") && perm.canReject && (
+              <Tooltip title={activeTab === 'approved' ? "Reject/Suspend" : "Reject"}>
                 <Button
                   danger
                   size="small"

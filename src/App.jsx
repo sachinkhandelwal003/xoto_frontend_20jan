@@ -75,6 +75,7 @@ import DeveloperPropertyManagement from "./components/ecommerce/B2C/developerpro
 import DeveloperRegistration from "./components/ecommerce/B2C/developerregistration";
 import DeveloperSidebar from "./components/ecommerce/B2C/developersidebar";
 import RegistrationAgency from "./components/ecommerce/B2C/registrationagency";
+import Checker from "./Checker";
 
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
@@ -255,6 +256,8 @@ function App() {
               <Route path="/magazines" element={<Magazine />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/customer/dashboard" element={<Customerdashboard />} />
+                            <Route path="/check" element={<Checker />} />
+
               <Route
                 path="/dashboard/:roleSlug/*"
                 element={

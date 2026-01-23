@@ -1,4 +1,3 @@
-// src/components/homepage/AiPlanner/GardenCalculator.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Card, Button, Typography, Form, Input, Select, Space, Row, Col,
@@ -19,6 +18,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 
+
 // Fix for default marker icons in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -27,11 +27,15 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+
 const { Title, Text } = Typography;
 const { Option } = Select;
 
+
 const BASE_URL = 'https://xoto.ae/api';
 const BRAND_PURPLE = '#5C039B';
+
+
 
 
 const steps = [
@@ -42,6 +46,7 @@ const steps = [
   { title: 'Contact', icon: <PhoneFilled /> },
 ];
 
+
 // Reverse geocoding function
 const reverseGeocode = async (lat, lng) => {
   const res = await fetch(
@@ -50,6 +55,7 @@ const reverseGeocode = async (lat, lng) => {
   const data = await res.json();
   const a = data.address || {};
 
+
   const city =
     a.city ||
     a.town ||
@@ -57,11 +63,13 @@ const reverseGeocode = async (lat, lng) => {
     a.county ||
     "";
 
+
   const area =
     a.suburb ||
     a.neighbourhood ||
     a.quarter ||
     "";
+
 
   return {
     country: a.country || "",
@@ -72,10 +80,10 @@ const reverseGeocode = async (lat, lng) => {
   };
 };
 
+
 // Map Picker Component
 const MapPicker = ({ coords, onChange }) => {
   const [position, setPosition] = useState(coords.lat && coords.lng ? [coords.lat, coords.lng] : [25.2048, 55.2708]);
-
 
 
   useEffect(() => {
@@ -83,6 +91,7 @@ const MapPicker = ({ coords, onChange }) => {
       setPosition([coords.lat, coords.lng]);
     }
   }, [coords.lat, coords.lng]);
+
 
   const LocationMarker = () => {
     useMapEvents({
@@ -93,8 +102,10 @@ const MapPicker = ({ coords, onChange }) => {
       },
     });
 
+
     return position ? <Marker position={position} /> : null;
   };
+
 
   return (
     <MapContainer
@@ -112,6 +123,7 @@ const MapPicker = ({ coords, onChange }) => {
   );
 };
 
+
 const Calculator = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [form] = Form.useForm();
@@ -120,6 +132,7 @@ const Calculator = () => {
   const [subcategories, setSubcategories] = useState([]);
   const [types, setTypes] = useState([]);
   const [packages, setPackages] = useState([]);
+
 
   // User Selections
   const [coords, setCoords] = useState({
@@ -131,6 +144,7 @@ const Calculator = () => {
     area: "",
     address: ""
   });
+
 
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
@@ -146,44 +160,56 @@ const Calculator = () => {
   const [galleryImages, setGalleryImages] = useState([]);
   const [selectedImages, setSelectedImages] = useState([]);
 
+
   const handlePhoneChange = (e) => {
-  const value = e.target.value.replace(/\D/g, ""); // numbers only
-  const rule = COUNTRY_PHONE_RULES[countryCode];
+    const value = e.target.value.replace(/\D/g, ""); // numbers only
+    const rule = COUNTRY_PHONE_RULES[countryCode];
 
-  if (!rule) return;
 
-  if (value.length > rule.digits) return; // block extra digits
+    if (!rule) return;
 
-  setPhone(value);
 
-  if (value.length < rule.digits) {
-    setPhoneError(`Phone number must be ${rule.digits} digits`);
-  } else {
+    if (value.length > rule.digits) return; // block extra digits
+
+
+    setPhone(value);
+
+
+    if (value.length < rule.digits) {
+      setPhoneError(`Phone number must be ${rule.digits} digits`);
+    } else {
+      setPhoneError("");
+    }
+  };
+
+
+
+
+  const handleCountryChange = (code) => {
+    setCountryCode(code);
+    setPhone(""); // reset phone on country change
     setPhoneError("");
-  }
-};
+  };
 
 
-const handleCountryChange = (code) => {
-  setCountryCode(code);
-  setPhone(""); // reset phone on country change
-  setPhoneError("");
-};
 
 
   const toggleImageSelect = (img) => {
     setSelectedImages((prev) => {
       const exists = prev.some(i => i.id === img.id);
 
+
       if (exists) {
         // remove image
         return prev.filter(i => i.id !== img.id);
       }
 
+
       // add image
       return [...prev, img];
     });
   };
+
 
   const getAllImages = async () => {
     try {
@@ -191,7 +217,9 @@ const handleCountryChange = (code) => {
         `https://xoto.ae/api/estimate/master/category/types/${selectedType}/gallery`
       );
 
+
       const data = await res.json();
+
 
       console.log("We got this from galllery images", data);
       // assuming res.data or res.gallery
@@ -201,11 +229,14 @@ const handleCountryChange = (code) => {
     }
   };
 
+
   useEffect(() => {
     if (selectedType) {
       getAllImages();
     }
   }, [selectedType]);
+
+
 
 
   const [loading, setLoading] = useState({
@@ -216,7 +247,9 @@ const handleCountryChange = (code) => {
     geocoding: false
   });
 
+
   const areaSqFt = length && width ? Math.round(parseFloat(length) * parseFloat(width)) : 0;
+
 
   // Country codes for dropdown
   const countryCodes = [
@@ -232,18 +265,20 @@ const handleCountryChange = (code) => {
     { value: '+1', label: 'USA/Canada (+1)' },
   ];
 
+
   const COUNTRY_PHONE_RULES = {
-  "+971": { country: "UAE", digits: 9 },
-  "+91": { country: "India", digits: 10 },
-  "+966": { country: "KSA", digits: 9 },
-  "+974": { country: "Qatar", digits: 8 },
-  "+968": { country: "Oman", digits: 8 },
-  "+973": { country: "Bahrain", digits: 8 },
-  "+965": { country: "Kuwait", digits: 8 },
-  "+92": { country: "Pakistan", digits: 10 },
-  "+44": { country: "UK", digits: 10 },
-  "+1": { country: "USA/Canada", digits: 10 },
-};
+    "+971": { country: "UAE", digits: 9 },
+    "+91": { country: "India", digits: 10 },
+    "+966": { country: "KSA", digits: 9 },
+    "+974": { country: "Qatar", digits: 8 },
+    "+968": { country: "Oman", digits: 8 },
+    "+973": { country: "Bahrain", digits: 8 },
+    "+965": { country: "Kuwait", digits: 8 },
+    "+92": { country: "Pakistan", digits: 10 },
+    "+44": { country: "UK", digits: 10 },
+    "+1": { country: "USA/Canada", digits: 10 },
+  };
+
 
   // --- API FETCHING ---
   useEffect(() => {
@@ -261,13 +296,17 @@ const handleCountryChange = (code) => {
   }, []);
 
 
+
+
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const navigate = useNavigate();
 
+
   const buildEstimateAnswersPayload = () => {
     return questions.map(q => {
       const userAnswer = answers[q._id];
+
 
       // TEXT / NUMBER / YES-NO
       if (q.questionType !== "options" && q.questionType !== "yesorno") {
@@ -282,10 +321,13 @@ const handleCountryChange = (code) => {
       }
 
 
-      // OPTIONS / yes or no 
+
+
+      // OPTIONS / yes or no
       const selectedOpt = q.options.find(
         opt => opt.title === userAnswer
       );
+
 
       return {
         question: q._id,
@@ -307,6 +349,9 @@ const handleCountryChange = (code) => {
 
 
 
+
+
+
   const handleAnswerChange = (questionId, value) => {
     setAnswers((prev) => ({
       ...prev,
@@ -315,16 +360,21 @@ const handleCountryChange = (code) => {
   };
 
 
+
+
   useEffect(() => {
     if (!selectedType) return;
 
+
     const getAllQuestions = async () => {
       setLoading(prev => ({ ...prev, questions: true }));
+
 
       try {
         const res = await apiService.get(
           `/estimate/master/category/types/${selectedType}/questions`
         );
+
 
         if (res.success) {
           setQuestions(res.data || []);
@@ -338,8 +388,10 @@ const handleCountryChange = (code) => {
       }
     };
 
+
     getAllQuestions();
   }, [selectedType]);
+
 
   useEffect(() => {
     if (!selectedSubcategory) return;
@@ -358,6 +410,7 @@ const handleCountryChange = (code) => {
     fetchTypes();
   }, [selectedSubcategory, subcategories]);
 
+
   useEffect(() => {
     const fetchPkgs = async () => {
       try {
@@ -372,18 +425,22 @@ const handleCountryChange = (code) => {
     fetchPkgs();
   }, []);
 
+
   // --- ACTIONS ---
   const handleGetLocation = () => {
     if (!navigator.geolocation) return message.error("Geolocation not supported");
     setLoading(prev => ({ ...prev, submitting: true, geocoding: true }));
+
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
+
         try {
           const geo = await reverseGeocode(lat, lng);
+
 
           setCoords({
             lat,
@@ -394,6 +451,7 @@ const handleCountryChange = (code) => {
             area: geo.area,
             address: geo.fullAddress
           });
+
 
           message.success("Location synchronized!");
         } catch (error) {
@@ -418,6 +476,7 @@ const handleCountryChange = (code) => {
     );
   };
 
+
   const handleMapLocationChange = async ({ lat, lng }) => {
     setLoading(prev => ({ ...prev, geocoding: true }));
     try {
@@ -439,10 +498,14 @@ const handleCountryChange = (code) => {
     }
   };
 
+
   const onFinalSubmit = async () => {
     // Validate form fields
 
+
     const estimateAnswers = buildEstimateAnswersPayload();
+
+
 
 
     if (!firstName.trim() || !lastName.trim()) {
@@ -450,28 +513,28 @@ const handleCountryChange = (code) => {
       return;
     }
 
+
     if (!email.trim()) {
       message.error("Please enter your email");
       return;
     }
+
 
     if (!phone.trim()) {
       message.error("Please enter your phone number");
       return;
     }
 
-    // if (!selectedPackage) {
-    //   message.error("Please select a package");
-    //   return;
-    // }
 
     setLoading(prev => ({ ...prev, submitting: true }));
+
 
 
 
     // Get selected type and subcategory details
     const selectedTypeData = types.find(t => t._id === selectedType);
     const selectedSubcat = subcategories.find(s => s._id === selectedSubcategory);
+
 
     // Prepare payload according to the example
     const payload = {
@@ -504,11 +567,14 @@ const handleCountryChange = (code) => {
       answers: estimateAnswers
     };
 
+
     console.log("Submitting payload:", JSON.stringify(payload, null, 2)); // For debugging
+
 
     try {
       const response = await apiService.post("/estimates/submit", payload);
       console.log("API Response:", response);
+
 
       if (response.success) {
         setActiveStep(5); // Move to success step
@@ -526,35 +592,65 @@ const handleCountryChange = (code) => {
   };
 
 
+
+
   const handleNext = () => {
-    console.log("activeSteeeeeeeeeeeeeeeeeeeppppppppppppppppp", activeStep)
-    if (activeStep == 5) {
-      navigate("/")
+    console.log("Current Step:", activeStep);
+   
+    // Finish Navigation
+    if (activeStep === 5) {
+      navigate("/");
+      return;
     }
 
 
+    // Step 3 Validation: Ensure all questions are answered
+    if (activeStep === 3) {
+      const isFormValid = questions.every((q) => {
+        const val = answers[q._id];
+        // Check for undefined, null, or empty string.
+        // We allow '0' (number) or boolean false if relevant, but typically text is string.
+        return val !== undefined && val !== null && val !== "";
+      });
+
+
+      if (!isFormValid) {
+        // ✅ CHANGE HERE: Message ko object banakar styles pass kiye hain
+        message.error({
+          content: "Please answer all the questions to proceed!",
+          style: {
+            fontSize: '20px',      // Text bada karne ke liye
+            marginTop: '15vh',     // Thoda niche dikhane ke liye (optional)
+            padding: '15px 25px',  // Box ka size bada karne ke liye
+            borderRadius: '12px',  // Corners round karne ke liye
+            lineHeight: '1.5'      // Text spacing ke liye
+          },
+          duration: 3, // Kitni der tak dikhega (seconds)
+        });
+        return; // Stop here, do not increment step
+      }
+    }
+
+
+    // Submit Trigger
     if (activeStep > 3) {
       onFinalSubmit();
       return;
     }
 
-    setActiveStep(prev => prev + 1);
+
+    // Default: Go to next step
+    setActiveStep((prev) => prev + 1);
   };
+
 
   const handleBack = () => setActiveStep(prev => prev - 1);
 
+
   const validateStep = () => {
-    // switch (activeStep) {
-    //   case 0: return !!coords.lat;
-    //   case 1: return !!selectedSubcategory;
-    //   case 2: return !!selectedType;
-    //   case 3: return areaSqFt >= 100;
-    //   case 4: return !!selectedPackage;
-    //   case 5: return firstName.trim() && lastName.trim() && email.trim() && phone.trim();
-    //   default: return true;
-    // }
     return true;
   };
+
 
   // --- UI COMPONENTS ---
   const SelectionCard = ({ item, isSelected, onClick, colorClass }) => (
@@ -562,7 +658,7 @@ const handleCountryChange = (code) => {
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className={`relative h-full p-6 rounded-3xl cursor-pointer transition-all border-2 
+      className={`relative h-full p-6 rounded-3xl cursor-pointer transition-all border-2
         ${isSelected ? `bg-purple-50 shadow-xl` : 'border-gray-100 bg-white hover:border-gray-200'}`}
       style={{ borderColor: isSelected ? BRAND_PURPLE : 'transparent' }}
     >
@@ -575,12 +671,14 @@ const handleCountryChange = (code) => {
     </motion.div>
   );
 
+
   const StepRenderer = () => {
     const variants = {
       initial: { opacity: 0, y: 20 },
       animate: { opacity: 1, y: 0 },
       exit: { opacity: 0, y: -20 }
     };
+
 
     switch (activeStep) {
       case 0:
@@ -594,6 +692,7 @@ const handleCountryChange = (code) => {
               We use GPS coordinates for accurate site analysis. Click on the map to adjust your exact location.
             </Text>
 
+
             <Button
               size="large"
               type="primary"
@@ -606,6 +705,7 @@ const handleCountryChange = (code) => {
               {coords.lat ? "Update My Location" : "Auto-Detect My Location"}
             </Button>
 
+
             {coords.lat && (
               <div className="space-y-4">
                 <div className="mt-6">
@@ -613,6 +713,7 @@ const handleCountryChange = (code) => {
                     Coordinates: {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
                   </Tag>
                 </div>
+
 
                 <div className="space-y-2">
                   {coords.country && (
@@ -632,11 +733,13 @@ const handleCountryChange = (code) => {
                   )}
                 </div>
 
+
                 {coords.address && (
                   <Text type="secondary" className="block mt-4 max-w-xl mx-auto">
                     <strong>Full Address:</strong> {coords.address}
                   </Text>
                 )}
+
 
                 <div className="mt-8 max-w-2xl mx-auto">
                   {loading.geocoding ? (
@@ -658,6 +761,7 @@ const handleCountryChange = (code) => {
           </motion.div>
         );
 
+
       case 1:
         return (
           <motion.div {...variants}>
@@ -676,6 +780,7 @@ const handleCountryChange = (code) => {
             </Row>
           </motion.div>
         );
+
 
       case 2:
         return (
@@ -698,141 +803,111 @@ const handleCountryChange = (code) => {
           </motion.div>
         );
 
-      // case 3:
-      //   return (
-      //     <motion.div {...variants} className="max-w-lg mx-auto py-10">
-      //       <Title level={2} className="text-center mb-10">Project Area</Title>
-      //       <Card className="rounded-[3rem] shadow-2xl overflow-hidden border-none">
-      //         <div className="p-12 text-center text-white" style={{ background: BRAND_PURPLE }}>
-      //           <Text className="text-purple-200 uppercase tracking-widest text-xs font-bold">Total Footprint</Text>
-      //           <div className="text-7xl font-bold my-4">{areaSqFt.toLocaleString()}</div>
-      //           <Text className="text-lg opacity-80">Square Feet</Text>
-      //         </div>
-      //         <div className="p-12 bg-white">
-      //           <Row gutter={24}>
-      //             <Col span={12}>
-      //               <Text strong className="text-gray-400 text-xs uppercase">Length (ft)</Text>
-      //               <Input
-      //                 size="large"
-      //                 type="number"
-      //                 value={length}
-      //                 onChange={e => setLength(e.target.value)}
-      //                 className="mt-3 h-14 rounded-2xl border-gray-100"
-      //                 placeholder="Enter length"
-      //                 min="1"
-      //               />
-      //             </Col>
-      //             <Col span={12}>
-      //               <Text strong className="text-gray-400 text-xs uppercase">Width (ft)</Text>
-      //               <Input
-      //                 size="large"
-      //                 type="number"
-      //                 value={width}
-      //                 onChange={e => setWidth(e.target.value)}
-      //                 className="mt-3 h-14 rounded-2xl border-gray-100"
-      //                 placeholder="Enter width"
-      //                 min="1"
-      //               />
-      //             </Col>
-      //           </Row>
-      //           {areaSqFt > 0 && (
-      //             <div className="mt-6 text-center">
-      //               <Text type={areaSqFt < 100 ? "danger" : "success"}>
-      //                 Minimum area required: 100 sqft (Current: {areaSqFt} sqft)
-      //               </Text>
-      //             </div>
-      //           )}
-      //         </div>
-      //       </Card>
-      //     </motion.div>
-      //   );
 
       case 3:
         return (
-       <motion.div {...variants} className="py-10">
-  <div className="max-w-3xl mx-auto">
-    <Title level={3} className="text-center mb-8">
-      Project Details
-    </Title>
+          <motion.div {...variants} className="py-10">
+            <div className="max-w-3xl mx-auto">
 
-    <Card className="rounded-xl shadow-sm">
-      {/* Condition: Agar questions hain aur unki length 0 se zyada hai */}
-      {questions && questions.length > 0 ? (
-        <Form layout="vertical" className="space-y-6">
-          {questions.map((q) => (
-            <Form.Item key={q._id} label={q.question} required={false}>
-              {/* TEXT */}
-              {q.questionType === "text" && (
-                <Input
-                  value={answers[q._id] || ""}
-                  onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                  placeholder="Enter value"
-                />
-              )}
 
-              {/* NUMBER */}
-              {q.questionType === "number" && (
-                <Input
-                  type="number"
-                  value={answers[q._id] || ""}
-                  onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                  placeholder="Enter number"
-                  min={q.minValue || 0}
-                  max={q.maxValue || undefined}
-                />
-              )}
+              <Title level={3} className="text-center mb-8">
+                Project Details
+              </Title>
 
-              {/* YES / NO */}
-              {q.questionType === "yesorno" && (
-                <Radio.Group
-                  value={answers[q._id]}
-                  onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+
+              <Card className="rounded-xl shadow-sm">
+                <Form
+                  layout="vertical"
+                  className="space-y-6"
                 >
-                  <Space>
-                    {q.options?.map((opt) => (
-                      <Radio key={opt._id} value={opt.title}>
-                        {opt.title}
-                      </Radio>
-                    ))}
-                  </Space>
-                </Radio.Group>
-              )}
+                  {questions.map((q) => (
+                    <Form.Item
+                      key={q._id}
+                      label={q.question}
+                      required={true}
+                      validateStatus={answers[q._id] ? "success" : "error"}
+                      // ✅ CHANGE HERE: Updated the error message text
+                      help={answers[q._id] ? null : "Please provide an answer to proceed."}
+                    >
+                      {/* TEXT */}
+                      {q.questionType === "text" && (
+                        <Input
+                          value={answers[q._id] || ""}
+                          onChange={e =>
+                            handleAnswerChange(q._id, e.target.value)
+                          }
+                          placeholder="Enter value"
+                          status={!answers[q._id] ? "error" : ""}
+                        />
+                      )}
 
-              {/* OPTIONS */}
-              {q.questionType === "options" && (
-                <Radio.Group
-                  value={answers[q._id]}
-                  onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                >
-                  <Space direction="vertical">
-                    {q.options?.map((opt) => (
-                      <Radio key={opt._id} value={opt.title}>
-                        {opt.title}
-                      </Radio>
-                    ))}
-                  </Space>
-                </Radio.Group>
-              )}
-            </Form.Item>
-          ))}
-        </Form>
-      ) : (
-        /* Agar data nahi hai toh ye dikhega */
-        <div className="text-center py-6">
-          <p className="text-lg font-bold text-gray-400 m-0">
-            No Question Available
-          </p>
-        </div>
-      )}
-    </Card>
-  </div>
-</motion.div>
+
+                      {/* NUMBER */}
+                      {q.questionType === "number" && (
+                        <Input
+                          type="number"
+                          value={answers[q._id] || ""}
+                          onChange={e =>
+                            handleAnswerChange(q._id, e.target.value)
+                          }
+                          placeholder="Enter number"
+                          min={q.minValue || 0}
+                          max={q.maxValue || undefined}
+                          status={!answers[q._id] ? "error" : ""}
+                        />
+                      )}
+
+
+                      {/* YES / NO */}
+                      {q.questionType === "yesorno" && (
+                        <Radio.Group
+                          value={answers[q._id]}
+                          onChange={e =>
+                            handleAnswerChange(q._id, e.target.value)
+                          }
+                        >
+                          <Space>
+                            {q.options.map(opt => (
+                              <Radio key={opt._id} value={opt.title}>
+                                {opt.title}
+                              </Radio>
+                            ))}
+                          </Space>
+                        </Radio.Group>
+                      )}
+
+
+                      {/* OPTIONS */}
+                      {q.questionType === "options" && (
+                        <Radio.Group
+                          value={answers[q._id]}
+                          onChange={e =>
+                            handleAnswerChange(q._id, e.target.value)
+                          }
+                        >
+                          <Space direction="vertical">
+                            {q.options.map(opt => (
+                              <Radio key={opt._id} value={opt.title}>
+                                {opt.title}
+                              </Radio>
+                            ))}
+                          </Space>
+                        </Radio.Group>
+                      )}
+                    </Form.Item>
+                  ))}
+                </Form>
+              </Card>
+            </div>
+          </motion.div>
         );
+
 
       case 4:
         const selectedPkg = packages.find(p => p._id === selectedPackage);
         const selectedTypeData = types.find(t => t._id === selectedType);
         const selectedSubcat = subcategories.find(s => s._id === selectedSubcategory);
+
 
         return (
           <motion.div {...variants} className="max-w-5xl mx-auto">
@@ -866,13 +941,6 @@ const handleCountryChange = (code) => {
                         ({length}ft × {width}ft)
                       </Text>
                     </div>
-                    {/* <Divider className="border-purple-400 opacity-30" /> */}
-                    {/* <div className="p-5 bg-white/10 rounded-2xl flex items-center justify-between border border-white/10">
-                      <Text className="text-white">Tier Selection</Text>
-                      <Tag color="gold" className="m-0 border-none font-bold px-3">
-                        {selectedPkg?.name || 'Not selected'}
-                      </Tag>
-                    </div> */}
                   </div>
                 </div>
               </Col>
@@ -891,6 +959,7 @@ const handleCountryChange = (code) => {
                       />
                     </div>
 
+
                     <div>
                       <Text strong className="block mb-2">Last Name *</Text>
                       <Input
@@ -902,6 +971,7 @@ const handleCountryChange = (code) => {
                         placeholder="Doe"
                       />
                     </div>
+
 
                     <div>
                       <Text strong className="block mb-2">Email Address *</Text>
@@ -916,57 +986,49 @@ const handleCountryChange = (code) => {
                       />
                     </div>
 
+
                     <div>
-                       <Text strong className="block mb-2">Contact Number *</Text>
+                      <Text strong className="block mb-2">Contact Number *</Text>
 
-  <Row gutter={8}>
-    <Col span={8}>
-      <Select
-        value={countryCode}
-        onChange={handleCountryChange}
-        className="w-full"
-        size="large"
-      >
-        {countryCodes.map(code => (
-          <Option key={code.value} value={code.value}>
-            {code.label}
-          </Option>
-        ))}
-      </Select>
-    </Col>
 
-    <Col span={16}>
-      <Input
-        size="large"
-        value={phone}
-        onChange={handlePhoneChange}
-        placeholder={`Enter ${COUNTRY_PHONE_RULES[countryCode]?.digits || ""} digit number`}
-        prefix={<PhoneFilled />}
-        maxLength={COUNTRY_PHONE_RULES[countryCode]?.digits}
-        status={phoneError ? "error" : ""}
-        className="rounded-xl h-14"
-      />
-    </Col>
-  </Row>
+                      <Row gutter={8}>
+                        <Col span={8}>
+                          <Select
+                            value={countryCode}
+                            onChange={handleCountryChange}
+                            className="w-full"
+                            size="large"
+                          >
+                            {countryCodes.map(code => (
+                              <Option key={code.value} value={code.value}>
+                                {code.label}
+                              </Option>
+                            ))}
+                          </Select>
+                        </Col>
 
-  {phoneError && (
-    <Text type="danger" className="text-xs mt-1 block">
-      {phoneError}
-    </Text>
-  )}
+
+                        <Col span={16}>
+                          <Input
+                            size="large"
+                            value={phone}
+                            onChange={handlePhoneChange}
+                            placeholder={`Enter ${COUNTRY_PHONE_RULES[countryCode]?.digits || ""} digit number`}
+                            prefix={<PhoneFilled />}
+                            maxLength={COUNTRY_PHONE_RULES[countryCode]?.digits}
+                            status={phoneError ? "error" : ""}
+                            className="rounded-xl"
+                          />
+                        </Col>
+                      </Row>
+
+
+                      {phoneError && (
+                        <Text type="danger" className="text-xs mt-1 block">
+                          {phoneError}
+                        </Text>
+                      )}
                     </div>
-                    {/* 
-                    <Button
-                      type="primary"
-                      onClick={onFinalSubmit}
-                      loading={loading.submitting}
-                      block
-                      className="h-16 rounded-2xl text-lg mt-4 border-none shadow-xl"
-                      style={{ backgroundColor: BRAND_PURPLE }}
-                      disabled={!firstName || !lastName || !email || !phone}
-                    >
-                      Generate My Quotation
-                    </Button> */}
                   </div>
                 </Card>
               </Col>
@@ -974,14 +1036,15 @@ const handleCountryChange = (code) => {
           </motion.div>
         );
 
+
       case 5:
         const pkg = packages.find(p => p._id === selectedPackage);
         return (
           <motion.div {...variants} className="text-center ">
             {/* RESPONSIVE DISCLAIMER */}
-<div className="max-w-5xl mx-auto mb-8 px-4">
-  <div
-    className="
+            <div className="max-w-5xl mx-auto mb-8 px-4">
+              <div
+                className="
       flex flex-col sm:flex-row
       items-start sm:items-center
       gap-3 sm:gap-4
@@ -993,24 +1056,25 @@ const handleCountryChange = (code) => {
       rounded-2xl
       shadow-sm
     "
-  >
-    {/* Icon */}
-    <div className="flex-shrink-0">
-      <EnvironmentOutlined className="text-red-500 text-xl sm:text-2xl" />
-    </div>
+              >
+                {/* Icon */}
+                <div className="flex-shrink-0">
+                  <EnvironmentOutlined className="text-red-500 text-xl sm:text-2xl" />
+                </div>
 
-    {/* Text */}
-    <div className="text-left">
-      <Text className="block font-semibold text-red-700 text-sm sm:text-base">
-       DISCLAIMER:
-      </Text>
-      <Text className="block text-xs sm:text-sm text-red-600 leading-relaxed">
-        This estimate is meant to give you a rough idea of costs. The final amount
-        may change once details are finalized and the site is reviewed.
-      </Text>
-    </div>
-  </div>
-</div>
+
+                {/* Text */}
+                <div className="text-left">
+                  <Text className="block font-semibold text-red-700 text-sm sm:text-base">
+                    DISCLAIMER:
+                  </Text>
+                  <Text className="block text-xs sm:text-sm text-red-600 leading-relaxed">
+                    This estimate is meant to give you a rough idea of costs. The final amount
+                    may change once details are finalized and the site is reviewed.
+                  </Text>
+                </div>
+              </div>
+            </div>
             <div className="bg-white p-16 rounded-[4rem] shadow-2xl inline-block border border-gray-50">
               <SmileOutlined style={{ color: BRAND_PURPLE, fontSize: '5rem' }} className="mb-8" />
               <Title level={1} style={{ color: BRAND_PURPLE }} className="m-0">Valuation Ready</Title>
@@ -1022,15 +1086,18 @@ const handleCountryChange = (code) => {
               </div>
             </div>
 
+
             {/* IMAGE SELECTION SECTION */}
             <div className="mt-16 max-w-6xl mx-auto">
               <Text className="text-gray-400 uppercase tracking-widest block mb-6 text-center">
                 Select Applicable Design / Finish
               </Text>
 
+
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {galleryImages.map((img) => {
                   const isSelected = selectedImages.some(i => i.id === img.id);
+
 
                   return (
                     <div
@@ -1046,16 +1113,18 @@ const handleCountryChange = (code) => {
                         className="w-full h-48 object-cover"
                       />
 
+
                       {/* Overlay */}
                       <div
                         className={`absolute inset-0 bg-black/40 flex items-center justify-center
-              ${isSelected ? "opacity-100" : "opacity-0 hover:opacity-100"}
+             ${isSelected ? "opacity-100" : "opacity-0 hover:opacity-100"}
             `}
                       >
                         <span className="text-white text-lg font-semibold">
                           {isSelected ? "Selected" : "Select"}
                         </span>
                       </div>
+
 
                       {/* Title */}
                       <div className="absolute bottom-0 w-full bg-black/60 text-white text-sm px-3 py-2">
@@ -1067,13 +1136,16 @@ const handleCountryChange = (code) => {
               </div>
             </div>
 
+
           </motion.div>
         );
+
 
       default:
         return null;
     }
   };
+
 
   const buildEstimatePayload = () => {
     // ---- ESTIMATE OBJECT (matches Estimate schema) ----
@@ -1083,13 +1155,17 @@ const handleCountryChange = (code) => {
       type: selectedType,
       package: selectedPackage || null,
 
+
       area_length: length ? Number(length) : null,
       area_width: width ? Number(width) : null,
       area_sqft: Number(areaSqFt),
 
+
       description: "Generated from estimator flow",
 
+
       status: "pending",
+
 
       customer: {
         firstName,
@@ -1101,6 +1177,7 @@ const handleCountryChange = (code) => {
         country: coords.country || null
       }
     };
+
 
     // ---- ANSWERS ARRAY (matches EstimateAnswer schema) ----
     const formattedAnswers = questions
@@ -1114,6 +1191,7 @@ const handleCountryChange = (code) => {
           areaQuestion: q.areaQuestion ?? false
         };
 
+
         // TEXT / NUMBER / YESNO
         if (q.questionType !== "options") {
           return {
@@ -1122,10 +1200,12 @@ const handleCountryChange = (code) => {
           };
         }
 
+
         // OPTIONS
         const selectedOpt = q.options.find(
           opt => opt.title === answers[q._id]
         );
+
 
         return {
           ...base,
@@ -1140,11 +1220,14 @@ const handleCountryChange = (code) => {
         };
       });
 
+
     return {
       estimate,
       answers: formattedAnswers
     };
   };
+
+
 
 
   return (
@@ -1157,7 +1240,7 @@ const handleCountryChange = (code) => {
               <div key={i} className={`flex items-center gap-3 transition-colors ${i <= activeStep ? 'text-black' : 'text-gray-300'}`}>
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all
-                    ${i === activeStep ? 'text-white border-transparent' :
+                  ${i === activeStep ? 'text-white border-transparent' :
                       i < activeStep ? 'bg-green-50 text-green-600 border-green-100' : 'border-gray-100'}`}
                   style={{ backgroundColor: i === activeStep ? BRAND_PURPLE : '' }}
                 >
@@ -1176,6 +1259,7 @@ const handleCountryChange = (code) => {
         </div>
       </div>
 
+
       <div className="max-w-7xl mx-auto mt-16 px-6">
         <AnimatePresence mode="wait">
           <div key={activeStep}>
@@ -1183,6 +1267,7 @@ const handleCountryChange = (code) => {
           </div>
         </AnimatePresence>
       </div>
+
 
       {/* Navigation Footer */}
       {/* {activeStep < 6 && activeStep !== 5 && ( */}
@@ -1199,6 +1284,7 @@ const handleCountryChange = (code) => {
               Back
             </Button>
 
+
             <div className="flex items-center gap-8">
               {activeStep > 0 && (
                 <div className="hidden sm:block text-right">
@@ -1214,6 +1300,7 @@ const handleCountryChange = (code) => {
                   </Text>
                 </div>
               )}
+
 
               <Button
                 type="primary"
@@ -1236,5 +1323,6 @@ const handleCountryChange = (code) => {
     </div>
   );
 };
+
 
 export default Calculator;

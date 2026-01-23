@@ -11,7 +11,8 @@ import {
   Checkbox,
   Typography,
   message,
-  Spin
+  Spin,
+  Space
 } from 'antd';
 import {
   UserOutlined,
@@ -25,6 +26,7 @@ import {
   EnvironmentOutlined
 } from '@ant-design/icons';
 import { useForm, Controller } from 'react-hook-form';
+// Unified Import
 import { Country, State, City } from 'country-state-city';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
@@ -45,26 +47,38 @@ const SellerPage = () => {
   const [statesList, setStatesList] = useState([]);
   const [citiesList, setCitiesList] = useState([]);
 
-  const themeColor = 'var(--color-primary)'; // Ensure this CSS variable exists or replace with hex code like #1890ff
+  const themeColor = 'var(--color-primary)'; 
 
   const {
     control,
+    handleSubmit,
     trigger,
     setError,
     watch,
     setValue,
-    handleSubmit, // Add handleSubmit here
-    getValues,     // Add getValues here
+    getValues,
     formState: { errors }
   } = useForm({
     mode: 'onChange',
     defaultValues: {
       mobile: { country_code: '+971' },
-      store_details: { country: 'AE' }
+      store_details: { country: 'AE' } // Default UAE
     }
   });
 
-  // Watchers for dependency logic
+  // --- 1. PHONE CODES DATA (From country-state-city) ---
+  const countryPhoneData = useMemo(() => {
+    const allCountries = Country.getAllCountries();
+    return allCountries.map(c => ({
+      iso: c.isoCode.toLowerCase(),
+      name: c.name,
+      phone: `+${c.phonecode}`,
+      value: `+${c.phonecode}`,
+      searchStr: `${c.name} ${c.phonecode}`
+    }));
+  }, []);
+
+  // --- 2. LOCATION LOGIC ---
   const selectedCountry = watch('store_details.country');
   const selectedState = watch('store_details.state');
 
@@ -73,6 +87,9 @@ const SellerPage = () => {
     if (selectedCountry) {
       const updatedStates = State.getStatesOfCountry(selectedCountry);
       setStatesList(updatedStates);
+      // Optional: Clear state/city if user changes country manually
+      // setValue('store_details.state', undefined);
+      // setValue('store_details.city', undefined);
     } else {
       setStatesList([]);
     }
@@ -88,17 +105,6 @@ const SellerPage = () => {
     }
   }, [selectedState, selectedCountry]);
 
-  // Prepare Phone Codes with Flag Images Data
-  const countryPhoneData = useMemo(() => {
-    const allCountries = Country.getAllCountries();
-    return allCountries.map(c => ({
-      iso: c.isoCode.toLowerCase(), // Needed for FlagCDN url
-      name: c.name,
-      phone: `+${c.phonecode}`,
-      value: `+${c.phonecode}`,
-      searchStr: `${c.name} ${c.phonecode}` // Custom search string
-    }));
-  }, []);
 
   const businessTypes = [
     { label: 'Individual / Sole Proprietor', value: 'Individual / Sole Proprietor' },
@@ -184,7 +190,7 @@ const SellerPage = () => {
     setSubmitting(true);
     setApiErrors({});
 
-    // Convert ISO codes to Names for backend readability
+    // Convert ISO codes to Names for Backend
     const countryObj = Country.getCountryByCode(data.store_details.country);
     const stateObj = State.getStateByCodeAndCountry(data.store_details.state, data.store_details.country);
     
@@ -251,6 +257,9 @@ const SellerPage = () => {
       setSubmitting(false);
     }
   };
+
+  // --- STYLING CONSTANTS ---
+  const inputClass = `w-full h-[42px] border rounded-md px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500 bg-white transition-all flex items-center border-gray-300`;
 
   if (success) {
     return (
@@ -353,81 +362,65 @@ const SellerPage = () => {
                         <Controller name="email" control={control} rules={{ required: 'Required', pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' } }} render={({ field }) => <Input size="large" {...field} />} />
                       </Form.Item>
 
-                      <Row gutter={16}>
-                        <Col span={8}>
-                          <Form.Item label="Code" required>
-                            <Controller 
-                              name="mobile.country_code" 
-                              control={control} 
-                              rules={{ required: 'Required' }} 
-                              render={({ field }) => (
-                                <Select 
-                                  size="large" 
-                                  showSearch
-                                  optionFilterProp="children" 
-                                  filterOption={(input, option) => 
-                                    (option['data-search'] || "").toLowerCase().includes(input.toLowerCase())
-                                  }
-                                  {...field}
-                                >
-                                  {countryPhoneData.map((country, index) => (
-                                    <Option 
-                                      key={`${country.iso}-${index}`} 
-                                      value={country.value}
-                                      data-search={country.searchStr} 
-                                    >
-                                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                                        <img 
-                                          src={`https://flagcdn.com/w20/${country.iso}.png`} 
-                                          srcSet={`https://flagcdn.com/w40/${country.iso}.png 2x`}
-                                          width="20" 
-                                          alt={country.name} 
-                                          style={{ marginRight: 8, borderRadius: 2 }} 
-                                        />
-                                        <span>{country.phone}</span>
-                                        <span style={{ color: '#999', fontSize: '12px', marginLeft: '6px' }}>
-                                           ({country.iso.toUpperCase()})
-                                        </span>
-                                      </div>
-                                    </Option>
-                                  ))}
-                                </Select>
-                              )} 
-                            />
-                          </Form.Item>
-                        </Col>
-                        <Col span={16}>
-                          <Form.Item label="Phone Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message || apiErrors['mobile.number']}>
-                            <Controller 
-                              name="mobile.number" 
-                              control={control} 
-                              rules={{ 
-                                required: 'Required', 
-                                validate: (value) => {
-                                  const countryCode = getValues('mobile.country_code');
-                                  if(!countryCode) return "Select code first";
-
-                                  const fullNumber = `${countryCode}${value}`;
-                                  const phoneNumber = parsePhoneNumberFromString(fullNumber);
-
-                                  return (phoneNumber && phoneNumber.isValid()) || `Invalid length for ${countryCode}`;
-                                }
-                              }} 
-                              render={({ field }) => (
-                                <Input 
-                                  size="large" 
-                                  placeholder="e.g. 501234567"
-                                  maxLength={15}
-                                  {...field} 
-                                  onChange={(e) => {
-                                    field.onChange(e.target.value.replace(/\D/g, ""));
-                                  }}
+                      {/* --- MOBILE FIELD WITH STRICT VALIDATION --- */}
+                      <Form.Item label="Mobile Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                            {/* Country Code */}
+                            <div style={{ width: '120px' }}>
+                                <Controller
+                                    name="mobile.country_code"
+                                    control={control}
+                                    rules={{ required: 'Required' }}
+                                    render={({ field }) => (
+                                        <Select 
+                                            {...field} 
+                                            showSearch
+                                            optionFilterProp="children"
+                                            filterOption={(input, option) => (option['data-search'] || "").toLowerCase().includes(input.toLowerCase())}
+                                            className="custom-select-seller"
+                                            style={{ width: '100%', height: '42px' }}
+                                        >
+                                            {countryPhoneData.map((country, index) => (
+                                                <Option key={`${country.iso}-${index}`} value={country.value} data-search={country.searchStr}>
+                                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                        <img src={`https://flagcdn.com/w20/${country.iso}.png`} width="20" alt={country.name} style={{ marginRight: 6 }} />
+                                                        <span>{country.phone}</span>
+                                                    </div>
+                                                </Option>
+                                            ))}
+                                        </Select>
+                                    )} 
                                 />
-                              )} 
-                            />
-                          </Form.Item>
-                        </Col>
-                      </Row>
+                            </div>
+                            
+                            {/* Phone Input */}
+                            <div style={{ flex: 1 }}>
+                                <Controller
+                                    name="mobile.number"
+                                    control={control}
+                                    rules={{ 
+                                        required: 'Required',
+                                        validate: (value) => {
+                                            const countryCode = getValues('mobile.country_code');
+                                            if(!countryCode) return "Select code";
+                                            const fullNumber = `${countryCode}${value}`;
+                                            const phoneNumber = parsePhoneNumberFromString(fullNumber);
+                                            return (phoneNumber && phoneNumber.isValid()) || "Invalid length";
+                                        }
+                                    }}
+                                    render={({ field }) => (
+                                        <input 
+                                            {...field}
+                                            className={inputClass}
+                                            placeholder="501234567"
+                                            style={{ width: '100%' }}
+                                            onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
+                                        />
+                                    )} 
+                                />
+                            </div>
+                        </div>
+                      </Form.Item>
 
                       <Row gutter={16}>
                         <Col span={12}>
@@ -644,6 +637,25 @@ const SellerPage = () => {
           </Col>
         </Row>
       </div>
+
+      {/* FIXED CSS FOR SELLER PAGE PHONE INPUT */}
+      <style jsx global>{`
+        .custom-select-seller .ant-select-selector {
+          border-radius: 0.375rem !important;
+          border-color: #d1d5db !important;
+          height: 42px !important;
+          display: flex !important;
+          align-items: center !important;
+          padding-left: 4px !important;
+        }
+        .custom-select-seller .ant-select-selector:hover {
+          border-color: #a855f7 !important;
+        }
+        .custom-select-seller.ant-select-focused .ant-select-selector {
+          border-color: #a855f7 !important;
+          box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2) !important;
+        }
+      `}</style>
     </div>
   );
 };
