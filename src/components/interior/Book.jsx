@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { notification, Select } from "antd";
 import { useTranslation } from "react-i18next";
-import { Country } from "country-state-city"; // Import Library
+import { Country } from "country-state-city"; 
 import { apiService } from "../../manageApi/utils/custom.apiservice";
 import helloImage from "../../assets/img/hello.jpg";
 
@@ -32,7 +32,7 @@ export default function ConsultationSection() {
     first_name: "",
     last_name: "",
     email: "",
-    country_code: "971", // Default without + for logic
+    country_code: "971", 
     number: "",
     message: "",
   });
@@ -57,7 +57,6 @@ export default function ConsultationSection() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user types
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
@@ -128,7 +127,6 @@ export default function ConsultationSection() {
   const onSubmit = async (e) => {
     e.preventDefault();
 
-    // Check Client Validation
     if (!validateForm()) {
       openNotification("error", t("errors.validationTitle") || "Validation Error", "Please fill all fields correctly.");
       return;
@@ -158,9 +156,8 @@ export default function ConsultationSection() {
         first_name: "", last_name: "", email: "",
         country_code: "971", number: "", message: "",
       });
-      setErrors({}); // Clear errors
+      setErrors({}); 
     } catch (err) {
-      // 9. Actual API Error Handling (Zero Index)
       const errorData = err.response?.data;
       let errorMessage = t("errors.submit") || "Something went wrong";
 
@@ -228,7 +225,7 @@ export default function ConsultationSection() {
                     name="first_name"
                     value={formData.first_name}
                     onChange={handleChange}
-                    className={`w-full rounded-xl border px-4 py-2.5 outline-none transition-all ${errors.first_name ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-purple-500"}`}
+                    className={`w-full rounded-xl border px-4 h-[46px] outline-none transition-all ${errors.first_name ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-purple-500"}`}
                     placeholder={t("form.firstName")}
                   />
                   {errors.first_name && <p className="text-red-500 text-xs mt-1">{errors.first_name}</p>}
@@ -240,7 +237,7 @@ export default function ConsultationSection() {
                     name="last_name"
                     value={formData.last_name}
                     onChange={handleChange}
-                    className={`w-full rounded-xl border px-4 py-2.5 outline-none transition-all ${errors.last_name ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-purple-500"}`}
+                    className={`w-full rounded-xl border px-4 h-[46px] outline-none transition-all ${errors.last_name ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-purple-500"}`}
                     placeholder={t("form.lastName")}
                   />
                   {errors.last_name && <p className="text-red-500 text-xs mt-1">{errors.last_name}</p>}
@@ -254,19 +251,19 @@ export default function ConsultationSection() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`w-full rounded-xl border px-4 py-2.5 outline-none transition-all ${errors.email ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-purple-500"}`}
+                  className={`w-full rounded-xl border px-4 h-[46px] outline-none transition-all ${errors.email ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-purple-500"}`}
                   placeholder={t("form.email")}
                 />
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
 
-              {/* MOBILE SECTION WITH FLAGS */}
+              {/* ----- UPDATED MOBILE SECTION ----- */}
               <div className="flex flex-col">
                 <label className="text-sm font-semibold text-gray-700 mb-1">{t("form.mobile")}*</label>
-                <div className="flex flex-row items-center gap-2 w-full flex-nowrap">
+                <div className="flex w-full gap-2">
                   
-                  {/* Country Selector (Antd Select) */}
-                  <div className="w-[120px] sm:w-[130px] flex-shrink-0">
+                  {/* Country Selector */}
+                  <div className="w-[125px] shrink-0">
                     <Select
                       value={formData.country_code}
                       onChange={handleCountryCodeChange}
@@ -276,9 +273,8 @@ export default function ConsultationSection() {
                         option.children.props?.children[1]?.props?.children[1]?.toLowerCase().includes(input.toLowerCase()) || 
                         option.value.includes(input)
                       }
-                      className="w-full h-[46px] custom-select-consultation"
-                      style={{ width: '100%' }}
-                      dropdownMatchSelectWidth={300}
+                      className="w-full custom-select-consultation"
+                      popupMatchSelectWidth={300}
                     >
                       {countryOptions.map((item) => (
                         <Option key={item.iso} value={item.code}>
@@ -297,17 +293,20 @@ export default function ConsultationSection() {
                     </Select>
                   </div>
 
-                  {/* Number Input */}
-                  <input
-                    type="text"
-                    value={formData.number}
-                    onChange={handleNumber}
-                    className={`flex-1 min-w-0 rounded-xl border px-4 py-2.5 outline-none transition-all h-[46px] ${errors.number ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-purple-500"}`}
-                    placeholder={t("form.mobile")}
-                  />
+                  {/* Mobile Input */}
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={formData.number}
+                      onChange={handleNumber}
+                      className={`w-full rounded-xl border px-4 h-[46px] outline-none transition-all ${errors.number ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-purple-500"}`}
+                      placeholder={t("form.mobile")}
+                    />
+                  </div>
                 </div>
                 {errors.number && <p className="text-red-500 text-xs mt-1">{errors.number}</p>}
               </div>
+              {/* ---------------------------------- */}
 
               <div className="flex flex-col">
                 <label className="text-sm font-semibold text-gray-700 mb-1">{t("form.message")}*</label>
@@ -340,20 +339,32 @@ export default function ConsultationSection() {
         </motion.div>
       </div>
 
-      {/* Styles for Antd Select to match Tailwind Input */}
+      {/* Global Style for Antd Select Customization */}
       <style jsx global>{`
         .custom-select-consultation .ant-select-selector {
-          border-radius: 0.75rem !important; 
-          border-color: #d1d5db !important; 
+          border-radius: 0.75rem !important; /* rounded-xl (12px) */
+          border-color: #d1d5db !important; /* border-gray-300 */
           height: 46px !important;
-          padding-top: 6px !important;
+          display: flex !important;
+          align-items: center !important;
+          background-color: white !important;
+          box-shadow: none !important;
         }
-        .custom-select-consultation .ant-select-selector:hover {
-          border-color: #a855f7 !important;
+        
+        .custom-select-consultation .ant-select-selection-item {
+          display: flex !important;
+          align-items: center !important;
+          line-height: 1 !important;
         }
+
+        .custom-select-consultation:hover .ant-select-selector {
+          border-color: #a855f7 !important; /* purple-500 */
+        }
+        
         .custom-select-consultation.ant-select-focused .ant-select-selector {
           border-color: #a855f7 !important;
-          box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2) !important;
+          box-shadow: 0 0 0 1px #a855f7 !important;
+          outline: none !important;
         }
       `}</style>
     </section>

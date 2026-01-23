@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Form,
   Input,
@@ -10,36 +10,48 @@ import {
   message,
   Spin,
   Modal,
+  Select,
 } from "antd";
 import { CodeOutlined, SafetyOutlined } from "@ant-design/icons";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { Country, State, City } from "country-state-city";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
+const { Option } = Select;
 
 const DeveloperRegistration = () => {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+
+  // Location States
+  const [statesList, setStatesList] = useState([]);
+  const [citiesList, setCitiesList] = useState([]);
 
   const themeColor = "#F97316";
 
   const {
     control,
     handleSubmit,
+    watch,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm({
     mode: "onChange",
     defaultValues: {
       name: "",
       phone_number: "",
-      country_code: "+91",
+      country_code: "+971", // Default UAE Code
       email: "",
       logo: "",
       description: "",
       websiteUrl: "",
-      country: "UAE",
+      country: "AE", // Default ISO Code for UAE
+      state: "", // Added state for dynamic logic
       city: "",
       address: "",
       reraNumber: "",
@@ -53,14 +65,49 @@ const DeveloperRegistration = () => {
     name: "documents",
   });
 
+  // Watchers for location logic
+  const selectedCountry = watch("country");
+  const selectedState = watch("state");
+
+  // Load States when Country changes
+  useEffect(() => {
+    if (selectedCountry) {
+      const updatedStates = State.getStatesOfCountry(selectedCountry);
+      setStatesList(updatedStates);
+      // Reset state and city if country changes (except on initial load if matching)
+      // setValue("state", undefined); 
+      // setValue("city", undefined);
+    } else {
+      setStatesList([]);
+    }
+  }, [selectedCountry]);
+
+  // Load Cities when State changes
+  useEffect(() => {
+    if (selectedState && selectedCountry) {
+      const updatedCities = City.getCitiesOfState(selectedCountry, selectedState);
+      setCitiesList(updatedCities);
+    } else {
+      setCitiesList([]);
+    }
+  }, [selectedState, selectedCountry]);
+
+  // Prepare Phone Codes with Flag Images
+  const countryPhoneData = useMemo(() => {
+    const allCountries = Country.getAllCountries();
+    return allCountries.map((c) => ({
+      iso: c.isoCode.toLowerCase(),
+      name: c.name,
+      phone: `+${c.phonecode}`,
+      value: `+${c.phonecode}`,
+      searchStr: `${c.name} ${c.phonecode}`,
+    }));
+  }, []);
+
   const showSuccessPopup = () => {
     Modal.success({
       centered: true,
-      title: (
-        <div style={{ fontSize: 20, fontWeight: 700 }}>
-          Registration Successful
-        </div>
-      ),
+      title: <div style={{ fontSize: 20, fontWeight: 700 }}>Registration Successful</div>,
       content: (
         <div style={{ marginTop: 10, fontSize: 15, lineHeight: 1.7 }}>
           <div>Your registration has been completed successfully.</div>
@@ -75,11 +122,7 @@ const DeveloperRegistration = () => {
   const showAlreadyRegisteredPopup = () => {
     Modal.info({
       centered: true,
-      title: (
-        <div style={{ fontSize: 20, fontWeight: 700 }}>
-          Already Registered
-        </div>
-      ),
+      title: <div style={{ fontSize: 20, fontWeight: 700 }}>Already Registered</div>,
       content: (
         <div style={{ marginTop: 10, fontSize: 15, lineHeight: 1.7 }}>
           <div>This email or phone number is already registered.</div>
@@ -95,9 +138,11 @@ const DeveloperRegistration = () => {
     setSubmitting(true);
 
     try {
-      const cleanDocuments = (data.documents || []).filter(
-        (d) => d && d.trim() !== ""
-      );
+      const cleanDocuments = (data.documents || []).filter((d) => d && d.trim() !== "");
+
+      // Convert ISO Codes to Names for Backend
+      const countryObj = Country.getCountryByCode(data.country);
+      const stateObj = State.getStateByCodeAndCountry(data.state, data.country);
 
       const registerPayload = {
         name: data.name,
@@ -107,7 +152,9 @@ const DeveloperRegistration = () => {
         logo: data.logo || "",
         description: data.description || "",
         websiteUrl: data.websiteUrl || "",
-        country: data.country || "UAE",
+        // Sending Names instead of ISO codes to API
+        country: countryObj ? countryObj.name : data.country,
+        state: stateObj ? stateObj.name : data.state, // Include State if backend accepts it
         city: data.city,
         address: data.address,
         reraNumber: data.reraNumber,
@@ -116,16 +163,12 @@ const DeveloperRegistration = () => {
       };
 
       await apiService.post("/property/create-developer", registerPayload);
-
       showSuccessPopup();
     } catch (err) {
       console.log("Developer register error:", err);
-
       const status = err?.response?.status;
       const res = err?.response?.data;
-
-      const apiMsg =
-        res?.message || res?.error || "Registration failed. Please try again.";
+      const apiMsg = res?.message || res?.error || "Registration failed. Please try again.";
 
       const isAlreadyRegistered =
         status === 409 ||
@@ -188,8 +231,7 @@ const DeveloperRegistration = () => {
               <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
                 <Spin spinning={submitting}>
                   <Title level={4} style={{ marginBottom: 20, color: "#333" }}>
-                    <CodeOutlined style={{ color: themeColor }} /> Developer
-                    Details
+                    <CodeOutlined style={{ color: themeColor }} /> Developer Details
                   </Title>
 
                   {/* Company Name */}
@@ -204,11 +246,7 @@ const DeveloperRegistration = () => {
                       control={control}
                       rules={{ required: "Company name is required" }}
                       render={({ field }) => (
-                        <Input
-                          size="large"
-                          placeholder="Company Name"
-                          {...field}
-                        />
+                        <Input size="large" placeholder="Company Name" {...field} />
                       )}
                     />
                   </Form.Item>
@@ -236,22 +274,54 @@ const DeveloperRegistration = () => {
                     />
                   </Form.Item>
 
-                  {/* Phone */}
+                  {/* Phone Section (Enhanced) */}
                   <Row gutter={16}>
-                    <Col xs={24} md={6}>
+                    <Col xs={24} md={8}>
                       <Form.Item label="Country Code" required>
                         <Controller
                           name="country_code"
                           control={control}
                           rules={{ required: "Required" }}
                           render={({ field }) => (
-                            <Input size="large" placeholder="+91" {...field} />
+                            <Select
+                              size="large"
+                              showSearch
+                              optionFilterProp="children"
+                              filterOption={(input, option) =>
+                                (option["data-search"] || "")
+                                  .toLowerCase()
+                                  .includes(input.toLowerCase())
+                              }
+                              {...field}
+                            >
+                              {countryPhoneData.map((country, index) => (
+                                <Option
+                                  key={`${country.iso}-${index}`}
+                                  value={country.value}
+                                  data-search={country.searchStr}
+                                >
+                                  <div style={{ display: "flex", alignItems: "center" }}>
+                                    <img
+                                      src={`https://flagcdn.com/w20/${country.iso}.png`}
+                                      srcSet={`https://flagcdn.com/w40/${country.iso}.png 2x`}
+                                      width="20"
+                                      alt={country.name}
+                                      style={{ marginRight: 8, borderRadius: 2 }}
+                                    />
+                                    <span>{country.phone}</span>
+                                    <span style={{ color: "#999", fontSize: "12px", marginLeft: "6px" }}>
+                                      ({country.iso.toUpperCase()})
+                                    </span>
+                                  </div>
+                                </Option>
+                              ))}
+                            </Select>
                           )}
                         />
                       </Form.Item>
                     </Col>
 
-                    <Col xs={24} md={18}>
+                    <Col xs={24} md={16}>
                       <Form.Item
                         label="Phone Number"
                         required
@@ -263,13 +333,26 @@ const DeveloperRegistration = () => {
                           control={control}
                           rules={{
                             required: "Phone number is required",
-                            minLength: { value: 8, message: "Minimum 8 digits" },
+                            validate: (value) => {
+                              const countryCode = getValues("country_code");
+                              if (!countryCode) return "Select code first";
+                              const fullNumber = `${countryCode}${value}`;
+                              const phoneNumber = parsePhoneNumberFromString(fullNumber);
+                              return (
+                                (phoneNumber && phoneNumber.isValid()) ||
+                                `Invalid length for ${countryCode}`
+                              );
+                            },
                           }}
                           render={({ field }) => (
                             <Input
                               size="large"
-                              placeholder="Phone Number"
+                              placeholder="e.g. 501234567"
+                              maxLength={15}
                               {...field}
+                              onChange={(e) => {
+                                field.onChange(e.target.value.replace(/\D/g, ""));
+                              }}
                             />
                           )}
                         />
@@ -283,11 +366,7 @@ const DeveloperRegistration = () => {
                       name="logo"
                       control={control}
                       render={({ field }) => (
-                        <Input
-                          size="large"
-                          placeholder="Logo URL"
-                          {...field}
-                        />
+                        <Input size="large" placeholder="Logo URL" {...field} />
                       )}
                     />
                   </Form.Item>
@@ -298,11 +377,7 @@ const DeveloperRegistration = () => {
                       name="websiteUrl"
                       control={control}
                       render={({ field }) => (
-                        <Input
-                          size="large"
-                          placeholder="Website URL"
-                          {...field}
-                        />
+                        <Input size="large" placeholder="Website URL" {...field} />
                       )}
                     />
                   </Form.Item>
@@ -324,7 +399,7 @@ const DeveloperRegistration = () => {
                     />
                   </Form.Item>
 
-                  {/* Location */}
+                  {/* Location Section (Dynamic) */}
                   <Row gutter={16}>
                     <Col xs={24} md={8}>
                       <Form.Item
@@ -338,7 +413,67 @@ const DeveloperRegistration = () => {
                           control={control}
                           rules={{ required: "Country is required" }}
                           render={({ field }) => (
-                            <Input size="large" placeholder="Country" {...field} />
+                            <Select
+                              size="large"
+                              showSearch
+                              placeholder="Select Country"
+                              optionFilterProp="children"
+                              filterOption={(input, option) =>
+                                option.children
+                                  ?.toLowerCase()
+                                  .indexOf(input.toLowerCase()) >= 0
+                              }
+                              onChange={(val) => {
+                                field.onChange(val);
+                                setValue("state", undefined);
+                                setValue("city", undefined);
+                              }}
+                              value={field.value}
+                            >
+                              {Country.getAllCountries().map((country) => (
+                                <Option key={country.isoCode} value={country.isoCode}>
+                                  {country.name}
+                                </Option>
+                              ))}
+                            </Select>
+                          )}
+                        />
+                      </Form.Item>
+                    </Col>
+
+                    {/* Added State Field (Necessary for City logic) */}
+                    <Col xs={24} md={8}>
+                      <Form.Item
+                        label="State / Province"
+                        // required // Optional based on if country has states
+                      >
+                        <Controller
+                          name="state"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              size="large"
+                              showSearch
+                              placeholder="Select State"
+                              disabled={!statesList.length}
+                              optionFilterProp="children"
+                              filterOption={(input, option) =>
+                                option.children
+                                  ?.toLowerCase()
+                                  .indexOf(input.toLowerCase()) >= 0
+                              }
+                              onChange={(val) => {
+                                field.onChange(val);
+                                setValue("city", undefined);
+                              }}
+                              value={field.value}
+                            >
+                              {statesList.map((state) => (
+                                <Option key={state.isoCode} value={state.isoCode}>
+                                  {state.name}
+                                </Option>
+                              ))}
+                            </Select>
                           )}
                         />
                       </Form.Item>
@@ -355,39 +490,49 @@ const DeveloperRegistration = () => {
                           name="city"
                           control={control}
                           rules={{ required: "City is required" }}
-                          render={({ field }) => (
-                            <Input size="large" placeholder="City" {...field} />
-                          )}
-                        />
-                      </Form.Item>
-                    </Col>
-
-                    <Col xs={24} md={8}>
-                      <Form.Item
-                        label="RERA Number"
-                        required
-                        validateStatus={errors.reraNumber ? "error" : ""}
-                        help={errors.reraNumber?.message}
-                      >
-                        <Controller
-                          name="reraNumber"
-                          control={control}
-                          rules={{ required: "RERA Number is required" }}
-                          render={({ field }) => (
-                            <Input
-                              size="large"
-                              placeholder="RERA Number"
-                              {...field}
-                            />
-                          )}
+                          render={({ field }) =>
+                            citiesList.length > 0 ? (
+                              <Select
+                                size="large"
+                                showSearch
+                                placeholder="Select City"
+                                optionFilterProp="children"
+                                {...field}
+                              >
+                                {citiesList.map((city) => (
+                                  <Option key={city.name} value={city.name}>
+                                    {city.name}
+                                  </Option>
+                                ))}
+                              </Select>
+                            ) : (
+                              <Input size="large" placeholder="City" {...field} />
+                            )
+                          }
                         />
                       </Form.Item>
                     </Col>
                   </Row>
 
+                  <Form.Item
+                    label="RERA Number"
+                    required
+                    validateStatus={errors.reraNumber ? "error" : ""}
+                    help={errors.reraNumber?.message}
+                  >
+                    <Controller
+                      name="reraNumber"
+                      control={control}
+                      rules={{ required: "RERA Number is required" }}
+                      render={({ field }) => (
+                        <Input size="large" placeholder="RERA Number" {...field} />
+                      )}
+                    />
+                  </Form.Item>
+
                   {/* Address */}
                   <Form.Item
-                    label="Address"
+                    label="Full Address"
                     required
                     validateStatus={errors.address ? "error" : ""}
                     help={errors.address?.message}
@@ -397,7 +542,7 @@ const DeveloperRegistration = () => {
                       control={control}
                       rules={{ required: "Address is required" }}
                       render={({ field }) => (
-                        <Input size="large" placeholder="Address" {...field} />
+                        <Input size="large" placeholder="Building No, Street Name..." {...field} />
                       )}
                     />
                   </Form.Item>
@@ -407,11 +552,7 @@ const DeveloperRegistration = () => {
                     {fields.map((item, index) => (
                       <div
                         key={item.id}
-                        style={{
-                          display: "flex",
-                          gap: 10,
-                          marginBottom: 12,
-                        }}
+                        style={{ display: "flex", gap: 10, marginBottom: 12 }}
                       >
                         <Controller
                           name={`documents.${index}`}
@@ -433,7 +574,6 @@ const DeveloperRegistration = () => {
                         </Button>
                       </div>
                     ))}
-
                     <Button
                       type="dashed"
                       onClick={() => append("")}
@@ -487,8 +627,8 @@ const DeveloperRegistration = () => {
 
                   <div style={{ marginTop: 16, textAlign: "center" }}>
                     <Text type="secondary" style={{ fontSize: 12 }}>
-                      <SafetyOutlined style={{ color: "#52c41a" }} /> Your data
-                      is encrypted and secure.
+                      <SafetyOutlined style={{ color: "#52c41a" }} /> Your data is
+                      encrypted and secure.
                     </Text>
                   </div>
                 </Spin>

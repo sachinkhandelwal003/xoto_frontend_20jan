@@ -21,28 +21,20 @@ const PHONE_LENGTH_RULES = {
 
 export default function QuickEnquiry() {
   const { t } = useTranslation("contact3");
-
   const [api, contextHolder] = notification.useNotification();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   // 2. Form State
   const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
-    email: "",
-    country_code: "971", 
-    number: "",
-    message: "",
+    first_name: "", last_name: "", email: "", country_code: "971", number: "", message: "",
   });
 
   // 3. Memoized Phone Country Codes
   const phoneCountryOptions = useMemo(() => {
     const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"];
     return Country.getAllCountries().map((country) => ({
-      name: country.name,
-      code: country.phonecode,
-      iso: country.isoCode,
+      name: country.name, code: country.phonecode, iso: country.isoCode,
     })).sort((a, b) => {
       const aPriority = priorityIsoCodes.includes(a.iso);
       const bPriority = priorityIsoCodes.includes(b.iso);
@@ -53,17 +45,10 @@ export default function QuickEnquiry() {
   }, []);
 
   const openNotification = (type, title, description) => {
-    api[type]({
-      message: title,
-      description,
-      placement: "topRight",
-      showProgress: true,
-      pauseOnHover: true,
-    });
+    api[type]({ message: title, description, placement: "topRight" });
   };
 
   // --- HANDLERS ---
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((p) => ({ ...p, [name]: value }));
@@ -72,28 +57,22 @@ export default function QuickEnquiry() {
 
   const handleCountryCodeChange = (value) => {
     const limit = PHONE_LENGTH_RULES[value] || 15;
-    setFormData((prev) => ({ 
-      ...prev, 
-      country_code: value, 
-      number: prev.number.slice(0, limit) 
-    }));
+    setFormData((prev) => ({ ...prev, country_code: value, number: prev.number.slice(0, limit) }));
   };
 
   const handleNumberChange = (e) => {
     const value = e.target.value.replace(/\D/g, "");
     const maxLength = PHONE_LENGTH_RULES[formData.country_code] || 15;
     const validatedValue = value.slice(0, maxLength);
-    
     setFormData((prev) => ({ ...prev, number: validatedValue }));
     if (errors.number) setErrors((prev) => ({ ...prev, number: "" }));
   };
 
-  // --- UPDATED VALIDATION LOGIC ---
+  // --- VALIDATION ---
   const validateForm = () => {
     let newErrors = {};
-    let firstErrorMessage = null; // Store the first error found
+    let firstErrorMessage = null; 
 
-    // Helper to set error
     const setError = (field, message) => {
       newErrors[field] = message;
       if (!firstErrorMessage) firstErrorMessage = message;
@@ -118,13 +97,14 @@ export default function QuickEnquiry() {
     if (!formData.message.trim()) setError("message", t("validation.message") || "Message required");
 
     setErrors(newErrors);
-    return firstErrorMessage; // Return the error message string or null
+    return firstErrorMessage; 
   };
 
+  // --- SUBMIT FUNCTION (RESTORED) ---
   const onSubmit = async (e) => {
     e.preventDefault();
 
-    // Catch specific validation message
+    // 1. Validation Check
     const validationError = validateForm();
     if (validationError) {
       openNotification("error", t("notification.errorTitle") || "Validation Error", validationError);
@@ -133,6 +113,7 @@ export default function QuickEnquiry() {
 
     setLoading(true);
 
+    // 2. API Call
     try {
       await apiService.post("/property/lead", {
         type: "enquiry",
@@ -148,177 +129,160 @@ export default function QuickEnquiry() {
         message: formData.message.trim(),
       });
 
+      // 3. Success Handling
       openNotification(
         "success",
-        t("notification.successTitle"),
-        t("notification.successMessage")
+        t("notification.successTitle") || "Success",
+        t("notification.successMessage") || "Enquiry submitted successfully!"
       );
 
+      // Reset Form
       setFormData({
         first_name: "", last_name: "", email: "",
         country_code: "971", number: "", message: "",
       });
       setErrors({});
     } catch (err) {
+      // 4. Error Handling
       openNotification(
         "error",
-        t("notification.errorTitle"),
-        t("notification.errorMessage")
+        t("notification.errorTitle") || "Error",
+        err.response?.data?.message || t("notification.errorMessage") || "Something went wrong"
       );
     } finally {
       setLoading(false);
     }
   };
 
+  // --- HEIGHT FIX: 42px Explicit ---
+  const inputClass = `w-full h-[42px] border rounded-md px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500 bg-white transition-all flex items-center border-gray-300`;
+  const errorClass = `border-red-500 focus:ring-red-200`;
+
   return (
     <>
       {contextHolder}
 
-      <section
-        className="relative bg-cover bg-center py-14 sm:py-16 md:py-20 lg:py-24 text-white overflow-hidden"
-        style={{ backgroundImage: `url(${Image})` }}
-      >
+      <section className="relative bg-cover bg-center py-14 sm:py-16 md:py-20 lg:py-24 text-white overflow-hidden" style={{ backgroundImage: `url(${Image})` }}>
         <div className="absolute inset-0 bg-gradient-to-r from-purple-800/80 to-blue-500/70"></div>
 
         <div className="relative z-10 max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-10 px-5 sm:px-6 lg:px-8">
-          {/* LEFT */}
+          
           <div className="w-full md:w-1/2 text-center md:text-left mt-10">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold mb-4 leading-snug">
-              {t("title")}
-            </h2>
-
-            <p className="text-base sm:text-lg md:text-xl text-gray-200 leading-relaxed">
-              {t("description")}
-            </p>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold mb-4 leading-snug">{t("title")}</h2>
+            <p className="text-base sm:text-lg md:text-xl text-gray-200 leading-relaxed">{t("description")}</p>
           </div>
 
-          {/* FORM */}
           <div className="w-full md:max-w-xl bg-white rounded-xl shadow-xl p-6 sm:p-8 md:p-10 text-gray-800">
             <form onSubmit={onSubmit} className="space-y-4 md:space-y-5">
               
+              {/* Name Fields */}
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div className="relative">
-                  <label className="block text-xs md:text-sm font-medium mb-1">
-                    {t("form.firstName")}*
-                  </label>
-                  <input
-                    name="first_name"
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    className={`w-full border rounded-md px-2 py-2 md:py-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-500 ${errors.first_name ? "border-red-500" : "border-gray-300"}`}
-                  />
-                  {/* Error Text Removed here to keep UI clean, shown in Toast instead */}
+                  <label className="block text-xs md:text-sm font-medium mb-1">{t("form.firstName")}*</label>
+                  <input name="first_name" value={formData.first_name} onChange={handleChange} className={`${inputClass} ${errors.first_name ? errorClass : ""}`} />
                 </div>
-
                 <div className="relative">
-                  <label className="block text-xs md:text-sm font-medium mb-1">
-                    {t("form.lastName")}*
-                  </label>
-                  <input
-                    name="last_name"
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    className={`w-full border rounded-md px-2 py-2 md:py-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-500 ${errors.last_name ? "border-red-500" : "border-gray-300"}`}
-                  />
+                  <label className="block text-xs md:text-sm font-medium mb-1">{t("form.lastName")}*</label>
+                  <input name="last_name" value={formData.last_name} onChange={handleChange} className={`${inputClass} ${errors.last_name ? errorClass : ""}`} />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                <div className="relative">
-                  <label className="block text-xs md:text-sm font-medium mb-1">
-                    {t("form.email")}*
-                  </label>
-                  <input
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={`w-full border rounded-md px-2 py-2 md:py-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-500 ${errors.email ? "border-red-500" : "border-gray-300"}`}
-                  />
-                </div>
+              {/* Email */}
+              <div className="relative">
+                  <label className="block text-xs md:text-sm font-medium mb-1">{t("form.email")}*</label>
+                  <input name="email" value={formData.email} onChange={handleChange} className={`${inputClass} ${errors.email ? errorClass : ""}`} />
+              </div>
 
-                <div className="relative">
-                  <label className="block text-xs md:text-sm font-medium mb-1">
-                    {t("form.mobile")}*
-                  </label>
-                  <div className="flex gap-2 h-[38px] md:h-[42px]">
-                    <div className="w-[90px] flex-shrink-0 h-full">
-                        <Select
-                            value={formData.country_code}
-                            onChange={handleCountryCodeChange}
-                            showSearch
-                            optionFilterProp="children"
-                            filterOption={(input, option) => 
-                                option.children.props?.children[1]?.props?.children[1]?.toLowerCase().includes(input.toLowerCase()) || 
-                                option.value.includes(input)
-                            }
-                            className="w-full h-full custom-select-enquiry"
-                            dropdownMatchSelectWidth={300}
-                        >
-                            {phoneCountryOptions.map((item) => (
-                            <Option key={item.iso} value={item.code}>
-                                <div className="flex items-center">
-                                <img src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`} srcSet={`https://flagcdn.com/w40/${item.iso.toLowerCase()}.png 2x`} width="20" alt={item.name} style={{ marginRight: 6, borderRadius: 2 }} />
-                                <span className="text-xs">+{item.code}</span>
-                                </div>
-                            </Option>
-                            ))}
-                        </Select>
-                    </div>
-                    <input
-                      name="number"
-                      value={formData.number}
-                      onChange={handleNumberChange}
-                      className={`w-full h-full border rounded-md px-2 text-sm outline-none focus:ring-2 focus:ring-purple-500 ${errors.number ? "border-red-500" : "border-gray-300"}`}
-                    />
+              {/* --- FIXED MOBILE SECTION --- */}
+              <div className="relative">
+                <label className="block text-xs md:text-sm font-medium mb-1">{t("form.mobile")}*</label>
+                
+                {/* Parent Div: Height 42px fix + items-stretch */}
+                <div className="flex w-full h-[42px] gap-2 items-stretch">
+                  
+                  {/* Select Wrapper */}
+                  <div className="w-[90px] sm:w-[110px] h-full flex-shrink-0">
+                      <Select
+                          value={formData.country_code}
+                          onChange={handleCountryCodeChange}
+                          showSearch
+                          optionFilterProp="children"
+                          filterOption={(input, option) => option.children.props?.children[1]?.props?.children[1]?.toLowerCase().includes(input.toLowerCase()) || option.value.includes(input)}
+                          className="w-full h-full custom-select-enquiry"
+                          dropdownMatchSelectWidth={300}
+                      >
+                          {phoneCountryOptions.map((item) => (
+                          <Option key={item.iso} value={item.code}>
+                              <div className="flex items-center">
+                              <img src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`} srcSet={`https://flagcdn.com/w40/${item.iso.toLowerCase()}.png 2x`} width="20" alt={item.name} style={{ marginRight: 6, borderRadius: 2 }} />
+                              <span className="text-xs">+{item.code}</span>
+                              </div>
+                          </Option>
+                          ))}
+                      </Select>
+                  </div>
+
+                  {/* Input Wrapper */}
+                  <div className="flex-1 h-full">
+                      <input
+                        name="number"
+                        value={formData.number}
+                        onChange={handleNumberChange}
+                        className={`w-full h-full border rounded-md px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500 ${errors.number ? "border-red-500" : "border-gray-300"}`}
+                      />
                   </div>
                 </div>
               </div>
+              {/* ---------------------------- */}
 
               <div className="relative">
-                <label className="block text-xs md:text-sm font-medium mb-1">
-                  {t("form.message")}*
-                </label>
-                <textarea
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  rows={4}
-                  className={`w-full border rounded-md px-2 py-2 text-sm outline-none resize-none focus:ring-2 focus:ring-purple-500 ${errors.message ? "border-red-500" : "border-gray-300"}`}
-                />
+                <label className="block text-xs md:text-sm font-medium mb-1">{t("form.message")}*</label>
+                <textarea name="message" value={formData.message} onChange={handleChange} rows={4} className={`w-full border rounded-md px-2 py-2 text-sm outline-none resize-none focus:ring-2 focus:ring-purple-500 ${errors.message ? "border-red-500" : "border-gray-300"}`} />
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-[#5C039B] text-white py-3 rounded-md font-semibold mt-4 hover:bg-purple-800 transition-colors shadow-md flex items-center justify-center gap-2"
-              >
+              <button type="submit" disabled={loading} className="w-full bg-[#5C039B] text-white py-3 rounded-md font-semibold mt-4 hover:bg-purple-800 transition-colors shadow-md flex items-center justify-center gap-2">
                 {loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : t("buttons.submit")}
               </button>
             </form>
 
-            <p className="text-center text-xs text-gray-500 mt-4">
-              {t("privacy")}
-            </p>
+            <p className="text-center text-xs text-gray-500 mt-4">{t("privacy")}</p>
           </div>
         </div>
       </section>
 
-      {/* Global CSS for Antd Select */}
+      {/* FIXED CSS FOR EXACT HEIGHT MATCHING */}
       <style jsx global>{`
         .custom-select-enquiry .ant-select-selector {
           border-radius: 0.375rem !important; /* rounded-md */
           border-color: #d1d5db !important; /* border-gray-300 */
-          height: 100% !important;
+          
+          /* FORCE 42px HEIGHT */
+          height: 42px !important; 
+          min-height: 42px !important;
+          max-height: 42px !important;
+          
           display: flex !important;
           align-items: center !important;
           padding-left: 4px !important;
+          padding-top: 0 !important;
+          padding-bottom: 0 !important;
+          box-sizing: border-box !important;
         }
+        
         .custom-select-enquiry .ant-select-selector:hover {
-          border-color: #a855f7 !important; /* purple-500 */
+          border-color: #a855f7 !important;
         }
+        
         .custom-select-enquiry.ant-select-focused .ant-select-selector {
           border-color: #a855f7 !important;
           box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2) !important;
+        }
+        
+        /* Vertically Center Content */
+        .custom-select-enquiry .ant-select-selection-item {
+            display: flex !important;
+            align-items: center !important;
+            line-height: 42px !important;
         }
       `}</style>
     </>

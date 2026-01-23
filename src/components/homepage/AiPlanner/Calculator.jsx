@@ -566,25 +566,58 @@ const Calculator = () => {
       return;
     }
 
-    // Step 3 validate
-    if (activeStep === 3) {
-      const ok = validateStep3();
-      if (!ok) return;
+  // 2. Step 3 Validation: Check if questions exist AND if they are answered
+  if (activeStep === 3) {
+    // Pehle check karein ki questions hain bhi ya nahi
+    if (!questions || questions.length === 0) {
+      message.warning("No questions available to answer. Cannot proceed.");
+      return; 
     }
 
-    // Final submit after step 4
-    if (activeStep > 3) {
-      onFinalSubmit();
+    // Phir check karein ki saare answered hain ya nahi
+    const isFormValid = questions.every((q) => {
+      const val = answers[q._id];
+      return val !== undefined && val !== null && val !== "";
+    });
+
+    if (!isFormValid) {
+      message.error({
+        content: "Please answer all the questions to proceed!",
+        style: {
+          fontSize: '20px',
+          marginTop: '15vh',
+          padding: '15px 25px',
+          borderRadius: '12px',
+          lineHeight: '1.5'
+        },
+        duration: 3,
+      });
       return;
     }
+  }
 
-    setActiveStep((prev) => prev + 1);
-  };
+  // 3. Submit Trigger
+  if (activeStep > 3) {
+    onFinalSubmit();
+    return;
+  }
+
+  // 4. Default: Go to next step
+  setActiveStep((prev) => prev + 1);
+};
 
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
-  const validateStep = () => true;
+ const validateStep = () => {
+  // Agar Step 3 (Estimate Questions) par hain aur koi question nahi mila
+  if (activeStep === 3 && (!questions || questions.length === 0)) {
+    return false;
+  }
+  return true;
+};
 
+
+  // --- UI COMPONENTS ---
   const SelectionCard = ({ item, isSelected, onClick, colorClass }) => (
     <motion.div
       whileHover={{ y: -5 }}
@@ -720,13 +753,14 @@ const Calculator = () => {
           </motion.div>
         );
 
-      case 3:
-        return (
-          <motion.div {...variants} className="py-10">
-            <div className="max-w-3xl mx-auto">
-              <Title level={3} className="text-center mb-8">
-                Project Details
-              </Title>
+
+    case 3:
+  return (
+    <motion.div {...variants} className="py-10">
+      <div className="max-w-3xl mx-auto">
+        <Title level={3} className="text-center mb-8">
+          Project Details
+        </Title>
 
               <Card className="rounded-xl shadow-sm">
                 <Form
@@ -809,6 +843,38 @@ const Calculator = () => {
             </div>
           </motion.div>
         );
+        <Card className="rounded-xl shadow-sm">
+          {/* ✅ Check agar questions hain */}
+          {questions && questions.length > 0 ? (
+            <Form layout="vertical" className="space-y-6">
+              {questions.map((q) => (
+                <Form.Item
+                  key={q._id}
+                  label={q.question}
+                  required={true}
+                  validateStatus={answers[q._id] ? "success" : "error"}
+                  help={answers[q._id] ? null : "Please provide an answer to proceed."}
+                >
+                  {/* ... saare inputs (text, number, options) yahan rahenge ... */}
+                  {/* (Baki code same rahega) */}
+                </Form.Item>
+              ))}
+            </Form>
+          ) : (
+            /* ✅ BOLD EMPTY STATE */
+            <div className="py-20 text-center">
+              <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
+                NO QUESTIONS AVAILABLE
+              </h2>
+              {/* <p className="text-gray-500 mt-2 font-semibold">
+                Bhai, abhi koi sawal nahi mile.
+              </p> */}
+            </div>
+          )}
+        </Card>
+      </div>
+    </motion.div>
+  );
 
       case 4:
         return (

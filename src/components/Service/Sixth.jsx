@@ -24,8 +24,6 @@ export default function Sixth() {
   const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [api, contextHolder] = notification.useNotification();
 
   const [errors, setErrors] = useState({});
 
@@ -144,7 +142,7 @@ export default function Sixth() {
         return;
     }
 
-    setLoading(true);
+    const fullMobile = countryCode + phone;
 
     const payload = {
       type: "Mortgage-deal",
@@ -181,7 +179,6 @@ export default function Sixth() {
 
   return (
     <>
-      {contextHolder}
       <div className="relative min-h-screen bg-gradient-to-br from-[#F8F4FF] via-[#F4EEFF] to-[#E9F1FF] overflow-hidden" style={dmSans}>
         
         <img src={wave2} className="absolute top-15 w-full -translate-y-2/3 opacity-90" alt="" />
@@ -191,13 +188,18 @@ export default function Sixth() {
 
           {/* LEFT CONTENT */}
           <div className="w-full lg:max-w-[600px] text-center lg:text-left space-y-6 mx-auto lg:mx-0 lg:ms-10">
+
+            {/* Title */}
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#0F172A] leading-tight lg:leading-extratight">
               {t("hero.title")}
             </h1>
+
+            {/* Subtitle */}
             <p className="text-base sm:text-lg text-[#5A7BA1] leading-tight max-w-[360px] mx-auto lg:mx-0">
               {t("hero.subtitle")}
             </p>
 
+            {/* CTA Buttons - Same functionality as CTAButtons / Second component */}
             <div className="flex flex-col sm:flex-row gap-4 pt-2 items-center lg:items-start justify-center lg:justify-start">
               <button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto px-8 py-4 bg-[#5C039B] hover:bg-[#4a027c] rounded-xl text-white font-semibold text-base shadow-lg transition">
                 {t("hero.primaryCta")}
@@ -214,12 +216,15 @@ export default function Sixth() {
             <h3 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-2">{t("form.heading")}</h3>
 
             <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
+
+              {/* FIRST / LAST NAME */}
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div className="w-full min-w-0">
                   <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t("form.firstName")}*</label>
                   <input name="firstName" value={formData.firstName} onChange={handleChange} className={`w-full px-2 py-2 md:px-4 md:py-3 text-sm md:text-base border rounded-xl outline-none transition ${errors.firstName ? "border-red-500 bg-red-50" : "border-gray-300 focus:ring-2 focus:ring-purple-500"}`} />
                   {errors.firstName && <span className="text-red-500 text-[10px]">{errors.firstName}</span>}
                 </div>
+
                 <div className="w-full min-w-0">
                   <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t("form.lastName")}*</label>
                   <input name="lastName" value={formData.lastName} onChange={handleChange} className={`w-full px-2 py-2 md:px-4 md:py-3 text-sm md:text-base border rounded-xl outline-none transition ${errors.lastName ? "border-red-500 bg-red-50" : "border-gray-300 focus:ring-2 focus:ring-purple-500"}`} />
@@ -227,6 +232,7 @@ export default function Sixth() {
                 </div>
               </div>
 
+              {/* EMAIL / PHONE */}
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div className="w-full min-w-0">
                   <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t("form.email")}*</label>
@@ -235,7 +241,9 @@ export default function Sixth() {
                 </div>
 
                 <div className="w-full min-w-0">
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t("form.phone")}*</label>
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
+                    {t("form.phone")}*
+                  </label>
                   <div className="flex gap-1 md:gap-2">
                     <div className="w-[80px] md:w-[110px] flex-shrink-0">
                         <Select value={formData.countryCode} onChange={handleCountryCodeChange} showSearch optionFilterProp="children" filterOption={(input, option) => option.children.props?.children[1]?.props?.children[1]?.toLowerCase().includes(input.toLowerCase()) || option.value.includes(input)} className="w-full h-full custom-select-mort6" style={{ width: '100%' }} dropdownMatchSelectWidth={300}>
@@ -258,7 +266,9 @@ export default function Sixth() {
               {/* Looking For & Country */}
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div className="relative w-full min-w-0">
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t("form.lookingFor")}*</label>
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
+                    {t("form.lookingFor")}*
+                  </label>
                   <div className="relative">
                     <select name="lookingFor" value={formData.lookingFor} onChange={handleChange} className={`w-full px-2 py-2 md:px-4 md:py-3 text-sm md:text-base border rounded-xl appearance-none pr-6 md:pr-10 outline-none ${errors.lookingFor ? "border-red-500 bg-red-50" : "border-gray-300 focus:ring-2 focus:ring-purple-500"}`}>
                       <option value="">{t("form.select")}</option>
@@ -266,7 +276,10 @@ export default function Sixth() {
                       <option value="refinance">{t("form.options.refinance")}</option>
                       <option value="personalLoan">{t("form.options.personalLoan")}</option>
                     </select>
-                    <ChevronDown className="absolute right-1 md:right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <ChevronDown
+                      className="absolute right-1 md:right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={16}
+                    />
                   </div>
                   {errors.lookingFor && <span className="text-red-500 text-[10px]">{errors.lookingFor}</span>}
                 </div>
@@ -306,6 +319,7 @@ export default function Sixth() {
                 </div>
               </div>
 
+              {/* BUDGET */}
               <div className="w-full min-w-0">
                 <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t("form.budget")}*</label>
                 <input name="budget" value={formData.budget} onChange={handleChange} className={`w-full px-2 py-2 md:px-4 md:py-3 text-sm md:text-base border rounded-xl outline-none transition ${errors.budget ? "border-red-500 bg-red-50" : "border-gray-300 focus:ring-2 focus:ring-purple-500"}`} />

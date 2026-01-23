@@ -419,10 +419,20 @@ export default function HeroSection() {
                                 <input name="bedroom_config" value={sellForm.bedroom_config} onChange={handleSellChange} placeholder={t("form.sell.bedroom_config")} className="premium-input pl-12" />
                                 <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"><BedDouble size={20} /></div>
                             </div>
-                            <div className="relative">
-                                <input name="price" value={sellForm.price} onChange={handleSellChange} placeholder={t("form.sell.price")} className="premium-input pl-12" />
-                                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"><Banknote size={20} /></div>
-                            </div>
+                           <div className="relative">
+    <input 
+        type="number"  // Yahan change kiya hai
+        name="price" 
+        value={sellForm.price} 
+        onChange={handleSellChange} 
+        placeholder={t("form.sell.price")} 
+        className="premium-input pl-12" 
+        onWheel={(e) => e.target.blur()} // Mouse scroll se number change hona rokne ke liye
+    />
+    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600">
+        <Banknote size={20} />
+    </div>
+</div>
                         </div>
                         <div className="relative">
                         <textarea name="description" value={sellForm.description} onChange={handleSellChange} placeholder={t("form.sell.description")} rows={4} className="premium-input pl-12 pt-4 resize-none" />
