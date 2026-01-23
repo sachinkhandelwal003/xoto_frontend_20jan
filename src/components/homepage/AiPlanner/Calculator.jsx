@@ -1,51 +1,65 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from "react";
 import {
-  Card, Button, Typography, Form, Input, Select, Space, Row, Col,
-  message, Spin, Result, Divider, Image, Badge, Empty, Tag, Checkbox, Radio
-} from 'antd';
+  Card,
+  Button,
+  Typography,
+  Form,
+  Input,
+  Select,
+  Space,
+  Row,
+  Col,
+  message,
+  Spin,
+  Tag,
+  Radio,
+  Badge,
+} from "antd";
 import {
-  UserOutlined, MailOutlined, CheckCircleOutlined,
-  SmileOutlined, HomeOutlined, BuildOutlined,
-  EnvironmentOutlined, CalculatorOutlined, PhoneFilled,
-  ArrowRightOutlined, ArrowLeftOutlined, CheckOutlined,
-  CompassOutlined, PictureOutlined, ExperimentOutlined,
-  EnvironmentFilled, SelectOutlined
-} from '@ant-design/icons';
-import { motion, AnimatePresence } from 'framer-motion';
-import { apiService } from '../../../manageApi/utils/custom.apiservice';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-import { useNavigate } from 'react-router-dom';
-
+  UserOutlined,
+  MailOutlined,
+  SmileOutlined,
+  HomeOutlined,
+  BuildOutlined,
+  EnvironmentOutlined,
+  PhoneFilled,
+  ArrowRightOutlined,
+  ArrowLeftOutlined,
+  CheckOutlined,
+  CompassOutlined,
+  EnvironmentFilled,
+  SafetyCertificateOutlined,
+} from "@ant-design/icons";
+import { motion, AnimatePresence } from "framer-motion";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import { useNavigate } from "react-router-dom";
 
 // Fix for default marker icons in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
-
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-
-const BASE_URL = 'https://xoto.ae/api';
-const BRAND_PURPLE = '#5C039B';
-
-
-
+const BRAND_PURPLE = "#5C039B";
 
 const steps = [
-  { title: 'Location', icon: <CompassOutlined /> },
-  { title: 'Service', icon: <EnvironmentOutlined /> },
-  { title: 'Style', icon: <HomeOutlined /> },
-  { title: 'Estimate Questions', icon: <BuildOutlined /> },
-  { title: 'Contact', icon: <PhoneFilled /> },
+  { title: "Location", icon: <CompassOutlined /> },
+  { title: "Service", icon: <EnvironmentOutlined /> },
+  { title: "Style", icon: <HomeOutlined /> },
+  { title: "Estimate Questions", icon: <BuildOutlined /> },
+  { title: "Contact", icon: <PhoneFilled /> },
 ];
-
 
 // Reverse geocoding function
 const reverseGeocode = async (lat, lng) => {
@@ -55,43 +69,29 @@ const reverseGeocode = async (lat, lng) => {
   const data = await res.json();
   const a = data.address || {};
 
-
-  const city =
-    a.city ||
-    a.town ||
-    a.municipality ||
-    a.county ||
-    "";
-
-
-  const area =
-    a.suburb ||
-    a.neighbourhood ||
-    a.quarter ||
-    "";
-
+  const city = a.city || a.town || a.municipality || a.county || "";
+  const area = a.suburb || a.neighbourhood || a.quarter || "";
 
   return {
     country: a.country || "",
     state: a.state || a.region || "",
     city,
     area,
-    fullAddress: data.display_name || ""
+    fullAddress: data.display_name || "",
   };
 };
 
-
 // Map Picker Component
 const MapPicker = ({ coords, onChange }) => {
-  const [position, setPosition] = useState(coords.lat && coords.lng ? [coords.lat, coords.lng] : [25.2048, 55.2708]);
-
+  const [position, setPosition] = useState(
+    coords.lat && coords.lng ? [coords.lat, coords.lng] : [25.2048, 55.2708]
+  );
 
   useEffect(() => {
     if (coords.lat && coords.lng) {
       setPosition([coords.lat, coords.lng]);
     }
   }, [coords.lat, coords.lng]);
-
 
   const LocationMarker = () => {
     useMapEvents({
@@ -102,10 +102,8 @@ const MapPicker = ({ coords, onChange }) => {
       },
     });
 
-
     return position ? <Marker position={position} /> : null;
   };
-
 
   return (
     <MapContainer
@@ -123,18 +121,17 @@ const MapPicker = ({ coords, onChange }) => {
   );
 };
 
-
 const Calculator = () => {
+  const navigate = useNavigate();
+
   const [activeStep, setActiveStep] = useState(0);
   const [form] = Form.useForm();
   const [estimationValue, setEstimationValue] = useState(0);
-  // Data Collections
+
   const [subcategories, setSubcategories] = useState([]);
   const [types, setTypes] = useState([]);
   const [packages, setPackages] = useState([]);
 
-
-  // User Selections
   const [coords, setCoords] = useState({
     lat: null,
     lng: null,
@@ -142,129 +139,69 @@ const Calculator = () => {
     state: "",
     city: "",
     area: "",
-    address: ""
+    address: "",
   });
 
-
-  const [selectedSubcategory, setSelectedSubcategory] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [selectedPackage, setSelectedPackage] = useState('');
-  const [length, setLength] = useState('');
-  const [width, setWidth] = useState('');
-  const [countryCode, setCountryCode] = useState('+971');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+  const [selectedType, setSelectedType] = useState("");
+  const [selectedPackage, setSelectedPackage] = useState("");
+  const [length, setLength] = useState("");
+  const [width, setWidth] = useState("");
+  const [countryCode, setCountryCode] = useState("+971");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
+
   const [galleryImages, setGalleryImages] = useState([]);
   const [selectedImages, setSelectedImages] = useState([]);
 
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
 
-  const handlePhoneChange = (e) => {
-    const value = e.target.value.replace(/\D/g, ""); // numbers only
-    const rule = COUNTRY_PHONE_RULES[countryCode];
+  // ✅ NEW: step 3 missing field highlight
+  const [step3Errors, setStep3Errors] = useState({});
 
+  // ✅ NEW: toast lock (one toast at a time)
+  const [toastLock, setToastLock] = useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
 
-    if (!rule) return;
+  const showLockedToast = (text = "Please fill the required field to continue.") => {
+    if (toastLock) return;
+    setToastLock(true);
 
-
-    if (value.length > rule.digits) return; // block extra digits
-
-
-    setPhone(value);
-
-
-    if (value.length < rule.digits) {
-      setPhoneError(`Phone number must be ${rule.digits} digits`);
-    } else {
-      setPhoneError("");
-    }
-  };
-
-
-
-
-  const handleCountryChange = (code) => {
-    setCountryCode(code);
-    setPhone(""); // reset phone on country change
-    setPhoneError("");
-  };
-
-
-
-
-  const toggleImageSelect = (img) => {
-    setSelectedImages((prev) => {
-      const exists = prev.some(i => i.id === img.id);
-
-
-      if (exists) {
-        // remove image
-        return prev.filter(i => i.id !== img.id);
-      }
-
-
-      // add image
-      return [...prev, img];
+    messageApi.open({
+      type: "error",
+      content: text,
+      duration: 1.2,
+      style: {
+        fontSize: "16px",
+        marginTop: "10vh",
+        padding: "10px 14px",
+        borderRadius: "10px",
+      },
+      onClose: () => {
+        setToastLock(false);
+      },
     });
   };
 
+  const areaSqFt =
+    length && width ? Math.round(parseFloat(length) * parseFloat(width)) : 0;
 
-  const getAllImages = async () => {
-    try {
-      const res = await fetch(
-        `https://xoto.ae/api/estimate/master/category/types/${selectedType}/gallery`
-      );
-
-
-      const data = await res.json();
-
-
-      console.log("We got this from galllery images", data);
-      // assuming res.data or res.gallery
-      setGalleryImages(data?.gallery?.moodboardImages || []);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-
-  useEffect(() => {
-    if (selectedType) {
-      getAllImages();
-    }
-  }, [selectedType]);
-
-
-
-
-  const [loading, setLoading] = useState({
-    subcat: true,
-    types: false,
-    packages: true,
-    submitting: false,
-    geocoding: false
-  });
-
-
-  const areaSqFt = length && width ? Math.round(parseFloat(length) * parseFloat(width)) : 0;
-
-
-  // Country codes for dropdown
   const countryCodes = [
-    { value: '+971', label: 'UAE (+971)' },
-    { value: '+966', label: 'KSA (+966)' },
-    { value: '+974', label: 'Qatar (+974)' },
-    { value: '+968', label: 'Oman (+968)' },
-    { value: '+973', label: 'Bahrain (+973)' },
-    { value: '+965', label: 'Kuwait (+965)' },
-    { value: '+91', label: 'India (+91)' },
-    { value: '+92', label: 'Pakistan (+92)' },
-    { value: '+44', label: 'UK (+44)' },
-    { value: '+1', label: 'USA/Canada (+1)' },
+    { value: "+971", label: "UAE (+971)" },
+    { value: "+966", label: "KSA (+966)" },
+    { value: "+974", label: "Qatar (+974)" },
+    { value: "+968", label: "Oman (+968)" },
+    { value: "+973", label: "Bahrain (+973)" },
+    { value: "+965", label: "Kuwait (+965)" },
+    { value: "+91", label: "India (+91)" },
+    { value: "+92", label: "Pakistan (+92)" },
+    { value: "+44", label: "UK (+44)" },
+    { value: "+1", label: "USA/Canada (+1)" },
   ];
-
 
   const COUNTRY_PHONE_RULES = {
     "+971": { country: "UAE", digits: 9 },
@@ -279,168 +216,149 @@ const Calculator = () => {
     "+1": { country: "USA/Canada", digits: 10 },
   };
 
+  const [loading, setLoading] = useState({
+    subcat: true,
+    types: false,
+    packages: true,
+    submitting: false,
+    geocoding: false,
+    questions: false,
+  });
 
-  // --- API FETCHING ---
+  const handlePhoneChange = (e) => {
+    const value = e.target.value.replace(/\D/g, "");
+    const rule = COUNTRY_PHONE_RULES[countryCode];
+    if (!rule) return;
+
+    if (value.length > rule.digits) return;
+
+    setPhone(value);
+
+    if (value.length < rule.digits) {
+      setPhoneError(`Phone number must be ${rule.digits} digits`);
+    } else {
+      setPhoneError("");
+    }
+  };
+
+  const handleCountryChange = (code) => {
+    setCountryCode(code);
+    setPhone("");
+    setPhoneError("");
+  };
+
+  const toggleImageSelect = (img) => {
+    setSelectedImages((prev) => {
+      const exists = prev.some((i) => i.id === img.id);
+      if (exists) return prev.filter((i) => i.id !== img.id);
+      return [...prev, img];
+    });
+  };
+
+  const getAllImages = async () => {
+    try {
+      const res = await fetch(
+        `https://xoto.ae/api/estimate/master/category/types/${selectedType}/gallery`
+      );
+      const data = await res.json();
+      setGalleryImages(data?.gallery?.moodboardImages || []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedType) getAllImages();
+  }, [selectedType]);
+
+  // Fetch subcategories
   useEffect(() => {
     const initFetch = async () => {
       try {
-        const res = await apiService.get("/estimate/master/category/name/Landscaping/subcategories");
+        const res = await apiService.get(
+          "/estimate/master/category/name/Landscaping/subcategories"
+        );
         if (res.success) setSubcategories(res.data || []);
       } catch (err) {
         message.error("Error loading services");
       } finally {
-        setLoading(prev => ({ ...prev, subcat: false }));
+        setLoading((prev) => ({ ...prev, subcat: false }));
       }
     };
     initFetch();
   }, []);
 
-
-
-
-  const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({});
-  const navigate = useNavigate();
-
-
-  const buildEstimateAnswersPayload = () => {
-    return questions.map(q => {
-      const userAnswer = answers[q._id];
-
-
-      // TEXT / NUMBER / YES-NO
-      if (q.questionType !== "options" && q.questionType !== "yesorno") {
-        return {
-          question: q._id,
-          questionText: q.question,
-          questionType: q.questionType,
-          answerValue: userAnswer || null,
-          includeInEstimate: true,
-          areaQuestion: q.areaQuestion || false
-        };
-      }
-
-
-
-
-      // OPTIONS / yes or no
-      const selectedOpt = q.options.find(
-        opt => opt.title === userAnswer
-      );
-
-
-      return {
-        question: q._id,
-        questionText: q.question,
-        questionType: q.questionType,
-        selectedOption: selectedOpt
-          ? {
-            optionId: selectedOpt._id,
-            title: selectedOpt.title,
-            value: selectedOpt.value || 0,
-            valueSubType: selectedOpt.valueSubType || "flat"
-          }
-          : null,
-        includeInEstimate: true,
-        areaQuestion: q.areaQuestion || false
-      };
-    });
-  };
-
-
-
-
-
-
-  const handleAnswerChange = (questionId, value) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: value
-    }));
-  };
-
-
-
-
+  // Fetch questions
   useEffect(() => {
     if (!selectedType) return;
 
-
     const getAllQuestions = async () => {
-      setLoading(prev => ({ ...prev, questions: true }));
-
-
+      setLoading((prev) => ({ ...prev, questions: true }));
       try {
         const res = await apiService.get(
           `/estimate/master/category/types/${selectedType}/questions`
         );
 
-
         if (res.success) {
           setQuestions(res.data || []);
-          console.log("Questiiiiiiiiiiioooooooooonnnnnnnnnnns", res.data)
         }
       } catch (error) {
         message.error("Error loading questions");
-        console.log("Error in fetching all questions of this type", error);
       } finally {
-        setLoading(prev => ({ ...prev, questions: false }));
+        setLoading((prev) => ({ ...prev, questions: false }));
       }
     };
-
 
     getAllQuestions();
   }, [selectedType]);
 
-
+  // Fetch types
   useEffect(() => {
     if (!selectedSubcategory) return;
     const fetchTypes = async () => {
-      setLoading(prev => ({ ...prev, types: true }));
+      setLoading((prev) => ({ ...prev, types: true }));
       try {
-        const sub = subcategories.find(s => s._id === selectedSubcategory);
-        const res = await apiService.get(`/estimate/master/category/${sub.category}/subcategories/${selectedSubcategory}/types`);
+        const sub = subcategories.find((s) => s._id === selectedSubcategory);
+        const res = await apiService.get(
+          `/estimate/master/category/${sub.category}/subcategories/${selectedSubcategory}/types`
+        );
         if (res.success) setTypes(res.data || []);
       } catch (err) {
         message.error("Error loading styles");
       } finally {
-        setLoading(prev => ({ ...prev, types: false }));
+        setLoading((prev) => ({ ...prev, types: false }));
       }
     };
     fetchTypes();
   }, [selectedSubcategory, subcategories]);
 
-
+  // Fetch packages
   useEffect(() => {
     const fetchPkgs = async () => {
       try {
         const res = await apiService.get("/packages");
-        if (res.success) setPackages(res.packages.filter(p => p.isActive));
+        if (res.success) setPackages(res.packages.filter((p) => p.isActive));
       } catch (err) {
         message.error("Error loading packages");
       } finally {
-        setLoading(prev => ({ ...prev, packages: false }));
+        setLoading((prev) => ({ ...prev, packages: false }));
       }
     };
     fetchPkgs();
   }, []);
 
-
-  // --- ACTIONS ---
+  // Get location
   const handleGetLocation = () => {
     if (!navigator.geolocation) return message.error("Geolocation not supported");
-    setLoading(prev => ({ ...prev, submitting: true, geocoding: true }));
-
+    setLoading((prev) => ({ ...prev, submitting: true, geocoding: true }));
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
-
         try {
           const geo = await reverseGeocode(lat, lng);
-
 
           setCoords({
             lat,
@@ -449,9 +367,8 @@ const Calculator = () => {
             state: geo.state,
             city: geo.city,
             area: geo.area,
-            address: geo.fullAddress
+            address: geo.fullAddress,
           });
-
 
           message.success("Location synchronized!");
         } catch (error) {
@@ -462,23 +379,22 @@ const Calculator = () => {
             state: "",
             city: "",
             area: "",
-            address: ""
+            address: "",
           });
           message.warning("Location detected but address details unavailable");
         } finally {
-          setLoading(prev => ({ ...prev, submitting: false, geocoding: false }));
+          setLoading((prev) => ({ ...prev, submitting: false, geocoding: false }));
         }
       },
       () => {
         message.error("Location access denied");
-        setLoading(prev => ({ ...prev, submitting: false, geocoding: false }));
+        setLoading((prev) => ({ ...prev, submitting: false, geocoding: false }));
       }
     );
   };
 
-
   const handleMapLocationChange = async ({ lat, lng }) => {
-    setLoading(prev => ({ ...prev, geocoding: true }));
+    setLoading((prev) => ({ ...prev, geocoding: true }));
     try {
       const geo = await reverseGeocode(lat, lng);
       setCoords({
@@ -488,65 +404,95 @@ const Calculator = () => {
         state: geo.state,
         city: geo.city,
         area: geo.area,
-        address: geo.fullAddress
+        address: geo.fullAddress,
       });
       message.success("Location updated!");
     } catch (error) {
       message.error("Could not fetch address details");
     } finally {
-      setLoading(prev => ({ ...prev, geocoding: false }));
+      setLoading((prev) => ({ ...prev, geocoding: false }));
     }
   };
 
+  const handleAnswerChange = (questionId, value) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: value,
+    }));
+
+    // ✅ remove error highlight when user fills
+    setStep3Errors((prev) => {
+      const copy = { ...prev };
+      delete copy[questionId];
+      return copy;
+    });
+  };
+
+  const buildEstimateAnswersPayload = () => {
+    return questions.map((q) => {
+      const userAnswer = answers[q._id];
+
+      if (q.questionType !== "options" && q.questionType !== "yesorno") {
+        return {
+          question: q._id,
+          questionText: q.question,
+          questionType: q.questionType,
+          answerValue: userAnswer || null,
+          includeInEstimate: true,
+          areaQuestion: q.areaQuestion || false,
+        };
+      }
+
+      const selectedOpt = q.options.find((opt) => opt.title === userAnswer);
+
+      return {
+        question: q._id,
+        questionText: q.question,
+        questionType: q.questionType,
+        selectedOption: selectedOpt
+          ? {
+              optionId: selectedOpt._id,
+              title: selectedOpt.title,
+              value: selectedOpt.value || 0,
+              valueSubType: selectedOpt.valueSubType || "flat",
+            }
+          : null,
+        includeInEstimate: true,
+        areaQuestion: q.areaQuestion || false,
+      };
+    });
+  };
 
   const onFinalSubmit = async () => {
-    // Validate form fields
-
-
     const estimateAnswers = buildEstimateAnswersPayload();
-
-
-
 
     if (!firstName.trim() || !lastName.trim()) {
       message.error("Please enter both first and last name");
       return;
     }
-
-
     if (!email.trim()) {
       message.error("Please enter your email");
       return;
     }
-
-
     if (!phone.trim()) {
       message.error("Please enter your phone number");
       return;
     }
 
+    setLoading((prev) => ({ ...prev, submitting: true }));
 
-    setLoading(prev => ({ ...prev, submitting: true }));
+    const selectedTypeData = types.find((t) => t._id === selectedType);
 
-
-
-
-    // Get selected type and subcategory details
-    const selectedTypeData = types.find(t => t._id === selectedType);
-    const selectedSubcat = subcategories.find(s => s._id === selectedSubcategory);
-
-
-    // Prepare payload according to the example
     const payload = {
       service_type: "landscape",
       customer_name: {
         first_name: firstName.trim(),
-        last_name: lastName.trim()
+        last_name: lastName.trim(),
       },
       customer_email: email.trim(),
       customer_mobile: {
         country_code: countryCode,
-        number: phone.trim()
+        number: phone.trim(),
       },
       type: selectedType,
       subcategory: selectedSubcategory,
@@ -554,7 +500,9 @@ const Calculator = () => {
       area_length: parseFloat(length),
       area_width: parseFloat(width),
       area_sqft: areaSqFt,
-      description: `Landscaping project for ${areaSqFt} sqft area with ${selectedTypeData?.label || 'selected'} style`,
+      description: `Landscaping project for ${areaSqFt} sqft area with ${
+        selectedTypeData?.label || "selected"
+      } style`,
       location: {
         lat: coords.lat,
         lng: coords.lng,
@@ -562,136 +510,124 @@ const Calculator = () => {
         state: coords.state,
         city: coords.city,
         area: coords.area,
-        address: coords.address
+        address: coords.address,
       },
-      answers: estimateAnswers
+      answers: estimateAnswers,
     };
-
-
-    console.log("Submitting payload:", JSON.stringify(payload, null, 2)); // For debugging
-
 
     try {
       const response = await apiService.post("/estimates/submit", payload);
-      console.log("API Response:", response);
-
 
       if (response.success) {
-        setActiveStep(5); // Move to success step
+        setActiveStep(5);
         message.success("Estimate submitted successfully!");
-        setEstimationValue(response.final_price)
+        setEstimationValue(response.final_price);
       } else {
         message.error(response.message || "Submission failed");
       }
     } catch (err) {
-      console.error("Submission error:", err);
       message.error(err.response?.data?.message || "Submission failed. Please try again.");
     } finally {
-      setLoading(prev => ({ ...prev, submitting: false }));
+      setLoading((prev) => ({ ...prev, submitting: false }));
     }
   };
 
+  // ✅ Step 3 validation with scroll + focus + toast lock
+  const validateStep3 = () => {
+    const missing = questions.find((q) => {
+      const val = answers[q._id];
+      return val === undefined || val === null || val === "";
+    });
 
+    if (!missing) return true;
 
+    // ✅ highlight only missing field
+    setStep3Errors({ [missing._id]: true });
+
+    // ✅ locked toast (no spam)
+    showLockedToast("Please fill the required field to continue.");
+
+    // ✅ scroll + focus
+    setTimeout(() => {
+      const el = document.getElementById(`q-${missing._id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.focus?.();
+      }
+    }, 200);
+
+    return false;
+  };
 
   const handleNext = () => {
-    console.log("Current Step:", activeStep);
-   
-    // Finish Navigation
+    // Finish
     if (activeStep === 5) {
       navigate("/");
       return;
     }
 
-
-    // Step 3 Validation: Ensure all questions are answered
+    // Step 3 validate
     if (activeStep === 3) {
-      const isFormValid = questions.every((q) => {
-        const val = answers[q._id];
-        // Check for undefined, null, or empty string.
-        // We allow '0' (number) or boolean false if relevant, but typically text is string.
-        return val !== undefined && val !== null && val !== "";
-      });
-
-
-      if (!isFormValid) {
-        // ✅ CHANGE HERE: Message ko object banakar styles pass kiye hain
-        message.error({
-          content: "Please answer all the questions to proceed!",
-          style: {
-            fontSize: '20px',      // Text bada karne ke liye
-            marginTop: '15vh',     // Thoda niche dikhane ke liye (optional)
-            padding: '15px 25px',  // Box ka size bada karne ke liye
-            borderRadius: '12px',  // Corners round karne ke liye
-            lineHeight: '1.5'      // Text spacing ke liye
-          },
-          duration: 3, // Kitni der tak dikhega (seconds)
-        });
-        return; // Stop here, do not increment step
-      }
+      const ok = validateStep3();
+      if (!ok) return;
     }
 
-
-    // Submit Trigger
+    // Final submit after step 4
     if (activeStep > 3) {
       onFinalSubmit();
       return;
     }
 
-
-    // Default: Go to next step
     setActiveStep((prev) => prev + 1);
   };
 
+  const handleBack = () => setActiveStep((prev) => prev - 1);
 
-  const handleBack = () => setActiveStep(prev => prev - 1);
+  const validateStep = () => true;
 
-
-  const validateStep = () => {
-    return true;
-  };
-
-
-  // --- UI COMPONENTS ---
   const SelectionCard = ({ item, isSelected, onClick, colorClass }) => (
     <motion.div
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={`relative h-full p-6 rounded-3xl cursor-pointer transition-all border-2
-        ${isSelected ? `bg-purple-50 shadow-xl` : 'border-gray-100 bg-white hover:border-gray-200'}`}
-      style={{ borderColor: isSelected ? BRAND_PURPLE : 'transparent' }}
+        ${isSelected ? `bg-purple-50 shadow-xl` : "border-gray-100 bg-white hover:border-gray-200"}`}
+      style={{ borderColor: isSelected ? BRAND_PURPLE : "transparent" }}
     >
       {isSelected && <Badge.Ribbon text="Selected" color={BRAND_PURPLE} />}
-      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-4 ${colorClass}`}>
-        {item.label ? item.label[0] : 'G'}
+      <div
+        className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-4 ${colorClass}`}
+      >
+        {item.label ? item.label[0] : "G"}
       </div>
-      <Title level={4} className="mb-1">{item.label}</Title>
-      <Text type="secondary" className="text-xs line-clamp-2">{item.description || 'Professional architectural landscaping.'}</Text>
+      <Title level={4} className="mb-1">
+        {item.label}
+      </Title>
+      <Text type="secondary" className="text-xs line-clamp-2">
+        {item.description || "Professional architectural landscaping."}
+      </Text>
     </motion.div>
   );
-
 
   const StepRenderer = () => {
     const variants = {
       initial: { opacity: 0, y: 20 },
       animate: { opacity: 1, y: 0 },
-      exit: { opacity: 0, y: -20 }
+      exit: { opacity: 0, y: -20 },
     };
-
 
     switch (activeStep) {
       case 0:
         return (
           <motion.div {...variants} className="text-center py-10">
             <div className="mb-6 inline-block p-6 rounded-full bg-purple-50">
-              <CompassOutlined style={{ color: BRAND_PURPLE, fontSize: '3rem' }} />
+              <CompassOutlined style={{ color: BRAND_PURPLE, fontSize: "3rem" }} />
             </div>
             <Title level={2}>Locate Your Address</Title>
             <Text className="text-lg text-gray-400 block mb-10">
-              We use GPS coordinates for accurate site analysis. Click on the map to adjust your exact location.
+              We use GPS coordinates for accurate site analysis. Click on the map to adjust your
+              exact location.
             </Text>
-
 
             <Button
               size="large"
@@ -705,7 +641,6 @@ const Calculator = () => {
               {coords.lat ? "Update My Location" : "Auto-Detect My Location"}
             </Button>
 
-
             {coords.lat && (
               <div className="space-y-4">
                 <div className="mt-6">
@@ -714,32 +649,11 @@ const Calculator = () => {
                   </Tag>
                 </div>
 
-
-                <div className="space-y-2">
-                  {coords.country && (
-                    <Tag color="purple" className="px-4 py-1 rounded-full">
-                      <strong>Country:</strong> {coords.country}
-                    </Tag>
-                  )}
-                  {coords.state && (
-                    <Tag color="blue" className="px-4 py-1 rounded-full">
-                      <strong>State/Region:</strong> {coords.state}
-                    </Tag>
-                  )}
-                  {coords.city && (
-                    <Tag color="green" className="px-4 py-1 rounded-full">
-                      <strong>City:</strong> {coords.city}
-                    </Tag>
-                  )}
-                </div>
-
-
                 {coords.address && (
                   <Text type="secondary" className="block mt-4 max-w-xl mx-auto">
                     <strong>Full Address:</strong> {coords.address}
                   </Text>
                 )}
-
 
                 <div className="mt-8 max-w-2xl mx-auto">
                   {loading.geocoding ? (
@@ -747,10 +661,7 @@ const Calculator = () => {
                       <Spin size="large" />
                     </div>
                   ) : (
-                    <MapPicker
-                      coords={coords}
-                      onChange={handleMapLocationChange}
-                    />
+                    <MapPicker coords={coords} onChange={handleMapLocationChange} />
                   )}
                   <Text className="text-xs text-gray-400 mt-2 block">
                     Click anywhere on the map to set your exact location
@@ -761,14 +672,15 @@ const Calculator = () => {
           </motion.div>
         );
 
-
       case 1:
         return (
           <motion.div {...variants}>
-            <Title level={2} className="text-center mb-10">What are we designing?</Title>
+            <Title level={2} className="text-center mb-10">
+              What are we designing?
+            </Title>
             <Row gutter={[24, 24]}>
-              {[...subcategories].reverse().map(sub => (
-                <Col xs={24} sm={12} md={8} key={sub._id} className='p-10'>
+              {[...subcategories].reverse().map((sub) => (
+                <Col xs={24} sm={12} md={8} key={sub._id} className="p-10">
                   <SelectionCard
                     item={sub}
                     isSelected={selectedSubcategory === sub._id}
@@ -781,14 +693,19 @@ const Calculator = () => {
           </motion.div>
         );
 
-
       case 2:
         return (
           <motion.div {...variants}>
-            <Title level={2} className="text-center mb-10">Select Your Aesthetic Style</Title>
-            {loading.types ? <div className="text-center py-20"><Spin size="large" /></div> : (
+            <Title level={2} className="text-center mb-10">
+              Select Your Aesthetic Style
+            </Title>
+            {loading.types ? (
+              <div className="text-center py-20">
+                <Spin size="large" />
+              </div>
+            ) : (
               <Row gutter={[24, 24]}>
-                {types.map(t => (
+                {types.map((t) => (
                   <Col xs={24} sm={12} md={8} key={t._id}>
                     <SelectionCard
                       item={t}
@@ -803,182 +720,161 @@ const Calculator = () => {
           </motion.div>
         );
 
-
       case 3:
         return (
           <motion.div {...variants} className="py-10">
             <div className="max-w-3xl mx-auto">
-
-
               <Title level={3} className="text-center mb-8">
                 Project Details
               </Title>
-
 
               <Card className="rounded-xl shadow-sm">
                 <Form
                   layout="vertical"
                   className="space-y-6"
+                  requiredMark={true} // ✅ only star
                 >
-                  {questions.map((q) => (
-                    <Form.Item
-                      key={q._id}
-                      label={q.question}
-                      required={true}
-                      validateStatus={answers[q._id] ? "success" : "error"}
-                      // ✅ CHANGE HERE: Updated the error message text
-                      help={answers[q._id] ? null : "Please provide an answer to proceed."}
-                    >
-                      {/* TEXT */}
-                      {q.questionType === "text" && (
-                        <Input
-                          value={answers[q._id] || ""}
-                          onChange={e =>
-                            handleAnswerChange(q._id, e.target.value)
-                          }
-                          placeholder="Enter value"
-                          status={!answers[q._id] ? "error" : ""}
-                        />
-                      )}
+                  {questions.map((q) => {
+                    const isError = !!step3Errors[q._id];
 
+                    return (
+                      <Form.Item
+                        key={q._id}
+                        label={q.question}
+                        required={true} // ✅ star show
+                        validateStatus={isError ? "error" : ""}
+                        help={isError ? "This field is required." : null}
+                      >
+                        {/* TEXT */}
+                        {q.questionType === "text" && (
+                          <Input
+                            id={`q-${q._id}`}
+                            value={answers[q._id] || ""}
+                            onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                            placeholder="Enter value"
+                            status={isError ? "error" : ""}
+                          />
+                        )}
 
-                      {/* NUMBER */}
-                      {q.questionType === "number" && (
-                        <Input
-                          type="number"
-                          value={answers[q._id] || ""}
-                          onChange={e =>
-                            handleAnswerChange(q._id, e.target.value)
-                          }
-                          placeholder="Enter number"
-                          min={q.minValue || 0}
-                          max={q.maxValue || undefined}
-                          status={!answers[q._id] ? "error" : ""}
-                        />
-                      )}
+                        {/* NUMBER */}
+                        {q.questionType === "number" && (
+                          <Input
+                            id={`q-${q._id}`}
+                            type="number"
+                            value={answers[q._id] || ""}
+                            onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                            placeholder="Enter number"
+                            min={q.minValue || 0}
+                            max={q.maxValue || undefined}
+                            status={isError ? "error" : ""}
+                          />
+                        )}
 
+                        {/* YES / NO */}
+                        {q.questionType === "yesorno" && (
+                          <Radio.Group
+                            value={answers[q._id]}
+                            onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                          >
+                            <Space>
+                              {q.options.map((opt) => (
+                                <Radio key={opt._id} value={opt.title}>
+                                  {opt.title}
+                                </Radio>
+                              ))}
+                            </Space>
+                          </Radio.Group>
+                        )}
 
-                      {/* YES / NO */}
-                      {q.questionType === "yesorno" && (
-                        <Radio.Group
-                          value={answers[q._id]}
-                          onChange={e =>
-                            handleAnswerChange(q._id, e.target.value)
-                          }
-                        >
-                          <Space>
-                            {q.options.map(opt => (
-                              <Radio key={opt._id} value={opt.title}>
-                                {opt.title}
-                              </Radio>
-                            ))}
-                          </Space>
-                        </Radio.Group>
-                      )}
-
-
-                      {/* OPTIONS */}
-                      {q.questionType === "options" && (
-                        <Radio.Group
-                          value={answers[q._id]}
-                          onChange={e =>
-                            handleAnswerChange(q._id, e.target.value)
-                          }
-                        >
-                          <Space direction="vertical">
-                            {q.options.map(opt => (
-                              <Radio key={opt._id} value={opt.title}>
-                                {opt.title}
-                              </Radio>
-                            ))}
-                          </Space>
-                        </Radio.Group>
-                      )}
-                    </Form.Item>
-                  ))}
+                        {/* OPTIONS */}
+                        {q.questionType === "options" && (
+                          <Radio.Group
+                            value={answers[q._id]}
+                            onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                          >
+                            <Space direction="vertical">
+                              {q.options.map((opt) => (
+                                <Radio key={opt._id} value={opt.title}>
+                                  {opt.title}
+                                </Radio>
+                              ))}
+                            </Space>
+                          </Radio.Group>
+                        )}
+                      </Form.Item>
+                    );
+                  })}
                 </Form>
               </Card>
             </div>
           </motion.div>
         );
 
-
       case 4:
-        const selectedPkg = packages.find(p => p._id === selectedPackage);
-        const selectedTypeData = types.find(t => t._id === selectedType);
-        const selectedSubcat = subcategories.find(s => s._id === selectedSubcategory);
-
-
         return (
           <motion.div {...variants} className="max-w-5xl mx-auto">
             <Row gutter={48}>
               <Col xs={24} lg={10}>
-                <div className="rounded-[2.5rem] p-10 text-white h-full shadow-2xl" style={{ backgroundColor: BRAND_PURPLE }}>
-                  <Title level={3} className="text-white mb-10">Design Summary</Title>
+                <div
+                  className="rounded-[2.5rem] p-10 text-white h-full shadow-2xl"
+                  style={{ backgroundColor: BRAND_PURPLE }}
+                >
+                  <Title level={3} className="text-white mb-10">
+                    Design Summary
+                  </Title>
+
                   <div className="space-y-8">
                     <div>
-                      <Text className="text-purple-300 block text-xs uppercase tracking-widest mb-1">Service Type</Text>
-                      <Text strong className="text-white text-xl uppercase">
-                        {selectedSubcat?.label || 'Landscaping'}
+                      <Text className="text-purple-300 block text-xs uppercase tracking-widest mb-1">
+                        Area
                       </Text>
-                    </div>
-                    <div>
-                      <Text className="text-purple-300 block text-xs uppercase tracking-widest mb-1">Selected Style</Text>
                       <Text strong className="text-white text-xl">
-                        {selectedTypeData?.label || 'Not selected'}
-                      </Text>
-                    </div>
-                    <div>
-                      <Text className="text-purple-300 block text-xs uppercase tracking-widest mb-1">Location</Text>
-                      <Text strong className="text-white text-sm">
-                        {coords.city ? `${coords.city}, ${coords.country}` : 'Location set'}
-                      </Text>
-                    </div>
-                    <div>
-                      <Text className="text-purple-300 block text-xs uppercase tracking-widest mb-1">Area Details</Text>
-                      <Text strong className="text-white text-xl">{areaSqFt} SQ FT</Text>
-                      <Text className="text-purple-300 text-xs">
-                        ({length}ft × {width}ft)
+                        {areaSqFt} SQ FT
                       </Text>
                     </div>
                   </div>
                 </div>
               </Col>
+
               <Col xs={24} lg={14}>
                 <Card className="rounded-[2.5rem] shadow-xl border-none p-6">
                   <div className="space-y-6">
                     <div>
-                      <Text strong className="block mb-2">First Name *</Text>
+                      <Text strong className="block mb-2">
+                        First Name *
+                      </Text>
                       <Input
                         size="large"
                         value={firstName}
-                        onChange={e => setFirstName(e.target.value)}
+                        onChange={(e) => setFirstName(e.target.value)}
                         prefix={<UserOutlined className="text-gray-300" />}
                         className="rounded-xl h-14"
                         placeholder="John"
                       />
                     </div>
 
-
                     <div>
-                      <Text strong className="block mb-2">Last Name *</Text>
+                      <Text strong className="block mb-2">
+                        Last Name *
+                      </Text>
                       <Input
                         size="large"
                         value={lastName}
-                        onChange={e => setLastName(e.target.value)}
+                        onChange={(e) => setLastName(e.target.value)}
                         prefix={<UserOutlined className="text-gray-300" />}
                         className="rounded-xl h-14"
                         placeholder="Doe"
                       />
                     </div>
 
-
                     <div>
-                      <Text strong className="block mb-2">Email Address *</Text>
+                      <Text strong className="block mb-2">
+                        Email Address *
+                      </Text>
                       <Input
                         size="large"
                         value={email}
-                        onChange={e => setEmail(e.target.value)}
+                        onChange={(e) => setEmail(e.target.value)}
                         prefix={<MailOutlined className="text-gray-300" />}
                         className="rounded-xl h-14"
                         placeholder="john@example.com"
@@ -986,10 +882,10 @@ const Calculator = () => {
                       />
                     </div>
 
-
                     <div>
-                      <Text strong className="block mb-2">Contact Number *</Text>
-
+                      <Text strong className="block mb-2">
+                        Contact Number *
+                      </Text>
 
                       <Row gutter={8}>
                         <Col span={8}>
@@ -999,7 +895,7 @@ const Calculator = () => {
                             className="w-full"
                             size="large"
                           >
-                            {countryCodes.map(code => (
+                            {countryCodes.map((code) => (
                               <Option key={code.value} value={code.value}>
                                 {code.label}
                               </Option>
@@ -1007,13 +903,14 @@ const Calculator = () => {
                           </Select>
                         </Col>
 
-
                         <Col span={16}>
                           <Input
                             size="large"
                             value={phone}
                             onChange={handlePhoneChange}
-                            placeholder={`Enter ${COUNTRY_PHONE_RULES[countryCode]?.digits || ""} digit number`}
+                            placeholder={`Enter ${
+                              COUNTRY_PHONE_RULES[countryCode]?.digits || ""
+                            } digit number`}
                             prefix={<PhoneFilled />}
                             maxLength={COUNTRY_PHONE_RULES[countryCode]?.digits}
                             status={phoneError ? "error" : ""}
@@ -1021,7 +918,6 @@ const Calculator = () => {
                           />
                         </Col>
                       </Row>
-
 
                       {phoneError && (
                         <Text type="danger" className="text-xs mt-1 block">
@@ -1036,241 +932,90 @@ const Calculator = () => {
           </motion.div>
         );
 
-
       case 5:
-        const pkg = packages.find(p => p._id === selectedPackage);
         return (
-          <motion.div {...variants} className="text-center ">
-            {/* RESPONSIVE DISCLAIMER */}
-            <div className="max-w-5xl mx-auto mb-8 px-4">
-              <div
-                className="
-      flex flex-col sm:flex-row
-      items-start sm:items-center
-      gap-3 sm:gap-4
-      bg-red-50
-      border border-red-200
-      text-red-700
-      px-4 sm:px-6
-      py-4
-      rounded-2xl
-      shadow-sm
-    "
-              >
-                {/* Icon */}
-                <div className="flex-shrink-0">
-                  <EnvironmentOutlined className="text-red-500 text-xl sm:text-2xl" />
-                </div>
-
-
-                {/* Text */}
-                <div className="text-left">
-                  <Text className="block font-semibold text-red-700 text-sm sm:text-base">
-                    DISCLAIMER:
-                  </Text>
-                  <Text className="block text-xs sm:text-sm text-red-600 leading-relaxed">
-                    This estimate is meant to give you a rough idea of costs. The final amount
-                    may change once details are finalized and the site is reviewed.
-                  </Text>
-                </div>
-              </div>
-            </div>
+          <motion.div {...variants} className="text-center">
             <div className="bg-white p-16 rounded-[4rem] shadow-2xl inline-block border border-gray-50">
-              <SmileOutlined style={{ color: BRAND_PURPLE, fontSize: '5rem' }} className="mb-8" />
-              <Title level={1} style={{ color: BRAND_PURPLE }} className="m-0">Valuation Ready</Title>
+              <SmileOutlined
+                style={{ color: BRAND_PURPLE, fontSize: "5rem" }}
+                className="mb-8"
+              />
+              <Title level={1} style={{ color: BRAND_PURPLE }} className="m-0">
+                Valuation Ready
+              </Title>
               <div className="my-12">
-                <Text className="text-gray-400 uppercase tracking-widest block mb-3">Estimated Investment Range</Text>
+                <Text className="text-gray-400 uppercase tracking-widest block mb-3">
+                  Estimated Investment Range
+                </Text>
                 <div className="text-8xl font-black text-gray-900">
-                  {estimationValue || 0} <small className="text-3xl font-light">AED</small>
+                  {estimationValue || 0}{" "}
+                  <small className="text-3xl font-light">AED</small>
                 </div>
               </div>
             </div>
-
-
-            {/* IMAGE SELECTION SECTION */}
-            <div className="mt-16 max-w-6xl mx-auto">
-              <Text className="text-gray-400 uppercase tracking-widest block mb-6 text-center">
-                Select Applicable Design / Finish
-              </Text>
-
-
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {galleryImages.map((img) => {
-                  const isSelected = selectedImages.some(i => i.id === img.id);
-
-
-                  return (
-                    <div
-                      key={img._id}
-                      onClick={() => toggleImageSelect(img)}
-                      className={`relative cursor-pointer rounded-2xl overflow-hidden border-4 transition-all
-            ${isSelected ? "border-purple-600 scale-105" : "border-transparent hover:scale-105"}
-          `}
-                    >
-                      <img
-                        src={`https://xoto.ae/api${img.url}`}
-                        alt={img.title}
-                        className="w-full h-48 object-cover"
-                      />
-
-
-                      {/* Overlay */}
-                      <div
-                        className={`absolute inset-0 bg-black/40 flex items-center justify-center
-             ${isSelected ? "opacity-100" : "opacity-0 hover:opacity-100"}
-            `}
-                      >
-                        <span className="text-white text-lg font-semibold">
-                          {isSelected ? "Selected" : "Select"}
-                        </span>
-                      </div>
-
-
-                      {/* Title */}
-                      <div className="absolute bottom-0 w-full bg-black/60 text-white text-sm px-3 py-2">
-                        {img.title}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-
           </motion.div>
         );
-
 
       default:
         return null;
     }
   };
 
-
-  const buildEstimatePayload = () => {
-    // ---- ESTIMATE OBJECT (matches Estimate schema) ----
-    const estimate = {
-      service_type: "landscape", // or derive dynamically
-      subcategory: selectedSubcategory || null,
-      type: selectedType,
-      package: selectedPackage || null,
-
-
-      area_length: length ? Number(length) : null,
-      area_width: width ? Number(width) : null,
-      area_sqft: Number(areaSqFt),
-
-
-      description: "Generated from estimator flow",
-
-
-      status: "pending",
-
-
-      customer: {
-        firstName,
-        lastName,
-        email,
-        phone: `${countryCode}${phone}`,
-        location: coords.address || null,
-        city: coords.city || null,
-        country: coords.country || null
-      }
-    };
-
-
-    // ---- ANSWERS ARRAY (matches EstimateAnswer schema) ----
-    const formattedAnswers = questions
-      .filter(q => answers[q._id] !== undefined && answers[q._id] !== "")
-      .map(q => {
-        const base = {
-          question: q._id,
-          questionText: q.question,
-          questionType: q.questionType,
-          includeInEstimate: q.includeInEstimate ?? true,
-          areaQuestion: q.areaQuestion ?? false
-        };
-
-
-        // TEXT / NUMBER / YESNO
-        if (q.questionType !== "options") {
-          return {
-            ...base,
-            answerValue: answers[q._id]
-          };
-        }
-
-
-        // OPTIONS
-        const selectedOpt = q.options.find(
-          opt => opt.title === answers[q._id]
-        );
-
-
-        return {
-          ...base,
-          selectedOption: selectedOpt
-            ? {
-              optionId: selectedOpt._id,
-              title: selectedOpt.title,
-              value: selectedOpt.value || 0,
-              valueSubType: selectedOpt.valueSubType || "flat"
-            }
-            : null
-        };
-      });
-
-
-    return {
-      estimate,
-      answers: formattedAnswers
-    };
-  };
-
-
-
-
   return (
     <div className="min-h-screen bg-[#F8F9FD] pb-40">
+      {contextHolder}
+
       {/* Step Indicator Header */}
       <div className="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 px-6 py-6">
         <div className="max-w-7xl mx-auto flex justify-center">
           <div className="hidden lg:flex items-center space-x-8">
             {steps.map((s, i) => (
-              <div key={i} className={`flex items-center gap-3 transition-colors ${i <= activeStep ? 'text-black' : 'text-gray-300'}`}>
+              <div
+                key={i}
+                className={`flex items-center gap-3 transition-colors ${
+                  i <= activeStep ? "text-black" : "text-gray-300"
+                }`}
+              >
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all
-                  ${i === activeStep ? 'text-white border-transparent' :
-                      i < activeStep ? 'bg-green-50 text-green-600 border-green-100' : 'border-gray-100'}`}
-                  style={{ backgroundColor: i === activeStep ? BRAND_PURPLE : '' }}
+                  ${
+                    i === activeStep
+                      ? "text-white border-transparent"
+                      : i < activeStep
+                      ? "bg-green-50 text-green-600 border-green-100"
+                      : "border-gray-100"
+                  }`}
+                  style={{ backgroundColor: i === activeStep ? BRAND_PURPLE : "" }}
                 >
                   {i < activeStep ? <CheckOutlined /> : i + 1}
                 </div>
-                <span className={`text-xs font-bold uppercase tracking-tighter ${i === activeStep ? 'opacity-100' : 'opacity-50'}`}>
+                <span
+                  className={`text-xs font-bold uppercase tracking-tighter ${
+                    i === activeStep ? "opacity-100" : "opacity-50"
+                  }`}
+                >
                   {s.title}
                 </span>
                 {i < steps.length - 1 && <div className="w-4 h-[2px] bg-gray-100" />}
               </div>
             ))}
           </div>
+
           <div className="lg:hidden">
-            <Tag color="purple" style={{ backgroundColor: BRAND_PURPLE }}>Step {activeStep + 1} of {steps.length}</Tag>
+            <Tag color="purple" style={{ backgroundColor: BRAND_PURPLE }}>
+              Step {activeStep + 1} of {steps.length}
+            </Tag>
           </div>
         </div>
       </div>
 
-
       <div className="max-w-7xl mx-auto mt-16 px-6">
         <AnimatePresence mode="wait">
-          <div key={activeStep}>
-            {StepRenderer()}
-          </div>
+          <div key={activeStep}>{StepRenderer()}</div>
         </AnimatePresence>
       </div>
 
-
       {/* Navigation Footer */}
-      {/* {activeStep < 6 && activeStep !== 5 && ( */}
       {activeStep < 6 && (
         <div className="fixed bottom-0 left-0 right-0 p-8 z-50 pointer-events-none">
           <div className="max-w-4xl mx-auto flex justify-between items-center bg-white/95 backdrop-blur-xl p-5 rounded-[2rem] shadow-2xl border border-white/50 pointer-events-auto">
@@ -1284,23 +1029,17 @@ const Calculator = () => {
               Back
             </Button>
 
-
             <div className="flex items-center gap-8">
               {activeStep > 0 && (
                 <div className="hidden sm:block text-right">
-                  <Text className="text-[10px] text-gray-400 uppercase font-black block tracking-widest">Progress</Text>
-                  {/* <Text strong style={{ color: BRAND_PURPLE }}>
-                    {Math.round(((activeStep + 1) / steps.length) * 100)}% Complete
-                  </Text> */}
+                  <Text className="text-[10px] text-gray-400 uppercase font-black block tracking-widest">
+                    Progress
+                  </Text>
                   <Text strong style={{ color: BRAND_PURPLE }}>
-                    {Math.min(
-                      Math.round(((activeStep + 1) / steps.length) * 100),
-                      100
-                    )}% Complete
+                    {Math.min(Math.round(((activeStep + 1) / steps.length) * 100), 100)}% Complete
                   </Text>
                 </div>
               )}
-
 
               <Button
                 type="primary"
@@ -1309,11 +1048,11 @@ const Calculator = () => {
                 disabled={!validateStep()}
                 className="h-14 px-12 rounded-2xl border-none text-lg shadow-xl transition-all"
                 style={{
-                  backgroundColor: !validateStep() ? '#f5f5f5' : BRAND_PURPLE,
-                  color: !validateStep() ? '#ccc' : 'white'
+                  backgroundColor: !validateStep() ? "#f5f5f5" : BRAND_PURPLE,
+                  color: !validateStep() ? "#ccc" : "white",
                 }}
               >
-                {activeStep === 4 ? 'Continue to Contact' : 'Continue'}
+                {activeStep === 4 ? "Continue to Contact" : "Continue"}
                 <ArrowRightOutlined className="ml-2" />
               </Button>
             </div>
@@ -1323,6 +1062,5 @@ const Calculator = () => {
     </div>
   );
 };
-
 
 export default Calculator;

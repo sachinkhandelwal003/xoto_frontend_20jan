@@ -1,16 +1,16 @@
 // components/CMS/pages/estimate/CategoryManager/MasterCategory.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Card, Button, Space, Tag, Tooltip, Spin,
+  Card, Button, Space, Tag, Tooltip,
   Typography, Popconfirm, Input, Form, Modal, message,
-  Row, Col, Statistic, Breadcrumb, Divider, Select, Switch,
-  InputNumber // <--- IMPORTED InputNumber
+  Row, Col, Statistic, Breadcrumb, Select, Switch,
+  InputNumber 
 } from 'antd';
 import {
   PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined,
   RestOutlined, ArrowLeftOutlined, FolderOutlined,
   FolderOpenOutlined, TagsOutlined, DatabaseOutlined, 
-  SearchOutlined, ReloadOutlined, AppstoreOutlined,
+  ReloadOutlined, AppstoreOutlined,
   HomeOutlined
 } from '@ant-design/icons';
 import CustomTable from '../../../../components/CMS/pages/custom/CustomTable';
@@ -43,7 +43,6 @@ const MasterCategory = () => {
   // Data State
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [showTrash, setShowTrash] = useState(false);
 
   const [pagination, setPagination] = useState({
@@ -75,7 +74,6 @@ const MasterCategory = () => {
       const params = { 
         page, 
         limit, 
-        search: searchTerm || undefined,
         active: showTrash ? 'false' : undefined 
       };
 
@@ -104,7 +102,7 @@ const MasterCategory = () => {
     } finally {
       setLoading(false);
     }
-  }, [level, parentCategory, parentSubcategory, searchTerm, showTrash]);
+  }, [level, parentCategory, parentSubcategory, showTrash]);
 
   useEffect(() => {
     fetchData(pagination.currentPage, pagination.itemsPerPage);
@@ -158,11 +156,13 @@ const MasterCategory = () => {
     }
   };
 
+  // ✅ FIXED: Dynamic Key for Columns based on Level
   const columns = useMemo(() => {
     const cols = [
       {
         title: level === 'categories' ? 'Category Name' : level === 'subcategories' ? 'Subcategory' : 'Type',
-        key: 'name',
+        // ✅ CHANGE: Categories use 'name', others use 'label'
+        key: level === 'categories' ? 'name' : 'label', 
         width: 350,
         render: (_, record) => (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -256,7 +256,6 @@ const MasterCategory = () => {
             </Form.Item>
           )}
 
-          {/* Create Modal - USING INPUTNUMBER */}
           {level === 'types' && (
             <Form.Item
               name="baseRatePerSqFt"
@@ -264,7 +263,6 @@ const MasterCategory = () => {
               rules={[{ required: true }]}
               extra="For example, if the minimum total charge is $1000 for 100 sq. ft, enter 10 ($/sq. ft)."
             >
-              {/* Using InputNumber for strict number input */}
               <InputNumber style={{ width: '100%' }} placeholder="Enter rate" />
             </Form.Item>
           )}
@@ -284,15 +282,13 @@ const MasterCategory = () => {
     );
   };
 
-  // --- EDIT MODAL (UPDATED) ---
+  // --- EDIT MODAL ---
  const EditModal = () => {
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
       if (selectedItem) {
-        console.log("🔥 EDIT MODAL ITEM:", selectedItem);
-        
         form.setFieldsValue({
           name: selectedItem.name,
           label: selectedItem.label,
@@ -307,26 +303,18 @@ const MasterCategory = () => {
     const onUpdate = async (values) => {
       setSaving(true);
       try {
-        // 👇 CORRECTED URL CONSTRUCTION
-        let url = `${API_BASE}/${selectedItem._id}`; // Default for Root Category
+        let url = `${API_BASE}/${selectedItem._id}`; 
 
         if (level === 'subcategories') {
-            // Use ID from item if available (safer), otherwise fallback to state
             const catId = selectedItem.category?._id || selectedItem.category || parentCategory;
             url = `${API_BASE}/${catId}/subcategories/${selectedItem._id}`;
         }
         
         if (level === 'types') {
-            // Ensure we use the exact parent IDs associated with this Type
             const catId = selectedItem.category?._id || selectedItem.category || parentCategory;
             const subCatId = selectedItem.subcategory?._id || selectedItem.subcategory || parentSubcategory;
-            
-            // Matches: /api/estimate/master/category/:catId/subcategories/:subCatId/types/:typeId
             url = `${API_BASE}/${catId}/subcategories/${subCatId}/types/${selectedItem._id}`;
         }
-
-        console.log("🚀 EXECUTE PUT API:", url); 
-        console.log("📤 Payload:", values);
 
         await apiService.put(url, values);
         message.success('Updated successfully!');
@@ -427,14 +415,28 @@ const MasterCategory = () => {
 
       {/* Table Card */}
       <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }} bodyStyle={{ padding: 0 }}>
-        <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Input prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} placeholder="Search entries..." style={{ width: 320, borderRadius: '8px' }} onChange={e => setSearchTerm(e.target.value)} allowClear />
+        
+        {/* Buttons Toolbar (Search removed because it's in CustomTable) */}
+        <div style={{ padding: '16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
           <Space>
             <Button type={showTrash ? 'primary' : 'default'} danger={showTrash} icon={<RestOutlined />} onClick={() => setShowTrash(!showTrash)}>{showTrash ? 'Hide Trash' : 'View Trash'}</Button>
             <Button icon={<ReloadOutlined />} onClick={() => fetchData()} />
           </Space>
         </div>
-        <CustomTable columns={columns} data={data} loading={loading} totalItems={pagination.totalItems} currentPage={pagination.currentPage} onPageChange={fetchData} />
+
+        {/* KEY PROP ADDED HERE: 
+            Isse jab bhi aap folder (category/subcategory) change karenge, 
+            table automatically reset ho jayega (search clean, page 1).
+        */}
+        <CustomTable 
+            key={`${level}-${parentCategory || 'root'}-${parentSubcategory || 'none'}`}
+            columns={columns} 
+            data={data} // Pass raw data
+            loading={loading} 
+            totalItems={data.length} 
+            currentPage={pagination.currentPage} 
+            onPageChange={(page) => fetchData(page)} 
+        />
       </Card>
 
       <CreateModal key={level} />
@@ -448,7 +450,6 @@ const MasterCategory = () => {
             <p><Text type="secondary">Display Name:</Text> <br /> <Text strong>{selectedItem.name || selectedItem.label}</Text></p>
             <p><Text type="secondary">Description:</Text> <br /> <Text>{selectedItem.description || 'N/A'}</Text></p>
             <p><Text type="secondary">Current Level:</Text> <br /> <Tag color="purple">{level.toUpperCase()}</Tag></p>
-            {/* Display Base Unit in Details if available - Checks both keys */}
             {(selectedItem.base_unit || selectedItem.baseRatePerSqFt) !== undefined && (
                  <p><Text type="secondary">Base Unit:</Text> <br /> <Text strong>{selectedItem.baseRatePerSqFt ?? selectedItem.base_unit}</Text></p>
             )}
