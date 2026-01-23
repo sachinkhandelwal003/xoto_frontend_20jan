@@ -4,7 +4,11 @@ import {
   Card, Button, Space, Tag, Tooltip, Spin,
   Typography, Popconfirm, Input, Form, Modal, message,
   Row, Col, Statistic, Breadcrumb, Divider, Select, Switch,
+<<<<<<< HEAD
+  InputNumber
+=======
   InputNumber 
+>>>>>>> ef1184f210278df5efcd57f4c8025cc118030e83
 } from 'antd';
 import {
   PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined,
@@ -30,6 +34,12 @@ const THEME = {
 };
 
 const API_BASE = '/estimate/master/category';
+
+// --- HELPER FUNCTION FOR CAPITALIZATION ---
+const capitalizeFirstLetter = (string) => {
+  if (!string) return '';
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
 
 const MasterCategory = () => {
   const [level, setLevel] = useState('categories'); 
@@ -173,8 +183,15 @@ const MasterCategory = () => {
                 {level === 'types' && <TagsOutlined style={{ fontSize: '18px', color: THEME.warning }} />}
             </div>
             <div>
-              <div style={{ fontWeight: 600, color: '#262626' }}>{record.name || record.label}</div>
-              {record.description && <Text type="secondary" style={{ fontSize: '12px' }}>{record.description}</Text>}
+              {/* Added Capitalization for Display */}
+              <div style={{ fontWeight: 600, color: '#262626' }}>
+                {capitalizeFirstLetter(record.name || record.label)}
+              </div>
+              {record.description && (
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  {capitalizeFirstLetter(record.description)}
+                </Text>
+              )}
             </div>
           </div>
         ),
@@ -240,11 +257,21 @@ const MasterCategory = () => {
       <Modal title={`Add New ${level.slice(0, -1)}`} open={createModalOpen} onCancel={() => setCreateModalOpen(false)} footer={null} centered destroyOnClose>
         <Form form={form} layout="vertical" onFinish={onSubmit} style={{ marginTop: '16px' }}>
           {level === 'categories' ? (
-            <Form.Item name="name" label="Category Type" rules={[{ required: true }]}>
+            <Form.Item 
+                name="name" 
+                label="Category Type" 
+                rules={[{ required: true }]}
+                normalize={(value) => capitalizeFirstLetter(value)} // Capitalize on input
+            >
               <Input />
             </Form.Item>
           ) : (
-            <Form.Item name="label" label="Name" rules={[{ required: true }]}>
+            <Form.Item 
+                name="label" 
+                label="Name" 
+                rules={[{ required: true }]}
+                normalize={(value) => capitalizeFirstLetter(value)} // Capitalize on input
+            >
               <Input />
             </Form.Item>
           )}
@@ -260,7 +287,11 @@ const MasterCategory = () => {
             </Form.Item>
           )}
 
-          <Form.Item name="description" label="Description">
+          <Form.Item 
+            name="description" 
+            label="Description"
+            normalize={(value) => capitalizeFirstLetter(value)} // Capitalize Description too
+          >
             <TextArea rows={3} />
           </Form.Item>
 
@@ -295,7 +326,12 @@ const MasterCategory = () => {
     const onUpdate = async (values) => {
       setSaving(true);
       try {
+<<<<<<< HEAD
+        let url = `${API_BASE}/${selectedItem._id}`; // Default for Root Category
+
+=======
         let url = `${API_BASE}/${selectedItem._id}`;
+>>>>>>> ef1184f210278df5efcd57f4c8025cc118030e83
         if (level === 'subcategories') {
             const catId = selectedItem.category?._id || selectedItem.category || parentCategory;
             url = `${API_BASE}/${catId}/subcategories/${selectedItem._id}`;
@@ -305,6 +341,10 @@ const MasterCategory = () => {
             const subCatId = selectedItem.subcategory?._id || selectedItem.subcategory || parentSubcategory;
             url = `${API_BASE}/${catId}/subcategories/${subCatId}/types/${selectedItem._id}`;
         }
+<<<<<<< HEAD
+
+=======
+>>>>>>> ef1184f210278df5efcd57f4c8025cc118030e83
         await apiService.put(url, values);
         message.success('Updated successfully!');
         setEditModalOpen(false);
@@ -317,15 +357,34 @@ const MasterCategory = () => {
       <Modal title={`Edit ${level.slice(0, -1)}`} open={editModalOpen} onCancel={() => setEditModalOpen(false)} footer={null} centered destroyOnClose>
         <Form form={form} layout="vertical" onFinish={onUpdate} style={{ marginTop: '16px' }}>
           {level === 'categories' ? (
-            <Form.Item name="name" label="Category Type" rules={[{ required: true }]}>
+            <Form.Item 
+                name="name" 
+                label="Category Type" 
+                rules={[{ required: true }]}
+                normalize={(value) => capitalizeFirstLetter(value)} // Capitalize on Edit
+            >
               <Input />
             </Form.Item>
           ) : (
-            <Form.Item name="label" label="Name" rules={[{ required: true }]}>
+            <Form.Item 
+                name="label" 
+                label="Name" 
+                rules={[{ required: true }]}
+                normalize={(value) => capitalizeFirstLetter(value)} // Capitalize on Edit
+            >
               <Input />
             </Form.Item>
           )}
+<<<<<<< HEAD
+          
+          <Form.Item 
+            name="description" 
+            label="Description"
+            normalize={(value) => capitalizeFirstLetter(value)}
+          >
+=======
           <Form.Item name="description" label="Description">
+>>>>>>> ef1184f210278df5efcd57f4c8025cc118030e83
             <TextArea rows={3} />
           </Form.Item>
           <Row gutter={16}>
@@ -363,8 +422,8 @@ const MasterCategory = () => {
           <Title level={3} style={{ margin: 0 }}>Category Architecture</Title>
           <Breadcrumb separator=">">
             <Breadcrumb.Item onClick={() => { setLevel('categories'); setParentCategory(null); setSelectedCategory(null); }} style={{ cursor: 'pointer' }}><HomeOutlined /> Root</Breadcrumb.Item>
-            {selectedCategory && <Breadcrumb.Item onClick={() => { setLevel('subcategories'); setParentSubcategory(null); }} style={{ cursor: 'pointer' }}>{selectedCategory.name}</Breadcrumb.Item>}
-            {selectedSubcategory && <Breadcrumb.Item>{selectedSubcategory.label}</Breadcrumb.Item>}
+            {selectedCategory && <Breadcrumb.Item onClick={() => { setLevel('subcategories'); setParentSubcategory(null); }} style={{ cursor: 'pointer' }}>{capitalizeFirstLetter(selectedCategory.name)}</Breadcrumb.Item>}
+            {selectedSubcategory && <Breadcrumb.Item>{capitalizeFirstLetter(selectedSubcategory.label)}</Breadcrumb.Item>}
           </Breadcrumb>
         </Space>
         <Space>
@@ -409,8 +468,8 @@ const MasterCategory = () => {
         {selectedItem && (
           <div style={{ padding: '8px 0' }}>
             <p><Text type="secondary">ID:</Text> <br /> <Text strong>{selectedItem._id}</Text></p>
-            <p><Text type="secondary">Display Name:</Text> <br /> <Text strong>{selectedItem.name || selectedItem.label}</Text></p>
-            <p><Text type="secondary">Description:</Text> <br /> <Text>{selectedItem.description || 'N/A'}</Text></p>
+            <p><Text type="secondary">Display Name:</Text> <br /> <Text strong>{capitalizeFirstLetter(selectedItem.name || selectedItem.label)}</Text></p>
+            <p><Text type="secondary">Description:</Text> <br /> <Text>{capitalizeFirstLetter(selectedItem.description) || 'N/A'}</Text></p>
             <p><Text type="secondary">Current Level:</Text> <br /> <Tag color="purple">{level.toUpperCase()}</Tag></p>
             {(selectedItem.base_unit || selectedItem.baseRatePerSqFt) !== undefined && (
                  <p><Text type="secondary">Base Unit:</Text> <br /> <Text strong>{selectedItem.baseRatePerSqFt ?? selectedItem.base_unit}</Text></p>
