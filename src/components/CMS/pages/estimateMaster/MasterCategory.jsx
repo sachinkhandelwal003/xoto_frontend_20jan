@@ -4,7 +4,11 @@ import {
   Card, Button, Space, Tag, Tooltip, Spin,
   Typography, Popconfirm, Input, Form, Modal, message,
   Row, Col, Statistic, Breadcrumb, Divider, Select, Switch,
+<<<<<<< HEAD
   InputNumber
+=======
+  InputNumber 
+>>>>>>> ef1184f210278df5efcd57f4c8025cc118030e83
 } from 'antd';
 import {
   PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined,
@@ -19,10 +23,9 @@ import { apiService } from '../../../../manageApi/utils/custom.apiservice';
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-// --- THEME CONFIGURATION ---
 const THEME = {
-  primary: "#722ed1", // Purple
-  secondary: "#1890ff", // Blue
+  primary: "#722ed1",
+  secondary: "#1890ff",
   success: "#52c41a",
   warning: "#faad14",
   error: "#ff4d4f",
@@ -39,14 +42,12 @@ const capitalizeFirstLetter = (string) => {
 };
 
 const MasterCategory = () => {
-  // Navigation State
   const [level, setLevel] = useState('categories'); 
   const [parentCategory, setParentCategory] = useState(null);
   const [parentSubcategory, setParentSubcategory] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
-  // Data State
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,17 +55,15 @@ const MasterCategory = () => {
 
   const [pagination, setPagination] = useState({
     currentPage: 1,
-    itemsPerPage: 10,
+    itemsPerPage: 100, // Locked to 100
     totalItems: 0,
   });
 
-  // Modal States
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
-  // Stats Calculation
   const stats = useMemo(() => {
     return {
       total: pagination.totalItems,
@@ -73,14 +72,14 @@ const MasterCategory = () => {
     };
   }, [data, pagination.totalItems]);
 
-  // Fetch data based on current level
-  const fetchData = useCallback(async (page = 1, limit = 10) => {
+  const fetchData = useCallback(async (page = 1, limit = 100) => {
     setLoading(true);
     try {
+      const forcedLimit = 100; // Always request 100 items
       let url = API_BASE;
       const params = { 
         page, 
-        limit, 
+        limit: forcedLimit, 
         search: searchTerm || undefined,
         active: showTrash ? 'false' : undefined 
       };
@@ -89,20 +88,23 @@ const MasterCategory = () => {
       if (level === 'subcategories') {
         url = `${API_BASE}/${parentCategory}/subcategories`;
         response = await apiService.get(url, params);
-        setData(response.data || []);
+        setData(response.data || response.subcategories || []);
       } else if (level === 'types') {
         url = `${API_BASE}/${parentCategory}/subcategories/${parentSubcategory}/types`;
+        // 🔥 Added params here so limit 100 works for types too
         response = await apiService.get(url, params);
-        setData(response.data || []);
+        const typeData = response.data || response.types || response; 
+        setData(Array.isArray(typeData) ? typeData : []);
       } else {
+        // 🔥 Added params here for categories too
         response = await apiService.get(url, params);
         setData(response.categories || response.data || []);
       }
 
       setPagination({
         currentPage: response.pagination?.page || page,
-        itemsPerPage: response.pagination?.limit || limit,
-        totalItems: response.pagination?.total || response.data?.length || response.categories?.length || 0,
+        itemsPerPage: forcedLimit, 
+        totalItems: response.pagination?.total || (Array.isArray(response.data) ? response.data.length : 0) || (Array.isArray(response.categories) ? response.categories.length : 0) || 0,
       });
     } catch (err) {
       message.error('Failed to load data');
@@ -113,10 +115,10 @@ const MasterCategory = () => {
   }, [level, parentCategory, parentSubcategory, searchTerm, showTrash]);
 
   useEffect(() => {
-    fetchData(pagination.currentPage, pagination.itemsPerPage);
+    fetchData(pagination.currentPage, 100);
   }, [fetchData]);
 
-  // Reset page when level changes
+  // Reset page to 1 when navigating levels
   useEffect(() => {
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   }, [level, parentCategory, parentSubcategory]);
@@ -131,10 +133,9 @@ const MasterCategory = () => {
       let url = `${API_BASE}/${id}`;
       if (level === 'subcategories') url = `${API_BASE}/${parentCategory}/subcategories/${id}`;
       if (level === 'types') url = `${API_BASE}/${parentCategory}/subcategories/${parentSubcategory}/types/${id}`;
-
       await apiService.delete(url);
       message.success('Deactivated successfully');
-      fetchData();
+      fetchData(1);
     } catch (err) {
       message.error('Operation failed');
     }
@@ -165,7 +166,7 @@ const MasterCategory = () => {
   };
 
   const columns = useMemo(() => {
-    const cols = [
+    return [
       {
         title: level === 'categories' ? 'Category Name' : level === 'subcategories' ? 'Subcategory' : 'Type',
         key: 'name',
@@ -224,16 +225,14 @@ const MasterCategory = () => {
               <Button size="small" icon={<EyeOutlined />} onClick={() => { setSelectedItem(record); setDetailsOpen(true); }} />
             </Tooltip>
             <Popconfirm title="Deactivate this item?" onConfirm={() => handleDelete(record._id)}>
-               <Button size="small" danger icon={<DeleteOutlined />} />
+                <Button size="small" danger icon={<DeleteOutlined />} />
             </Popconfirm>
           </Space>
         ),
       },
     ];
-    return cols;
   }, [level]);
 
-  // --- CREATE MODAL ---
   const CreateModal = () => {
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
@@ -242,16 +241,14 @@ const MasterCategory = () => {
       setSaving(true);
       try {
         let url = API_BASE;
-        let payload = values;
-
         if (level === 'subcategories') url = `${API_BASE}/${parentCategory}/subcategories`;
         if (level === 'types') url = `${API_BASE}/${parentCategory}/subcategories/${parentSubcategory}/types`;
 
-        await apiService.post(url, payload);
+        await apiService.post(url, values);
         message.success('Created successfully!');
         setCreateModalOpen(false);
         form.resetFields();
-        fetchData(1);
+        fetchData(1); 
       } catch (err) { message.error('Create failed'); } 
       finally { setSaving(false); }
     };
@@ -284,7 +281,7 @@ const MasterCategory = () => {
               name="baseRatePerSqFt"
               label="Base Rate per Sq. Ft"
               rules={[{ required: true }]}
-              extra="For example, if the minimum total charge is $1000 for 100 sq. ft, enter 10 ($/sq. ft)."
+              extra="Example: Enter 10 ($/sq. ft)."
             >
               <InputNumber style={{ width: '100%' }} placeholder="Enter rate" />
             </Form.Item>
@@ -309,8 +306,7 @@ const MasterCategory = () => {
     );
   };
 
-  // --- EDIT MODAL (UPDATED) ---
- const EditModal = () => {
+  const EditModal = () => {
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
 
@@ -330,41 +326,36 @@ const MasterCategory = () => {
     const onUpdate = async (values) => {
       setSaving(true);
       try {
+<<<<<<< HEAD
         let url = `${API_BASE}/${selectedItem._id}`; // Default for Root Category
 
+=======
+        let url = `${API_BASE}/${selectedItem._id}`;
+>>>>>>> ef1184f210278df5efcd57f4c8025cc118030e83
         if (level === 'subcategories') {
             const catId = selectedItem.category?._id || selectedItem.category || parentCategory;
             url = `${API_BASE}/${catId}/subcategories/${selectedItem._id}`;
         }
-        
         if (level === 'types') {
             const catId = selectedItem.category?._id || selectedItem.category || parentCategory;
             const subCatId = selectedItem.subcategory?._id || selectedItem.subcategory || parentSubcategory;
             url = `${API_BASE}/${catId}/subcategories/${subCatId}/types/${selectedItem._id}`;
         }
+<<<<<<< HEAD
 
+=======
+>>>>>>> ef1184f210278df5efcd57f4c8025cc118030e83
         await apiService.put(url, values);
         message.success('Updated successfully!');
         setEditModalOpen(false);
-        fetchData();
-      } catch (err) { 
-        console.error("Update Error:", err);
-        message.error('Update failed'); 
-      } 
+        fetchData(pagination.currentPage);
+      } catch (err) { message.error('Update failed'); } 
       finally { setSaving(false); }
     };
 
     return (
-      <Modal 
-        title={`Edit ${level.slice(0, -1)}`} 
-        open={editModalOpen} 
-        onCancel={() => setEditModalOpen(false)} 
-        footer={null} 
-        centered 
-        destroyOnClose
-      >
+      <Modal title={`Edit ${level.slice(0, -1)}`} open={editModalOpen} onCancel={() => setEditModalOpen(false)} footer={null} centered destroyOnClose>
         <Form form={form} layout="vertical" onFinish={onUpdate} style={{ marginTop: '16px' }}>
-          
           {level === 'categories' ? (
             <Form.Item 
                 name="name" 
@@ -384,21 +375,21 @@ const MasterCategory = () => {
               <Input />
             </Form.Item>
           )}
+<<<<<<< HEAD
           
           <Form.Item 
             name="description" 
             label="Description"
             normalize={(value) => capitalizeFirstLetter(value)}
           >
+=======
+          <Form.Item name="description" label="Description">
+>>>>>>> ef1184f210278df5efcd57f4c8025cc118030e83
             <TextArea rows={3} />
           </Form.Item>
-
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item 
-                name="baseEstimationValueUnit" 
-                label="Base Unit"
-              >
+              <Form.Item name="baseEstimationValueUnit" label="Base Unit">
                  <InputNumber style={{ width: '100%' }} placeholder="0" />
               </Form.Item>
             </Col>
@@ -413,7 +404,6 @@ const MasterCategory = () => {
               </Form.Item>
             </Col>
           </Row>
-
           <div style={{ display: 'flex', justifyContent: 'end', gap: '8px', marginTop: '10px' }}>
             <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
             <Button type="primary" htmlType="submit" loading={saving} style={{ background: THEME.primary }}>
@@ -427,7 +417,6 @@ const MasterCategory = () => {
 
   return (
     <div style={{ padding: '24px', background: '#f5f7fa', minHeight: '100vh' }}>
-      {/* Header & Breadcrumb */}
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <Space direction="vertical" size={4}>
           <Title level={3} style={{ margin: 0 }}>Category Architecture</Title>
@@ -443,33 +432,38 @@ const MasterCategory = () => {
         </Space>
       </div>
 
-      {/* Stats */}
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
         {[{ t: 'Total', v: stats.total, c: THEME.primary, i: <AppstoreOutlined /> }, { t: 'Active', v: stats.active, c: THEME.success, i: <DatabaseOutlined /> }, { t: 'Trash/Inactive', v: stats.trashed, c: THEME.error, i: <RestOutlined /> }].map((s, idx) => (
           <Col xs={24} sm={8} key={idx}>
             <Card bordered={false} style={{ borderRadius: '12px', borderBottom: `3px solid ${s.c}` }}>
-              <Statistic title={s.t} value={s.v} prefix={s.i} valueStyle={{ color: '#262626' }} />
+              <Statistic title={s.t} value={s.v} prefix={s.i} />
             </Card>
           </Col>
         ))}
       </Row>
 
-      {/* Table Card */}
-      <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }} bodyStyle={{ padding: 0 }}>
-        <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Input prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} placeholder="Search entries..." style={{ width: 320, borderRadius: '8px' }} onChange={e => setSearchTerm(e.target.value)} allowClear />
+      <Card bordered={false} style={{ borderRadius: '12px' }} bodyStyle={{ padding: 0 }}>
+        <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between' }}>
+          <Input prefix={<SearchOutlined />} placeholder="Search entries..." style={{ width: 320 }} onChange={e => setSearchTerm(e.target.value)} allowClear />
           <Space>
             <Button type={showTrash ? 'primary' : 'default'} danger={showTrash} icon={<RestOutlined />} onClick={() => setShowTrash(!showTrash)}>{showTrash ? 'Hide Trash' : 'View Trash'}</Button>
-            <Button icon={<ReloadOutlined />} onClick={() => fetchData()} />
+            <Button icon={<ReloadOutlined />} onClick={() => fetchData(1)} />
           </Space>
         </div>
-        <CustomTable columns={columns} data={data} loading={loading} totalItems={pagination.totalItems} currentPage={pagination.currentPage} onPageChange={fetchData} />
+        <CustomTable 
+          columns={columns} 
+          data={data} 
+          loading={loading} 
+          totalItems={pagination.totalItems} 
+          currentPage={pagination.currentPage} 
+          pageSize={100} // 🔥 Force table to show 100 rows
+          onPageChange={(p, l) => fetchData(p, 100)} 
+        />
       </Card>
 
-      <CreateModal key={level} />
-      <EditModal />
+      <CreateModal key={`create-${level}`} />
+      <EditModal key={`edit-${selectedItem?._id}`} />
 
-      {/* Details View */}
       <Modal title="Detailed View" open={detailsOpen} onCancel={() => setDetailsOpen(false)} footer={<Button onClick={() => setDetailsOpen(false)}>Close</Button>} centered>
         {selectedItem && (
           <div style={{ padding: '8px 0' }}>
@@ -477,7 +471,6 @@ const MasterCategory = () => {
             <p><Text type="secondary">Display Name:</Text> <br /> <Text strong>{capitalizeFirstLetter(selectedItem.name || selectedItem.label)}</Text></p>
             <p><Text type="secondary">Description:</Text> <br /> <Text>{capitalizeFirstLetter(selectedItem.description) || 'N/A'}</Text></p>
             <p><Text type="secondary">Current Level:</Text> <br /> <Tag color="purple">{level.toUpperCase()}</Tag></p>
-            {/* Display Base Unit in Details if available - Checks both keys */}
             {(selectedItem.base_unit || selectedItem.baseRatePerSqFt) !== undefined && (
                  <p><Text type="secondary">Base Unit:</Text> <br /> <Text strong>{selectedItem.baseRatePerSqFt ?? selectedItem.base_unit}</Text></p>
             )}
