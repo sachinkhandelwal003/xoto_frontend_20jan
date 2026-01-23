@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Form,
   Input,
@@ -19,12 +19,13 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import styled from "styled-components";
 import axios from "axios";
+import { Country } from "country-state-city"; // Sirf flags ke liye
+import { parsePhoneNumberFromString } from "libphonenumber-js"; // Validation ke liye
 
 import {
   MailOutlined,
   LockOutlined,
   PhoneOutlined,
-  GlobalOutlined,
   UploadOutlined,
   ApartmentOutlined,
 } from "@ant-design/icons";
@@ -86,20 +87,21 @@ const RegistrationAgency = () => {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
-  const [selectedCountry, setSelectedCountry] = useState("+971");
-
   const themeColor = "#4F46E5";
   const themeGradient = "linear-gradient(135deg, #4F46E5, #4338ca)";
-  
-  // ✅ API Base URL
   const BASE_URL = "https://xoto.ae";
 
-  const countryRules = {
-    "+971": { digits: 9, placeholder: "50 123 4567" },
-    "+91":  { digits: 10, placeholder: "98765 43210" },
-    "+1":   { digits: 10, placeholder: "202 555 0123" },
-    "+44":  { digits: 10, placeholder: "7700 900077" }
-  };
+  // --- Prepare Country Codes with Flags ---
+  const countryPhoneData = useMemo(() => {
+    const allCountries = Country.getAllCountries();
+    return allCountries.map((c) => ({
+      iso: c.isoCode.toLowerCase(),
+      name: c.name,
+      phone: `+${c.phonecode}`,
+      value: `+${c.phonecode}`,
+      searchStr: `${c.name} ${c.phonecode}`,
+    }));
+  }, []);
 
   const normFile = (e) => {
     if (Array.isArray(e)) {
@@ -108,32 +110,26 @@ const RegistrationAgency = () => {
     return e?.fileList;
   };
 
-  // ✅ MAIN SUBMIT FUNCTION
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      console.log("🚀 Starting JSON Registration...");
-      
-      // ✅ 1. Create a Standard JSON Object
       const payload = {
         email: values.email,
         password: values.password,
         country_code: values.country_code,
         mobile_number: values.mobile_number,
-        // Note: Files cannot be sent via JSON. 
-        // If you need files, you must use FormData or upload them separately.
+        
+        // Handling File Objects if needed by your API structure
+        profile_photo: values.profile_photo?.[0]?.originFileObj, 
+        letter_of_authority: values.letter_of_authority?.[0]?.originFileObj, 
       };
 
       console.log("📡 Sending Payload:", payload);
 
-      // ✅ 2. Send as JSON
       const response = await axios.post(
         `${BASE_URL}/api/agency/agency-signup`, 
         payload
-        // No headers needed, Axios defaults to application/json
       );
-
-      console.log("✅ Response:", response.data);
 
       if (response.data) {
         toast.success("Registration Successful! Please Login.");
@@ -142,12 +138,10 @@ const RegistrationAgency = () => {
 
     } catch (error) {
       console.error("❌ Registration Error:", error);
-      
       const errorMessage = 
         error.response?.data?.message || 
         error.message || 
         "Registration Failed.";
-        
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -236,7 +230,7 @@ const RegistrationAgency = () => {
                   </Col>
                 </Row>
 
-                {/* --- Contact Details --- */}
+                {/* --- Contact Details with Flag & Validation --- */}
                 <Divider orientation="left" style={{ borderColor: "#e5e7eb", marginTop: 30 }}>
                     <span style={{ color: themeColor, fontSize: 13, fontWeight: "bold", letterSpacing: 1 }}>
                         CONTACT DETAILS
@@ -251,35 +245,72 @@ const RegistrationAgency = () => {
                             rules={[{ required: true, message: "Required" }]}
                         >
                             <Select 
-                                placeholder="Code" 
-                                onChange={(val) => {
-                                    setSelectedCountry(val);
-                                    form.setFieldsValue({ mobile_number: "" });
-                                }}
+                                showSearch
+                                optionFilterProp="children"
+                                filterOption={(input, option) => 
+                                    (option['data-search'] || "").toLowerCase().includes(input.toLowerCase())
+                                }
                             >
-                                <Option value="+971">+971 (UAE)</Option>
-                                <Option value="+91">+91 (IND)</Option>
-                                <Option value="+1">+1 (USA)</Option>
-                                <Option value="+44">+44 (UK)</Option>
+                                {countryPhoneData.map((country, index) => (
+                                    <Option 
+                                      key={`${country.iso}-${index}`} 
+                                      value={country.value}
+                                      data-search={country.searchStr}
+                                    >
+                                      <div style={{ display: "flex", alignItems: "center" }}>
+                                        <img 
+                                          src={`https://flagcdn.com/w20/${country.iso}.png`} 
+                                          srcSet={`https://flagcdn.com/w40/${country.iso}.png 2x`}
+                                          width="20" 
+                                          alt={country.name} 
+                                          style={{ marginRight: 8, borderRadius: 2 }} 
+                                        />
+                                        <span>{country.phone}</span>
+                                        <span style={{ color: "#999", fontSize: "12px", marginLeft: "6px" }}>
+                                           ({country.iso.toUpperCase()})
+                                        </span>
+                                      </div>
+                                    </Option>
+                                ))}
                             </Select>
                         </Form.Item>
                     </Col>
                     <Col xs={24} md={16}>
                         <Form.Item
                             name="mobile_number"
-                            label={`Mobile Number (${countryRules[selectedCountry]?.digits} Digits)`}
+                            label="Mobile Number"
+                            dependencies={['country_code']}
                             rules={[
                                 { required: true, message: "Mobile number is required" },
-                                { 
-                                    pattern: new RegExp(`^[0-9]{${countryRules[selectedCountry]?.digits}}$`), 
-                                    message: `Please enter valid ${countryRules[selectedCountry]?.digits} digit number` 
-                                }
+                                ({ getFieldValue }) => ({
+                                    validator(_, value) {
+                                        const countryCode = getFieldValue('country_code');
+                                        if (!value || !countryCode) {
+                                            return Promise.resolve();
+                                        }
+                                        const fullNumber = `${countryCode}${value}`;
+                                        const phoneNumber = parsePhoneNumberFromString(fullNumber);
+
+                                        if (phoneNumber && phoneNumber.isValid()) {
+                                            return Promise.resolve();
+                                        }
+                                        return Promise.reject(new Error(`Invalid number length for ${countryCode}`));
+                                    },
+                                }),
                             ]}
                         >
                         <Input 
                             prefix={<PhoneOutlined style={{color: "#aaa"}} />} 
-                            placeholder={countryRules[selectedCountry]?.placeholder} 
-                            maxLength={countryRules[selectedCountry]?.digits}
+                            placeholder="e.g. 50 123 4567" 
+                            maxLength={15}
+                            onChange={(e) => {
+                                // Only allow digits
+                                const { value } = e.target;
+                                const reg = /^\d*$/;
+                                if (reg.test(value)) {
+                                    form.setFieldsValue({ mobile_number: value });
+                                }
+                            }}
                             style={{ borderRadius: 8 }} 
                         />
                         </Form.Item>
