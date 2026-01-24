@@ -27,7 +27,6 @@ import {
   PhoneOutlined,
   LockOutlined,
   DeleteOutlined,
-  SearchOutlined,
   TeamOutlined,
   SafetyCertificateFilled,
   CheckCircleOutlined,
@@ -52,7 +51,6 @@ const THEME = {
 };
 
 // --- COUNTRY DATA CONFIGURATION ---
-// len: The EXACT number of digits required for that country
 const COUNTRY_CODES = [
   { code: 'AE', dial: '+971', flag: '🇦🇪', len: 9, name: 'UAE' },
   { code: 'IN', dial: '+91', flag: '🇮🇳', len: 10, name: 'India' },
@@ -64,14 +62,15 @@ const COUNTRY_CODES = [
 
 const UsersRoleList = () => {
   const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState([]); 
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const [totalUsers, setTotalUsers] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  
-  const [activeTab, setActiveTab] = useState('all'); 
-  const [searchText, setSearchText] = useState('');
+
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchText, setSearchText] = useState(''); // ✅ still used for API calls
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
 
@@ -82,6 +81,34 @@ const UsersRoleList = () => {
       rolesCount: roles.length
     };
   }, [totalUsers, users, roles]);
+
+  // ✅ Flatten users for CustomTable search (objects skip hotey hain)
+  const flattenUsersForSearch = (list = []) => {
+    return list.map((u) => {
+      const first = u?.name?.first_name || "";
+      const last = u?.name?.last_name || "";
+      const fullName = `${first} ${last}`.trim();
+
+      const email = u?.email || "";
+      const mobile = u?.mobile || "";
+
+      const roleName = u?.role?.name || "";
+      const statusText = u?.isActive ? "Active" : "Inactive";
+
+      return {
+        ...u,
+
+        // ✅ flat searchable fields
+        __search_name: fullName,
+        __search_first: first,
+        __search_last: last,
+        __search_email: email,
+        __search_mobile: mobile,
+        __search_role: roleName,
+        __search_status: statusText,
+      };
+    });
+  };
 
   // --- API CALLS ---
   const fetchRoles = async () => {
@@ -107,7 +134,10 @@ const UsersRoleList = () => {
       };
 
       const res = await apiService.get('/users', params);
-      setUsers(res.data || []);
+
+      // ✅ IMPORTANT: flatten before setting
+      setUsers(flattenUsersForSearch(res.data || []));
+
       setTotalUsers(res.pagination?.total || 0);
       setCurrentPage(res.pagination?.page || page);
       setItemsPerPage(res.pagination?.limit || limit);
@@ -123,9 +153,10 @@ const UsersRoleList = () => {
     fetchUsers(1, 10, 'all');
   }, []);
 
+  // ✅ keep tab/search working for backend calls (if backend supports)
   useEffect(() => {
     const timer = setTimeout(() => {
-        fetchUsers(1, itemsPerPage, activeTab, searchText);
+      fetchUsers(1, itemsPerPage, activeTab, searchText);
     }, 300);
     return () => clearTimeout(timer);
   }, [activeTab, searchText]);
@@ -171,7 +202,7 @@ const UsersRoleList = () => {
       await apiService.post('/users/register', {
         name: { first_name: values.first_name, last_name: values.last_name },
         email: values.email,
-        mobile: fullMobile, 
+        mobile: fullMobile,
         password: values.password,
         confirm_password: values.confirm_password,
         role: values.role,
@@ -204,18 +235,18 @@ const UsersRoleList = () => {
       title: 'Team Member',
       render: (_, r) => (
         <Space>
-          <Avatar 
-            size="large" 
+          <Avatar
+            size="large"
             style={{ backgroundColor: THEME.primary, verticalAlign: 'middle' }}
           >
             {r.name?.first_name?.charAt(0)?.toUpperCase()}
           </Avatar>
           <div>
             <div className="font-bold text-gray-800">
-                {r.name?.first_name} {r.name?.last_name}
+              {r.name?.first_name} {r.name?.last_name}
             </div>
             <div className="text-xs text-gray-500 flex items-center gap-1">
-                <MailOutlined /> {r.email}
+              <MailOutlined /> {r.email}
             </div>
           </div>
         </Space>
@@ -226,7 +257,7 @@ const UsersRoleList = () => {
       title: 'Contact',
       render: (_, r) => (
         <div className="text-gray-600">
-            <PhoneOutlined className="mr-2" /> {r.mobile}
+          <PhoneOutlined className="mr-2" /> {r.mobile}
         </div>
       )
     },
@@ -237,11 +268,11 @@ const UsersRoleList = () => {
         let color = 'default';
         if (r.role?.name === 'Supervisor') color = 'geekblue';
         if (r.role?.name === 'Accountant') color = 'purple';
-        
+
         return (
-            <Tag color={color} style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 500 }}>
-                {r.role?.name || 'N/A'}
-            </Tag>
+          <Tag color={color} style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 500 }}>
+            {r.role?.name || 'N/A'}
+          </Tag>
         );
       },
     },
@@ -250,14 +281,14 @@ const UsersRoleList = () => {
       title: 'Status',
       render: (_, r) => (
         <Space>
-            <Switch
-                checked={r.isActive}
-                onChange={() => toggleStatus(r._id, r.isActive)}
-                checkedChildren={<CheckCircleOutlined />}
-                unCheckedChildren={<StopOutlined />}
-                style={{ backgroundColor: r.isActive ? THEME.success : undefined }}
-            />
-            <span className="text-xs text-gray-500">{r.isActive ? 'Active' : 'Inactive'}</span>
+          <Switch
+            checked={r.isActive}
+            onChange={() => toggleStatus(r._id, r.isActive)}
+            checkedChildren={<CheckCircleOutlined />}
+            unCheckedChildren={<StopOutlined />}
+            style={{ backgroundColor: r.isActive ? THEME.success : undefined }}
+          />
+          <span className="text-xs text-gray-500">{r.isActive ? 'Active' : 'Inactive'}</span>
         </Space>
       ),
     },
@@ -266,19 +297,19 @@ const UsersRoleList = () => {
       title: 'Action',
       align: 'center',
       render: (_, r) => (
-        <Popconfirm 
-            title="Delete Member?" 
-            description="This action cannot be undone."
-            onConfirm={() => deleteUser(r._id)}
-            okText="Delete"
-            cancelText="Cancel"
-            okButtonProps={{ danger: true }}
+        <Popconfirm
+          title="Delete Member?"
+          description="This action cannot be undone."
+          onConfirm={() => deleteUser(r._id)}
+          okText="Delete"
+          cancelText="Cancel"
+          okButtonProps={{ danger: true }}
         >
-          <Button 
-            type="text" 
-            danger 
+          <Button
+            type="text"
+            danger
             shape="circle"
-            icon={<DeleteOutlined />} 
+            icon={<DeleteOutlined />}
           />
         </Popconfirm>
       ),
@@ -308,8 +339,8 @@ const UsersRoleList = () => {
   // --- COUNTRY SELECTOR COMPONENT (DEFAULT UAE) ---
   const prefixSelector = (
     <Form.Item name="country_code" noStyle initialValue="+971">
-      <Select 
-        style={{ width: 90 }} 
+      <Select
+        style={{ width: 90 }}
         popupMatchSelectWidth={false}
         optionLabelProp="label"
       >
@@ -327,92 +358,83 @@ const UsersRoleList = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      
+
       {/* Header & Stats */}
       <div className="mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-            <div>
-                <Title level={3} style={{ margin: 0 }}>Team Management</Title>
-                <Text type="secondary">Manage Supervisors, Accountants, and other staff.</Text>
-            </div>
-            <Button
-                type="primary"
-                size="large"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                    form.resetFields();
-                    setModalVisible(true);
-                }}
-                style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}
-            >
-                Add Team Member
-            </Button>
+          <div>
+            <Title level={3} style={{ margin: 0 }}>Team Management</Title>
+            <Text type="secondary">Manage Supervisors, Accountants, and other staff.</Text>
+          </div>
+          <Button
+            type="primary"
+            size="large"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              form.resetFields();
+              setModalVisible(true);
+            }}
+            style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}
+          >
+            Add Team Member
+          </Button>
         </div>
 
         <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12}>
-                <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.primary }}>
-                    <Statistic 
-                        title="Total Members" 
-                        value={stats.total} 
-                        prefix={<TeamOutlined style={{ color: THEME.primary }} />} 
-                    />
-                </Card>
-            </Col>
-            <Col xs={24} sm={12}>
-                <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.success }}>
-                    <Statistic 
-                        title="Active Members" 
-                        value={stats.active} 
-                        prefix={<CheckCircleOutlined style={{ color: THEME.success }} />} 
-                    />
-                </Card>
-            </Col>
+          <Col xs={24} sm={12}>
+            <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.primary }}>
+              <Statistic
+                title="Total Members"
+                value={stats.total}
+                prefix={<TeamOutlined style={{ color: THEME.primary }} />}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.success }}>
+              <Statistic
+                title="Active Members"
+                value={stats.active}
+                prefix={<CheckCircleOutlined style={{ color: THEME.success }} />}
+              />
+            </Card>
+          </Col>
         </Row>
       </div>
 
       {/* Main Table */}
       <Card bordered={false} className="shadow-md rounded-lg" bodyStyle={{ padding: 0 }}>
-        <div className="p-4 border-b border-gray-100 bg-white rounded-t-lg">
-            <Input 
-                prefix={<SearchOutlined className="text-gray-400" />}
-                placeholder="Search by name, email, or mobile..." 
-                size="large"
-                onChange={(e) => setSearchText(e.target.value)}
-                style={{ maxWidth: 400 }}
-                allowClear
-            />
-        </div>
+        {/* ✅ Removed top search bar (CustomTable ka search use hoga) */}
 
         <Tabs
-            activeKey={activeTab}
-            onChange={handleTabChange}
-            type="card"
-            size="large"
-            tabBarStyle={{ margin: 0, paddingLeft: 16, paddingTop: 16, background: '#fafafa' }}
-            items={tabItems}
+          activeKey={activeTab}
+          onChange={handleTabChange}
+          type="card"
+          size="large"
+          tabBarStyle={{ margin: 0, paddingLeft: 16, paddingTop: 16, background: '#fafafa' }}
+          items={tabItems}
         />
 
         <div className="p-0">
-            <CustomTable
-                columns={columns}
-                data={users}
-                loading={loading}
-                totalItems={totalUsers}
-                currentPage={currentPage}
-                itemsPerPage={itemsPerPage}
-                onPageChange={handlePageChange}
-            />
+          <CustomTable
+            columns={columns}
+            data={users}
+            loading={loading}
+            totalItems={totalUsers}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+          />
         </div>
       </Card>
 
       {/* Create User Modal */}
       <Modal
         title={
-            <div className="flex items-center gap-2 text-xl font-bold text-gray-800">
-                <UserOutlined style={{ color: THEME.primary }} />
-                Add Team Member
-            </div>
+          <div className="flex items-center gap-2 text-xl font-bold text-gray-800">
+            <UserOutlined style={{ color: THEME.primary }} />
+            Add Team Member
+          </div>
         }
         open={modalVisible}
         onCancel={() => {
@@ -428,68 +450,64 @@ const UsersRoleList = () => {
         <Form form={form} onFinish={handleCreate} layout="vertical">
           <Row gutter={16}>
             <Col span={12}>
-                <Form.Item name="first_name" label="First Name" rules={[{ required: true }]}>
-                    <Input prefix={<UserOutlined className="text-gray-400" />} size="large" placeholder="John" />
-                </Form.Item>
+              <Form.Item name="first_name" label="First Name" rules={[{ required: true }]}>
+                <Input prefix={<UserOutlined className="text-gray-400" />} size="large" placeholder="John" />
+              </Form.Item>
             </Col>
             <Col span={12}>
-                <Form.Item name="last_name" label="Last Name" rules={[{ required: true }]}>
-                    <Input prefix={<UserOutlined className="text-gray-400" />} size="large" placeholder="Doe" />
-                </Form.Item>
+              <Form.Item name="last_name" label="Last Name" rules={[{ required: true }]}>
+                <Input prefix={<UserOutlined className="text-gray-400" />} size="large" placeholder="Doe" />
+              </Form.Item>
             </Col>
           </Row>
 
           <Row gutter={16}>
             <Col span={12}>
-                <Form.Item name="email" label="Email Address" rules={[{ required: true, type: 'email' }]}>
-                    <Input prefix={<MailOutlined className="text-gray-400" />} size="large" placeholder="john@example.com" />
-                </Form.Item>
+              <Form.Item name="email" label="Email Address" rules={[{ required: true, type: 'email' }]}>
+                <Input prefix={<MailOutlined className="text-gray-400" />} size="large" placeholder="john@example.com" />
+              </Form.Item>
             </Col>
             <Col span={12}>
-                {/* --- DYNAMIC MOBILE FIELD VALIDATION --- */}
-                {/* We use shouldUpdate to re-render this specific Form.Item when country_code changes */}
-                <Form.Item
-                  noStyle
-                  shouldUpdate={(prevValues, currentValues) => prevValues.country_code !== currentValues.country_code}
-                >
-                  {({ getFieldValue }) => {
-                    const countryDial = getFieldValue('country_code') || '+971'; // Default UAE
-                    const country = COUNTRY_CODES.find(c => c.dial === countryDial);
-                    const requiredLen = country ? country.len : 10; // Default 10 if not found
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, currentValues) => prevValues.country_code !== currentValues.country_code}
+              >
+                {({ getFieldValue }) => {
+                  const countryDial = getFieldValue('country_code') || '+971';
+                  const country = COUNTRY_CODES.find(c => c.dial === countryDial);
+                  const requiredLen = country ? country.len : 10;
 
-                    return (
-                        <Form.Item
-                            name="mobile"
-                            label="Mobile Number"
-                            rules={[
-                                { required: true, message: 'Please enter mobile number' },
-                                {
-                                    validator: (_, value) => {
-                                        if (!value) return Promise.resolve();
-                                        // 1. Check for non-digits
-                                        if (!/^\d+$/.test(value)) {
-                                            return Promise.reject(new Error('Only digits allowed'));
-                                        }
-                                        // 2. Strict length check
-                                        if (value.length !== requiredLen) {
-                                            return Promise.reject(new Error(`${country?.name || 'This country'} requires exactly ${requiredLen} digits`));
-                                        }
-                                        return Promise.resolve();
-                                    }
-                                }
-                            ]}
-                        >
-                            <Input 
-                                addonBefore={prefixSelector} 
-                                style={{ width: '100%' }} 
-                                size="large" 
-                                placeholder={`${requiredLen} digits`} 
-                                maxLength={requiredLen} // <--- PREVENTS TYPING MORE THAN ALLOWED
-                            />
-                        </Form.Item>
-                    );
-                  }}
-                </Form.Item>
+                  return (
+                    <Form.Item
+                      name="mobile"
+                      label="Mobile Number"
+                      rules={[
+                        { required: true, message: 'Please enter mobile number' },
+                        {
+                          validator: (_, value) => {
+                            if (!value) return Promise.resolve();
+                            if (!/^\d+$/.test(value)) {
+                              return Promise.reject(new Error('Only digits allowed'));
+                            }
+                            if (value.length !== requiredLen) {
+                              return Promise.reject(new Error(`${country?.name || 'This country'} requires exactly ${requiredLen} digits`));
+                            }
+                            return Promise.resolve();
+                          }
+                        }
+                      ]}
+                    >
+                      <Input
+                        addonBefore={prefixSelector}
+                        style={{ width: '100%' }}
+                        size="large"
+                        placeholder={`${requiredLen} digits`}
+                        maxLength={requiredLen}
+                      />
+                    </Form.Item>
+                  );
+                }}
+              </Form.Item>
             </Col>
           </Row>
 
@@ -497,38 +515,38 @@ const UsersRoleList = () => {
             <Select placeholder="Select role" size="large">
               {roles.map(r => (
                 <Option key={r._id} value={r._id}>
-                    <Space>
-                        <SafetyCertificateFilled style={{ color: THEME.secondary }} /> 
-                        {r.name}
-                    </Space>
+                  <Space>
+                    <SafetyCertificateFilled style={{ color: THEME.secondary }} />
+                    {r.name}
+                  </Space>
                 </Option>
               ))}
             </Select>
           </Form.Item>
 
           <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-100">
-              <Row gutter={16}>
-                <Col span={12}>
-                    <Form.Item name="password" label="Password" rules={[{ required: true, min: 6 }]} style={{ marginBottom: 0 }}>
-                        <Input.Password prefix={<LockOutlined className="text-gray-400" />} size="large" placeholder="••••••" />
-                    </Form.Item>
-                </Col>
-                <Col span={12}>
-                    <Form.Item name="confirm_password" label="Confirm Password" rules={[{ required: true }]} style={{ marginBottom: 0 }}>
-                        <Input.Password prefix={<LockOutlined className="text-gray-400" />} size="large" placeholder="••••••" />
-                    </Form.Item>
-                </Col>
-              </Row>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="password" label="Password" rules={[{ required: true, min: 6 }]} style={{ marginBottom: 0 }}>
+                  <Input.Password prefix={<LockOutlined className="text-gray-400" />} size="large" placeholder="••••••" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="confirm_password" label="Confirm Password" rules={[{ required: true }]} style={{ marginBottom: 0 }}>
+                  <Input.Password prefix={<LockOutlined className="text-gray-400" />} size="large" placeholder="••••••" />
+                </Form.Item>
+              </Col>
+            </Row>
           </div>
 
           <div className="flex justify-end gap-3 mt-6">
             <Button size="large" onClick={() => setModalVisible(false)}>Cancel</Button>
-            <Button 
-                type="primary" 
-                htmlType="submit" 
-                loading={loading} 
-                size="large"
-                style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              size="large"
+              style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}
             >
               Create Member
             </Button>

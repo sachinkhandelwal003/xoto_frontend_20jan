@@ -2,14 +2,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Card, Drawer, Descriptions, Tag, Button, Space, Badge,
-  Alert, message, Avatar, Row, Col, Input, Tabs, Select, Statistic, Tooltip, Divider, Empty
+  message, Avatar, Row, Col, Tabs, Statistic, Tooltip, Empty
 } from 'antd';
 import {
   PhoneOutlined, MailOutlined, UserOutlined,
   HomeOutlined, DollarCircleOutlined, CalendarOutlined,
   CheckCircleOutlined, EyeOutlined, DeleteOutlined, BellOutlined,
-  UsergroupAddOutlined, BankOutlined, SearchOutlined, FilterOutlined,
-  EnvironmentOutlined, RiseOutlined, BuildOutlined, QuestionCircleOutlined,
+  UsergroupAddOutlined, BankOutlined,
+  RiseOutlined, BuildOutlined, QuestionCircleOutlined,
   SolutionOutlined
 } from '@ant-design/icons';
 import { apiService } from '../../../../../manageApi/utils/custom.apiservice';
@@ -18,8 +18,8 @@ import CustomTable from '../../custom/CustomTable';
 
 // --- THEME CONFIGURATION ---
 const THEME = {
-  primary: "#722ed1", // Purple
-  secondary: "#1890ff", // Blue
+  primary: "#722ed1",
+  secondary: "#1890ff",
   success: "#52c41a",
   warning: "#faad14",
   error: "#ff4d4f",
@@ -33,7 +33,7 @@ const typeConfig = {
   rent: { label: 'Rent', color: 'cyan', icon: <BankOutlined /> },
   schedule_visit: { label: 'Visit', color: 'orange', icon: <CalendarOutlined /> },
   partner: { label: 'Partner', color: 'green', icon: <UsergroupAddOutlined /> },
-  // New Types Added
+
   investor: { label: 'Investor', color: 'gold', icon: <RiseOutlined /> },
   developer: { label: 'Developer', color: 'geekblue', icon: <BuildOutlined /> },
   consultation: { label: 'Consultation', color: 'volcano', icon: <SolutionOutlined /> },
@@ -50,17 +50,24 @@ const statusConfig = {
 const PropertyLeads = () => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+
   const [activeTab, setActiveTab] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+
+  // ✅ CustomTable filters (search etc.)
+  const [filters, setFilters] = useState({
+    search: "",
+  });
+
   const [pagination, setPagination] = useState({
     currentPage: 1,
     itemsPerPage: 10,
     totalItems: 0
   });
 
-  // --- STATS CALCULATION (Client side for current page, ideally backend provides this) ---
+  // --- STATS CALCULATION (Client-side, current page only) ---
   const stats = useMemo(() => {
     return {
       total: pagination.totalItems,
@@ -77,12 +84,12 @@ const PropertyLeads = () => {
       if (tab !== 'all') params.type = tab;
 
       const res = await apiService.get('/landing/lead', params);
-      
+
       if (res.success) {
-        setLeads(res.data);
+        setLeads(res.data || []);
         setPagination({
-          currentPage: res.pagination?.page || 1,
-          itemsPerPage: res.pagination?.limit || 10,
+          currentPage: res.pagination?.page || page,
+          itemsPerPage: res.pagination?.limit || limit,
           totalItems: res.pagination?.total || 0
         });
       }
@@ -95,32 +102,38 @@ const PropertyLeads = () => {
   };
 
   useEffect(() => {
-    fetchLeads(activeTab, 1, 10, searchTerm);
+    fetchLeads(activeTab, 1, pagination.itemsPerPage, filters.search);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   const handleTabChange = (key) => {
     setActiveTab(key);
-    fetchLeads(key, 1, 10, searchTerm);
-  };
-
-  const handleSearch = () => {
-    fetchLeads(activeTab, 1, 10, searchTerm);
+    fetchLeads(key, 1, pagination.itemsPerPage, filters.search);
   };
 
   const handlePageChange = (page, pageSize) => {
-    fetchLeads(activeTab, page, pageSize, searchTerm);
+    fetchLeads(activeTab, page, pageSize, filters.search);
+  };
+
+  // ✅ CustomTable search/filter handler
+  const handleFilter = (newFilters) => {
+    const updated = {
+      ...filters,
+      ...newFilters,
+      search: (newFilters?.search || "").trim(),
+    };
+
+    setFilters(updated);
+    fetchLeads(activeTab, 1, pagination.itemsPerPage, updated.search);
   };
 
   const markAsContacted = async (id) => {
     try {
-      // Assuming you have a generic update or specific endpoint
-      // Adjust endpoint based on your backend routes
       await apiService.put(`/property/lead/${id}`, { status: 'contacted' });
       showSuccessAlert('Success!', 'Lead marked as contacted');
-      
-      // Update local state to reflect change immediately
-      setLeads(prev => prev.map(l => l._id === id ? { ...l, status: 'contacted' } : l));
-      
+
+      setLeads(prev => prev.map(l => (l._id === id ? { ...l, status: 'contacted' } : l)));
+
       if (selectedLead?._id === id) {
         setSelectedLead({ ...selectedLead, status: 'contacted' });
       }
@@ -135,7 +148,7 @@ const PropertyLeads = () => {
       try {
         await apiService.delete(`/property/lead/${id}`);
         showSuccessAlert('Deleted', 'Lead moved to trash');
-        fetchLeads(activeTab, pagination.currentPage, pagination.itemsPerPage, searchTerm);
+        fetchLeads(activeTab, pagination.currentPage, pagination.itemsPerPage, filters.search);
       } catch (err) {
         message.error('Delete failed');
       }
@@ -144,7 +157,7 @@ const PropertyLeads = () => {
 
   const getFullName = (record) => {
     if (record.full_name) return record.full_name;
-    if (record.name && record.name.first_name) {
+    if (record.name?.first_name) {
       return `${record.name.first_name} ${record.name.last_name || ''}`.trim();
     }
     return 'N/A';
@@ -158,20 +171,12 @@ const PropertyLeads = () => {
       width: 250,
       render: (_, record) => (
         <Space>
-          <Avatar 
-            style={{ backgroundColor: THEME.secondary }} 
-            icon={<UserOutlined />} 
-            size="large"
-          >
+          <Avatar style={{ backgroundColor: THEME.secondary }} icon={<UserOutlined />} size="large">
             {record.name?.first_name?.[0]?.toUpperCase()}
           </Avatar>
           <div>
-            <div className="font-bold text-gray-800">
-              {getFullName(record)}
-            </div>
-            <div className="text-xs text-gray-500">
-              {new Date(record.createdAt).toLocaleDateString()}
-            </div>
+            <div className="font-bold text-gray-800">{getFullName(record)}</div>
+            <div className="text-xs text-gray-500">{new Date(record.createdAt).toLocaleDateString()}</div>
           </div>
         </Space>
       )
@@ -180,11 +185,15 @@ const PropertyLeads = () => {
       title: 'Intent',
       key: 'type',
       render: (_, record) => {
-        const config = typeConfig[record.type] || { label: record.type, color: 'default', icon: <UserOutlined /> };
+        const config = typeConfig[record.type] || {
+          label: record.type,
+          color: 'default',
+          icon: <UserOutlined />
+        };
         return (
-            <Tag icon={config.icon} color={config.color} style={{ borderRadius: 12, padding: '2px 10px' }}>
-                {config.label}
-            </Tag>
+          <Tag icon={config.icon} color={config.color} style={{ borderRadius: 12, padding: '2px 10px' }}>
+            {config.label}
+          </Tag>
         );
       }
     },
@@ -194,12 +203,12 @@ const PropertyLeads = () => {
       render: (_, record) => (
         <div className="flex flex-col gap-1 text-gray-600">
           <div className="flex items-center gap-2">
-             <MailOutlined className="text-gray-400"/> 
-             <span className="text-xs">{record.email || 'N/A'}</span>
+            <MailOutlined className="text-gray-400" />
+            <span className="text-xs">{record.email || 'N/A'}</span>
           </div>
           <div className="flex items-center gap-2">
-             <PhoneOutlined className="text-gray-400"/> 
-             <span className="text-xs">{record.mobile?.country_code} {record.mobile?.number}</span>
+            <PhoneOutlined className="text-gray-400" />
+            <span className="text-xs">{record.mobile?.country_code} {record.mobile?.number}</span>
           </div>
         </div>
       )
@@ -208,7 +217,7 @@ const PropertyLeads = () => {
       title: 'Status',
       key: 'status',
       render: (_, record) => {
-        const config = statusConfig[record.status] || { label: record.status, color: 'default', icon: <BellOutlined /> };
+        const config = statusConfig[record.status] || { label: record.status };
         return <Badge status={record.status === 'contacted' ? 'success' : 'warning'} text={config.label} />;
       }
     },
@@ -220,34 +229,34 @@ const PropertyLeads = () => {
         <Space>
           <Tooltip title="View Details">
             <Button
-                shape="circle"
-                icon={<EyeOutlined style={{ color: THEME.primary }} />}
-                style={{ borderColor: THEME.primary }}
-                onClick={() => {
-                  setSelectedLead(record);
-                  setDrawerVisible(true);
-                }}
+              shape="circle"
+              icon={<EyeOutlined style={{ color: THEME.primary }} />}
+              style={{ borderColor: THEME.primary }}
+              onClick={() => {
+                setSelectedLead(record);
+                setDrawerVisible(true);
+              }}
             />
           </Tooltip>
 
           {record.status === 'submit' && (
             <Tooltip title="Mark as Contacted">
-                <Button
+              <Button
                 shape="circle"
                 type="primary"
                 ghost
                 icon={<CheckCircleOutlined />}
                 onClick={() => markAsContacted(record._id)}
-                />
+              />
             </Tooltip>
           )}
 
           <Tooltip title="Delete">
             <Button
-                shape="circle"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={() => softDelete(record._id)}
+              shape="circle"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => softDelete(record._id)}
             />
           </Tooltip>
         </Space>
@@ -256,25 +265,13 @@ const PropertyLeads = () => {
   ];
 
   const tabItems = [
-    {
-      key: 'all',
-      label: (
-        <span>
-          <UsergroupAddOutlined /> All Leads
-        </span>
-      )
-    },
+    { key: 'all', label: (<span><UsergroupAddOutlined /> All Leads</span>) },
     ...Object.keys(typeConfig).map(key => ({
       key,
-      label: (
-        <span>
-          {typeConfig[key].icon} {typeConfig[key].label}
-        </span>
-      )
+      label: (<span>{typeConfig[key].icon} {typeConfig[key].label}</span>)
     }))
   ];
 
-  // --- DRAWER CONTENT RENDERER ---
   const renderTypeSpecificDetails = (lead) => {
     switch (lead.type) {
       case 'buy':
@@ -328,7 +325,7 @@ const PropertyLeads = () => {
         return (
           <Descriptions title="Consultation Request" bordered column={1} size="small" className="bg-white p-4 rounded border">
             <Descriptions.Item label="Consultant Type">
-                <Tag color="cyan">{lead.consultant_type?.toUpperCase() || 'GENERAL'}</Tag>
+              <Tag color="cyan">{lead.consultant_type?.toUpperCase() || 'GENERAL'}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Message">{lead.message || 'N/A'}</Descriptions.Item>
           </Descriptions>
@@ -348,66 +345,42 @@ const PropertyLeads = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      
-      {/* 1. Header & Stats */}
+      {/* Header & Stats */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-4">Meta Leads</h1>
+
         <Row gutter={[16, 16]}>
-            <Col xs={24} sm={8}>
-                <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.primary }}>
-                    <Statistic 
-                        title="Total Leads" 
-                        value={pagination.totalItems} 
-                        prefix={<UsergroupAddOutlined style={{ color: THEME.primary }} />} 
-                    />
-                </Card>
-            </Col>
-            <Col xs={24} sm={8}>
-                <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.warning }}>
-                    <Statistic 
-                        title="New Submissions" 
-                        value={stats.new} 
-                        prefix={<BellOutlined style={{ color: THEME.warning }} />} 
-                    />
-                </Card>
-            </Col>
-            <Col xs={24} sm={8}>
-                <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.success }}>
-                    <Statistic 
-                        title="Contacted" 
-                        value={stats.contacted} 
-                        prefix={<CheckCircleOutlined style={{ color: THEME.success }} />} 
-                    />
-                </Card>
-            </Col>
+          <Col xs={24} sm={8}>
+            <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.primary }}>
+              <Statistic title="Total Leads" value={pagination.totalItems} prefix={<UsergroupAddOutlined style={{ color: THEME.primary }} />} />
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={8}>
+            <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.warning }}>
+              <Statistic title="New Submissions" value={stats.new} prefix={<BellOutlined style={{ color: THEME.warning }} />} />
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={8}>
+            <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.success }}>
+              <Statistic title="Contacted" value={stats.contacted} prefix={<CheckCircleOutlined style={{ color: THEME.success }} />} />
+            </Card>
+          </Col>
         </Row>
       </div>
 
-      {/* 2. Main Content */}
+      {/* Main Content */}
       <Card bordered={false} className="shadow-md rounded-lg" bodyStyle={{ padding: 0 }}>
-        
-        {/* Search Bar */}
-        <div className="p-4 border-b border-gray-100 bg-white rounded-t-lg">
-            <Input
-                prefix={<SearchOutlined className="text-gray-400" />}
-                placeholder="Search by name, email, mobile, company..."
-                allowClear
-                size="large"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onPressEnter={handleSearch}
-                style={{ maxWidth: 400 }}
-            />
-        </div>
+        {/* ❌ Removed manual Input search bar (CustomTable has its own) */}
 
-        {/* Tabs & Table */}
-        <Tabs 
-            activeKey={activeTab} 
-            onChange={handleTabChange} 
-            items={tabItems} 
-            type="card" 
-            size="large"
-            tabBarStyle={{ margin: 0, paddingLeft: 16, paddingTop: 16, background: '#fafafa' }}
+        <Tabs
+          activeKey={activeTab}
+          onChange={handleTabChange}
+          items={tabItems}
+          type="card"
+          size="large"
+          tabBarStyle={{ margin: 0, paddingLeft: 16, paddingTop: 16, background: '#fafafa' }}
         />
 
         <div className="p-0">
@@ -419,17 +392,18 @@ const PropertyLeads = () => {
             currentPage={pagination.currentPage}
             itemsPerPage={pagination.itemsPerPage}
             onPageChange={handlePageChange}
+            onFilter={handleFilter} // ✅ Now CustomTable search works
           />
         </div>
       </Card>
 
-      {/* 3. Detail Drawer */}
+      {/* Detail Drawer */}
       <Drawer
         title={
-            <div className="flex items-center gap-2">
-                <HomeOutlined style={{ color: THEME.primary }} />
-                <span>Lead Profile</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <HomeOutlined style={{ color: THEME.primary }} />
+            <span>Lead Profile</span>
+          </div>
         }
         placement="right"
         width={600}
@@ -440,18 +414,13 @@ const PropertyLeads = () => {
       >
         {selectedLead && (
           <div className="space-y-6">
-            
-            {/* Header Card */}
             <Card bordered={false} className="shadow-sm">
               <div className="flex items-start gap-4">
                 <Avatar size={64} icon={<UserOutlined />} style={{ backgroundColor: THEME.primary }} />
                 <div className="flex-1">
                   <h3 className="text-xl font-bold m-0 text-gray-800">{getFullName(selectedLead)}</h3>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <Tag 
-                      color={typeConfig[selectedLead.type]?.color} 
-                      icon={typeConfig[selectedLead.type]?.icon}
-                    >
+                    <Tag color={typeConfig[selectedLead.type]?.color} icon={typeConfig[selectedLead.type]?.icon}>
                       {typeConfig[selectedLead.type]?.label || selectedLead.type}
                     </Tag>
                     <Tag color={statusConfig[selectedLead.status]?.color}>
@@ -465,30 +434,29 @@ const PropertyLeads = () => {
               </div>
             </Card>
 
-            {/* Contact Info */}
             <Card title="Contact Information" size="small" bordered={false} className="shadow-sm">
-                <Descriptions column={1} bordered size="small">
-                    <Descriptions.Item label={<span className="text-gray-500"><MailOutlined/> Email</span>}>
-                        <a href={`mailto:${selectedLead.email}`} className="text-blue-600">{selectedLead.email || 'N/A'}</a>
-                    </Descriptions.Item>
-                    <Descriptions.Item label={<span className="text-gray-500"><PhoneOutlined/> Mobile</span>}>
-                        <a href={`tel:${selectedLead.mobile?.country_code}${selectedLead.mobile?.number}`} className="text-blue-600">
-                            {selectedLead.mobile?.country_code} {selectedLead.mobile?.number}
-                        </a>
-                    </Descriptions.Item>
-                    <Descriptions.Item label={<span className="text-gray-500"><BellOutlined/> Preference</span>}>
-                        {selectedLead.preferred_contact?.toUpperCase() || 'ANY'}
-                    </Descriptions.Item>
-                </Descriptions>
+              <Descriptions column={1} bordered size="small">
+                <Descriptions.Item label={<span className="text-gray-500"><MailOutlined /> Email</span>}>
+                  <a href={`mailto:${selectedLead.email}`} className="text-blue-600">{selectedLead.email || 'N/A'}</a>
+                </Descriptions.Item>
+
+                <Descriptions.Item label={<span className="text-gray-500"><PhoneOutlined /> Mobile</span>}>
+                  <a href={`tel:${selectedLead.mobile?.country_code}${selectedLead.mobile?.number}`} className="text-blue-600">
+                    {selectedLead.mobile?.country_code} {selectedLead.mobile?.number}
+                  </a>
+                </Descriptions.Item>
+
+                <Descriptions.Item label={<span className="text-gray-500"><BellOutlined /> Preference</span>}>
+                  {selectedLead.preferred_contact?.toUpperCase() || 'ANY'}
+                </Descriptions.Item>
+              </Descriptions>
             </Card>
 
-            {/* Type Specific Requirements */}
             <div className="space-y-2">
-                <div className="text-sm font-semibold text-gray-500 uppercase ml-1">Requirement Details</div>
-                {renderTypeSpecificDetails(selectedLead)}
+              <div className="text-sm font-semibold text-gray-500 uppercase ml-1">Requirement Details</div>
+              {renderTypeSpecificDetails(selectedLead)}
             </div>
 
-            {/* Action Footer */}
             {selectedLead.status === 'submit' && (
               <div className="mt-8 pt-4 border-t border-gray-200">
                 <Button
@@ -505,7 +473,7 @@ const PropertyLeads = () => {
                   Mark as Contacted
                 </Button>
                 <div className="text-center text-xs text-gray-400 mt-2">
-                    Acknowledging this lead will update its status to 'Contacted'.
+                  Acknowledging this lead will update its status to 'Contacted'.
                 </div>
               </div>
             )}
