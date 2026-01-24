@@ -12,7 +12,8 @@ import {
   Typography,
   message,
   Spin,
-  Space
+  Space,
+  notification // Ensure notification is imported
 } from 'antd';
 import {
   UserOutlined,
@@ -22,17 +23,18 @@ import {
   ArrowLeftOutlined,
   ArrowRightOutlined,
   SafetyOutlined,
-  CheckCircleFilled
+  CheckCircleFilled,
+  EnvironmentOutlined,
+  SafetyCertificateOutlined 
 } from '@ant-design/icons';
 import { useForm, Controller } from 'react-hook-form';
-import { apiService } from '../../../manageApi/utils/custom.apiservice';
-
-// --- NEW IMPORTS ---
-import CountryList from 'country-list-with-dial-code-and-flag';
 import { Country, State, City } from 'country-state-city';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import { apiService } from '../../../manageApi/utils/custom.apiservice'; 
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
+const { Option } = Select;
 
 const SellerPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -42,7 +44,17 @@ const SellerPage = () => {
   const [success, setSuccess] = useState(false);
   const [apiErrors, setApiErrors] = useState({});
 
-  const themeColor = 'var(--color-primary)';
+  // States for Address Logic
+  const [statesList, setStatesList] = useState([]);
+  const [citiesList, setCitiesList] = useState([]);
+
+  // --- OTP STATES ---
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [enteredOtp, setEnteredOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+
+  const themeColor = 'var(--color-primary)'; 
 
   const {
     control,
@@ -51,56 +63,51 @@ const SellerPage = () => {
     setError,
     watch,
     setValue,
+    getValues,
     formState: { errors }
   } = useForm({
     mode: 'onChange',
     defaultValues: {
-      mobile: { country_code: '+971' }
+      mobile: { country_code: '+971' },
+      store_details: { country: 'AE' } // Default UAE
     }
   });
 
-  // --- DYNAMIC DATA HOOKS ---
-  
-  // 1. Mobile Country Codes
-  const mobileCountryOptions = useMemo(() => CountryList.getAll().map(c => ({
-     value: c.dial_code,
-     label: `${c.flag} ${c.dial_code} (${c.code})`
-  })), []);
+  // --- 1. PHONE CODES DATA ---
+  const countryPhoneData = useMemo(() => {
+    const allCountries = Country.getAllCountries();
+    return allCountries.map(c => ({
+      iso: c.isoCode.toLowerCase(),
+      name: c.name,
+      phone: `+${c.phonecode}`,
+      value: `+${c.phonecode}`,
+      searchStr: `${c.name} ${c.phonecode}`
+    }));
+  }, []);
 
-  // 2. Location Cascading Logic
-  const watchStoreCountry = watch('store_details.country'); // Stores ISO Code (e.g., 'AE')
-  const watchStoreState = watch('store_details.state');     // Stores ISO Code (e.g., 'DU')
+  // --- 2. LOCATION LOGIC ---
+  const selectedCountry = watch('store_details.country');
+  const selectedState = watch('store_details.state');
 
-  const locationCountries = useMemo(() => Country.getAllCountries().map(c => ({
-      label: `${c.flag} ${c.name}`,
-      value: c.isoCode
-  })), []);
-
-  const availableStates = useMemo(() => {
-      if (!watchStoreCountry) return [];
-      return State.getStatesOfCountry(watchStoreCountry).map(s => ({
-          label: s.name,
-          value: s.isoCode
-      }));
-  }, [watchStoreCountry]);
-
-  const availableCities = useMemo(() => {
-      if (!watchStoreCountry || !watchStoreState) return [];
-      return City.getCitiesOfState(watchStoreCountry, watchStoreState).map(c => ({
-          label: c.name,
-          value: c.name // Cities don't usually have ISOs in this lib, using name is safe
-      }));
-  }, [watchStoreCountry, watchStoreState]);
-
-  // Reset logic for location
+  // Load States when Country changes
   useEffect(() => {
-      setValue('store_details.state', undefined);
-      setValue('store_details.city', undefined);
-  }, [watchStoreCountry, setValue]);
+    if (selectedCountry) {
+      const updatedStates = State.getStatesOfCountry(selectedCountry);
+      setStatesList(updatedStates);
+    } else {
+      setStatesList([]);
+    }
+  }, [selectedCountry]);
 
+  // Load Cities when State changes
   useEffect(() => {
-      setValue('store_details.city', undefined);
-  }, [watchStoreState, setValue]);
+    if (selectedState && selectedCountry) {
+      const updatedCities = City.getCitiesOfState(selectedCountry, selectedState);
+      setCitiesList(updatedCities);
+    } else {
+      setCitiesList([]);
+    }
+  }, [selectedState, selectedCountry]);
 
 
   const businessTypes = [
@@ -119,21 +126,16 @@ const SellerPage = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      // Updated API endpoint as per your requirement
       const response = await apiService.get('/products/get-all-category?limit=100');
-      
-      // Standardizing response data access
       const categoryData = response.data?.data || response.data || response;
       
       if (Array.isArray(categoryData)) {
         const categoryOptions = categoryData.map(category => ({
-          // Using label/value format for Ant Design Select
           label: category.name,
           value: category._id
         }));
         setCategories(categoryOptions);
       } else if (categoryData.categories) {
-        // Fallback for your previous structure
         const categoryOptions = categoryData.categories.map(category => ({
           label: category.parent ? `${category.name} (${category.parent.name})` : category.name,
           value: category._id
@@ -150,15 +152,82 @@ const SellerPage = () => {
 
   const steps = ['Personal', 'Store', 'Business'];
 
+  // --- OTP HANDLERS ---
+  const handleSendOtp = async () => {
+    const countryCode = getValues('mobile.country_code');
+    const number = getValues('mobile.number');
+
+    if (!countryCode || !number) {
+        message.error("Please enter a valid mobile number first.");
+        return;
+    }
+
+    setOtpLoading(true);
+    try {
+        const payload = {
+            country_code: countryCode,
+            phone_number: number
+        };
+        await apiService.post("/otp/send-otp", payload);
+        message.success("OTP sent successfully!");
+        setOtpSent(true);
+        setOtpVerified(false);
+    } catch (error) {
+        const errMsg = error?.response?.data?.message || "Failed to send OTP";
+        notification.error({ message: "OTP Error", description: errMsg });
+    } finally {
+        setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!enteredOtp) {
+        message.error("Please enter the OTP");
+        return;
+    }
+    setOtpLoading(true);
+    try {
+        const payload = {
+            country_code: getValues('mobile.country_code'),
+            phone_number: getValues('mobile.number'),
+            otp: enteredOtp
+        };
+        await apiService.post("/otp/verify-otp", payload);
+        message.success("Mobile Verified Successfully!");
+        setOtpVerified(true);
+        setOtpSent(false); // Hide OTP input
+    } catch (error) {
+        notification.error({
+            message: "Verification Failed",
+            description: error?.response?.data?.message || "Invalid OTP"
+        });
+    } finally {
+        setOtpLoading(false);
+    }
+  };
+
+
   const handleNext = async () => {
     let fieldsToValidate = [];
 
     if (currentStep === 0) {
+      if (!otpVerified) {
+          message.error("Please verify your mobile number to continue.");
+          return;
+      }
       fieldsToValidate = ['first_name', 'last_name', 'email', 'mobile.country_code', 'mobile.number', 'password', 'confirmPassword'];
     } else if (currentStep === 1) {
-      fieldsToValidate = ['store_details.store_name', 'store_details.store_type', 'store_details.categories'];
+      fieldsToValidate = ['store_details.store_name', 'store_details.store_type', 'store_details.categories', 'store_details.store_description'];
     } else if (currentStep === 2) {
-      fieldsToValidate = ['registration.pan_number', 'store_details.store_address', 'store_details.city', 'store_details.state', 'store_details.country', 'store_details.pincode', 'meta.agreed_to_terms'];
+      fieldsToValidate = [
+        'registration.pan_number', 
+        'store_details.store_address', 
+        'store_details.country', 
+        'store_details.state', 
+        'store_details.city', 
+        'store_details.pincode', 
+        'meta.agreed_to_terms'
+      ];
     }
 
     const result = await trigger(fieldsToValidate);
@@ -175,34 +244,30 @@ const SellerPage = () => {
     }
   };
 
-  const filterOption = (input, option) =>
-    (option?.label ?? '').toLowerCase().includes(input.toLowerCase());
-
   const onSubmit = async (data) => {
     if (data.password !== data.confirmPassword) {
       message.error('Passwords do not match');
       return;
     }
 
+    if (!otpVerified) {
+        message.error("Mobile number not verified.");
+        setCurrentStep(0);
+        return;
+    }
+
     setSubmitting(true);
     setApiErrors({});
 
-    // --- DATA CONVERSION (ISO -> NAMES) ---
-    const countryObj = Country.getAllCountries().find(c => c.isoCode === data.store_details?.country);
-    const countryName = countryObj ? countryObj.name : data.store_details?.country;
-
-    let stateName = data.store_details?.state;
-    if (countryObj && data.store_details?.state) {
-        const stateObj = State.getStatesOfCountry(countryObj.isoCode).find(s => s.isoCode === data.store_details.state);
-        stateName = stateObj ? stateObj.name : data.store_details.state;
-    }
-
+    const countryObj = Country.getCountryByCode(data.store_details.country);
+    const stateObj = State.getStateByCodeAndCountry(data.store_details.state, data.store_details.country);
+    
     const payload = {
       first_name: data.first_name,
       last_name: data.last_name,
       email: data.email,
       mobile: {
-        country_code: data.mobile?.country_code || '+971',
+        country_code: data.mobile?.country_code,
         number: data.mobile?.number || ''
       },
       password: data.password,
@@ -212,12 +277,9 @@ const SellerPage = () => {
         store_description: data.store_details?.store_description || '',
         store_type: data.store_details?.store_type,
         store_address: data.store_details?.store_address,
-        
-        // Send Names to Backend
-        city: data.store_details?.city, 
-        state: stateName,
-        country: countryName,
-        
+        country: countryObj ? countryObj.name : data.store_details?.country,
+        state: stateObj ? stateObj.name : data.store_details?.state, 
+        city: data.store_details?.city,
         pincode: data.store_details?.pincode,
         categories: data.store_details?.categories || []
       },
@@ -237,7 +299,10 @@ const SellerPage = () => {
     } catch (err) {
       const res = err.response?.data;
 
-      if (res?.errors && Array.isArray(res.errors)) {
+      // --- STRICT ERROR DISPLAY LOGIC (Same as RegisterNowPage) ---
+      if (res?.errors && Array.isArray(res.errors) && res.errors.length > 0) {
+        
+        // 1. Map ALL errors to fields (so input borders turn red)
         const errorMap = {};
         res.errors.forEach(e => {
           errorMap[e.field] = e.message;
@@ -245,11 +310,25 @@ const SellerPage = () => {
         });
         setApiErrors(errorMap);
 
-        const firstErrorField = res.errors[0].field;
-        const el = document.querySelector(`[name="${firstErrorField}"]`);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        // 2. Get the 0th Index Error
+        const firstError = res.errors[0];
 
-        message.error(`Please fix ${res.errors.length} error(s).`);
+        // 3. Jump to the Step containing the error
+        if(firstError.field.includes('store_details.country') || firstError.field.includes('registration')) {
+            setCurrentStep(2);
+        } else if (firstError.field.includes('store_details')) {
+            setCurrentStep(1);
+        } else {
+            setCurrentStep(0);
+        }
+
+        // 4. Show the 0th index error message in Notification
+        notification.error({
+            message: "Validation Error",
+            description: firstError.message, // Shows exact message from backend
+            duration: 5,
+        });
+
       } else {
         message.error(res?.message || "Registration failed. Please try again.");
       }
@@ -257,6 +336,9 @@ const SellerPage = () => {
       setSubmitting(false);
     }
   };
+
+  // --- STYLING CONSTANTS ---
+  const inputClass = `w-full h-[42px] border rounded-md px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500 bg-white transition-all flex items-center border-gray-300`;
 
   if (success) {
     return (
@@ -359,41 +441,131 @@ const SellerPage = () => {
                         <Controller name="email" control={control} rules={{ required: 'Required', pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' } }} render={({ field }) => <Input size="large" {...field} />} />
                       </Form.Item>
 
-                      {/* --- MOBILE NUMBER WITH FLAGS --- */}
-                      <Form.Item label="Mobile Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message}>
-                        <Space.Compact style={{ width: '100%' }}>
-                            <Controller
-                                name="mobile.country_code"
-                                control={control}
-                                rules={{ required: 'Code required' }}
-                                render={({ field }) => (
-                                    <Select 
-                                        {...field} 
-                                        size="large" 
-                                        style={{ width: '30%', minWidth: '120px' }}
-                                        options={mobileCountryOptions}
-                                        showSearch
-                                        optionFilterProp="label"
-                                        filterOption={filterOption}
-                                        placeholder="Code"
+                      {/* --- MOBILE FIELD WITHOUT BORDER BOX --- */}
+                      <div className="mb-4">
+                        <Form.Item label="Mobile Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message} style={{marginBottom: 0}}>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                                {/* Country Code */}
+                                <div style={{ width: '120px' }}>
+                                    <Controller
+                                        name="mobile.country_code"
+                                        control={control}
+                                        rules={{ required: 'Required' }}
+                                        render={({ field }) => (
+                                            <Select 
+                                                {...field} 
+                                                showSearch
+                                                disabled={otpVerified || otpSent} 
+                                                optionFilterProp="children"
+                                                filterOption={(input, option) => (option['data-search'] || "").toLowerCase().includes(input.toLowerCase())}
+                                                className="custom-select-seller"
+                                                style={{ width: '100%', height: '42px' }}
+                                            >
+                                                {countryPhoneData.map((country, index) => (
+                                                    <Option key={`${country.iso}-${index}`} value={country.value} data-search={country.searchStr}>
+                                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                            <img src={`https://flagcdn.com/w20/${country.iso}.png`} width="20" alt={country.name} style={{ marginRight: 6 }} />
+                                                            <span>{country.phone}</span>
+                                                        </div>
+                                                    </Option>
+                                                ))}
+                                            </Select>
+                                        )} 
                                     />
+                                </div>
+                                
+                                {/* Phone Input */}
+                                <div style={{ flex: 1 }}>
+                                    <Controller
+                                        name="mobile.number"
+                                        control={control}
+                                        rules={{ 
+                                            required: 'Required',
+                                            validate: (value) => {
+                                                const countryCode = getValues('mobile.country_code');
+                                                if(!countryCode) return "Select code";
+                                                const fullNumber = `${countryCode}${value}`;
+                                                const phoneNumber = parsePhoneNumberFromString(fullNumber);
+                                                return (phoneNumber && phoneNumber.isValid()) || "Invalid length";
+                                            }
+                                        }}
+                                        render={({ field }) => (
+                                            <input 
+                                                {...field}
+                                                className={inputClass}
+                                                placeholder="501234567"
+                                                disabled={otpVerified || otpSent} 
+                                                style={{ width: '100%' }}
+                                                onChange={(e) => {
+                                                    field.onChange(e.target.value.replace(/\D/g, ""));
+                                                    setOtpSent(false); 
+                                                    setOtpVerified(false);
+                                                }}
+                                            />
+                                        )} 
+                                    />
+                                </div>
+
+                                {/* Send OTP Button */}
+                                {!otpVerified && !otpSent && (
+                                    <Button 
+                                        type="primary" 
+                                        style={{ height: '42px', backgroundColor: '#333', borderColor: '#333' }}
+                                        onClick={handleSendOtp}
+                                        loading={otpLoading}
+                                    >
+                                        Send OTP
+                                    </Button>
                                 )}
-                            />
-                            <Controller
-                                name="mobile.number"
-                                control={control}
-                                rules={{ required: 'Number required' }}
-                                render={({ field }) => (
+
+                                {/* Change Number Button */}
+                                {otpSent && !otpVerified && (
+                                    <Button 
+                                        danger 
+                                        style={{ height: '42px' }}
+                                        onClick={() => { setOtpSent(false); setEnteredOtp(""); }}
+                                    >
+                                        Change
+                                    </Button>
+                                )}
+                            </div>
+                        </Form.Item>
+
+                        {/* OTP Input Section */}
+                        {otpSent && !otpVerified && (
+                            <div style={{ marginTop: 16, display: 'flex', gap: 8, animation: 'fadeIn 0.3s ease' }}>
+                                <div style={{ flex: 1 }}>
                                     <Input 
-                                        {...field} 
-                                        size="large" 
-                                        style={{ width: '70%' }} 
-                                        placeholder="501234567"
+                                        size="large"
+                                        placeholder="Enter 6-digit OTP"
+                                        prefix={<SafetyCertificateOutlined style={{ color: themeColor }}/>} 
+                                        value={enteredOtp}
+                                        onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ""))}
+                                        maxLength={6}
                                     />
-                                )}
-                            />
-                        </Space.Compact>
-                      </Form.Item>
+                                    <Text type="secondary" style={{ fontSize: 12, marginLeft: 4 }}>
+                                        OTP sent to {getValues('mobile.country_code')} {getValues('mobile.number')}
+                                    </Text>
+                                </div>
+                                <Button 
+                                    type="primary" 
+                                    size="large" 
+                                    onClick={handleVerifyOtp} 
+                                    loading={otpLoading}
+                                    style={{ background: themeColor, borderColor: themeColor }}
+                                >
+                                    Verify
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* Verified Success Message */}
+                        {otpVerified && (
+                            <div style={{ marginTop: 8, color: '#52c41a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <CheckCircleFilled /> Mobile Number Verified
+                            </div>
+                        )}
+                      </div>
 
                       <Row gutter={16}>
                         <Col span={12}>
@@ -426,19 +598,9 @@ const SellerPage = () => {
                         )} />
                       </Form.Item>
 
-                      {/* --- DYNAMIC CATEGORIES --- */}
                       <Form.Item label="Categories" required validateStatus={errors.store_details?.categories ? 'error' : ''} help={errors.store_details?.categories?.message}>
                         <Controller name="store_details.categories" control={control} rules={{ required: 'Select at least one category' }} render={({ field }) => (
-                          <Select 
-                            mode="multiple" 
-                            size="large" 
-                            loading={loading} 
-                            options={categories} 
-                            optionFilterProp="label" 
-                            filterOption={filterOption}
-                            placeholder="Select business categories"
-                            {...field} 
-                          />
+                          <Select mode="multiple" size="large" loading={loading} options={categories} optionFilterProp="label" {...field} />
                         )} />
                       </Form.Item>
 
@@ -454,83 +616,114 @@ const SellerPage = () => {
                   {currentStep === 2 && (
                     <>
                       <Title level={4} style={{ marginBottom: 24, color: '#333' }}>
-                        <FileTextOutlined style={{ color: themeColor }} /> Business Details
+                        <FileTextOutlined style={{ color: themeColor }} /> Business & Address
                       </Title>
                       <Row gutter={16}>
                         <Col span={12}>
-                          <Form.Item label="TRN Number" required validateStatus={errors.registration?.pan_number ? 'error' : ''} help={errors.registration?.pan_number?.message}>
-                            <Controller name="registration.pan_number" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
+                          <Form.Item label="TRN Number (PAN)" required validateStatus={errors.registration?.pan_number ? 'error' : ''} help={errors.registration?.pan_number?.message}>
+                            <Controller name="registration.pan_number" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" placeholder="Enter TRN/PAN" {...field} />} />
                           </Form.Item>
                         </Col>
                         <Col span={12}>
-                          <Form.Item label="VAT (Optional)">
-                            <Controller name="registration.gstin" control={control} render={({ field }) => <Input size="large" {...field} />} />
+                          <Form.Item label="VAT/GSTIN (Optional)">
+                            <Controller name="registration.gstin" control={control} render={({ field }) => <Input size="large" placeholder="Enter VAT/GSTIN" {...field} />} />
                           </Form.Item>
                         </Col>
                       </Row>
 
-                      <Form.Item label="Address" required validateStatus={errors.store_details?.store_address ? 'error' : ''} help={errors.store_details?.store_address?.message}>
-                        <Controller name="store_details.store_address" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
+                      <Form.Item label="Street Address" required validateStatus={errors.store_details?.store_address ? 'error' : ''} help={errors.store_details?.store_address?.message}>
+                        <Controller name="store_details.store_address" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" prefix={<EnvironmentOutlined className='text-gray-400'/>} {...field} />} />
                       </Form.Item>
 
-                      {/* --- CASCADING LOCATION --- */}
+                      {/* --- DYNAMIC ADDRESS SECTION --- */}
                       <Row gutter={16}>
                         <Col span={12}>
                           <Form.Item label="Country" required validateStatus={errors.store_details?.country ? 'error' : ''} help={errors.store_details?.country?.message}>
-                            <Controller name="store_details.country" control={control} rules={{ required: 'Required' }} render={({ field }) => (
-                              <Select 
-                                size="large" 
-                                showSearch
-                                options={locationCountries} 
-                                optionFilterProp="label"
-                                filterOption={filterOption}
-                                placeholder="Select Country"
-                                {...field} 
-                              />
+                            <Controller 
+                                name="store_details.country" 
+                                control={control} 
+                                rules={{ required: 'Required' }} 
+                                render={({ field }) => (
+                                <Select 
+                                    size="large" 
+                                    showSearch 
+                                    optionFilterProp="children"
+                                    filterOption={(input, option) => option.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0}
+                                    onChange={(val) => {
+                                        field.onChange(val);
+                                        setValue('store_details.state', undefined); // Reset State
+                                        setValue('store_details.city', undefined); // Reset City
+                                    }}
+                                    value={field.value}
+                                >
+                                    {Country.getAllCountries().map(country => (
+                                        <Option key={country.isoCode} value={country.isoCode}>{country.name}</Option>
+                                    ))}
+                                </Select>
                             )} />
                           </Form.Item>
                         </Col>
+
                         <Col span={12}>
-                          <Form.Item label="State/Province" required validateStatus={errors.store_details?.state ? 'error' : ''} help={errors.store_details?.state?.message}>
-                            <Controller name="store_details.state" control={control} rules={{ required: 'Required' }} render={({ field }) => (
-                              <Select 
-                                size="large" 
-                                showSearch
-                                options={availableStates}
-                                disabled={!watchStoreCountry}
-                                optionFilterProp="label"
-                                filterOption={filterOption}
-                                placeholder="Select State"
-                                {...field} 
-                              />
+                          <Form.Item label="State / Province" required validateStatus={errors.store_details?.state ? 'error' : ''} help={errors.store_details?.state?.message}>
+                            <Controller 
+                                name="store_details.state" 
+                                control={control} 
+                                rules={{ required: 'Required' }} 
+                                render={({ field }) => (
+                                <Select 
+                                    size="large" 
+                                    showSearch 
+                                    disabled={!statesList.length}
+                                    optionFilterProp="children"
+                                    filterOption={(input, option) => option.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0}
+                                    onChange={(val) => {
+                                        field.onChange(val);
+                                        setValue('store_details.city', undefined); // Reset City
+                                    }}
+                                    value={field.value}
+                                >
+                                    {statesList.map(state => (
+                                        <Option key={state.isoCode} value={state.isoCode}>{state.name}</Option>
+                                    ))}
+                                </Select>
                             )} />
                           </Form.Item>
                         </Col>
                       </Row>
-                      
+
                       <Row gutter={16}>
                         <Col span={12}>
-                          <Form.Item label="City" required validateStatus={errors.store_details?.city ? 'error' : ''} help={errors.store_details?.city?.message}>
-                            <Controller name="store_details.city" control={control} rules={{ required: 'Required' }} render={({ field }) => (
-                              <Select 
-                                size="large" 
-                                showSearch
-                                options={availableCities}
-                                disabled={!watchStoreState}
-                                optionFilterProp="label"
-                                filterOption={filterOption}
-                                placeholder="Select City"
-                                {...field} 
-                              />
+                           <Form.Item label="City" required validateStatus={errors.store_details?.city ? 'error' : ''} help={errors.store_details?.city?.message}>
+                            <Controller 
+                                name="store_details.city" 
+                                control={control} 
+                                rules={{ required: 'Required' }} 
+                                render={({ field }) => (
+                                citiesList.length > 0 ? (
+                                    <Select 
+                                        size="large" 
+                                        showSearch
+                                        optionFilterProp="children"
+                                        {...field}
+                                    >
+                                        {citiesList.map(city => (
+                                            <Option key={city.name} value={city.name}>{city.name}</Option>
+                                        ))}
+                                    </Select>
+                                ) : (
+                                    <Input size="large" {...field} />
+                                )
                             )} />
                           </Form.Item>
                         </Col>
                         <Col span={12}>
-                          <Form.Item label="PO Box" required validateStatus={errors.store_details?.pincode ? 'error' : ''} help={errors.store_details?.pincode?.message}>
+                          <Form.Item label="Zip / PO Code" required validateStatus={errors.store_details?.pincode ? 'error' : ''} help={errors.store_details?.pincode?.message}>
                             <Controller name="store_details.pincode" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
                           </Form.Item>
                         </Col>
                       </Row>
+                       {/* --- END ADDRESS SECTION --- */}
 
                       <Form.Item validateStatus={errors.meta?.agreed_to_terms ? 'error' : ''} help={errors.meta?.agreed_to_terms?.message}>
                         <Controller
@@ -589,6 +782,28 @@ const SellerPage = () => {
           </Col>
         </Row>
       </div>
+
+      <style jsx global>{`
+        .custom-select-seller .ant-select-selector {
+          border-radius: 0.375rem !important; 
+          border-color: #d1d5db !important;
+          height: 42px !important;
+          display: flex !important;
+          align-items: center !important;
+          padding-left: 4px !important;
+        }
+        .custom-select-seller .ant-select-selector:hover {
+          border-color: #a855f7 !important;
+        }
+        .custom-select-seller.ant-select-focused .ant-select-selector {
+          border-color: #a855f7 !important;
+          box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2) !important;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 };

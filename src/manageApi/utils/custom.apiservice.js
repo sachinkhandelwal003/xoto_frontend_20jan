@@ -26,21 +26,30 @@ api.interceptors.request.use(
   }
 );
 
-// src/utils/apiService.js
+// Response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const token = localStorage.getItem('token');
+    
+    // YAHAN LOGIC CHANGE KIYA HAI
     if (token) {
-  const errorMessage = error.response?.data?.message || 'Something went wrong';
+      const errorData = error.response?.data;
+      const errorMessage = errorData?.message || errorData?.error?.message || 'Something went wrong';
 
-  // ❌ suppress ONLY upgrade-limit message
-  if (errorMessage?.toLowerCase().includes('generate more images')) {
-    return Promise.reject(error);
-  }
+      // 1. ❌ Suppress upgrade-limit message
+      if (errorMessage?.toLowerCase().includes('generate more images')) {
+        return Promise.reject(error);
+      }
 
-  showToast(errorMessage, 'error');
-}
+      // 2. ❌ Suppress "Customer not found" message (Frontend hand-to-hand modal handles this)
+      if (errorMessage === "Customer not found") {
+        return Promise.reject(error);
+      }
+
+      // Baaki sabhi cases mein toast dikhao
+      showToast(errorMessage, 'error');
+    }
 
     return Promise.reject(error);
   }
@@ -102,9 +111,9 @@ export const apiService = {
   download: async (url, fileName) => {
     try {
       const response = await api.get(url, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const urlBlob = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
-      link.href = url;
+      link.href = urlBlob;
       link.setAttribute('download', fileName);
       document.body.appendChild(link);
       link.click();

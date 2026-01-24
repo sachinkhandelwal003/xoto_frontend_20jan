@@ -19,7 +19,6 @@ export default function Consultation() {
   const [loading, setLoading] = useState(false);
   const [api, contextHolder] = notification.useNotification();
 
-  // 1. Errors State Add kiya
   const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
@@ -36,7 +35,6 @@ export default function Consultation() {
     return Country.getAllCountries().map((country) => ({
       name: country.name, code: country.phonecode, iso: country.isoCode,
     })).sort((a, b) => {
-      // Sorting logic same as before
       const aPriority = priorityIsoCodes.includes(a.iso);
       const bPriority = priorityIsoCodes.includes(b.iso);
       if (aPriority && !bPriority) return -1;
@@ -49,7 +47,6 @@ export default function Consultation() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     
-    // 2. Typing karte waqt error hatana
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -69,7 +66,6 @@ export default function Consultation() {
     
     setFormData((prev) => ({ ...prev, number: validatedValue }));
     
-    // Number type karte waqt error hatana
     if (errors.number) {
       setErrors((prev) => ({ ...prev, number: "" }));
     }
@@ -79,7 +75,6 @@ export default function Consultation() {
     api[type]({ message: title, description: description, placement: 'topRight' });
   };
 
-  // 3. Validation Function
   const validateForm = () => {
     let newErrors = {};
     let isValid = true;
@@ -121,7 +116,6 @@ export default function Consultation() {
   const onSubmit = async (e) => {
     e.preventDefault();
 
-    // 4. Pehle Validate karein, agar fail hua to yahin ruk jayein
     if (!validateForm()) {
       openNotification("error", "Validation Error", "Please fill all required fields correctly.");
       return; 
@@ -142,9 +136,8 @@ export default function Consultation() {
       await apiService.post("/property/lead", payload);
       openNotification("success", "Thank You!", "Your consultation request has been submitted successfully.");
       setFormData({ first_name: "", last_name: "", email: "", country_code: "971", number: "", message: "" });
-      setErrors({}); // Reset errors on success
+      setErrors({});
     } catch (err) {
-      // API Error handling logic same as before
       const errorData = err.response?.data;
       let errorMessage = "Something went wrong. Please try again.";
       if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
@@ -180,7 +173,7 @@ export default function Consultation() {
                   <label className="block text-sm font-semibold text-gray-700 mb-1">{t("form.firstName")}*</label>
                   <input 
                     type="text" name="first_name" value={formData.first_name} onChange={handleChange} 
-                    className={`w-full rounded-xl border px-4 py-2.5 outline-none focus:border-purple-500 ${errors.first_name ? "border-red-500 bg-red-50" : "border-gray-300"}`} 
+                    className={`w-full rounded-xl border px-4 h-[46px] outline-none focus:border-purple-500 ${errors.first_name ? "border-red-500 bg-red-50" : "border-gray-300"}`} 
                     placeholder={t("form.firstName")} 
                   />
                   {errors.first_name && <p className="text-red-500 text-xs mt-1">{errors.first_name}</p>}
@@ -189,7 +182,7 @@ export default function Consultation() {
                   <label className="block text-sm font-semibold text-gray-700 mb-1">{t("form.lastName")}*</label>
                   <input 
                     type="text" name="last_name" value={formData.last_name} onChange={handleChange} 
-                    className={`w-full rounded-xl border px-4 py-2.5 outline-none focus:border-purple-500 ${errors.last_name ? "border-red-500 bg-red-50" : "border-gray-300"}`} 
+                    className={`w-full rounded-xl border px-4 h-[46px] outline-none focus:border-purple-500 ${errors.last_name ? "border-red-500 bg-red-50" : "border-gray-300"}`} 
                     placeholder={t("form.lastName")} 
                   />
                   {errors.last_name && <p className="text-red-500 text-xs mt-1">{errors.last_name}</p>}
@@ -200,16 +193,17 @@ export default function Consultation() {
                 <label className="block text-sm font-semibold text-gray-700 mb-1">{t("form.email")}*</label>
                 <input 
                   type="email" name="email" value={formData.email} onChange={handleChange} 
-                  className={`w-full rounded-xl border px-4 py-2.5 outline-none focus:border-purple-500 ${errors.email ? "border-red-500 bg-red-50" : "border-gray-300"}`} 
+                  className={`w-full rounded-xl border px-4 h-[46px] outline-none focus:border-purple-500 ${errors.email ? "border-red-500 bg-red-50" : "border-gray-300"}`} 
                   placeholder={t("form.email")} 
                 />
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
 
+              {/* ----- UPDATED MOBILE SECTION ----- */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">{t("form.mobile")}*</label>
-                <div className="flex flex-row items-center gap-2 w-full flex-nowrap">
-                  <div className="w-[120px] sm:w-[140px] flex-shrink-0">
+                <div className="flex w-full gap-2">
+                  <div className="w-[125px] shrink-0">
                     <Select
                       value={formData.country_code}
                       onChange={handleCountryCodeChange}
@@ -219,9 +213,8 @@ export default function Consultation() {
                         option.children.props?.children[1]?.props?.children[1]?.toLowerCase().includes(input.toLowerCase()) || 
                         option.value.includes(input)
                       }
-                      className="w-full h-[46px] custom-select-consultation"
-                      style={{ width: '100%' }}
-                      dropdownMatchSelectWidth={300}
+                      className="w-full custom-select-consultation"
+                      popupMatchSelectWidth={300}
                     >
                       {countryOptions.map((item) => (
                         <Option key={item.iso} value={item.code}>
@@ -236,13 +229,14 @@ export default function Consultation() {
                   <div className="flex-1">
                     <input 
                         type="text" value={formData.number} onChange={handleNumber} 
-                        className={`w-full rounded-xl border px-4 py-2.5 outline-none focus:border-purple-500 h-[46px] ${errors.number ? "border-red-500 bg-red-50" : "border-gray-300"}`} 
+                        className={`w-full rounded-xl border px-4 h-[46px] outline-none focus:border-purple-500 ${errors.number ? "border-red-500 bg-red-50" : "border-gray-300"}`} 
                         placeholder={t("form.mobile")} 
                     />
                   </div>
                 </div>
                 {errors.number && <p className="text-red-500 text-xs mt-1">{errors.number}</p>}
               </div>
+              {/* ---------------------------------- */}
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">{t("form.message")}*</label>
@@ -272,19 +266,31 @@ export default function Consultation() {
       </div>
       
       <style jsx global>{`
+        /* Custom Select CSS to match Tailwind Inputs */
         .custom-select-consultation .ant-select-selector {
-          border-radius: 0.75rem !important; 
-          border-color: #d1d5db !important; 
+          border-radius: 0.75rem !important; /* rounded-xl (12px) */
+          border-color: #d1d5db !important; /* border-gray-300 */
           height: 46px !important;
-          padding-top: 6px !important;
-          background-color: #f9fafb !important;
+          display: flex !important;
+          align-items: center !important;
+          background-color: white !important;
+          box-shadow: none !important;
         }
-        .custom-select-consultation .ant-select-selector:hover {
-          border-color: #a855f7 !important;
+        
+        .custom-select-consultation .ant-select-selection-item {
+          display: flex !important;
+          align-items: center !important;
+          line-height: 1 !important;
         }
+
+        .custom-select-consultation:hover .ant-select-selector {
+          border-color: #a855f7 !important; /* purple-500 */
+        }
+        
         .custom-select-consultation.ant-select-focused .ant-select-selector {
           border-color: #a855f7 !important;
-          box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2) !important;
+          box-shadow: 0 0 0 1px #a855f7 !important;
+          outline: none !important;
         }
       `}</style>
     </section>

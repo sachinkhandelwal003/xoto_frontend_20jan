@@ -4,9 +4,7 @@ import {
   User,
   Mail,
   Lock,
-  CheckCircle2,
   Smartphone,
-  MapPin, 
 } from "lucide-react";
 import {
   Button,
@@ -64,7 +62,6 @@ const LeadGenerationModal = ({
       name: country.name,
       code: country.phonecode,
       iso: country.isoCode,
-      // Note: Hum flag emoji nahi, ab image use karenge render ke time
     })).sort((a, b) => {
       const aPriority = priorityIsoCodes.includes(a.iso);
       const bPriority = priorityIsoCodes.includes(b.iso);
@@ -89,7 +86,7 @@ const LeadGenerationModal = ({
     form.setFieldsValue({ city: undefined });
   };
 
-  /* ================= 🔴 UPDATED PREFIX SELECTOR (WITH IMAGES) ================= */
+  /* ================= PREFIX SELECTOR ================= */
   const prefixSelector = (
     <Form.Item name="country_code" noStyle initialValue="971">
       <Select
@@ -100,6 +97,8 @@ const LeadGenerationModal = ({
         optionFilterProp="children"
         onChange={(val) => {
           setCountryCode(val);
+          // Explicitly updating form value to stay synced
+          form.setFieldsValue({ country_code: val });
           form.setFieldsValue({ mobile: "" });
           form.validateFields(['mobile']);
         }}
@@ -128,64 +127,153 @@ const LeadGenerationModal = ({
     </Form.Item>
   );
 
-  /* ================= SUBMIT HANDLER ================= */
-  const handleSubmit = async (values) => {
-    setIsSubmitting(true);
+  // /* ================= SUBMIT HANDLER (FIXED) ================= */
+  // const handleSubmit = async (values) => {
+  //   setIsSubmitting(true);
 
-    try {
-      const mobilePayload = {
-        country_code: values.country_code,
-        number: values.mobile.toString(),
+  //   try {
+  //     // FIX: Ensure Country Code has '+' prefix
+  //     const rawCode = values.country_code ? values.country_code.toString() : "971";
+  //     const formattedCode = rawCode.startsWith("+") ? rawCode : `+${rawCode}`;
+
+  //     const mobilePayload = {
+  //       country_code: formattedCode, // Sends +971 instead of 971
+  //       number: values.mobile.toString(),
+  //     };
+
+  //     if (activeTab === "signin") {
+  //       const loginData = await login("/users/login/customer", { mobile: mobilePayload });
+  //       onAuthSuccess?.(loginData);
+  //       onCancel();
+  //     } else {
+  //       const selectedCountryData = Country.getCountryByCode(values.location_country);
+  //       const countryName = selectedCountryData ? selectedCountryData.name : "";
+  //       const selectedStateData = State.getStateByCodeAndCountry(values.state, values.location_country);
+  //       const stateName = selectedStateData ? selectedStateData.name : values.state;
+
+  //       const payload = {
+  //         name: { first_name: values.first_name, last_name: values.last_name },
+  //         email: values.email,
+  //         comingFromAiPage: true,
+  //         mobile: mobilePayload,
+  //         location: { country: countryName, state: stateName, city: values.city, address: "" },
+  //       };
+
+  //       const response = await apiService.post("/users/signup/customer", payload);
+
+  //       if (response?.success) {
+  //         notification.success({ message: "Account Created", description: "Logging you in..." });
+  //         const loginData = await login("/users/login/customer", { mobile: mobilePayload });
+  //         onAuthSuccess?.(loginData);
+  //         onCancel();
+  //         form.resetFields();
+  //       }
+  //     }
+  //   } catch (error) {
+  //       const data = error?.response?.data;
+  //       if (Array.isArray(data?.errors) && data.errors.length > 0) {
+  //           const fieldErrors = data.errors.map((err) => {
+  //               const parts = err.field?.split(".");
+  //               const fieldName = parts?.length > 1 ? parts[parts.length - 1] : parts?.[0];
+  //               return { name: fieldName, errors: [err.message] };
+  //           });
+  //           form.setFields(fieldErrors);
+  //       } else if (activeTab === "signin") {
+  //           form.setFields([{ name: "mobile", errors: [data?.message || "Error"] }]);
+  //       } else {
+  //           notification.error({ message: "Failed", description: data?.message || "Error" });
+  //       }
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+/* ================= SUBMIT HANDLER (FIXED FOR ERRORS) ================= */
+const handleSubmit = async (values) => {
+  setIsSubmitting(true);
+
+  try {
+    // 1. Mobile payload ko bahar rakhte hain taaki Login/Signup dono use kar sakein
+    const rawCode = values.country_code ? values.country_code.toString() : "971";
+    const formattedCode = rawCode.startsWith("+") ? rawCode : `+${rawCode}`;
+
+    const mobilePayload = {
+      country_code: formattedCode,
+      number: values.mobile.toString(),
+    };
+
+    if (activeTab === "signin") {
+      // SIGN IN LOGIC
+      const loginData = await login("/users/login/customer", { mobile: mobilePayload });
+      onAuthSuccess?.(loginData);
+      onCancel();
+    } else {
+      // SIGN UP LOGIC
+      const selectedCountryData = Country.getCountryByCode(values.location_country);
+      const countryName = selectedCountryData ? selectedCountryData.name : "";
+      const selectedStateData = State.getStateByCodeAndCountry(values.state, values.location_country);
+      const stateName = selectedStateData ? selectedStateData.name : values.state;
+
+      // Payload variable ab yahan defined hai
+      const signupPayload = {
+        name: { first_name: values.first_name, last_name: values.last_name },
+        email: values.email,
+        comingFromAiPage: true,
+        mobile: mobilePayload,
+        location: { 
+            country: countryName, 
+            state: stateName, 
+            city: values.city, 
+            address: "" 
+        },
       };
 
-      if (activeTab === "signin") {
+      const response = await apiService.post("/users/signup/customer", signupPayload);
+
+      if (response?.success) {
+        notification.success({ message: "Account Created", description: "Logging you in..." });
         const loginData = await login("/users/login/customer", { mobile: mobilePayload });
         onAuthSuccess?.(loginData);
         onCancel();
-      } else {
-        const selectedCountryData = Country.getCountryByCode(values.location_country);
-        const countryName = selectedCountryData ? selectedCountryData.name : "";
-        const selectedStateData = State.getStateByCodeAndCountry(values.state, values.location_country);
-        const stateName = selectedStateData ? selectedStateData.name : values.state;
-
-        const payload = {
-          name: { first_name: values.first_name, last_name: values.last_name },
-          email: values.email,
-          comingFromAiPage: true,
-          mobile: mobilePayload,
-          location: { country: countryName, state: stateName, city: values.city, address: "" },
-        };
-
-        const response = await apiService.post("/users/signup/customer", payload);
-
-        if (response?.success) {
-          notification.success({ message: "Account Created", description: "Logging you in..." });
-          const loginData = await login("/users/login/customer", { mobile: mobilePayload });
-          onAuthSuccess?.(loginData);
-          onCancel();
-          form.resetFields();
-        }
+        form.resetFields();
       }
-    } catch (error) {
-        // Error Handling Same as before
-        const data = error?.response?.data;
-        if (Array.isArray(data?.errors) && data.errors.length > 0) {
-            const fieldErrors = data.errors.map((err) => {
-                const parts = err.field?.split(".");
-                const fieldName = parts?.length > 1 ? parts[parts.length - 1] : parts?.[0];
-                return { name: fieldName, errors: [err.message] };
-            });
-            form.setFields(fieldErrors);
-        } else if (activeTab === "signin") {
-            form.setFields([{ name: "mobile", errors: [data?.message || "Error"] }]);
-        } else {
-            notification.error({ message: "Failed", description: data?.message || "Error" });
-        }
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  } catch (error) {
+    console.error("Auth Error:", error);
 
+    // 1. Backend se error details nikalna
+    const responseData = error?.response?.data;
+    
+    // Sabse pehle check karein agar 'errors' array mein koi message hai
+    // Phir check karein agar main 'message' field mein kuch hai
+    const errorMessage = responseData?.errors?.[0]?.message || 
+                         responseData?.message || 
+                         "An unexpected error occurred";
+
+    // 2. Toast Notification dikhana (Ant Design Notification)
+    notification.error({
+      message: "Action Failed",
+      description: errorMessage, // Yahan "Mobile number already registered" dikhayega
+      placement: "topRight",
+      duration: 5,
+    });
+
+    // 3. Form fields ko red highlight karna (Optional but Recommended)
+    if (responseData?.errors && Array.isArray(responseData.errors)) {
+      const fieldErrors = responseData.errors.map((err) => {
+        // Agar field "mobile.number" hai toh usey "mobile" se map karein
+        const fieldName = err.field.includes('.') ? err.field.split('.')[0] : err.field;
+        return {
+          name: fieldName, 
+          errors: [err.message]
+        };
+      });
+      form.setFields(fieldErrors);
+    }
+
+  } finally {
+    setIsSubmitting(false);
+  } 
+};
   const getRequiredLength = () => PHONE_LENGTH_RULES[countryCode] || 15;
 
   return (
