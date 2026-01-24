@@ -120,7 +120,8 @@ const Permission = () => {
   const getPermValue = (value) => value === 1 || value === true;
 
   /* -------------------------- FETCH DATA -------------------------- */
-  const fetchData = useCallback(async (page = 1, itemsPerPage = 10, filtersArg = {}) => {
+const fetchData = useCallback(
+  async (page = 1, itemsPerPage = 10, filters = {}) => {
     if (!perm.canView) {
       setLoading(false);
       return;
@@ -144,10 +145,13 @@ const Permission = () => {
       const [rolesRes, modulesRes, permissionsRes] = await Promise.all([
         apiService.get('/roles', roleParams), // ✅ now search will go in API
         moduleService.getAll(),
-        apiService.get('/permission')
+        apiService.get('/permission', { limit: 100 }) // 👈 HERE
       ]);
 
-      const sortedModules = (modulesRes.data || []).sort((a, b) => a.position - b.position);
+      const sortedModules = (modulesRes.data || []).sort(
+        (a, b) => a.position - b.position
+      );
+
       setModules(sortedModules);
 
       setRoles(rolesRes.roles || []);
@@ -160,19 +164,17 @@ const Permission = () => {
         itemsPerPage: rolesRes.pagination?.perPage || itemsPerPage,
       });
 
-      // Build permission map
       const map = {};
       let grantedCount = 0;
 
-      (permissionsRes.permissions || []).forEach(p => {
+      permissionsRes.permissions.forEach(p => {
         const roleId = p.role._id;
         const modId = p.module._id;
-        const subId = p.subModule?._id || null;
+        const subId = p.subModule?._id || '__module__';
 
-        if (!map[roleId]) map[roleId] = {};
-        if (!map[roleId][modId]) map[roleId][modId] = {};
+        map[roleId] ??= {};
+        map[roleId][modId] ??= {};
 
-        const key = subId || '__module__';
         const permObj = {
           id: p._id,
           canAdd: getPermValue(p.permissions.canAdd),
@@ -182,31 +184,39 @@ const Permission = () => {
           canViewAll: getPermValue(p.permissions.canViewAll),
         };
 
-        if (Object.values(permObj).some(v => v)) grantedCount++;
+        if (Object.values(permObj).some(Boolean)) {
+          grantedCount++;
+        }
 
-        map[roleId][modId][key] = permObj;
+        map[roleId][modId][subId] = permObj;
       });
 
-      const roleList = rolesRes.roles || [];
       const totalItems =
-        sortedModules.reduce((c, m) => c + 1 + (m.subModules?.length || 0), 0) *
-        (roleList.length || 0);
+        sortedModules.reduce((c, m) => c + 1 + m.subModules.length, 0) *
+        (rolesRes.roles?.length || 0);
 
-      const activeRoles = roleList.filter(r => r.isActive)?.length || 0;
+      const activeRoles =
+        rolesRes.roles?.filter(r => r.isActive)?.length || 0;
 
       setStats({
         totalPermissions: totalItems,
         activeRoles,
-        grantedPermissions: grantedCount
+        grantedPermissions: grantedCount,
       });
 
       setRolePermMap(map);
     } catch (err) {
-      showToast(err?.response?.data?.message || 'Failed to load data', 'error');
+      showToast(
+        err.response?.data?.message || 'Failed to load data',
+        'error'
+      );
     } finally {
       setLoading(false);
     }
-  }, [perm.canView]);
+  },
+  [perm.canView]
+);
+
 
   useEffect(() => {
     if (token) {

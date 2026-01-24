@@ -7,6 +7,7 @@ import "./App.css";
 import { BlogProvider } from "./context/BlogContext";
 import { ProductProvider } from "./context/ProductContext"; // BASE LOGIC ADDED
 // -----------------------
+import { FreelancerProvider } from "./context/FreelancerContext";
 
 import Navbar from "./components/navbar/index.jsx";
 import Footer from "./components/footer/footer";
@@ -160,7 +161,7 @@ function LayoutWrapper({ children }) {
 function App() {
   return (
     <BlogProvider>
-      <ProductProvider>
+      <FreelancerProvider><ProductProvider>
         <LayoutWrapper>
           <ScrollToTop />
           <Suspense fallback={<Loader />}>
@@ -271,6 +272,8 @@ function App() {
           </Suspense>
         </LayoutWrapper>
       </ProductProvider>
+      </FreelancerProvider>
+
     </BlogProvider>
   );
 }

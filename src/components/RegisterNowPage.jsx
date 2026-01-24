@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { Form, Input, Select, Button, message, notification } from "antd";
 import { apiService } from "../manageApi/utils/custom.apiservice";
 import { AuthContext } from "../manageApi/context/AuthContext";
-import { Country } from "country-state-city"; 
-
+import { Country } from "country-state-city"; // Import Library
+import { showToast } from "../manageApi/utils/toast";
 const { Option } = Select;
 
 // --- Phone Length Rules ---
@@ -140,30 +140,60 @@ const RegisterNowPage = () => {
       // 3. Redirect
       navigate("/dashboard/customer", { replace: true });
 
-    } catch (err) {
-      const apiError = err?.response?.data;
+   } catch (err) {
+  const apiError = err?.response?.data;
 
-      if (apiError?.errors && Array.isArray(apiError.errors) && apiError.errors.length > 0) {
-        const firstError = apiError.errors[0]; 
-        notification.error({
-          message: "Validation Error",
-          description: firstError.message, 
-          duration: 4,
-        });
-        return; 
+  // 1️⃣ Case: API returns ARRAY of errors
+  if (Array.isArray(apiError)) {
+    apiError.forEach(e => {
+      if (e?.message) {
+        showToast(e.message, "error");
+      }
+    });
+    return;
+  }
+
+  // 2️⃣ Case: Validation errors (field-level)
+  if (apiError?.errors && Array.isArray(apiError.errors)) {
+    // Show ONLY first error in toast
+    showToast(apiError.errors[0]?.message, "error");
+
+    // Map ALL errors to form fields
+    apiError.errors.forEach(errObj => {
+      let fieldName = errObj.field?.split(".").pop();
+
+      if (errObj.field === "mobile.number") {
+        fieldName = "mobileNumber";
       }
 
-      if (apiError?.message) {
-         notification.error({
-            message: "Registration Failed",
-            description: apiError.message,
-         });
-      } else {
-         message.error("Something went wrong. Please try again.");
-      }
-    } finally {
-      setLoading(false);
-    }
+      setError(fieldName, {
+        type: "manual",
+        message: errObj.message,
+      });
+    });
+    return;
+  }
+
+  // 3️⃣ Case: Account already exists
+  if (
+    apiError?.message &&
+    /already|exists/i.test(apiError.message)
+  ) {
+    showToast("Account already exists. Please login.", "warning");
+    navigate("/user/login");
+    return;
+  }
+
+  // 4️⃣ Fallback message
+  if (apiError?.message) {
+    showToast(apiError.message, "error");
+  } else {
+    showToast("Registration failed. Please try again.", "error");
+  }
+
+} finally {
+  setLoading(false);
+}
   };
 
   /* ================= UI ================= */
@@ -229,7 +259,7 @@ const RegisterNowPage = () => {
                         <Select
                             size="large"
                             value={countryIso}
-                            disabled={otpVerified || otpSent}
+                            // disabled={otpVerified || otpSent}
                             onChange={(val) => {
                                 setCountryIso(val);
                                 setMobileNumber("");
@@ -263,7 +293,7 @@ const RegisterNowPage = () => {
                                     size="large"
                                     prefix={<Phone size={16} className="text-gray-400" />}
                                     value={mobileNumber}
-                                    disabled={otpVerified || otpSent}
+                                    // disabled={otpVerified || otpSent}
                                     onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ""))}
                                     placeholder="Enter digits"
                                     maxLength={PHONE_LENGTH_RULES[countryIso] || 15}
