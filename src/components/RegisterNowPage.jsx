@@ -6,7 +6,7 @@ import { Form, Input, Select, Button, message, notification } from "antd";
 import { apiService } from "../manageApi/utils/custom.apiservice";
 import { AuthContext } from "../manageApi/context/AuthContext";
 import { Country } from "country-state-city"; // Import Library
-
+import { showToast } from "../manageApi/utils/toast";
 const { Option } = Select;
 
 /* ================= PHONE RULES ================= */
@@ -108,60 +108,60 @@ const RegisterNowPage = () => {
       // 3️⃣ REDIRECT
       navigate("/dashboard/customer", { replace: true });
 
-    } catch (err) {
-      const apiError = err?.response?.data;
+   } catch (err) {
+  const apiError = err?.response?.data;
 
-      // Handle structured validation errors from backend
-      if (apiError?.errors && Array.isArray(apiError.errors) && apiError.errors.length > 0) {
-        
-        // --- 1. Show ONLY the 0 index error in Toast ---
-        const firstError = apiError.errors[0];
-        notification.error({
-          message: "Validation Failed",
-          description: firstError.message,
-          duration: 4,
-        });
+  // 1️⃣ Case: API returns ARRAY of errors
+  if (Array.isArray(apiError)) {
+    apiError.forEach(e => {
+      if (e?.message) {
+        showToast(e.message, "error");
+      }
+    });
+    return;
+  }
 
-        // --- 2. Map ALL errors to fields (Red Border) ---
-        apiError.errors.forEach((errObj) => {
-          const parts = errObj.field?.split(".");
-          let fieldName = parts?.length > 1 ? parts[parts.length - 1] : parts?.[0];
+  // 2️⃣ Case: Validation errors (field-level)
+  if (apiError?.errors && Array.isArray(apiError.errors)) {
+    // Show ONLY first error in toast
+    showToast(apiError.errors[0]?.message, "error");
 
-          if (fieldName === "number" || errObj.field === "mobile.number") {
-            fieldName = "mobileNumber";
-          }
+    // Map ALL errors to form fields
+    apiError.errors.forEach(errObj => {
+      let fieldName = errObj.field?.split(".").pop();
 
-          setError(fieldName, {
-            type: "manual",
-            message: errObj.message,
-          });
-        });
-        return; 
+      if (errObj.field === "mobile.number") {
+        fieldName = "mobileNumber";
       }
 
-      // Check for account existence error
-      if (
-        apiError?.message?.toLowerCase().includes("already") ||
-        apiError?.message?.toLowerCase().includes("exists")
-      ) {
-        message.warning("Account already exists. Please login.");
-        navigate("/user/login");
-        return;
-      }
+      setError(fieldName, {
+        type: "manual",
+        message: errObj.message,
+      });
+    });
+    return;
+  }
 
-      // Fallback Generic Error
-      if (apiError?.message && apiError.message !== "Validation failed") {
-          notification.error({
-            message: "Registration Failed",
-            description: apiError.message,
-          });
-      } else if (!apiError?.errors) {
-          message.error("Registration failed. Please try again.");
-      }
-      
-    } finally {
-      setLoading(false);
-    }
+  // 3️⃣ Case: Account already exists
+  if (
+    apiError?.message &&
+    /already|exists/i.test(apiError.message)
+  ) {
+    showToast("Account already exists. Please login.", "warning");
+    navigate("/user/login");
+    return;
+  }
+
+  // 4️⃣ Fallback message
+  if (apiError?.message) {
+    showToast(apiError.message, "error");
+  } else {
+    showToast("Registration failed. Please try again.", "error");
+  }
+
+} finally {
+  setLoading(false);
+}
   };
 
   /* ================= UI ================= */

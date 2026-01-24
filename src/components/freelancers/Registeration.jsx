@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import {
   Form, Input, Select, Button, Checkbox, message, Spin,
-  Space, Typography
+  Space, Typography, Modal, Tag
 } from "antd";
 import registerimage from "../../assets/img/registergarden.jpg";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
@@ -17,8 +17,9 @@ import CountryList from 'country-list-with-dial-code-and-flag';
 import { Country, State, City } from 'country-state-city';
 
 const { Option } = Select;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
+// --- Mock Options ---
 const experienceOptions = Array.from({ length: 11 }, (_, i) => ({
   value: i,
   label: i === 0 ? "Less than 1 year" : `${i} year${i > 1 ? "s" : ""}`,
@@ -42,13 +43,19 @@ const Registration = () => {
     subcategories: true,
     types: {},
     submitting: false,
+    otpSending: false,
+    otpVerifying: false,
   });
   const [success, setSuccess] = useState(false);
 
-  // --- Mobile State ---
+  // --- Mobile Verification State ---
   const [countryCode, setCountryCode] = useState("+971");
   const [mobileNumber, setMobileNumber] = useState("");
   const mobileCountryOptions = useMemo(() => CountryList.getAll(), []);
+  
+  const [isMobileVerified, setIsMobileVerified] = useState(false);
+  const [otpModalVisible, setOtpModalVisible] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
 
   // --- React Hook Form ---
   const {
@@ -57,11 +64,13 @@ const Registration = () => {
     setValue,
     trigger,
     watch,
-    register, // Added register for manual fields
+    register,
+    setError, // Used to set manual errors (like "Not Verified")
+    clearErrors,
     formState: { errors },
   } = useForm({ mode: "onChange" });
 
-  // --- Register Mobile Field Manually ---
+  // Register mobile number manually to handle validation
   useEffect(() => {
     register("mobile_number", { 
         required: "Mobile number is required",
@@ -73,48 +82,25 @@ const Registration = () => {
   const watchState = watch("state");
 
   const locationCountries = useMemo(() => Country.getAllCountries(), []);
+  const availableStates = useMemo(() => watchCountry ? State.getStatesOfCountry(watchCountry) : [], [watchCountry]);
+  const availableCities = useMemo(() => (watchCountry && watchState) ? City.getCitiesOfState(watchCountry, watchState) : [], [watchCountry, watchState]);
 
-  const availableStates = useMemo(() => {
-    if (!watchCountry) return [];
-    return State.getStatesOfCountry(watchCountry);
-  }, [watchCountry]);
+  useEffect(() => { setValue("state", null); setValue("city", null); }, [watchCountry, setValue]);
+  useEffect(() => { setValue("city", null); }, [watchState, setValue]);
 
-  const availableCities = useMemo(() => {
-    if (!watchCountry || !watchState) return [];
-    return City.getCitiesOfState(watchCountry, watchState);
-  }, [watchCountry, watchState]);
-
-  useEffect(() => {
-    setValue("state", null);
-    setValue("city", null);
-  }, [watchCountry, setValue]);
-
-  useEffect(() => {
-    setValue("city", null);
-  }, [watchState, setValue]);
-
-  const [services, setServices] = useState([{
-    subcategoryId: "",
-    types: [],
-    description: "",
-    unit: "per job"
-  }]);
+  const [services, setServices] = useState([{ subcategoryId: "", types: [], description: "", unit: "per job" }]);
   const [selectedLanguages, setSelectedLanguages] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [typesMap, setTypesMap] = useState({});
 
+  // --- Fetch Services ---
   useEffect(() => {
     const initFetch = async () => {
       try {
         const res = await apiService.get("/estimate/master/category/name/Landscaping/subcategories");
-        if (res.success) {
-          setSubcategories(res.data || []);
-        }
-      } catch (err) {
-        message.error("Error loading services");
-      } finally {
-        setLoading(prev => ({ ...prev, subcategories: false }));
-      }
+        if (res.success) setSubcategories(res.data || []);
+      } catch (err) { message.error("Error loading services"); }
+      finally { setLoading(prev => ({ ...prev, subcategories: false })); }
     };
     initFetch();
   }, []);
@@ -130,11 +116,8 @@ const Registration = () => {
         const formatted = (res.data || []).map(item => ({ value: item._id, label: item.label }));
         setTypesMap(prev => ({ ...prev, [serviceIndex]: formatted }));
       }
-    } catch (err) {
-      message.error("Error loading specializations");
-    } finally {
-      setLoading(prev => ({ ...prev, types: { ...prev.types, [serviceIndex]: false } }));
-    }
+    } catch (err) { message.error("Error loading specializations"); }
+    finally { setLoading(prev => ({ ...prev, types: { ...prev.types, [serviceIndex]: false } })); }
   };
 
   const handleSubcategorySelect = (serviceIndex, subcategoryId) => {
@@ -151,44 +134,107 @@ const Registration = () => {
     setServices(newServices);
   };
 
-  const addService = () => {
-    setServices(prev => [...prev, { subcategoryId: "", types: [], description: "", unit: "per job" }]);
+  const addService = () => setServices(prev => [...prev, { subcategoryId: "", types: [], description: "", unit: "per job" }]);
+  const removeService = (index) => setServices(prev => prev.filter((_, i) => i !== index));
+
+  // --- OTP Handlers ---
+  const handleSendOtp = async () => {
+    if (!mobileNumber || mobileNumber.length < 7) {
+      setError("mobile_number", { type: "manual", message: "Enter a valid number to verify" });
+      return;
+    }
+    
+    setLoading(prev => ({ ...prev, otpSending: true }));
+    try {
+      await apiService.post("/otp/send-otp", {
+        country_code: countryCode,
+        phone_number: mobileNumber
+      });
+      message.success(`OTP sent to ${countryCode} ${mobileNumber}`);
+      setOtpModalVisible(true);
+      clearErrors("mobile_number");
+    } catch (error) {
+      message.error(error.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setLoading(prev => ({ ...prev, otpSending: false }));
+    }
   };
 
-  const removeService = (index) => {
-    setServices(prev => prev.filter((_, i) => i !== index));
+  const handleVerifyOtp = async () => {
+    if (!otpValue || otpValue.length < 4) {
+      return message.error("Please enter a valid OTP");
+    }
+
+    setLoading(prev => ({ ...prev, otpVerifying: true }));
+    try {
+      await apiService.post("/otp/verify-otp", {
+        country_code: countryCode,
+        phone_number: mobileNumber,
+        otp: otpValue
+      });
+      
+      message.success("Mobile number verified successfully!");
+      setIsMobileVerified(true);
+      setOtpModalVisible(false);
+      clearErrors("mobile_number"); // Clear any "Not Verified" errors
+    } catch (error) {
+      message.error(error.response?.data?.message || "Invalid OTP. Please try again.");
+    } finally {
+      setLoading(prev => ({ ...prev, otpVerifying: false }));
+    }
   };
 
-  // --- FIXED NEXT FUNCTION ---
+  // --- Navigation with Inline Errors ---
   const next = async () => {
-    const fields = step === 0
-      ? ["first_name", "last_name", "email", "password", "confirmPassword", "mobile_number"] // Added mobile_number
-      : ["experience_years", "bio", "country", "state", "city"];
-    
-    // This triggers validation. If invalid, errors appear in the UI automatically.
-    const ok = await trigger(fields);
-    
-    if (ok) setStep(s => s + 1);
+    let isValid = true;
+
+    // STEP 0 Validation
+    if (step === 0) {
+      const fields = ["first_name", "last_name", "email", "password", "confirmPassword", "mobile_number"];
+      
+      // Trigger react-hook-form validation first
+      const formValid = await trigger(fields);
+      
+      // Check Mobile Verification Manually
+      if (!isMobileVerified) {
+        setError("mobile_number", {
+          type: "manual",
+          message: "Please verify your mobile number first", // This shows below input
+        });
+        isValid = false;
+      } else {
+        // If validated, clear previous errors
+        if (formValid) clearErrors("mobile_number");
+      }
+
+      if (!formValid) isValid = false;
+    } 
+    // STEP 1 Validation
+    else if (step === 1) {
+      const fields = ["experience_years", "bio", "country", "state", "city"];
+      const formValid = await trigger(fields);
+      if (!formValid) isValid = false;
+    }
+
+    if (isValid) setStep(s => s + 1);
   };
 
   const back = () => setStep(s => s - 1);
 
+  // --- Final Submit ---
   const onSubmit = async (data) => {
     if (data.password !== data.confirmPassword) {
-      return message.error("Passwords do not match");
+      setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
+      return;
     }
-    if (selectedLanguages.length === 0) {
-      return message.error("Please select at least one language");
-    }
-    if (services.some(s => !s.subcategoryId || s.types.length === 0 || !s.description)) {
-      return message.error("Please complete all service fields");
-    }
+    
+    if (selectedLanguages.length === 0) return message.error("Please select at least one language");
+    if (services.some(s => !s.subcategoryId || s.types.length === 0 || !s.description)) return message.error("Please complete all service fields");
 
     setLoading(prev => ({ ...prev, submitting: true }));
 
     const countryName = locationCountries.find(c => c.isoCode === data.country)?.name || data.country;
     const stateName = availableStates.find(s => s.isoCode === data.state)?.name || data.state;
-    const cityName = data.city; 
 
     const payload = {
       email: data.email,
@@ -196,8 +242,8 @@ const Registration = () => {
       confirm_password: data.confirmPassword,
       name: { first_name: data.first_name, last_name: data.last_name },
       mobile: { country_code: countryCode, number: mobileNumber.replace(/\D/g, "") },
-      is_mobile_verified: true,
-      location: { country: countryName, state: stateName, city: cityName },
+      is_mobile_verified: isMobileVerified,
+      location: { country: countryName, state: stateName, city: data.city },
       professional: {
         experience_years: Number(data.experience_years),
         bio: data.bio,
@@ -227,8 +273,7 @@ const Registration = () => {
     }
   };
 
-  const filterOption = (input, option) =>
-    (option?.label ?? '').toLowerCase().includes(input.toLowerCase());
+  const filterOption = (input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase());
 
   if (success) {
     return (
@@ -253,6 +298,8 @@ const Registration = () => {
       style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url(${registerimage})` }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-4">
+          
+          {/* Sidebar */}
           <div className="bg-gradient-to-b from-purple-700 to-purple-900 text-white p-8">
             <h3 className="text-2xl font-bold mb-2">Join as a Pro</h3>
             <p className="text-purple-200 mb-8">Grow your landscaping business</p>
@@ -268,6 +315,7 @@ const Registration = () => {
             <p className="text-gray-600 mb-8">Step {step + 1} of 3</p>
 
             <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
+              {/* STEP 0: BASIC INFO */}
               {step === 0 && (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -282,30 +330,32 @@ const Registration = () => {
                     <Controller name="email" control={control} rules={{ required: "Required", pattern: { value: /^\S+@\S+$/i, message: "Invalid email" } }} render={({ field }) => <Input prefix={<Mail />} size="large" {...field} />} />
                   </Form.Item>
 
-                  {/* --- FIXED: Mobile Number with validation below --- */}
+                  {/* --- MOBILE NUMBER WITH INLINE ERROR DISPLAY --- */}
                   <Form.Item 
-                    label="Mobile Number" 
+                    label={
+                        <Space>
+                            <span>Mobile Number</span>
+                            {isMobileVerified && <Tag color="success" icon={<Check size={12} />}>Verified</Tag>}
+                        </Space>
+                    }
                     required 
                     validateStatus={errors.mobile_number ? "error" : ""} 
-                    help={errors.mobile_number?.message} // Checks the registered field error
+                    help={errors.mobile_number?.message} // Displays error here (e.g. "Please verify mobile")
                   >
                     <Space.Compact style={{ width: '100%' }}>
                         <Select
                             showSearch
                             value={countryCode}
                             onChange={setCountryCode}
-                            style={{ width: '30%', minWidth: '120px' }}
+                            style={{ width: '30%', minWidth: '110px' }}
                             placeholder="Code"
                             size="large"
                             optionFilterProp="label"
                             filterOption={filterOption}
+                            disabled={isMobileVerified}
                         >
                             {mobileCountryOptions.map((country, index) => (
-                                <Option
-                                    key={`${country.code}-${index}`} 
-                                    value={country.dial_code}
-                                    label={`${country.name} ${country.dial_code}`}
-                                >
+                                <Option key={`${country.code}-${index}`} value={country.dial_code} label={`${country.name} ${country.dial_code}`}>
                                     <span>{country.flag} {country.dial_code}</span>
                                 </Option>
                             ))}
@@ -316,13 +366,26 @@ const Registration = () => {
                             onChange={e => {
                                 const val = e.target.value.replace(/\D/g, "");
                                 setMobileNumber(val);
-                                // IMPORTANT: Update the hook form validation manually
+                                // Update hook form value manually
                                 setValue("mobile_number", val, { shouldValidate: true });
+                                // Clear manual verify error if user starts typing (optional logic)
+                                if (errors.mobile_number?.type === 'manual') clearErrors("mobile_number");
                             }}
                             placeholder="501234567" 
                             size="large" 
-                            style={{ width: '70%' }} 
+                            style={{ width: '50%' }} 
+                            disabled={isMobileVerified} 
                         />
+                        <Button 
+                            type="primary" 
+                            size="large" 
+                            onClick={handleSendOtp}
+                            disabled={isMobileVerified || !mobileNumber}
+                            loading={loading.otpSending}
+                            style={{ width: '20%', minWidth: '100px', backgroundColor: isMobileVerified ? '#52c41a' : undefined }}
+                        >
+                            {isMobileVerified ? "Verified" : "Verify"}
+                        </Button>
                     </Space.Compact>
                   </Form.Item>
 
@@ -330,10 +393,11 @@ const Registration = () => {
                     <Form.Item label="Password" required validateStatus={errors.password ? "error" : ""} help={errors.password?.message}>
                       <Controller name="password" control={control} rules={{ required: "Required", minLength: { value: 6, message: "Min 6 characters" } }} render={({ field }) => <Input.Password prefix={<Lock />} size="large" {...field} />} />
                     </Form.Item>
-                    <Form.Item label="Confirm Password" required>
+                    <Form.Item label="Confirm Password" required validateStatus={errors.confirmPassword ? "error" : ""} help={errors.confirmPassword?.message}>
                       <Controller name="confirmPassword" control={control} rules={{ required: "Required" }} render={({ field }) => <Input.Password prefix={<Lock />} size="large" {...field} />} />
                     </Form.Item>
                   </div>
+                  
                   <div className="text-right mt-8">
                     <Button type="primary" size="large" onClick={next} style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}>
                       Next <ChevronRight className="inline" />
@@ -342,6 +406,7 @@ const Registration = () => {
                 </>
               )}
 
+              {/* STEP 1: PROFESSIONAL DETAILS */}
               {step === 1 && (
                 <>
                   <Form.Item label="Years of Experience" required validateStatus={errors.experience_years ? "error" : ""} help={errors.experience_years?.message}>
@@ -356,63 +421,31 @@ const Registration = () => {
                   </Form.Item>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Country */}
                     <Form.Item label="Country" required validateStatus={errors.country ? "error" : ""} help={errors.country?.message}>
                       <Controller name="country" control={control} rules={{ required: "Required" }} render={({ field }) => (
-                        <Select 
-                            {...field} 
-                            size="large" 
-                            placeholder="Select country" 
-                            showSearch
-                            optionFilterProp="label"
-                            filterOption={filterOption}
-                        >
+                        <Select {...field} size="large" placeholder="Select country" showSearch optionFilterProp="label" filterOption={filterOption}>
                           {locationCountries.map(c => (
-                             <Option key={c.isoCode} value={c.isoCode} label={c.name}>
-                                {c.flag} {c.name}
-                             </Option>
+                             <Option key={c.isoCode} value={c.isoCode} label={c.name}>{c.flag} {c.name}</Option>
                           ))}
                         </Select>
                       )} />
                     </Form.Item>
 
-                    {/* State */}
                     <Form.Item label="State/Emirate" required validateStatus={errors.state ? "error" : ""} help={errors.state?.message}>
                       <Controller name="state" control={control} rules={{ required: "Required" }} render={({ field }) => (
-                        <Select 
-                            {...field} 
-                            size="large" 
-                            placeholder={!watchCountry ? "Select Country first" : "Select State"} 
-                            disabled={!watchCountry}
-                            showSearch
-                            optionFilterProp="label"
-                            filterOption={filterOption}
-                        >
+                        <Select {...field} size="large" placeholder={!watchCountry ? "Select Country first" : "Select State"} disabled={!watchCountry} showSearch optionFilterProp="label" filterOption={filterOption}>
                           {availableStates.map(s => (
-                             <Option key={s.isoCode} value={s.isoCode} label={s.name}>
-                                {s.name}
-                             </Option>
+                             <Option key={s.isoCode} value={s.isoCode} label={s.name}>{s.name}</Option>
                           ))}
                         </Select>
                       )} />
                     </Form.Item>
 
-                    {/* City */}
                     <Form.Item label="City" required validateStatus={errors.city ? "error" : ""} help={errors.city?.message}>
                       <Controller name="city" control={control} rules={{ required: "Required" }} render={({ field }) => (
-                        <Select 
-                            {...field} 
-                            size="large" 
-                            placeholder={!watchState ? "Select State first" : "Select City"} 
-                            disabled={!watchState}
-                            showSearch
-                            optionFilterProp="label"
-                            filterOption={filterOption}
-                        >
+                        <Select {...field} size="large" placeholder={!watchState ? "Select State first" : "Select City"} disabled={!watchState} showSearch optionFilterProp="label" filterOption={filterOption}>
                           {availableCities.map(c => (
-                             <Option key={c.name} value={c.name} label={c.name}>
-                                {c.name}
-                             </Option>
+                             <Option key={c.name} value={c.name} label={c.name}>{c.name}</Option>
                           ))}
                         </Select>
                       )} />
@@ -428,7 +461,7 @@ const Registration = () => {
                 </>
               )}
 
-              {/* ... Step 2 and rest of code remains the same ... */}
+              {/* STEP 2: SERVICES */}
               {step === 2 && (
                 <Spin spinning={loading.submitting}>
                   {services.map((service, index) => (
@@ -452,9 +485,7 @@ const Registration = () => {
                           className="w-full"
                         >
                           {subcategories.map(sub => (
-                            <Option key={sub._id} value={sub._id}>
-                              {sub.label}
-                            </Option>
+                            <Option key={sub._id} value={sub._id}>{sub.label}</Option>
                           ))}
                         </Select>
                       </Form.Item>
@@ -542,6 +573,52 @@ const Registration = () => {
           </div>
         </div>
       </div>
+
+      {/* --- OTP Verification Modal --- */}
+      <Modal
+        title={<Title level={4} style={{ margin: 0 }}>Verify Mobile Number</Title>}
+        open={otpModalVisible}
+        onCancel={() => setOtpModalVisible(false)}
+        footer={null}
+        width={400}
+        centered
+      >
+        <div className="text-center py-4">
+          <Text className="block mb-6 text-gray-500">
+            Enter the 6-digit code sent to <br /> 
+            <strong>{countryCode} {mobileNumber}</strong>
+          </Text>
+          
+          <Input.OTP 
+            length={6} 
+            value={otpValue} 
+            onChange={setOtpValue} 
+            size="large"
+            style={{ marginBottom: 24 }}
+          />
+
+          <Button 
+            type="primary" 
+            block 
+            size="large" 
+            loading={loading.otpVerifying}
+            onClick={handleVerifyOtp}
+            style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}
+          >
+            Verify OTP
+          </Button>
+
+          <Button 
+            type="link" 
+            className="mt-4 text-gray-400" 
+            onClick={handleSendOtp}
+            disabled={loading.otpSending}
+          >
+            Resend OTP
+          </Button>
+        </div>
+      </Modal>
+
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useCmsContext } from '../../contexts/CmsContext'; 
 import { FiX, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
+import { useFreelancer } from '../../../../../src/context/FreelancerContext';
 
 // IMPORT BOTH SEPARATE IMAGES HERE
 import logoNew from '../../../../assets/img/logoNew.png'; 
@@ -34,6 +35,10 @@ const Sidebar = () => {
   } = useCmsContext();
 
   const location = useLocation();
+    const {
+  freelancer,
+  loading: freelancerLoading
+} = useFreelancer();
   const { user, token, permissions } = useSelector((s) => s.auth);
   const [openModule, setOpenModule] = useState(null);
   const sidebarRef = useRef(null);
@@ -43,6 +48,8 @@ const Sidebar = () => {
       setMobileSidebarCollapsed(true); 
     }
   }, [location.pathname, setMobileSidebarCollapsed]);
+
+
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -60,8 +67,10 @@ const Sidebar = () => {
   const roleSlug = roleSlugMap[roleCode] ?? 'dashboard';
   const basePath = `/dashboard/${roleSlug}`;
   const isFreelancer = roleCode === '7';
-  const isPendingApproval = isFreelancer && user.status !== 1;
-
+const isPendingApproval =
+  isFreelancer &&
+  freelancer &&
+  freelancer.status_info?.status !== 1;
   const navTree = useMemo(() => {
     const tree = [{ title: 'Dashboard', icon: 'fas fa-home', to: basePath, exact: true, submenus: [] }];
     if (isPendingApproval) return tree;
