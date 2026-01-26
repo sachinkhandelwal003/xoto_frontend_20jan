@@ -152,15 +152,15 @@ const Login = () => {
       gradient: "linear-gradient(135deg, #10B981, #059669)",
       type: "direct",
     },
-    {
-      id: "xoto-grid", // Group Trigger
-      label: "Xoto Grid",
-      desc: "Devs, Agents & Agencies",
-      icon: <CodeOutlined style={{ fontSize: "28px" }} />,
-      color: "#F97316",
-      gradient: "linear-gradient(135deg, #F97316, #EA580C)",
-      type: "group", 
-    },
+    // {
+    //   id: "xoto-grid", // Group Trigger
+    //   label: "Xoto Grid",
+    //   desc: "Devs, Agents & Agencies",
+    //   icon: <CodeOutlined style={{ fontSize: "28px" }} />,
+    //   color: "#F97316",
+    //   gradient: "linear-gradient(135deg, #F97316, #EA580C)",
+    //   type: "group", 
+    // },
   ];
 
   // 2. All Partner Types (For Login Logic & Sub-selection)
