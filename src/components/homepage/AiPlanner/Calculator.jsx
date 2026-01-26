@@ -95,39 +95,30 @@ const reverseGeocode = async (lat, lng) => {
 
 // Map Picker Component
 const MapPicker = ({ coords, onChange }) => {
-  const [position, setPosition] = useState(
-    coords.lat && coords.lng ? [coords.lat, coords.lng] : [25.2048, 55.2708]
+  const position = React.useMemo(
+    () =>
+      coords.lat && coords.lng
+        ? [coords.lat, coords.lng]
+        : [25.2048, 55.2708],
+    [coords.lat, coords.lng]
   );
-
-  useEffect(() => {
-    if (coords.lat && coords.lng) {
-      setPosition([coords.lat, coords.lng]);
-    }
-  }, [coords.lat, coords.lng]);
 
   const LocationMarker = () => {
     useMapEvents({
-      async click(e) {
-        const newPosition = [e.latlng.lat, e.latlng.lng];
-        setPosition(newPosition);
-        onChange({ lat: newPosition[0], lng: newPosition[1] });
+      click(e) {
+        onChange({ lat: e.latlng.lat, lng: e.latlng.lng });
       },
     });
-
-    return position ? <Marker position={position} /> : null;
+    return <Marker position={position} />;
   };
 
   return (
     <MapContainer
       center={position}
       zoom={15}
-      style={{ height: 300, width: "100%", borderRadius: "1rem", zIndex: 1 }}
-      scrollWheelZoom={true}
+      style={{ height: 300, width: "100%", borderRadius: "1rem" }}
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <LocationMarker />
     </MapContainer>
   );
@@ -142,7 +133,7 @@ const Calculator = () => {
   const [subcategories, setSubcategories] = useState([]);
   const [types, setTypes] = useState([]);
   const [packages, setPackages] = useState([]);
-
+const [step3Form] = Form.useForm();
   const [coords, setCoords] = useState({
     lat: null,
     lng: null,
@@ -233,6 +224,10 @@ const Calculator = () => {
     questions: false,
   });
 
+  const handleSelectType = React.useCallback(
+  (id) => setSelectedType(id),
+  []
+);
   const handlePhoneChange = (e) => {
     const value = e.target.value.replace(/\D/g, "");
     const rule = COUNTRY_PHONE_RULES[countryCode];
@@ -435,18 +430,25 @@ const Calculator = () => {
     }
   };
 
-  const handleAnswerChange = (questionId, value) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: value,
-    }));
+const handleAnswerChange = React.useCallback((questionId, newValue) => {
+  let valueChanged = false;
 
+  setAnswers((prev) => {
+    if (prev[questionId] === newValue) return prev;
+    valueChanged = true;
+    return { ...prev, [questionId]: newValue };
+  });
+
+  // Only clear error if value actually changed
+  if (valueChanged) {
     setStep3Errors((prev) => {
+      if (!prev[questionId]) return prev;
       const copy = { ...prev };
       delete copy[questionId];
       return copy;
     });
-  };
+  }
+}, []);
 
   const buildEstimateAnswersPayload = () => {
     return questions.map((q) => {
@@ -616,7 +618,126 @@ const Calculator = () => {
     }
     return true;
   };
+//  B. Memoized single question (prevents re-render of other fields)
+const QuestionField = React.memo(function QuestionField({
+  question,
+  value,
+  hasError,
+  onChange,
+}) {
+  const id = `q-${question._id}`;
 
+  if (question.questionType === "text") {
+    return (
+      <Form.Item
+        label={question.question}
+        required
+        validateStatus={hasError ? "error" : ""}
+        help={hasError ? "This field is required." : null}
+      >
+        <Input
+          id={id}
+          value={value ?? ""}
+          onChange={(e) => onChange(question._id, e.target.value)}
+        />
+      </Form.Item>
+    );
+  }
+
+  if (question.questionType === "number") {
+    return (
+      <Form.Item
+        label={question.question}
+        required
+        validateStatus={hasError ? "error" : ""}
+        help={hasError ? "This field is required." : null}
+      >
+        <Input
+          id={id}
+          type="number"
+          value={value ?? ""}
+          onChange={(e) => onChange(question._id, e.target.value)}
+        />
+      </Form.Item>
+    );
+  }
+
+  if (question.questionType === "options" || question.questionType === "yesorno") {
+    return (
+      <Form.Item
+        label={question.question}
+        required
+        validateStatus={hasError ? "error" : ""}
+        help={hasError ? "This field is required." : null}
+      >
+        <Radio.Group
+          value={value}
+          onChange={(e) => onChange(question._id, e.target.value)}
+        >
+          <Space direction="vertical">
+            {question.options?.map((opt) => (
+              <Radio key={opt._id} value={opt.title}>
+                {opt.title}
+              </Radio>
+            ))}
+          </Space>
+        </Radio.Group>
+      </Form.Item>
+    );
+  }
+
+  return null;
+});
+
+// ────────────────────────────────────────────────
+//  C. Main questions container – now very lean
+const Step3Questions = React.memo(function Step3Questions({
+  form,
+  questions,
+  answers,
+  step3Errors,
+  loading,
+}) {
+  if (loading) {
+    return (
+      <div className="py-20 text-center">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (!questions?.length) {
+    return (
+      <div className="py-20 text-center">
+        <h2 className="text-2xl font-bold">NO QUESTIONS AVAILABLE</h2>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-10">
+      <div className="max-w-3xl mx-auto">
+        <Title level={3} className="text-center mb-8">
+          Project Details
+        </Title>
+
+        <Card className="rounded-xl shadow-sm">
+          <Form form={form} layout="vertical" preserve>
+            {questions.map((q) => (
+              <QuestionField
+                key={q._id}
+                question={q}
+                value={answers[q._id]}
+                hasError={!!step3Errors[q._id]}
+                onChange={handleAnswerChange}
+              />
+            ))}
+          </Form>
+        </Card>
+      </div>
+    </div>
+  );
+});
   // --- UI COMPONENTS ---
   const SelectionCard = ({ item, isSelected, onClick, colorClass }) => (
     <motion.div
@@ -658,9 +779,6 @@ const Calculator = () => {
       case 0:
         return (
           <motion.div
-            initial={variants.initial}
-            animate={variants.animate}
-            exit={variants.exit}
             className="text-center py-10"
           >
             <div className="mb-6 inline-block p-6 rounded-full bg-purple-50">
@@ -719,9 +837,6 @@ const Calculator = () => {
       case 1:
         return (
           <motion.div
-            initial={variants.initial}
-            animate={variants.animate}
-            exit={variants.exit}
           >
             <Title level={2} className="text-center mb-10">
               What are we designing?
@@ -745,9 +860,6 @@ const Calculator = () => {
       case 2:
         return (
           <motion.div
-            initial={variants.initial}
-            animate={variants.animate}
-            exit={variants.exit}
           >
             <Title level={2} className="text-center mb-10">
               Select Your Aesthetic Style
@@ -764,7 +876,7 @@ const Calculator = () => {
                     <SelectionCard
                       item={t}
                       isSelected={selectedType === t._id}
-                      onClick={() => setSelectedType(t._id)}
+                      onClick={() => handleSelectType(t._id)}
                       colorClass="bg-emerald-50 text-emerald-600"
                     />
                   </Col>
@@ -774,118 +886,19 @@ const Calculator = () => {
           </motion.div>
         );
 
-      case 3:
-        return (
-          <motion.div
-            initial={variants.initial}
-            animate={variants.animate}
-            exit={variants.exit}
-            className="py-10"
-          >
-            <div className="max-w-3xl mx-auto">
-              <Title level={3} className="text-center mb-8">
-                Project Details
-              </Title>
-
-              <Card className="rounded-xl shadow-sm">
-                {loading.questions ? (
-                  <div className="py-20 text-center">
-                    <Spin size="large" />
-                  </div>
-                ) : questions && questions.length > 0 ? (
-                  <Form layout="vertical" className="space-y-6" requiredMark={true}>
-                    {questions.map((q) => {
-                      const isError = !!step3Errors[q._id];
-
-                      return (
-                        <Form.Item
-                          key={q._id}
-                          label={q.question}
-                          required={true}
-                          validateStatus={isError ? "error" : ""}
-                          help={isError ? "This field is required." : null}
-                        >
-                          {/* TEXT */}
-                          {q.questionType === "text" && (
-                            <Input
-                              id={`q-${q._id}`}
-                              value={answers[q._id] || ""}
-                              onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                              placeholder="Enter value"
-                              status={isError ? "error" : ""}
-                            />
-                          )}
-
-                          {/* NUMBER */}
-                          {q.questionType === "number" && (
-                            <Input
-                              id={`q-${q._id}`}
-                              type="number"
-                              value={answers[q._id] || ""}
-                              onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                              placeholder="Enter number"
-                              min={q.minValue || 0}
-                              max={q.maxValue || undefined}
-                              status={isError ? "error" : ""}
-                            />
-                          )}
-
-                          {/* YES / NO */}
-                          {q.questionType === "yesorno" && (
-                            <Radio.Group
-                              value={answers[q._id]}
-                              onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                            >
-                              <Space>
-                                {q.options?.map((opt) => (
-                                  <Radio key={opt._id} value={opt.title}>
-                                    {opt.title}
-                                  </Radio>
-                                ))}
-                              </Space>
-                            </Radio.Group>
-                          )}
-
-                          {/* OPTIONS */}
-                          {q.questionType === "options" && (
-                            <Radio.Group
-                              value={answers[q._id]}
-                              onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                            >
-                              <Space direction="vertical">
-                                {q.options?.map((opt) => (
-                                  <Radio key={opt._id} value={opt.title}>
-                                    {opt.title}
-                                  </Radio>
-                                ))}
-                              </Space>
-                            </Radio.Group>
-                          )}
-                        </Form.Item>
-                      );
-                    })}
-                  </Form>
-                ) : (
-                  <div className="py-20 text-center">
-                    <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
-                      NO QUESTIONS AVAILABLE
-                    </h2>
-                    <p className="text-gray-500 mt-2 font-semibold">
-                      Please select another style/service or try again later.
-                    </p>
-                  </div>
-                )}
-              </Card>
-            </div>
-          </motion.div>
-        );
-
+case 3:
+  return (
+    <Step3Questions
+  form={step3Form}
+questions={questions}
+answers={answers}
+step3Errors={step3Errors}
+loading={loading.questions}
+    />
+  );
       case 4:
         return (
           <motion.div
-            initial={variants.initial}
-            animate={variants.animate}
-            exit={variants.exit}
             className="max-w-5xl mx-auto"
           >
             <Row gutter={48}>

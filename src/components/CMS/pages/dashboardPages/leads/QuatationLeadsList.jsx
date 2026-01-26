@@ -7,7 +7,7 @@ import {
   Drawer, Button, Card, Tag, message, Form, Input, InputNumber,
   Modal, Row, Col, Divider, Table, Space, Select,
   Descriptions, Badge, Typography, Avatar, Tooltip,
-  Image, List, Empty
+  Image, List, Empty, Collapse, Alert
 } from 'antd';
 import {
   EyeOutlined, FileAddOutlined,
@@ -15,16 +15,19 @@ import {
   CalculatorOutlined, 
   PictureOutlined, EnvironmentOutlined,
   IdcardOutlined, QuestionCircleOutlined,
-  DeleteOutlined, PlusOutlined,FileTextOutlined 
+  DeleteOutlined, PlusOutlined, FileTextOutlined,
+  CheckOutlined
 } from '@ant-design/icons';
 import { showSuccessAlert, showErrorAlert } from '../../../../../manageApi/utils/sweetAlert';
 
 // --- Import Freelancer Context ---
 import { useFreelancer } from '../../../../../../src/context/FreelancerContext';      
+import logo from "../../../../../assets/img/logoNew.png";
 
 const { TextArea } = Input;
 const { Option } = Select;
 const { Title, Text } = Typography;
+const { Panel } = Collapse;
 
 // Purple Theme Colors
 const PURPLE_THEME = {
@@ -61,8 +64,11 @@ const QuotationLeadsList = () => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   
+  console.log(mySubmittedQuotation)
   // Single Item State
-  const [items, setItems] = useState([{ item: '', quantity: 1, unit_price: 0, total: 0 }]);
+  const [quotationPrice, setQuotationPrice] = useState(0);
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [scopeOfWork, setScopeOfWork] = useState('');
 
   const statusConfig = {
     pending: { label: 'Pending', color: 'warning', bgColor: '#fff7e6', textColor: '#fa8c16' },
@@ -75,12 +81,10 @@ const QuotationLeadsList = () => {
     customer_rejected: { label: 'Rejected', color: 'error', bgColor: '#fff1f0', textColor: '#cf1322' }
   };
 
-  const unitOptions = ['sq.ft', 'sq.m', 'lumpsum', 'hour', 'day', 'week', 'month', 'piece', 'set', 'unit', 'lot'];
-
   // --- Helpers ---
   const formatMobileNumber = (mobileObj) => mobileObj ? `${mobileObj.country_code || ''} ${mobileObj.number || ''}`.trim() : 'N/A';
   const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
-  const formatCurrency = (amount, currency = 'AED') => amount ? `${currency} ${parseFloat(amount).toLocaleString()}` : `${currency} 0`;
+  const formatCurrency = (amount, currency = 'AED') => amount ? `${currency} ${parseFloat(amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : `${currency} 0.00`;
   
   const getFullImageUrl = (path) => {
     if (!path) return null;
@@ -150,20 +154,9 @@ const QuotationLeadsList = () => {
   );
 
   // --- Action Handlers ---
-  const calculateTotals = () => {
-    const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
-    const discountPercent = form.getFieldValue('discount_percent') || 0;
-    const discountAmount = (subtotal * discountPercent) / 100;
-    const grandTotal = subtotal - discountAmount;
-    return { subtotal, discountAmount, grandTotal };
-  };
-
-  const updateItemTotal = (index) => {
-    const newItems = [...items];
-    const price = newItems[index].unit_price || 0;
-    const area = selectedEstimate?.area_sqft || 1;
-    newItems[index].total = price * area;
-    setItems(newItems);
+  const calculateGrandTotal = () => {
+    const discountAmount = (quotationPrice * discountPercent) / 100;
+    return quotationPrice - discountAmount;
   };
 
   const handlePageChange = (page, pageSize) => fetchLeads(page, pageSize, filters);
@@ -175,10 +168,15 @@ const QuotationLeadsList = () => {
     
     setSelectedEstimate(estimate);
     form.resetFields();
+    
+    // Reset state
+    setQuotationPrice(0);
+    setDiscountPercent(0);
+    setScopeOfWork('');
 
     // 1. Find matching service in Freelancer Profile (Rate Card)
     let initialPrice = 0;
-    const typeLabel = estimate.type?.label || 'Service'; // e.g. "Paving"
+    const typeLabel = estimate.type?.label || 'Service';
     const subcategoryLabel = estimate.subcategory?.label || 'General';
 
     if (freelancer && freelancer.services_offered) {
@@ -196,14 +194,8 @@ const QuotationLeadsList = () => {
         }
     }
 
-    // 2. Pre-fill Single Item Line
-    const area = estimate.area_sqft || 1;
-    setItems([{ 
-        item: `${subcategoryLabel} - ${typeLabel}`, // Auto-generated Item Name
-        quantity: area, // Locked to Estimate Area
-        unit_price: initialPrice, // Auto-populated from profile, Editable
-        total: area * initialPrice 
-    }]);
+    // Set the initial price (this is the TOTAL price, not per sq.ft)
+    setQuotationPrice(initialPrice);
 
     setCreateModalVisible(true);
   };
@@ -217,26 +209,36 @@ const QuotationLeadsList = () => {
     }
   };
 
+  
   const openDetailsDrawer = (lead) => { setSelectedLead(lead); setDetailsDrawerVisible(true); };
 
-  const handleSubmitQuotation = async (values) => {
+  const handleSubmitQuotation = async () => {
     setSubmitting(true);
     try {
-      if (!values.scope_of_work?.trim()) { setSubmitting(false); return showErrorAlert("Validation Error", "Scope of work is required."); }
+      if (!scopeOfWork?.trim()) {
+        setSubmitting(false);
+        return showErrorAlert("Validation Error", "Scope of work is required.");
+      }
       
-      const singleItem = items[0];
+      if (quotationPrice <= 0) {
+        setSubmitting(false);
+        return showErrorAlert("Validation Error", "Please enter a valid price.");
+      }
       
+      // Calculate final price after discount
+      const discountAmount = (quotationPrice * discountPercent) / 100;
+      const finalPrice = quotationPrice - discountAmount;
+
+      // Send simplified JSON format as requested
       const quotationData = { 
-          items: [{
-              item: singleItem.item,
-              description: "", // Removed as per request
-              quantity: singleItem.quantity,
-              unit_price: singleItem.unit_price,
-              total: singleItem.total
-          }], 
-          scope_of_work: values.scope_of_work, 
-          discount_percent: values.discount_percent || 0 
+        scope_of_work: scopeOfWork,
+        price: finalPrice,  // Final price after discount
+        discount_percent: discountPercent,
+        estimate_type: selectedEstimate?.type?._id,
+        estimate_subcategory: selectedEstimate?.subcategory?._id
       };
+      
+      console.log('Submitting quotation:', quotationData);
       
       const response = await apiService.post(`/estimates/${selectedEstimate._id}/quotation`, quotationData);
       
@@ -254,52 +256,6 @@ const QuotationLeadsList = () => {
   };
 
   useEffect(() => { if (user?.id) fetchLeads(1, 10, { status: 'assigned' }); }, [user]);
-
-  // --- Table Columns (New Quotation - Simplified) ---
-  const itemColumns = [
-    { 
-        title: 'Service Type (Item)', 
-        dataIndex: 'item', 
-        render: (t) => (
-            <div className="font-medium text-gray-700">
-                {t}
-            </div>
-        )
-    },
-    { 
-        title: 'Area (Qty)', 
-        dataIndex: 'quantity', 
-        width: 120, 
-        align: 'center',
-        render: (t) => <Tag color="blue" style={{ fontSize: 14 }}>{t} sq.ft</Tag> 
-    },
-    { 
-        title: 'Your Rate (Editable)', 
-        dataIndex: 'unit_price', 
-        width: 180, 
-        render: (t, _, i) => (
-            <InputNumber 
-                min={0} 
-                value={t} 
-                style={{ width: '100%', borderColor: PURPLE_THEME.primary }} 
-                // Allow freelancer to change rate
-                onChange={v => { 
-                    const n = [...items]; 
-                    n[i].unit_price = v || 0; 
-                    updateItemTotal(i); 
-                }} 
-                addonAfter="AED"
-            />
-        ) 
-    },
-    { 
-        title: 'Total Amount', 
-        dataIndex: 'total', 
-        width: 180, 
-        align: 'right', 
-        render: t => <span style={{ color: PURPLE_THEME.success, fontWeight: 'bold', fontSize: 16 }}>{formatCurrency(t)}</span> 
-    }
-  ];
 
   // --- Main Table Columns ---
   const columns = [
@@ -333,7 +289,8 @@ const QuotationLeadsList = () => {
         </div>
       )
     },
-    { title: 'Status', width: 120, render: (_, r) => <StatusBadge status={r.status} /> },
+  
+    // { title: 'Status', width: 120, render: (_, r) => <StatusBadge status={r.status} /> },
     { 
       title: 'Actions', width: 180, 
       render: (_, r) => (
@@ -351,7 +308,7 @@ const QuotationLeadsList = () => {
     }
   ];
 
-  const { subtotal, discountAmount, grandTotal } = calculateTotals();
+  const grandTotal = calculateGrandTotal();
 
   return (
     <div className="min-h-screen p-6" style={{ background: '#f0f2f5' }}>
@@ -418,9 +375,11 @@ const QuotationLeadsList = () => {
                                     <Tag color="blue">
                                        {ans.selectedOption?.title || ans.answerValue || 'N/A'}
                                     </Tag>
-                                    <span className="font-bold text-green-600">
-                                      {formatCurrency(ans.calculatedAmount)}
-                                    </span>
+                                    {ans.calculatedAmount > 0 && (
+                                      <span className="font-bold text-green-600">
+                                        {formatCurrency(ans.calculatedAmount)}
+                                      </span>
+                                    )}
                                  </div>
                               </div>
                            ))}
@@ -439,6 +398,7 @@ const QuotationLeadsList = () => {
                        <Descriptions.Item label="Dimensions">{selectedLead.area_length || '-'} x {selectedLead.area_width || '-'}</Descriptions.Item>
                        <Descriptions.Item label="Type">{selectedLead.type?.label}</Descriptions.Item>
                        <Descriptions.Item label="Category">{selectedLead.subcategory?.label}</Descriptions.Item>
+                       <Descriptions.Item label="Estimate Amount"><strong>{formatCurrency(selectedLead.estimated_amount)}</strong></Descriptions.Item>
                     </Descriptions>
                     {selectedLead.description && (
                       <div className="mt-4 p-3 bg-gray-50 rounded text-sm text-gray-600 italic border border-gray-200">
@@ -484,107 +444,354 @@ const QuotationLeadsList = () => {
 
         {/* --- CREATE QUOTATION MODAL --- */}
         <Modal
-          title={<div className="text-xl font-bold text-purple-700">New Quotation</div>}
+          title={null}
           open={createModalVisible}
           onCancel={() => setCreateModalVisible(false)}
           footer={null}
           width={1000}
+          style={{ top: 20 }}
           destroyOnClose
           maskClosable={false}
         >
-           <Form form={form} layout="vertical" onFinish={handleSubmitQuotation}>
-              <div className="bg-gray-50 p-4 rounded mb-4 border border-gray-200">
-                 <Descriptions size="small" column={2}>
-                    <Descriptions.Item label="Customer">{getCustomerName(selectedEstimate?.customer)}</Descriptions.Item>
-                    <Descriptions.Item label="Service">{selectedEstimate?.service_type}</Descriptions.Item>
-                    <Descriptions.Item label="Estimate Type"><Tag color="purple">{selectedEstimate?.type?.label}</Tag></Descriptions.Item>
-                    <Descriptions.Item label="Total Area"><strong>{selectedEstimate?.area_sqft} sq.ft</strong></Descriptions.Item>
-                 </Descriptions>
+          <div className="p-6">
+            {/* Header with Logo */}
+            <div className="flex justify-between items-start border-b pb-6 mb-6">
+              <div>
+                <img src={logo} alt="Company Logo" style={{ height: 50, marginBottom: 8 }} />
+                <div className="text-xs text-gray-500">Freelancer Quotation</div>
               </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-purple-700">QUOTATION</div>
+                <div className="text-sm text-gray-500">Date: {new Date().toLocaleDateString()}</div>
+                {selectedEstimate && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    For Estimate: {selectedEstimate._id.substring(0,8)}
+                  </div>
+                )}
+              </div>
+            </div>
 
-              <Card size="small" title="Quotation Items" className="mb-4 shadow-sm">
-                 <Table 
-                   dataSource={items} 
-                   columns={itemColumns} 
-                   pagination={false} 
-                   size="small" 
-                   rowKey="sno" 
-                 />
-              </Card>
-
+            {/* Customer & Estimate Info */}
+            <div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
               <Row gutter={24}>
-                 <Col span={16}>
-                    <Form.Item name="scope_of_work" label="Scope of Work / Terms" rules={[{ required: true }]}>
-                       <TextArea rows={5} placeholder="Describe the scope of work clearly..." />
-                    </Form.Item>
-                 </Col>
-                 <Col span={8}>
-                    <Card size="small" className="bg-purple-50 border-purple-100">
-                       <div className="flex justify-between mb-2"><span>Subtotal:</span> <strong>{formatCurrency(calculateTotals().subtotal)}</strong></div>
-                       <Form.Item name="discount_percent" label="Discount %" style={{ marginBottom: 12 }}>
-                          <InputNumber min={0} max={100} style={{ width: '100%' }} onChange={() => setItems([...items])} />
-                       </Form.Item>
-                       <div className="flex justify-between text-red-500 mb-2"><span>Discount:</span> -{formatCurrency(calculateTotals().discountAmount)}</div>
-                       <Divider style={{ margin: '8px 0' }} />
-                       <div className="flex justify-between text-lg font-bold text-purple-700"><span>Grand Total:</span> {formatCurrency(calculateTotals().grandTotal)}</div>
-                    </Card>
-                 </Col>
+                <Col span={12}>
+                  <div className="mb-2">
+                    <div className="text-xs text-gray-500">CUSTOMER</div>
+                    <div className="font-bold text-lg">{getCustomerName(selectedEstimate?.customer)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">SERVICE</div>
+                    <div className="font-medium">
+                      <Tag color="purple">{selectedEstimate?.service_type?.toUpperCase()}</Tag>
+                      {selectedEstimate?.subcategory?.label} - {selectedEstimate?.type?.label}
+                    </div>
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <div className="mb-2">
+                        <div className="text-xs text-gray-500">AREA</div>
+                        <div className="font-bold text-lg">{selectedEstimate?.area_sqft} sq.ft</div>
+                      </div>
+                    </Col>
+                    <Col span={12}>
+                      <div className="mb-2">
+                        <div className="text-xs text-gray-500">ESTIMATE VALUE</div>
+                        <div className="font-bold text-lg text-purple-700">
+                          {formatCurrency(selectedEstimate?.estimated_amount)}
+                        </div>
+                      </div>
+                    </Col>
+                  </Row>
+                </Col>
               </Row>
+            </div>
 
-              <div className="text-right mt-4">
-                 <Button onClick={() => setCreateModalVisible(false)} style={{ marginRight: 8 }}>Cancel</Button>
-                 <Button type="primary" htmlType="submit" loading={submitting} style={{ background: PURPLE_THEME.primary }}>Submit Quotation</Button>
+            {/* Quotation Form */}
+            <div className="grid grid-cols-12 gap-6">
+              {/* Left Column - Price Inputs */}
+              <div className="col-span-8">
+                <Card 
+                  title={<div className="font-bold">Quotation Details</div>}
+                  className="shadow-sm border"
+                >
+                  <div className="space-y-6">
+                    {/* Price Input */}
+                    <div>
+                      <div className="font-medium mb-2">Total Quotation Amount (AED)</div>
+                      <InputNumber
+                        style={{ width: '100%', borderColor: PURPLE_THEME.primary, height: 48 }}
+                        size="large"
+                        min={0}
+                        value={quotationPrice}
+                        onChange={(value) => setQuotationPrice(value || 0)}
+                        placeholder="Enter your quotation price"
+                        prefix="AED"
+                        className="text-lg"
+                      />
+                      <div className="text-xs text-gray-500 mt-1">
+                        Total price for the entire project
+                      </div>
+                    </div>
+
+                    {/* Discount */}
+                    <div>
+                      <div className="font-medium mb-2">Discount Percentage</div>
+                      <InputNumber
+                        style={{ width: '100%', height: 48 }}
+                        size="large"
+                        min={0}
+                        max={100}
+                        value={discountPercent}
+                        onChange={(value) => setDiscountPercent(value || 0)}
+                        placeholder="Enter discount percentage"
+                        addonAfter="%"
+                        className="text-lg"
+                      />
+                    </div>
+
+                    {/* Scope of Work */}
+                    <div>
+                      <div className="font-medium mb-2">Scope of Work / Terms</div>
+                      <TextArea
+                        rows={6}
+                        value={scopeOfWork}
+                        onChange={(e) => setScopeOfWork(e.target.value)}
+                        placeholder="Describe the scope of work, materials, timeline, terms and conditions clearly..."
+                        style={{ borderColor: PURPLE_THEME.primary }}
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+                </Card>
               </div>
-           </Form>
+
+              {/* Right Column - Summary */}
+              <div className="col-span-4">
+                <Card 
+                  className="bg-purple-50 border-purple-200 shadow-sm"
+                  title={<div className="font-bold text-purple-700">Price Summary</div>}
+                >
+                  <div className="space-y-4">
+                    {/* Service Type */}
+                    <div className="bg-white p-3 rounded border">
+                      <div className="text-xs text-gray-500">SERVICE TYPE</div>
+                      <div className="font-bold">{selectedEstimate?.type?.label}</div>
+                      <div className="text-sm text-gray-600">{selectedEstimate?.subcategory?.label}</div>
+                    </div>
+
+                    {/* Price Breakdown */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center border-b pb-2">
+                        <span className="font-medium">Quotation Amount:</span>
+                        <span className="font-bold text-lg">{formatCurrency(quotationPrice)}</span>
+                      </div>
+                      
+                      {discountPercent > 0 && (
+                        <>
+                          <div className="flex justify-between items-center text-red-500 border-b pb-2">
+                            <span>Discount ({discountPercent}%):</span>
+                            <span className="font-bold">-{formatCurrency((quotationPrice * discountPercent) / 100)}</span>
+                          </div>
+                          <div className="border-b border-dashed"></div>
+                        </>
+                      )}
+                      
+                      <div className="flex justify-between items-center pt-2">
+                        <span className="font-bold text-lg">Grand Total:</span>
+                        <span className="text-2xl font-bold text-purple-700">{formatCurrency(grandTotal)}</span>
+                      </div>
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className="pt-4">
+                      <Button 
+                        type="primary" 
+                        onClick={handleSubmitQuotation} 
+                        loading={submitting} 
+                        style={{ 
+                          background: PURPLE_THEME.primary,
+                          width: '100%',
+                          height: 48,
+                          fontSize: '16px'
+                        }}
+                        disabled={!scopeOfWork.trim() || quotationPrice <= 0}
+                        block
+                      >
+                        {submitting ? 'Submitting...' : 'Submit Quotation'}
+                      </Button>
+                      
+                      <Button 
+                        onClick={() => setCreateModalVisible(false)} 
+                        style={{ 
+                          width: '100%',
+                          height: 40,
+                          marginTop: 12,
+                          borderColor: PURPLE_THEME.gray
+                        }}
+                        block
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+
+                    <div className="text-xs text-gray-500 text-center pt-4 border-t">
+                      * This quotation will be submitted to the customer for review
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </div>
         </Modal>
 
-        {/* --- VIEW QUOTATION MODAL --- */}
+        {/* --- VIEW SUBMITTED QUOTATION MODAL --- */}
         <Modal
-          title="Submitted Quotation"
+          title={null}
           open={viewQuotationModal}
           onCancel={() => setViewQuotationModal(false)}
           footer={<Button onClick={() => setViewQuotationModal(false)}>Close</Button>}
-          width={800}
+          width={900}
+          style={{ top: 20 }}
         >
-           {mySubmittedQuotation && (
-              <div className="p-2">
-                 <div className="flex justify-between items-center mb-6 border-b pb-4">
-                    <div>
-                       <div className="text-sm text-gray-500">Quotation Date</div>
-                       <div className="font-bold">{formatDate(mySubmittedQuotation.createdAt || new Date())}</div>
-                    </div>
-                    <Tag color="green" style={{ fontSize: 14, padding: '4px 10px' }}>SUBMITTED</Tag>
-                 </div>
-
-                 <Table 
-                   dataSource={mySubmittedQuotation.items || []} 
-                   pagination={false} 
-                   bordered 
-                   size="small"
-                   columns={[
-                      { title: '#', width: 50, render: (_,__,i) => i+1 },
-                      { title: 'Item', dataIndex: 'item' },
-                      { title: 'Qty', dataIndex: 'quantity', width: 80, align: 'center' },
-                      { title: 'Rate', dataIndex: 'unit_price', width: 100, align: 'right', render: v => formatCurrency(v) },
-                      { title: 'Total', dataIndex: 'total', width: 120, align: 'right', render: v => <strong>{formatCurrency(v)}</strong> },
-                   ]}
-                 />
-
-                 <div className="mt-6 flex justify-end">
-                    <div className="w-1/3 space-y-2">
-                       <div className="flex justify-between"><span>Subtotal:</span> {formatCurrency(mySubmittedQuotation.subtotal || (mySubmittedQuotation.grand_total / (1 - (mySubmittedQuotation.discount_percent/100))))}</div>
-                       <div className="flex justify-between text-red-500"><span>Discount ({mySubmittedQuotation.discount_percent}%):</span> -{formatCurrency(mySubmittedQuotation.discount_amount || 0)}</div>
-                       <Divider style={{ margin: '8px 0' }} />
-                       <div className="flex justify-between text-xl font-bold text-purple-700"><span>Total:</span> {formatCurrency(mySubmittedQuotation.grand_total)}</div>
-                    </div>
-                 </div>
-
-                 <div className="mt-6 p-4 bg-gray-50 rounded border border-gray-200">
-                    <h4 className="font-bold text-gray-700 mb-2">Scope of Work:</h4>
-                    <p className="text-gray-600 whitespace-pre-wrap">{mySubmittedQuotation.scope_of_work}</p>
-                 </div>
+          {mySubmittedQuotation && (
+            <div className="p-6">
+              {/* Header with Logo */}
+              <div className="flex justify-between items-start border-b pb-6 mb-6">
+                <div>
+                  <img src={logo} alt="Company Logo" style={{ height: 50, marginBottom: 8 }} />
+                  <div className="text-xs text-gray-500">Submitted Quotation</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-purple-700">QUOTATION</div>
+                  <div className="text-sm text-gray-500">Date: {formatDate(mySubmittedQuotation.createdAt)}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Reference: {mySubmittedQuotation._id.substring(0,8)}
+                  </div>
+                </div>
               </div>
-           )}
+
+              {/* Status Badge */}
+              <div className="mb-6 flex justify-between items-center">
+                <div>
+                  <Tag color="green" style={{ fontSize: 14, padding: '6px 12px' }}>
+                    SUBMITTED
+                  </Tag>
+                  <div className="text-sm text-gray-500 mt-1">
+                    Submitted on {formatDate(mySubmittedQuotation.createdAt)}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-gray-500">Freelancer</div>
+                  <div className="font-bold">{freelancer?.name.full_name || 'N/A'}</div>
+                </div>
+              </div>
+
+              {/* Quotation Summary Card */}
+             <div className="overflow-x-auto">
+  <table className="w-full border border-purple-200 border-collapse">
+    <thead>
+      <tr className="text-xs text-gray-500 uppercase">
+        <th className="border border-purple-200 p-4 text-center">Service Type</th>
+        <th className="border border-purple-200 p-4 text-center">Price</th>
+        <th className="border border-purple-200 p-4 text-center">Discount</th>
+        <th className="border border-purple-200 p-4 text-center">Quotation Amount</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td className="border border-purple-200 p-4 text-center">
+          <div className="font-bold text-lg">
+            {mySubmittedQuotation.estimate_type?.label ||
+              selectedEstimate?.type?.label}
+          </div>
+          <div className="text-sm text-gray-600">
+            {mySubmittedQuotation.estimate_subcategory?.label ||
+              selectedEstimate?.subcategory?.label}
+          </div>
+        </td>
+
+        <td className="border border-purple-200 p-4 text-center">
+          <div className="text-3xl font-bold text-purple-700">
+            {formatCurrency(mySubmittedQuotation.price)}
+          </div>
+        </td>
+
+        <td className="border border-purple-200 p-4 text-center">
+          <div className="text-2xl font-bold text-red-500">
+            {mySubmittedQuotation.discount_percent || 0}%
+          </div>
+          <div className="text-sm text-gray-600">
+            -{formatCurrency(
+              (mySubmittedQuotation.price *
+                (mySubmittedQuotation.discount_percent || 0)) /
+                100
+            )}
+          </div>
+        </td>
+
+        <td className="border border-purple-200 p-4 text-center">
+          <div className="text-3xl font-bold text-purple-700">
+            {formatCurrency(mySubmittedQuotation.grand_total)}
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+              {/* Scope of Work */}
+              <Card 
+                title={<div className="font-bold">Scope of Work & Terms</div>}
+                className="mb-6 shadow-sm"
+              >
+                <div className="p-4 bg-gray-50 rounded border">
+                  <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
+                    {mySubmittedQuotation.scope_of_work || 'No scope of work provided.'}
+                  </p>
+                </div>
+              </Card>
+
+              {/* Estimate Details */}
+              {/* {selectedEstimate && (
+                <Card 
+                  title={<div className="font-bold">Estimate Details</div>}
+                  className="shadow-sm"
+                >
+                  <Row gutter={16}>
+                    <Col span={8}>
+                      <div className="p-3 bg-gray-50 rounded border">
+                        <div className="text-xs text-gray-500 mb-1">CUSTOMER</div>
+                        <div className="font-bold">{getCustomerName(selectedEstimate.customer)}</div>
+                      </div>
+                    </Col>
+                    <Col span={4}>
+                      <div className="p-3 bg-gray-50 rounded border">
+                        <div className="text-xs text-gray-500 mb-1">AREA</div>
+                        <div className="font-bold">{selectedEstimate.area_sqft} sq.ft</div>
+                      </div>
+                    </Col>
+                    <Col span={6}>
+                      <div className="p-3 bg-gray-50 rounded border">
+                        <div className="text-xs text-gray-500 mb-1">SERVICE</div>
+                        <div className="font-bold">{selectedEstimate.service_type}</div>
+                      </div>
+                    </Col>
+                    <Col span={6}>
+                      <div className="p-3 bg-gray-50 rounded border">
+                        <div className="text-xs text-gray-500 mb-1">ESTIMATE VALUE</div>
+                        <div className="font-bold text-purple-700">
+                          {formatCurrency(selectedEstimate.estimated_amount)}
+                        </div>
+                      </div>
+                    </Col>
+                  </Row>
+                </Card>
+              )} */}
+            </div>
+          )}
         </Modal>
 
       </div>

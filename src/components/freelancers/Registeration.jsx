@@ -352,7 +352,7 @@ const Registration = () => {
                             size="large"
                             optionFilterProp="label"
                             filterOption={filterOption}
-                            disabled={isMobileVerified}
+                            // disabled={isMobileVerified}
                         >
                             {mobileCountryOptions.map((country, index) => (
                                 <Option key={`${country.code}-${index}`} value={country.dial_code} label={`${country.name} ${country.dial_code}`}>
@@ -374,7 +374,7 @@ const Registration = () => {
                             placeholder="501234567" 
                             size="large" 
                             style={{ width: '50%' }} 
-                            disabled={isMobileVerified} 
+                            // disabled={isMobileVerified} 
                         />
                         <Button 
                             type="primary" 

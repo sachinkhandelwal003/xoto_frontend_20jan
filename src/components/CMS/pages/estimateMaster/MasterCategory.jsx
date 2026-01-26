@@ -17,14 +17,12 @@ import {
 import CustomTable from '../../../../components/CMS/pages/custom/CustomTable';
 import { apiService } from '../../../../manageApi/utils/custom.apiservice';
 
-
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-
 const THEME = {
-  primary: "#722ed1",
-  secondary: "#1890ff",
+  primary: "#722ed1", // Purple
+  secondary: "#1890ff", // Blue
   success: "#52c41a",
   warning: "#faad14",
   error: "#ff4d4f",
@@ -43,7 +41,7 @@ const MasterCategory = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
-
+  // Data State
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -127,12 +125,10 @@ const MasterCategory = () => {
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   }, [level, parentCategory, parentSubcategory]);
 
-
   const handleEditClick = (record) => {
     setSelectedItem(record);
     setEditModalOpen(true);
   };
-
 
   const handleDelete = async (id) => {
     try {
@@ -147,20 +143,17 @@ const MasterCategory = () => {
     }
   };
 
-
   const goToSubcategories = (category) => {
     setParentCategory(category._id);
     setSelectedCategory(category);
     setLevel('subcategories');
   };
 
-
   const goToTypes = (subcategory) => {
     setParentSubcategory(subcategory._id);
     setSelectedSubcategory(subcategory);
     setLevel('types');
   };
-
 
   const goBack = () => {
     if (level === 'types') {
@@ -241,7 +234,6 @@ const MasterCategory = () => {
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
 
-
     const onSubmit = async (values) => {
       setSaving(true);
       try {
@@ -302,11 +294,9 @@ const MasterCategory = () => {
     );
   };
 
-
   const EditModal = () => {
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
-
 
     useEffect(() => {
       if (selectedItem) {
