@@ -37,7 +37,7 @@ const TypesGallery = () => {
   const [editingId, setEditingId] = useState(null); 
   const [questionType, setQuestionType] = useState("text");
   const [options, setOptions] = useState([]);
-
+const [isAreaQuestion, setIsAreaQuestion] = useState(false);
   // Load Categories on mount
   useEffect(() => {
     const fetchCats = async () => {
@@ -86,7 +86,7 @@ const TypesGallery = () => {
         
         setEditingId(questionId);
         setQuestionType(data.questionType);
-        
+        setIsAreaQuestion(!!data.areaQuestion);
         if (data.options) {
           setOptions(data.options.map(o => ({
             title: o.title,
@@ -114,6 +114,7 @@ const TypesGallery = () => {
       setEditingId(null);
       setQuestionType("text");
       setOptions([]);
+      setIsAreaQuestion(false);
       form.resetFields();
       setQuestionModalOpen(true);
     }
@@ -124,6 +125,7 @@ const TypesGallery = () => {
     const payload = {
       type: selectedType,
       question: values.question,
+      areaQuestion: questionType === "number" ? isAreaQuestion : false, // ✅ added
       questionType,
       isActive: values.isActive ?? true,
       includeInEstimate: values.includeInEstimate ?? true,
@@ -370,7 +372,17 @@ const TypesGallery = () => {
                     </div>
                   </div>
                 )}
-
+{questionType === "number" && (
+  <Form.Item label="Is Area Based Question ?">
+    <Select
+      value={isAreaQuestion}
+      onChange={(val) => setIsAreaQuestion(val)}
+    >
+      <Select.Option value={true}>Yes (Area Based)</Select.Option>
+      <Select.Option value={false}>No (Normal Number)</Select.Option>
+    </Select>
+  </Form.Item>
+)}
                 <Divider className="my-4" />
 
                 <div className="flex justify-end gap-3">

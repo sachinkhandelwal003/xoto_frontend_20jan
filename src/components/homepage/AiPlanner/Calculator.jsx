@@ -14,6 +14,7 @@ import {
   Tag,
   Radio,
   Badge,
+  Image,
 } from "antd";
 import {
   UserOutlined,
@@ -51,6 +52,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const BRAND_PURPLE = "#5C039B";
+const BASE_URL = "https://xoto.ae"; // ✅ Your API Base URL for images
 
 const steps = [
   { title: "Location", icon: <CompassOutlined /> },
@@ -62,22 +64,33 @@ const steps = [
 
 // Reverse geocoding function
 const reverseGeocode = async (lat, lng) => {
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
-  );
-  const data = await res.json();
-  const a = data.address || {};
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+    );
+    const data = await res.json();
+    const a = data.address || {};
 
-  const city = a.city || a.town || a.municipality || a.county || "";
-  const area = a.suburb || a.neighbourhood || a.quarter || "";
+    const city = a.city || a.town || a.municipality || a.county || "";
+    const area = a.suburb || a.neighbourhood || a.quarter || "";
 
-  return {
-    country: a.country || "",
-    state: a.state || a.region || "",
-    city,
-    area,
-    fullAddress: data.display_name || "",
-  };
+    return {
+      country: a.country || "",
+      state: a.state || a.region || "",
+      city,
+      area,
+      fullAddress: data.display_name || "",
+    };
+  } catch (error) {
+    console.error("Geocoding error", error);
+    return {
+      country: "",
+      state: "",
+      city: "",
+      area: "",
+      fullAddress: "",
+    };
+  }
 };
 
 // Map Picker Component
@@ -143,16 +156,11 @@ const [step3Form] = Form.useForm();
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
 
-  const [galleryImages, setGalleryImages] = useState([]);
-  const [selectedImages, setSelectedImages] = useState([]);
-
+  const [galleryImages, setGalleryImages] = useState([]); // ✅ This holds your images
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
 
-  // ✅ Step 3 missing field highlight
   const [step3Errors, setStep3Errors] = useState({});
-
-  // ✅ toast lock (one toast at a time)
   const [toastLock, setToastLock] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -250,13 +258,14 @@ const [step3Form] = Form.useForm();
     });
   };
 
-  const getAllImages = async () => {
+ const getAllImages = async () => {
     try {
       const res = await fetch(
         `https://xoto.ae/api/estimate/master/category/types/${selectedType}/gallery`
       );
       const data = await res.json();
-      setGalleryImages(data?.gallery?.moodboardImages || []);
+      // Ensure we set the moodboardImages array from your response structure
+      setGalleryImages(data?.gallery?.moodboardImages || []); 
     } catch (error) {
       console.error(error);
     }
@@ -275,7 +284,7 @@ const [step3Form] = Form.useForm();
         );
         if (res.success) setSubcategories(res.data || []);
       } catch (err) {
-        message.error("Error loading services");
+        messageApi.error("Error loading services");
       } finally {
         setLoading((prev) => ({ ...prev, subcat: false }));
       }
@@ -296,11 +305,11 @@ const [step3Form] = Form.useForm();
 
         if (res.success) {
           setQuestions(res.data || []);
-          setAnswers({}); // optional reset answers on type change
+          setAnswers({});
           setStep3Errors({});
         }
       } catch (error) {
-        message.error("Error loading questions");
+        messageApi.error("Error loading questions");
       } finally {
         setLoading((prev) => ({ ...prev, questions: false }));
       }
@@ -321,7 +330,7 @@ const [step3Form] = Form.useForm();
         );
         if (res.success) setTypes(res.data || []);
       } catch (err) {
-        message.error("Error loading styles");
+        messageApi.error("Error loading styles");
       } finally {
         setLoading((prev) => ({ ...prev, types: false }));
       }
@@ -336,7 +345,7 @@ const [step3Form] = Form.useForm();
         const res = await apiService.get("/packages");
         if (res.success) setPackages(res.packages.filter((p) => p.isActive));
       } catch (err) {
-        message.error("Error loading packages");
+        // messageApi.error("Error loading packages");
       } finally {
         setLoading((prev) => ({ ...prev, packages: false }));
       }
@@ -347,7 +356,7 @@ const [step3Form] = Form.useForm();
   // Get location
   const handleGetLocation = () => {
     if (!navigator.geolocation)
-      return message.error("Geolocation not supported");
+      return messageApi.error("Geolocation not supported");
 
     setLoading((prev) => ({ ...prev, submitting: true, geocoding: true }));
 
@@ -369,7 +378,7 @@ const [step3Form] = Form.useForm();
             address: geo.fullAddress,
           });
 
-          message.success("Location synchronized!");
+          messageApi.success("Location synchronized!");
         } catch (error) {
           setCoords({
             lat,
@@ -380,7 +389,7 @@ const [step3Form] = Form.useForm();
             area: "",
             address: "",
           });
-          message.warning("Location detected but address details unavailable");
+          messageApi.warning("Location detected but address details unavailable");
         } finally {
           setLoading((prev) => ({
             ...prev,
@@ -390,7 +399,7 @@ const [step3Form] = Form.useForm();
         }
       },
       () => {
-        message.error("Location access denied");
+        messageApi.error("Location access denied");
         setLoading((prev) => ({
           ...prev,
           submitting: false,
@@ -413,30 +422,32 @@ const [step3Form] = Form.useForm();
         area: geo.area,
         address: geo.fullAddress,
       });
-      message.success("Location updated!");
+      messageApi.success("Location updated!");
     } catch (error) {
-      message.error("Could not fetch address details");
+      messageApi.error("Could not fetch address details");
     } finally {
       setLoading((prev) => ({ ...prev, geocoding: false }));
     }
   };
 
 const handleAnswerChange = React.useCallback((questionId, newValue) => {
+  let valueChanged = false;
+
   setAnswers((prev) => {
-    // Prevent unnecessary state update → very important for input smoothness
     if (prev[questionId] === newValue) return prev;
+    valueChanged = true;
     return { ...prev, [questionId]: newValue };
   });
 
-  // Clear error only if it existed
-  setStep3Errors((prev) => {
-    if (questionId in prev) {
-      const next = { ...prev };
-      delete next[questionId];
-      return next;
-    }
-    return prev;
-  });
+  // Only clear error if value actually changed
+  if (valueChanged) {
+    setStep3Errors((prev) => {
+      if (!prev[questionId]) return prev;
+      const copy = { ...prev };
+      delete copy[questionId];
+      return copy;
+    });
+  }
 }, []);
 
   const buildEstimateAnswersPayload = () => {
@@ -478,19 +489,19 @@ const handleAnswerChange = React.useCallback((questionId, newValue) => {
     const estimateAnswers = buildEstimateAnswersPayload();
 
     if (!firstName.trim() || !lastName.trim()) {
-      message.error("Please enter both first and last name");
+      messageApi.error("Please enter both first and last name");
       return;
     }
     if (!email.trim()) {
-      message.error("Please enter your email");
+      messageApi.error("Please enter your email");
       return;
     }
     if (!phone.trim()) {
-      message.error("Please enter your phone number");
+      messageApi.error("Please enter your phone number");
       return;
     }
     if (phoneError) {
-      message.error("Please enter a valid phone number");
+      messageApi.error("Please enter a valid phone number");
       return;
     }
 
@@ -512,8 +523,8 @@ const handleAnswerChange = React.useCallback((questionId, newValue) => {
       type: selectedType,
       subcategory: selectedSubcategory,
       package: selectedPackage,
-      area_length: parseFloat(length),
-      area_width: parseFloat(width),
+      area_length: parseFloat(length) || 0,
+      area_width: parseFloat(width) || 0,
       area_sqft: areaSqFt,
       description: `Landscaping project for ${areaSqFt} sqft area with ${
         selectedTypeData?.label || "selected"
@@ -535,13 +546,13 @@ const handleAnswerChange = React.useCallback((questionId, newValue) => {
 
       if (response.success) {
         setActiveStep(5);
-        message.success("Estimate submitted successfully!");
+        messageApi.success("Estimate submitted successfully!");
         setEstimationValue(response.final_price);
       } else {
-        message.error(response.message || "Submission failed");
+        messageApi.error(response.message || "Submission failed");
       }
     } catch (err) {
-      message.error(
+      messageApi.error(
         err.response?.data?.message || "Submission failed. Please try again."
       );
     } finally {
@@ -549,9 +560,8 @@ const handleAnswerChange = React.useCallback((questionId, newValue) => {
     }
   };
 
-  // ✅ Step 3 validation with scroll + focus + toast lock
   const validateStep3 = () => {
-    if (!questions || questions.length === 0) return false;
+    if (!questions || questions.length === 0) return true;
 
     const missing = questions.find((q) => {
       const val = answers[q._id];
@@ -575,25 +585,21 @@ const handleAnswerChange = React.useCallback((questionId, newValue) => {
   };
 
   const handleNext = () => {
-    // last page finish -> home
     if (activeStep === 5) {
       navigate("/");
       return;
     }
 
-    // Step 3 validation
     if (activeStep === 3) {
       const ok = validateStep3();
       if (!ok) return;
     }
 
-    // Step 4 -> submit
     if (activeStep === 4) {
       onFinalSubmit();
       return;
     }
 
-    // next
     setActiveStep((prev) => prev + 1);
   };
 
@@ -603,9 +609,12 @@ const handleAnswerChange = React.useCallback((questionId, newValue) => {
   };
 
   const validateStep = () => {
-    // disable Continue only when step3 has no questions
+    // Basic validation logic
     if (activeStep === 3 && (!questions || questions.length === 0)) {
-      return false;
+      // If there are no questions in step 3, we usually allow continue unless logic says otherwise
+      // But based on your original code, we can keep it strict if needed.
+      // Since we auto-allow in validateStep3 if empty, let's allow here too.
+      return true; 
     }
     return true;
   };
@@ -758,8 +767,13 @@ const Step3Questions = React.memo(function Step3Questions({
     </motion.div>
   );
 
-  const StepRenderer = () => {
-
+  // --- FIX: THIS IS NOW A HELPER FUNCTION, NOT A COMPONENT ---
+  const renderStepContent = () => {
+    const variants = {
+      initial: { opacity: 0, y: 20 },
+      animate: { opacity: 1, y: 0 },
+      exit: { opacity: 0, y: -20 },
+    };
 
     switch (activeStep) {
       case 0:
@@ -1009,9 +1023,13 @@ loading={loading.questions}
       case 5:
         return (
           <motion.div
-            className="text-center"
+            initial={variants.initial}
+            animate={variants.animate}
+            exit={variants.exit}
+            className="text-center pb-20"
           >
-            <div className="bg-white p-16 rounded-[4rem] shadow-2xl inline-block border border-gray-50">
+            {/* 1. Valuation Card */}
+            <div className="bg-white p-10 md:p-16 rounded-[4rem] shadow-2xl inline-block border border-gray-50 mb-12">
               <SmileOutlined
                 style={{ color: BRAND_PURPLE, fontSize: "5rem" }}
                 className="mb-8"
@@ -1020,16 +1038,52 @@ loading={loading.questions}
                 Valuation Ready
               </Title>
 
-              <div className="my-12">
+              <div className="my-8">
                 <Text className="text-gray-400 uppercase tracking-widest block mb-3">
                   Estimated Investment Range
                 </Text>
-                <div className="text-8xl font-black text-gray-900">
+                <div className="text-6xl md:text-8xl font-black text-gray-900">
                   {estimationValue || 0}{" "}
-                  <small className="text-3xl font-light">AED</small>
+                  <small className="text-2xl md:text-3xl font-light">AED</small>
                 </div>
               </div>
             </div>
+
+            {/* 2. Moodboard / Gallery Section */}
+            {galleryImages && galleryImages.length > 0 && (
+              <div className="max-w-6xl mx-auto px-4">
+                <div className="flex items-center justify-center gap-4 mb-8">
+                  <div className="h-[1px] bg-gray-200 w-20"></div>
+                  <Title level={3} className="m-0 text-gray-700">
+                    Style Inspiration
+                  </Title>
+                  <div className="h-[1px] bg-gray-200 w-20"></div>
+                </div>
+
+                <Row gutter={[24, 24]} justify="center">
+                  {galleryImages.map((img, index) => (
+                    <Col xs={24} sm={12} md={8} lg={6} key={index}>
+                      <motion.div
+                        whileHover={{ y: -5 }}
+                        className="rounded-2xl overflow-hidden shadow-lg h-full bg-white"
+                      >
+                        <Image
+                          src={`${BASE_URL}${img.url}`} // ✅ Combine Base URL + Image Path
+                          alt="Moodboard"
+                          className="object-cover w-full h-64"
+                          style={{ objectFit: "cover", height: "250px", width: "100%" }}
+                          fallback="https://via.placeholder.com/300?text=No+Image"
+                        />
+                      </motion.div>
+                    </Col>
+                  ))}
+                </Row>
+                
+                <Text type="secondary" className="mt-6 block text-sm">
+                  Based on your selection of {types.find(t => t._id === selectedType)?.label || "style"}
+                </Text>
+              </div>
+            )}
           </motion.div>
         );
 
@@ -1090,15 +1144,8 @@ loading={loading.questions}
 
       <div className="max-w-7xl mx-auto mt-16 px-6">
         <AnimatePresence mode="wait">
-       <motion.div
-key={activeStep}
-initial={{ opacity: 0, y: 20 }}
-animate={{ opacity: 1, y: 0 }}
-exit={{ opacity: 0, y: -20 }}
-transition={{ duration: 0.3 }}
->
-<StepRenderer />
-</motion.div>
+          {/* FIX: Call the function instead of using a Component tag */}
+          <div key={activeStep}>{renderStepContent()}</div>
         </AnimatePresence>
       </div>
 
