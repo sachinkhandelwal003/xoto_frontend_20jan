@@ -3,8 +3,10 @@ import Vapi from "@vapi-ai/web";
 import GlobeAnimation from "./GlobeAnimation";
 import { motion } from "framer-motion";
 
-const PUBLIC_KEY = "84eaf008-b5f6-410a-abae-033778db7132";
-const ASSISTANT_ID = "25802ec9-95e5-41b4-8478-5b7c6e2fb36a";
+// const PUBLIC_KEY = "84eaf008-b5f6-410a-abae-033778db7132";
+// const ASSISTANT_ID = "25802ec9-95e5-41b4-8478-5b7c6e2fb36a";
+const PUBLIC_KEY = "16018716-ebb1-4148-a6f5-70cb3a6bf952";
+const ASSISTANT_ID = "5a97a57e-d69d-4b1b-9ed8-5a51ddcc96c2";
 
 function VoiceAIInterface({ onClose }) {
   const vapiRef = useRef(null);
@@ -53,6 +55,9 @@ function VoiceAIInterface({ onClose }) {
       // 1. Jaise hi user tap kare, status update karo
       setStatus("AI Initializing..."); 
       vapiRef.current.start(ASSISTANT_ID);
+      console.log("Vapi call started");
+      console.log("assistant id:", ASSISTANT_ID);
+      console.log("public key:", PUBLIC_KEY);
     }
   };
 
