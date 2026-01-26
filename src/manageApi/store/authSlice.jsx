@@ -146,6 +146,20 @@ const authSlice = createSlice({
   name: "auth",
   initialState: loadInitialState(),
   reducers: {
+    setAuthFromToken: (state, action) => {
+const token = action.payload;
+const decoded = jwtDecode(token);
+
+
+state.token = token;
+state.user = decoded;
+state.isAuthenticated = true;
+state.error = null;
+
+
+localStorage.setItem("token", token);
+axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+},
     rehydrateAuthState: (state) => {
       const token = localStorage.getItem("token");
       if (token) {
@@ -253,5 +267,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { rehydrateAuthState, clearError } = authSlice.actions;
+export const { rehydrateAuthState, clearError,setAuthFromToken } = authSlice.actions;
 export default authSlice.reducer;

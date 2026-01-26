@@ -24,7 +24,7 @@ const NotFound = () => {
         
         <div className="flex flex-col sm:flex-row justify-center gap-3">
           <Link
-            to="/sawtar/"
+            to="/"
             className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition duration-300 shadow-md"
           >
             Go to Homepage

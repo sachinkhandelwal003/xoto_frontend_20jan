@@ -1,31 +1,26 @@
 // src/pages/freelancer/Projects.jsx
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRightOutlined,
   EyeOutlined,
-  SearchOutlined,
   ProjectOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
-  DollarCircleOutlined,
-  FilterOutlined
+  DollarCircleOutlined
 } from "@ant-design/icons";
 import {
   Button,
   Card,
-  Space,
   Tag,
   Tooltip,
-  Spin,
   Typography,
   Tabs,
   Progress,
   Row,
   Col,
   Statistic,
-  Input,
   Avatar
 } from "antd";
 import { showToast } from "../../../../../../../manageApi/utils/toast";
@@ -33,12 +28,11 @@ import { apiService } from "../../../../../../../manageApi/utils/custom.apiservi
 import CustomTable from "../../../../custom/CustomTable";
 
 const { Title, Text } = Typography;
-const { TabPane } = Tabs;
 
 // --- THEME CONFIGURATION ---
 const THEME = {
-  primary: "#722ed1", // Purple
-  secondary: "#1890ff", // Blue
+  primary: "#722ed1",
+  secondary: "#1890ff",
   success: "#52c41a",
   warning: "#faad14",
   error: "#ff4d4f",
@@ -63,7 +57,7 @@ const Projects = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
+
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -71,27 +65,63 @@ const Projects = () => {
     itemsPerPage: 10,
   });
 
-  // Calculate client-side stats for the visible page (or placeholder)
+  // ✅ helper: normalize string
+  const normalize = (str) => (str || "").toString().trim();
+
+  /**
+   * ✅ MAIN FIX FOR SEARCH (CustomTable objects ignore karta hai)
+   * Projects ko flat searchable keys me convert kar rahe hain
+   */
+  const flattenProjectsForSearch = (list = []) => {
+    return list.map((p) => {
+      const title = p?.title || "";
+      const code = p?.Code || p?.code || "";
+      const clientName = p?.client_name || "";
+      const clientCompany = p?.client_company || "";
+      const categoryName = p?.category?.name || "";
+      const status = p?.status || "";
+      const budget = p?.budget !== undefined && p?.budget !== null ? String(p?.budget) : "";
+
+      const milestonesActive = Array.isArray(p?.milestones)
+        ? p.milestones.filter((m) => !m?.is_deleted)
+        : [];
+      const milestonesCompleted = milestonesActive.filter((m) => m?.status === "approved").length;
+      const milestonesTotal = milestonesActive.length;
+
+      return {
+        ...p,
+        __search_title: normalize(title),
+        __search_code: normalize(code),
+        __search_client: normalize(`${clientName} ${clientCompany}`),
+        __search_category: normalize(categoryName),
+        __search_status: normalize(status),
+        __search_budget: normalize(budget),
+        __search_milestones: normalize(`${milestonesCompleted}/${milestonesTotal}`),
+      };
+    });
+  };
+
+  // Calculate client-side stats for the visible page
   const stats = useMemo(() => {
     return {
       total: pagination.totalResults,
-      active: projects.filter(p => p.status === 'in_progress' || p.status === 'assigned').length,
-      completed: projects.filter(p => p.status === 'completed').length,
-      budget: projects.reduce((acc, curr) => acc + (Number(curr.budget) || 0), 0)
+      active: projects.filter((p) => p.status === "in_progress" || p.status === "assigned").length,
+      completed: projects.filter((p) => p.status === "completed").length,
+      budget: projects.reduce((acc, curr) => acc + (Number(curr.budget) || 0), 0),
     };
   }, [projects, pagination.totalResults]);
 
   const fetchProjects = useCallback(
-    async (page = 1, limit = 10, tab = activeTab, search = searchTerm) => {
+    async (page = 1, limit = 10, tab = activeTab) => {
       setLoading(true);
       try {
         const params = { page, limit };
-        if (tab !== 'all') params.status = tab;
-        if (search) params.search = search;
+        if (tab !== "all") params.status = tab;
 
         const response = await apiService.get("/freelancer/projects", params);
-        
-        setProjects(response.projects || []);
+
+        setProjects(flattenProjectsForSearch(response.projects || []));
+
         setPagination({
           currentPage: response.pagination?.page || 1,
           totalPages: response.pagination?.totalPages || 1,
@@ -104,33 +134,29 @@ const Projects = () => {
         setLoading(false);
       }
     },
-    [activeTab, searchTerm]
+    [activeTab]
   );
 
   useEffect(() => {
     if (token) {
-      fetchProjects(1, 10, activeTab, searchTerm);
+      fetchProjects(1, 10, activeTab);
     }
-  }, [token, activeTab]); // Re-fetch when tab changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, activeTab]);
 
-  const handlePageChange = (page, limit) => fetchProjects(page, limit, activeTab, searchTerm);
-  
+  const handlePageChange = (page, limit) => fetchProjects(page, limit, activeTab);
+
   const handleTabChange = (key) => {
     setActiveTab(key);
-    // Fetch triggered by useEffect dependency
-  };
-
-  const handleSearch = () => {
-    fetchProjects(1, 10, activeTab, searchTerm);
   };
 
   // --- CONFIG ---
   const statusConfig = {
-    assigned: { color: 'blue', icon: <ClockCircleOutlined />, label: 'Assigned' },
-    in_progress: { color: 'orange', icon: <ClockCircleOutlined />, label: 'In Progress' },
-    completed: { color: 'green', icon: <CheckCircleOutlined />, label: 'Completed' },
-    cancelled: { color: 'red', icon: <ClockCircleOutlined />, label: 'Cancelled' },
-    default: { color: 'default', icon: <ProjectOutlined />, label: 'Unknown' }
+    assigned: { color: "blue", icon: <ClockCircleOutlined />, label: "Assigned" },
+    in_progress: { color: "orange", icon: <ClockCircleOutlined />, label: "In Progress" },
+    completed: { color: "green", icon: <CheckCircleOutlined />, label: "Completed" },
+    cancelled: { color: "red", icon: <ClockCircleOutlined />, label: "Cancelled" },
+    default: { color: "default", icon: <ProjectOutlined />, label: "Unknown" },
   };
 
   // --- COLUMNS ---
@@ -142,16 +168,16 @@ const Projects = () => {
         width: 250,
         render: (_, record) => (
           <div className="flex items-center gap-3">
-            <Avatar 
-              shape="square" 
-              size="large" 
-              icon={<ProjectOutlined />} 
-              style={{ backgroundColor: THEME.bgLight, color: THEME.primary }} 
+            <Avatar
+              shape="square"
+              size="large"
+              icon={<ProjectOutlined />}
+              style={{ backgroundColor: THEME.bgLight, color: THEME.primary }}
             />
             <div>
               <div className="font-semibold text-gray-800 text-base">{record.title}</div>
               <Tooltip title="Project Code">
-                <Tag className="mt-1 mr-0 text-xs">{record.Code}</Tag>
+                <Tag className="mt-1 mr-0 text-xs">{record.Code || record.code || "—"}</Tag>
               </Tooltip>
             </div>
           </div>
@@ -177,7 +203,7 @@ const Projects = () => {
         width: 150,
         render: (v) => (
           <span className="font-semibold text-gray-700">
-            ${Number(v).toLocaleString()}
+            ${Number(v || 0).toLocaleString()}
           </span>
         ),
       },
@@ -190,11 +216,13 @@ const Projects = () => {
           const completed = active.filter((m) => m.status === "approved").length;
           const total = active.length;
           const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-          
+
           return (
             <div className="w-full">
               <div className="flex justify-between text-xs mb-1 text-gray-500">
-                <span>{completed}/{total} Milestones</span>
+                <span>
+                  {completed}/{total} Milestones
+                </span>
                 <span>{percent}%</span>
               </div>
               <Progress percent={percent} size="small" showInfo={false} strokeColor={THEME.primary} />
@@ -209,7 +237,7 @@ const Projects = () => {
         render: (_, r) => {
           const config = statusConfig[r.status] || statusConfig.default;
           return (
-            <Tag color={config.color} icon={config.icon} style={{ borderRadius: 12, padding: '2px 10px' }}>
+            <Tag color={config.color} icon={config.icon} style={{ borderRadius: 12, padding: "2px 10px" }}>
               {config.label}
             </Tag>
           );
@@ -219,15 +247,15 @@ const Projects = () => {
         key: "actions",
         title: "Actions",
         width: 100,
-        align: 'center',
+        align: "center",
         render: (_, r) => (
           <Tooltip title="View Project Details">
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               ghost
-              size="small" 
+              size="small"
               shape="circle"
-              icon={<EyeOutlined />} 
+              icon={<EyeOutlined />}
               onClick={() => navigate(`/dashboard/${roleSlug}/projects/${r._id}`)}
               style={{ borderColor: THEME.primary, color: THEME.primary }}
             />
@@ -239,15 +267,14 @@ const Projects = () => {
   );
 
   const tabItems = [
-    { key: 'all', label: <span><ProjectOutlined /> All Projects</span> },
-    { key: 'in_progress', label: <span><ClockCircleOutlined /> In Progress</span> },
-    { key: 'completed', label: <span><CheckCircleOutlined /> Completed</span> },
-    { key: 'assigned', label: <span><ArrowRightOutlined /> Assigned</span> },
+    { key: "all", label: <span><ProjectOutlined /> All Projects</span> },
+    { key: "in_progress", label: <span><ClockCircleOutlined /> In Progress</span> },
+    { key: "completed", label: <span><CheckCircleOutlined /> Completed</span> },
+    { key: "assigned", label: <span><ArrowRightOutlined /> Assigned</span> },
   ];
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      
       {/* 1. Header & Stats */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-6">
@@ -256,7 +283,12 @@ const Projects = () => {
             <Text type="secondary">Track and manage your ongoing and completed projects.</Text>
           </div>
           <Link to={`/dashboard/${roleSlug}/addProjects`}>
-            <Button type="primary" size="large" icon={<ArrowRightOutlined />} style={{ background: THEME.primary, borderColor: THEME.primary }}>
+            <Button
+              type="primary"
+              size="large"
+              icon={<ArrowRightOutlined />}
+              style={{ background: THEME.primary, borderColor: THEME.primary }}
+            >
               Create New Project
             </Button>
           </Link>
@@ -265,38 +297,38 @@ const Projects = () => {
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={6}>
             <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.primary }}>
-              <Statistic 
-                title="Total Projects" 
-                value={stats.total} 
-                prefix={<ProjectOutlined style={{ color: THEME.primary }} />} 
+              <Statistic
+                title="Total Projects"
+                value={stats.total}
+                prefix={<ProjectOutlined style={{ color: THEME.primary }} />}
               />
             </Card>
           </Col>
           <Col xs={24} sm={6}>
             <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.warning }}>
-              <Statistic 
-                title="Active Projects" 
-                value={stats.active} // Based on current page fetch or needs API support
-                prefix={<ClockCircleOutlined style={{ color: THEME.warning }} />} 
+              <Statistic
+                title="Active Projects"
+                value={stats.active}
+                prefix={<ClockCircleOutlined style={{ color: THEME.warning }} />}
               />
             </Card>
           </Col>
           <Col xs={24} sm={6}>
             <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.success }}>
-              <Statistic 
-                title="Completed" 
-                value={stats.completed} 
-                prefix={<CheckCircleOutlined style={{ color: THEME.success }} />} 
+              <Statistic
+                title="Completed"
+                value={stats.completed}
+                prefix={<CheckCircleOutlined style={{ color: THEME.success }} />}
               />
             </Card>
           </Col>
           <Col xs={24} sm={6}>
             <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.secondary }}>
-              <Statistic 
-                title="Page Budget" 
-                value={stats.budget} 
+              <Statistic
+                title="Page Budget"
+                value={stats.budget}
                 precision={2}
-                prefix={<DollarCircleOutlined style={{ color: THEME.secondary }} />} 
+                prefix={<DollarCircleOutlined style={{ color: THEME.secondary }} />}
               />
             </Card>
           </Col>
@@ -305,32 +337,17 @@ const Projects = () => {
 
       {/* 2. Main Content */}
       <Card bordered={false} className="shadow-md rounded-lg" bodyStyle={{ padding: 0 }}>
-        
-        {/* Search Bar */}
-        <div className="p-4 border-b border-gray-100 bg-white rounded-t-lg">
-            <Input
-                prefix={<SearchOutlined className="text-gray-400" />}
-                placeholder="Search projects by title, code or client..."
-                allowClear
-                size="large"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onPressEnter={handleSearch}
-                style={{ maxWidth: 400 }}
-            />
-        </div>
-
         {/* Tabs */}
-        <Tabs 
-            activeKey={activeTab} 
-            onChange={handleTabChange} 
-            items={tabItems}
-            type="card" 
-            size="large"
-            tabBarStyle={{ margin: 0, paddingLeft: 16, paddingTop: 16, background: '#fafafa' }}
+        <Tabs
+          activeKey={activeTab}
+          onChange={handleTabChange}
+          items={tabItems}
+          type="card"
+          size="large"
+          tabBarStyle={{ margin: 0, paddingLeft: 16, paddingTop: 16, background: "#fafafa" }}
         />
 
-        {/* Table */}
+        {/* Table (Only ONE search bar from CustomTable) */}
         <div className="p-0">
           <CustomTable
             columns={columns}

@@ -11,8 +11,14 @@ import {
   Spin,
   Modal,
   Select,
+  notification // Added notification for error handling
 } from "antd";
-import { CodeOutlined, SafetyOutlined } from "@ant-design/icons";
+import { 
+  CodeOutlined, 
+  SafetyOutlined,
+  SafetyCertificateOutlined, // Added for OTP icon
+  CheckCircleFilled // Added for verified status
+} from "@ant-design/icons";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Country, State, City } from "country-state-city";
@@ -30,6 +36,12 @@ const DeveloperRegistration = () => {
   // Location States
   const [statesList, setStatesList] = useState([]);
   const [citiesList, setCitiesList] = useState([]);
+
+  // --- OTP STATES ---
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [enteredOtp, setEnteredOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
 
   const themeColor = "#F97316";
 
@@ -51,7 +63,7 @@ const DeveloperRegistration = () => {
       description: "",
       websiteUrl: "",
       country: "AE", // Default ISO Code for UAE
-      state: "", // Added state for dynamic logic
+      state: "", 
       city: "",
       address: "",
       reraNumber: "",
@@ -74,9 +86,6 @@ const DeveloperRegistration = () => {
     if (selectedCountry) {
       const updatedStates = State.getStatesOfCountry(selectedCountry);
       setStatesList(updatedStates);
-      // Reset state and city if country changes (except on initial load if matching)
-      // setValue("state", undefined); 
-      // setValue("city", undefined);
     } else {
       setStatesList([]);
     }
@@ -103,6 +112,60 @@ const DeveloperRegistration = () => {
       searchStr: `${c.name} ${c.phonecode}`,
     }));
   }, []);
+
+  // --- OTP HANDLERS ---
+  const handleSendOtp = async () => {
+    const countryCode = getValues("country_code");
+    const number = getValues("phone_number");
+
+    if (!countryCode || !number) {
+        message.error("Please enter a valid phone number first.");
+        return;
+    }
+
+    setOtpLoading(true);
+    try {
+        const payload = {
+            country_code: countryCode,
+            phone_number: number
+        };
+        await apiService.post("/otp/send-otp", payload);
+        message.success("OTP sent successfully!");
+        setOtpSent(true);
+        setOtpVerified(false);
+    } catch (error) {
+        const errMsg = error?.response?.data?.message || "Failed to send OTP";
+        notification.error({ message: "OTP Error", description: errMsg });
+    } finally {
+        setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!enteredOtp) {
+        message.error("Please enter the OTP");
+        return;
+    }
+    setOtpLoading(true);
+    try {
+        const payload = {
+            country_code: getValues("country_code"),
+            phone_number: getValues("phone_number"),
+            otp: enteredOtp
+        };
+        await apiService.post("/otp/verify-otp", payload);
+        message.success("Phone Verified Successfully!");
+        setOtpVerified(true);
+        setOtpSent(false); // Hide OTP input
+    } catch (error) {
+        notification.error({
+            message: "Verification Failed",
+            description: error?.response?.data?.message || "Invalid OTP"
+        });
+    } finally {
+        setOtpLoading(false);
+    }
+  };
 
   const showSuccessPopup = () => {
     Modal.success({
@@ -135,6 +198,12 @@ const DeveloperRegistration = () => {
   };
 
   const onSubmit = async (data) => {
+    // --- CHECK OTP VERIFICATION ---
+    if (!otpVerified) {
+        message.error("Please verify your phone number to continue.");
+        return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -154,7 +223,7 @@ const DeveloperRegistration = () => {
         websiteUrl: data.websiteUrl || "",
         // Sending Names instead of ISO codes to API
         country: countryObj ? countryObj.name : data.country,
-        state: stateObj ? stateObj.name : data.state, // Include State if backend accepts it
+        state: stateObj ? stateObj.name : data.state, 
         city: data.city,
         address: data.address,
         reraNumber: data.reraNumber,
@@ -274,91 +343,133 @@ const DeveloperRegistration = () => {
                     />
                   </Form.Item>
 
-                  {/* Phone Section (Enhanced) */}
-                  <Row gutter={16}>
-                    <Col xs={24} md={8}>
-                      <Form.Item label="Country Code" required>
-                        <Controller
-                          name="country_code"
-                          control={control}
-                          rules={{ required: "Required" }}
-                          render={({ field }) => (
-                            <Select
-                              size="large"
-                              showSearch
-                              optionFilterProp="children"
-                              filterOption={(input, option) =>
-                                (option["data-search"] || "")
-                                  .toLowerCase()
-                                  .includes(input.toLowerCase())
-                              }
-                              {...field}
-                            >
-                              {countryPhoneData.map((country, index) => (
-                                <Option
-                                  key={`${country.iso}-${index}`}
-                                  value={country.value}
-                                  data-search={country.searchStr}
-                                >
-                                  <div style={{ display: "flex", alignItems: "center" }}>
-                                    <img
-                                      src={`https://flagcdn.com/w20/${country.iso}.png`}
-                                      srcSet={`https://flagcdn.com/w40/${country.iso}.png 2x`}
-                                      width="20"
-                                      alt={country.name}
-                                      style={{ marginRight: 8, borderRadius: 2 }}
-                                    />
-                                    <span>{country.phone}</span>
-                                    <span style={{ color: "#999", fontSize: "12px", marginLeft: "6px" }}>
-                                      ({country.iso.toUpperCase()})
-                                    </span>
-                                  </div>
-                                </Option>
-                              ))}
-                            </Select>
-                          )}
-                        />
-                      </Form.Item>
-                    </Col>
+                  {/* ================= PHONE NUMBER SECTION WITH OTP ================= */}
+                  <div className="mb-6">
+                    <Form.Item label="Phone Number" required validateStatus={errors.phone_number ? "error" : ""} help={errors.phone_number?.message} style={{marginBottom: 0}}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                            {/* Country Code */}
+                            <div style={{ width: '130px' }}>
+                                <Controller
+                                    name="country_code"
+                                    control={control}
+                                    rules={{ required: "Required" }}
+                                    render={({ field }) => (
+                                        <Select
+                                            size="large"
+                                            showSearch
+                                            disabled={otpVerified || otpSent} // Lock if verifying
+                                            optionFilterProp="children"
+                                            filterOption={(input, option) => (option["data-search"] || "").toLowerCase().includes(input.toLowerCase())}
+                                            {...field}
+                                            style={{ width: "100%" }}
+                                        >
+                                            {countryPhoneData.map((country, index) => (
+                                                <Option key={`${country.iso}-${index}`} value={country.value} data-search={country.searchStr}>
+                                                    <div style={{ display: "flex", alignItems: "center" }}>
+                                                        <img src={`https://flagcdn.com/w20/${country.iso}.png`} width="20" alt={country.name} style={{ marginRight: 6 }} />
+                                                        <span>{country.phone}</span>
+                                                    </div>
+                                                </Option>
+                                            ))}
+                                        </Select>
+                                    )}
+                                />
+                            </div>
 
-                    <Col xs={24} md={16}>
-                      <Form.Item
-                        label="Phone Number"
-                        required
-                        validateStatus={errors.phone_number ? "error" : ""}
-                        help={errors.phone_number?.message}
-                      >
-                        <Controller
-                          name="phone_number"
-                          control={control}
-                          rules={{
-                            required: "Phone number is required",
-                            validate: (value) => {
-                              const countryCode = getValues("country_code");
-                              if (!countryCode) return "Select code first";
-                              const fullNumber = `${countryCode}${value}`;
-                              const phoneNumber = parsePhoneNumberFromString(fullNumber);
-                              return (
-                                (phoneNumber && phoneNumber.isValid()) ||
-                                `Invalid length for ${countryCode}`
-                              );
-                            },
-                          }}
-                          render={({ field }) => (
-                            <Input
-                              size="large"
-                              placeholder="e.g. 501234567"
-                              maxLength={15}
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e.target.value.replace(/\D/g, ""));
-                              }}
-                            />
-                          )}
-                        />
-                      </Form.Item>
-                    </Col>
-                  </Row>
+                            {/* Phone Number Input */}
+                            <div style={{ flex: 1 }}>
+                                <Controller
+                                    name="phone_number"
+                                    control={control}
+                                    rules={{
+                                        required: "Phone number is required",
+                                        validate: (value) => {
+                                            const countryCode = getValues("country_code");
+                                            if (!countryCode) return "Select code first";
+                                            const fullNumber = `${countryCode}${value}`;
+                                            const phoneNumber = parsePhoneNumberFromString(fullNumber);
+                                            return (phoneNumber && phoneNumber.isValid()) || `Invalid length for ${countryCode}`;
+                                        },
+                                    }}
+                                    render={({ field }) => (
+                                        <Input
+                                            size="large"
+                                            placeholder="e.g. 501234567"
+                                            maxLength={15}
+                                            disabled={otpVerified || otpSent} // Lock if verifying
+                                            {...field}
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value.replace(/\D/g, ""));
+                                                setOtpSent(false); // Reset on change
+                                                setOtpVerified(false);
+                                            }}
+                                        />
+                                    )}
+                                />
+                            </div>
+
+                            {/* Send OTP Button */}
+                            {!otpVerified && !otpSent && (
+                                <Button 
+                                    type="primary" 
+                                    size="large"
+                                    style={{ backgroundColor: '#333', borderColor: '#333' }}
+                                    onClick={handleSendOtp}
+                                    loading={otpLoading}
+                                >
+                                    Send OTP
+                                </Button>
+                            )}
+
+                            {/* Change Number Button */}
+                            {otpSent && !otpVerified && (
+                                <Button 
+                                    danger 
+                                    size="large"
+                                    onClick={() => { setOtpSent(false); setEnteredOtp(""); }}
+                                >
+                                    Change
+                                </Button>
+                            )}
+                        </div>
+                    </Form.Item>
+
+                    {/* OTP Verify Input Section */}
+                    {otpSent && !otpVerified && (
+                        <div style={{ marginTop: 16, display: 'flex', gap: 8, animation: 'fadeIn 0.3s ease' }}>
+                            <div style={{ flex: 1 }}>
+                                <Input 
+                                    size="large"
+                                    placeholder="Enter 6-digit OTP"
+                                    prefix={<SafetyCertificateOutlined style={{ color: themeColor }}/>} 
+                                    value={enteredOtp}
+                                    onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ""))}
+                                    maxLength={6}
+                                />
+                                <Text type="secondary" style={{ fontSize: 12, marginLeft: 4 }}>
+                                    OTP sent to {getValues('country_code')} {getValues('phone_number')}
+                                </Text>
+                            </div>
+                            <Button 
+                                type="primary" 
+                                size="large" 
+                                onClick={handleVerifyOtp} 
+                                loading={otpLoading}
+                                style={{ background: themeColor, borderColor: themeColor }}
+                            >
+                                Verify
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* Verified Success Indicator */}
+                    {otpVerified && (
+                        <div style={{ marginTop: 8, color: '#52c41a', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+                            <CheckCircleFilled /> Phone Verified Successfully
+                        </div>
+                    )}
+                  </div>
+                  {/* ================= END PHONE SECTION ================= */}
 
                   {/* Logo */}
                   <Form.Item label="Logo URL (Optional)">
@@ -637,6 +748,14 @@ const DeveloperRegistration = () => {
           </Col>
         </Row>
       </div>
+      
+      {/* CSS for fading in the OTP box */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 };

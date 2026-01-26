@@ -2,15 +2,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Card, Drawer, Descriptions, Tag, Button, Space, Badge,
-  Alert, message, Avatar, Row, Col, Input, Tabs, Select, Statistic, Tooltip, Divider, Empty
+  message, Avatar, Row, Col, Tabs, Statistic, Tooltip, Empty
 } from 'antd';
 import {
   PhoneOutlined, MailOutlined, UserOutlined,
   HomeOutlined, DollarCircleOutlined, CalendarOutlined,
   CheckCircleOutlined, EyeOutlined, DeleteOutlined, BellOutlined,
-  UsergroupAddOutlined, BankOutlined, SearchOutlined, FilterOutlined,
+  UsergroupAddOutlined, BankOutlined,
   EnvironmentOutlined, RiseOutlined, BuildOutlined, QuestionCircleOutlined,
-  SolutionOutlined, FileTextOutlined, DownloadOutlined
+  SolutionOutlined
 } from '@ant-design/icons';
 import { apiService } from '../../../../../manageApi/utils/custom.apiservice';
 import { showSuccessAlert, showConfirmDialog } from '../../../../../manageApi/utils/sweetAlert';
@@ -53,8 +53,14 @@ const PropertyLeads = () => {
   const [loading, setLoading] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+
   const [activeTab, setActiveTab] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+
+  // ✅ filters for CustomTable server-side search
+  const [filters, setFilters] = useState({
+    search: '',
+  });
+
   const [pagination, setPagination] = useState({
     currentPage: 1,
     itemsPerPage: 10,
@@ -73,14 +79,17 @@ const PropertyLeads = () => {
     setLoading(true);
     try {
       const params = { page, limit };
-      if (search) params.search = search;
+
+      if (search) params.search = search;       // ✅ server side search
       if (tab !== 'all') params.type = tab;
+
       const res = await apiService.get('/property/lead', params);
+
       if (res.success) {
-        setLeads(res.data);
+        setLeads(res.data || []);
         setPagination({
-          currentPage: res.pagination?.page || 1,
-          itemsPerPage: res.pagination?.limit || 10,
+          currentPage: res.pagination?.page || page,
+          itemsPerPage: res.pagination?.limit || limit,
           totalItems: res.pagination?.total || 0
         });
       }
@@ -93,27 +102,40 @@ const PropertyLeads = () => {
   };
 
   useEffect(() => {
-    fetchLeads(activeTab, 1, 10, searchTerm);
+    fetchLeads(activeTab, 1, pagination.itemsPerPage, filters.search);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   const handleTabChange = (key) => {
     setActiveTab(key);
-    fetchLeads(key, 1, 10, searchTerm);
-  };
-
-  const handleSearch = () => {
-    fetchLeads(activeTab, 1, 10, searchTerm);
+    fetchLeads(key, 1, pagination.itemsPerPage, filters.search);
   };
 
   const handlePageChange = (page, pageSize) => {
-    fetchLeads(activeTab, page, pageSize, searchTerm);
+    fetchLeads(activeTab, page, pageSize, filters.search);
+  };
+
+  // ✅ CustomTable ke search se yahi call hoga
+  const handleFilter = (newFilters) => {
+    const updatedFilters = {
+      ...filters,
+      ...newFilters,
+      search: (newFilters?.search || '').trim(),
+    };
+    setFilters(updatedFilters);
+
+    fetchLeads(activeTab, 1, pagination.itemsPerPage, updatedFilters.search);
   };
 
   const markAsContacted = async (id) => {
     try {
       await apiService.put(`/property/lead/${id}`, { status: 'contacted' });
       showSuccessAlert('Success!', 'Lead marked as contacted');
-      setLeads(prev => prev.map(l => l._id === id ? { ...l, status: 'contacted' } : l));
+
+      setLeads(prev =>
+        prev.map(l => (l._id === id ? { ...l, status: 'contacted' } : l))
+      );
+
       if (selectedLead?._id === id) {
         setSelectedLead({ ...selectedLead, status: 'contacted' });
       }
@@ -128,7 +150,8 @@ const PropertyLeads = () => {
       try {
         await apiService.delete(`/property/lead/${id}`);
         showSuccessAlert('Deleted', 'Lead moved to trash');
-        fetchLeads(activeTab, pagination.currentPage, pagination.itemsPerPage, searchTerm);
+
+        fetchLeads(activeTab, pagination.currentPage, pagination.itemsPerPage, filters.search);
       } catch (err) {
         message.error('Delete failed');
       }
@@ -213,11 +236,19 @@ const PropertyLeads = () => {
               }}
             />
           </Tooltip>
+
           {record.status === 'submit' && (
             <Tooltip title="Mark as Contacted">
-              <Button shape="circle" type="primary" ghost icon={<CheckCircleOutlined />} onClick={() => markAsContacted(record._id)} />
+              <Button
+                shape="circle"
+                type="primary"
+                ghost
+                icon={<CheckCircleOutlined />}
+                onClick={() => markAsContacted(record._id)}
+              />
             </Tooltip>
           )}
+
           <Tooltip title="Delete">
             <Button shape="circle" danger icon={<DeleteOutlined />} onClick={() => softDelete(record._id)} />
           </Tooltip>
@@ -236,66 +267,6 @@ const PropertyLeads = () => {
 
   const renderTypeSpecificDetails = (lead) => {
     switch (lead.type) {
-      case 'mortgage':
-        const { mortgage_application: app, personal_details: pers, product_details: prod, mortgage_applicationdocument: docs } = lead;
-        return (
-          <div className="space-y-4">
-            <Card title={<span className="text-blue-600">Application Info</span>} size="small" className="shadow-sm">
-              <Descriptions column={1} size="small" bordered>
-                <Descriptions.Item label="App ID"><b>{app?.application_id || 'N/A'}</b></Descriptions.Item>
-                <Descriptions.Item label="Sub Type">{lead.lead_sub_type?.toUpperCase()}</Descriptions.Item>
-                <Descriptions.Item label="Loan Purpose">{app?.loan_type?.toUpperCase()}</Descriptions.Item>
-                <Descriptions.Item label="Status"><Tag color="blue">{app?.status?.replace('_', ' ').toUpperCase()}</Tag></Descriptions.Item>
-              </Descriptions>
-            </Card>
-            <Card title="Personal Details" size="small" className="shadow-sm">
-              <Descriptions column={1} size="small" bordered>
-                <Descriptions.Item label="Full Name">{pers?.full_name}</Descriptions.Item>
-                <Descriptions.Item label="Gender/Marital">{pers?.gender} / {pers?.marital_status}</Descriptions.Item>
-                <Descriptions.Item label="Nationality">{pers?.nationality || 'UAE'}</Descriptions.Item>
-                <Descriptions.Item label="Occupation">{lead.occupation || app?.income_type}</Descriptions.Item>
-                <Descriptions.Item label="Monthly Salary">{pers?.monthly_salary > 0 ? `AED ${pers.monthly_salary}` : 'Not Disclosed'}</Descriptions.Item>
-                <Descriptions.Item label="EID Expiry">{pers?.emirated_expiry_date ? new Date(pers.emirated_expiry_date).toLocaleDateString() : 'N/A'}</Descriptions.Item>
-              </Descriptions>
-            </Card>
-            <Card title="Property Requirements" size="small" className="shadow-sm">
-              <Descriptions column={1} size="small" bordered>
-                <Descriptions.Item label="Property Value">AED {lead.price || prod?.property_value}</Descriptions.Item>
-                <Descriptions.Item label="Area">{prod?.property_area || lead.area}</Descriptions.Item>
-                <Descriptions.Item label="Found Property?"><Tag color={prod?.found_property === 'yes' ? 'green' : 'orange'}>{prod?.found_property?.toUpperCase()}</Tag></Descriptions.Item>
-                <Descriptions.Item label="Mortgage Type">{prod?.mortgage_type?.toUpperCase()}</Descriptions.Item>
-              </Descriptions>
-            </Card>
-            {/* --- UPDATED DOCUMENTS SECTION WITH LINKS --- */}
-            <Card title="Uploaded Documents" size="small" className="shadow-sm">
-              <Descriptions column={1} size="small" bordered>
-                {[
-                  { label: 'Passport', url: docs?.passport },
-                  { label: 'Visa', url: docs?.visa },
-                  { label: 'Emirates ID', url: docs?.emirates_id },
-                  { label: 'Salary Certificate', url: docs?.salary_certificate },
-                  { label: 'Marriage Certificate', url: docs?.marriage_certificate }
-                ].map((doc, i) => (
-                  <Descriptions.Item key={i} label={doc.label}>
-                    {doc.url ? (
-                      <Button 
-                        type="link" 
-                        size="small" 
-                        icon={<EyeOutlined />} 
-                        onClick={() => window.open(doc.url, '_blank')}
-                      >
-                        View Document
-                      </Button>
-                    ) : (
-                      <span className="text-gray-400 text-xs italic">Not Uploaded</span>
-                    )}
-                  </Descriptions.Item>
-                ))}
-              </Descriptions>
-            </Card>
-          </div>
-        );
-
       case 'buy':
         return (
           <Descriptions title="Buying Requirements" bordered column={1} size="small" layout="vertical" className="bg-white p-4 rounded border">
@@ -346,7 +317,9 @@ const PropertyLeads = () => {
       case 'consultation':
         return (
           <Descriptions title="Consultation Request" bordered column={1} size="small" className="bg-white p-4 rounded border">
-            <Descriptions.Item label="Consultant Type"><Tag color="cyan">{lead.consultant_type?.toUpperCase() || 'GENERAL'}</Tag></Descriptions.Item>
+            <Descriptions.Item label="Consultant Type">
+              <Tag color="cyan">{lead.consultant_type?.toUpperCase() || 'GENERAL'}</Tag>
+            </Descriptions.Item>
             <Descriptions.Item label="Message">{lead.message || 'N/A'}</Descriptions.Item>
           </Descriptions>
         );
@@ -368,25 +341,63 @@ const PropertyLeads = () => {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-4">Property Leads</h1>
         <Row gutter={[16, 16]}>
-          <Col xs={24} sm={8}><Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.primary }}><Statistic title="Total Leads" value={pagination.totalItems} prefix={<UsergroupAddOutlined style={{ color: THEME.primary }} />} /></Card></Col>
-          <Col xs={24} sm={8}><Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.warning }}><Statistic title="New Submissions" value={stats.new} prefix={<BellOutlined style={{ color: THEME.warning }} />} /></Card></Col>
-          <Col xs={24} sm={8}><Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.success }}><Statistic title="Contacted" value={stats.contacted} prefix={<CheckCircleOutlined style={{ color: THEME.success }} />} /></Card></Col>
+          <Col xs={24} sm={8}>
+            <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.primary }}>
+              <Statistic title="Total Leads" value={pagination.totalItems} prefix={<UsergroupAddOutlined style={{ color: THEME.primary }} />} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.warning }}>
+              <Statistic title="New Submissions" value={stats.new} prefix={<BellOutlined style={{ color: THEME.warning }} />} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.success }}>
+              <Statistic title="Contacted" value={stats.contacted} prefix={<CheckCircleOutlined style={{ color: THEME.success }} />} />
+            </Card>
+          </Col>
         </Row>
       </div>
 
       <Card bordered={false} className="shadow-md rounded-lg" bodyStyle={{ padding: 0 }}>
-        <div className="p-4 border-b border-gray-100 bg-white rounded-t-lg">
-          <Input prefix={<SearchOutlined className="text-gray-400" />} placeholder="Search by name, email, mobile, company..." allowClear size="large" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onPressEnter={handleSearch} style={{ maxWidth: 400 }} />
-        </div>
-        <Tabs activeKey={activeTab} onChange={handleTabChange} items={tabItems} type="card" size="large" tabBarStyle={{ margin: 0, paddingLeft: 16, paddingTop: 16, background: '#fafafa' }} />
+        {/* ❌ Removed extra search bar from here */}
+
+        <Tabs
+          activeKey={activeTab}
+          onChange={handleTabChange}
+          items={tabItems}
+          type="card"
+          size="large"
+          tabBarStyle={{ margin: 0, paddingLeft: 16, paddingTop: 16, background: '#fafafa' }}
+        />
+
         <div className="p-0">
-          <CustomTable columns={columns} data={leads} loading={loading} totalItems={pagination.totalItems} currentPage={pagination.currentPage} itemsPerPage={pagination.itemsPerPage} onPageChange={handlePageChange} />
+          <CustomTable
+            columns={columns}
+            data={leads}
+            loading={loading}
+            totalItems={pagination.totalItems}
+            currentPage={pagination.currentPage}
+            itemsPerPage={pagination.itemsPerPage}
+            onPageChange={handlePageChange}
+            onFilter={handleFilter}   // ✅ NOW CustomTable Search will work
+          />
         </div>
       </Card>
 
       <Drawer
-        title={<div className="flex items-center gap-2"><HomeOutlined style={{ color: THEME.primary }} /><span>Lead Profile</span></div>}
-        placement="right" width={600} onClose={() => setDrawerVisible(false)} open={drawerVisible} destroyOnClose bodyStyle={{ backgroundColor: '#f9fafb' }}
+        title={
+          <div className="flex items-center gap-2">
+            <HomeOutlined style={{ color: THEME.primary }} />
+            <span>Lead Profile</span>
+          </div>
+        }
+        placement="right"
+        width={600}
+        onClose={() => setDrawerVisible(false)}
+        open={drawerVisible}
+        destroyOnClose
+        bodyStyle={{ backgroundColor: '#f9fafb' }}
       >
         {selectedLead && (
           <div className="space-y-6">
@@ -396,28 +407,59 @@ const PropertyLeads = () => {
                 <div className="flex-1">
                   <h3 className="text-xl font-bold m-0 text-gray-800">{getFullName(selectedLead)}</h3>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <Tag color={typeConfig[selectedLead.type]?.color} icon={typeConfig[selectedLead.type]?.icon}>{typeConfig[selectedLead.type]?.label || selectedLead.type}</Tag>
-                    <Tag color={statusConfig[selectedLead.status]?.color}>{statusConfig[selectedLead.status]?.label}</Tag>
+                    <Tag color={typeConfig[selectedLead.type]?.color} icon={typeConfig[selectedLead.type]?.icon}>
+                      {typeConfig[selectedLead.type]?.label || selectedLead.type}
+                    </Tag>
+                    <Tag color={statusConfig[selectedLead.status]?.color}>
+                      {statusConfig[selectedLead.status]?.label}
+                    </Tag>
                   </div>
-                  <div className="text-xs text-gray-400 mt-2">Received: {new Date(selectedLead.createdAt).toLocaleString()}</div>
+                  <div className="text-xs text-gray-400 mt-2">
+                    Received: {new Date(selectedLead.createdAt).toLocaleString()}
+                  </div>
                 </div>
               </div>
             </Card>
+
             <Card title="Contact Information" size="small" bordered={false} className="shadow-sm">
               <Descriptions column={1} bordered size="small">
-                <Descriptions.Item label={<span className="text-gray-500"><MailOutlined /> Email</span>}><a href={`mailto:${selectedLead.email}`} className="text-blue-600">{selectedLead.email || 'N/A'}</a></Descriptions.Item>
-                <Descriptions.Item label={<span className="text-gray-500"><PhoneOutlined /> Mobile</span>}><a href={`tel:${selectedLead.mobile?.country_code}${selectedLead.mobile?.number}`} className="text-blue-600">{selectedLead.mobile?.country_code} {selectedLead.mobile?.number}</a></Descriptions.Item>
-                <Descriptions.Item label={<span className="text-gray-500"><BellOutlined /> Preference</span>}>{selectedLead.preferred_contact?.toUpperCase() || 'ANY'}</Descriptions.Item>
+                <Descriptions.Item label={<span className="text-gray-500"><MailOutlined /> Email</span>}>
+                  <a href={`mailto:${selectedLead.email}`} className="text-blue-600">{selectedLead.email || 'N/A'}</a>
+                </Descriptions.Item>
+                <Descriptions.Item label={<span className="text-gray-500"><PhoneOutlined /> Mobile</span>}>
+                  <a href={`tel:${selectedLead.mobile?.country_code}${selectedLead.mobile?.number}`} className="text-blue-600">
+                    {selectedLead.mobile?.country_code} {selectedLead.mobile?.number}
+                  </a>
+                </Descriptions.Item>
+                <Descriptions.Item label={<span className="text-gray-500"><BellOutlined /> Preference</span>}>
+                  {selectedLead.preferred_contact?.toUpperCase() || 'ANY'}
+                </Descriptions.Item>
               </Descriptions>
             </Card>
+
             <div className="space-y-2">
               <div className="text-sm font-semibold text-gray-500 uppercase ml-1">Requirement Details</div>
               {renderTypeSpecificDetails(selectedLead)}
             </div>
+
             {selectedLead.status === 'submit' && (
               <div className="mt-8 pt-4 border-t border-gray-200">
-                <Button type="primary" size="large" block icon={<CheckCircleOutlined />} style={{ backgroundColor: THEME.success, borderColor: THEME.success }} onClick={() => { markAsContacted(selectedLead._id); setDrawerVisible(false); }}>Mark as Contacted</Button>
-                <div className="text-center text-xs text-gray-400 mt-2">Acknowledging this lead will update its status to 'Contacted'.</div>
+                <Button
+                  type="primary"
+                  size="large"
+                  block
+                  icon={<CheckCircleOutlined />}
+                  style={{ backgroundColor: THEME.success, borderColor: THEME.success }}
+                  onClick={() => {
+                    markAsContacted(selectedLead._id);
+                    setDrawerVisible(false);
+                  }}
+                >
+                  Mark as Contacted
+                </Button>
+                <div className="text-center text-xs text-gray-400 mt-2">
+                  Acknowledging this lead will update its status to 'Contacted'.
+                </div>
               </div>
             )}
           </div>

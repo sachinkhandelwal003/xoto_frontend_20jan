@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Form,
   Input,
@@ -12,15 +12,16 @@ import {
   Divider,
   Select,
   Upload,
-  message
+  message,
+  Space
 } from "antd";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import styled from "styled-components";
 import axios from "axios";
-import { Country } from "country-state-city"; // Sirf flags ke liye
-import { parsePhoneNumberFromString } from "libphonenumber-js"; // Validation ke liye
+import { Country } from "country-state-city";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 import {
   MailOutlined,
@@ -28,13 +29,15 @@ import {
   PhoneOutlined,
   UploadOutlined,
   ApartmentOutlined,
+  CheckCircleFilled,
+  SafetyCertificateOutlined
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 const { Option } = Select;
 
-// --- Styled Components ---
+// --- Styled Components (Same as before) ---
 const PageWrapper = styled.div`
   min-height: 100vh;
   position: relative;
@@ -87,11 +90,17 @@ const RegistrationAgency = () => {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
+  // --- OTP Related States ---
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false); // For Send/Verify buttons
+  const [otpValue, setOtpValue] = useState("");
+
   const themeColor = "#4F46E5";
   const themeGradient = "linear-gradient(135deg, #4F46E5, #4338ca)";
   const BASE_URL = "https://xoto.ae";
 
-  // --- Prepare Country Codes with Flags ---
+  // --- Country Data ---
   const countryPhoneData = useMemo(() => {
     const allCountries = Country.getAllCountries();
     return allCountries.map((c) => ({
@@ -104,13 +113,104 @@ const RegistrationAgency = () => {
   }, []);
 
   const normFile = (e) => {
-    if (Array.isArray(e)) {
-      return e;
-    }
+    if (Array.isArray(e)) return e;
     return e?.fileList;
   };
 
+  // --- OTP Logic: Send OTP ---
+  const handleSendOtp = async () => {
+    try {
+      // Pehle form se values validate karte hain
+      const values = await form.validateFields(['country_code', 'mobile_number']);
+      const { country_code, mobile_number } = values;
+
+      setOtpLoading(true);
+
+      const payload = {
+        country_code: country_code,
+        phone_number: mobile_number // API expects 'phone_number'
+      };
+
+      console.log("📡 Sending OTP Payload:", payload);
+
+      const response = await axios.post(`${BASE_URL}/api/otp/send-otp`, payload);
+
+      if (response.data) {
+        toast.success("OTP Sent Successfully!");
+        setOtpSent(true);
+        setOtpVerified(false); // Reset verified status if sending again
+      }
+    } catch (error) {
+      console.error("❌ Send OTP Error:", error);
+      // Agar validation error hai (form fields invalid), wo catch mein nahi aayega usually
+      // API error handle karte hain:
+      const msg = error.response?.data?.message || "Failed to send OTP.";
+      toast.error(msg);
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // --- OTP Logic: Verify OTP ---
+  const handleVerifyOtp = async () => {
+    if (!otpValue) {
+      toast.error("Please enter the OTP");
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+      const values = form.getFieldsValue(['country_code', 'mobile_number']);
+      
+      const payload = {
+        country_code: values.country_code,
+        phone_number: values.mobile_number,
+        otp: otpValue
+      };
+
+      console.log("📡 Verifying OTP Payload:", payload);
+
+      const response = await axios.post(`${BASE_URL}/api/otp/verify-otp`, payload);
+
+      if (response.data) {
+        toast.success("Mobile Number Verified!");
+        setOtpVerified(true);
+        setOtpSent(false); // Hide OTP field after success
+      }
+    } catch (error) {
+      console.error("❌ Verify OTP Error:", error);
+      const msg = error.response?.data?.message || "Invalid OTP.";
+      toast.error(msg);
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // --- Handle Mobile Number Change ---
+  // Agar user number change kare verify hone ke baad, status reset karo
+  const handleMobileChange = (e) => {
+    // Standard input processing
+    const { value } = e.target;
+    const reg = /^\d*$/;
+    if (reg.test(value)) {
+      form.setFieldsValue({ mobile_number: value });
+      
+      // Reset logic
+      if (otpVerified || otpSent) {
+        setOtpVerified(false);
+        setOtpSent(false);
+        setOtpValue("");
+      }
+    }
+  };
+
   const onFinish = async (values) => {
+    // --- Strict Check: OTP must be verified ---
+    if (!otpVerified) {
+      toast.error("Please verify your mobile number first.");
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
@@ -119,12 +219,11 @@ const RegistrationAgency = () => {
         country_code: values.country_code,
         mobile_number: values.mobile_number,
         
-        // Handling File Objects if needed by your API structure
         profile_photo: values.profile_photo?.[0]?.originFileObj, 
         letter_of_authority: values.letter_of_authority?.[0]?.originFileObj, 
       };
 
-      console.log("📡 Sending Payload:", payload);
+      console.log("📡 Sending Registration Payload:", payload);
 
       const response = await axios.post(
         `${BASE_URL}/api/agency/agency-signup`, 
@@ -230,18 +329,18 @@ const RegistrationAgency = () => {
                   </Col>
                 </Row>
 
-                {/* --- Contact Details with Flag & Validation --- */}
+                {/* --- Contact Details with OTP --- */}
                 <Divider orientation="left" style={{ borderColor: "#e5e7eb", marginTop: 30 }}>
                     <span style={{ color: themeColor, fontSize: 13, fontWeight: "bold", letterSpacing: 1 }}>
-                        CONTACT DETAILS
+                        CONTACT DETAILS & VERIFICATION
                     </span>
                 </Divider>
 
                 <Row gutter={24}>
-                    <Col xs={24} md={8}>
+                    <Col xs={24} md={6}>
                         <Form.Item
                             name="country_code"
-                            label="Country Code"
+                            label="Code"
                             rules={[{ required: true, message: "Required" }]}
                         >
                             <Select 
@@ -250,6 +349,11 @@ const RegistrationAgency = () => {
                                 filterOption={(input, option) => 
                                     (option['data-search'] || "").toLowerCase().includes(input.toLowerCase())
                                 }
+                                // Reset OTP if country changes
+                                onChange={() => {
+                                    setOtpVerified(false);
+                                    setOtpSent(false);
+                                }}
                             >
                                 {countryPhoneData.map((country, index) => (
                                     <Option 
@@ -266,16 +370,14 @@ const RegistrationAgency = () => {
                                           style={{ marginRight: 8, borderRadius: 2 }} 
                                         />
                                         <span>{country.phone}</span>
-                                        <span style={{ color: "#999", fontSize: "12px", marginLeft: "6px" }}>
-                                           ({country.iso.toUpperCase()})
-                                        </span>
                                       </div>
                                     </Option>
                                 ))}
                             </Select>
                         </Form.Item>
                     </Col>
-                    <Col xs={24} md={16}>
+                    
+                    <Col xs={24} md={10}>
                         <Form.Item
                             name="mobile_number"
                             label="Mobile Number"
@@ -285,16 +387,13 @@ const RegistrationAgency = () => {
                                 ({ getFieldValue }) => ({
                                     validator(_, value) {
                                         const countryCode = getFieldValue('country_code');
-                                        if (!value || !countryCode) {
-                                            return Promise.resolve();
-                                        }
+                                        if (!value || !countryCode) return Promise.resolve();
                                         const fullNumber = `${countryCode}${value}`;
                                         const phoneNumber = parsePhoneNumberFromString(fullNumber);
-
                                         if (phoneNumber && phoneNumber.isValid()) {
                                             return Promise.resolve();
                                         }
-                                        return Promise.reject(new Error(`Invalid number length for ${countryCode}`));
+                                        return Promise.reject(new Error(`Invalid number`));
                                     },
                                 }),
                             ]}
@@ -303,19 +402,83 @@ const RegistrationAgency = () => {
                             prefix={<PhoneOutlined style={{color: "#aaa"}} />} 
                             placeholder="e.g. 50 123 4567" 
                             maxLength={15}
-                            onChange={(e) => {
-                                // Only allow digits
-                                const { value } = e.target;
-                                const reg = /^\d*$/;
-                                if (reg.test(value)) {
-                                    form.setFieldsValue({ mobile_number: value });
-                                }
-                            }}
+                            disabled={otpVerified} // Lock input after verification
+                            suffix={otpVerified ? <CheckCircleFilled style={{ color: "#52c41a" }} /> : null}
+                            onChange={handleMobileChange}
                             style={{ borderRadius: 8 }} 
                         />
                         </Form.Item>
                     </Col>
+
+                    {/* --- Send OTP Button Column --- */}
+                    <Col xs={24} md={8} style={{ display: 'flex', alignItems: 'flex-start', paddingTop: '29px' }}>
+                        {!otpVerified ? (
+                            <Button 
+                            className="mt-5"
+                                onClick={handleSendOtp}
+                                loading={otpLoading}
+                                disabled={otpSent} // Disable if OTP already sent (unless you add Resend logic)
+                                block={isMobile}
+                                type="default"
+                                style={{ 
+                                    borderColor: themeColor, 
+                                    color: themeColor,
+                                    borderRadius: 8,
+                                    fontWeight: 500,
+                                }}
+                            >
+                                {otpSent ? "OTP Sent" : "Send OTP"}
+                            </Button>
+                        ) : (
+                            <Button 
+                                type="text" 
+                                icon={<CheckCircleFilled />} 
+                                style={{ color: '#52c41a', cursor: 'default', fontWeight: 'bold' }}
+                            >
+                                Verified
+                            </Button>
+                        )}
+                    </Col>
                 </Row>
+
+                {/* --- OTP Input Row (Visible only when OTP is Sent and Not Verified) --- */}
+                {otpSent && !otpVerified && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                    >
+                        <Row gutter={24} style={{ marginBottom: 24, background: "#f9fafb", padding: "15px", borderRadius: "8px", border: "1px dashed #d9d9d9" }}>
+                            <Col xs={24} md={16}>
+                                <Text strong style={{ display: "block", marginBottom: 8, fontSize: 13 }}>Enter Verification Code</Text>
+                                <Input 
+                                    placeholder="Enter OTP (e.g. 123456)"
+                                    value={otpValue}
+                                    onChange={(e) => setOtpValue(e.target.value)}
+                                    prefix={<SafetyCertificateOutlined style={{color: "#aaa"}} />}
+                                    style={{ borderRadius: 8 }}
+                                    maxLength={6}
+                                />
+                            </Col>
+                            <Col xs={24} md={8} style={{ display: 'flex', alignItems: 'flex-end' }}>
+                                <Button 
+                                    type="primary" 
+                                    onClick={handleVerifyOtp}
+                                    loading={otpLoading}
+                                    block
+                                    style={{ background: "#333", borderColor: "#333", borderRadius: 8 }}
+                                >
+                                    Verify OTP
+                                </Button>
+                            </Col>
+                            <Col span={24}>
+                                <Button type="link" size="small" onClick={handleSendOtp} style={{ paddingLeft: 0, marginTop: 5 }}>
+                                    Resend OTP
+                                </Button>
+                            </Col>
+                        </Row>
+                    </motion.div>
+                )}
 
                 {/* --- Documents --- */}
                 <Divider orientation="left" style={{ borderColor: "#e5e7eb", marginTop: 30 }}>

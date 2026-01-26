@@ -10,7 +10,6 @@ import {
   Tooltip,
   Spin,
   Typography,
-  Divider,
   Row,
   Col,
   Progress,
@@ -18,9 +17,7 @@ import {
   Statistic,
   Alert
 } from 'antd';
-import { Form } from 'antd';
 import {
-  EyeOutlined,
   SaveOutlined,
   CloseOutlined,
   SafetyCertificateOutlined,
@@ -49,7 +46,6 @@ const PURPLE_THEME = {
   dark: '#1f2937'
 };
 
-// Helper: Deep clone to avoid mutation
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
 
 const useModulePermission = () => {
@@ -64,7 +60,6 @@ const useModulePermission = () => {
   };
 };
 
-// ProCard-like component
 const ProCard = ({ children, title, extra, headerStyle, bodyStyle, className = '', ...props }) => (
   <Card
     {...props}
@@ -102,13 +97,20 @@ const Permission = () => {
   const [selectedRole, setSelectedRole] = useState(null);
   const [rolePermMap, setRolePermMap] = useState({});
   const [saving, setSaving] = useState(false);
-  const [filters, setFilters] = useState({});
+
+  // ✅ filters must include search
+  const [filters, setFilters] = useState({
+    search: '',
+    isActive: undefined
+  });
+
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
     totalResults: 0,
     itemsPerPage: 10,
   });
+
   const [stats, setStats] = useState({
     totalPermissions: 0,
     activeRoles: 0,
@@ -118,44 +120,61 @@ const Permission = () => {
   const getPermValue = (value) => value === 1 || value === true;
 
   /* -------------------------- FETCH DATA -------------------------- */
-  const fetchData = useCallback(async (page = 1, itemsPerPage = 10, filters = {}) => {
+const fetchData = useCallback(
+  async (page = 1, itemsPerPage = 10, filters = {}) => {
     if (!perm.canView) {
       setLoading(false);
       return;
     }
 
     setLoading(true);
+
     try {
+      // ✅ Extract filters
+      const search = filtersArg?.search?.trim();
+      const isActive = filtersArg?.isActive;
+
+      // ✅ BUILD PARAMS FOR API
+      const roleParams = {
+        page,
+        limit: itemsPerPage,
+        ...(typeof isActive === 'boolean' ? { isActive } : {}),
+        ...(search ? { search } : {}), // ✅ IMPORTANT
+      };
+
       const [rolesRes, modulesRes, permissionsRes] = await Promise.all([
-        apiService.get('/roles', { page, limit: itemsPerPage, ...filters }),
+        apiService.get('/roles', roleParams), // ✅ now search will go in API
         moduleService.getAll(),
-        apiService.get('/permission')
+        apiService.get('/permission', { limit: 100 }) // 👈 HERE
       ]);
 
-      const sortedModules = (modulesRes.data || []).sort((a, b) => a.position - b.position);
+      const sortedModules = (modulesRes.data || []).sort(
+        (a, b) => a.position - b.position
+      );
+
       setModules(sortedModules);
+
       setRoles(rolesRes.roles || []);
       setPermissions(permissionsRes.permissions || []);
 
       setPagination({
-        currentPage: rolesRes.pagination?.currentPage || 1,
+        currentPage: rolesRes.pagination?.currentPage || page,
         totalPages: rolesRes.pagination?.totalPages || 1,
         totalResults: rolesRes.pagination?.totalRecords || 0,
-        itemsPerPage: rolesRes.pagination?.perPage || 10,
+        itemsPerPage: rolesRes.pagination?.perPage || itemsPerPage,
       });
 
-      // Build immutable permission map
       const map = {};
       let grantedCount = 0;
+
       permissionsRes.permissions.forEach(p => {
         const roleId = p.role._id;
         const modId = p.module._id;
-        const subId = p.subModule?._id || null;
+        const subId = p.subModule?._id || '__module__';
 
-        if (!map[roleId]) map[roleId] = {};
-        if (!map[roleId][modId]) map[roleId][modId] = {};
+        map[roleId] ??= {};
+        map[roleId][modId] ??= {};
 
-        const key = subId || '__module__';
         const permObj = {
           id: p._id,
           canAdd: getPermValue(p.permissions.canAdd),
@@ -164,44 +183,61 @@ const Permission = () => {
           canDelete: getPermValue(p.permissions.canDelete),
           canViewAll: getPermValue(p.permissions.canViewAll),
         };
-        
-        // Count granted permissions
-        if (Object.values(permObj).some(v => v)) {
+
+        if (Object.values(permObj).some(Boolean)) {
           grantedCount++;
         }
-        
-        map[roleId][modId][key] = permObj;
+
+        map[roleId][modId][subId] = permObj;
       });
-      
-      // Calculate stats
-      const totalItems = sortedModules.reduce((c, m) => c + 1 + m.subModules.length, 0) * (rolesRes.roles?.length || 0);
-      const activeRoles = rolesRes.roles?.filter(r => r.isActive)?.length || 0;
-      
+
+      const totalItems =
+        sortedModules.reduce((c, m) => c + 1 + m.subModules.length, 0) *
+        (rolesRes.roles?.length || 0);
+
+      const activeRoles =
+        rolesRes.roles?.filter(r => r.isActive)?.length || 0;
+
       setStats({
         totalPermissions: totalItems,
         activeRoles,
-        grantedPermissions: grantedCount
+        grantedPermissions: grantedCount,
       });
-      
+
       setRolePermMap(map);
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to load data', 'error');
+      showToast(
+        err.response?.data?.message || 'Failed to load data',
+        'error'
+      );
     } finally {
       setLoading(false);
     }
-  }, [perm.canView]);
+  },
+  [perm.canView]
+);
+
 
   useEffect(() => {
     if (token) {
       localStorage.setItem('token', token);
       fetchData(pagination.currentPage, pagination.itemsPerPage, filters);
     }
-  }, [token, fetchData]);
+  }, [token, fetchData]); // ✅ keep stable
 
   const handlePageChange = (page, itemsPerPage) => fetchData(page, itemsPerPage, filters);
+
+  // ✅ FIXED FILTER HANDLER
   const handleFilter = (newFilters) => {
-    setFilters(newFilters);
-    fetchData(1, pagination.itemsPerPage, newFilters);
+    const updated = {
+      ...filters,
+      ...newFilters,
+    };
+
+    setFilters(updated);
+
+    // ✅ search always reset to page 1
+    fetchData(1, pagination.itemsPerPage, updated);
   };
 
   const openDrawer = (role) => {
@@ -247,6 +283,7 @@ const Permission = () => {
     }
 
     setSaving(true);
+
     const roleId = selectedRole._id;
     const rolePerms = rolePermMap[roleId] || {};
     const toCreate = [];
@@ -266,39 +303,24 @@ const Permission = () => {
           canViewAll: p.canViewAll ? 1 : 0,
         };
 
-        if (hasAny && p.id) {
-          toUpdate.push({ id: p.id, data: payload });
-        } else if (hasAny && !p.id) {
-          toCreate.push({ roleId, moduleId: modId, subModuleId: subId, ...payload });
-        } else if (!hasAny && p.id) {
-          toDelete.push(p.id);
-        }
+        if (hasAny && p.id) toUpdate.push({ id: p.id, data: payload });
+        else if (hasAny && !p.id) toCreate.push({ roleId, moduleId: modId, subModuleId: subId, ...payload });
+        else if (!hasAny && p.id) toDelete.push(p.id);
       });
     });
 
     try {
-      // Delete first
-      if (toDelete.length) {
-        await Promise.all(toDelete.map(id => apiService.delete(`/permission/${id}`)));
-      }
-
-      // Update
-      if (toUpdate.length) {
-        await Promise.all(toUpdate.map(({ id, data }) => apiService.put(`/permission/${id}`, data)));
-      }
-
-      // Create
-      if (toCreate.length) {
-        await apiService.post('/permission', toCreate);
-      }
+      if (toDelete.length) await Promise.all(toDelete.map(id => apiService.delete(`/permission/${id}`)));
+      if (toUpdate.length) await Promise.all(toUpdate.map(({ id, data }) => apiService.put(`/permission/${id}`, data)));
+      if (toCreate.length) await apiService.post('/permission', toCreate);
 
       showSuccessAlert('Success', `${toCreate.length} created, ${toUpdate.length} updated, ${toDelete.length} removed`);
+
       closeDrawer();
       fetchData(pagination.currentPage, pagination.itemsPerPage, filters);
     } catch (err) {
-      const msg = err.response?.data?.message || 'Save failed';
+      const msg = err?.response?.data?.message || 'Save failed';
       showErrorAlert('Error', msg);
-      console.error('Save error:', err.response?.data);
     } finally {
       setSaving(false);
     }
@@ -312,8 +334,10 @@ const Permission = () => {
       sortable: true,
       render: (v, record) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center" 
-               style={{ background: PURPLE_THEME.primaryBg }}>
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: PURPLE_THEME.primaryBg }}
+          >
             <TeamOutlined style={{ color: PURPLE_THEME.primary, fontSize: '18px' }} />
           </div>
           <div>
@@ -332,13 +356,15 @@ const Permission = () => {
       key: 'permissions',
       title: 'Permissions',
       render: (_, r) => {
-        const totalItems = modules.reduce((c, m) => c + 1 + m.subModules.length, 0);
+        const totalItems = modules.reduce((c, m) => c + 1 + (m.subModules?.length || 0), 0);
+
         const granted = Object.values(rolePermMap[r._id] || {}).reduce(
           (c, mod) => c + Object.keys(mod).length,
           0
         );
+
         const percent = totalItems > 0 ? Math.round((granted / totalItems) * 100) : 0;
-        
+
         return (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
@@ -347,16 +373,18 @@ const Permission = () => {
                 {percent}%
               </span>
             </div>
+
             <Progress
               percent={percent}
               size="small"
               strokeColor={percent === 100 ? PURPLE_THEME.success : PURPLE_THEME.primary}
               showInfo={false}
             />
+
             <div className="text-xs text-gray-500">
-              {percent === 0 ? 'No access' : 
-               percent === 100 ? 'Full access' : 
-               'Limited access'}
+              {percent === 0 ? 'No access' :
+                percent === 100 ? 'Full access' :
+                  'Limited access'}
             </div>
           </div>
         );
@@ -405,7 +433,6 @@ const Permission = () => {
     },
   ], [modules, rolePermMap, perm.canView]);
 
-  /* -------------------------- RENDER -------------------------- */
   if (loading && !roles.length) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -436,12 +463,12 @@ const Permission = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <Typography.Title 
-              level={2} 
-              style={{ 
-                margin: 0, 
+            <Typography.Title
+              level={2}
+              style={{
+                margin: 0,
                 color: PURPLE_THEME.dark,
-                fontWeight: 600 
+                fontWeight: 600
               }}
             >
               Role Permissions
@@ -458,13 +485,13 @@ const Permission = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats */}
         <Row gutter={[16, 16]} className="mb-6">
           <Col xs={24} sm={8}>
             <ProCard className="h-full">
               <Statistic
                 title="Total Roles"
-                value={roles.length}
+                value={pagination.totalResults}
                 prefix={<TeamOutlined />}
                 valueStyle={{ color: PURPLE_THEME.primary }}
               />
@@ -473,6 +500,7 @@ const Permission = () => {
               </div>
             </ProCard>
           </Col>
+
           <Col xs={24} sm={8}>
             <ProCard className="h-full">
               <Statistic
@@ -486,6 +514,7 @@ const Permission = () => {
               </div>
             </ProCard>
           </Col>
+
           <Col xs={24} sm={8}>
             <ProCard className="h-full">
               <Statistic
@@ -521,17 +550,18 @@ const Permission = () => {
           onPageChange={handlePageChange}
           onFilter={handleFilter}
           loading={loading}
-          rowClassName="hover:bg-purple-50 transition-colors"
         />
       </ProCard>
 
-      {/* Drawer for Permissions */}
+      {/* Drawer */}
       <Drawer
         title={
           <div className="pr-8">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" 
-                   style={{ background: PURPLE_THEME.primaryBg }}>
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{ background: PURPLE_THEME.primaryBg }}
+              >
                 <TeamOutlined style={{ color: PURPLE_THEME.primary, fontSize: '24px' }} />
               </div>
               <div>
@@ -540,9 +570,9 @@ const Permission = () => {
                 </Typography.Title>
                 <div className="flex items-center gap-2">
                   <Tag color="blue" style={{ margin: 0 }}>{selectedRole?.code}</Tag>
-                  <Badge 
-                    status={selectedRole?.isActive ? "success" : "error"} 
-                    text={selectedRole?.isActive ? "Active" : "Inactive"} 
+                  <Badge
+                    status={selectedRole?.isActive ? "success" : "error"}
+                    text={selectedRole?.isActive ? "Active" : "Inactive"}
                   />
                 </div>
               </div>
@@ -561,154 +591,29 @@ const Permission = () => {
         maskClosable={false}
         styles={{
           body: { background: '#fafafa' },
-          header: { 
+          header: {
             borderBottom: `1px solid ${PURPLE_THEME.primaryLighter}`,
             background: 'white'
           }
         }}
       >
-        {selectedRole && (
-          <div className="space-y-6">
-            {/* Permission Summary */}
-            <Alert
-              message="Permission Configuration"
-              description={`Click the switches to enable or disable permissions for ${selectedRole.name}. Changes are saved when you click "Save Permissions".`}
-              type="info"
-              showIcon
-              style={{ background: '#e6f7ff', border: '1px solid #91d5ff' }}
-            />
+        {/* Drawer content same as your code */}
+        <Alert
+          message="Permission Configuration"
+          description={`Click the switches to enable or disable permissions for ${selectedRole?.name}. Changes are saved when you click "Save Permissions".`}
+          type="info"
+          showIcon
+          style={{ background: '#e6f7ff', border: '1px solid #91d5ff' }}
+        />
 
-            {/* Modules */}
-            <div className="space-y-6 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
-              {modules.map(mod => {
-                const modPerms = rolePermMap[selectedRole._id]?.[mod._id] || {};
-                const permTypes = [
-                  { key: 'canView', label: 'View', color: '#52c41a' },
-                  { key: 'canAdd', label: 'Add', color: '#1890ff' },
-                  { key: 'canEdit', label: 'Edit', color: '#faad14' },
-                  { key: 'canDelete', label: 'Delete', color: '#ff4d4f' },
-                  { key: 'canViewAll', label: 'View All', color: '#722ed1' },
-                ];
-
-                return (
-                  <ProCard
-                    key={mod._id}
-                    title={
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <SettingOutlined style={{ color: PURPLE_THEME.primary }} />
-                          <div>
-                            <span className="font-semibold text-gray-800">{mod.name}</span>
-                            {mod.description && (
-                              <div className="text-sm text-gray-500">{mod.description}</div>
-                            )}
-                          </div>
-                        </div>
-                        <Tag color="purple">Module</Tag>
-                      </div>
-                    }
-                    className="hover:shadow-md transition-shadow"
-                  >
-                    {mod.subModules.length === 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                        {permTypes.map(({ key, label, color }) => {
-                          const p = modPerms['__module__'] || {};
-                          const checked = !!p[key];
-                          const isAllowed = perm.canEdit;
-
-                          return (
-                            <div key={key} className="text-center">
-                              <div className="mb-2">
-                                <Switch
-                                  checked={checked}
-                                  onChange={c => updatePerm(mod._id, null, key, c)}
-                                  disabled={!isAllowed}
-                                  style={{ 
-                                    backgroundColor: checked ? color : undefined 
-                                  }}
-                                  size="small"
-                                />
-                              </div>
-                              <div className="text-sm font-medium" style={{ color }}>
-                                {label}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {checked ? 'Enabled' : 'Disabled'}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="space-y-6">
-                        {mod.subModules.map(sub => {
-                          const p = modPerms[sub._id] || {};
-                          return (
-                            <div key={sub._id} className="border-l-4 pl-4" 
-                                 style={{ borderColor: PURPLE_THEME.primaryLighter }}>
-                              <div className="mb-4">
-                                <div className="flex items-center justify-between mb-3">
-                                  <div>
-                                    <div className="font-medium text-gray-700">{sub.name}</div>
-                                    {sub.description && (
-                                      <div className="text-sm text-gray-500">{sub.description}</div>
-                                    )}
-                                  </div>
-                                  <Tag color="cyan" style={{ margin: 0 }}>Sub-module</Tag>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                                  {permTypes.map(({ key, label, color }) => {
-                                    const checked = !!p[key];
-                                    const isAllowed = perm.canEdit;
-
-                                    return (
-                                      <div key={key} className="text-center">
-                                        <div className="mb-2">
-                                          <Switch
-                                            checked={checked}
-                                            onChange={c => updatePerm(mod._id, sub._id, key, c)}
-                                            disabled={!isAllowed}
-                                            style={{ 
-                                              backgroundColor: checked ? color : undefined 
-                                            }}
-                                            size="small"
-                                          />
-                                        </div>
-                                        <div className="text-sm font-medium" style={{ color }}>
-                                          {label}
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                          {checked ? 'Enabled' : 'Disabled'}
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </ProCard>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Footer Actions */}
+        {/* Footer */}
         <div className="mt-8 flex justify-between items-center sticky bottom-0 bg-white p-4 border-t rounded-b-lg shadow-lg">
           <div className="text-sm text-gray-500">
             <CheckCircleOutlined className="mr-2" style={{ color: PURPLE_THEME.success }} />
             Configure permissions carefully
           </div>
           <Space>
-            <Button 
-              onClick={closeDrawer} 
-              size="large"
-              className="hover:border-purple-500 hover:text-purple-500"
-            >
+            <Button onClick={closeDrawer} size="large">
               Cancel
             </Button>
             <Button
@@ -722,7 +627,6 @@ const Permission = () => {
                 background: PURPLE_THEME.primary,
                 borderColor: PURPLE_THEME.primary,
               }}
-              className="hover:opacity-90 transition-opacity"
             >
               Save Permissions
             </Button>

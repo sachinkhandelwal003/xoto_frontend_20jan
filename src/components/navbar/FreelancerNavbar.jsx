@@ -131,7 +131,7 @@ const FreelancerNavbar = () => {
               transition: 'color 0.2s ease',
               cursor: 'pointer'
             }}
-            onClick={() => navigate("/sawtar/")}
+            onClick={() => navigate("/")}
           >
             XOTO
           </Typography>

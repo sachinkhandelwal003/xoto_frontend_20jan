@@ -1,73 +1,27 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
-import { 
-  Briefcase, 
-  DollarSign, 
-  UserCheck, 
-  Star, 
-  TrendingUp, 
+import {
+  Briefcase,
+  DollarSign,
+  TrendingUp,
   Award,
   Clock,
   CheckCircle,
   AlertCircle,
+  AlertTriangle, // Added for the warning
   Edit3,
   MapPin,
   Languages,
   Hammer
 } from "lucide-react";
-import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useFreelancer } from "../../../../src/context/FreelancerContext"; // Adjust path if needed
 
 const FreelancerDashboard = () => {
-  const [freelancer, setFreelancer] = useState(null);
-  const [progress, setProgress] = useState(null);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const user = useSelector((state) => state.auth?.user);
-
-  // Fetch all dashboard data
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [profileRes, statsRes] = await Promise.all([
-          apiService.get("/freelancer/profile"),
-        ]);
-
-        console.log("Profile:", profileRes.freelancer);
-        console.log("Stats:", statsRes);
-
-        setFreelancer(profileRes.freelancer);
-        setProgress(profileRes.profileProgress);
-        setStats(statsRes.stats || {
-          totalJobs: 0,
-          pendingJobs: 0,
-          completedJobs: 0,
-          totalEarnings: 0,
-          currentMonthEarnings: 0,
-          performanceScore: 85,
-          activeProposals: 0
-        });
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-        // Set default stats if API fails
-        setStats({
-          totalJobs: 0,
-          pendingJobs: 0,
-          completedJobs: 0,
-          totalEarnings: 0,
-          currentMonthEarnings: 0,
-          performanceScore: 85,
-          activeProposals: 0
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDashboardData();
-  }, []);
-
+  const { freelancer, progress, stats, loading } = useFreelancer();
+console.log(freelancer)
+  // 1. Loading State
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -79,13 +33,18 @@ const FreelancerDashboard = () => {
     );
   }
 
+  // 2. Error/Empty State
   if (!freelancer || !progress) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center bg-white p-8 rounded-2xl shadow-lg">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Profile Not Found</h2>
-          <p className="text-gray-600 mb-6">Unable to load your freelancer profile.</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Profile Not Found
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Unable to load your freelancer profile.
+          </p>
           <button
             onClick={() => navigate("/dashboard/freelancer/complete-profile")}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition"
@@ -97,7 +56,12 @@ const FreelancerDashboard = () => {
     );
   }
 
-  // Enhanced stats with real data
+  // 3. Check Approval Status (Check both fields as requested)
+  const isApproved =
+    freelancer?.onboarding_status === "approved" &&
+    freelancer?.status_info?.status === 1;
+
+  // 4. Render Data
   const dashboardStats = [
     {
       title: "Total Jobs",
@@ -105,7 +69,7 @@ const FreelancerDashboard = () => {
       icon: <Briefcase className="w-6 h-6 text-blue-600" />,
       color: "bg-blue-50 border border-blue-200",
       trend: "+12%",
-      description: "All time jobs"
+      description: "All time jobs",
     },
     {
       title: "Pending Jobs",
@@ -113,7 +77,7 @@ const FreelancerDashboard = () => {
       icon: <Clock className="w-6 h-6 text-orange-600" />,
       color: "bg-orange-50 border border-orange-200",
       trend: "+5%",
-      description: "Under review"
+      description: "Under review",
     },
     {
       title: "Completed Jobs",
@@ -121,23 +85,23 @@ const FreelancerDashboard = () => {
       icon: <CheckCircle className="w-6 h-6 text-green-600" />,
       color: "bg-green-50 border border-green-200",
       trend: "+8%",
-      description: "Successfully delivered"
+      description: "Successfully delivered",
     },
     {
       title: "Total Earnings",
-      value: `$${(stats?.totalEarnings || 0).toLocaleString()}`,
+      value: `AED${(stats?.totalEarnings || 0).toLocaleString()}`,
       icon: <DollarSign className="w-6 h-6 text-purple-600" />,
       color: "bg-purple-50 border border-purple-200",
       trend: "+15%",
-      description: "Lifetime earnings"
+      description: "Lifetime earnings",
     },
     {
       title: "This Month",
-      value: `$${(stats?.currentMonthEarnings || 0).toLocaleString()}`,
+      value: `AED${(stats?.currentMonthEarnings || 0).toLocaleString()}`,
       icon: <TrendingUp className="w-6 h-6 text-green-600" />,
       color: "bg-green-50 border border-green-200",
       trend: "+20%",
-      description: "Current month payout"
+      description: "Current month payout",
     },
     {
       title: "Performance",
@@ -145,11 +109,10 @@ const FreelancerDashboard = () => {
       icon: <Award className="w-6 h-6 text-yellow-600" />,
       color: "bg-yellow-50 border border-yellow-200",
       trend: "+2%",
-      description: "Client satisfaction"
+      description: "Client satisfaction",
     },
   ];
 
-  // Quick actions
   const quickActions = [
     {
       title: "Update Profile",
@@ -157,15 +120,15 @@ const FreelancerDashboard = () => {
       icon: <Edit3 className="w-5 h-5" />,
       color: "bg-blue-500 hover:bg-blue-600",
       onClick: () => navigate(`/dashboard/freelancer/update`),
-      completed: progress.completionPercentage === 100
+      completed: progress.completionPercentage === 100,
     },
     {
       title: "View Jobs",
       description: "Check available landscaping jobs",
       icon: <Briefcase className="w-5 h-5" />,
-      color: "bg-green-500 hover:bg-green-600",
-      onClick: () => navigate("/dashboard/freelancer/jobs"),
-      completed: false
+      color: isApproved ? "bg-green-500 hover:bg-green-600" : "bg-gray-400 cursor-not-allowed",
+      onClick: () => isApproved && navigate("/dashboard/freelancer/jobs"),
+      completed: false,
     },
     {
       title: "My Portfolio",
@@ -173,43 +136,44 @@ const FreelancerDashboard = () => {
       icon: <Award className="w-5 h-5" />,
       color: "bg-purple-500 hover:bg-purple-600",
       onClick: () => navigate("/dashboard/freelancer/portfolio"),
-      completed: freelancer.portfolio?.length > 0
+      completed: freelancer.portfolio?.length > 0,
     },
     {
       title: "Earnings",
       description: "View your earnings and payments",
       icon: <DollarSign className="w-5 h-5" />,
-      color: "bg-orange-500 hover:bg-orange-600",
-      onClick: () => navigate("/dashboard/freelancer/earnings"),
-      completed: false
+      color: isApproved ? "bg-orange-500 hover:bg-orange-600" : "bg-gray-400 cursor-not-allowed",
+      onClick: () => isApproved && navigate("/dashboard/freelancer/earnings"),
+      completed: false,
     },
   ];
 
-  // Profile summary items
   const profileSummary = [
     {
       label: "Location",
-      value: `${freelancer.location?.city || 'Not set'}, ${freelancer.location?.country || 'Not set'}`,
+      value: `${freelancer.location?.city || "Not set"}, ${
+        freelancer.location?.country || "Not set"
+      }`,
       icon: <MapPin className="w-4 h-4" />,
-      completed: !!freelancer.location?.city
+      completed: !!freelancer.location?.city,
     },
     {
       label: "Languages",
-      value: freelancer.languages?.join(', ') || 'Not set',
+      value: freelancer.languages?.join(", ") || "Not set",
       icon: <Languages className="w-4 h-4" />,
-      completed: freelancer.languages?.length > 0
+      completed: freelancer.languages?.length > 0,
     },
     {
       label: "Services",
       value: `${freelancer.services_offered?.length || 0} services offered`,
       icon: <Hammer className="w-4 h-4" />,
-      completed: freelancer.services_offered?.length > 0
+      completed: freelancer.services_offered?.length > 0,
     },
     {
       label: "Experience",
       value: `${freelancer.professional?.experience_years || 0} years`,
       icon: <Briefcase className="w-4 h-4" />,
-      completed: !!freelancer.professional?.experience_years
+      completed: !!freelancer.professional?.experience_years,
     },
   ];
 
@@ -231,30 +195,47 @@ const FreelancerDashboard = () => {
               Here's what's happening with your landscaping business today.
             </p>
           </div>
-          <div className="flex items-center gap-4 mt-4 lg:mt-0">
+          {/* <div className="flex items-center gap-4 mt-4 lg:mt-0">
             <div className="text-right">
               <p className="text-sm text-gray-500">Status</p>
-              <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
-                freelancer.status_info?.status === 1 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                {freelancer.status_info?.status === 1 ? (
-                  <>
-                    <CheckCircle className="w-4 h-4" />
-                    Approved
-                  </>
-                ) : (
-                  <>
-                    <Clock className="w-4 h-4" />
-                    Pending
-                  </>
-                )}
+              <div
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
+                  isApproved
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
+               
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </motion.div>
+
+      {/* ===== RED ALERT BOX (NEW) ===== */}
+      {/* {!isApproved && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8 bg-red-50 border border-red-200 rounded-2xl p-6 shadow-sm flex items-start gap-4"
+        >
+          <div className="p-3 bg-red-100 rounded-full shrink-0">
+            <AlertTriangle className="w-6 h-6 text-red-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-red-800 mb-1">
+              Profile Under Review
+            </h3>
+            <p className="text-red-700 leading-relaxed">
+              Your profile is currently under review. While you can update your
+              profile details, access to Jobs and Earnings will be restricted
+              until your <strong>Onboarding Status is Approved</strong> and your
+              account status is active.
+            </p>
+          </div>
+        </motion.div>
+      )} */}
 
       {/* ===== STATS GRID ===== */}
       <motion.div
@@ -327,9 +308,7 @@ const FreelancerDashboard = () => {
               />
             </div>
 
-            <p className="text-gray-600 mb-6">
-              {progress.summary}
-            </p>
+            <p className="text-gray-600 mb-6">{progress.summary}</p>
 
             <button
               className={`w-full px-6 py-3 rounded-xl font-semibold transition-all ${
@@ -365,20 +344,22 @@ const FreelancerDashboard = () => {
                 >
                   <div className="flex items-center justify-between mb-3">
                     <p className="font-medium capitalize text-gray-700">
-                      {section.replace(/([A-Z])/g, ' $1')}
+                      {section.replace(/([A-Z])/g, " AED1")}
                     </p>
-                    <span className={`text-sm font-semibold ${
-                      value === 100 ? 'text-green-600' : 'text-blue-600'
-                    }`}>
+                    <span
+                      className={`text-sm font-semibold ${
+                        value === 100 ? "text-green-600" : "text-blue-600"
+                      }`}
+                    >
                       {value}%
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                     <motion.div
                       className={`h-2 rounded-full ${
-                        value === 100 
-                          ? 'bg-green-500' 
-                          : 'bg-gradient-to-r from-blue-500 to-purple-500'
+                        value === 100
+                          ? "bg-green-500"
+                          : "bg-gradient-to-r from-blue-500 to-purple-500"
                       }`}
                       initial={{ width: 0 }}
                       animate={{ width: `${value}%` }}
@@ -410,6 +391,7 @@ const FreelancerDashboard = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={action.onClick}
+                  // Disable visually if action is disabled logic (like not approved)
                   className={`w-full text-white ${action.color} p-4 rounded-xl flex items-center gap-4 transition shadow-sm hover:shadow-md`}
                 >
                   <div className="p-2 bg-white bg-opacity-20 rounded-lg">
@@ -443,17 +425,28 @@ const FreelancerDashboard = () => {
             </h2>
             <div className="space-y-4">
               {profileSummary.map((item, index) => (
-                <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                  <div className={`p-2 rounded-lg ${
-                    item.completed ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-600'
-                  }`}>
+                <div
+                  key={index}
+                  className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg"
+                >
+                  <div
+                    className={`p-2 rounded-lg ${
+                      item.completed
+                        ? "bg-green-100 text-green-600"
+                        : "bg-gray-200 text-gray-600"
+                    }`}
+                  >
                     {item.icon}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-700">{item.label}</p>
-                    <p className={`text-sm ${
-                      item.completed ? 'text-gray-600' : 'text-gray-500'
-                    }`}>
+                    <p className="text-sm font-medium text-gray-700">
+                      {item.label}
+                    </p>
+                    <p
+                      className={`text-sm ${
+                        item.completed ? "text-gray-600" : "text-gray-500"
+                      }`}
+                    >
                       {item.value}
                     </p>
                   </div>
