@@ -41,10 +41,7 @@ const MasterCategory = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
-<<<<<<< HEAD
-=======
   // Data State
->>>>>>> d4250f8bc87bee43bf583f0447910d6280912bf9
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
