@@ -37,7 +37,7 @@ const TypesGallery = () => {
   const [editingId, setEditingId] = useState(null); 
   const [questionType, setQuestionType] = useState("text");
   const [options, setOptions] = useState([]);
-
+const [isAreaQuestion, setIsAreaQuestion] = useState(false);
   // Load Categories on mount
   useEffect(() => {
     const fetchCats = async () => {
@@ -86,12 +86,12 @@ const TypesGallery = () => {
         
         setEditingId(questionId);
         setQuestionType(data.questionType);
-        
+        setIsAreaQuestion(!!data.areaQuestion);
         if (data.options) {
           setOptions(data.options.map(o => ({
             title: o.title,
             value: o.value,
-            valueSubType: o.valueSubType || "persqm"
+            valueSubType: o.valueSubType || "persqft"
           })));
         } else {
           setOptions([]);
@@ -114,6 +114,7 @@ const TypesGallery = () => {
       setEditingId(null);
       setQuestionType("text");
       setOptions([]);
+      setIsAreaQuestion(false);
       form.resetFields();
       setQuestionModalOpen(true);
     }
@@ -124,11 +125,12 @@ const TypesGallery = () => {
     const payload = {
       type: selectedType,
       question: values.question,
+      areaQuestion: questionType === "number" ? isAreaQuestion : false, // ✅ added
       questionType,
       isActive: values.isActive ?? true,
       includeInEstimate: values.includeInEstimate ?? true,
       valueType: "number",
-      valueSubType: values.valueSubType || "persqm",
+      valueSubType: values.valueSubType || "persqft",
       options: (questionType === "options" || questionType === "yesorno")
         ? options.map((opt, index) => ({
             title: opt.title,
@@ -136,7 +138,7 @@ const TypesGallery = () => {
             includeInEstimate: true,
             valueType: "number",
             value: Number(opt.value) || 0,
-            valueSubType: opt.valueSubType || "persqm"
+            valueSubType: opt.valueSubType || "persqft"
           }))
         : []
     };
@@ -285,7 +287,7 @@ const TypesGallery = () => {
                 form={form} 
                 layout="vertical" 
                 onFinish={onFinish} 
-                initialValues={{ isActive: true, includeInEstimate: true, valueType: "number", valueSubType: "persqm" }}
+                initialValues={{ isActive: true, includeInEstimate: true, valueType: "number", valueSubType: "persqft" }}
               >
                 <Form.Item label="Question" name="question" rules={[{ required: true, message: 'Please enter the question' }]}>
                   <Input.TextArea rows={2} placeholder="Enter question text..." />
@@ -296,9 +298,9 @@ const TypesGallery = () => {
                     <Select value={questionType} onChange={(val) => {
                       setQuestionType(val);
                       if (val === "yesorno") {
-                        setOptions([{ title: "Yes", valueSubType: "persqm", value: 0 }, { title: "No", valueSubType: "persqm", value: 0 }]);
+                        setOptions([{ title: "Yes", valueSubType: "persqft", value: 0 }, { title: "No", valueSubType: "persqft", value: 0 }]);
                       } else if (val === "options") {
-                        setOptions([{ title: "", valueSubType: "persqm", value: 0 }]);
+                        setOptions([{ title: "", valueSubType: "persqft", value: 0 }]);
                       } else {
                         setOptions([]);
                       }
@@ -313,8 +315,7 @@ const TypesGallery = () => {
                   {questionType !== "text" && (
                     <Form.Item label="Default Value Sub Type" name="valueSubType">
                       <Select>
-                        <Select.Option value="persqm">Per Sq.m</Select.Option>
-                        <Select.Option value="flat">Flat</Select.Option>
+<Select.Option value="persqft">Per Sq. Ft</Select.Option>                        <Select.Option value="flat">Flat</Select.Option>
                       </Select>
                     </Form.Item>
                   )}
@@ -344,7 +345,7 @@ const TypesGallery = () => {
                               newOpts[index].valueSubType = v;
                               setOptions(newOpts);
                             }}>
-                              <Select.Option value="persqm">Sq.m</Select.Option>
+                              <Select.Option value="persqft">Sq.Ft</Select.Option>
                               <Select.Option value="flat">Flat</Select.Option>
                             </Select>
                           </div>
@@ -363,14 +364,24 @@ const TypesGallery = () => {
                         </div>
                       ))}
                       {questionType === "options" && (
-                        <Button type="dashed" block icon={<PlusOutlined />} onClick={() => setOptions([...options, { title: "", valueSubType: "persqm", value: 0 }])}>
+                        <Button type="dashed" block icon={<PlusOutlined />} onClick={() => setOptions([...options, { title: "", valueSubType: "persqft", value: 0 }])}>
                           Add More Option
                         </Button>
                       )}
                     </div>
                   </div>
                 )}
-
+{questionType === "number" && (
+  <Form.Item label="Is Area Based Question ?">
+    <Select
+      value={isAreaQuestion}
+      onChange={(val) => setIsAreaQuestion(val)}
+    >
+      <Select.Option value={true}>Yes (Area Based)</Select.Option>
+      <Select.Option value={false}>No (Normal Number)</Select.Option>
+    </Select>
+  </Form.Item>
+)}
                 <Divider className="my-4" />
 
                 <div className="flex justify-end gap-3">

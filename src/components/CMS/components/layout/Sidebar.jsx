@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useCmsContext } from '../../contexts/CmsContext'; 
-import { FiX, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
+import { FiX, FiChevronDown } from 'react-icons/fi';
 import { useFreelancer } from '../../../../../src/context/FreelancerContext';
 
 // IMPORT BOTH SEPARATE IMAGES HERE
@@ -27,6 +27,7 @@ const ROLE_MODULE_ORDER = {
 };
 
 const Sidebar = () => {
+  // --- 1. HOOKS (Must always be at the top) ---
   const { 
     sidebarCollapsed, 
     mobileSidebarCollapsed,
@@ -35,21 +36,17 @@ const Sidebar = () => {
   } = useCmsContext();
 
   const location = useLocation();
-    const {
-  freelancer,
-  loading: freelancerLoading
-} = useFreelancer();
+  const { freelancer } = useFreelancer();
   const { user, token, permissions } = useSelector((s) => s.auth);
   const [openModule, setOpenModule] = useState(null);
   const sidebarRef = useRef(null);
 
+  // --- 2. EFFECTS ---
   useEffect(() => {
     if (!mobileSidebarCollapsed) {
       setMobileSidebarCollapsed(true); 
     }
   }, [location.pathname, setMobileSidebarCollapsed]);
-
-
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -61,19 +58,21 @@ const Sidebar = () => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [mobileSidebarCollapsed, setMobileSidebarCollapsed]);
 
-  if (!user || !token) return null;
-
-  const roleCode = user.role.code.toString();
+  // --- 3. PRE-CALCULATIONS (Safe for hooks) ---
+  // We use optional chaining here so these don't crash when user is null during logout
+  const roleCode = user?.role?.code?.toString() || '0';
   const roleSlug = roleSlugMap[roleCode] ?? 'dashboard';
   const basePath = `/dashboard/${roleSlug}`;
   const isFreelancer = roleCode === '7';
-const isPendingApproval =
-  isFreelancer &&
-  freelancer &&
-  freelancer.status_info?.status !== 1;
+  const isPendingApproval = isFreelancer && freelancer && freelancer.status_info?.status !== 1;
+
   const navTree = useMemo(() => {
+    // If no user, return empty tree but keep the hook active
+    if (!user || !token) return [];
+
     const tree = [{ title: 'Dashboard', icon: 'fas fa-home', to: basePath, exact: true, submenus: [] }];
     if (isPendingApproval) return tree;
+
     const modulesMap = {};
     Object.entries(permissions ?? {}).forEach(([key, p]) => {
       if (!p?.canView || !p?.route) return;
@@ -85,19 +84,28 @@ const isPendingApproval =
       if (!sub) modulesMap[module].to = fullPath;
       else modulesMap[module].submenus.push({ title: sub, to: fullPath, icon: p.icon || 'fas fa-circle' });
     });
+
     const ordered = [];
     const customOrder = ROLE_MODULE_ORDER[roleCode] || [];
-    customOrder.forEach(t => { if (modulesMap[t]) { ordered.push(modulesMap[t]); delete modulesMap[t]; } });
+    customOrder.forEach(t => { 
+      if (modulesMap[t]) { 
+        ordered.push(modulesMap[t]); 
+        delete modulesMap[t]; 
+      } 
+    });
     ordered.push(...Object.values(modulesMap));
     return [...tree, ...ordered];
-  }, [permissions, basePath, isPendingApproval, roleCode]);
+  }, [permissions, basePath, isPendingApproval, roleCode, user, token]);
 
+  // --- 4. EARLY RETURN (Only after all Hooks!) ---
+  if (!user || !token) return null;
+
+  // --- 5. EVENT HANDLERS ---
   const toggleModule = (mod) => setOpenModule(openModule === mod ? null : mod);
   const isParentActive = (item) => item.submenus.some(s => location.pathname.startsWith(s.to));
   const handleNavClick = () => !mobileSidebarCollapsed && setMobileSidebarCollapsed(true);
 
   const mobileOpen = !mobileSidebarCollapsed;
-
   const sidebarClasses = `
     fixed top-0 left-0 h-full z-50 flex flex-col
     bg-gradient-to-b from-[#1a0b2e] via-[#2a1247] to-[#14051f]
@@ -122,21 +130,21 @@ const isPendingApproval =
         {/* Header Section */}
         <div className={`flex items-center p-4 border-b border-purple-800/50 ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
           <div className="flex flex-col items-center gap-3 flex-1 overflow-hidden">
-            <div className="flex flex-col items-center flex-shrink-0" title={sidebarCollapsed ? "Home" : ""}>
+            <div className="flex flex-col items-center flex-shrink-0">
               <img 
                 src={sidebarCollapsed ? favicon : logoNew} 
                 alt="Logo" 
                 className={`transition-all duration-300 ${sidebarCollapsed ? 'h-8 w-8' : 'h-10 sm:h-12 lg:h-14 w-auto'}`} 
               />
               {!sidebarCollapsed && (
-                <span className="text-white text-[8px] sm:text-[10px] whitespace-nowrap mt-1 animate-in fade-in duration-500">
+                <span className="text-white text-[8px] sm:text-[10px] whitespace-nowrap mt-1">
                   Powered by AI. Inspired by you.
                 </span>
               )}
             </div>
 
             {!sidebarCollapsed && (
-              <div className="text-center animate-in slide-in-from-top-1 duration-300">
+              <div className="text-center">
                 <div className="text-xs uppercase tracking-widest text-purple-300/80">Welcome</div>
                 <div className="text-sm font-bold text-purple-200">{user.role?.name || 'User'}</div>
               </div>
@@ -163,7 +171,7 @@ const isPendingApproval =
                   <NavLink
                     to={item.to}
                     onClick={handleNavClick}
-                    title={sidebarCollapsed ? item.title : ""} // TOOLTIP ADDED HERE
+                    title={sidebarCollapsed ? item.title : ""}
                     className={({ isActive }) => `
                       flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
                       ${isActive ? 'bg-purple-600/50 text-white shadow-lg' : 'text-purple-300 hover:bg-purple-800/30'}
@@ -177,7 +185,7 @@ const isPendingApproval =
                   <div>
                     <button
                       onClick={() => toggleModule(item.title)}
-                      title={sidebarCollapsed ? item.title : ""} // TOOLTIP ADDED HERE
+                      title={sidebarCollapsed ? item.title : ""}
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium
                         ${active || expanded ? 'text-white bg-purple-800/30' : 'text-purple-300 hover:bg-purple-800/20'}
                         ${sidebarCollapsed ? 'justify-center px-0' : ''}

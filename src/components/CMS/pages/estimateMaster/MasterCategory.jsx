@@ -20,10 +20,9 @@ import { apiService } from '../../../../manageApi/utils/custom.apiservice';
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-
 const THEME = {
-  primary: "#722ed1",
-  secondary: "#1890ff",
+  primary: "#722ed1", // Purple
+  secondary: "#1890ff", // Blue
   success: "#52c41a",
   warning: "#faad14",
   error: "#ff4d4f",
@@ -42,6 +41,10 @@ const MasterCategory = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
+<<<<<<< HEAD
+=======
+  // Data State
+>>>>>>> d4250f8bc87bee43bf583f0447910d6280912bf9
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

@@ -23,7 +23,13 @@ export default function Sixth() {
   const { t } = useTranslation("mort6");
   const navigate = useNavigate();
 
+  // --- FIX 1: Initialize Notification Hook ---
+  const [api, contextHolder] = notification.useNotification();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // --- FIX 2: Define loading state ---
+  const [loading, setLoading] = useState(false);
 
   const [errors, setErrors] = useState({});
 
@@ -142,7 +148,10 @@ export default function Sixth() {
         return;
     }
 
-    const fullMobile = countryCode + phone;
+    // --- FIX 3: Start Loading ---
+    setLoading(true);
+
+    const fullMobile = formData.countryCode + formData.phone;
 
     const payload = {
       type: "Mortgage-deal",
@@ -173,12 +182,16 @@ export default function Sixth() {
       }
       api.error({ message: "Failed", description: errorMessage });
     } finally {
+      // --- FIX 4: Stop Loading ---
       setLoading(false);
     }
   };
 
   return (
     <>
+      {/* --- FIX 5: Render Notification Context --- */}
+      {contextHolder}
+
       <div className="relative min-h-screen bg-gradient-to-br from-[#F8F4FF] via-[#F4EEFF] to-[#E9F1FF] overflow-hidden" style={dmSans}>
         
         <img src={wave2} className="absolute top-15 w-full -translate-y-2/3 opacity-90" alt="" />
@@ -199,7 +212,7 @@ export default function Sixth() {
               {t("hero.subtitle")}
             </p>
 
-            {/* CTA Buttons - Same functionality as CTAButtons / Second component */}
+            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-2 items-center lg:items-start justify-center lg:justify-start">
               <button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto px-8 py-4 bg-[#5C039B] hover:bg-[#4a027c] rounded-xl text-white font-semibold text-base shadow-lg transition">
                 {t("hero.primaryCta")}

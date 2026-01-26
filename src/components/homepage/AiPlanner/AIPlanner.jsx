@@ -4,11 +4,11 @@ import {
   Home, LayoutDashboard, Compass, 
   Image as ImageIcon, Sparkles, Upload, 
   ChevronDown, X, ArrowRight, CheckCircle2,
-  Download, Coins, Crown, Loader2, Sun, Sprout, Info, ArrowLeft ,Check 
+  Download, Coins, Crown, Loader2, Sun, Sprout, Info, ArrowLeft, Check 
 } from 'lucide-react';
 import { 
   Button, Modal, Progress, Card, Tag, Empty, 
-  notification, Typography, Divider 
+  notification, Typography, Divider, Spin
 } from 'antd';
 import { useSelector } from 'react-redux';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
@@ -19,15 +19,8 @@ const { Paragraph, Title, Text } = Typography;
 
 // --- Constants ---
 const BRAND_PURPLE = "#5C039B"; 
-const API_BASE_URL = 'https://xoto.ae/api';
 
-// --- Mock Data ---
-const dummySpaceImages = [
-  { id: 1, url: 'https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=800' },
-  { id: 2, url: 'https://images.unsplash.com/photo-1598902108854-10e335adac99?w=800' },
-  { id: 3, url: 'https://images.unsplash.com/photo-1557429287-b2e26467fc2b?w=800' },
-];
-
+// --- Mock Data Options ---
 const gardenStyles = [
   { value: 'modern', label: 'Modern Garden', img: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=600' },
   { value: 'japanese', label: 'Japanese Zen', img: 'https://www.japan-experience.com/sites/default/files/styles/scale_crop_570x300/public/regiondo/big-ticket-image-5f7541324c6c4582000815-cropped600-400-dpl-65a78e47b9a57.jpg.webp?itok=-yBTm-IO' },
@@ -46,20 +39,30 @@ const gardenElements = [
   { value: 'seating', label: 'Seating Area', img: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRN533r4zs2Vywi2quKHBlEqsrzpY4l_Mpbkg&s' },
 ];
 
+const dummySpaceImages = [
+  { id: 1, url: 'https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=800' },
+  { id: 2, url: 'https://images.unsplash.com/photo-1598902108854-10e335adac99?w=800' },
+  { id: 3, url: 'https://images.unsplash.com/photo-1557429287-b2e26467fc2b?w=800' },
+];
+
 const AIPlanner = () => {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
 
-  // State
+  // --- State ---
   const [selectedImage, setSelectedImage] = useState(null);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [selectedStyles, setSelectedStyles] = useState([]);
   const [selectedElements, setSelectedElements] = useState([]);
   const [specificRequirement, setSpecificRequirement] = useState('');
   
+  // Designs State (Holds both fetched history and new generations)
   const [designs, setDesigns] = useState([]);
+  
+  // Loading States
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [loadingSaved, setLoadingSaved] = useState(false);
   
   // Modals
   const [showGeneratedModal, setShowGeneratedModal] = useState(false);
@@ -81,17 +84,49 @@ const AIPlanner = () => {
     return user && (user.role?.name === 'Customer' || user.role?.name === 'SuperAdmin');
   }, [user]);
 
-  // --- Handlers ---
+  // --- API: Fetch Saved Designs ---
+  const fetchSavedDesigns = async () => {
+    if (!user) return;
 
-  const resetDesign = () => {
-    setSelectedImage(null);
-    setUploadedFile(null);
-    setSelectedStyles([]);
-    setSelectedElements([]);
-    setSpecificRequirement('');
-    notification.info({ message: 'Form cleared' });
+    try {
+      setLoadingSaved(true);
+      // API call to get history
+      const res = await apiService.get("/ai/get-landscape-designs");
+
+      // Extract data array from response
+      const apiDesigns = res?.data || [];
+
+      // Map API response to UI format
+      const formatted = apiDesigns.map((item, index) => ({
+        id: item._id,
+        image: item.imageUrl, // Mapping 'imageUrl' from API
+        title: `Design ${index + 1}`,
+        // Format date or use current time if missing
+        timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+        aiAnalysis: item.aiAnalysis || "AI Generated Design",
+        styles: [], // API might not return styles history, default empty
+        elements: [],
+        fromApi: true,
+      }));
+
+      // Reverse to show newest first
+      setDesigns(formatted.reverse());
+    } catch (err) {
+      console.error("Failed to load designs", err);
+    } finally {
+      setLoadingSaved(false);
+    }
   };
 
+  // Trigger fetch on mount/user change
+  useEffect(() => {
+    if (user) {
+      fetchSavedDesigns();
+    }
+  }, [user]);
+
+
+  // --- Handlers ---
   const processUploadedFile = (file) => {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
@@ -115,14 +150,11 @@ const AIPlanner = () => {
       return;
     }
 
-    // Removed the hasUsedFreeCredit check. 
-    // We now let the backend decide if the user has reached their limit.
     generateAIDesigns(user);
   };
 
   const handleAuthSuccess = (userData) => {
     setShowAuthModal(false);
-    // You could trigger generateAIDesigns here automatically if desired
   };
 
   const generateAIDesigns = async (currentUser) => {
@@ -159,7 +191,7 @@ const AIPlanner = () => {
 
       const resData = response;
 
-      // --- LOGIC: Check for Premium Restriction Response ---
+      // Check for Premium Restriction
       if (resData.status === false && resData.aiImageGeneration === false) {
         setIsGenerating(false);
         setUpgradeMessage(resData.message || "Limit reached. Upgrade to continue.");
@@ -167,22 +199,23 @@ const AIPlanner = () => {
         return; 
       }
 
-      // --- LOGIC: Check for Success Response ---
+      // Success
       if (resData.imageUrl && resData.imageUrl !== "") {
         const aiUrl = resData.imageUrl;
         const aiDesc = resData.message || "Garden generated successfully";
         
         const newDesign = {
-          id: Date.now(),
+          id: Date.now(), // Temporary ID for UI until refresh
           image: aiUrl,
-          title: `Vision ${designs.length + 1}`,
+          title: `New Vision`,
           styles: [...selectedStyles],
           elements: [...selectedElements],
-          timestamp: new Date().toLocaleTimeString(),
+          timestamp: "Just now",
           aiAnalysis: aiDesc,
           userInfo: currentUser
         };
 
+        // Add new design to the top of the list
         setDesigns(prev => [newDesign, ...prev]);
         setCurrentResult({ url: aiUrl, desc: aiDesc });
         setGenerationProgress(100);
@@ -196,11 +229,8 @@ const AIPlanner = () => {
       }
     } catch (error) {
       console.error('❌ Generation failed:', error);
-      
-      // Handle Error Responses
       const errRes = error.response?.data;
       
-      // --- START: TARGET LOGIC ---
       if (errRes?.error?.message === "Customer not found") {
         setIsGenerating(false);
         notification.error({
@@ -210,7 +240,6 @@ const AIPlanner = () => {
         setShowAuthModal(true); 
         return;
       }
-      // --- END: TARGET LOGIC ---
 
       if (errRes && (errRes.aiImageGeneration === false || errRes.status === false)) {
           setIsGenerating(false);
@@ -219,7 +248,6 @@ const AIPlanner = () => {
           return;
       }
 
-      // notification.error removed here to stop "Something went wrong" as requested
       setIsGenerating(false);
     } finally {
       clearInterval(interval);
@@ -286,12 +314,10 @@ const AIPlanner = () => {
             onClick={() => navigate('/')}
             className="flex items-center px-6 py-3.5 cursor-pointer hover:bg-gray-50 group relative"
           >
-            {/* ICON FIXED SLOT */}
             <div className="w-12 flex justify-center shrink-0">
               <Home size={26} className="text-gray-500 group-hover:text-gray-900" />
             </div>
 
-            {/* TEXT */}
             <span
               className={`
                 ml-2 text-base font-medium whitespace-nowrap
@@ -303,18 +329,12 @@ const AIPlanner = () => {
             </span>
           </div>
 
-          {/* Active */}
+          {/* Active Link */}
           <div className="flex items-center px-6 py-3.5 bg-purple-50 text-purple-700 cursor-pointer relative">
-            
-            {/* Active Indicator */}
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-700 rounded-r-full" />
-
-            {/* ICON FIXED SLOT */}
             <div className="w-12 flex justify-center shrink-0">
               <Sparkles size={26} />
             </div>
-
-            {/* TEXT */}
             <span
               className={`
                 ml-2 text-base font-medium whitespace-nowrap
@@ -447,77 +467,80 @@ const AIPlanner = () => {
           {/* Mobile Results Preview */}
           <div className="lg:hidden mt-10">
              {designs.length > 0 && (
-                <>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-lg text-gray-900">Your Designs</h3>
-                    <span className="text-xs text-gray-500">{designs.length} Items</span>
-                  </div>
-                  <div className="space-y-4">
-                    {designs.map(d => (
-                        <div key={d.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                            <img src={d.image} className="w-full h-48 object-cover" alt="Result" />
-                            <div className="p-4 flex justify-between items-center">
-                                <div>
-                                    <h4 className="font-bold text-sm text-gray-800">{d.title}</h4>
-                                    <span className="text-xs text-gray-400">{d.timestamp}</span>
-                                </div>
-                                <button onClick={() => { setCurrentResult({url: d.image, desc: d.aiAnalysis}); setShowGeneratedModal(true); }} className="p-2 bg-gray-50 rounded-full">
-                                    <ArrowRight size={16} className="text-purple-600" />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                  </div>
-                </>
-             )}
+               <>
+                 <div className="flex items-center justify-between mb-4">
+                   <h3 className="font-bold text-lg text-gray-900">Your Designs</h3>
+                   <span className="text-xs text-gray-500">{designs.length} Items</span>
+                 </div>
+                 <div className="space-y-4">
+                   {designs.map(d => (
+                       <div key={d.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                           <img src={d.image} className="w-full h-48 object-cover" alt="Result" />
+                           <div className="p-4 flex justify-between items-center">
+                               <div>
+                                   <h4 className="font-bold text-sm text-gray-800">{d.title}</h4>
+                                   <span className="text-xs text-gray-400">{d.timestamp}</span>
+                               </div>
+                               <button onClick={() => { setCurrentResult({url: d.image, desc: d.aiAnalysis}); setShowGeneratedModal(true); }} className="p-2 bg-gray-50 rounded-full">
+                                   <ArrowRight size={16} className="text-purple-600" />
+                               </button>
+                           </div>
+                       </div>
+                   ))}
+                 </div>
+               </>
+            )}
           </div>
         </div>
 
         {/* --- RIGHT: RESULTS GALLERY (Desktop Only) --- */}
         <div className="hidden lg:block flex-1 bg-[#F8F9FC] p-12 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
-             <div className="mb-10 flex justify-between items-end">
-               <div>
-                 <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Your Masterpieces</h1>
-                 <p className="text-gray-500 font-medium text-lg">AI-generated landscapes created by you.</p>
-               </div>
-              
-             </div>
-
-             {designs.length === 0 ? (
-               <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-gray-200 rounded-[32px] bg-white/50">
-                 <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-                   <ImageIcon size={40} className="text-gray-300" />
-                 </div>
-                 <h3 className="text-xl font-bold text-gray-400">No designs yet</h3>
-                 <p className="text-gray-400 mt-2">Use the panel on the left to start.</p>
-               </div>
-             ) : (
-                <div className="grid grid-cols-2 gap-8">
-                  {designs.map(d => (
-                    <Card key={d.id} hoverable className="rounded-[32px] overflow-hidden border-none shadow-sm hover:shadow-2xl transition-all duration-300 group" bodyStyle={{ padding: 0 }}>
-                      <div className="relative aspect-[4/3] overflow-hidden">
-                        <img src={d.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Design" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-6 backdrop-blur-[3px]">
-                           <button onClick={() => downloadImage(d.image, 'design')} className="flex flex-col items-center gap-3 text-white hover:scale-110 transition-transform group/btn">
-                             <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover/btn:bg-white/30 border border-white/30">
-                                <Download size={24} />
-                             </div>
-                             <span className="text-xs font-bold tracking-widest uppercase">Download</span>
-                           </button>
-                        </div>
-                        <div className="absolute top-5 left-5">
-                           <Tag color="#5c039b" className="text-purple-700 font-bold border-none px-3 py-1.5 rounded-full shadow-lg">AI GENERATED</Tag>
-                        </div>
-                      </div>
-                      <div className="p-6">
-                          <h3 className="font-bold text-xl text-gray-900 mb-1">{d.title}</h3>
-                          <p className="text-gray-400 text-sm">{d.timestamp}</p>
-                      </div>
-                    </Card>
-                  ))}
+              <div className="mb-10 flex justify-between items-end">
+                <div>
+                  <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Your Masterpieces</h1>
+                  <p className="text-gray-500 font-medium text-lg">AI-generated landscapes created by you.</p>
                 </div>
-             )}
+              </div>
+
+              {loadingSaved ? (
+                  <div className="flex flex-col items-center justify-center h-[50vh]">
+                     <Spin size="large" tip="Loading your designs..." />
+                  </div>
+              ) : designs.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-gray-200 rounded-[32px] bg-white/50">
+                  <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                    <ImageIcon size={40} className="text-gray-300" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-400">No designs yet</h3>
+                  <p className="text-gray-400 mt-2">Use the panel on the left to start.</p>
+                </div>
+              ) : (
+                 <div className="grid grid-cols-2 gap-8">
+                   {designs.map(d => (
+                     <Card key={d.id} hoverable className="rounded-[32px] overflow-hidden border-none shadow-sm hover:shadow-2xl transition-all duration-300 group" bodyStyle={{ padding: 0 }}>
+                       <div className="relative aspect-[4/3] overflow-hidden">
+                         <img src={d.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Design" />
+                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-6 backdrop-blur-[3px]">
+                            <button onClick={() => downloadImage(d.image, 'design')} className="flex flex-col items-center gap-3 text-white hover:scale-110 transition-transform group/btn">
+                              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover/btn:bg-white/30 border border-white/30">
+                                 <Download size={24} />
+                              </div>
+                              <span className="text-xs font-bold tracking-widest uppercase">Download</span>
+                            </button>
+                         </div>
+                         <div className="absolute top-5 left-5">
+                            <Tag color="#5c039b" className="text-purple-700 font-bold border-none px-3 py-1.5 rounded-full shadow-lg">AI GENERATED</Tag>
+                         </div>
+                       </div>
+                       <div className="p-6">
+                           <h3 className="font-bold text-xl text-gray-900 mb-1">{d.title}</h3>
+                           <p className="text-gray-400 text-sm">{d.timestamp}</p>
+                       </div>
+                     </Card>
+                   ))}
+                 </div>
+              )}
           </div>
         </div>
 

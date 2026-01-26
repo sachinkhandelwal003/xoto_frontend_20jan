@@ -60,7 +60,7 @@ const BusinessProfile = () => {
       setBusiness(response.business);
     } catch (error) {
       showToast(error.response?.data?.message || 'Failed to fetch business details', 'error');
-      navigate('/sawtar/cms/business');
+      // navigate('/sawtar/cms/business');
     } finally {
       setLoading(false);
     }

@@ -38,9 +38,9 @@ const NotFound = () => {
         </div>
         
         <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-sm text-gray-500">
+          {/* <p className="text-sm text-gray-500">
             Need help? <Link to="/sawtar/consultation" className="text-indigo-600 hover:underline">Contact our support</Link>
-          </p>
+          </p> */}
         </div>
       </div>
     </div>

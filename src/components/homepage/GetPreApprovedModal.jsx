@@ -234,7 +234,7 @@ export default function GetPreApprovedModal({ open, onClose }) {
               {/* Name & Phone Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                 <div>
-                  <label className="block text-left mb-1 font-medium">Name <span className="text-red-500">*</span></label>
+                  <label className="block text-left mb-1 font-medium"> Full Name <span className="text-red-500">*</span></label>
                   <input
                     value={form.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
