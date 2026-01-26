@@ -446,7 +446,7 @@ const MasterCategory = () => {
       </Modal>
     </div>
   );
-};
+}; 
 
 
 export default MasterCategory;
