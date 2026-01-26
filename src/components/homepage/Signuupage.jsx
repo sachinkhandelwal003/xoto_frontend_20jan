@@ -16,6 +16,11 @@ import {
   ConfigProvider,
   Typography,
 } from "antd";
+import { 
+  SafetyCertificateOutlined, 
+  CheckCircleFilled,
+  EditOutlined // Imported Edit Icon
+} from "@ant-design/icons";
 import { Country, State, City } from "country-state-city";
 import { AuthContext } from "../../manageApi/context/AuthContext";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
@@ -54,6 +59,15 @@ const LeadGenerationModal = ({
   const [statesList, setStatesList] = useState([]);
   const [citiesList, setCitiesList] = useState([]);
 
+  // --- OTP STATES ---
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  
+  // State to track input for button disabling
+  const [mobileNumber, setMobileNumber] = useState("");
+
   /* ================= PREPARE MOBILE CODES DATA ================= */
   const phoneCodesData = useMemo(() => {
     const priorityIsoCodes = ["AE", "IN", "US", "GB", "SA"]; 
@@ -86,6 +100,79 @@ const LeadGenerationModal = ({
     form.setFieldsValue({ city: undefined });
   };
 
+  // --- OTP Logic: Send OTP ---
+  const handleSendOtp = async () => {
+    try {
+      // Validate mobile fields first
+      await form.validateFields(['mobile']);
+      const mobileVal = form.getFieldValue('mobile');
+      
+      // Construct code
+      const rawCode = form.getFieldValue('country_code') || "971";
+      const formattedCode = rawCode.toString().startsWith("+") ? rawCode : `+${rawCode}`;
+
+      setOtpLoading(true);
+
+      const payload = {
+        country_code: formattedCode,
+        phone_number: mobileVal
+      };
+
+      await apiService.post("/otp/send-otp", payload);
+      
+      notification.success({ message: "OTP Sent", description: "Please check your mobile." });
+      setOtpSent(true);
+      setOtpVerified(false);
+    } catch (error) {
+      console.error("Send OTP Error:", error);
+      const msg = error?.response?.data?.message || error?.errorFields?.[0]?.errors?.[0] || "Failed to send OTP.";
+      notification.error({ message: "Error", description: msg });
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // --- OTP Logic: Verify OTP ---
+  const handleVerifyOtp = async () => {
+    if (!otpValue) {
+      notification.error({ message: "Error", description: "Please enter the OTP" });
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+      const mobileVal = form.getFieldValue('mobile');
+      const rawCode = form.getFieldValue('country_code') || "971";
+      const formattedCode = rawCode.toString().startsWith("+") ? rawCode : `+${rawCode}`;
+
+      const payload = {
+        country_code: formattedCode,
+        phone_number: mobileVal,
+        otp: otpValue
+      };
+
+      await apiService.post("/otp/verify-otp", payload);
+
+      notification.success({ message: "Verified", description: "Mobile number verified successfully!" });
+      setOtpVerified(true);
+      setOtpSent(false); // Hide OTP field after success
+    } catch (error) {
+      console.error("Verify OTP Error:", error);
+      const msg = error?.response?.data?.message || "Invalid OTP.";
+      notification.error({ message: "Verification Failed", description: msg });
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // --- Change Number Handler ---
+  const handleChangeNumber = () => {
+    setOtpSent(false);
+    setOtpVerified(false);
+    setOtpValue("");
+    // Input automatically becomes enabled because otpSent is false
+  };
+
   /* ================= PREFIX SELECTOR ================= */
   const prefixSelector = (
     <Form.Item name="country_code" noStyle initialValue="971">
@@ -93,17 +180,17 @@ const LeadGenerationModal = ({
         style={{ width: 110 }}
         bordered={false}
         showSearch
+        disabled={otpVerified || otpSent} // Lock if processing
         dropdownMatchSelectWidth={320}
         optionFilterProp="children"
         onChange={(val) => {
           setCountryCode(val);
-          // Explicitly updating form value to stay synced
           form.setFieldsValue({ country_code: val });
-          form.setFieldsValue({ mobile: "" });
-          form.validateFields(['mobile']);
+          // Reset OTP state on country change
+          setOtpVerified(false);
+          setOtpSent(false);
         }}
         filterOption={(input, option) => 
-          // Search by Name or Code
           option.children[1]?.props?.children[1]?.toLowerCase().includes(input.toLowerCase()) || 
           option.value.includes(input)
         }
@@ -111,7 +198,6 @@ const LeadGenerationModal = ({
         {phoneCodesData.map((item) => (
           <Option key={item.iso} value={item.code}>
             <div className="flex items-center">
-              {/* Flag Image from CDN */}
               <img 
                 src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`} 
                 srcSet={`https://flagcdn.com/w40/${item.iso.toLowerCase()}.png 2x`}
@@ -127,153 +213,81 @@ const LeadGenerationModal = ({
     </Form.Item>
   );
 
-  // /* ================= SUBMIT HANDLER (FIXED) ================= */
-  // const handleSubmit = async (values) => {
-  //   setIsSubmitting(true);
+  /* ================= SUBMIT HANDLER ================= */
+  const handleSubmit = async (values) => {
+    if (activeTab === "signup" && !otpVerified) {
+      notification.error({ message: "Verification Required", description: "Please verify your mobile number first." });
+      return;
+    }
 
-  //   try {
-  //     // FIX: Ensure Country Code has '+' prefix
-  //     const rawCode = values.country_code ? values.country_code.toString() : "971";
-  //     const formattedCode = rawCode.startsWith("+") ? rawCode : `+${rawCode}`;
+    setIsSubmitting(true);
 
-  //     const mobilePayload = {
-  //       country_code: formattedCode, // Sends +971 instead of 971
-  //       number: values.mobile.toString(),
-  //     };
+    try {
+      const rawCode = values.country_code ? values.country_code.toString() : "971";
+      const formattedCode = rawCode.startsWith("+") ? rawCode : `+${rawCode}`;
 
-  //     if (activeTab === "signin") {
-  //       const loginData = await login("/users/login/customer", { mobile: mobilePayload });
-  //       onAuthSuccess?.(loginData);
-  //       onCancel();
-  //     } else {
-  //       const selectedCountryData = Country.getCountryByCode(values.location_country);
-  //       const countryName = selectedCountryData ? selectedCountryData.name : "";
-  //       const selectedStateData = State.getStateByCodeAndCountry(values.state, values.location_country);
-  //       const stateName = selectedStateData ? selectedStateData.name : values.state;
+      const mobilePayload = {
+        country_code: formattedCode,
+        number: values.mobile.toString(),
+      };
 
-  //       const payload = {
-  //         name: { first_name: values.first_name, last_name: values.last_name },
-  //         email: values.email,
-  //         comingFromAiPage: true,
-  //         mobile: mobilePayload,
-  //         location: { country: countryName, state: stateName, city: values.city, address: "" },
-  //       };
+      if (activeTab === "signin") {
+        const loginData = await login("/users/login/customer", { mobile: mobilePayload });
+        onAuthSuccess?.(loginData);
+        onCancel();
+      } else {
+        const selectedCountryData = Country.getCountryByCode(values.location_country);
+        const countryName = selectedCountryData ? selectedCountryData.name : "";
+        const selectedStateData = State.getStateByCodeAndCountry(values.state, values.location_country);
+        const stateName = selectedStateData ? selectedStateData.name : values.state;
 
-  //       const response = await apiService.post("/users/signup/customer", payload);
-
-  //       if (response?.success) {
-  //         notification.success({ message: "Account Created", description: "Logging you in..." });
-  //         const loginData = await login("/users/login/customer", { mobile: mobilePayload });
-  //         onAuthSuccess?.(loginData);
-  //         onCancel();
-  //         form.resetFields();
-  //       }
-  //     }
-  //   } catch (error) {
-  //       const data = error?.response?.data;
-  //       if (Array.isArray(data?.errors) && data.errors.length > 0) {
-  //           const fieldErrors = data.errors.map((err) => {
-  //               const parts = err.field?.split(".");
-  //               const fieldName = parts?.length > 1 ? parts[parts.length - 1] : parts?.[0];
-  //               return { name: fieldName, errors: [err.message] };
-  //           });
-  //           form.setFields(fieldErrors);
-  //       } else if (activeTab === "signin") {
-  //           form.setFields([{ name: "mobile", errors: [data?.message || "Error"] }]);
-  //       } else {
-  //           notification.error({ message: "Failed", description: data?.message || "Error" });
-  //       }
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // };
-/* ================= SUBMIT HANDLER (FIXED FOR ERRORS) ================= */
-const handleSubmit = async (values) => {
-  setIsSubmitting(true);
-
-  try {
-    // 1. Mobile payload ko bahar rakhte hain taaki Login/Signup dono use kar sakein
-    const rawCode = values.country_code ? values.country_code.toString() : "971";
-    const formattedCode = rawCode.startsWith("+") ? rawCode : `+${rawCode}`;
-
-    const mobilePayload = {
-      country_code: formattedCode,
-      number: values.mobile.toString(),
-    };
-
-    if (activeTab === "signin") {
-      // SIGN IN LOGIC
-      const loginData = await login("/users/login/customer", { mobile: mobilePayload });
-      onAuthSuccess?.(loginData);
-      onCancel();
-    } else {
-      // SIGN UP LOGIC
-      const selectedCountryData = Country.getCountryByCode(values.location_country);
-      const countryName = selectedCountryData ? selectedCountryData.name : "";
-      const selectedStateData = State.getStateByCodeAndCountry(values.state, values.location_country);
-      const stateName = selectedStateData ? selectedStateData.name : values.state;
-
-      // Payload variable ab yahan defined hai
-      const signupPayload = {
-        name: { first_name: values.first_name, last_name: values.last_name },
-        email: values.email,
-        comingFromAiPage: true,
-        mobile: mobilePayload,
-        location: { 
+        const signupPayload = {
+          name: { first_name: values.first_name, last_name: values.last_name },
+          email: values.email,
+          comingFromAiPage: true,
+          mobile: mobilePayload,
+          location: { 
             country: countryName, 
             state: stateName, 
             city: values.city, 
             address: "" 
-        },
-      };
-
-      const response = await apiService.post("/users/signup/customer", signupPayload);
-
-      if (response?.success) {
-        notification.success({ message: "Account Created", description: "Logging you in..." });
-        const loginData = await login("/users/login/customer", { mobile: mobilePayload });
-        onAuthSuccess?.(loginData);
-        onCancel();
-        form.resetFields();
-      }
-    }
-  } catch (error) {
-    console.error("Auth Error:", error);
-
-    // 1. Backend se error details nikalna
-    const responseData = error?.response?.data;
-    
-    // Sabse pehle check karein agar 'errors' array mein koi message hai
-    // Phir check karein agar main 'message' field mein kuch hai
-    const errorMessage = responseData?.errors?.[0]?.message || 
-                         responseData?.message || 
-                         "An unexpected error occurred";
-
-    // 2. Toast Notification dikhana (Ant Design Notification)
-    notification.error({
-      message: "Action Failed",
-      description: errorMessage, // Yahan "Mobile number already registered" dikhayega
-      placement: "topRight",
-      duration: 5,
-    });
-
-    // 3. Form fields ko red highlight karna (Optional but Recommended)
-    if (responseData?.errors && Array.isArray(responseData.errors)) {
-      const fieldErrors = responseData.errors.map((err) => {
-        // Agar field "mobile.number" hai toh usey "mobile" se map karein
-        const fieldName = err.field.includes('.') ? err.field.split('.')[0] : err.field;
-        return {
-          name: fieldName, 
-          errors: [err.message]
+          },
         };
-      });
-      form.setFields(fieldErrors);
-    }
 
-  } finally {
-    setIsSubmitting(false);
-  } 
-};
+        const response = await apiService.post("/users/signup/customer", signupPayload);
+
+        if (response?.success) {
+          notification.success({ message: "Account Created", description: "Logging you in..." });
+          const loginData = await login("/users/login/customer", { mobile: mobilePayload });
+          onAuthSuccess?.(loginData);
+          onCancel();
+          form.resetFields();
+        }
+      }
+    } catch (error) {
+      console.error("Auth Error:", error);
+      const responseData = error?.response?.data;
+      const errorMessage = responseData?.errors?.[0]?.message || responseData?.message || "An unexpected error occurred";
+
+      notification.error({
+        message: "Action Failed",
+        description: errorMessage,
+        placement: "topRight",
+        duration: 5,
+      });
+
+      if (responseData?.errors && Array.isArray(responseData.errors)) {
+        const fieldErrors = responseData.errors.map((err) => {
+          const fieldName = err.field.includes('.') ? err.field.split('.')[0] : err.field;
+          return { name: fieldName, errors: [err.message] };
+        });
+        form.setFields(fieldErrors);
+      }
+    } finally {
+      setIsSubmitting(false);
+    } 
+  };
+
   const getRequiredLength = () => PHONE_LENGTH_RULES[countryCode] || 15;
 
   return (
@@ -308,7 +322,7 @@ const handleSubmit = async (values) => {
           </div>
 
           {/* Right Panel */}
-          <div className="lg:w-7/12 p-8 lg:p-12 relative">
+          <div className="lg:w-7/12 p-8 lg:p-12 relative overflow-y-auto max-h-[100vh]">
             <Title level={2}>{activeTab === "signin" ? "Welcome Back" : "Create Account"}</Title>
 
             <div className="flex p-1.5 bg-gray-100 rounded-xl my-6">
@@ -328,33 +342,95 @@ const handleSubmit = async (values) => {
                 </>
               )}
 
-              <Form.Item
-                label="Mobile Number"
-                name="mobile"
-                rules={[
-                  { required: true, message: 'Required' },
-                  () => ({
-                    validator(_, value) {
-                      if (!value) return Promise.resolve();
-                      const exactLength = PHONE_LENGTH_RULES[countryCode];
-                      if (exactLength) {
-                        if (value.length !== exactLength) return Promise.reject(new Error(`Enter exactly ${exactLength} digits`));
+              {/* Mobile Input with OTP Logic */}
+              <div className="relative">
+                <Form.Item
+                  label="Mobile Number"
+                  name="mobile"
+                  rules={[
+                    { required: true, message: 'Required' },
+                    () => ({
+                      validator(_, value) {
+                        if (!value) return Promise.resolve();
+                        const exactLength = PHONE_LENGTH_RULES[countryCode];
+                        if (exactLength && value.length !== exactLength) return Promise.reject(new Error(`Enter exactly ${exactLength} digits`));
+                        if (value.length < 7 || value.length > 15) return Promise.reject(new Error("7-15 digits required"));
                         return Promise.resolve();
-                      }
-                      if (value.length < 7 || value.length > 15) return Promise.reject(new Error("7-15 digits required"));
-                      return Promise.resolve();
-                    },
-                  }),
-                ]}
-              >
-                <Input
-                  addonBefore={prefixSelector}
-                  prefix={<Smartphone size={18} className="text-gray-400"/>}
-                  maxLength={getRequiredLength()}
-                  placeholder="50 123 4567"
-                  onChange={(e) => form.setFieldsValue({ mobile: e.target.value.replace(/\D/g, "") })}
-                />
-              </Form.Item>
+                      },
+                    }),
+                  ]}
+                >
+                  <Input
+                    addonBefore={prefixSelector}
+                    prefix={<Smartphone size={18} className="text-gray-400"/>}
+                    maxLength={getRequiredLength()}
+                    placeholder="50 123 4567"
+                    disabled={otpVerified || otpSent} // Lock input during OTP
+                    onChange={(e) => {
+                       const val = e.target.value.replace(/\D/g, "");
+                       form.setFieldsValue({ mobile: val });
+                       setMobileNumber(val); 
+                       if(!otpVerified && !otpSent) {
+                           setOtpVerified(false);
+                       }
+                    }}
+                  />
+                </Form.Item>
+
+                {/* OTP Send/Verify Actions (Only for Signup) */}
+                {activeTab === "signup" && (
+                    <div className="mb-6">
+                        {!otpVerified && !otpSent && (
+                            <Button 
+                                type="primary"
+                                block 
+                                onClick={handleSendOtp} 
+                                loading={otpLoading}
+                                disabled={!mobileNumber}
+                                style={{ 
+                                    backgroundColor: !mobileNumber ? 'white' : '#1677ff', 
+                                    borderColor: !mobileNumber ? '#d9d9d9' : '#1677ff',
+                                    color: !mobileNumber ? 'rgba(0,0,0,0.25)' : 'white'
+                                }}
+                            >
+                                Send OTP
+                            </Button>
+                        )}
+
+                        {otpSent && !otpVerified && (
+                             <div className="flex flex-col gap-2 mt-2">
+                                <div className="flex gap-2">
+                                    <Input 
+                                        placeholder="Enter OTP" 
+                                        value={otpValue} 
+                                        onChange={(e) => setOtpValue(e.target.value)}
+                                        prefix={<SafetyCertificateOutlined className="text-gray-400"/>}
+                                    />
+                                    <Button type="primary" style={{ background: "#1677ff", borderColor: "#1677ff", borderRadius: 8 }} onClick={handleVerifyOtp} loading={otpLoading}>Verify</Button>
+                                </div>
+                                {/* 🟢 Added Change Number Button */}
+                                <div className="text-right">
+                                    <Button 
+                                        type="link" 
+                                        size="small" 
+                                        danger 
+                                        icon={<EditOutlined />}
+                                        onClick={handleChangeNumber}
+                                    >
+                                        Change Number
+                                    </Button>
+                                </div>
+                             </div>
+                        )}
+
+                        {otpVerified && (
+                            <div className="flex items-center gap-2 text-green-600 bg-green-50 p-2 rounded border border-green-200 mt-[-10px]">
+                                <CheckCircleFilled /> <span className="text-sm font-medium">Mobile Number Verified</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+              </div>
 
               {activeTab === "signup" && (
                 <>

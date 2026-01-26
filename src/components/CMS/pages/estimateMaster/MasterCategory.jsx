@@ -5,12 +5,12 @@ import {
   Card, Button, Space, Tag, Tooltip, Spin,
   Typography, Popconfirm, Input, Form, Modal, message,
   Row, Col, Statistic, Breadcrumb, Divider, Select, Switch,
-  InputNumber 
+  InputNumber
 } from 'antd';
 import {
   PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined,
   RestOutlined, ArrowLeftOutlined, FolderOutlined,
-  FolderOpenOutlined, TagsOutlined, DatabaseOutlined, 
+  FolderOpenOutlined, TagsOutlined, DatabaseOutlined,
   SearchOutlined, ReloadOutlined, AppstoreOutlined,
   HomeOutlined
 } from '@ant-design/icons';
@@ -19,6 +19,7 @@ import { apiService } from '../../../../manageApi/utils/custom.apiservice';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
+
 
 const THEME = {
   primary: "#722ed1",
@@ -30,10 +31,12 @@ const THEME = {
   border: "#f0f0f0"
 };
 
+
 const API_BASE = '/estimate/master/category';
 
+
 const MasterCategory = () => {
-  const [level, setLevel] = useState('categories'); 
+  const [level, setLevel] = useState('categories');
   const [parentCategory, setParentCategory] = useState(null);
   const [parentSubcategory, setParentSubcategory] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -44,16 +47,19 @@ const MasterCategory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showTrash, setShowTrash] = useState(false);
 
+
   const [pagination, setPagination] = useState({
     currentPage: 1,
     itemsPerPage: 100, // Locked to 100
     totalItems: 0,
   });
 
+
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+
 
   const stats = useMemo(() => {
     return {
@@ -63,17 +69,19 @@ const MasterCategory = () => {
     };
   }, [data, pagination.totalItems]);
 
+
   const fetchData = useCallback(async (page = 1, limit = 100) => {
     setLoading(true);
     try {
       const forcedLimit = 100; // Always request 100 items
       let url = API_BASE;
-      const params = { 
-        page, 
-        limit: forcedLimit, 
+      const params = {
+        page,
+        limit: forcedLimit,
         search: searchTerm || undefined,
-        active: showTrash ? 'false' : undefined 
+        active: showTrash ? 'false' : undefined
       };
+
 
       let response;
       if (level === 'subcategories') {
@@ -84,7 +92,7 @@ const MasterCategory = () => {
         url = `${API_BASE}/${parentCategory}/subcategories/${parentSubcategory}/types`;
         // 🔥 Added params here so limit 100 works for types too
         response = await apiService.get(url, params);
-        const typeData = response.data || response.types || response; 
+        const typeData = response.data || response.types || response;
         setData(Array.isArray(typeData) ? typeData : []);
       } else {
         // 🔥 Added params here for categories too
@@ -92,9 +100,10 @@ const MasterCategory = () => {
         setData(response.categories || response.data || []);
       }
 
+
       setPagination({
         currentPage: response.pagination?.page || page,
-        itemsPerPage: forcedLimit, 
+        itemsPerPage: forcedLimit,
         totalItems: response.pagination?.total || (Array.isArray(response.data) ? response.data.length : 0) || (Array.isArray(response.categories) ? response.categories.length : 0) || 0,
       });
     } catch (err) {
@@ -164,10 +173,10 @@ const MasterCategory = () => {
         width: 350,
         render: (_, record) => (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ 
-              width: '38px', height: '38px', borderRadius: '8px', 
+            <div style={{
+              width: '38px', height: '38px', borderRadius: '8px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: THEME.bgLight 
+              background: THEME.bgLight
             }}>
                 {level === 'categories' && <FolderOutlined style={{ fontSize: '18px', color: THEME.primary }} />}
                 {level === 'subcategories' && <FolderOpenOutlined style={{ fontSize: '18px', color: THEME.secondary }} />}
@@ -232,10 +241,11 @@ const MasterCategory = () => {
         message.success('Created successfully!');
         setCreateModalOpen(false);
         form.resetFields();
-        fetchData(1); 
-      } catch (err) { message.error('Create failed'); } 
+        fetchData(1);
+      } catch (err) { message.error('Create failed'); }
       finally { setSaving(false); }
     };
+
 
     return (
       <Modal title={`Add New ${level.slice(0, -1)}`} open={createModalOpen} onCancel={() => setCreateModalOpen(false)} footer={null} centered destroyOnClose>
@@ -310,9 +320,10 @@ const MasterCategory = () => {
         message.success('Updated successfully!');
         setEditModalOpen(false);
         fetchData(pagination.currentPage);
-      } catch (err) { message.error('Update failed'); } 
+      } catch (err) { message.error('Update failed'); }
       finally { setSaving(false); }
     };
+
 
     return (
       <Modal title={`Edit ${level.slice(0, -1)}`} open={editModalOpen} onCancel={() => setEditModalOpen(false)} footer={null} centered destroyOnClose>
@@ -374,6 +385,7 @@ const MasterCategory = () => {
         </Space>
       </div>
 
+
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
         {[{ t: 'Total', v: stats.total, c: THEME.primary, i: <AppstoreOutlined /> }, { t: 'Active', v: stats.active, c: THEME.success, i: <DatabaseOutlined /> }, { t: 'Trash/Inactive', v: stats.trashed, c: THEME.error, i: <RestOutlined /> }].map((s, idx) => (
           <Col xs={24} sm={8} key={idx}>
@@ -384,6 +396,7 @@ const MasterCategory = () => {
         ))}
       </Row>
 
+
       <Card bordered={false} style={{ borderRadius: '12px' }} bodyStyle={{ padding: 0 }}>
         <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between' }}>
           <Input prefix={<SearchOutlined />} placeholder="Search entries..." style={{ width: 320 }} onChange={e => setSearchTerm(e.target.value)} allowClear />
@@ -392,19 +405,21 @@ const MasterCategory = () => {
             <Button icon={<ReloadOutlined />} onClick={() => fetchData(1)} />
           </Space>
         </div>
-        <CustomTable 
-          columns={columns} 
-          data={data} 
-          loading={loading} 
-          totalItems={pagination.totalItems} 
-          currentPage={pagination.currentPage} 
+        <CustomTable
+          columns={columns}
+          data={data}
+          loading={loading}
+          totalItems={pagination.totalItems}
+          currentPage={pagination.currentPage}
           pageSize={100} // 🔥 Force table to show 100 rows
-          onPageChange={(p, l) => fetchData(p, 100)} 
+          onPageChange={(p, l) => fetchData(p, 100)}
         />
       </Card>
 
+
       <CreateModal key={`create-${level}`} />
       <EditModal key={`edit-${selectedItem?._id}`} />
+
 
       <Modal title="Detailed View" open={detailsOpen} onCancel={() => setDetailsOpen(false)} footer={<Button onClick={() => setDetailsOpen(false)}>Close</Button>} centered>
         {selectedItem && (
@@ -423,4 +438,6 @@ const MasterCategory = () => {
   );
 };
 
+
 export default MasterCategory;
+

@@ -73,7 +73,13 @@ const SellerPage = () => {
     }
   });
 
-  // --- 1. PHONE CODES DATA ---
+  // --- 1. WATCHERS ---
+  const selectedCountry = watch('store_details.country');
+  const selectedState = watch('store_details.state');
+  // 🟢 Change 1: Phone Number Watcher added
+  const watchedMobileNumber = watch('mobile.number');
+
+  // --- 2. PHONE CODES DATA ---
   const countryPhoneData = useMemo(() => {
     const allCountries = Country.getAllCountries();
     return allCountries.map(c => ({
@@ -85,10 +91,7 @@ const SellerPage = () => {
     }));
   }, []);
 
-  // --- 2. LOCATION LOGIC ---
-  const selectedCountry = watch('store_details.country');
-  const selectedState = watch('store_details.state');
-
+  // --- 3. LOCATION LOGIC ---
   // Load States when Country changes
   useEffect(() => {
     if (selectedCountry) {
@@ -506,11 +509,18 @@ const SellerPage = () => {
                                     />
                                 </div>
 
-                                {/* Send OTP Button */}
+                                {/* Send OTP Button - UPDATED */}
                                 {!otpVerified && !otpSent && (
                                     <Button 
                                         type="primary" 
-                                        style={{ height: '42px', backgroundColor: '#333', borderColor: '#333' }}
+                                        // 🟢 Change 2: Logic for disabled and white BG
+                                        disabled={!watchedMobileNumber}
+                                        style={{ 
+                                            height: '42px', 
+                                            backgroundColor: !watchedMobileNumber ? 'white' : "#1677ff", 
+                                            borderColor: !watchedMobileNumber ? '#d9d9d9' : "#1677ff",
+                                            color: !watchedMobileNumber ? 'rgba(0,0,0,0.25)' : 'white'
+                                        }}
                                         onClick={handleSendOtp}
                                         loading={otpLoading}
                                     >
