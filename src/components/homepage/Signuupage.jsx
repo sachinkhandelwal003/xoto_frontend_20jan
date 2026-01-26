@@ -19,6 +19,7 @@ import {
 import { Country, State, City } from "country-state-city";
 import { AuthContext } from "../../manageApi/context/AuthContext";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
+import { showToast } from "../../manageApi/utils/toast";
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -237,43 +238,64 @@ const handleSubmit = async (values) => {
         form.resetFields();
       }
     }
-  } catch (error) {
-    console.error("Auth Error:", error);
-
-    // 1. Backend se error details nikalna
-    const responseData = error?.response?.data;
-    
-    // Sabse pehle check karein agar 'errors' array mein koi message hai
-    // Phir check karein agar main 'message' field mein kuch hai
-    const errorMessage = responseData?.errors?.[0]?.message || 
-                         responseData?.message || 
-                         "An unexpected error occurred";
-
-    // 2. Toast Notification dikhana (Ant Design Notification)
-    notification.error({
-      message: "Action Failed",
-      description: errorMessage, // Yahan "Mobile number already registered" dikhayega
-      placement: "topRight",
-      duration: 5,
-    });
-
-    // 3. Form fields ko red highlight karna (Optional but Recommended)
-    if (responseData?.errors && Array.isArray(responseData.errors)) {
-      const fieldErrors = responseData.errors.map((err) => {
-        // Agar field "mobile.number" hai toh usey "mobile" se map karein
-        const fieldName = err.field.includes('.') ? err.field.split('.')[0] : err.field;
-        return {
-          name: fieldName, 
-          errors: [err.message]
-        };
+   } catch (err) {
+    const apiError = err?.response?.data;
+  console.log(apiError)
+    // 1️⃣ Case: API returns ARRAY of errors
+    if (Array.isArray(apiError)) {
+      apiError.forEach(e => {
+        if (e?.message) {
+          showToast(e.message, "error");
+        }
       });
-      form.setFields(fieldErrors);
+      return;
     }
-
+  
+    // 2️⃣ Case: Validation errors (field-level)
+    if (apiError?.errors && Array.isArray(apiError.errors)) {
+      // Show ONLY first error in toast
+      showToast(apiError.errors[0]?.message, "error");
+  
+      // Map ALL errors to form fields
+      apiError.errors.forEach(errObj => {
+        let fieldName = errObj.field?.split(".").pop();
+  
+        if (errObj.field === "mobile.number") {
+          fieldName = "mobileNumber";
+        }
+  
+        setError(fieldName, {
+          type: "manual",
+          message: errObj.message,
+        });
+      });
+      return;
+    }
+  
+    // 3️⃣ Case: Account already exists
+    if (
+      apiError?.message &&
+      /already|exists/i.test(apiError.message)
+    ) {
+      showToast("Account already exists. Please login.", "warning");
+      navigate("/user/login");
+      return;
+    }
+  
+    // 4️⃣ Fallback message
+    if (apiError?.message) {
+      showToast(apiError.message, "error");
+    } else {
+      showToast("Registration failed. Please try again.", "error");
+    }
+  
   } finally {
     setIsSubmitting(false);
-  } 
+  }
 };
+
+
+
   const getRequiredLength = () => PHONE_LENGTH_RULES[countryCode] || 15;
 
   return (

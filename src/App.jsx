@@ -8,6 +8,7 @@ import { BlogProvider } from "./context/BlogContext";
 import { ProductProvider } from "./context/ProductContext"; // BASE LOGIC ADDED
 // -----------------------
 import { FreelancerProvider } from "./context/FreelancerContext";
+import { useSelector } from "react-redux";
 
 import Navbar from "./components/navbar/index.jsx";
 import Footer from "./components/footer/footer";
@@ -101,21 +102,32 @@ const Registration = lazy(() => import("./components/freelancers/Registeration")
 const Magazine = lazy(() => import("./components/magazines/Index"));
 
 function PrivateRoute({ children, allowedRoles }) {
-  const user = { role: { code: "1" } };
-  const loading = false;
+  // 1. Get real data from Redux (or your Auth Context)
+  const { user, token, loading } = useSelector((state) => state.auth);
   const location = useLocation();
 
+  // 2. If the app is still checking for a saved token, show the loader
   if (loading) return <Loader />;
-  if (!user || !user.role?.code)
+
+  // 3. CRITICAL: If no user or token, redirect immediately to login
+  // This prevents the "Dashboard flicker" during logout
+  if (!user || !token || !user.role?.code) {
     return <Navigate to="/login" state={{ from: location }} replace />;
-  if (allowedRoles && !allowedRoles.includes(user.role.code))
+  }
+
+  // 4. Role-based access control
+  const userRole = user.role.code.toString();
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
     return <Navigate to="/" replace />;
+  }
+
   return children;
 }
 
 function LayoutWrapper({ children }) {
-  const location = useLocation();
-  const hideNavbarPaths = [
+const location = useLocation();
+  const { user, token } = useSelector((state) => state.auth);
+    const hideNavbarPaths = [
     "/login", "/quotation", "/freelancer/browse-category", "/freelancer/category",
     "/freelancer/free-listing", "/ecommerce", "/freelancer/create-business",
     "/designs/Tool", "/dashboard", "/customer/dashboard", "/admin/login",
@@ -123,8 +135,14 @@ function LayoutWrapper({ children }) {
     "/aiPlanner/landscape", "/estimate/calculator", "/estimate/calculator/interior",
     "/accountant/login", "/ecommerce/seller", "/ecommerce/cart",
   ];
+const isDashboard = location.pathname.startsWith("/dashboard");
+const hideNavbar = hideNavbarPaths.includes(location.pathname) || isDashboard;
 
-  const hideNavbar = hideNavbarPaths.includes(location.pathname) || location.pathname.startsWith("/dashboard/");
+
+if (isDashboard && (!user || !token)) {
+    return <div className="min-h-screen">{children}</div>;
+  }
+
   const showFreelancerNavbar =
     location.pathname === "/freelancer/browse-category" ||
     location.pathname === "/freelancer/free-listing" ||
@@ -143,10 +161,7 @@ function LayoutWrapper({ children }) {
     "/freelancer/registration",
   ];
 
-  const hideFooter =
-    hideFooterPaths.includes(location.pathname) ||
-    location.pathname.startsWith("/dashboard/") ||
-    location.pathname.startsWith("/profile/");
+const hideFooter = hideFooterPaths.includes(location.pathname) || isDashboard || location.pathname.startsWith("/profile/");
 
   return (
     <div className="min-h-screen relative">
@@ -176,7 +191,7 @@ function App() {
               <Route path="/mortgages-product-upload-document" element={<UploadDocuments />} />
               <Route path="/product-requirements-edit" element={<ProductRequirementsEdit />} />
               <Route path="/my-applications" element={<MyApplications />} />
-              <Route path="/aiPlanner/interior" element={<ComingSoon />} />
+              <Route path="/aiPlanner/interior" element={<InteriorPlanner />} />
               <Route path="/aiPlanner/landscape" element={<AIPlanner />} />
               <Route path="/register" element={<RegisterNowPage />} />
               <Route path="/aiPlanner/exterior" element={<ComingSoon />} />
