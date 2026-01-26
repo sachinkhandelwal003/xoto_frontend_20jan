@@ -100,6 +100,9 @@ const RegistrationAgency = () => {
   const themeGradient = "linear-gradient(135deg, #4F46E5, #4338ca)";
   const BASE_URL = "https://xoto.ae";
 
+  // 🟢 Change 1: Watching mobile number to toggle button state 
+  const watchedMobileNumber = Form.useWatch('mobile_number', form);
+
   // --- Country Data ---
   const countryPhoneData = useMemo(() => {
     const allCountries = Country.getAllCountries();
@@ -414,20 +417,22 @@ const RegistrationAgency = () => {
                     <Col xs={24} md={8} style={{ display: 'flex', alignItems: 'flex-start', paddingTop: '29px' }}>
                         {!otpVerified ? (
                             <Button 
-                            className="mt-5"
+                                type="primary" 
+                                // 🟢 Change 2: Logic for disabled and white BG
+                                disabled={!watchedMobileNumber}
+                                style={{ 
+                                    height: '38px', 
+                                    borderRadius: 8,
+                                    marginTop: "16px",
+                                    width: '100%',
+                                    backgroundColor: !watchedMobileNumber ? 'white' : "#1677ff", 
+                                    borderColor: !watchedMobileNumber ? '#d9d9d9' : "#1677ff",
+                                    color: !watchedMobileNumber ? 'rgba(0,0,0,0.25)' : 'white'
+                                }}
                                 onClick={handleSendOtp}
                                 loading={otpLoading}
-                                disabled={otpSent} // Disable if OTP already sent (unless you add Resend logic)
-                                block={isMobile}
-                                type="default"
-                                style={{ 
-                                    borderColor: themeColor, 
-                                    color: themeColor,
-                                    borderRadius: 8,
-                                    fontWeight: 500,
-                                }}
                             >
-                                {otpSent ? "OTP Sent" : "Send OTP"}
+                                Send OTP
                             </Button>
                         ) : (
                             <Button 
@@ -466,16 +471,12 @@ const RegistrationAgency = () => {
                                     onClick={handleVerifyOtp}
                                     loading={otpLoading}
                                     block
-                                    style={{ background: "#333", borderColor: "#333", borderRadius: 8 }}
+                                    style={{ background: "#1677ff", borderColor: "#1677ff", borderRadius: 8 }}
                                 >
                                     Verify OTP
                                 </Button>
                             </Col>
-                            <Col span={24}>
-                                <Button type="link" size="small" onClick={handleSendOtp} style={{ paddingLeft: 0, marginTop: 5 }}>
-                                    Resend OTP
-                                </Button>
-                            </Col>
+                           
                         </Row>
                     </motion.div>
                 )}
