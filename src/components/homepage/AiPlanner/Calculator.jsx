@@ -36,6 +36,8 @@ const BASE_URL = 'https://xoto.ae/api';
 const BRAND_PURPLE = '#5C039B';
 
 
+
+
 const steps = [
   { title: 'Location', icon: <CompassOutlined /> },
   { title: 'Service', icon: <EnvironmentOutlined /> },
@@ -53,6 +55,7 @@ const reverseGeocode = async (lat, lng) => {
   const data = await res.json();
   const a = data.address || {};
 
+
   const city =
     a.city ||
     a.town ||
@@ -60,11 +63,13 @@ const reverseGeocode = async (lat, lng) => {
     a.county ||
     "";
 
+
   const area =
     a.suburb ||
     a.neighbourhood ||
     a.quarter ||
     "";
+
 
   return {
     country: a.country || "",
@@ -96,6 +101,7 @@ const MapPicker = ({ coords, onChange }) => {
         onChange({ lat: newPosition[0], lng: newPosition[1] });
       },
     });
+
 
     return position ? <Marker position={position} /> : null;
   };
@@ -159,11 +165,15 @@ const Calculator = () => {
     const value = e.target.value.replace(/\D/g, ""); // numbers only
     const rule = COUNTRY_PHONE_RULES[countryCode];
 
+
     if (!rule) return;
+
 
     if (value.length > rule.digits) return; // block extra digits
 
+
     setPhone(value);
+
 
     if (value.length < rule.digits) {
       setPhoneError(`Phone number must be ${rule.digits} digits`);
@@ -173,6 +183,8 @@ const Calculator = () => {
   };
 
 
+
+
   const handleCountryChange = (code) => {
     setCountryCode(code);
     setPhone(""); // reset phone on country change
@@ -180,14 +192,20 @@ const Calculator = () => {
   };
 
 
+
+
   const toggleImageSelect = (img) => {
     setSelectedImages((prev) => {
       const exists = prev.some(i => i.id === img.id);
 
+
       if (exists) {
+        // remove image
         return prev.filter(i => i.id !== img.id);
       }
 
+
+      // add image
       return [...prev, img];
     });
   };
@@ -199,9 +217,12 @@ const Calculator = () => {
         `https://xoto.ae/api/estimate/master/category/types/${selectedType}/gallery`
       );
 
+
       const data = await res.json();
 
+
       console.log("We got this from galllery images", data);
+      // assuming res.data or res.gallery
       setGalleryImages(data?.gallery?.moodboardImages || []);
     } catch (error) {
       console.error(error);
@@ -214,6 +235,8 @@ const Calculator = () => {
       getAllImages();
     }
   }, [selectedType]);
+
+
 
 
   const [loading, setLoading] = useState({
@@ -273,6 +296,8 @@ const Calculator = () => {
   }, []);
 
 
+
+
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const navigate = useNavigate();
@@ -282,6 +307,8 @@ const Calculator = () => {
     return questions.map(q => {
       const userAnswer = answers[q._id];
 
+
+      // TEXT / NUMBER / YES-NO
       if (q.questionType !== "options" && q.questionType !== "yesorno") {
         return {
           question: q._id,
@@ -293,9 +320,14 @@ const Calculator = () => {
         };
       }
 
+
+
+
+      // OPTIONS / yes or no
       const selectedOpt = q.options.find(
         opt => opt.title === userAnswer
       );
+
 
       return {
         question: q._id,
@@ -316,6 +348,10 @@ const Calculator = () => {
   };
 
 
+
+
+
+
   const handleAnswerChange = (questionId, value) => {
     setAnswers((prev) => ({
       ...prev,
@@ -324,16 +360,21 @@ const Calculator = () => {
   };
 
 
+
+
   useEffect(() => {
     if (!selectedType) return;
 
+
     const getAllQuestions = async () => {
       setLoading(prev => ({ ...prev, questions: true }));
+
 
       try {
         const res = await apiService.get(
           `/estimate/master/category/types/${selectedType}/questions`
         );
+
 
         if (res.success) {
           setQuestions(res.data || []);
@@ -346,6 +387,7 @@ const Calculator = () => {
         setLoading(prev => ({ ...prev, questions: false }));
       }
     };
+
 
     getAllQuestions();
   }, [selectedType]);
@@ -384,62 +426,21 @@ const Calculator = () => {
   }, []);
 
 
-  // ──────────────────────────────────────────────
-  //              VALIDATION LOGIC
-  // ──────────────────────────────────────────────
-  const isStepValid = () => {
-    switch (activeStep) {
-      case 0: // Location
-        return !!coords.lat && !!coords.lng;
-
-      case 1: // Service (Subcategory)
-        return !!selectedSubcategory;
-
-      case 2: // Style (Type)
-        return !!selectedType;
-
-      case 3: // Estimate Questions
-        if (!questions || questions.length === 0) {
-          return true; // no questions → allowed
-        }
-        return questions.every(q => {
-          const val = answers[q._id];
-          return val !== undefined && val !== null && val !== "" && val !== false;
-        });
-
-      case 4: // Contact
-        const phoneDigits = COUNTRY_PHONE_RULES[countryCode]?.digits || 10;
-        return (
-          firstName.trim().length >= 2 &&
-          lastName.trim().length >= 2 &&
-          email.trim().includes("@") &&
-          email.trim().includes(".") &&
-          email.trim().length >= 6 &&
-          phone.trim().length === phoneDigits &&
-          !phoneError
-        );
-
-      case 5:
-        return true;
-
-      default:
-        return false;
-    }
-  };
-
-
   // --- ACTIONS ---
   const handleGetLocation = () => {
     if (!navigator.geolocation) return message.error("Geolocation not supported");
     setLoading(prev => ({ ...prev, submitting: true, geocoding: true }));
+
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
+
         try {
           const geo = await reverseGeocode(lat, lng);
+
 
           setCoords({
             lat,
@@ -450,6 +451,7 @@ const Calculator = () => {
             area: geo.area,
             address: geo.fullAddress
           });
+
 
           message.success("Location synchronized!");
         } catch (error) {
@@ -498,33 +500,43 @@ const Calculator = () => {
 
 
   const onFinalSubmit = async () => {
-    if (!isStepValid()) {
-      message.error("Please fill all required fields");
-      return;
-    }
+    // Validate form fields
+
 
     const estimateAnswers = buildEstimateAnswersPayload();
+
+
+
 
     if (!firstName.trim() || !lastName.trim()) {
       message.error("Please enter both first and last name");
       return;
     }
 
+
     if (!email.trim()) {
       message.error("Please enter your email");
       return;
     }
+
 
     if (!phone.trim()) {
       message.error("Please enter your phone number");
       return;
     }
 
+
     setLoading(prev => ({ ...prev, submitting: true }));
 
+
+
+
+    // Get selected type and subcategory details
     const selectedTypeData = types.find(t => t._id === selectedType);
     const selectedSubcat = subcategories.find(s => s._id === selectedSubcategory);
 
+
+    // Prepare payload according to the example
     const payload = {
       service_type: "landscape",
       customer_name: {
@@ -555,14 +567,17 @@ const Calculator = () => {
       answers: estimateAnswers
     };
 
-    console.log("Submitting payload:", JSON.stringify(payload, null, 2));
+
+    console.log("Submitting payload:", JSON.stringify(payload, null, 2)); // For debugging
+
 
     try {
       const response = await apiService.post("/estimates/submit", payload);
       console.log("API Response:", response);
 
+
       if (response.success) {
-        setActiveStep(5);
+        setActiveStep(5); // Move to success step
         message.success("Estimate submitted successfully!");
         setEstimationValue(response.final_price)
       } else {
@@ -577,32 +592,68 @@ const Calculator = () => {
   };
 
 
-  const handleNext = () => {
-    if (!isStepValid()) {
-      message.warning("Please complete all required fields to continue");
-      return;
+
+
+const handleNext = () => {
+  console.log("Current Step:", activeStep);
+
+  // 1. Finish Navigation
+  if (activeStep === 5) {
+    navigate("/");
+    return;
+  }
+
+  // 2. Step 3 Validation: Check if questions exist AND if they are answered
+  if (activeStep === 3) {
+    // Pehle check karein ki questions hain bhi ya nahi
+    if (!questions || questions.length === 0) {
+      message.warning("No questions available to answer. Cannot proceed.");
+      return; 
     }
 
-    if (activeStep === 5) {
-      navigate("/");
+    // Phir check karein ki saare answered hain ya nahi
+    const isFormValid = questions.every((q) => {
+      const val = answers[q._id];
+      return val !== undefined && val !== null && val !== "";
+    });
+
+    if (!isFormValid) {
+      message.error({
+        content: "Please answer all the questions to proceed!",
+        style: {
+          fontSize: '20px',
+          marginTop: '15vh',
+          padding: '15px 25px',
+          borderRadius: '12px',
+          lineHeight: '1.5'
+        },
+        duration: 3,
+      });
       return;
     }
+  }
 
-    if (activeStep === 4) {
-      onFinalSubmit();
-      return;
-    }
+  // 3. Submit Trigger
+  if (activeStep > 3) {
+    onFinalSubmit();
+    return;
+  }
 
-    setActiveStep(prev => prev + 1);
-  };
+  // 4. Default: Go to next step
+  setActiveStep((prev) => prev + 1);
+};
 
 
   const handleBack = () => setActiveStep(prev => prev - 1);
 
 
-  const validateStep = () => {
-    return isStepValid();
-  };
+ const validateStep = () => {
+  // Agar Step 3 (Estimate Questions) par hain aur koi question nahi mila
+  if (activeStep === 3 && (!questions || questions.length === 0)) {
+    return false;
+  }
+  return true;
+};
 
 
   // --- UI COMPONENTS ---
@@ -632,6 +683,7 @@ const Calculator = () => {
       exit: { opacity: 0, y: -20 }
     };
 
+
     switch (activeStep) {
       case 0:
         return (
@@ -643,6 +695,7 @@ const Calculator = () => {
             <Text className="text-lg text-gray-400 block mb-10">
               We use GPS coordinates for accurate site analysis. Click on the map to adjust your exact location.
             </Text>
+
 
             <Button
               size="large"
@@ -656,6 +709,7 @@ const Calculator = () => {
               {coords.lat ? "Update My Location" : "Auto-Detect My Location"}
             </Button>
 
+
             {coords.lat && (
               <div className="space-y-4">
                 <div className="mt-6">
@@ -663,6 +717,7 @@ const Calculator = () => {
                     Coordinates: {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
                   </Tag>
                 </div>
+
 
                 <div className="space-y-2">
                   {coords.country && (
@@ -682,11 +737,13 @@ const Calculator = () => {
                   )}
                 </div>
 
+
                 {coords.address && (
                   <Text type="secondary" className="block mt-4 max-w-xl mx-auto">
                     <strong>Full Address:</strong> {coords.address}
                   </Text>
                 )}
+
 
                 <div className="mt-8 max-w-2xl mx-auto">
                   {loading.geocoding ? (
@@ -751,47 +808,53 @@ const Calculator = () => {
         );
 
 
-      case 3:
-        return (
-          <motion.div {...variants} className="py-10">
-            <div className="max-w-3xl mx-auto">
-              <Title level={3} className="text-center mb-8">
-                Project Details
-              </Title>
+    case 3:
+  return (
+    <motion.div {...variants} className="py-10">
+      <div className="max-w-3xl mx-auto">
+        <Title level={3} className="text-center mb-8">
+          Project Details
+        </Title>
 
-              <Card className="rounded-xl shadow-sm">
-                {questions && questions.length > 0 ? (
-                  <Form layout="vertical" className="space-y-6">
-                    {questions.map((q) => (
-                      <Form.Item
-                        key={q._id}
-                        label={q.question}
-                        required={true}
-                        validateStatus={answers[q._id] ? "success" : "error"}
-                        help={answers[q._id] ? null : "Please provide an answer to proceed."}
-                      >
-                        {/* ... saare inputs (text, number, options) yahan rahenge ... */}
-                        {/* (Baki code same rahega) */}
-                      </Form.Item>
-                    ))}
-                  </Form>
-                ) : (
-                  <div className="py-20 text-center">
-                    <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
-                      NO QUESTIONS AVAILABLE
-                    </h2>
-                  </div>
-                )}
-              </Card>
+        <Card className="rounded-xl shadow-sm">
+          {/* ✅ Check agar questions hain */}
+          {questions && questions.length > 0 ? (
+            <Form layout="vertical" className="space-y-6">
+              {questions.map((q) => (
+                <Form.Item
+                  key={q._id}
+                  label={q.question}
+                  required={true}
+                  validateStatus={answers[q._id] ? "success" : "error"}
+                  help={answers[q._id] ? null : "Please provide an answer to proceed."}
+                >
+                  {/* ... saare inputs (text, number, options) yahan rahenge ... */}
+                  {/* (Baki code same rahega) */}
+                </Form.Item>
+              ))}
+            </Form>
+          ) : (
+            /* ✅ BOLD EMPTY STATE */
+            <div className="py-20 text-center">
+              <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
+                NO QUESTIONS AVAILABLE
+              </h2>
+              {/* <p className="text-gray-500 mt-2 font-semibold">
+                Bhai, abhi koi sawal nahi mile.
+              </p> */}
             </div>
-          </motion.div>
-        );
+          )}
+        </Card>
+      </div>
+    </motion.div>
+  );
 
 
       case 4:
         const selectedPkg = packages.find(p => p._id === selectedPackage);
         const selectedTypeData = types.find(t => t._id === selectedType);
         const selectedSubcat = subcategories.find(s => s._id === selectedSubcategory);
+
 
         return (
           <motion.div {...variants} className="max-w-5xl mx-auto">
@@ -843,6 +906,7 @@ const Calculator = () => {
                       />
                     </div>
 
+
                     <div>
                       <Text strong className="block mb-2">Last Name *</Text>
                       <Input
@@ -854,6 +918,7 @@ const Calculator = () => {
                         placeholder="Doe"
                       />
                     </div>
+
 
                     <div>
                       <Text strong className="block mb-2">Email Address *</Text>
@@ -868,8 +933,10 @@ const Calculator = () => {
                       />
                     </div>
 
+
                     <div>
                       <Text strong className="block mb-2">Contact Number *</Text>
+
 
                       <Row gutter={8}>
                         <Col span={8}>
@@ -887,6 +954,7 @@ const Calculator = () => {
                           </Select>
                         </Col>
 
+
                         <Col span={16}>
                           <Input
                             size="large"
@@ -900,6 +968,7 @@ const Calculator = () => {
                           />
                         </Col>
                       </Row>
+
 
                       {phoneError && (
                         <Text type="danger" className="text-xs mt-1 block">
@@ -919,6 +988,7 @@ const Calculator = () => {
         const pkg = packages.find(p => p._id === selectedPackage);
         return (
           <motion.div {...variants} className="text-center ">
+            {/* RESPONSIVE DISCLAIMER */}
             <div className="max-w-5xl mx-auto mb-8 px-4">
               <div
                 className="
@@ -934,10 +1004,13 @@ const Calculator = () => {
       shadow-sm
     "
               >
+                {/* Icon */}
                 <div className="flex-shrink-0">
                   <EnvironmentOutlined className="text-red-500 text-xl sm:text-2xl" />
                 </div>
 
+
+                {/* Text */}
                 <div className="text-left">
                   <Text className="block font-semibold text-red-700 text-sm sm:text-base">
                     DISCLAIMER:
@@ -960,14 +1033,18 @@ const Calculator = () => {
               </div>
             </div>
 
+
+            {/* IMAGE SELECTION SECTION */}
             <div className="mt-16 max-w-6xl mx-auto">
               <Text className="text-gray-400 uppercase tracking-widest block mb-6 text-center">
                 Select Applicable Design / Finish
               </Text>
 
+
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {galleryImages.map((img) => {
                   const isSelected = selectedImages.some(i => i.id === img.id);
+
 
                   return (
                     <div
@@ -983,6 +1060,8 @@ const Calculator = () => {
                         className="w-full h-48 object-cover"
                       />
 
+
+                      {/* Overlay */}
                       <div
                         className={`absolute inset-0 bg-black/40 flex items-center justify-center
              ${isSelected ? "opacity-100" : "opacity-0 hover:opacity-100"}
@@ -993,6 +1072,8 @@ const Calculator = () => {
                         </span>
                       </div>
 
+
+                      {/* Title */}
                       <div className="absolute bottom-0 w-full bg-black/60 text-white text-sm px-3 py-2">
                         {img.title}
                       </div>
@@ -1002,6 +1083,7 @@ const Calculator = () => {
               </div>
             </div>
 
+
           </motion.div>
         );
 
@@ -1010,6 +1092,89 @@ const Calculator = () => {
         return null;
     }
   };
+
+
+  const buildEstimatePayload = () => {
+    // ---- ESTIMATE OBJECT (matches Estimate schema) ----
+    const estimate = {
+      service_type: "landscape", // or derive dynamically
+      subcategory: selectedSubcategory || null,
+      type: selectedType,
+      package: selectedPackage || null,
+
+
+      area_length: length ? Number(length) : null,
+      area_width: width ? Number(width) : null,
+      area_sqft: Number(areaSqFt),
+
+
+      description: "Generated from estimator flow",
+
+
+      status: "pending",
+
+
+      customer: {
+        firstName,
+        lastName,
+        email,
+        phone: `${countryCode}${phone}`,
+        location: coords.address || null,
+        city: coords.city || null,
+        country: coords.country || null
+      }
+    };
+
+
+    // ---- ANSWERS ARRAY (matches EstimateAnswer schema) ----
+    const formattedAnswers = questions
+      .filter(q => answers[q._id] !== undefined && answers[q._id] !== "")
+      .map(q => {
+        const base = {
+          question: q._id,
+          questionText: q.question,
+          questionType: q.questionType,
+          includeInEstimate: q.includeInEstimate ?? true,
+          areaQuestion: q.areaQuestion ?? false
+        };
+
+
+        // TEXT / NUMBER / YESNO
+        if (q.questionType !== "options") {
+          return {
+            ...base,
+            answerValue: answers[q._id]
+          };
+        }
+
+
+        // OPTIONS
+        const selectedOpt = q.options.find(
+          opt => opt.title === answers[q._id]
+        );
+
+
+        return {
+          ...base,
+          selectedOption: selectedOpt
+            ? {
+              optionId: selectedOpt._id,
+              title: selectedOpt.title,
+              value: selectedOpt.value || 0,
+              valueSubType: selectedOpt.valueSubType || "flat"
+            }
+            : null
+        };
+      });
+
+
+    return {
+      estimate,
+      answers: formattedAnswers
+    };
+  };
+
+
 
 
   return (
@@ -1052,6 +1217,7 @@ const Calculator = () => {
 
 
       {/* Navigation Footer */}
+      {/* {activeStep < 6 && activeStep !== 5 && ( */}
       {activeStep < 6 && (
         <div className="fixed bottom-0 left-0 right-0 p-8 z-50 pointer-events-none">
           <div className="max-w-4xl mx-auto flex justify-between items-center bg-white/95 backdrop-blur-xl p-5 rounded-[2rem] shadow-2xl border border-white/50 pointer-events-auto">
@@ -1065,10 +1231,14 @@ const Calculator = () => {
               Back
             </Button>
 
+
             <div className="flex items-center gap-8">
               {activeStep > 0 && (
                 <div className="hidden sm:block text-right">
                   <Text className="text-[10px] text-gray-400 uppercase font-black block tracking-widest">Progress</Text>
+                  {/* <Text strong style={{ color: BRAND_PURPLE }}>
+                    {Math.round(((activeStep + 1) / steps.length) * 100)}% Complete
+                  </Text> */}
                   <Text strong style={{ color: BRAND_PURPLE }}>
                     {Math.min(
                       Math.round(((activeStep + 1) / steps.length) * 100),
@@ -1077,6 +1247,7 @@ const Calculator = () => {
                   </Text>
                 </div>
               )}
+
 
               <Button
                 type="primary"
