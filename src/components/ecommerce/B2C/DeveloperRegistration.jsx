@@ -11,13 +11,13 @@ import {
   Spin,
   Modal,
   Select,
-  notification // Added notification for error handling
+  notification
 } from "antd";
 import { 
   CodeOutlined, 
   SafetyOutlined,
-  SafetyCertificateOutlined, // Added for OTP icon
-  CheckCircleFilled // Added for verified status
+  SafetyCertificateOutlined,
+  CheckCircleFilled
 } from "@ant-design/icons";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -77,9 +77,12 @@ const DeveloperRegistration = () => {
     name: "documents",
   });
 
-  // Watchers for location logic
+  // Watchers
   const selectedCountry = watch("country");
   const selectedState = watch("state");
+  
+  // 🟢 Change 1: Phone Number ko watch kiya taaki button disable kar sakein
+  const watchedPhoneNumber = watch("phone_number");
 
   // Load States when Country changes
   useEffect(() => {
@@ -409,17 +412,24 @@ const DeveloperRegistration = () => {
                             </div>
 
                             {/* Send OTP Button */}
-                            {!otpVerified && !otpSent && (
-                                <Button 
-                                    type="primary" 
-                                    size="large"
-                                    style={{ backgroundColor: '#333', borderColor: '#333' }}
-                                    onClick={handleSendOtp}
-                                    loading={otpLoading}
-                                >
-                                    Send OTP
-                                </Button>
-                            )}
+                          {/* Send OTP Button - UPDATED */}
+{!otpVerified && !otpSent && (
+    <Button 
+        type="primary" 
+        size="large"
+        style={{ 
+            // Logic: Agar number nahi hai toh White BG, warna Blue BG
+            backgroundColor: !watchedPhoneNumber ? 'white' : '#1677ff', 
+            borderColor: !watchedPhoneNumber ? '#d9d9d9' : '#1677ff',
+            color: !watchedPhoneNumber ? 'rgba(0,0,0,0.25)' : 'white', // Disabled text color
+        }}
+        onClick={handleSendOtp}
+        loading={otpLoading}
+        disabled={!watchedPhoneNumber} 
+    >
+        Send OTP
+    </Button>
+)}
 
                             {/* Change Number Button */}
                             {otpSent && !otpVerified && (

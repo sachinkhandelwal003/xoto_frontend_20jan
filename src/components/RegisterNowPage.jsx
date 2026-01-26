@@ -140,60 +140,60 @@ const RegisterNowPage = () => {
       // 3. Redirect
       navigate("/dashboard/customer", { replace: true });
 
-   } catch (err) {
-  const apiError = err?.response?.data;
+    } catch (err) {
+      const apiError = err?.response?.data;
 
-  // 1️⃣ Case: API returns ARRAY of errors
-  if (Array.isArray(apiError)) {
-    apiError.forEach(e => {
-      if (e?.message) {
-        showToast(e.message, "error");
-      }
-    });
-    return;
-  }
-
-  // 2️⃣ Case: Validation errors (field-level)
-  if (apiError?.errors && Array.isArray(apiError.errors)) {
-    // Show ONLY first error in toast
-    showToast(apiError.errors[0]?.message, "error");
-
-    // Map ALL errors to form fields
-    apiError.errors.forEach(errObj => {
-      let fieldName = errObj.field?.split(".").pop();
-
-      if (errObj.field === "mobile.number") {
-        fieldName = "mobileNumber";
+      // 1️⃣ Case: API returns ARRAY of errors
+      if (Array.isArray(apiError)) {
+        apiError.forEach(e => {
+          if (e?.message) {
+            showToast(e.message, "error");
+          }
+        });
+        return;
       }
 
-      setError(fieldName, {
-        type: "manual",
-        message: errObj.message,
-      });
-    });
-    return;
-  }
+      // 2️⃣ Case: Validation errors (field-level)
+      if (apiError?.errors && Array.isArray(apiError.errors)) {
+        // Show ONLY first error in toast
+        showToast(apiError.errors[0]?.message, "error");
 
-  // 3️⃣ Case: Account already exists
-  if (
-    apiError?.message &&
-    /already|exists/i.test(apiError.message)
-  ) {
-    showToast("Account already exists. Please login.", "warning");
-    navigate("/user/login");
-    return;
-  }
+        // Map ALL errors to form fields
+        apiError.errors.forEach(errObj => {
+          let fieldName = errObj.field?.split(".").pop();
 
-  // 4️⃣ Fallback message
-  if (apiError?.message) {
-    showToast(apiError.message, "error");
-  } else {
-    showToast("Registration failed. Please try again.", "error");
-  }
+          if (errObj.field === "mobile.number") {
+            fieldName = "mobileNumber";
+          }
 
-} finally {
-  setLoading(false);
-}
+          setError(fieldName, {
+            type: "manual",
+            message: errObj.message,
+          });
+        });
+        return;
+      }
+
+      // 3️⃣ Case: Account already exists
+      if (
+        apiError?.message &&
+        /already|exists/i.test(apiError.message)
+      ) {
+        showToast("Account already exists. Please login.", "warning");
+        navigate("/user/login");
+        return;
+      }
+
+      // 4️⃣ Fallback message
+      if (apiError?.message) {
+        showToast(apiError.message, "error");
+      } else {
+        showToast("Registration failed. Please try again.", "error");
+      }
+
+    } finally {
+      setLoading(false);
+    }
   };
 
   /* ================= UI ================= */
@@ -300,7 +300,7 @@ const RegisterNowPage = () => {
                                     suffix={otpVerified && <CheckCircle size={16} className="text-green-500" />}
                                 />
                                 
-                                {/* Send Button */}
+                                {/* Send Button - UPDATED STYLE & THEME */}
                                 {!otpVerified && !otpSent && (
                                     <Button 
                                         type="primary" 
@@ -308,7 +308,13 @@ const RegisterNowPage = () => {
                                         onClick={handleSendOtp}
                                         loading={otpLoading}
                                         disabled={!mobileNumber}
-                                        className="bg-black hover:bg-gray-800 border-none min-w-[90px]"
+                                        style={{ 
+                                            // 🟢 Theme Logic Applied: White when disabled, Purple when enabled
+                                            backgroundColor: !mobileNumber ? 'white' : '#5C039B', 
+                                            borderColor: !mobileNumber ? '#d9d9d9' : '#5C039B',
+                                            color: !mobileNumber ? 'rgba(0,0,0,0.25)' : 'white',
+                                            minWidth: '90px'
+                                        }}
                                     >
                                         Send OTP
                                     </Button>
@@ -317,7 +323,7 @@ const RegisterNowPage = () => {
                                 {/* Change Button */}
                                 {otpSent && !otpVerified && (
                                      <Button danger size="large" onClick={() => { setOtpSent(false); setEnteredOtp(""); }}>
-                                        Change
+                                         Change
                                      </Button>
                                 )}
                             </div>
@@ -362,7 +368,7 @@ const RegisterNowPage = () => {
                 </Form.Item>
             </div>
 
-            {/* SUBMIT BUTTON - FIX: !text-white ensures white text ALWAYS */}
+            {/* SUBMIT BUTTON */}
             <Button
                 htmlType="submit"
                 loading={loading}
@@ -371,8 +377,8 @@ const RegisterNowPage = () => {
                 disabled={!otpVerified}
                 className={`rounded-xl h-12 mt-4 font-semibold !text-white !border-none ${
                     !otpVerified 
-                    ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' // Disabled: Gray BG, White Text
-                    : '!bg-[#5C039B] hover:!bg-[#4a027d]' // Active: Purple BG, White Text
+                    ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
+                    : '!bg-[#5C039B] hover:!bg-[#4a027d]' 
                 }`}
             >
                 {!otpVerified ? "Verify Mobile to Continue" : "Create Account"}

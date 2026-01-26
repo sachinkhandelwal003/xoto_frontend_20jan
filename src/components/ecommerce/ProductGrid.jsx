@@ -330,7 +330,8 @@ const ProductGrid = ({
         centered
         style={{ maxWidth: '95vw' }}
       >
-        {/* Modal content same as your original - no change */}
+
+        {/* Modal content same as your original - no change .. */}
         {/* ... paste your full modal content here if needed ... */}
       </Modal>
     </div>
