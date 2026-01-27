@@ -2,7 +2,7 @@ import React, { useState, useContext, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { User, Mail, Phone, Lock, CheckCircle, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Form, Input, Select, Button, message, notification } from "antd";
+import { Form, Input,       Select, Button, message, notification } from "antd";
 import { apiService } from "../manageApi/utils/custom.apiservice";
 import { AuthContext } from "../manageApi/context/AuthContext";
 import { Country } from "country-state-city"; 
@@ -304,7 +304,7 @@ const RegisterNowPage = () => {
             </div>
 
             <Button
-                htmlType="submit"
+                htmlType="submit   "
                 loading={loading}
                 block
                 size="large"
