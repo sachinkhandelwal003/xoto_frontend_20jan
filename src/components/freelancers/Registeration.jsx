@@ -157,10 +157,10 @@ const Registration = () => {
     
     setLoading(prev => ({ ...prev, otpSending: true }));
     try {
-      await apiService.post("/otp/send-otp", {
-        country_code: countryCode,
-        phone_number: mobileNumber
-      });
+      // await apiService.post("/otp/send-otp", {
+      //   country_code: countryCode,
+      //   phone_number: mobileNumber
+      // });
       message.success(`OTP sent to ${fullNumber}`);
       setShowOtpInput(true);
       clearErrors("mobile_number");

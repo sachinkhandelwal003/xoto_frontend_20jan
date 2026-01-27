@@ -171,7 +171,7 @@ const SellerPage = () => {
             country_code: countryCode,
             phone_number: number
         };
-        await apiService.post("/otp/send-otp", payload);
+        // await apiService.post("/otp/send-otp", payload);
         message.success("OTP sent successfully!");
         setOtpSent(true);
         setOtpVerified(false);
@@ -182,6 +182,7 @@ const SellerPage = () => {
         setOtpLoading(false);
     }
   };
+  
 
   const handleVerifyOtp = async () => {
     if (!enteredOtp) {
