@@ -13,7 +13,7 @@ import {
   message,
   Spin,
   Space,
-  notification // Ensure notification is imported
+  notification
 } from 'antd';
 import {
   UserOutlined,
@@ -25,7 +25,8 @@ import {
   SafetyOutlined,
   CheckCircleFilled,
   EnvironmentOutlined,
-  SafetyCertificateOutlined 
+  SafetyCertificateOutlined,
+  EditOutlined 
 } from '@ant-design/icons';
 import { useForm, Controller } from 'react-hook-form';
 import { Country, State, City } from 'country-state-city';
@@ -44,7 +45,6 @@ const SellerPage = () => {
   const [success, setSuccess] = useState(false);
   const [apiErrors, setApiErrors] = useState({});
 
-  // States for Address Logic
   const [statesList, setStatesList] = useState([]);
   const [citiesList, setCitiesList] = useState([]);
 
@@ -69,17 +69,14 @@ const SellerPage = () => {
     mode: 'onChange',
     defaultValues: {
       mobile: { country_code: '+971' },
-      store_details: { country: 'AE' } // Default UAE
+      store_details: { country: 'AE' }
     }
   });
 
-  // --- 1. WATCHERS ---
   const selectedCountry = watch('store_details.country');
   const selectedState = watch('store_details.state');
-  // 🟢 Change 1: Phone Number Watcher added
   const watchedMobileNumber = watch('mobile.number');
 
-  // --- 2. PHONE CODES DATA ---
   const countryPhoneData = useMemo(() => {
     const allCountries = Country.getAllCountries();
     return allCountries.map(c => ({
@@ -91,8 +88,6 @@ const SellerPage = () => {
     }));
   }, []);
 
-  // --- 3. LOCATION LOGIC ---
-  // Load States when Country changes
   useEffect(() => {
     if (selectedCountry) {
       const updatedStates = State.getStatesOfCountry(selectedCountry);
@@ -102,7 +97,6 @@ const SellerPage = () => {
     }
   }, [selectedCountry]);
 
-  // Load Cities when State changes
   useEffect(() => {
     if (selectedState && selectedCountry) {
       const updatedCities = City.getCitiesOfState(selectedCountry, selectedState);
@@ -210,6 +204,14 @@ const SellerPage = () => {
     }
   };
 
+  // ✅ New Handler to Change Number even after verification
+  const handleChangeNumber = () => {
+    setOtpSent(false);
+    setOtpVerified(false);
+    setEnteredOtp("");
+    // Note: We don't clear the mobile number value, just unlock the input
+  };
+
 
   const handleNext = async () => {
     let fieldsToValidate = [];
@@ -303,10 +305,7 @@ const SellerPage = () => {
     } catch (err) {
       const res = err.response?.data;
 
-      // --- STRICT ERROR DISPLAY LOGIC (Same as RegisterNowPage) ---
       if (res?.errors && Array.isArray(res.errors) && res.errors.length > 0) {
-        
-        // 1. Map ALL errors to fields (so input borders turn red)
         const errorMap = {};
         res.errors.forEach(e => {
           errorMap[e.field] = e.message;
@@ -314,10 +313,8 @@ const SellerPage = () => {
         });
         setApiErrors(errorMap);
 
-        // 2. Get the 0th Index Error
         const firstError = res.errors[0];
 
-        // 3. Jump to the Step containing the error
         if(firstError.field.includes('store_details.country') || firstError.field.includes('registration')) {
             setCurrentStep(2);
         } else if (firstError.field.includes('store_details')) {
@@ -326,10 +323,9 @@ const SellerPage = () => {
             setCurrentStep(0);
         }
 
-        // 4. Show the 0th index error message in Notification
         notification.error({
             message: "Validation Error",
-            description: firstError.message, // Shows exact message from backend
+            description: firstError.message,
             duration: 5,
         });
 
@@ -341,7 +337,6 @@ const SellerPage = () => {
     }
   };
 
-  // --- STYLING CONSTANTS ---
   const inputClass = `w-full h-[42px] border rounded-md px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500 bg-white transition-all flex items-center border-gray-300`;
 
   if (success) {
@@ -445,7 +440,7 @@ const SellerPage = () => {
                         <Controller name="email" control={control} rules={{ required: 'Required', pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' } }} render={({ field }) => <Input size="large" {...field} />} />
                       </Form.Item>
 
-                      {/* --- MOBILE FIELD WITHOUT BORDER BOX --- */}
+                      {/* --- MOBILE FIELD --- */}
                       <div className="mb-4">
                         <Form.Item label="Mobile Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message} style={{marginBottom: 0}}>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
@@ -459,7 +454,7 @@ const SellerPage = () => {
                                             <Select 
                                                 {...field} 
                                                 showSearch
-                                                disabled={otpVerified || otpSent} 
+                                                disabled={otpVerified || otpSent} // Disable if verification in progress
                                                 optionFilterProp="children"
                                                 filterOption={(input, option) => (option['data-search'] || "").toLowerCase().includes(input.toLowerCase())}
                                                 className="custom-select-seller"
@@ -498,47 +493,51 @@ const SellerPage = () => {
                                                 {...field}
                                                 className={inputClass}
                                                 placeholder="501234567"
-                                                disabled={otpVerified || otpSent} 
-                                                style={{ width: '100%' }}
+                                                // Only disable if OTP sent but not verified yet. 
+                                                // If Verified, we allow change (via button click logic)
+                                                disabled={otpSent && !otpVerified} 
+                                                style={{ width: '100%', borderColor: errors.mobile?.number ? 'red' : '#d1d5db' }}
                                                 onChange={(e) => {
                                                     field.onChange(e.target.value.replace(/\D/g, ""));
-                                                    setOtpSent(false); 
-                                                    setOtpVerified(false);
+                                                    if (otpVerified) {
+                                                        setOtpVerified(false); // Reset if user changes verified number manually
+                                                    }
                                                 }}
                                             />
                                         )} 
                                     />
                                 </div>
 
-                                {/* Send OTP Button - UPDATED */}
-                                {!otpVerified && !otpSent && (
-                                    <Button 
-                                        type="primary" 
-                                        // 🟢 Change 2: Logic for disabled and white BG
-                                        disabled={!watchedMobileNumber}
-                                        style={{ 
-                                            height: '42px', 
-                                            backgroundColor: !watchedMobileNumber ? 'white' : "#1677ff", 
-                                            borderColor: !watchedMobileNumber ? '#d9d9d9' : "#1677ff",
-                                            color: !watchedMobileNumber ? 'rgba(0,0,0,0.25)' : 'white'
-                                        }}
-                                        onClick={handleSendOtp}
-                                        loading={otpLoading}
-                                    >
-                                        Send OTP
-                                    </Button>
-                                )}
-
-                                {/* Change Number Button */}
-                                {otpSent && !otpVerified && (
-                                    <Button 
-                                        danger 
-                                        style={{ height: '42px' }}
-                                        onClick={() => { setOtpSent(false); setEnteredOtp(""); }}
-                                    >
-                                        Change
-                                    </Button>
-                                )}
+                                {/* Action Button Logic */}
+                                <div style={{ width: '100px' }}>
+                                    {!otpVerified && !otpSent ? (
+                                        <Button 
+                                            type="primary" 
+                                            disabled={!watchedMobileNumber}
+                                            style={{ 
+                                                height: '42px', 
+                                                width: '100%',
+                                                backgroundColor: !watchedMobileNumber ? 'white' : "#1677ff", 
+                                                borderColor: !watchedMobileNumber ? '#d9d9d9' : "#1677ff",
+                                                color: !watchedMobileNumber ? 'rgba(0,0,0,0.25)' : 'white'
+                                            }}
+                                            onClick={handleSendOtp}
+                                            loading={otpLoading}
+                                        >
+                                            Send OTP
+                                        </Button>
+                                    ) : (
+                                        <Button 
+                                            // Always show Change button if OTP sent or verified
+                                            danger={!otpVerified} // Red if cancelling, Default if changing verified
+                                            style={{ height: '42px', width: '100%' }}
+                                            onClick={handleChangeNumber}
+                                            icon={<EditOutlined />}
+                                        >
+                                            Change
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </Form.Item>
 
@@ -572,7 +571,7 @@ const SellerPage = () => {
 
                         {/* Verified Success Message */}
                         {otpVerified && (
-                            <div style={{ marginTop: 8, color: '#52c41a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ marginTop: 8, color: '#52c41a', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
                                 <CheckCircleFilled /> Mobile Number Verified
                             </div>
                         )}
@@ -734,7 +733,7 @@ const SellerPage = () => {
                           </Form.Item>
                         </Col>
                       </Row>
-                       {/* --- END ADDRESS SECTION --- */}
+                        {/* --- END ADDRESS SECTION --- */}
 
                       <Form.Item validateStatus={errors.meta?.agreed_to_terms ? 'error' : ''} help={errors.meta?.agreed_to_terms?.message}>
                         <Controller
