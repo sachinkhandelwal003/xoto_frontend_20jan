@@ -216,10 +216,10 @@ const AIRecommendationModal = ({ show, onClose }) => {
 
 setTimeout(() => {
   onClose();
-  navigate(`/sawtar/freelancer/browse-category?${generateFilters()}`, {
-    replace: true,
-    state: { fromAI: true }
-  });
+  // navigate(`/sawtar/freelancer/browse-category?${generateFilters()}`, {
+  //   replace: true,
+  //   state: { fromAI: true }
+  // });
   setCurrentStep(0);
   setAnswers({});
   setIsSubmitting(false);

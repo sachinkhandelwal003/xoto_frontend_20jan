@@ -112,7 +112,7 @@ export default function GetPreApprovedModal({ open, onClose }) {
     let newErrors = {};
     let isValid = true;
 
-    if (!form.name.trim()) { newErrors.name = "Name is required"; isValid = false; }
+    if (!form.name.trim()) { newErrors.name = "Full Name is required"; isValid = false; }
     
     if (!form.email.trim()) { newErrors.email = "Email is required"; isValid = false; }
     else if (!/\S+@\S+\.\S+/.test(form.email)) { newErrors.email = "Invalid email format"; isValid = false; }
@@ -150,7 +150,6 @@ export default function GetPreApprovedModal({ open, onClose }) {
     const first_name = nameParts[0];
     const last_name = nameParts.length > 1 ? nameParts.slice(1).join(" ") : first_name;
 
-    // Resolve Names from Codes
     const selectedCountryData = Country.getCountryByCode(form.location_country);
     const countryName = selectedCountryData ? selectedCountryData.name : "";
     
@@ -164,13 +163,10 @@ export default function GetPreApprovedModal({ open, onClose }) {
       mobile: { country_code: form.country_code, number: form.phone },
       email: form.email.toLowerCase().trim(),
       has_property: form.foundProperty === "Yes",
-      
-      // FIXED: Sending city correctly
       country: countryName,
       state: stateName,
       city: form.city, 
       preferred_city: form.city || stateName, 
-      
       preferred_contact: form.contact[0]?.toLowerCase() || "whatsapp",
       terms_accepted: form.terms,
       marketing_consent: form.marketing,
@@ -191,9 +187,16 @@ export default function GetPreApprovedModal({ open, onClose }) {
         const updatedEmails = [...submittedEmails, form.email.toLowerCase().trim()];
         localStorage.setItem("submitted_leads", JSON.stringify(updatedEmails));
         toast.success("Success! Lead Created.");
+        
+        // --- DATA RESET LOGIC ---
+        setForm({
+          name: "", phone: "", email: "", foundProperty: "No", contact: [],
+          marketing: false, terms: false, country_code: "971", 
+          location_country: null, state: null, city: null 
+        });
+
         setTimeout(() => onClose(), 1500);
       } else {
-        // Zero Index Error Handling
         let errorMessage = "Something went wrong";
         if (result.errors && Array.isArray(result.errors) && result.errors.length > 0) {
            errorMessage = result.errors[0].message || result.errors[0].msg;
@@ -234,7 +237,7 @@ export default function GetPreApprovedModal({ open, onClose }) {
               {/* Name & Phone Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                 <div>
-                  <label className="block text-left mb-1 font-medium">Name <span className="text-red-500">*</span></label>
+                  <label className="block text-left mb-1 font-medium"> Full Name <span className="text-red-500">*</span></label>
                   <input
                     value={form.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
@@ -305,9 +308,7 @@ export default function GetPreApprovedModal({ open, onClose }) {
               {/* LOCATION SECTION */}
               <div>
                  <label className="block text-left mb-2 font-medium">Property Location <span className="text-red-500">*</span></label>
-                 
                  <div className="space-y-4">
-                    {/* Country Select */}
                     <div>
                       <Select
                         placeholder="Select Country"
@@ -326,7 +327,6 @@ export default function GetPreApprovedModal({ open, onClose }) {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* State Select */}
                         <div>
                           <Select
                             placeholder="State / Region"
@@ -345,7 +345,6 @@ export default function GetPreApprovedModal({ open, onClose }) {
                           {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state}</p>}
                         </div>
 
-                        {/* City Select */}
                         <div>
                           <Select
                             placeholder="City"
