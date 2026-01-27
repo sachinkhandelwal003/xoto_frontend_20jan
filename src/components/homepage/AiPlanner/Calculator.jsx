@@ -539,10 +539,15 @@ const Calculator = () => {
     }
   };
 
+
+  
   // ✅ Optimized Answer Handler (Fixes fluctuation)
   const handleAnswerChange = useCallback((questionId, newValue) => {
     setAnswers((prev) => ({ ...prev, [questionId]: newValue }));
   }, []);
+
+
+  
 
   // ✅ CHECK VALIDATION FOR NEXT BUTTON
   const isStepValid = () => {
