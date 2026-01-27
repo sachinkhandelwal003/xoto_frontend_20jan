@@ -103,7 +103,7 @@ const LeadGenerationModal = ({
       await form.validateFields(['mobile']);
       setOtpLoading(true);
       setTimeout(() => {
-        notification.success({ message: "OTP Sent", description: "Please use your bypass OTP." });
+        notification.success({ message: "OTP Sent", description: "Please use your OTP." });
         setOtpSent(true);
         setOtpVerified(false);
         setOtpLoading(false);
@@ -132,7 +132,7 @@ const LeadGenerationModal = ({
       setOtpVerified(true);
       setOtpSent(false); 
     } catch (error) {
-      notification.error({ message: "Verification Failed", description: "Invalid bypass OTP." });
+      notification.error({ message: "Verification Failed", description: "Invalid OTP." });
     } finally {
       setOtpLoading(false);
     }
