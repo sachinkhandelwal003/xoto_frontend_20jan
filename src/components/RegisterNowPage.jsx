@@ -2,13 +2,14 @@ import React, { useState, useContext, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { User, Mail, Phone, Lock, CheckCircle, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Form, Input, Select, Button, message, notification } from "antd";
+import { Form, Input,       Select, Button, message, notification } from "antd";
 import { apiService } from "../manageApi/utils/custom.apiservice";
 import { AuthContext } from "../manageApi/context/AuthContext";
 import { Country } from "country-state-city"; 
 import { showToast } from "../manageApi/utils/toast";
 const { Option } = Select;
 
+// --- Phone Length Rules ---
 const PHONE_LENGTH_RULES = {
   "AE": 9, "IN": 10, "SA": 9, "US": 10, "CA": 10, "GB": 10, "AU": 9,
 };
@@ -34,6 +35,7 @@ const RegisterNowPage = () => {
   const [enteredOtp, setEnteredOtp] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
 
+  // --- Country Data ---
   const countryOptions = useMemo(() => {
     const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"];
     return Country.getAllCountries().map((country) => ({
@@ -64,20 +66,13 @@ const RegisterNowPage = () => {
     }
 
     setOtpLoading(true);
-    
-    // API Hit Commented - Bypassing Twilio
+    // Bypassing Send API as requested
     setTimeout(() => {
         message.success("OTP sent (Bypass Mode enabled)!");
         setOtpSent(true);
         setOtpVerified(false);
         setOtpLoading(false);
     }, 800);
-
-    /* try {
-        const payload = { country_code: getCountryCode(), phone_number: mobileNumber };
-        await apiService.post("/otp/send-otp", payload);
-    } catch (error) { ... }
-    */
   };
 
   const handleVerifyOtp = async () => {
@@ -90,11 +85,9 @@ const RegisterNowPage = () => {
         const payload = {
             country_code: getCountryCode(),
             phone_number: mobileNumber,
-            otp: enteredOtp // Backend bypass code check
+            otp: enteredOtp 
         };
-        // Hitting actual API to check your bypass logic on backend
         await apiService.post("/otp/verify-otp", payload);
-        
         message.success("Mobile Verified Successfully!");
         setOtpVerified(true);
         setOtpSent(false);
@@ -108,7 +101,7 @@ const RegisterNowPage = () => {
     }
   };
 
-  /* ================= SUBMIT LOGIC ================= */
+  /* ================= SUBMIT LOGIC (Handles Array Object Errors) ================= */
 
   const onSubmit = async (data) => {
     if (!otpVerified) {
@@ -128,18 +121,38 @@ const RegisterNowPage = () => {
     try {
       setLoading(true);
       await apiService.post("/users/signup/customer", signupPayload);
+      
       await login("/users/login/customer", {
         mobile: { country_code: getCountryCode(), number: String(mobileNumber) },
       });
+
       navigate("/dashboard/customer", { replace: true });
     } catch (err) {
       const apiError = err?.response?.data;
-      if (apiError?.message && /already|exists/i.test(apiError.message)) {
-        showToast("Account already exists. Please login.", "warning");
-        navigate("/user/login");
-        return;
+
+      // 🟢 Handling Backend Array Format: [{ status: 500, message: "..." }]
+      if (Array.isArray(apiError) && apiError.length > 0) {
+        const firstErr = apiError[0];
+        if (firstErr.message) {
+          showToast(firstErr.message, "error");
+          // If already exists, redirect to login
+          if (/already|exists/i.test(firstErr.message)) {
+            setTimeout(() => navigate("/user/login"), 2000);
+          }
+        }
+      } 
+      // Case: Standard validation errors object
+      else if (apiError?.errors && Array.isArray(apiError.errors)) {
+        apiError.errors.forEach((e) => {
+          let fieldName = e.field;
+          if (fieldName.includes("name.")) fieldName = fieldName.split(".")[1];
+          if (fieldName === "mobile.number") fieldName = "mobileNumber";
+          setError(fieldName, { type: "manual", message: e.message });
+        });
+      } 
+      else {
+        showToast(apiError?.message || "Registration failed. Try again.", "error");
       }
-      showToast(apiError?.message || "Registration failed.", "error");
     } finally {
       setLoading(false);
     }
@@ -176,17 +189,17 @@ const RegisterNowPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Form.Item label="First Name" validateStatus={errors.first_name && "error"} help={errors.first_name?.message}>
                 <Controller name="first_name" control={control} rules={{ required: "First name is required" }} 
-                    render={({ field }) => <Input size="large" prefix={<User />} {...field} />} />
+                    render={({ field }) => <Input size="large" prefix={<User size={18} />} {...field} />} />
               </Form.Item>
               <Form.Item label="Last Name" validateStatus={errors.last_name && "error"} help={errors.last_name?.message}>
                 <Controller name="last_name" control={control} rules={{ required: "Last name is required" }} 
-                    render={({ field }) => <Input size="large" prefix={<User />} {...field} />} />
+                    render={({ field }) => <Input size="large" prefix={<User size={18} />} {...field} />} />
               </Form.Item>
             </div>
 
             <Form.Item label="Email" validateStatus={errors.email && "error"} help={errors.email?.message}>
               <Controller name="email" control={control} rules={{ required: "Email is required", pattern: { value: /^\S+@\S+\.\S+$/, message: "Invalid email" } }} 
-                  render={({ field }) => <Input size="large" prefix={<Mail />} {...field} />} />
+                  render={({ field }) => <Input size="large" prefix={<Mail size={18} />} {...field} />} />
             </Form.Item>
 
             <div className="mb-4">
@@ -282,16 +295,16 @@ const RegisterNowPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Form.Item label="Password" validateStatus={errors.password && "error"} help={errors.password?.message}>
                 <Controller name="password" control={control} rules={{ required: "Required", minLength: { value: 6, message: "Min 6 chars" } }} 
-                    render={({ field }) => <Input.Password size="large" prefix={<Lock />} {...field} />} />
+                    render={({ field }) => <Input.Password size="large" prefix={<Lock size={18} />} {...field} />} />
                 </Form.Item>
                 <Form.Item label="Confirm Password" validateStatus={errors.confirmPassword && "error"} help={errors.confirmPassword?.message}>
                 <Controller name="confirmPassword" control={control} rules={{ required: "Required" }} 
-                    render={({ field }) => <Input.Password size="large" prefix={<Lock />} {...field} />} />
+                    render={({ field }) => <Input.Password size="large" prefix={<Lock size={18} />} {...field} />} />
                 </Form.Item>
             </div>
 
             <Button
-                htmlType="submit"
+                htmlType="submit   "
                 loading={loading}
                 block
                 size="large"

@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus } from 'react-icons/fa';
-
+   // mainnnnn
 const BASE_URL = 'https://xoto.ae';
-
+                
 const Category = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
@@ -12,39 +12,40 @@ const Category = () => {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      console.log('📡 Starting API fetch from:', `${BASE_URL}/api/products/get-all-category?limit=100`);
-
       try {
         const response = await fetch(`${BASE_URL}/api/products/get-all-category?limit=100`);
         
-        console.log('📡 Response status:', response.status, response.statusText);
-        console.log('📡 Response OK?', response.ok);
-
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const json = await response.json();
-        console.log('📡 Raw API response:', json);
+        let apiCategories = json.data || [];
 
-        // Extract the array from { data: [...] }
-        const apiCategories = json.data || [];
-
-        console.log('📡 Number of categories received:', apiCategories.length);
-        console.log('📡 First few items:', apiCategories.slice(0, 2));
+        // ✅ ALPHABETICAL SORTING (A to Z) ADDED HERE
+        apiCategories.sort((a, b) => {
+          const nameA = (a.name || "").toLowerCase();
+          const nameB = (b.name || "").toLowerCase();
+          if (nameA < nameB) return -1;
+          if (nameA > nameB) return 1;
+          return 0;
+        });
 
         const formatted = apiCategories.map((cat, index) => {
           const name = cat.name || 'Category';
+          const imageUrl = cat.icon ? cat.icon : `https://via.placeholder.com/64?text=${name}`;
 
           return {
             id: cat._id || index + 1,
             name: name,
-            // No image in API → using placeholder (replace with real image URL logic later)
             icon: (
               <img
-                src="https://via.placeholder.com/64?text=Category"
+                src={imageUrl}
                 alt={name}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = "https://via.placeholder.com/64?text=Error";
+                }}
               />
             ),
             color: getOriginalColor(index),
@@ -53,7 +54,7 @@ const Category = () => {
           };
         });
 
-        // Add "See More" at the end (same as original)
+        // Add "See More" at the end (Sorting ke baad add kiya taaki ye hamesha last mein rahe)
         formatted.push({
           id: 999,
           name: "See More",
@@ -61,21 +62,17 @@ const Category = () => {
           color: "from-gray-700 to-gray-500",
         });
 
-        console.log('📡 Final formatted categories count:', formatted.length);
         setCategories(formatted);
       } catch (err) {
         console.error('❌ Fetch failed:', err.message);
-        console.error('❌ Full error:', err);
       } finally {
         setLoading(false);
-        console.log('⏱ Fetch process completed');
       }
     };
 
     fetchCategories();
   }, []);
 
-  // Original color cycle preserved
   const getOriginalColor = (index) => {
     const colors = [
       "from-[var(--color-primary)] to-pink-500",
@@ -112,7 +109,7 @@ const Category = () => {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-8 gap-6">
             {Array(8).fill(0).map((_, i) => (
-              <div key={i} className="w-[140px] h-[140px] bg-white rounded-2xl border border-gray-100 shadow-sm" />
+              <div key={i} className="w-[140px] h-[140px] bg-white rounded-2xl border border-gray-100 shadow-sm animate-pulse" />
             ))}
           </div>
         </div>
