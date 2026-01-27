@@ -10,6 +10,11 @@ import Bathicon from "../../assets/img/buy/Bath.png";
 import Squareicon from "../../assets/img/buy/Square Meters.png";
 import favoriteicon from "../../assets/img/buy/Favorited.png";
 import popularicon from "../../assets/img/buy/Group 860.png";
+import {
+  parsePhoneNumberFromString,
+  validatePhoneNumberLength,
+} from "libphonenumber-js";
+
 
 const { Option } = Select;
 
@@ -17,6 +22,44 @@ const { Option } = Select;
 const PHONE_LENGTH_RULES = {
   "971": 9, "91": 10, "966": 9, "1": 10, "44": 10, "61": 9,
 };
+
+const validatePhone = (countryCode, mobile) => {
+  if (!mobile) return "Mobile is required";
+
+  const fullNumber = `+${countryCode}${mobile}`;
+  const phoneNumber = parsePhoneNumberFromString(fullNumber);
+
+  if (!phoneNumber) {
+    return "Invalid mobile number";
+  }
+
+  // Length validation (proper way)
+  const lengthError = validatePhoneNumberLength(
+    phoneNumber.nationalNumber,
+    phoneNumber.country
+  );
+
+  if (lengthError === "TOO_SHORT") return "Number is too short";
+  if (lengthError === "TOO_LONG") return "Number is too long";
+
+  // Structural validation
+  if (!phoneNumber.isValid()) {
+    return "Invalid mobile number for selected country";
+  }
+
+  // Block landlines
+  if (phoneNumber.getType() === "FIXED_LINE") {
+    return "Landline numbers are not allowed";
+  }
+
+  // UAE-specific rule (real one)
+  if (countryCode === "971" && !/^(50|52|54|55|56|58)/.test(mobile)) {
+    return "Invalid UAE mobile prefix";
+  }
+
+  return ""; // ✅ valid
+};
+
 
 const Property = () => {
   const { t } = useTranslation("buy3");
@@ -121,6 +164,10 @@ const Property = () => {
     const value = e.target.value.replace(/\D/g, "");
     const maxLength = PHONE_LENGTH_RULES[formData.country_code] || 15;
     const validatedValue = value.slice(0, maxLength);
+    const phoneObj = parsePhoneNumberFromString(
+  `+${formData.country_code}${formData.mobile}`
+);
+
     setFormData((prev) => ({ ...prev, mobile: validatedValue }));
     if (errors.mobile) setErrors((prev) => ({ ...prev, mobile: "" }));
   };
@@ -160,13 +207,16 @@ const Property = () => {
     if (!formData.last_name.trim()) { newErrors.last_name = "Required"; isValid = false; }
     if (!formData.email.trim()) { newErrors.email = "Required"; isValid = false; }
     else if (!/\S+@\S+\.\S+/.test(formData.email)) { newErrors.email = "Invalid email"; isValid = false; }
+const phoneError = validatePhone(
+  formData.country_code,
+  formData.mobile
+);
 
-    const requiredLength = PHONE_LENGTH_RULES[formData.country_code];
-    if (!formData.mobile.trim()) { newErrors.mobile = "Required"; isValid = false; }
-    else if (requiredLength && formData.mobile.length !== requiredLength) {
-      newErrors.mobile = `Enter ${requiredLength} digits`;
-      isValid = false;
-    }
+if (phoneError) {
+  newErrors.mobile = phoneError;
+  isValid = false;
+}
+
 
     if (!formData.occupation.trim()) { newErrors.occupation = "Required"; isValid = false; }
     if (!formData.location_country) { newErrors.location_country = "Country Required"; isValid = false; }
@@ -191,7 +241,12 @@ const Property = () => {
     const payload = {
       type: "schedule_visit",
       name: { first_name: formData.first_name.trim(), last_name: formData.last_name.trim() },
-      mobile: { country_code: formData.country_code, number: formData.mobile },
+      mobile: {
+  country_code: formData.country_code,
+  number: formData.mobile,
+  full: phoneObj.number, // +9715XXXXXXXX
+},
+
       email: formData.email.toLowerCase().trim(),
       occupation: formData.occupation,
       location: finalLocationString,

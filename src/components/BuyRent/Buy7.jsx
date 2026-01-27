@@ -2,6 +2,11 @@ import React, { useState, useMemo } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
+import {
+  parsePhoneNumberFromString,
+  validatePhoneNumberLength,
+} from "libphonenumber-js";
+
 import { Select } from "antd"; 
 import { Country, State, City } from "country-state-city"; // Location Package
 
@@ -20,6 +25,49 @@ const COUNTRY_CONFIG = {
 const getPhoneConfig = (code) => {
   return COUNTRY_CONFIG[code] || { country: "Unknown", digits: 10, startsWith: /^\d/ }; 
 };
+
+const validatePhone = (countryCode, phone) => {
+  if (!phone) return "Phone number is required";
+
+  const fullNumber = `+${countryCode}${phone}`;
+  const phoneObj = parsePhoneNumberFromString(fullNumber);
+
+  if (!phoneObj) {
+    return "Invalid phone number";
+  }
+
+  // Proper length validation
+  const lengthError = validatePhoneNumberLength(
+    phoneObj.nationalNumber,
+    phoneObj.country
+  );
+
+  if (lengthError === "TOO_SHORT") return "Phone number is too short";
+  if (lengthError === "TOO_LONG") return "Phone number is too long";
+
+  // Structure check
+  if (!phoneObj.isValid()) {
+    return "Invalid phone number for selected country";
+  }
+
+  // Block landlines
+  if (phoneObj.getType() === "FIXED_LINE") {
+    return "Landline numbers are not allowed";
+  }
+
+  // UAE strict rule (real prefixes)
+  if (countryCode === "971" && !/^(50|52|54|55|56|58)/.test(phone)) {
+    return "Invalid UAE mobile number";
+  }
+
+  // India strict rule
+  if (countryCode === "91" && !/^[6-9]/.test(phone)) {
+    return "Invalid Indian mobile number";
+  }
+
+  return ""; // ✅ valid
+};
+
 
 export default function HeroSection() {
   const { t } = useTranslation("buy7");
@@ -113,12 +161,17 @@ export default function HeroSection() {
       return;
     }
 
-    if (COUNTRY_CONFIG[countryCode] && phone.length !== config.digits) {
-      toast.error(`${config.country} phone number must be ${config.digits} digits`);
-      return;
-    }
+  const phoneError = validatePhone(countryCode, phone);
+if (phoneError) {
+  toast.error(phoneError);
+  return;
+}
+
 
     setLoading(true);
+  const phoneObj = parsePhoneNumberFromString(
+  `+${form.countryCode}${form.phone}`
+);
 
     // Resolve Names
     const countryName = Country.getCountryByCode(form.location_country)?.name || "";
@@ -131,10 +184,12 @@ export default function HeroSection() {
           first_name: form.firstName.trim(),
           last_name: form.lastName.trim(),
         },
-        mobile: {
-          country_code: form.countryCode,
-          number: form.phone,
-        },
+      mobile: {
+  country_code: form.countryCode,
+  number: form.phone,
+  full: phoneObj.number, // +9715XXXXXXX
+},
+
         email: form.email.trim().toLowerCase(),
         
         // Location Data
