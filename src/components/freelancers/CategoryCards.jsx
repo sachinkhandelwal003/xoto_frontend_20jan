@@ -44,7 +44,7 @@ const CategoryCards = ({ categoryId }) => {
 
   const handleSubClick = (subId, subName) => {
     navigate(
-      `/sawtar/freelancer/browse-subcategory/${subId}`
+      // `/sawtar/freelancer/browse-subcategory/${subId}`
     );
   };
 

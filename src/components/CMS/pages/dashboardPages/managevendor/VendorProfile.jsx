@@ -34,7 +34,7 @@ const VendorProfile = () => {
       setVendor(response.vendor);
     } catch (error) {
       showToast(error.response?.data?.message || 'Failed to fetch vendor details', 'error');
-      navigate('/sawtar/cms/vendors');
+      // navigate('/sawtar/cms/vendors');
     } finally {
       setLoading(false);
     }
@@ -109,7 +109,7 @@ const VendorProfile = () => {
         <div className="text-center">
           <p className="text-red-600">Vendor not found</p>
           <button
-            onClick={() => navigate('/sawtar/cms/vendors')}
+            // onClick={() => navigate('/sawtar/cms/vendors')}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             Back to Vendors
@@ -132,7 +132,7 @@ const VendorProfile = () => {
     <div className="p-6 bg-gray-100 min-h-screen">
       <div className="mb-6">
         <button
-          onClick={() => navigate('/sawtar/cms/vendors')}
+          // onClick={() => navigate('/sawtar/cms/vendors')}
           className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
         >
           <FiArrowLeft className="mr-2" /> Back to Vendors

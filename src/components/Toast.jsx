@@ -38,7 +38,7 @@ export default function FreelancerToast() {
   };
 
   const handleRegister = () => {
-    window.location.href = '/sawtar/freelancer/registration';
+    // window.location.href = '/sawtar/freelancer/registration';
   };
 
   return (

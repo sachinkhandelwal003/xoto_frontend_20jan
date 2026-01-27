@@ -270,13 +270,13 @@ const AllVendorProductB2C = () => {
           <Button
             type="link"
             icon={<FiEye />}
-            href={`/sawtar/cms/vendor/b2c/product/review/${item._id}`}
+            // href={`/sawtar/cms/vendor/b2c/product/review/${item._id}`}
             title="View Details"
           />
           <Button
             type="link"
             icon={<FiShoppingBag />}
-            href={`/sawtar/cms/products/inventory/${item._id}`}
+            // href={`/sawtar/cms/products/inventory/${item._id}`}
             title="Manage Inventory"
             className="text-purple-600"
           />
@@ -369,9 +369,9 @@ const AllVendorProductB2C = () => {
               <h1 className="text-2xl font-bold text-gray-800">All B2C Vendor Products</h1>
               <p className="text-gray-500 mt-1">
                 View all products with vendor details |{' '}
-                <Link to="/sawtar/cms/products" className="text-blue-600 hover:underline">
+                {/* <Link to="/sawtar/cms/products" className="text-blue-600 hover:underline">
                   Go to Products Page
-                </Link>
+                </Link> */}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">

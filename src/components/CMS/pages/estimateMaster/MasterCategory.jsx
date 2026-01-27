@@ -114,11 +114,9 @@ const MasterCategory = () => {
     }
   }, [level, parentCategory, parentSubcategory, searchTerm, showTrash]);
 
-
   useEffect(() => {
     fetchData(pagination.currentPage, 100);
   }, [fetchData]);
-
 
   // Reset page to 1 when navigating levels
   useEffect(() => {
@@ -166,7 +164,6 @@ const MasterCategory = () => {
       setSelectedCategory(null);
     }
   };
-
 
   const columns = useMemo(() => {
     return [
@@ -229,7 +226,6 @@ const MasterCategory = () => {
     ];
   }, [level]);
 
-
   const CreateModal = () => {
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
@@ -240,7 +236,6 @@ const MasterCategory = () => {
         let url = API_BASE;
         if (level === 'subcategories') url = `${API_BASE}/${parentCategory}/subcategories`;
         if (level === 'types') url = `${API_BASE}/${parentCategory}/subcategories/${parentSubcategory}/types`;
-
 
         await apiService.post(url, values);
         message.success('Created successfully!');
@@ -265,7 +260,6 @@ const MasterCategory = () => {
             </Form.Item>
           )}
 
-
           {level === 'types' && (
             <Form.Item
               name="baseRatePerSqFt"
@@ -277,11 +271,9 @@ const MasterCategory = () => {
             </Form.Item>
           )}
 
-
           <Form.Item name="description" label="Description">
             <TextArea rows={3} />
           </Form.Item>
-
 
           <div style={{ display: 'flex', justifyContent: 'end', gap: '8px' }}>
             <Button onClick={() => setCreateModalOpen(false)}>Cancel</Button>
@@ -310,7 +302,6 @@ const MasterCategory = () => {
         });
       }
     }, [selectedItem, form]);
-
 
     const onUpdate = async (values) => {
       setSaving(true);
@@ -376,7 +367,6 @@ const MasterCategory = () => {
       </Modal>
     );
   };
-
 
   return (
     <div style={{ padding: '24px', background: '#f5f7fa', minHeight: '100vh' }}>
