@@ -378,7 +378,7 @@ const LeadGenerationModal = ({
               )}
 
               <Button type="primary" htmlType="submit" block loading={isSubmitting} className="h-14 mt-4" style={{ background: `linear-gradient(135deg, ${BRAND_PURPLE}, ${BRAND_PURPLE_DARK})`, border: "none" }}>
-                {activeTab === "signin" ? "Sign In" : "Create Account"}
+                {activeTab === "signin" ? "Sign In" : "Create Account"} 
               </Button>
             </Form>
           </div>
