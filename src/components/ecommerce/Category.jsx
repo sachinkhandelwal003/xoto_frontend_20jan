@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus } from 'react-icons/fa';
-   // mainnnnn
+
 const BASE_URL = 'https://xoto.ae';
-                
+
 const Category = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
@@ -13,6 +13,7 @@ const Category = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        // Bhai yahan limit 100 hai isliye load slow ho sakta hai, par logic wahi rakha hai
         const response = await fetch(`${BASE_URL}/api/products/get-all-category?limit=100`);
         
         if (!response.ok) {
@@ -22,7 +23,6 @@ const Category = () => {
         const json = await response.json();
         let apiCategories = json.data || [];
 
-        // ✅ ALPHABETICAL SORTING (A to Z) ADDED HERE
         apiCategories.sort((a, b) => {
           const nameA = (a.name || "").toLowerCase();
           const nameB = (b.name || "").toLowerCase();
@@ -42,6 +42,7 @@ const Category = () => {
               <img
                 src={imageUrl}
                 alt={name}
+                loading="lazy" // <-- Ye loading speed fast karega
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   e.target.src = "https://via.placeholder.com/64?text=Error";
@@ -54,7 +55,6 @@ const Category = () => {
           };
         });
 
-        // Add "See More" at the end (Sorting ke baad add kiya taaki ye hamesha last mein rahe)
         formatted.push({
           id: 999,
           name: "See More",
