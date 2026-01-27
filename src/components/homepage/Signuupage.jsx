@@ -3,7 +3,6 @@ import {
   Sparkles,
   User,
   Mail,
-  Lock,
   Smartphone,
 } from "lucide-react";
 import {
@@ -19,7 +18,7 @@ import {
 import { 
   SafetyCertificateOutlined, 
   CheckCircleFilled,
-  EditOutlined 
+  EditOutlined // ✅ Added Edit Icon
 } from "@ant-design/icons";
 import { Country, State, City } from "country-state-city";
 import { AuthContext } from "../../manageApi/context/AuthContext";
@@ -97,24 +96,37 @@ const LeadGenerationModal = ({
     form.setFieldsValue({ city: undefined });
   };
 
-  // --- OTP Logic: Send OTP (Bypassed) ---
+  // --- OTP Logic: Send OTP ---
   const handleSendOtp = async () => {
     try {
       await form.validateFields(['mobile']);
+      
+      const mobileVal = form.getFieldValue('mobile');
+      const rawCode = form.getFieldValue('country_code') || "971";
+      const formattedCode = rawCode.toString().startsWith("+") ? rawCode : `+${rawCode}`;
+
       setOtpLoading(true);
-      setTimeout(() => {
-        notification.success({ message: "OTP Sent", description: "Please use your OTP." });
-        setOtpSent(true);
-        setOtpVerified(false);
-        setOtpLoading(false);
-      }, 800);
+      
+      // API Call
+      await apiService.post("/otp/send-otp", {
+        country_code: formattedCode,
+        phone_number: mobileVal
+      });
+
+      notification.success({ message: "OTP Sent", description: "Please check your mobile." });
+      setOtpSent(true);
+      setOtpVerified(false);
     } catch (error) {
-      notification.error({ message: "Error", description: "Invalid phone number" });
+      notification.error({ 
+        message: "Error", 
+        description: error?.response?.data?.message || "Invalid phone number or Server Error" 
+      });
+    } finally {
       setOtpLoading(false);
     }
   };
 
-  // --- OTP Logic: Verify OTP (Hits API) ---
+  // --- OTP Logic: Verify OTP ---
   const handleVerifyOtp = async () => {
     if (!otpValue) {
       notification.error({ message: "Error", description: "Please enter the OTP" });
@@ -132,16 +144,18 @@ const LeadGenerationModal = ({
       setOtpVerified(true);
       setOtpSent(false); 
     } catch (error) {
-      notification.error({ message: "Verification Failed", description: "Invalid OTP." });
+      notification.error({ message: "Verification Failed", description: error?.response?.data?.message || "Invalid OTP." });
     } finally {
       setOtpLoading(false);
     }
   };
 
+  // ✅ Reset Function (Isse Verify hone ke baad bhi number change kar paoge)
   const handleChangeNumber = () => {
     setOtpSent(false);
     setOtpVerified(false);
     setOtpValue("");
+    // Note: Mobile number field clear nahi kar rahe taaki user edit kar sake
   };
 
   /* ================= PREFIX SELECTOR ================= */
@@ -151,7 +165,8 @@ const LeadGenerationModal = ({
         style={{ width: 110 }}
         bordered={false}
         showSearch
-        disabled={otpVerified || otpSent}
+        // Disable ONLY when OTP is actively being verified or sent, enable if verified (so user knows they can change)
+        disabled={otpSent && !otpVerified} 
         dropdownMatchSelectWidth={320}
         optionFilterProp="children"
         onChange={(val) => {
@@ -173,7 +188,7 @@ const LeadGenerationModal = ({
     </Form.Item>
   );
 
-  /* ================= SUBMIT HANDLER (with proper error toast) ================= */
+  /* ================= SUBMIT HANDLER ================= */
   const handleSubmit = async (values) => {
     if (activeTab === "signup" && !otpVerified) {
       notification.error({ message: "Verification Required", description: "Please verify mobile." });
@@ -214,19 +229,15 @@ const LeadGenerationModal = ({
       }
     } catch (error) {
       console.error("Signup/Login Error:", error);
-
-      // Extract backend error message
       let errorMessage = "Something went wrong. Please try again.";
       const responseData = error?.response?.data;
 
-      // Your backend sends array like [{ status: 500, message: "..." }]
       if (Array.isArray(responseData) && responseData.length > 0) {
         errorMessage = responseData[0]?.message || errorMessage;
       } else if (responseData?.message) {
         errorMessage = responseData.message;
       }
 
-      // Show toast with the exact message
       notification.error({
         message: "Error",
         description: errorMessage,
@@ -288,22 +299,32 @@ const LeadGenerationModal = ({
                 </>
               )}
 
+              {/* --- MOBILE INPUT --- */}
               <Form.Item label="Mobile Number" name="mobile" rules={[{ required: true, message: 'Required' }]}>
                 <Input
                   addonBefore={prefixSelector}
                   prefix={<Smartphone size={18}/>}
                   maxLength={getRequiredLength()}
                   placeholder="50 123 4567"
-                  disabled={otpVerified || otpSent}
-                  onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ""))}
+                  // 🔥 Logic Update: Disable ONLY if OTP is sent and NOT verified yet.
+                  disabled={otpSent && !otpVerified}
+                  onChange={(e) => {
+                    setMobileNumber(e.target.value.replace(/\D/g, ""));
+                    if(otpVerified) {
+                        setOtpVerified(false); // Reset if user types in verified field manually
+                    }
+                  }}
                 />
               </Form.Item>
 
               {activeTab === "signup" && (
                 <div className="mb-6">
+                  {/* CASE 1: Start */}
                   {!otpVerified && !otpSent && (
                     <Button type="primary" block onClick={handleSendOtp} loading={otpLoading} disabled={!mobileNumber}>Send OTP</Button>
                   )}
+
+                  {/* CASE 2: OTP Sent */}
                   {otpSent && !otpVerified && (
                     <div className="flex flex-col gap-2">
                       <div className="flex gap-2">
@@ -313,9 +334,22 @@ const LeadGenerationModal = ({
                       <Button type="link" size="small" danger onClick={handleChangeNumber} className="text-right">Change Number</Button>
                     </div>
                   )}
+
+                  {/* CASE 3: Verified - Now shows Change Button */}
                   {otpVerified && (
-                    <div className="flex items-center gap-2 text-green-600 bg-green-50 p-2 rounded border border-green-200">
-                      <CheckCircleFilled /> <span className="text-sm font-medium">Mobile Number Verified</span>
+                    <div className="flex items-center justify-between bg-green-50 p-3 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-2 text-green-700 font-medium">
+                        <CheckCircleFilled /> Mobile Number Verified
+                      </div>
+                      <Button 
+                        type="text" 
+                        size="small" 
+                        icon={<EditOutlined />} 
+                        onClick={handleChangeNumber}
+                        className="text-gray-500 hover:text-purple-600"
+                      >
+                        Change
+                      </Button>
                     </div>
                   )}
                 </div>
