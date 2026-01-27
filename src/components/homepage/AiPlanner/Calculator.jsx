@@ -37,11 +37,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useNavigate } from "react-router-dom";
 
-
-
-
 // Fix for default marker icons in Leaflet
-
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -56,7 +52,13 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const BRAND_PURPLE = "#5C039B";
-const BASE_URL = "https://xoto.ae"; // ✅ Your API Base URL for images
+const BASE_URL = "https://xoto.ae"; 
+
+// Helper to handle absolute vs relative URLs
+const getImageUrl = (url) => {
+  if (!url) return "";
+  return url.startsWith("http") ? url : `${BASE_URL}${url}`;
+};
 
 const steps = [
   { title: "Location", icon: <CompassOutlined /> },
@@ -128,7 +130,7 @@ const MapPicker = ({ coords, onChange }) => {
   );
 };
 
-// UI Component: Selection Card (Same Layout)
+// UI Component: Selection Card
 const SelectionCard = ({ item, isSelected, onClick, colorClass }) => (
   <motion.div
     whileHover={{ y: -5 }}
@@ -157,7 +159,7 @@ const SelectionCard = ({ item, isSelected, onClick, colorClass }) => (
   </motion.div>
 );
 
-// --- FIX START: Component separated to prevent Re-render/Fluctuation ---
+// Question Field Component
 const QuestionField = React.memo(function QuestionField({
   question,
   value,
@@ -168,8 +170,6 @@ const QuestionField = React.memo(function QuestionField({
   const isOptions = question.questionType === "options";
 
   return (
-    // We keep Form.Item for the LAYOUT (Label styling) but we don't bind it to the Form instance
-    // This keeps your UI exactly the same but fixes the lag.
     <Form.Item
       label={question.question}
       required
@@ -202,7 +202,6 @@ const QuestionField = React.memo(function QuestionField({
           onChange={(e) => onChange(question._id, e.target.value)}
           className="w-full"
         >
-          {/* FIX: Horizontal for Yes/No, Vertical for long options */}
           <Space direction={isYesNo ? "horizontal" : "vertical"} wrap className="w-full">
             {question.options?.map((opt) => (
               <Radio key={opt._id} value={opt.title}>
@@ -247,7 +246,6 @@ const Step3Questions = React.memo(function Step3Questions({
         </Title>
 
         <Card className="rounded-xl shadow-sm">
-          {/* Using 'preserve' ensures values stick, but we manage state manually */}
           <Form layout="vertical">
             {questions.map((q) => (
               <QuestionField
@@ -263,8 +261,8 @@ const Step3Questions = React.memo(function Step3Questions({
     </div>
   );
 });
-// --- FIX END ---
 
+// MAIN CALCULATOR COMPONENT
 const Calculator = () => {
   const navigate = useNavigate();
 
@@ -275,7 +273,6 @@ const Calculator = () => {
   const [types, setTypes] = useState([]);
   const [packages, setPackages] = useState([]);
   
-  // Note: We are not using step3Form instance anymore to avoid the conflict
   const [coords, setCoords] = useState({
     lat: null,
     lng: null,
@@ -298,7 +295,10 @@ const Calculator = () => {
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
 
+  // Gallery States
   const [galleryImages, setGalleryImages] = useState([]); 
+  const [previewImage, setPreviewImage] = useState(null); 
+
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
 
@@ -340,6 +340,7 @@ const Calculator = () => {
     submitting: false,
     geocoding: false,
     questions: false,
+    gallery: false,
   });
 
   const handleSelectType = useCallback(
@@ -369,21 +370,47 @@ const Calculator = () => {
     setPhoneError("");
   };
 
-  const getAllImages = async () => {
-    try {
-      const res = await fetch(
-        `https://xoto.ae/api/estimate/master/category/types/${selectedType}/gallery`
-      );
-      const data = await res.json();
-      setGalleryImages(data?.gallery?.moodboardImages || []); 
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  // ✅ UPDATED: Fetch BOTH images (Moodboard & Preview) via POST method
+  // ✅ UPDATED: Fetch BOTH images (Moodboard & Preview) via POST method
+  // ✅ SINGLE SOURCE OF TRUTH
+const getAllImages = useCallback(async () => {
+  if (!selectedType) return;
 
+  setLoading(prev => ({ ...prev, gallery: true }));
+  console.log("Fetching gallery via GET for Type:", selectedType);
+
+  try {
+    const res = await apiService.get(
+      `/estimate/master/category/types/${selectedType}/gallery`
+    );
+
+    const gallery = res.gallery || res.data?.gallery;
+
+    if (gallery) {
+      // ✅ Preview (object)
+      setPreviewImage(gallery.previewFile || null);
+
+      // ✅ Moodboard (array)
+      setGalleryImages(gallery.moodboardImages || []);
+    } else {
+      setPreviewImage(null);
+      setGalleryImages([]);
+    }
+
+  } catch (error) {
+    console.error("Gallery fetch failed:", error);
+    setPreviewImage(null);
+    setGalleryImages([]);
+  } finally {
+    setLoading(prev => ({ ...prev, gallery: false }));
+  }
+}, [selectedType]);
+
+
+  // Trigger Image Fetch on Type Selection
   useEffect(() => {
     if (selectedType) getAllImages();
-  }, [selectedType]);
+  }, [selectedType, getAllImages]);
 
   // Fetch subcategories
   useEffect(() => {
@@ -539,17 +566,12 @@ const Calculator = () => {
     }
   };
 
-
   
-  // ✅ Optimized Answer Handler (Fixes fluctuation)
   const handleAnswerChange = useCallback((questionId, newValue) => {
     setAnswers((prev) => ({ ...prev, [questionId]: newValue }));
   }, []);
 
-
   
-
-  // ✅ CHECK VALIDATION FOR NEXT BUTTON
   const isStepValid = () => {
     if (activeStep === 0) return !!coords.lat; // Step 1: Location required
     if (activeStep === 1) return !!selectedSubcategory; // Step 2: Service required
@@ -605,7 +627,7 @@ const Calculator = () => {
     });
   };
 
-  const onFinalSubmit = async () => {
+ const onFinalSubmit = async () => {
     // Safety check again
     if (!isStepValid()) {
         messageApi.error("Please fill all required fields");
@@ -657,10 +679,26 @@ const Calculator = () => {
         setActiveStep(5);
         messageApi.success("Estimate submitted successfully!");
         setEstimationValue(response.final_price);
+
+        // ✅ CHECK: Use snapshot images if available, otherwise use already fetched images
+        const snapshotImages = response.updatedEstimate?.type_gallery_snapshot?.moodboardImages;
+        
+        if (snapshotImages && snapshotImages.length > 0) {
+            console.log("Using Snapshot Images from Response");
+            setGalleryImages(snapshotImages);
+        } else {
+            console.log("Snapshot empty, checking existing gallery images...");
+            if (galleryImages.length === 0) {
+                // If we have nothing (Step 2 failed or API didn't run), try fetching again
+                getAllImages();
+            }
+        }
+
       } else {
         messageApi.error(response.message || "Submission failed");
       }
     } catch (err) {
+      console.error(err);
       messageApi.error(
         err.response?.data?.message || "Submission failed. Please try again."
       );
@@ -814,7 +852,6 @@ const Calculator = () => {
 
       case 3:
         return (
-            // Using the separated Component to avoid re-renders
             <Step3Questions
                 questions={questions}
                 answers={answers}
@@ -984,8 +1021,8 @@ const Calculator = () => {
               </div>
             </div>
 
-            {/* 2. Moodboard / Gallery Section */}
-            {galleryImages && galleryImages.length > 0 && (
+            {/* 2. Style Inspiration Section (Preview & Moodboard) */}
+            {(previewImage || (galleryImages && galleryImages.length > 0)) && (
               <div className="max-w-6xl mx-auto px-4">
                 <div className="flex items-center justify-center gap-4 mb-8">
                   <div className="h-[1px] bg-gray-200 w-20"></div>
@@ -995,28 +1032,60 @@ const Calculator = () => {
                   <div className="h-[1px] bg-gray-200 w-20"></div>
                 </div>
 
-                <Row gutter={[24, 24]} justify="center">
-                  {galleryImages.map((img, index) => (
-                    <Col xs={24} sm={12} md={8} lg={6} key={index}>
-                      <motion.div
-                        whileHover={{ y: -5 }}
-                        className="rounded-2xl overflow-hidden shadow-lg h-full bg-white"
-                      >
-                        <Image
-                          src={`${BASE_URL}${img.url}`} // ✅ Combine Base URL + Image Path
-                          alt="Moodboard"
-                          className="object-cover w-full h-64"
-                          style={{ objectFit: "cover", height: "250px", width: "100%" }}
-                          fallback="https://via.placeholder.com/300?text=No+Image"
-                        />
-                      </motion.div>
-                    </Col>
-                  ))}
-                </Row>
-                
-                <Text type="secondary" className="mt-6 block text-sm">
-                  Based on your selection of {types.find(t => t._id === selectedType)?.label || "style"}
+                <Text type="secondary" className="block text-center mb-8">
+                  Based on your selection of <strong>{types.find(t => t._id === selectedType)?.label || "style"}</strong>
                 </Text>
+
+                {/* ✅ PREVIEW IMAGE (Hero Section) */}
+                {previewImage && (
+                  <motion.div 
+                    whileHover={{ scale: 1.01 }} 
+                    className="mb-10 rounded-3xl overflow-hidden shadow-2xl border-4 border-white mx-auto max-w-4xl"
+                  >
+                    <Image
+                      src={getImageUrl(previewImage.url)}
+                      alt={previewImage.title || "Preview"}
+                      className="object-cover w-full"
+                      style={{ maxHeight: "500px", width: "100%", objectFit: "cover" }}
+                      fallback="https://via.placeholder.com/800x400?text=Preview+Loading"
+                    />
+                    {previewImage.title && (
+                      <div className="bg-white p-4">
+                        <Text strong className="text-lg">{previewImage.title}</Text>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* ✅ MOODBOARD GRID */}
+                {galleryImages && galleryImages.length > 0 && (
+                  <>
+                     <Title level={4} className="text-left text-gray-500 mb-6 pl-2">Moodboard Details</Title>
+                     <Row gutter={[24, 24]} justify="center">
+                      {galleryImages.map((img, index) => (
+                        <Col xs={24} sm={12} md={8} lg={6} key={index}>
+                          <motion.div
+                            whileHover={{ y: -5 }}
+                            className="rounded-2xl overflow-hidden shadow-lg h-full bg-white"
+                          >
+                            <Image
+                              src={getImageUrl(img.url)}
+                              alt={img.title || "Moodboard"}
+                              className="object-cover w-full h-64"
+                              style={{ objectFit: "cover", height: "250px", width: "100%" }}
+                              fallback="https://via.placeholder.com/300?text=No+Image"
+                            />
+                            {img.title && (
+                              <div className="p-3 text-left">
+                                <Text className="text-xs font-semibold text-gray-600">{img.title}</Text>
+                              </div>
+                            )}
+                          </motion.div>
+                        </Col>
+                      ))}
+                    </Row>
+                  </>
+                )}
               </div>
             )}
           </motion.div>
@@ -1113,7 +1182,6 @@ const Calculator = () => {
                 </div>
               )}
 
-              {/* ✅ Button with validation logic */}
               <Button
                 type="primary"
                 size="large"
