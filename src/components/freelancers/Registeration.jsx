@@ -3,11 +3,11 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   User, Mail, Phone, Lock, Briefcase, Wrench,
-  Plus, Trash2, ChevronLeft, ChevronRight, Check, ArrowRight,
+  Plus, Trash2, ChevronLeft, ChevronRight, Check, ArrowRight, Edit
 } from "lucide-react";
 import {
   Form, Input, Select, Button, Checkbox, message, Spin,
-  Space, Typography, Modal, Tag
+  Space, Typography, Tag
 } from "antd";
 import registerimage from "../../assets/img/registergarden.jpg";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
@@ -15,6 +15,8 @@ import { apiService } from "../../manageApi/utils/custom.apiservice";
 // --- Libraries ---
 import CountryList from 'country-list-with-dial-code-and-flag';
 import { Country, State, City } from 'country-state-city';
+// Import validation function
+import { isValidPhoneNumber } from 'libphonenumber-js';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -54,7 +56,7 @@ const Registration = () => {
   const mobileCountryOptions = useMemo(() => CountryList.getAll(), []);
   
   const [isMobileVerified, setIsMobileVerified] = useState(false);
-  const [otpModalVisible, setOtpModalVisible] = useState(false);
+  const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpValue, setOtpValue] = useState("");
 
   // --- React Hook Form ---
@@ -65,16 +67,15 @@ const Registration = () => {
     trigger,
     watch,
     register,
-    setError, // Used to set manual errors (like "Not Verified")
+    setError,
     clearErrors,
     formState: { errors },
   } = useForm({ mode: "onChange" });
 
-  // Register mobile number manually to handle validation
   useEffect(() => {
     register("mobile_number", { 
         required: "Mobile number is required",
-        minLength: { value: 7, message: "Number is too short" } 
+        minLength: { value: 5, message: "Number is too short" } 
     });
   }, [register]);
 
@@ -139,9 +140,19 @@ const Registration = () => {
 
   // --- OTP Handlers ---
   const handleSendOtp = async () => {
-    if (!mobileNumber || mobileNumber.length < 7) {
-      setError("mobile_number", { type: "manual", message: "Enter a valid number to verify" });
+    if (!mobileNumber) {
+      setError("mobile_number", { type: "manual", message: "Mobile number is required" });
       return;
+    }
+
+    const fullNumber = `${countryCode}${mobileNumber}`;
+    
+    if (!isValidPhoneNumber(fullNumber)) {
+        setError("mobile_number", { 
+            type: "manual", 
+            message: `Invalid number format for ${countryCode}` 
+        });
+        return;
     }
     
     setLoading(prev => ({ ...prev, otpSending: true }));
@@ -150,8 +161,8 @@ const Registration = () => {
         country_code: countryCode,
         phone_number: mobileNumber
       });
-      message.success(`OTP sent to ${countryCode} ${mobileNumber}`);
-      setOtpModalVisible(true);
+      message.success(`OTP sent to ${fullNumber}`);
+      setShowOtpInput(true);
       clearErrors("mobile_number");
     } catch (error) {
       message.error(error.response?.data?.message || "Failed to send OTP");
@@ -175,8 +186,8 @@ const Registration = () => {
       
       message.success("Mobile number verified successfully!");
       setIsMobileVerified(true);
-      setOtpModalVisible(false);
-      clearErrors("mobile_number"); // Clear any "Not Verified" errors
+      setShowOtpInput(false);
+      clearErrors("mobile_number");
     } catch (error) {
       message.error(error.response?.data?.message || "Invalid OTP. Please try again.");
     } finally {
@@ -184,32 +195,32 @@ const Registration = () => {
     }
   };
 
-  // --- Navigation with Inline Errors ---
+  const handleChangeNumber = () => {
+    setIsMobileVerified(false);
+    setShowOtpInput(false);
+    setOtpValue("");
+  };
+
+  // --- Navigation ---
   const next = async () => {
     let isValid = true;
 
-    // STEP 0 Validation
     if (step === 0) {
       const fields = ["first_name", "last_name", "email", "password", "confirmPassword", "mobile_number"];
-      
-      // Trigger react-hook-form validation first
       const formValid = await trigger(fields);
       
-      // Check Mobile Verification Manually
       if (!isMobileVerified) {
         setError("mobile_number", {
           type: "manual",
-          message: "Please verify your mobile number first", // This shows below input
+          message: "Please verify your mobile number first",
         });
         isValid = false;
       } else {
-        // If validated, clear previous errors
         if (formValid) clearErrors("mobile_number");
       }
 
       if (!formValid) isValid = false;
     } 
-    // STEP 1 Validation
     else if (step === 1) {
       const fields = ["experience_years", "bio", "country", "state", "city"];
       const formValid = await trigger(fields);
@@ -221,7 +232,6 @@ const Registration = () => {
 
   const back = () => setStep(s => s - 1);
 
-  // --- Final Submit ---
   const onSubmit = async (data) => {
     if (data.password !== data.confirmPassword) {
       setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
@@ -330,7 +340,7 @@ const Registration = () => {
                     <Controller name="email" control={control} rules={{ required: "Required", pattern: { value: /^\S+@\S+$/i, message: "Invalid email" } }} render={({ field }) => <Input prefix={<Mail />} size="large" {...field} />} />
                   </Form.Item>
 
-                  {/* --- MOBILE NUMBER WITH INLINE ERROR DISPLAY --- */}
+                  {/* --- MOBILE NUMBER WITH INLINE OTP --- */}
                   <Form.Item 
                     label={
                         <Space>
@@ -340,19 +350,22 @@ const Registration = () => {
                     }
                     required 
                     validateStatus={errors.mobile_number ? "error" : ""} 
-                    help={errors.mobile_number?.message} // Displays error here (e.g. "Please verify mobile")
+                    help={errors.mobile_number?.message}
                   >
                     <Space.Compact style={{ width: '100%' }}>
                         <Select
                             showSearch
                             value={countryCode}
-                            onChange={setCountryCode}
+                            onChange={(val) => {
+                                setCountryCode(val);
+                                if (errors.mobile_number?.type === 'manual') clearErrors("mobile_number");
+                            }}
                             style={{ width: '30%', minWidth: '110px' }}
                             placeholder="Code"
                             size="large"
                             optionFilterProp="label"
                             filterOption={filterOption}
-                            // disabled={isMobileVerified}
+                            disabled={showOtpInput || isMobileVerified}
                         >
                             {mobileCountryOptions.map((country, index) => (
                                 <Option key={`${country.code}-${index}`} value={country.dial_code} label={`${country.name} ${country.dial_code}`}>
@@ -366,27 +379,69 @@ const Registration = () => {
                             onChange={e => {
                                 const val = e.target.value.replace(/\D/g, "");
                                 setMobileNumber(val);
-                                // Update hook form value manually
                                 setValue("mobile_number", val, { shouldValidate: true });
-                                // Clear manual verify error if user starts typing (optional logic)
                                 if (errors.mobile_number?.type === 'manual') clearErrors("mobile_number");
                             }}
                             placeholder="501234567" 
                             size="large" 
                             style={{ width: '50%' }} 
-                            // disabled={isMobileVerified} 
+                            disabled={showOtpInput || isMobileVerified}
                         />
-                        <Button 
-                            type="primary" 
-                            size="large" 
-                            onClick={handleSendOtp}
-                            disabled={isMobileVerified || !mobileNumber}
-                            loading={loading.otpSending}
-                            style={{ width: '20%', minWidth: '100px', backgroundColor: isMobileVerified ? '#52c41a' : undefined }}
-                        >
-                            {isMobileVerified ? "Verified" : "Verify"}
-                        </Button>
+                        
+                        {!isMobileVerified && !showOtpInput && (
+                             <Button 
+                                type="primary" 
+                                size="large" 
+                                onClick={handleSendOtp}
+                                disabled={!mobileNumber}
+                                loading={loading.otpSending}
+                                style={{ width: '20%', minWidth: '100px' }}
+                             >
+                                Send OTP
+                             </Button>
+                        )}
+
+                        {(showOtpInput || isMobileVerified) && (
+                            <Button 
+                                size="large" 
+                                icon={<Edit size={16} />}
+                                onClick={handleChangeNumber}
+                                style={{ width: '20%', minWidth: '100px' }}
+                            >
+                                Change
+                            </Button>
+                        )}
                     </Space.Compact>
+
+                    {/* UPDATED: Normal Input Field for OTP */}
+                    {showOtpInput && (
+                        <div className="mt-4 p-4 bg-gray-50 border border-purple-100 rounded-lg">
+                             <Text type="secondary" className="block mb-3">
+                                Enter the 6-digit code sent to <strong>{countryCode} {mobileNumber}</strong>
+                             </Text>
+                             
+                             <div className="flex gap-3 items-center">
+                                 <Input 
+                                    placeholder="Enter OTP"
+                                    maxLength={6}
+                                    value={otpValue} 
+                                    onChange={(e) => setOtpValue(e.target.value)} 
+                                    size="large"
+                                    style={{ width: '200px' }}
+                                 />
+                                 <Button 
+                                    type="primary" 
+                                    onClick={handleVerifyOtp} 
+                                    loading={loading.otpVerifying}
+                                    style={{ backgroundColor: '#1677ff', borderColor: '#1677ff' }}
+                                    size="large"
+                                 >
+                                    Verify OTP
+                                 </Button>
+                             </div>
+                             {/* Resend button removed as requested */}
+                        </div>
+                    )}
                   </Form.Item>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -573,54 +628,7 @@ const Registration = () => {
           </div>
         </div>
       </div>
-
-      {/* --- OTP Verification Modal --- */}
-      <Modal
-        title={<Title level={4} style={{ margin: 0 }}>Verify Mobile Number</Title>}
-        open={otpModalVisible}
-        onCancel={() => setOtpModalVisible(false)}
-        footer={null}
-        width={400}
-        centered
-      >
-        <div className="text-center py-4">
-          <Text className="block mb-6 text-gray-500">
-            Enter the 6-digit code sent to <br /> 
-            <strong>{countryCode} {mobileNumber}</strong>
-          </Text>
-          
-          <Input.OTP 
-            length={6} 
-            value={otpValue} 
-            onChange={setOtpValue} 
-            size="large"
-            style={{ marginBottom: 24 }}
-          />
-
-          <Button 
-            type="primary" 
-            block 
-            size="large" 
-            loading={loading.otpVerifying}
-            onClick={handleVerifyOtp}
-            style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}
-          >
-            Verify OTP
-          </Button>
-
-          <Button 
-            type="link" 
-            className="mt-4 text-gray-400" 
-            onClick={handleSendOtp}
-            disabled={loading.otpSending}
-          >
-            Resend OTP
-          </Button>
-        </div>
-      </Modal>
-
     </div>
   );
 };
-
 export default Registration;

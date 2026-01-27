@@ -154,7 +154,7 @@ export default function Sixth() {
     const fullMobile = formData.countryCode + formData.phone;
 
     const payload = {
-      type: "Mortgage-deal",
+      type: "mortgage",
       name: { first_name: formData.firstName, last_name: formData.lastName },
       email: formData.email.toLowerCase().trim(),
       company: "Individual",
