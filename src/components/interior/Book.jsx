@@ -24,7 +24,7 @@ export default function ConsultationSection() {
     first_name: "",
     last_name: "",
     email: "",
-    country_code: "91", // Default to India or UAE as needed
+    country_code: "971", // Default to India or UAE as needed
     number: "",
     message: "",
   });
