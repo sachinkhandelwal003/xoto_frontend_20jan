@@ -222,7 +222,7 @@ const FreelancerCard = ({ freelancer, isSmall }) => {
         {/* Button */}
         <div className="px-6 pb-6">
           <Link 
-            to="/sawtar/freelancer/browse-category" 
+            // to="/sawtar/freelancer/browse-category" 
             className={`block text-center ${isSmall ? 'py-1 px-3 text-sm' : 'py-2 px-4'} rounded-lg font-medium text-white bg-[#D26C44] hover:bg-[#C45A32] transition-colors duration-200`}
           >
             {isSmall ? 'View' : 'Consult Now'}

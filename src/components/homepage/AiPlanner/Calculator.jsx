@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Card,
   Button,
@@ -37,7 +37,11 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useNavigate } from "react-router-dom";
 
+
+
+
 // Fix for default marker icons in Leaflet
+
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -95,7 +99,7 @@ const reverseGeocode = async (lat, lng) => {
 
 // Map Picker Component
 const MapPicker = ({ coords, onChange }) => {
-  const position = React.useMemo(
+  const position = useMemo(
     () =>
       coords.lat && coords.lng
         ? [coords.lat, coords.lng]
@@ -116,13 +120,150 @@ const MapPicker = ({ coords, onChange }) => {
     <MapContainer
       center={position}
       zoom={15}
-      style={{ height: 300, width: "100%", borderRadius: "1rem" }}
+      style={{ height: 300, width: "100%", borderRadius: "1rem", zIndex:1 }}
     >
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <LocationMarker />
     </MapContainer>
   );
 };
+
+// UI Component: Selection Card (Same Layout)
+const SelectionCard = ({ item, isSelected, onClick, colorClass }) => (
+  <motion.div
+    whileHover={{ y: -5 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={onClick}
+    className={`relative h-full p-6 rounded-3xl cursor-pointer transition-all border-2
+      ${
+        isSelected
+          ? `bg-purple-50 shadow-xl`
+          : "border-gray-100 bg-white hover:border-gray-200"
+      }`}
+    style={{ borderColor: isSelected ? BRAND_PURPLE : "transparent" }}
+  >
+    {isSelected && <Badge.Ribbon text="Selected" color={BRAND_PURPLE} />}
+    <div
+      className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-4 ${colorClass}`}
+    >
+      {item.label ? item.label[0] : "G"}
+    </div>
+    <Title level={4} className="mb-1">
+      {item.label}
+    </Title>
+    <Text type="secondary" className="text-xs line-clamp-2">
+      {item.description || "Professional architectural landscaping."}
+    </Text>
+  </motion.div>
+);
+
+// --- FIX START: Component separated to prevent Re-render/Fluctuation ---
+const QuestionField = React.memo(function QuestionField({
+  question,
+  value,
+  onChange,
+}) {
+  const id = `q-${question._id}`;
+  const isYesNo = question.questionType === "yesorno";
+  const isOptions = question.questionType === "options";
+
+  return (
+    // We keep Form.Item for the LAYOUT (Label styling) but we don't bind it to the Form instance
+    // This keeps your UI exactly the same but fixes the lag.
+    <Form.Item
+      label={question.question}
+      required
+      className="mb-6"
+    >
+      {question.questionType === "text" && (
+        <Input
+          id={id}
+          value={value ?? ""}
+          onChange={(e) => onChange(question._id, e.target.value)}
+          size="large"
+          className="rounded-xl"
+        />
+      )}
+
+      {question.questionType === "number" && (
+        <Input
+          id={id}
+          type="number"
+          value={value ?? ""}
+          onChange={(e) => onChange(question._id, e.target.value)}
+          size="large"
+          className="rounded-xl"
+        />
+      )}
+
+      {(isOptions || isYesNo) && (
+        <Radio.Group
+          value={value}
+          onChange={(e) => onChange(question._id, e.target.value)}
+          className="w-full"
+        >
+          {/* FIX: Horizontal for Yes/No, Vertical for long options */}
+          <Space direction={isYesNo ? "horizontal" : "vertical"} wrap className="w-full">
+            {question.options?.map((opt) => (
+              <Radio key={opt._id} value={opt.title}>
+                {opt.title}
+              </Radio>
+            ))}
+          </Space>
+        </Radio.Group>
+      )}
+    </Form.Item>
+  );
+});
+
+// Step 3 Container
+const Step3Questions = React.memo(function Step3Questions({
+  questions,
+  answers,
+  loading,
+  onAnswerChange,
+}) {
+  if (loading) {
+    return (
+      <div className="py-20 text-center">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (!questions?.length) {
+    return (
+      <div className="py-20 text-center">
+        <h2 className="text-2xl font-bold">NO QUESTIONS AVAILABLE</h2>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-10">
+      <div className="max-w-3xl mx-auto">
+        <Title level={3} className="text-center mb-8">
+          Project Details
+        </Title>
+
+        <Card className="rounded-xl shadow-sm">
+          {/* Using 'preserve' ensures values stick, but we manage state manually */}
+          <Form layout="vertical">
+            {questions.map((q) => (
+              <QuestionField
+                key={q._id}
+                question={q}
+                value={answers[q._id]}
+                onChange={onAnswerChange}
+              />
+            ))}
+          </Form>
+        </Card>
+      </div>
+    </div>
+  );
+});
+// --- FIX END ---
 
 const Calculator = () => {
   const navigate = useNavigate();
@@ -133,7 +274,8 @@ const Calculator = () => {
   const [subcategories, setSubcategories] = useState([]);
   const [types, setTypes] = useState([]);
   const [packages, setPackages] = useState([]);
-const [step3Form] = Form.useForm();
+  
+  // Note: We are not using step3Form instance anymore to avoid the conflict
   const [coords, setCoords] = useState({
     lat: null,
     lng: null,
@@ -156,35 +298,11 @@ const [step3Form] = Form.useForm();
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
 
-  const [galleryImages, setGalleryImages] = useState([]); // ✅ This holds your images
+  const [galleryImages, setGalleryImages] = useState([]); 
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
 
-  const [step3Errors, setStep3Errors] = useState({});
-  const [toastLock, setToastLock] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
-
-  const showLockedToast = (
-    text = "Please fill the required field to continue."
-  ) => {
-    if (toastLock) return;
-    setToastLock(true);
-
-    messageApi.open({
-      type: "error",
-      content: text,
-      duration: 1.2,
-      style: {
-        fontSize: "16px",
-        marginTop: "10vh",
-        padding: "10px 14px",
-        borderRadius: "10px",
-      },
-      onClose: () => {
-        setToastLock(false);
-      },
-    });
-  };
 
   const areaSqFt =
     length && width ? Math.round(parseFloat(length) * parseFloat(width)) : 0;
@@ -224,10 +342,11 @@ const [step3Form] = Form.useForm();
     questions: false,
   });
 
-  const handleSelectType = React.useCallback(
-  (id) => setSelectedType(id),
-  []
-);
+  const handleSelectType = useCallback(
+    (id) => setSelectedType(id),
+    []
+  );
+
   const handlePhoneChange = (e) => {
     const value = e.target.value.replace(/\D/g, "");
     const rule = COUNTRY_PHONE_RULES[countryCode];
@@ -250,21 +369,12 @@ const [step3Form] = Form.useForm();
     setPhoneError("");
   };
 
-  const toggleImageSelect = (img) => {
-    setSelectedImages((prev) => {
-      const exists = prev.some((i) => i.id === img.id);
-      if (exists) return prev.filter((i) => i.id !== img.id);
-      return [...prev, img];
-    });
-  };
-
- const getAllImages = async () => {
+  const getAllImages = async () => {
     try {
       const res = await fetch(
         `https://xoto.ae/api/estimate/master/category/types/${selectedType}/gallery`
       );
       const data = await res.json();
-      // Ensure we set the moodboardImages array from your response structure
       setGalleryImages(data?.gallery?.moodboardImages || []); 
     } catch (error) {
       console.error(error);
@@ -306,7 +416,6 @@ const [step3Form] = Form.useForm();
         if (res.success) {
           setQuestions(res.data || []);
           setAnswers({});
-          setStep3Errors({});
         }
       } catch (error) {
         messageApi.error("Error loading questions");
@@ -430,25 +539,36 @@ const [step3Form] = Form.useForm();
     }
   };
 
-const handleAnswerChange = React.useCallback((questionId, newValue) => {
-  let valueChanged = false;
 
-  setAnswers((prev) => {
-    if (prev[questionId] === newValue) return prev;
-    valueChanged = true;
-    return { ...prev, [questionId]: newValue };
-  });
+  
+  // ✅ Optimized Answer Handler (Fixes fluctuation)
+  const handleAnswerChange = useCallback((questionId, newValue) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: newValue }));
+  }, []);
 
-  // Only clear error if value actually changed
-  if (valueChanged) {
-    setStep3Errors((prev) => {
-      if (!prev[questionId]) return prev;
-      const copy = { ...prev };
-      delete copy[questionId];
-      return copy;
-    });
-  }
-}, []);
+
+  
+
+  // ✅ CHECK VALIDATION FOR NEXT BUTTON
+  const isStepValid = () => {
+    if (activeStep === 0) return !!coords.lat; // Step 1: Location required
+    if (activeStep === 1) return !!selectedSubcategory; // Step 2: Service required
+    if (activeStep === 2) return !!selectedType; // Step 3: Style required
+    if (activeStep === 3) {
+      // Step 4: All questions must be answered
+      if (!questions || questions.length === 0) return true;
+      return questions.every(q => {
+        const val = answers[q._id];
+        return val !== undefined && val !== null && val !== "";
+      });
+    }
+    if (activeStep === 4) {
+        // Step 5: Contact details
+        const isPhoneValid = phone.length === COUNTRY_PHONE_RULES[countryCode]?.digits;
+        return !!firstName && !!lastName && !!email && isPhoneValid && !phoneError;
+    }
+    return true;
+  };
 
   const buildEstimateAnswersPayload = () => {
     return questions.map((q) => {
@@ -486,24 +606,13 @@ const handleAnswerChange = React.useCallback((questionId, newValue) => {
   };
 
   const onFinalSubmit = async () => {
-    const estimateAnswers = buildEstimateAnswersPayload();
+    // Safety check again
+    if (!isStepValid()) {
+        messageApi.error("Please fill all required fields");
+        return;
+    }
 
-    if (!firstName.trim() || !lastName.trim()) {
-      messageApi.error("Please enter both first and last name");
-      return;
-    }
-    if (!email.trim()) {
-      messageApi.error("Please enter your email");
-      return;
-    }
-    if (!phone.trim()) {
-      messageApi.error("Please enter your phone number");
-      return;
-    }
-    if (phoneError) {
-      messageApi.error("Please enter a valid phone number");
-      return;
-    }
+    const estimateAnswers = buildEstimateAnswersPayload();
 
     setLoading((prev) => ({ ...prev, submitting: true }));
 
@@ -560,39 +669,15 @@ const handleAnswerChange = React.useCallback((questionId, newValue) => {
     }
   };
 
-  const validateStep3 = () => {
-    if (!questions || questions.length === 0) return true;
-
-    const missing = questions.find((q) => {
-      const val = answers[q._id];
-      return val === undefined || val === null || val === "";
-    });
-
-    if (!missing) return true;
-
-    setStep3Errors({ [missing._id]: true });
-    showLockedToast("Please fill the required field to continue.");
-
-    setTimeout(() => {
-      const el = document.getElementById(`q-${missing._id}`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.focus?.();
-      }
-    }, 200);
-
-    return false;
-  };
-
   const handleNext = () => {
+    if (!isStepValid()) {
+        messageApi.warning("Please complete the required fields to continue");
+        return;
+    }
+
     if (activeStep === 5) {
       navigate("/");
       return;
-    }
-
-    if (activeStep === 3) {
-      const ok = validateStep3();
-      if (!ok) return;
     }
 
     if (activeStep === 4) {
@@ -608,166 +693,7 @@ const handleAnswerChange = React.useCallback((questionId, newValue) => {
     setActiveStep((prev) => prev - 1);
   };
 
-  const validateStep = () => {
-    // Basic validation logic
-    if (activeStep === 3 && (!questions || questions.length === 0)) {
-      // If there are no questions in step 3, we usually allow continue unless logic says otherwise
-      // But based on your original code, we can keep it strict if needed.
-      // Since we auto-allow in validateStep3 if empty, let's allow here too.
-      return true; 
-    }
-    return true;
-  };
-//  B. Memoized single question (prevents re-render of other fields)
-const QuestionField = React.memo(function QuestionField({
-  question,
-  value,
-  hasError,
-  onChange,
-}) {
-  const id = `q-${question._id}`;
-
-  if (question.questionType === "text") {
-    return (
-      <Form.Item
-        label={question.question}
-        required
-        validateStatus={hasError ? "error" : ""}
-        help={hasError ? "This field is required." : null}
-      >
-        <Input
-          id={id}
-          value={value ?? ""}
-          onChange={(e) => onChange(question._id, e.target.value)}
-        />
-      </Form.Item>
-    );
-  }
-
-  if (question.questionType === "number") {
-    return (
-      <Form.Item
-        label={question.question}
-        required
-        validateStatus={hasError ? "error" : ""}
-        help={hasError ? "This field is required." : null}
-      >
-        <Input
-          id={id}
-          type="number"
-          value={value ?? ""}
-          onChange={(e) => onChange(question._id, e.target.value)}
-        />
-      </Form.Item>
-    );
-  }
-
-  if (question.questionType === "options" || question.questionType === "yesorno") {
-    return (
-      <Form.Item
-        label={question.question}
-        required
-        validateStatus={hasError ? "error" : ""}
-        help={hasError ? "This field is required." : null}
-      >
-        <Radio.Group
-          value={value}
-          onChange={(e) => onChange(question._id, e.target.value)}
-        >
-          <Space direction="vertical">
-            {question.options?.map((opt) => (
-              <Radio key={opt._id} value={opt.title}>
-                {opt.title}
-              </Radio>
-            ))}
-          </Space>
-        </Radio.Group>
-      </Form.Item>
-    );
-  }
-
-  return null;
-});
-
-// ────────────────────────────────────────────────
-//  C. Main questions container – now very lean
-const Step3Questions = React.memo(function Step3Questions({
-  form,
-  questions,
-  answers,
-  step3Errors,
-  loading,
-}) {
-  if (loading) {
-    return (
-      <div className="py-20 text-center">
-        <Spin size="large" />
-      </div>
-    );
-  }
-
-  if (!questions?.length) {
-    return (
-      <div className="py-20 text-center">
-        <h2 className="text-2xl font-bold">NO QUESTIONS AVAILABLE</h2>
-      </div>
-    );
-  }
-
-  return (
-    <div className="py-10">
-      <div className="max-w-3xl mx-auto">
-        <Title level={3} className="text-center mb-8">
-          Project Details
-        </Title>
-
-        <Card className="rounded-xl shadow-sm">
-          <Form form={form} layout="vertical" preserve>
-            {questions.map((q) => (
-              <QuestionField
-                key={q._id}
-                question={q}
-                value={answers[q._id]}
-                hasError={!!step3Errors[q._id]}
-                onChange={handleAnswerChange}
-              />
-            ))}
-          </Form>
-        </Card>
-      </div>
-    </div>
-  );
-});
-  // --- UI COMPONENTS ---
-  const SelectionCard = ({ item, isSelected, onClick, colorClass }) => (
-    <motion.div
-      whileHover={{ y: -5 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={`relative h-full p-6 rounded-3xl cursor-pointer transition-all border-2
-        ${
-          isSelected
-            ? `bg-purple-50 shadow-xl`
-            : "border-gray-100 bg-white hover:border-gray-200"
-        }`}
-      style={{ borderColor: isSelected ? BRAND_PURPLE : "transparent" }}
-    >
-      {isSelected && <Badge.Ribbon text="Selected" color={BRAND_PURPLE} />}
-      <div
-        className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-4 ${colorClass}`}
-      >
-        {item.label ? item.label[0] : "G"}
-      </div>
-      <Title level={4} className="mb-1">
-        {item.label}
-      </Title>
-      <Text type="secondary" className="text-xs line-clamp-2">
-        {item.description || "Professional architectural landscaping."}
-      </Text>
-    </motion.div>
-  );
-
-  // --- FIX: THIS IS NOW A HELPER FUNCTION, NOT A COMPONENT ---
+  // Main Render Helper
   const renderStepContent = () => {
     const variants = {
       initial: { opacity: 0, y: 20 },
@@ -886,16 +812,17 @@ const Step3Questions = React.memo(function Step3Questions({
           </motion.div>
         );
 
-case 3:
-  return (
-    <Step3Questions
-  form={step3Form}
-questions={questions}
-answers={answers}
-step3Errors={step3Errors}
-loading={loading.questions}
-    />
-  );
+      case 3:
+        return (
+            // Using the separated Component to avoid re-renders
+            <Step3Questions
+                questions={questions}
+                answers={answers}
+                loading={loading.questions}
+                onAnswerChange={handleAnswerChange}
+            />
+        );
+
       case 4:
         return (
           <motion.div
@@ -914,11 +841,19 @@ loading={loading.questions}
                   <div className="space-y-8">
                     <div>
                       <Text className="text-purple-300 block text-xs uppercase tracking-widest mb-1">
-                        Area
+                        Service
                       </Text>
                       <Text strong className="text-white text-xl">
-                        {areaSqFt} SQ FT
+                        {subcategories.find(s => s._id === selectedSubcategory)?.label || "-"}
                       </Text>
+                    </div>
+                    <div>
+                        <Text className="text-purple-300 block text-xs uppercase tracking-widest mb-1">
+                            Style
+                        </Text>
+                        <Text strong className="text-white text-xl">
+                            {types.find(t => t._id === selectedType)?.label || "-"}
+                        </Text>
                     </div>
                   </div>
                 </div>
@@ -1144,7 +1079,6 @@ loading={loading.questions}
 
       <div className="max-w-7xl mx-auto mt-16 px-6">
         <AnimatePresence mode="wait">
-          {/* FIX: Call the function instead of using a Component tag */}
           <div key={activeStep}>{renderStepContent()}</div>
         </AnimatePresence>
       </div>
@@ -1179,18 +1113,20 @@ loading={loading.questions}
                 </div>
               )}
 
+              {/* ✅ Button with validation logic */}
               <Button
                 type="primary"
                 size="large"
                 onClick={handleNext}
-                disabled={!validateStep()}
+                disabled={!isStepValid()}
                 className="h-14 px-12 rounded-2xl border-none text-lg shadow-xl transition-all"
                 style={{
-                  backgroundColor: !validateStep() ? "#f5f5f5" : BRAND_PURPLE,
-                  color: !validateStep() ? "#ccc" : "white",
+                  backgroundColor: !isStepValid() ? "#e5e7eb" : BRAND_PURPLE,
+                  color: !isStepValid() ? "#9ca3af" : "white",
+                  cursor: !isStepValid() ? "not-allowed" : "pointer"
                 }}
               >
-                {activeStep === 4 ? "Continue to Contact" : "Continue"}
+                {activeStep === 4 ? "Submit Estimate" : "Continue"}
                 <ArrowRightOutlined className="ml-2" />
               </Button>
             </div>

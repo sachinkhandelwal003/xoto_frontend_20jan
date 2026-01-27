@@ -37,8 +37,7 @@ const VendorB2BProfile = () => {
       setVendor(response.vendor);
     } catch (error) {
       showToast(error.response?.data?.message || 'Failed to fetch vendor details', 'error');
-      navigate('/sawtar/cms/vendors');
-    } finally {
+      // navigate('/sawtar/cms/vendors');} finally {
       setLoading(false);
     }
   };
@@ -110,9 +109,9 @@ const VendorB2BProfile = () => {
       <div className="min-h-screen bg-gray-100 py-8 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500">Vendor not found</p>
-          <Button type="primary" className="mt-4" onClick={() => navigate('/sawtar/cms/vendors')}>
+          {/* <Button type="primary" className="mt-4" onClick={() => navigate('/sawtar/cms/vendors')}>
             Back to Vendors
-          </Button>
+          </Button> */}
         </div>
       </div>
     );
