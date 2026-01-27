@@ -8,8 +8,20 @@ import {
   X, ArrowRight, Phone, Mail, MessageCircle, Globe, User, BedDouble, 
   Home, Building2, MapPin, Banknote, FileText
 } from "lucide-react";
+import { isValidPhoneNumber, parsePhoneNumber } from "libphonenumber-js";
+
 
 const { Option } = Select;
+
+const validatePhone = (countryCode, mobile) => {
+  try {
+    const fullNumber = `+${countryCode}${mobile}`;
+    return isValidPhoneNumber(fullNumber);
+  } catch {
+    return false;
+  }
+};
+
 
 // 1. Strict Phone Length Rules
 const PHONE_LENGTH_RULES = {
@@ -123,11 +135,21 @@ export default function HeroSection() {
 
     const currentForm = actionType === "Buy" ? buyForm : sellForm;
     
-    if (!currentForm.mobile || currentForm.mobile.length < 5) {
-       openNotification('error', 'Validation Error', t("Please enter a valid mobile number"));
-       setLoading(false);
-       return;
-    }
+  const isPhoneValid = validatePhone(
+  currentForm.country_code,
+  currentForm.mobile
+);
+
+if (!isPhoneValid) {
+  openNotification(
+    "error",
+    "Validation Error",
+    "Please enter a valid phone number for selected country"
+  );
+  setLoading(false);
+  return;
+}
+
 
     // Sell Form Location Validation
     if (actionType === "Sell") {

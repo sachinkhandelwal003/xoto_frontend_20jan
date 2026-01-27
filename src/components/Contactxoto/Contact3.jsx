@@ -6,6 +6,10 @@ import { apiService } from "../../manageApi/utils/custom.apiservice";
 import Image from "../../assets/img/Image2.jpg";
 import { useTranslation } from "react-i18next";
 import { Country } from "country-state-city"; 
+import {
+  parsePhoneNumberFromString,
+  validatePhoneNumberLength,
+} from "libphonenumber-js";
 
 const { Option } = Select;
 
@@ -68,6 +72,54 @@ export default function QuickEnquiry() {
     if (errors.number) setErrors((prev) => ({ ...prev, number: "" }));
   };
 
+  const validatePhone = (countryCode, number) => {
+  if (!number) return "Mobile number is required";
+
+  const fullNumber = `+${countryCode}${number}`;
+  const phoneObj = parsePhoneNumberFromString(fullNumber);
+
+  if (!phoneObj) {
+    return "Invalid mobile number";
+  }
+
+  // Length check (real, country-aware)
+  const lengthError = validatePhoneNumberLength(
+    phoneObj.nationalNumber,
+    phoneObj.country
+  );
+
+  if (lengthError === "TOO_SHORT") return "Number is too short";
+  if (lengthError === "TOO_LONG") return "Number is too long";
+
+  // Structure check
+  if (!phoneObj.isValid()) {
+    return "Invalid mobile number for selected country";
+  }
+
+  // Block landlines
+  if (phoneObj.getType() === "FIXED_LINE") {
+    return "Landline numbers are not allowed";
+  }
+
+  // UAE strict rule
+  if (
+    countryCode === "971" &&
+    !/^(50|52|54|55|56|58)/.test(number)
+  ) {
+    return "Invalid UAE mobile number";
+  }
+
+  // India strict rule
+  if (
+    countryCode === "91" &&
+    !/^[6-9]/.test(number)
+  ) {
+    return "Invalid Indian mobile number";
+  }
+
+  return "";
+};
+
   // --- VALIDATION ---
   const validateForm = () => {
     let newErrors = {};
@@ -87,12 +139,15 @@ export default function QuickEnquiry() {
        setError("email", "Invalid email format");
     }
 
-    const requiredLength = PHONE_LENGTH_RULES[formData.country_code];
-    if (!formData.number.trim()) {
-       setError("number", t("validation.mobile") || "Mobile required");
-    } else if (requiredLength && formData.number.length !== requiredLength) {
-       setError("number", `Enter ${requiredLength} digits`);
-    }
+   const phoneError = validatePhone(
+  formData.country_code,
+  formData.number
+);
+
+if (phoneError) {
+  setError("number", phoneError);
+}
+
 
     if (!formData.message.trim()) setError("message", t("validation.message") || "Message required");
 
@@ -101,58 +156,84 @@ export default function QuickEnquiry() {
   };
 
   // --- SUBMIT FUNCTION (RESTORED) ---
-  const onSubmit = async (e) => {
-    e.preventDefault();
+const onSubmit = async (e) => {
+  e.preventDefault();
 
-    // 1. Validation Check
-    const validationError = validateForm();
-    if (validationError) {
-      openNotification("error", t("notification.errorTitle") || "Validation Error", validationError);
-      return;
-    }
+  // 1. Existing basic validation
+  const validationError = validateForm();
+  if (validationError) {
+    openNotification(
+      "error",
+      t("notification.errorTitle") || "Validation Error",
+      validationError
+    );
+    return;
+  }
 
-    setLoading(true);
+  // 2. 🔥 REAL PHONE VALIDATION (libphonenumber-js)
+  const phoneError = validatePhone(
+    formData.country_code,
+    formData.number
+  );
 
-    // 2. API Call
-    try {
-      await apiService.post("/property/lead", {
-        type: "enquiry",
-        name: {
-          first_name: formData.first_name.trim(),
-          last_name: formData.last_name.trim(),
-        },
-        mobile: {
-          country_code: formData.country_code,
-          number: formData.number,
-        },
-        email: formData.email.trim().toLowerCase(),
-        message: formData.message.trim(),
-      });
+  if (phoneError) {
+    openNotification(
+      "error",
+      t("notification.errorTitle") || "Validation Error",
+      phoneError
+    );
+    return;
+  }
 
-      // 3. Success Handling
-      openNotification(
-        "success",
-        t("notification.successTitle") || "Success",
-        t("notification.successMessage") || "Enquiry submitted successfully!"
-      );
+  // 3. Now safe to submit
+  setLoading(true);
+const phoneObj = parsePhoneNumberFromString(
+  `+${formData.country_code}${formData.number}`
+);
 
-      // Reset Form
-      setFormData({
-        first_name: "", last_name: "", email: "",
-        country_code: "971", number: "", message: "",
-      });
-      setErrors({});
-    } catch (err) {
-      // 4. Error Handling
-      openNotification(
-        "error",
-        t("notification.errorTitle") || "Error",
-        err.response?.data?.message || t("notification.errorMessage") || "Something went wrong"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    await apiService.post("/property/lead", {
+      type: "enquiry",
+      name: {
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+      },
+      mobile: {
+  country_code: formData.country_code,
+  number: formData.number,
+  full: phoneObj.number, // +9715XXXXXXXX
+},
+
+      email: formData.email.trim().toLowerCase(),
+      message: formData.message.trim(),
+    });
+
+    openNotification(
+      "success",
+      t("notification.successTitle") || "Success",
+      t("notification.successMessage") || "Enquiry submitted successfully!"
+    );
+
+    setFormData({
+      first_name: "",
+      last_name: "",
+      email: "",
+      country_code: "971",
+      number: "",
+      message: "",
+    });
+    setErrors({});
+  } catch (err) {
+    openNotification(
+      "error",
+      t("notification.errorTitle") || "Error",
+      err.response?.data?.message || "Something went wrong"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // --- HEIGHT FIX: 42px Explicit ---
   const inputClass = `w-full h-[42px] border rounded-md px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500 bg-white transition-all flex items-center border-gray-300`;

@@ -310,8 +310,8 @@ const RegisterNowPage = () => {
                                         disabled={!mobileNumber}
                                         style={{ 
                                             // 🟢 Theme Logic Applied: White when disabled, Purple when enabled
-                                            backgroundColor: !mobileNumber ? 'white' : '#5C039B', 
-                                            borderColor: !mobileNumber ? '#d9d9d9' : '#5C039B',
+                                            backgroundColor: !mobileNumber ? 'white' : '#1677ff', 
+                                            borderColor: !mobileNumber ? '#d9d9d9' : '#1677ff',
                                             color: !mobileNumber ? 'rgba(0,0,0,0.25)' : 'white',
                                             minWidth: '90px'
                                         }}
