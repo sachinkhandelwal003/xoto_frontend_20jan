@@ -23,7 +23,17 @@ import {
   Tooltip,
   Timeline,
   Image,
-  Carousel
+  Carousel,
+  Collapse,
+  Badge,
+  Progress,
+  Select,
+  Input,
+  Form,
+  Upload,
+  message,
+  Popconfirm,
+  Alert
 } from 'antd';
 
 import {
@@ -39,13 +49,37 @@ import {
   TeamOutlined,
   CheckOutlined,
   EnvironmentOutlined,
-  CompassOutlined
+  CompassOutlined,
+  DollarOutlined,
+  CalendarOutlined,
+  InfoCircleOutlined,
+  QuestionCircleOutlined,
+  UploadOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  DownloadOutlined,
+  ShoppingOutlined,
+  CalculatorOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ExclamationCircleOutlined,
+  FileDoneOutlined,
+  GlobalOutlined,
+  HomeOutlined,
+  BuildOutlined,
+  SafetyOutlined,
+  FileImageOutlined,
+  AppstoreOutlined,
+  BarsOutlined
 } from '@ant-design/icons';
 
 import { showSuccessAlert, showErrorAlert, showConfirmDialog } from '../../../../../manageApi/utils/sweetAlert';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
+const { Panel } = Collapse;
+const { Option } = Select;
+const { TextArea } = Input;
 
 // Purple Theme Colors
 const PURPLE_THEME = {
@@ -79,6 +113,8 @@ const LeadsList = () => {
   const [viewDetailsModal, setViewDetailsModal] = useState({ visible: false, data: null });
   const [quotationModal, setQuotationModal] = useState({ visible: false, data: null, estimateStatus: null });
   const [imageViewer, setImageViewer] = useState({ visible: false, images: [], currentIndex: 0 });
+  const [editQuotationModal, setEditQuotationModal] = useState({ visible: false, data: null });
+  const [answersModal, setAnswersModal] = useState({ visible: false, data: null });
 
   // Stats & Pagination
   const [stats, setStats] = useState({
@@ -101,6 +137,11 @@ const LeadsList = () => {
 
   // ✅ Initialize filter with 'pending'
   const [filters, setFilters] = useState({ status: 'pending' });
+  const [searchText, setSearchText] = useState('');
+
+  // Edit Quotation Form
+  const [editForm] = Form.useForm();
+  const [quotationItems, setQuotationItems] = useState([]);
 
   // --- CONFIGURATIONS ---
   const statusConfig = {
@@ -108,6 +149,10 @@ const LeadsList = () => {
     assigned: { label: 'Assigned', color: 'processing', icon: <TeamOutlined />, bgColor: '#e6f7ff', textColor: '#1890ff' },
     final_created: { label: 'Final Created', color: 'purple', icon: <FileTextOutlined />, bgColor: '#f9f0ff', textColor: '#722ed1' },
     superadmin_approved: { label: 'Approved & Sent', color: 'success', icon: <CheckOutlined />, bgColor: '#f6ffed', textColor: '#52c41a' },
+    // customer_accepted: { label: 'Customer Accepted', color: 'green', icon: <CheckCircleOutlined />, bgColor: '#f6ffed', textColor: '#52c41a' },
+    // customer_rejected: { label: 'Customer Rejected', color: 'red', icon: <CloseCircleOutlined />, bgColor: '#fff1f0', textColor: '#ff4d4f' },
+    // cancelled: { label: 'Cancelled', color: 'default', icon: <CloseCircleOutlined />, bgColor: '#fafafa', textColor: '#d9d9d9' },
+    // deal: { label: 'Deal Closed', color: 'gold', icon: <GoldOutlined />, bgColor: '#fffbe6', textColor: '#faad14' }
   };
 
   const progressConfig = {
@@ -133,6 +178,7 @@ const LeadsList = () => {
   // ✅ Helper: currency
   const formatCurrency = (amount) => amount ? `AED ${amount?.toLocaleString()}` : 'AED 0';
   const formatDate = (date) => date ? new Date(date).toLocaleString() : 'N/A';
+  const formatShortDate = (date) => date ? new Date(date).toLocaleDateString() : 'N/A';
 
   /**
    * ✅ MAIN FIX FOR SEARCH:
@@ -234,6 +280,11 @@ const LeadsList = () => {
     fetchLeads(1, pagination.itemsPerPage, newFilters);
   };
 
+  const handleSearch = (value) => {
+    setSearchText(value);
+    // You can implement search filtering here
+  };
+
   const openAssignDrawer = (lead) => {
     setSelectedLead(lead);
     setDrawerVisible(true);
@@ -269,6 +320,27 @@ const LeadsList = () => {
     }
   };
 
+  const rejectQuotation = async (estimateId) => {
+    const confirm = await showConfirmDialog('Reject Quotation', 'Reject this quotation? This will send it back to supervisor.', 'Reject');
+    if (confirm.isConfirmed) {
+      try {
+        await apiService.put(`/estimates/${estimateId}/reject-quotation`);
+        showSuccessAlert('Success', 'Quotation rejected and sent back to supervisor');
+        fetchLeads(pagination.currentPage, pagination.itemsPerPage, filters);
+        setQuotationModal({ visible: false, data: null });
+      } catch (error) {
+        showErrorAlert('Error', 'Failed to reject quotation');
+      }
+    }
+  };
+
+
+
+  const downloadQuotationPDF = (lead) => {
+    // Implement PDF download functionality
+    showSuccessAlert('Info', 'PDF download feature would be implemented here');
+  };
+
   // --- HELPERS ---
   const calculateStats = (data) => {
     const statCounts = {
@@ -292,35 +364,17 @@ const LeadsList = () => {
     setStats(statCounts);
   };
 
-  const openImageGallery = (previewImage, moodboardImages) => {
-    const images = [];
-    if (previewImage?.url) {
-      images.push({
-        src: previewImage.url,
-        title: previewImage.title || 'Preview Image'
-      });
-    }
 
-    if (moodboardImages?.length > 0) {
-      moodboardImages.forEach(img => {
-        images.push({
-          src: img.url,
-          title: img.title || 'Moodboard Image'
-        });
-      });
-    }
-
-    if (images.length > 0) {
-      setImageViewer({
-        visible: true,
-        images,
-        currentIndex: 0
-      });
-    }
+  const calculateEstimatedTotal = (lead) => {
+    if (!lead.EstimateAnswers) return 0;
+    return lead.EstimateAnswers.reduce((total, answer) => {
+      return total + (answer.calculatedAmount || 0);
+    }, 0);
   };
 
   // --- COLUMNS ---
   const columns = useMemo(() => [
+ 
     {
       title: 'Customer',
       key: 'customer',
@@ -348,7 +402,7 @@ const LeadsList = () => {
     {
       title: 'Service Info',
       key: 'service_info',
-      width: 200,
+      width: 180,
       render: (_, r) => (
         <div>
           <Tag color="purple">{r.service_type?.toUpperCase()}</Tag>
@@ -357,30 +411,9 @@ const LeadsList = () => {
         </div>
       )
     },
-    {
-      title: 'Location',
-      key: 'location',
-      width: 180,
-      render: (_, r) => (
-        <div className="text-xs">
-          {r.customer?.location ? (
-            <>
-              <div className="font-medium flex items-center gap-1">
-                <EnvironmentOutlined />
-                {getLocationString(r.customer.location)}
-              </div>
-              {r.customer.location.lat && r.customer.location.lng && (
-                <div className="text-gray-400 mt-1">
-                  📍 {r.customer.location.lat.toFixed(4)}, {r.customer.location.lng.toFixed(4)}
-                </div>
-              )}
-            </>
-          ) : (
-            <span className="text-gray-400">No location data</span>
-          )}
-        </div>
-      )
-    },
+    
+ 
+  
     {
       title: 'Area',
       key: 'area',
@@ -388,7 +421,6 @@ const LeadsList = () => {
       render: (_, r) => (
         <div>
           <span className="font-bold text-gray-700">{r.area_sqft}</span> <span className="text-xs text-gray-500">sq.ft</span>
-          <div className="text-xs text-gray-400">{r.area_length} x {r.area_width}</div>
         </div>
       )
     },
@@ -399,23 +431,26 @@ const LeadsList = () => {
       render: (_, r) => {
         const cfg = statusConfig[r.status] || statusConfig.pending;
         return (
-          <Tag color={cfg.color} style={{ borderRadius: 10, padding: '2px 10px' }}>
-            {cfg.icon} <span className="ml-1">{cfg.label}</span>
-          </Tag>
+          <Badge 
+            color={cfg.color} 
+            text={
+              <span className="flex items-center gap-1">
+                {cfg.icon}
+                <span>{cfg.label}</span>
+              </span>
+            }
+            style={{ fontSize: '12px' }}
+          />
         );
       }
     },
-    {
-      title: 'Created',
-      key: 'createdAt',
-      width: 140,
-      render: (_, r) => <span className="text-xs text-gray-600">{formatDate(r.createdAt)}</span>
-    },
+  
+   
     {
       title: 'Actions',
       fixed: 'right',
       key: 'actions',
-      width: 180,
+      width: 250,
       render: (_, r) => (
         <Space>
           <Tooltip title="View Full Details">
@@ -425,6 +460,40 @@ const LeadsList = () => {
               onClick={() => setViewDetailsModal({ visible: true, data: r })}
             />
           </Tooltip>
+          
+          <Tooltip title="View Answers">
+            <Button
+              icon={<QuestionCircleOutlined />}
+              size="small"
+              onClick={() => setAnswersModal({ visible: true, data: r })}
+            />
+          </Tooltip>
+          
+          {/* Show View Quotation button for final_created status */}
+          {(r.status === 'final_created' && r.final_quotation) && (
+            <>
+              <Tooltip title="View & Approve Quotation">
+                <Button
+                  type="primary"
+                  size="small"
+                  style={{ background: PURPLE_THEME.success }}
+                  onClick={() => setQuotationModal({ 
+                    visible: true, 
+                    data: r,
+                    estimateStatus: r.status 
+                  })}
+                >
+                  <FileTextOutlined /> View
+                </Button>
+              </Tooltip>
+              
+             
+              
+            
+            </>
+          )}
+          
+          {/* Show Assign button only for pending status */}
           {r.status === 'pending' && (
             <Button
               type="primary"
@@ -435,23 +504,52 @@ const LeadsList = () => {
               Assign
             </Button>
           )}
+          
+          {/* Additional actions for other statuses */}
+          {r.status === 'superadmin_approved' && (
+            <Tag color="success">Sent to Customer</Tag>
+          )}
         </Space>
       )
     }
   ], []);
 
   // --- SUB-COMPONENTS ---
-  const DetailSection = ({ title, icon, children, extra }) => (
-    <Card
-      size="small"
-      title={<span className="flex items-center gap-2 text-purple-700">{icon} {title}</span>}
-      className="mb-4 shadow-sm"
-      headStyle={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}
-      extra={extra}
-    >
-      {children}
-    </Card>
-  );
+  const DetailSection = ({ title, icon, children, extra, collapsible = false }) => {
+    if (collapsible) {
+      return (
+        <Collapse 
+          defaultActiveKey={['1']}
+          className="mb-4"
+          expandIconPosition="end"
+        >
+          <Panel 
+            header={
+              <span className="flex items-center gap-2 text-purple-700 font-medium">
+                {icon} {title}
+              </span>
+            } 
+            key="1"
+            extra={extra}
+          >
+            {children}
+          </Panel>
+        </Collapse>
+      );
+    }
+    
+    return (
+      <Card
+        size="small"
+        title={<span className="flex items-center gap-2 text-purple-700 font-medium">{icon} {title}</span>}
+        className="mb-4 shadow-sm"
+        headStyle={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}
+        extra={extra}
+      >
+        {children}
+      </Card>
+    );
+  };
 
   const MapDisplay = ({ location }) => {
     if (!location || !location.lat || !location.lng) {
@@ -502,6 +600,76 @@ const LeadsList = () => {
     );
   };
 
+  const renderEstimateAnswers = (answers) => {
+    if (!answers || answers.length === 0) {
+      return <Alert message="No answers recorded" type="info" showIcon />;
+    }
+
+    return (
+      <div className="space-y-4">
+        {answers.map((answer, index) => (
+          <Card key={answer._id || index} size="small" className="border-l-4 border-purple-500">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <div className="font-medium text-gray-800 mb-1">
+                  {index + 1}. {answer.questionText}
+                </div>
+                
+                <div className="text-sm text-gray-600 mb-2">
+                  <span className="font-medium">Type:</span> {answer.questionType}
+                  {answer.includeInEstimate && (
+                    <Tag color="green" size="small" className="ml-2">Included in Estimate</Tag>
+                  )}
+                  {answer.areaQuestion && (
+                    <Tag color="blue" size="small" className="ml-2">Area Question</Tag>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4 mt-2">
+                  <div>
+                    <span className="text-gray-500">Answer:</span>
+                    <div className="font-medium">
+                      {answer.selectedOption?.title || answer.answerValue || 'Not answered'}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <span className="text-gray-500">Value:</span>
+                    <div className="font-medium">
+                      {answer.selectedOption?.value || answer.answerValue || 'N/A'}
+                      {answer.selectedOption?.valueSubType && (
+                        <span className="text-xs text-gray-400 ml-1">
+                          ({answer.selectedOption.valueSubType})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <span className="text-gray-500">Calculated Amount:</span>
+                    <div className="font-bold text-purple-700">
+                      {formatCurrency(answer.calculatedAmount)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
+        
+        {/* Total Calculation */}
+        <Card size="small" className="bg-purple-50 border-purple-200">
+          <div className="flex justify-between items-center">
+            <div className="font-bold text-gray-700">Total Estimated Amount:</div>
+            <div className="text-2xl font-bold text-purple-700">
+              {formatCurrency(answers.reduce((sum, ans) => sum + (ans.calculatedAmount || 0), 0))}
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  };
+
   // --- INITIAL FETCH ---
   useEffect(() => {
     if (dataFetchedRef.current) return;
@@ -513,21 +681,47 @@ const LeadsList = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="mb-6">
-        <Title level={3}>Leads Management</Title>
+        <div className="flex justify-between items-center mb-6">
+          <Title level={3}>Leads Management</Title>
+          <div className="flex gap-2">
+           
+            <Button 
+              type="primary" 
+              icon={<UploadOutlined />}
+              size="large"
+              style={{ background: PURPLE_THEME.primary }}
+            >
+              Export
+            </Button>
+          </div>
+        </div>
 
-        <Row gutter={[16, 16]}>
+        {/* <Row gutter={[16, 16]}>
           {Object.entries(stats).map(([key, value]) => (
             <Col key={key} xs={12} sm={6} md={4} lg={3}>
-              <Card size="small" hoverable className="text-center border-t-4 border-purple-500">
+              <Card 
+                size="small" 
+                hoverable 
+                className="text-center border-t-4"
+                style={{ borderTopColor: statusConfig[key]?.color || PURPLE_THEME.primary }}
+              >
                 <Statistic
-                  title={key.replace(/_/g, ' ').toUpperCase()}
+                  title={
+                    <span className="flex items-center justify-center gap-2">
+                      {statusConfig[key]?.icon}
+                      {key.replace(/_/g, ' ').toUpperCase()}
+                    </span>
+                  }
                   value={value}
-                  valueStyle={{ color: PURPLE_THEME.primary }}
+                  valueStyle={{ color: statusConfig[key]?.color || PURPLE_THEME.primary }}
                 />
+                <div className="text-xs text-gray-500 mt-2">
+                  {((value / stats.total) * 100 || 0).toFixed(1)}% of total
+                </div>
               </Card>
             </Col>
           ))}
-        </Row>
+        </Row> */}
       </div>
 
       <Card bodyStyle={{ padding: 0 }} className="mb-6 overflow-hidden rounded-lg shadow-sm">
@@ -544,6 +738,10 @@ const LeadsList = () => {
                 <span className="flex items-center gap-2 px-4">
                   {statusConfig[key].icon}
                   {statusConfig[key].label}
+                  <Badge 
+                    count={stats[key]} 
+                    style={{ backgroundColor: statusConfig[key].color }}
+                  />
                 </span>
               }
               key={key}
@@ -553,7 +751,6 @@ const LeadsList = () => {
       </Card>
 
       <Card bodyStyle={{ padding: '0px' }}>
-        {/* ✅ CustomTable untouched + search will work perfectly now */}
         <CustomTable
           columns={columns}
           data={leads}
@@ -565,7 +762,7 @@ const LeadsList = () => {
         />
       </Card>
 
-      {/* ======================= MODALS ======================= */}
+      {/* ======================= VIEW DETAILS MODAL ======================= */}
       <Modal
         title={null}
         open={viewDetailsModal.visible}
@@ -573,22 +770,28 @@ const LeadsList = () => {
         width={1400}
         footer={null}
         style={{ top: 20 }}
+        className="leads-details-modal"
       >
         {viewDetailsModal.data && (
           <div>
             <div className="flex justify-between items-start mb-6 border-b pb-4">
               <div>
                 <Title level={3} style={{ margin: 0, color: PURPLE_THEME.primary }}>
-                  {viewDetailsModal.data.service_type?.toUpperCase()} Request
+                  <BuildOutlined /> {viewDetailsModal.data.service_type?.toUpperCase()} Request
                 </Title>
-                <Text type="secondary">Created on {formatDate(viewDetailsModal.data.createdAt)}</Text>
+                <Text type="secondary">
+                  <CalendarOutlined /> Created on {formatDate(viewDetailsModal.data.createdAt)}
+                </Text>
               </div>
               <div className="text-right">
                 <Tag color={statusConfig[viewDetailsModal.data.status]?.color} style={{ fontSize: 14, padding: '4px 12px' }}>
-                  {statusConfig[viewDetailsModal.data.status]?.label?.toUpperCase()}
+                  {statusConfig[viewDetailsModal.data.status]?.icon}
+                  <span className="ml-1">{statusConfig[viewDetailsModal.data.status]?.label?.toUpperCase()}</span>
                 </Tag>
                 {viewDetailsModal.data.submitted_at && (
-                  <div className="text-xs text-gray-400 mt-1">Submitted: {formatDate(viewDetailsModal.data.submitted_at)}</div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Submitted: {formatDate(viewDetailsModal.data.submitted_at)}
+                  </div>
                 )}
               </div>
             </div>
@@ -600,10 +803,12 @@ const LeadsList = () => {
                     <Avatar size={64} icon={<UserOutlined />} style={{ background: PURPLE_THEME.primaryLight }} />
                     <div className="flex-1">
                       <h4 className="text-lg font-bold m-0">
-                        {viewDetailsModal.data.customer?.name?.first_name} {viewDetailsModal.data.customer?.name?.last_name || viewDetailsModal.data.customer_name}
+                        <UserOutlined /> {viewDetailsModal.data.customer?.name?.first_name} {viewDetailsModal.data.customer?.name?.last_name || viewDetailsModal.data.customer_name}
                       </h4>
                       <div className="grid grid-cols-2 gap-2 mt-2">
-                        <div className="text-gray-600"><MailOutlined /> {viewDetailsModal.data.customer?.email || viewDetailsModal.data.customer_email}</div>
+                        <div className="text-gray-600">
+                          <MailOutlined /> {viewDetailsModal.data.customer?.email || viewDetailsModal.data.customer_email}
+                        </div>
                         <div className="text-gray-600">
                           <PhoneOutlined /> {viewDetailsModal.data.customer?.mobile ?
                             `${viewDetailsModal.data.customer.mobile.country_code} ${viewDetailsModal.data.customer.mobile.number}` :
@@ -621,10 +826,13 @@ const LeadsList = () => {
                       </Divider>
 
                       <Descriptions bordered size="small" column={2} className="mb-3">
-                        <Descriptions.Item label="Address">{viewDetailsModal.data.customer.location.address}</Descriptions.Item>
+                        <Descriptions.Item label="Address" span={2}>
+                          {viewDetailsModal.data.customer.location.address}
+                        </Descriptions.Item>
                         <Descriptions.Item label="Area">{viewDetailsModal.data.customer.location.area}</Descriptions.Item>
                         <Descriptions.Item label="City">{viewDetailsModal.data.customer.location.city}</Descriptions.Item>
                         <Descriptions.Item label="State">{viewDetailsModal.data.customer.location.state}</Descriptions.Item>
+                        <Descriptions.Item label="Country">{viewDetailsModal.data.customer.location.country}</Descriptions.Item>
                       </Descriptions>
 
                       <MapDisplay location={viewDetailsModal.data.customer.location} />
@@ -636,8 +844,11 @@ const LeadsList = () => {
                   <Descriptions bordered size="small" column={2}>
                     <Descriptions.Item label="Category">{viewDetailsModal.data.subcategory?.label}</Descriptions.Item>
                     <Descriptions.Item label="Type">{viewDetailsModal.data.type?.label}</Descriptions.Item>
+                    <Descriptions.Item label="Service Type">
+                      <Tag color="purple">{viewDetailsModal.data.service_type?.toUpperCase()}</Tag>
+                    </Descriptions.Item>
                     <Descriptions.Item label="Package">
-                      <Tag color="gold">{viewDetailsModal.data.package?.name}</Tag>
+                      <Tag color="gold">{viewDetailsModal.data.package?.name || 'No Package'}</Tag>
                     </Descriptions.Item>
                     <Descriptions.Item label="Estimated Amount">
                       {formatCurrency(
@@ -649,7 +860,9 @@ const LeadsList = () => {
                   </Descriptions>
 
                   <div className="mt-4 p-3 bg-purple-50 rounded border border-purple-100">
-                    <div className="text-xs text-purple-600 font-bold uppercase mb-2">Area Dimensions</div>
+                    <div className="text-xs text-purple-600 font-bold uppercase mb-2">
+                      <HomeOutlined /> Area Dimensions
+                    </div>
                     <div className="flex justify-between text-center">
                       <div>
                         <div className="text-xl font-bold">{viewDetailsModal.data.area_sqft}</div>
@@ -669,7 +882,9 @@ const LeadsList = () => {
                   </div>
 
                   <div className="mt-4">
-                    <Text strong>Description:</Text>
+                    <Text strong>
+                      <FileTextOutlined /> Description:
+                    </Text>
                     <Paragraph className="bg-gray-50 p-2 rounded mt-1 text-gray-600">
                       {viewDetailsModal.data.description}
                     </Paragraph>
@@ -678,19 +893,208 @@ const LeadsList = () => {
               </Col>
 
               <Col span={8}>
+                <Card size="small" title="Quotation Summary" className="mb-4">
+                  {viewDetailsModal.data?.final_quotation ? (
+                    <div>
+                      <div className="mb-3 p-2 bg-purple-50 rounded">
+                        <div className="flex justify-between mb-1">
+                          <span className="text-gray-600">Total Amount:</span>
+                          <span className="font-bold text-purple-700">
+                            {formatCurrency(viewDetailsModal.data.final_quotation.grand_total)}
+                          </span>
+                        </div>
+                        {viewDetailsModal.data.final_quotation.discount_percent > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Discount:</span>
+                            <span>{viewDetailsModal.data.final_quotation.discount_percent}%</span>
+                          </div>
+                        )}
+                        {viewDetailsModal.data.final_quotation.margin_percent > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Margin:</span>
+                            <span>{viewDetailsModal.data.final_quotation.margin_percent}%</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="text-center space-y-2">
+                        <Button
+                          type="primary"
+                          icon={<FileTextOutlined />}
+                          style={{ background: PURPLE_THEME.primary }}
+                          onClick={() => setQuotationModal({ 
+                            visible: true, 
+                            data: viewDetailsModal.data,
+                            estimateStatus: viewDetailsModal.data.status 
+                          })}
+                          block
+                        >
+                          View Full Quotation
+                        </Button>
+                        
+                        <Button
+                          type="default"
+                          icon={<QuestionCircleOutlined />}
+                          style={{ borderColor: PURPLE_THEME.info, color: PURPLE_THEME.info }}
+                          onClick={() => setAnswersModal({ visible: true, data: viewDetailsModal.data })}
+                          block
+                        >
+                          View Questionnaire Answers
+                        </Button>
+                        
+                        {viewDetailsModal.data.status === 'final_created' && (
+                          <>
+                            <Button
+                              type="default"
+                              icon={<CheckOutlined />}
+                              style={{ 
+                                borderColor: PURPLE_THEME.success, 
+                                color: PURPLE_THEME.success,
+                              }}
+                              onClick={() => approveQuotation(viewDetailsModal.data._id)}
+                              block
+                            >
+                              Approve & Send to Customer
+                            </Button>
+                            
+                            <Button
+                              type="default"
+                              icon={<CloseCircleOutlined />}
+                              style={{ 
+                                borderColor: PURPLE_THEME.error, 
+                                color: PURPLE_THEME.error,
+                              }}
+                              onClick={() => rejectQuotation(viewDetailsModal.data._id)}
+                              block
+                            >
+                              Reject Quotation
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-400 py-4">
+                      <FileTextOutlined style={{ fontSize: 24, marginBottom: 8 }} />
+                      <div>No quotation created yet</div>
+                    </div>
+                  )}
+                </Card>
+
                 <Card size="small" title="Workflow Progress" className="mb-4">
                   <Timeline className="mt-2">
-                    <Timeline.Item color="green">Created: {formatDate(viewDetailsModal.data.createdAt)}</Timeline.Item>
-                    <Timeline.Item color={viewDetailsModal.data.assigned_supervisor ? 'green' : 'gray'}>
-                      Assigned: {viewDetailsModal.data.assigned_supervisor ? formatDate(viewDetailsModal.data.assigned_at) : 'Pending'}
+                    <Timeline.Item 
+                      color="green" 
+                      dot={<CalendarOutlined />}
+                    >
+                      <div>
+                        <strong>Created:</strong>
+                        <div className="text-xs text-gray-500">{formatDate(viewDetailsModal.data.createdAt)}</div>
+                      </div>
                     </Timeline.Item>
-                    <Timeline.Item color={viewDetailsModal.data.supervisor_progress === 'final_quotation_created' ? 'green' : 'blue'}>
-                      Supervisor Status: <Tag>{progressConfig[viewDetailsModal.data.supervisor_progress]?.label}</Tag>
+                    
+                    <Timeline.Item 
+                      color={viewDetailsModal.data.assigned_supervisor ? 'green' : 'gray'}
+                      dot={<TeamOutlined />}
+                    >
+                      <div>
+                        <strong>Assigned:</strong>
+                        <div className="text-xs text-gray-500">
+                          {viewDetailsModal.data.assigned_supervisor ? formatDate(viewDetailsModal.data.assigned_at) : 'Pending'}
+                        </div>
+                        {viewDetailsModal.data.assigned_supervisor && (
+                          <div className="text-xs mt-1">
+                            To: {viewDetailsModal.data.assigned_supervisor.name?.first_name} {viewDetailsModal.data.assigned_supervisor.name?.last_name}
+                          </div>
+                        )}
+                      </div>
                     </Timeline.Item>
-                    <Timeline.Item dot={<GoldOutlined />} color="purple">
-                      Customer Status: <Tag>{progressConfig[viewDetailsModal.data.customer_progress]?.label}</Tag>
+                    
+                    <Timeline.Item 
+                      color={viewDetailsModal.data.supervisor_progress === 'final_quotation_created' ? 'green' : 'blue'}
+                      dot={<BuildOutlined />}
+                    >
+                      <div>
+                        <strong>Supervisor Status:</strong>
+                        <div className="mt-1">
+                          <Tag color={progressConfig[viewDetailsModal.data.supervisor_progress]?.color}>
+                            {progressConfig[viewDetailsModal.data.supervisor_progress]?.label}
+                          </Tag>
+                        </div>
+                      </div>
+                    </Timeline.Item>
+                    
+                    <Timeline.Item 
+                      color={viewDetailsModal.data.final_quotation ? 'purple' : 'gray'}
+                      dot={<FileTextOutlined />}
+                    >
+                      <div>
+                        <strong>Final Quotation:</strong>
+                        <div className="mt-1">
+                          {viewDetailsModal.data.final_quotation ? 'Created' : 'Pending'}
+                          {viewDetailsModal.data.final_quotation && (
+                            <div className="text-xs mt-1">
+                              Amount: {formatCurrency(viewDetailsModal.data.final_quotation.grand_total)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Timeline.Item>
+                    
+                    <Timeline.Item 
+                      dot={<GoldOutlined />} 
+                      color="purple"
+                    >
+                      <div>
+                        <strong>Customer Status:</strong>
+                        <div className="mt-1">
+                          <Tag>{progressConfig[viewDetailsModal.data.customer_progress]?.label}</Tag>
+                        </div>
+                      </div>
                     </Timeline.Item>
                   </Timeline>
+                </Card>
+
+                <Card size="small" title="Freelancer Quotes" className="mb-4">
+                  {viewDetailsModal.data.freelancer_quotations?.length > 0 ? (
+                    <div className="space-y-3">
+                      {viewDetailsModal.data.freelancer_quotations.map((quote, index) => (
+                        <div 
+                          key={quote._id || index}
+                          className={`p-3 rounded border ${quote._id === viewDetailsModal.data.freelancer_selected_quotation ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-medium">
+                                {quote.freelancer?.name?.first_name} {quote.freelancer?.name?.last_name}
+                              </div>
+                              <div className="text-xs text-gray-500">{quote.freelancer?.email}</div>
+                            </div>
+                            {quote._id === viewDetailsModal.data.freelancer_selected_quotation && (
+                              <Tag color="success">Selected</Tag>
+                            )}
+                          </div>
+                          <div className="mt-2">
+                            <div className="font-bold text-purple-700">
+                              {formatCurrency(quote.quotation?.grand_total)}
+                            </div>
+                            {quote.quotation?.discount_percent > 0 && (
+                              <div className="text-xs text-gray-500">
+                                Discount: {quote.quotation.discount_percent}%
+                              </div>
+                            )}
+                            <div className="text-xs text-gray-400 mt-1">
+                              Submitted: {formatShortDate(quote.submitted_at)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-400 py-2">
+                      No freelancer quotes yet
+                    </div>
+                  )}
                 </Card>
               </Col>
             </Row>
@@ -698,77 +1102,178 @@ const LeadsList = () => {
         )}
       </Modal>
 
+      {/* ======================= QUOTATION MODAL ======================= */}
       <Modal
-        title={null}
-        footer={null}
+        title="Quotation Details"
+        footer={[
+          <Button key="cancel" onClick={() => setQuotationModal({ visible: false, data: null, estimateStatus: null })}>
+            Close
+          </Button>,
+          <Button 
+            key="download" 
+            icon={<DownloadOutlined />}
+            onClick={() => downloadQuotationPDF(quotationModal.data)}
+          >
+            Download PDF
+          </Button>,
+          // Show Approve button only for final_created status
+          quotationModal.estimateStatus === 'final_created' && quotationModal.data?.final_quotation && (
+            <Button
+              key="approve"
+              type="primary"
+              style={{ background: PURPLE_THEME.success }}
+              icon={<CheckOutlined />}
+              onClick={() => approveQuotation(quotationModal.data._id)}
+            >
+              Approve & Send to Customer
+            </Button>
+          )
+        ].filter(Boolean)}
         open={quotationModal.visible}
         onCancel={() => setQuotationModal({ visible: false, data: null, estimateStatus: null })}
-        width={800}
+        width={900}
         bodyStyle={{ padding: 0 }}
         centered
       >
-        {quotationModal.data && (
+        {quotationModal.data?.final_quotation && (
           <div className="bg-white">
-            <div className="p-8 bg-gray-50 border-b">
+            <div className="p-6 bg-gray-50 border-b">
               <div className="flex justify-between items-start">
                 <div>
-                  <img src={logo} alt="Company Logo" style={{ height: 60, marginBottom: 10 }} />
+                  <img src={logo} alt="Company Logo" style={{ height: 50, marginBottom: 10 }} />
                   <div className="text-gray-500 text-sm">
                     123 Landscape Avenue<br />Dubai, UAE<br />contact@company.com
                   </div>
                 </div>
                 <div className="text-right">
-                  <Title level={2} style={{ color: PURPLE_THEME.primary, margin: 0 }}>QUOTATION</Title>
+                  <Title level={3} style={{ color: PURPLE_THEME.primary, margin: 0 }}>FINAL QUOTATION</Title>
                   <div className="mt-2 text-gray-600">
                     <div><strong>Quotation #:</strong> {quotationModal.data._id?.substring(0, 8).toUpperCase()}</div>
-                    <div><strong>Date:</strong> {new Date(quotationModal.data.createdAt).toLocaleDateString()}</div>
-                    <div><strong>Status:</strong> <Tag color="blue">GENERATED</Tag></div>
+                    <div><strong>Date:</strong> {formatDate(quotationModal.data.createdAt)}</div>
+                    <div><strong>Status:</strong> 
+                      <Tag color={statusConfig[quotationModal.data.status]?.color} style={{ marginLeft: 8 }}>
+                        {statusConfig[quotationModal.data.status]?.label?.toUpperCase()}
+                      </Tag>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-8">
-              <Table
-                dataSource={quotationModal.data.items || []}
-                rowKey="_id"
-                pagination={false}
-                bordered
-                columns={[
-                  { title: '#', render: (_, __, i) => i + 1, width: 50, align: 'center' },
-                  {
-                    title: 'Item Description',
-                    dataIndex: 'item',
-                    key: 'item',
-                    render: (text, record) => (
-                      <div>
-                        <div className="font-medium">{text}</div>
-                        <div className="text-xs text-gray-500">{record.description}</div>
-                      </div>
-                    )
-                  },
-                  { title: 'Qty', dataIndex: 'quantity', key: 'quantity', width: 80, align: 'center' },
-                  { title: 'Unit Price', dataIndex: 'unit_price', key: 'unit_price', width: 120, align: 'right', render: (val) => formatCurrency(val) },
-                  { title: 'Total', dataIndex: 'total', key: 'total', width: 120, align: 'right', render: (val) => <span className="font-medium">{formatCurrency(val)}</span> }
-                ]}
-              />
-
-              <div className="flex justify-end mt-6">
-                <div className="w-64 space-y-3">
-                  <div className="flex justify-between text-gray-600">
-                    <span>Subtotal:</span><span>{formatCurrency(quotationModal.data.subtotal)}</span>
+            {/* Customer Info */}
+            <div className="p-6 border-b">
+              <Row gutter={[16, 16]}>
+                <Col span={12}>
+                  <div>
+                    <Text strong>Customer:</Text>
+                    <div>
+                      {quotationModal.data.customer?.name?.first_name} {quotationModal.data.customer?.name?.last_name}
+                    </div>
+                    <div className="text-gray-500">
+                      {quotationModal.data.customer?.email}
+                    </div>
                   </div>
+                </Col>
+                <Col span={12}>
+                  <div>
+                    <Text strong>Service:</Text>
+                    <div>
+                      <Tag color="purple">{quotationModal.data.service_type?.toUpperCase()}</Tag>
+                      <span className="ml-2">{quotationModal.data.subcategory?.label} - {quotationModal.data.type?.label}</span>
+                    </div>
+                    <div className="text-gray-500">
+                      Area: {quotationModal.data.area_sqft} sq.ft
+                    </div>
+                  </div>
+                </Col>
+              </Row>
+            </div>
+
+            <div className="p-6">
+              {/* Scope of Work */}
+              {quotationModal.data.final_quotation.scope_of_work && (
+                <div className="mb-6">
+                  <Text strong>Scope of Work:</Text>
+                  <Paragraph className="mt-2 bg-gray-50 p-3 rounded">
+                    {quotationModal.data.final_quotation.scope_of_work}
+                  </Paragraph>
+                </div>
+              )}
+
+      
+
+              {/* Total Summary */}
+              <div className="flex justify-end">
+                <div className="w-64 space-y-3">
+                
+                  
+                  {quotationModal.data.final_quotation.discount_percent > 0 && (
+                    <div className="flex justify-between text-gray-600">
+                      <span>Discount ({quotationModal.data.final_quotation.discount_percent}%):</span>
+                      <span>-{formatCurrency(quotationModal.data.final_quotation.discount_amount)}</span>
+                    </div>
+                  )}
+                  
+                  {quotationModal.data.final_quotation.margin_percent > 0 && (
+                    <div className="flex justify-between text-gray-600">
+                      <span>Margin ({quotationModal.data.final_quotation.margin_percent}%):</span>
+                      <span>+{formatCurrency(quotationModal.data.final_quotation.margin_amount)}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between text-xl font-bold text-purple-800 border-t pt-3">
-                    <span>Grand Total:</span><span>{formatCurrency(quotationModal.data.grand_total)}</span>
+                    <span>Grand Total:</span>
+                    <span>{formatCurrency(quotationModal.data.final_quotation.grand_total)}</span>
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         )}
       </Modal>
 
+      {/* ======================= EDIT QUOTATION MODAL ======================= */}
+     
+
+      {/* ======================= ANSWERS MODAL ======================= */}
+      <Modal
+        title="Questionnaire Answers"
+        open={answersModal.visible}
+        onCancel={() => setAnswersModal({ visible: false, data: null })}
+        width={1200}
+        footer={[
+          <Button key="close" onClick={() => setAnswersModal({ visible: false, data: null })}>
+            Close
+          </Button>
+        ]}
+      >
+        {answersModal.data && (
+          <div>
+            <div className="mb-6 p-4 bg-purple-50 rounded-lg">
+              <div className="flex justify-between items-center">
+                <div>
+                  <Title level={4} style={{ margin: 0, color: PURPLE_THEME.primary }}>
+                    Customer: {answersModal.data.customer?.name?.first_name} {answersModal.data.customer?.name?.last_name}
+                  </Title>
+                  <Text type="secondary">
+                    Service: {answersModal.data.service_type?.toUpperCase()} - {answersModal.data.subcategory?.label}
+                  </Text>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-purple-700">
+                    {formatCurrency(calculateEstimatedTotal(answersModal.data))}
+                  </div>
+                  <Text type="secondary">Total Estimated Amount</Text>
+                </div>
+              </div>
+            </div>
+
+            {renderEstimateAnswers(answersModal.data.EstimateAnswers)}
+          </div>
+        )}
+      </Modal>
+
+      {/* ======================= IMAGE VIEWER MODAL ======================= */}
       <Modal
         open={imageViewer.visible}
         onCancel={() => setImageViewer({ visible: false, images: [], currentIndex: 0 })}
@@ -791,7 +1296,7 @@ const LeadsList = () => {
         </Carousel>
       </Modal>
 
-      {/* ======================= DRAWER ======================= */}
+      {/* ======================= ASSIGN DRAWER ======================= */}
       <Drawer
         title="Assign Supervisor"
         open={drawerVisible}
