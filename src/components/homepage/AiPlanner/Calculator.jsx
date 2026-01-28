@@ -298,6 +298,8 @@ const Calculator = () => {
   // Gallery States
   const [galleryImages, setGalleryImages] = useState([]); 
   const [previewImage, setPreviewImage] = useState(null); 
+  const [selectedImages, setSelectedImages] = useState([]);
+
 
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
@@ -405,6 +407,17 @@ const getAllImages = useCallback(async () => {
     setLoading(prev => ({ ...prev, gallery: false }));
   }
 }, [selectedType]);
+
+const toggleImageSelect = (img) => {
+  setSelectedImages((prev) => {
+    const exists = prev.find(i => i.url === img.url);
+    if (exists) {
+      return prev.filter(i => i.url !== img.url);
+    }
+    return [...prev, img];
+  });
+};
+
 
 
   // Trigger Image Fetch on Type Selection
@@ -742,9 +755,26 @@ const getAllImages = useCallback(async () => {
     switch (activeStep) {
       case 0:
         return (
-          <motion.div
-            className="text-center py-10"
-          >
+         <motion.div className="relative text-center py-10">
+
+      {/* 🔙 SUBTLE BACK LINK */}
+      <div className="absolute -top-12 left-0">
+  <Button
+    onClick={() => navigate("/")}
+    icon={<ArrowLeftOutlined />}
+    className="h-16 px-10 rounded-2xl font-semibold shadow-md transition-all"
+    style={{
+      backgroundColor: "#ffffff",
+      border: `1px solid ${BRAND_PURPLE}33`,
+      color: BRAND_PURPLE,
+      fontSize: "16px",
+    }}
+  >
+    Back
+  </Button>
+</div>
+
+
             <div className="mb-6 inline-block p-6 rounded-full bg-purple-50">
               <CompassOutlined style={{ color: BRAND_PURPLE, fontSize: "3rem" }} />
             </div>
@@ -1036,54 +1066,95 @@ const getAllImages = useCallback(async () => {
                   Based on your selection of <strong>{types.find(t => t._id === selectedType)?.label || "style"}</strong>
                 </Text>
 
-                {/* ✅ PREVIEW IMAGE (Hero Section) */}
-                {previewImage && (
-                  <motion.div 
-                    whileHover={{ scale: 1.01 }} 
-                    className="mb-10 rounded-3xl overflow-hidden shadow-2xl border-4 border-white mx-auto max-w-4xl"
-                  >
-                    <Image
-                      src={getImageUrl(previewImage.url)}
-                      alt={previewImage.title || "Preview"}
-                      className="object-cover w-full"
-                      style={{ maxHeight: "500px", width: "100%", objectFit: "cover" }}
-                      fallback="https://via.placeholder.com/800x400?text=Preview+Loading"
-                    />
-                    {previewImage.title && (
-                      <div className="bg-white p-4">
-                        <Text strong className="text-lg">{previewImage.title}</Text>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
+               {/* ✅ PREVIEW IMAGE (Hero Section) */}
+{previewImage && (
+  <motion.div
+    whileHover={{ scale: 1.01 }}
+    className="mb-10 rounded-3xl overflow-hidden shadow-2xl border-4 border-white mx-auto max-w-4xl bg-white"
+  >
+    <Image
+      src={getImageUrl(previewImage.url)}
+      alt={previewImage.title || previewImage.name || "Preview"}
+      className="object-cover w-full"
+      style={{ maxHeight: "500px", width: "100%" }}
+      preview={false}
+    />
+
+    {/* ✅ PREVIEW TITLE */}
+    {(previewImage.title || previewImage.name || previewImage.label) && (
+      <div className="p-4 border-t border-gray-100 text-left">
+        <Text className="text-base font-semibold text-gray-800">
+          {previewImage.title ||
+            previewImage.name ||
+            previewImage.label}
+        </Text>
+      </div>
+    )}
+  </motion.div>
+)}
+
 
                 {/* ✅ MOODBOARD GRID */}
                 {galleryImages && galleryImages.length > 0 && (
                   <>
                      <Title level={4} className="text-left text-gray-500 mb-6 pl-2">Moodboard Details</Title>
-                     <Row gutter={[24, 24]} justify="center">
-                      {galleryImages.map((img, index) => (
-                        <Col xs={24} sm={12} md={8} lg={6} key={index}>
-                          <motion.div
-                            whileHover={{ y: -5 }}
-                            className="rounded-2xl overflow-hidden shadow-lg h-full bg-white"
-                          >
-                            <Image
-                              src={getImageUrl(img.url)}
-                              alt={img.title || "Moodboard"}
-                              className="object-cover w-full h-64"
-                              style={{ objectFit: "cover", height: "250px", width: "100%" }}
-                              fallback="https://via.placeholder.com/300?text=No+Image"
-                            />
-                            {img.title && (
-                              <div className="p-3 text-left">
-                                <Text className="text-xs font-semibold text-gray-600">{img.title}</Text>
-                              </div>
-                            )}
-                          </motion.div>
-                        </Col>
-                      ))}
-                    </Row>
+                    <Row gutter={32} className="mt-12">
+  
+  {/* RIGHT – ALL IMAGES */}
+  <Col xs={24} lg={18}>
+    <Row gutter={[24, 24]}>
+      {galleryImages.map((img, index) => {
+        const isSelected = selectedImages.some(i => i.url === img.url);
+
+        return (
+          <Col xs={24} sm={12} md={8} key={index}>
+         <motion.div
+  whileHover={{ scale: 1.02 }}
+  onClick={() => toggleImageSelect(img)}
+  className={`relative rounded-2xl overflow-hidden cursor-pointer border-2 bg-white transition-all
+    ${isSelected ? "border-purple-600 shadow-lg" : "border-transparent"}
+  `}
+>
+  {/* IMAGE */}
+  <Image
+    src={getImageUrl(img.url)}
+    preview={false}
+    className="w-full h-64 object-cover"
+  />
+
+  {/* SELECTED OVERLAY */}
+  {isSelected && (
+    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+      <div
+        className="w-14 h-14 rounded-full flex items-center justify-center shadow-xl"
+        style={{ backgroundColor: BRAND_PURPLE }}
+      >
+        <CheckOutlined className="text-white text-2xl font-bold" />
+      </div>
+    </div>
+  )}
+
+  {/* ✅ IMAGE TITLE (FIXED) */}
+  {(img.title || img.name || img.label || img.caption || img.originalName) && (
+    <div className="p-3 border-t border-gray-100 text-center">
+      <Text className="text-sm font-semibold text-gray-700 line-clamp-2">
+        {img.title ||
+          img.name ||
+          img.label ||
+          img.caption ||
+          img.originalName}
+      </Text>
+    </div>
+  )}
+</motion.div>
+
+          </Col>
+        );
+      })}
+    </Row>
+  </Col>
+</Row>
+
                   </>
                 )}
               </div>
