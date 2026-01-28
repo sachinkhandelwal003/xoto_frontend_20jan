@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from "react-redux";
 import { apiService } from '../../../../../manageApi/utils/custom.apiservice';
 import CustomTable from '../../../pages/custom/CustomTable';
+import { useFreelancer } from '../../../../../../src/context/FreelancerContext';
 
-// 1. IMPORT LOGO
+// Logo import
 import logo from "../../../../../assets/img/logoNew.png";
 
 import { 
@@ -35,7 +36,12 @@ import {
   Tooltip,
   Image,
   Rate,
-  Popover
+  Popover,
+  Steps,
+  Statistic,
+  Progress,
+  Radio,
+  Switch
 } from 'antd';
 
 import { 
@@ -63,15 +69,26 @@ import {
   EnvironmentOutlined,
   StarOutlined,
   WalletOutlined,
-  CheckCircleFilled
+  CheckCircleFilled,
+  PercentageOutlined,
+  CalculatorFilled,
+  InfoCircleOutlined,
+  FileDoneOutlined,
+  AuditOutlined,
+  BarChartOutlined,
+  EyeInvisibleOutlined,
+  DownloadOutlined,
+  PrinterOutlined,
+  ShareAltOutlined
 } from '@ant-design/icons';
 
 import { showSuccessAlert, showErrorAlert, showConfirmDialog } from '../../../../../manageApi/utils/sweetAlert';
 
 const { Option } = Select;
 const { TextArea } = Input;
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { Panel } = Collapse;
+const { Step } = Steps;
 
 // Purple Theme Colors
 const PURPLE_THEME = {
@@ -90,6 +107,7 @@ const PURPLE_THEME = {
 
 const AssignedLeadsList = () => {
     const user = useSelector((s) => s.auth?.user);
+    const { freelancer } = useFreelancer();
     const [leads, setLeads] = useState([]);
     const [loading, setLoading] = useState(false);
     
@@ -102,14 +120,17 @@ const AssignedLeadsList = () => {
     // Visibility States
     const [drawerVisible, setDrawerVisible] = useState(false);
     const [freelancerDrawerVisible, setFreelancerDrawerVisible] = useState(false);
+    const [activityLogVisible, setActivityLogVisible] = useState(false);
     
-    // MODALS (No longer drawers for quotations)
+    // MODALS
     const [reviewQuotesModalVisible, setReviewQuotesModalVisible] = useState(false);
     const [finalQuotationModalVisible, setFinalQuotationModalVisible] = useState(false);
+    const [viewFinalQuotationModalVisible, setViewFinalQuotationModalVisible] = useState(false);
 
     // Selection States
     const [selectedLead, setSelectedLead] = useState(null);
     const [selectedFreelancers, setSelectedFreelancers] = useState([]);
+    const [selectedQuotation, setSelectedQuotation] = useState(null);
     
     // Pagination & Filters
     const [pagination, setPagination] = useState({ currentPage: 1, itemsPerPage: 10, totalItems: 0 });
@@ -120,6 +141,20 @@ const AssignedLeadsList = () => {
     const [items, setItems] = useState([
         { sno: 1, item: '', description: '', unit: '', quantity: 1, unit_price: 0, total: 0 }
     ]);
+// ✅ Ant Design correct way to watch discount
+const discountPercent = Form.useWatch('discount_percent', finalQuotationForm) || 0;
+    // Margin Calculation State - Moved here to be accessible by all modals
+    const [marginType, setMarginType] = useState('percentage'); // 'percentage' or 'fixed'
+    const [marginValue, setMarginValue] = useState(15); // 15% by default
+    const [selectedFreelancerQuotationId, setSelectedFreelancerQuotationId] = useState(null);
+    const [marginAmount, setMarginAmount] = useState(0);
+    const [priceAfterMargin, setPriceAfterMargin] = useState(0);
+    const [basePrice, setBasePrice] = useState(0);
+    const [liveFinalPrice, setLiveFinalPrice] = useState(0);
+
+    // Activity Logs
+    const [activityLogs, setActivityLogs] = useState([]);
+    const [logsLoading, setLogsLoading] = useState(false);
 
     // --- CONFIGURATION OBJECTS ---
     const statusConfig = {
@@ -143,15 +178,14 @@ const AssignedLeadsList = () => {
 
     // --- HELPERS ---
     const formatMobileNumber = (mobileObj) => mobileObj ? `${mobileObj.country_code || ''} ${mobileObj.number || ''}`.trim() : 'N/A';
-    const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
-    const formatCurrency = (amount, currency = 'AED') => amount ? `${currency} ${parseFloat(amount).toLocaleString()}` : `${currency} 0`;
+    const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
+    const formatCurrency = (amount, currency = 'AED') => amount ? `${currency} ${parseFloat(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${currency} 0.00`;
     
     // Get full image URL
     const getFullImageUrl = (path) => {
         if (!path) return null;
         if (path.startsWith('http')) return path;
-        // Assuming your API base URL is stored somewhere, or use relative path
-        return path.startsWith('/') ? `https://xoto.ae/api${path}` : path;
+        return `http://localhost:5000${path.startsWith('/') ? '' : '/'}${path}`;
     };
 
     // Get customer name
@@ -173,7 +207,6 @@ const AssignedLeadsList = () => {
         
         if (!service || !service.subcategories) return null;
         
-        // If specific service type is provided, find that
         if (serviceTypeId) {
             const subcategory = service.subcategories.find(sub => 
                 sub.type && sub.type._id === serviceTypeId
@@ -181,7 +214,6 @@ const AssignedLeadsList = () => {
             return subcategory || null;
         }
         
-        // Return first available subcategory if no specific type
         return service.subcategories.length > 0 ? service.subcategories[0] : null;
     };
 
@@ -191,13 +223,82 @@ const AssignedLeadsList = () => {
         return `${formatCurrency(rateData.price_range)} ${rateData.unit || ''}`.trim();
     };
 
+    // Get selected freelancer quotation
+    const getSelectedFreelancerQuotation = (lead) => {
+        if (!lead?.freelancer_quotations || !lead?.freelancer_selected_quotation) return null;
+        const quotation = lead.freelancer_quotations.find(q => q.quotation._id === lead.freelancer_selected_quotation);
+        return quotation?.quotation || null;
+    };
+
+    // --- MARGIN CALCULATION FUNCTIONS ---
+    const calculateMargin = (basePriceValue = basePrice) => {
+        if (!basePriceValue || basePriceValue <= 0) {
+            return { marginAmount: 0, finalPrice: 0 };
+        }
+        
+        const base = parseFloat(basePriceValue);
+        let calculatedMargin = 0;
+        let finalPrice = base;
+        
+        if (marginType === 'percentage') {
+            calculatedMargin = (base * parseFloat(marginValue)) / 100;
+        } else {
+            calculatedMargin = parseFloat(marginValue) || 0;
+        }
+        
+        finalPrice = base + calculatedMargin;
+        
+        return { 
+            marginAmount: Number(calculatedMargin.toFixed(2)), 
+            finalPrice: Number(finalPrice.toFixed(2)) 
+        };
+    };
+
+    const updateMarginCalculation = () => {
+        const { marginAmount: newMargin, finalPrice: newFinalPrice } = calculateMargin();
+        setMarginAmount(newMargin);
+        setPriceAfterMargin(newFinalPrice);
+        
+        // Update items with the new price
+        if (items.length > 0) {
+            const updatedItems = [...items];
+            updatedItems[0] = {
+                ...updatedItems[0],
+                unit_price: newFinalPrice,
+                total: newFinalPrice
+            };
+            setItems(updatedItems);
+        }
+        
+        // Update live final price
+        updateLiveFinalPrice();
+    };
+
+    const updateLiveFinalPrice = () => {
+    const discountPercent = finalQuotationForm.getFieldValue('discount_percent') || 0;
+    const discountAmount = (priceAfterMargin * discountPercent) / 100;
+    const finalPriceAfterDiscount = priceAfterMargin - discountAmount;
+    setLiveFinalPrice(Number(finalPriceAfterDiscount.toFixed(2)));
+};
+useEffect(() => {
+    if (priceAfterMargin > 0) {
+        const discountAmount = (priceAfterMargin * discountPercent) / 100;
+        const finalPriceAfterDiscount = priceAfterMargin - discountAmount;
+        setLiveFinalPrice(Number(finalPriceAfterDiscount.toFixed(2)));
+    }
+}, [discountPercent, priceAfterMargin]);
+// Remove the problematic useEffect and add this simple one:
+useEffect(() => {
+    // Initial calculation
+    updateLiveFinalPrice();
+}, [priceAfterMargin]);
     // --- API CALLS ---
     const fetchLeads = async (page = 1, limit = 10, filterParams = {}) => {
         setLoading(true);
         try {
             const params = { page, limit, supervisor: user?.id, ...filterParams };
             const response = await apiService.get('/estimates', params);
-            console.log('API Response:', response.data); // Debug log
+            console.log('API Response:', response.data);
             
             if (response.success) {
                 setLeads(response.data || []);
@@ -239,6 +340,15 @@ const AssignedLeadsList = () => {
             setFreelancersLoading(false);
         }
     };
+    const hasFreelancerSubmittedQuotation = (lead, freelancerId) => {
+    if (!lead?.freelancer_quotations?.length) return false;
+
+    return lead.freelancer_quotations.some(
+        fq =>
+            fq.freelancer?.id === freelancerId &&
+            fq.quotation?.status === 'freelancer_to_supervisor'
+    );
+};
 
     const fetchQuotations = async (estimateId) => {
         setQuotationsLoading(true);
@@ -258,22 +368,7 @@ const AssignedLeadsList = () => {
         const item = newItems[index];
         item.total = (item.quantity || 0) * (item.unit_price || 0);
         setItems(newItems);
-    };
-
-    const calculateTotals = () => {
-        const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
-        const discountPercent = finalQuotationForm.getFieldValue('discount_percent') || 0;
-        const discountAmount = (subtotal * discountPercent) / 100;
-        const grandTotal = subtotal - discountAmount;
-        return { subtotal, discountAmount, grandTotal, discountPercent };
-    };
-
-    const addItem = () => setItems([...items, { sno: items.length + 1, item: '', description: '', unit: '', quantity: 1, unit_price: 0, total: 0 }]);
-    
-    const removeItem = (index) => {
-        if (items.length === 1) return message.warning('At least one item is required');
-        const newItems = items.filter((_, i) => i !== index).map((item, idx) => ({ ...item, sno: idx + 1 }));
-        setItems(newItems);
+        updateLiveFinalPrice();
     };
 
     // --- HANDLERS ---
@@ -299,7 +394,6 @@ const AssignedLeadsList = () => {
         setSelectedFreelancers([]);
         setFreelancerDrawerVisible(true);
         
-        // Fetch freelancers based on service category
         const serviceCategoryId = lead.subcategory?._id;
         if (serviceCategoryId) {
             fetchFreelancers(serviceCategoryId);
@@ -311,76 +405,139 @@ const AssignedLeadsList = () => {
 
     const openReviewModal = async (lead) => {
         setSelectedLead(lead);
-        setReviewQuotesModalVisible(true); // Open Modal, NOT Drawer
+        setReviewQuotesModalVisible(true);
         await fetchQuotations(lead._id);
     };
 
-    const openFinalQuotationModal = (lead) => {
+    const openActivityLog = async (lead) => {
         setSelectedLead(lead);
-        setFinalQuotationModalVisible(true);
-        finalQuotationForm.resetFields();
-        setItems([{ sno: 1, item: '', description: '', unit: '', quantity: 1, unit_price: 0, total: 0 }]);
+        setActivityLogVisible(true);
     };
 
-    const handleCopyFreelancerData = (quotation) => {
-        // Map freelancer items to final items
-        if (quotation.items && quotation.items.length > 0) {
-            const mappedItems = quotation.items.map((item, index) => ({
-                sno: index + 1,
-                item: item.item,
-                description: item.description || '',
-                unit: item.unit || 'lumpsum',
-                quantity: item.quantity || 1,
-                unit_price: item.unit_price || 0,
-                total: (item.quantity || 1) * (item.unit_price || 0)
-            }));
-            setItems(mappedItems);
+    const openMarginCalculator = (quotation) => {
+        if (!quotation) return;
+        
+        setSelectedQuotation(quotation);
+        setSelectedFreelancerQuotationId(quotation._id);
+        
+        // Set base price from freelancer quotation
+        const freelancerPrice = quotation.grand_total || quotation.price || 0;
+        setBasePrice(freelancerPrice);
+        
+        // Calculate initial margin
+        updateMarginCalculation();
+    };
+
+    const openFinalQuotationModal = (lead, quotationData = null, applyMargin = false) => {
+        setSelectedLead(lead);
+
+        let scopeOfWork = '';
+        let discountPercent = 0;
+        let freelancerPrice = 0;
+
+        if (quotationData) {
+            // Set base price from freelancer quotation
+            freelancerPrice = quotationData.grand_total || quotationData.price || 0;
+            setBasePrice(freelancerPrice);
+            setSelectedFreelancerQuotationId(quotationData._id);
+            
+            scopeOfWork = quotationData.scope_of_work || '';
+            discountPercent = quotationData.discount_percent || 0;
+
+            // Calculate price after margin
+            const { finalPrice } = calculateMargin(freelancerPrice);
+            const finalPriceToUse = applyMargin ? finalPrice : freelancerPrice;
+
+            setItems([{
+                sno: 1,
+                item: `${lead.subcategory?.label} - ${lead.type?.label}`,
+                description: scopeOfWork || 'Complete service as per quotation',
+                unit_price: finalPriceToUse,
+                total: finalPriceToUse
+            }]);
+        } else {
+            setItems([
+                { sno: 1, item: '', description: '', unit_price: 0, total: 0 }
+            ]);
         }
 
         finalQuotationForm.setFieldsValue({
-            scope_of_work: quotation.scope_of_work,
-            discount_percent: 0 
+            scope_of_work: scopeOfWork,
+            discount_percent: discountPercent
         });
 
-        // Close Review Modal and Open Final Modal
-        setReviewQuotesModalVisible(false);
         setFinalQuotationModalVisible(true);
-    };
-
-    const handleCreateFinalQuotation = async (values) => {
-        const { scope_of_work, discount_percent } = values;
         
-        const filteredItems = items.filter(i => i.item && i.item.trim() !== "");
-        if (filteredItems.length === 0) return showErrorAlert("Validation Error", "At least one item is required.");
-
-        const preparedItems = filteredItems.map(i => ({
-            sno: i.sno,
-            item: i.item,
-            description: i.description,
-            unit: i.unit,
-            quantity: i.quantity,
-            unit_price: i.unit_price,
-            total: i.total
-        }));
-
-        try {
-            const payload = {
-                items: preparedItems,
-                scope_of_work,
-                discount_percent: discount_percent || 0
-            };
-
-            const response = await apiService.post(`/estimates/${selectedLead._id}/final-quotation`, payload);
-            if (response.success) {
-                showSuccessAlert("Success", "Final quotation created successfully");
-                setFinalQuotationModalVisible(false);
-                fetchLeads(pagination.currentPage, pagination.itemsPerPage, filters);
-            }
-        } catch (error) {
-            showErrorAlert("Error", "Failed to create final quotation");
-        }
+        // Update live final price
+        updateLiveFinalPrice();
     };
 
+    const handleCopyFreelancerData = (quotation) => {
+        openFinalQuotationModal(selectedLead, quotation, false);
+        setReviewQuotesModalVisible(false);
+    };
+
+    const handleApplyMargin = () => {
+        // Update margin calculation
+        updateMarginCalculation();
+        
+        // Show success message
+        message.success(
+            `Margin applied. New price: ${formatCurrency(priceAfterMargin)}`
+        );
+    };
+
+   const handleCreateFinalQuotation = async (values) => {
+  const { scope_of_work, discount_percent } = values;
+
+  if (!selectedFreelancerQuotationId) {
+    return showErrorAlert("Error", "Please select a freelancer quotation first");
+  }
+
+  try {
+    // ✅ ALWAYS send freelancer grand_total as base price
+    const freelancerBasePrice = Number(basePrice); // already set from quotation
+
+    // ✅ margin amount logic (unchanged)
+    const marginAmountToSend =
+      marginType === 'percentage'
+        ? Number(((freelancerBasePrice * marginValue) / 100).toFixed(2))
+        : Number(marginValue);
+
+    const payload = {
+      scope_of_work: scope_of_work || '',
+
+      // ✅ IMPORTANT FIX HERE
+      price: freelancerBasePrice,
+
+      discount_percent: discount_percent || 0,
+      estimate_type: selectedLead.type._id,
+      estimate_subcategory: selectedLead.subcategory._id,
+      freelancer_quotation_id: selectedFreelancerQuotationId,
+
+      // ✅ margin stored separately
+      margin_type: marginType === 'percentage' ? 'percentage' : 'amount',
+      margin_percent: marginType === 'percentage' ? marginValue : 0,
+      margin_amount: marginAmountToSend
+    };
+
+    console.log('✅ Final Quotation Payload:', payload);
+
+    const response = await apiService.post(
+      `/estimates/${selectedLead._id}/final-quotation`,
+      payload
+    );
+
+    if (response.success) {
+      showSuccessAlert("Success", "Final quotation created successfully");
+      setFinalQuotationModalVisible(false);
+      setSelectedFreelancerQuotationId(null);
+      fetchLeads(pagination.currentPage, pagination.itemsPerPage, filters);
+    }
+  } catch (error) {
+    showErrorAlert("Error", "Failed to create final quotation");
+  }
+};
     const handleTabChange = (tabKey) => {
         let filterParams = { status: 'assigned' };
         if (tabKey === 'assigned') filterParams.supervisor_progress = 'none';
@@ -399,194 +556,262 @@ const AssignedLeadsList = () => {
         return 'assigned';
     };
 
-    const { subtotal, discountAmount, grandTotal } = calculateTotals();
-
-    // --- COLUMNS DEFINITIONS ---
-    const itemColumns = [
-        { title: '#', dataIndex: 'sno', width: 50, align: 'center', render: (t) => <Badge count={t} style={{ backgroundColor: PURPLE_THEME.primary }} /> },
-        { title: 'Item', dataIndex: 'item', render: (t, r, i) => <Input value={t} onChange={(e) => { const n = [...items]; n[i].item = e.target.value; setItems(n); }} placeholder="Item Name" /> },
-        { title: 'Description', dataIndex: 'description', render: (t, r, i) => <Input value={t} onChange={(e) => { const n = [...items]; n[i].description = e.target.value; setItems(n); }} placeholder="Desc" /> },
-        { title: 'Unit', dataIndex: 'unit', width: 90, render: (t, r, i) => <Select value={t} onChange={(v) => { const n = [...items]; n[i].unit = v; setItems(n); }} style={{ width: '100%' }}>{unitOptions.map(u => <Option key={u} value={u}>{u}</Option>)}</Select> },
-        { title: 'Qty', dataIndex: 'quantity', width: 80, render: (t, r, i) => <InputNumber min={1} value={t} onChange={(v) => { const n = [...items]; n[i].quantity = v; setItems(n); updateItemTotal(i); }} style={{ width: '100%' }} /> },
-        { title: 'Price', dataIndex: 'unit_price', width: 110, render: (t, r, i) => <InputNumber min={0} value={t} onChange={(v) => { const n = [...items]; n[i].unit_price = v; setItems(n); updateItemTotal(i); }} style={{ width: '100%' }} /> },
-        { title: 'Total', dataIndex: 'total', width: 100, align: 'right', render: (t) => <span style={{ color: PURPLE_THEME.success, fontWeight: 'bold' }}>{t?.toLocaleString()}</span> },
-        { title: '', width: 50, render: (_, __, i) => <Button type="text" danger icon={<DeleteOutlined />} onClick={() => removeItem(i)} /> }
-    ];
-
-    const columns = [
-        {
-            title: 'Customer Info',
-            width: 250,
-            render: (_, r) => {
-                const customerName = getCustomerName(r.customer);
-                const customerEmail = r.customer?.email || r.customer_email || 'N/A';
-                const customerMobile = r.customer?.mobile || r.customer_mobile;
-                
-                return (
-                    <div className="flex items-center gap-3">
-                        <Avatar size={40} icon={<UserOutlined />} style={{ background: PURPLE_THEME.primaryBg, color: PURPLE_THEME.primary }} />
-                        <div>
-                            <div className="font-semibold">{customerName}</div>
-                            <div className="text-xs text-gray-500">{customerEmail}</div>
-                            <div className="text-xs text-gray-400">{formatMobileNumber(customerMobile)}</div>
-                        </div>
-                    </div>
-                );
-            }
-        },
-        {
-            title: 'Service',
-            render: (_, r) => (
-                <div>
-                    <Tag color="purple">{r.service_type}</Tag>
-                    <div className="text-sm font-medium mt-1">{r.subcategory?.label}</div>
-                    <div className="text-xs text-gray-500">{r.package?.name}</div>
-                </div>
-            )
-        },
-        {
-            title: 'Area',
-            width: 120,
-            render: (_, r) => (
-                 <div>
-                    <div className="font-bold text-gray-700">{r.area_sqft} <span className="text-xs font-normal">sq.ft</span></div>
-                    <div className="text-xs text-gray-400">{r.area_length} x {r.area_width}</div>
-                 </div>
-            )
-        },
-        {
-            title: 'Progress',
-            render: (_, r) => {
-                const cfg = supervisorProgressConfig[r.supervisor_progress] || supervisorProgressConfig.none;
-                return <Tag color={cfg.color}>{cfg.label}</Tag>;
-            }
-        },
-        {
-            title: 'Status',
-            render: (_, r) => {
-                const cfg = statusConfig[r.status] || statusConfig.pending;
-                return <Tag color={cfg.color} icon={cfg.icon}>{cfg.label}</Tag>;
-            }
-        },
-        {
-            title: 'Actions',
-            fixed: 'right',
-            width: 200,
-            render: (_, r) => (
-                <Space>
-                    <Tooltip title="View Full Details">
-                        <Button icon={<EyeOutlined />} onClick={() => { setSelectedLead(r); setDrawerVisible(true); }} />
-                    </Tooltip>
-                    
-                    {r.status === 'assigned' && r.supervisor_progress === 'none' && (
-                        <Button type="primary" size="small" style={{ background: PURPLE_THEME.primary }} onClick={() => openFreelancerDrawer(r)}>Send to Freelancer</Button>
-                    )}
-                    
-                    {r.supervisor_progress === 'request_completed' && (
-                        <Button type="primary" size="small" style={{ background: PURPLE_THEME.success, borderColor: PURPLE_THEME.success }} onClick={() => openReviewModal(r)}>
-                            Review ({r.freelancer_quotations?.length || 0})
-                        </Button>
-                    )}
-
-                    {r.status === 'final_created' && (
-                         <Tag icon={<CheckCircleOutlined />} color="success">Done</Tag>
-                    )}
-                </Space>
-            )
-        }
-    ];
-
-    const DetailCard = ({ title, icon, children }) => (
-        <Card size="small" title={<span className="flex items-center gap-2 text-purple-700">{icon} {title}</span>} className="mb-4 shadow-sm" headStyle={{ background: '#fafafa' }}>{children}</Card>
-    );
-
-    // Freelancer Rate Card Component
-    const FreelancerRateCard = ({ freelancer, lead }) => {
-        const serviceCategoryId = lead?.subcategory?._id;
-        const serviceTypeId = lead?.type?._id;
-        const rateData = getFreelancerRate(freelancer, serviceCategoryId, serviceTypeId);
-        
-        const content = (
-            <div className="p-3 max-w-xs">
-                <div className="font-semibold mb-2 text-purple-700">Rate Information</div>
-                {rateData ? (
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Service:</span>
-                            <span className="font-medium">{rateData.type?.label || 'General'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Rate:</span>
-                            <span className="font-bold text-green-600">
-                                {formatCurrency(rateData.price_range)}
-                            </span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Unit:</span>
-                            <span className="font-medium">{rateData.unit || 'Per service'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Status:</span>
-                            <Tag color={rateData.is_active ? "success" : "error"} size="small">
-                                {rateData.is_active ? "Active" : "Inactive"}
-                            </Tag>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="text-gray-500 text-sm">
-                        No specific rate found for this service
-                    </div>
-                )}
-                
-                {freelancer.professional?.experience_years && (
-                    <div className="mt-3 pt-2 border-t">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Experience:</span>
-                            <span className="font-medium">{freelancer.professional.experience_years} years</span>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-
-        return (
-            <Popover content={content} title="Service Rate Details">
-                <div className="cursor-pointer hover:bg-purple-50 p-1 rounded">
-                    {rateData ? (
-                        <Tag color="green" icon={<DollarOutlined />} className="font-bold">
-                            {formatRateDisplay(rateData)}
-                        </Tag>
-                    ) : (
-                        <Tag color="default">No Rate</Tag>
-                    )}
-                </div>
-            </Popover>
-        );
+    const handleViewFinalQuotation = (lead) => {
+        setSelectedLead(lead);
+        setViewFinalQuotationModalVisible(true);
     };
 
+    const handleDownloadFinalQuotation = () => {
+        // Implement PDF download functionality
+        message.success('Download feature coming soon!');
+    };
+
+    const handlePrintFinalQuotation = () => {
+        // Implement print functionality
+        window.print();
+    };
+
+    // --- USE EFFECTS ---
     useEffect(() => {
         if (user?.id) fetchLeads(1, 10, { status: 'assigned', supervisor_progress: 'none' });
     }, [user]);
+
+    // Update live price when margin settings change
+    useEffect(() => {
+        if (basePrice > 0) {
+            updateMarginCalculation();
+        }
+    }, [marginType, marginValue, basePrice]);
+
+    // Update live price when discount changes
+ 
+
+    // --- COLUMNS DEFINITIONS ---
+    const itemColumns = [
+        { title: 'Item', dataIndex: 'item', render: (t, r, i) => <Input value={t} onChange={(e) => { const n = [...items]; n[i].item = e.target.value; setItems(n); }} placeholder="Item Name" /> },
+        { title: 'Description', dataIndex: 'description', render: (t, r, i) => <Input value={t} onChange={(e) => { const n = [...items]; n[i].description = e.target.value; setItems(n); }} placeholder="Desc" /> },
+        { title: 'Price', dataIndex: 'unit_price', width: 110, render: (t, r, i) => <InputNumber min={0} value={t} onChange={(v) => { const n = [...items]; n[i].unit_price = v; setItems(n); updateItemTotal(i); }} style={{ width: '100%' }} /> },
+        { title: 'Total', dataIndex: 'total', width: 100, align: 'right', render: (t) => <span style={{ color: PURPLE_THEME.success, fontWeight: 'bold' }}>{t?.toLocaleString()}</span> },
+    ];
+
+    // Columns for different tabs
+    const getColumnsForTab = (activeTab) => {
+        const baseColumns = [
+            {
+                title: 'Customer Info',
+                width: 250,
+                render: (_, r) => {
+                    const customerName = getCustomerName(r.customer);
+                    const customerEmail = r.customer?.email || r.customer_email || 'N/A';
+                    const customerMobile = r.customer?.mobile || r.customer_mobile;
+                    
+                    return (
+                        <div className="flex items-center gap-3">
+                            <Avatar size={40} icon={<UserOutlined />} style={{ background: PURPLE_THEME.primaryBg, color: PURPLE_THEME.primary }} />
+                            <div>
+                                <div className="font-semibold">{customerName}</div>
+                                <div className="text-xs text-gray-500">{customerEmail}</div>
+                                <div className="text-xs text-gray-400">{formatMobileNumber(customerMobile)}</div>
+                            </div>
+                        </div>
+                    );
+                }
+            },
+            {
+                title: 'Service',
+                render: (_, r) => (
+                    <div>
+                        <Tag color="purple">{r.service_type}</Tag>
+                        <div className="text-sm font-medium mt-1">{r.subcategory?.label}</div>
+                        <div className="text-xs text-gray-500">{r.type?.label}</div>
+                    </div>
+                )
+            },
+            {
+                title: 'Area',
+                width: 120,
+                render: (_, r) => (
+                     <div>
+                        <div className="font-bold text-gray-700">{r.area_sqft} <span className="text-xs font-normal">sq.ft</span></div>
+                     </div>
+                )
+            },
+            {
+                title: 'Progress',
+                render: (_, r) => {
+                    const cfg = supervisorProgressConfig[r.supervisor_progress] || supervisorProgressConfig.none;
+                    return <Tag color={cfg.color}>{cfg.label}</Tag>;
+                }
+            },
+            {
+                title: 'Quotations',
+                width: 100,
+                render: (_, r) => (
+                    <Badge 
+                        count={r.freelancer_quotations?.length || 0} 
+                        style={{ backgroundColor: r.freelancer_quotations?.length > 0 ? PURPLE_THEME.success : PURPLE_THEME.gray }}
+                    />
+                )
+            }
+        ];
+
+        if (activeTab === 'final_created') {
+            return [
+                ...baseColumns,
+                {
+                    title: 'Final Quotation',
+                    width: 200,
+                    render: (_, r) => (
+                        <div>
+                            <div className="font-bold text-purple-700">
+                                {formatCurrency(r.final_quotation?.price || 0)}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                                Created: {formatDate(r.final_quotation?.createdAt)}
+                            </div>
+                        </div>
+                    )
+                },
+                {
+                    title: 'Status',
+                    width: 120,
+                    render: (_, r) => {
+                        if (r.final_quotation?.superadmin_approved) {
+                            return <Tag color="success" icon={<CheckCircleOutlined />}>Approved</Tag>;
+                        }
+                        return <Tag color="processing">Pending Approval</Tag>;
+                    }
+                },
+                {
+                    title: 'Actions',
+                    fixed: 'right',
+                    width: 150,
+                    render: (_, r) => (
+                        <Space>
+                            <Tooltip title="View Full Details">
+                                <Button icon={<EyeOutlined />} onClick={() => { setSelectedLead(r); setDrawerVisible(true); }} />
+                            </Tooltip>
+                            <Tooltip title="View Final Quotation">
+                                <Button 
+                                    type="primary" 
+                                    size="small" 
+                                    style={{ background: PURPLE_THEME.primary }}
+                                    onClick={() => handleViewFinalQuotation(r)}
+                                >
+                                    View Final
+                                </Button>
+                            </Tooltip>
+                        </Space>
+                    )
+                }
+            ];
+        }
+
+        // For other tabs
+        return [
+            ...baseColumns,
+            {
+                title: 'Actions',
+                fixed: 'right',
+                width: 200,
+                render: (_, r) => (
+                    <Space>
+                        <Tooltip title="View Full Details">
+                            <Button icon={<EyeOutlined />} onClick={() => { setSelectedLead(r); setDrawerVisible(true); }} />
+                        </Tooltip>
+                        
+                        {r.status === 'assigned' && r.supervisor_progress === 'none' && (
+                            <Button type="primary" size="small" style={{ background: PURPLE_THEME.primary }} onClick={() => openFreelancerDrawer(r)}>
+                                Send to Freelancer
+                            </Button>
+                        )}
+                        
+                        {r.supervisor_progress === 'request_completed' && (
+                            <Button type="primary" size="small" style={{ background: PURPLE_THEME.success, borderColor: PURPLE_THEME.success }} onClick={() => openReviewModal(r)}>
+                                Review ({r.freelancer_quotations?.length || 0})
+                            </Button>
+                        )}
+                    </Space>
+                )
+            }
+        ];
+    };
+
+    const DetailCard = ({ title, icon, children, extra }) => (
+        <Card 
+            size="small" 
+            title={<span className="flex items-center gap-2 text-purple-700">{icon} {title}</span>} 
+            className="mb-4 shadow-sm" 
+            headStyle={{ background: '#fafafa' }}
+            extra={extra}
+        >
+            {children}
+        </Card>
+    );
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
             <div className="max-w-screen-2xl mx-auto">
                 <Title level={2} className="mb-6" style={{ color: PURPLE_THEME.dark }}>My Estimates</Title>
 
+                {/* STATISTICS CARD */}
+                <Row gutter={16} className="mb-6">
+                    <Col span={6}>
+                        <Card>
+                            <Statistic
+                                title="Total Assigned"
+                                value={leads.filter(l => l.supervisor_progress === 'none').length}
+                                prefix={<TeamOutlined />}
+                                valueStyle={{ color: PURPLE_THEME.primary }}
+                            />
+                        </Card>
+                    </Col>
+                    <Col span={6}>
+                        <Card>
+                            <Statistic
+                                title="Request Sent"
+                                value={leads.filter(l => l.supervisor_progress === 'request_sent').length}
+                                prefix={<SendOutlined />}
+                                valueStyle={{ color: PURPLE_THEME.info }}
+                            />
+                        </Card>
+                    </Col>
+                    <Col span={6}>
+                        <Card>
+                            <Statistic
+                                title="Quotations Received"
+                                value={leads.filter(l => l.supervisor_progress === 'request_completed').length}
+                                prefix={<FileTextOutlined />}
+                                valueStyle={{ color: PURPLE_THEME.success }}
+                            />
+                        </Card>
+                    </Col>
+                    <Col span={6}>
+                        <Card>
+                            <Statistic
+                                title="Final Created"
+                                value={leads.filter(l => l.status === 'final_created').length}
+                                prefix={<CheckCircleOutlined />}
+                                valueStyle={{ color: PURPLE_THEME.warning }}
+                            />
+                        </Card>
+                    </Col>
+                </Row>
+
                 {/* TABS */}
                 <Card bodyStyle={{ padding: 0 }} className="mb-6 overflow-hidden rounded-lg shadow-sm">
                     <Tabs activeKey={getActiveTabKey()} onChange={handleTabChange} type="card" size="large" tabBarStyle={{ margin: 0 }}>
-                         <Tabs.TabPane tab="Assigned (New)" key="assigned" />
-                         <Tabs.TabPane tab="Request Sent" key="request_sent" />
-                         <Tabs.TabPane tab={<Badge count={leads.filter(l => l.supervisor_progress === 'request_completed').length} offset={[10, 0]}>Quotations Received</Badge>} key="quotations_received" />
-                         <Tabs.TabPane tab="Final Created" key="final_created" />
+                        <Tabs.TabPane tab="Assigned (New)" key="assigned" />
+                        <Tabs.TabPane tab="Request Sent" key="request_sent" />
+                        <Tabs.TabPane tab={<Badge count={leads.filter(l => l.supervisor_progress === 'request_completed').length} offset={[10, 0]}>Quotations Received</Badge>} key="quotations_received" />
+                        <Tabs.TabPane tab={<Badge count={leads.filter(l => l.status === 'final_created').length} offset={[10, 0]}>Final Created</Badge>} key="final_created" />
                     </Tabs>
                 </Card>
 
                 {/* TABLE */}
                 <Card bodyStyle={{ padding: 0 }}>
                     <CustomTable 
-                        columns={columns} 
+                        columns={getColumnsForTab(getActiveTabKey())} 
                         data={leads} 
                         totalItems={pagination.totalItems} 
                         currentPage={pagination.currentPage} 
@@ -613,14 +838,14 @@ const AssignedLeadsList = () => {
                                     {selectedLead.service_type} - {selectedLead.subcategory?.label}
                                 </h3>
                             </div>
-                            <div className="flex flex-col items-end gap-2">
+                            {/* <div className="flex flex-col items-end gap-2">
                                 <Tag color={statusConfig[selectedLead.status]?.color} style={{ fontSize: '14px', padding: '4px 12px' }}>
                                     {statusConfig[selectedLead.status]?.icon} {statusConfig[selectedLead.status]?.label}
                                 </Tag>
                                 <Tag color={supervisorProgressConfig[selectedLead.supervisor_progress]?.color}>
                                     Supervisor: {supervisorProgressConfig[selectedLead.supervisor_progress]?.label}
                                 </Tag>
-                            </div>
+                            </div> */}
                         </div>
 
                         <Row gutter={16}>
@@ -656,66 +881,26 @@ const AssignedLeadsList = () => {
                                     </Row>
                                 </DetailCard>
 
-                                {/* Project Images */}
-                                {(selectedLead.type_gallery_snapshot?.previewImage?.url || 
-                                  selectedLead.type_gallery_snapshot?.moodboardImages?.length > 0) && (
-                                    <DetailCard title="Project Images" icon={<PictureOutlined />}>
-                                        <div className="space-y-4">
-                                            {selectedLead.type_gallery_snapshot?.previewImage?.url && (
-                                                <div>
-                                                    <Text strong>Preview Image:</Text>
-                                                    <div className="mt-2">
-                                                        <Image
-                                                            width="100%"
-                                                            src={getFullImageUrl(selectedLead.type_gallery_snapshot.previewImage.url)}
-                                                            alt={selectedLead.type_gallery_snapshot.previewImage.title || 'Preview'}
-                                                            className="rounded-md"
-                                                            fallback="https://via.placeholder.com/300x200?text=No+Image"
-                                                        />
+                                {/* Estimate Answers */}
+                                {selectedLead.EstimateAnswers?.length > 0 && (
+                                    <DetailCard title="Estimate Questions & Answers" icon={<CalculatorOutlined />}>
+                                        <div className="space-y-3">
+                                            {selectedLead.EstimateAnswers.map((ans, idx) => (
+                                                <div key={idx} className="bg-gray-50 p-3 rounded border border-gray-100">
+                                                    <div className="text-sm font-medium text-gray-700 mb-1">{ans.questionText}</div>
+                                                    <div className="flex justify-between items-center mt-1">
+                                                        <Tag color="blue">
+                                                            {ans.selectedOption?.title || ans.answerValue || 'N/A'}
+                                                        </Tag>
+                                                        {ans.calculatedAmount > 0 && (
+                                                            <span className="font-bold text-green-600">
+                                                                {formatCurrency(ans.calculatedAmount)}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
-                                            )}
-                                            
-                                            {selectedLead.type_gallery_snapshot?.moodboardImages?.length > 0 && (
-                                                <div>
-                                                    <Text strong>Moodboard Images ({selectedLead.type_gallery_snapshot.moodboardImages.length}):</Text>
-                                                    <div className="mt-2 grid grid-cols-2 gap-3">
-                                                        {selectedLead.type_gallery_snapshot.moodboardImages.map((img, idx) => (
-                                                            <div key={idx} className="relative">
-                                                                <Image
-                                                                    width="100%"
-                                                                    height={120}
-                                                                    src={getFullImageUrl(img.url)}
-                                                                    alt={img.title || `Moodboard ${idx + 1}`}
-                                                                    className="rounded-md object-cover"
-                                                                    fallback="https://via.placeholder.com/150x120?text=Image"
-                                                                />
-                                                                <div className="text-xs text-gray-500 mt-1 truncate">{img.title}</div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
+                                            ))}
                                         </div>
-                                    </DetailCard>
-                                )}
-
-                                {/* Attachments */}
-                                {selectedLead.attachments?.length > 0 && (
-                                    <DetailCard title="Attachments" icon={<PaperClipOutlined />}>
-                                        <List
-                                            size="small"
-                                            dataSource={selectedLead.attachments}
-                                            renderItem={(item, index) => (
-                                                <List.Item>
-                                                    <List.Item.Meta
-                                                        avatar={<FileOutlined style={{ color: PURPLE_THEME.primary }} />}
-                                                        title={<a href={getFullImageUrl(item.url)} target="_blank" rel="noopener noreferrer">{item.title || `Attachment ${index + 1}`}</a>}
-                                                        description={item.description || 'No description'}
-                                                    />
-                                                </List.Item>
-                                            )}
-                                        />
                                     </DetailCard>
                                 )}
                             </Col>
@@ -735,17 +920,7 @@ const AssignedLeadsList = () => {
                                             <Text strong>{selectedLead.type?.label}</Text>
                                             <div className="text-xs text-gray-500 mt-1">{selectedLead.type?.description}</div>
                                         </Descriptions.Item>
-                                        <Descriptions.Item label="Package">
-                                            <div>
-                                                <Text strong>{selectedLead.package?.name}</Text>
-                                                <div className="text-xs text-gray-500 mt-1">{selectedLead.package?.description}</div>
-                                            </div>
-                                        </Descriptions.Item>
-                                        <Descriptions.Item label="Package Price">
-                                            <Text strong style={{ color: PURPLE_THEME.primary }}>
-                                                {formatCurrency(selectedLead.package?.price, selectedLead.package?.currency || 'AED')}
-                                            </Text>
-                                        </Descriptions.Item>
+                                       
                                     </Descriptions>
                                 </DetailCard>
 
@@ -757,68 +932,84 @@ const AssignedLeadsList = () => {
                                             <Text size="small" type="secondary">Sq.Ft</Text>
                                         </div>
                                         <Divider type="vertical" style={{ height: '40px' }} />
-                                        <div className="text-center">
-                                            <Title level={4} className="m-0">{selectedLead.area_length}x{selectedLead.area_width}</Title>
-                                            <Text size="small" type="secondary">Dimensions</Text>
-                                        </div>
+                                    
                                     </div>
-                                    <Text strong>Description:</Text>
-                                    <p className="text-gray-600 mt-1" style={{ fontSize: '13px' }}>{selectedLead.description}</p>
                                 </DetailCard>
 
                                 {/* Assigned Freelancers */}
-                                <DetailCard title="Assigned Freelancers" icon={<TeamOutlined />}>
-                                    {selectedLead.sent_to_freelancers && selectedLead.sent_to_freelancers.length > 0 ? (
-                                        <List
-                                            itemLayout="horizontal"
-                                            dataSource={selectedLead.sent_to_freelancers}
-                                            renderItem={(f) => (
-                                                <List.Item className="px-0">
-                                                    <List.Item.Meta
-                                                        avatar={<Avatar style={{ backgroundColor: '#87d068' }} icon={<UserOutlined />} />}
-                                                        title={<Text strong>{f.full_name || `${f.name?.first_name} ${f.name?.last_name}`}</Text>}
-                                                        description={
-                                                            <Space direction="vertical" size={0}>
-                                                                <Text type="secondary" style={{ fontSize: '12px' }}><MailOutlined /> {f.email}</Text>
-                                                                <Text type="secondary" style={{ fontSize: '12px' }}><PhoneOutlined /> {formatMobileNumber(f.mobile)}</Text>
-                                                            </Space>
-                                                        }
-                                                    />
-                                                    <Tag color="green">Notified</Tag>
-                                                </List.Item>
-                                            )}
-                                        />
-                                    ) : (
-                                        <Alert 
-                                            message="No Freelancers Assigned" 
-                                            description="This lead has not been sent to any freelancers yet." 
-                                            type="info" 
-                                            showIcon 
-                                            action={
-                                                <Button size="small" type="primary" onClick={() => { setDrawerVisible(false); openFreelancerDrawer(selectedLead); }}>
-                                                    Assign Now
-                                                </Button>
-                                            }
-                                        />
-                                    )}
-                                </DetailCard>
+                         <DetailCard title="Assigned Freelancers" icon={<TeamOutlined />}>
+    {selectedLead?.sent_to_freelancers?.length > 0 ? (
+        <List
+            itemLayout="horizontal"
+            dataSource={selectedLead.sent_to_freelancers}
+            renderItem={(f) => {
+                const quotationReceived = hasFreelancerSubmittedQuotation(
+                    selectedLead,
+                    f.id || f._id
+                );
 
-                                {/* Process Timeline */}
-                                <DetailCard title="Process Timeline" icon={<HistoryOutlined />}>
-                                    <Timeline mode="left" className="mt-2" size="small">
-                                        <Timeline.Item color="green" label="Created">{formatDate(selectedLead.createdAt)}</Timeline.Item>
-                                        <Timeline.Item color="blue" label="Assigned">{formatDate(selectedLead.assigned_at)}</Timeline.Item>
-                                        <Timeline.Item 
-                                            color={selectedLead.sent_to_freelancers?.length > 0 ? 'purple' : 'gray'} 
-                                            label="Freelancers"
-                                        >
-                                            {selectedLead.sent_to_freelancers?.length || 0} notified
-                                        </Timeline.Item>
-                                        {selectedLead.submitted_at && (
-                                            <Timeline.Item color="orange" label="Submitted">{formatDate(selectedLead.submitted_at)}</Timeline.Item>
-                                        )}
-                                    </Timeline>
-                                </DetailCard>
+                return (
+                    <List.Item className="px-0">
+                        <List.Item.Meta
+                            avatar={
+                                <Avatar
+                                    style={{ backgroundColor: '#87d068' }}
+                                    icon={<UserOutlined />}
+                                />
+                            }
+                            title={
+                                <Text strong>
+                                    {f.full_name ||
+                                        `${f.name?.first_name} ${f.name?.last_name}`}
+                                </Text>
+                            }
+                            description={
+                                <Space direction="vertical" size={0}>
+                                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                                        <MailOutlined /> {f.email}
+                                    </Text>
+                                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                                        <PhoneOutlined /> {formatMobileNumber(f.mobile)}
+                                    </Text>
+                                </Space>
+                            }
+                        />
+
+                        {/* ✅ STATUS TAG */}
+                        {quotationReceived ? (
+                            <Tag color="green" icon={<CheckCircleOutlined />}>
+                                Quotation Received
+                            </Tag>
+                        ) : (
+                            <Tag color="orange" icon={<ClockCircleOutlined />}>
+                                Waiting
+                            </Tag>
+                        )}
+                    </List.Item>
+                );
+            }}
+        />
+    ) : (
+        <Alert
+            message="No Freelancers Assigned"
+            description="This lead has not been sent to any freelancers yet."
+            type="info"
+            showIcon
+            action={
+                <Button
+                    size="small"
+                    type="primary"
+                    onClick={() => {
+                        setDrawerVisible(false);
+                        openFreelancerDrawer(selectedLead);
+                    }}
+                >
+                    Assign Now
+                </Button>
+            }
+        />
+    )}
+</DetailCard>
                             </Col>
                         </Row>
                     </div>
@@ -928,18 +1119,6 @@ const AssignedLeadsList = () => {
                                                             </Text>
                                                         </div>
                                                     )}
-
-
-                                                     <div>
-                                    <Text type="secondary">Service: </Text>
-                                    <Tag color="purple">{selectedLead?.subcategory?.label}</Tag>
-                                    {selectedLead?.type?.label && (
-                                        <>
-                                            <Text type="secondary"> Sub-Service: </Text>
-                                            <Tag color="blue">{selectedLead.type.label}</Tag>
-                                        </>
-                                    )}
-                                </div>
                                                 </div>
                                             }
                                         />
@@ -949,10 +1128,7 @@ const AssignedLeadsList = () => {
                         />
                         
                         <div className="mt-6 pt-4 border-t">
-                         
-                            
                             <div className="flex justify-between items-center">
-                               
                                 <Button 
                                     type="primary" 
                                     disabled={selectedFreelancers.length === 0}
@@ -968,13 +1144,13 @@ const AssignedLeadsList = () => {
                 )}
             </Drawer>
 
-            {/* --- MODAL: REVIEW FREELANCER QUOTATIONS (Formal Logo View) --- */}
+            {/* --- MODAL: REVIEW FREELANCER QUOTATIONS --- */}
             <Modal
                 title={null}
                 open={reviewQuotesModalVisible}
                 onCancel={() => setReviewQuotesModalVisible(false)}
                 footer={null}
-                width={800}
+                width={900}
                 style={{ top: 20 }}
             >
                 {quotationsLoading ? <div className="text-center py-10"><Spin size="large" /></div> : (
@@ -986,15 +1162,31 @@ const AssignedLeadsList = () => {
                                 <Panel 
                                     header={
                                         <div className="flex justify-between items-center w-full">
-                                            <span>Quote from <strong>{quote.created_by?.name?.first_name} {quote.created_by?.name?.last_name}</strong></span>
-                                            <Tag color="blue">{formatCurrency(quote.grand_total)}</Tag>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar 
+                                                    size="small" 
+                                                    src={quote.created_by?.avatar} 
+                                                    icon={<UserOutlined />}
+                                                    style={{ 
+                                                        backgroundColor: selectedFreelancerQuotationId === quote._id ? 
+                                                        PURPLE_THEME.primary : '#f5f5f5' 
+                                                    }}
+                                                />
+                                                <span>
+                                                    Quote from <strong>{quote.created_by?.name?.first_name} {quote.created_by?.name?.last_name}</strong>
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {selectedFreelancerQuotationId === quote._id && (
+                                                    <Tag color="green" icon={<CheckOutlined />}>Selected</Tag>
+                                                )}
+                                                <Tag color="blue">{formatCurrency(quote.grand_total || quote.price)}</Tag>
+                                            </div>
                                         </div>
                                     } 
                                     key={idx}
                                 >
-                                    {/* --- FORMAL QUOTATION VIEW WITH LOGO --- */}
                                     <div className="p-6 border rounded-lg bg-white shadow-sm">
-                                        
                                         {/* Header with Logo */}
                                         <div className="flex justify-between items-start border-b pb-4 mb-4">
                                             <div>
@@ -1008,86 +1200,104 @@ const AssignedLeadsList = () => {
                                             </div>
                                         </div>
 
-                                        {/* Items Table (Read Only) */}
-                                        <Table 
-                                            dataSource={quote.items}
-                                            pagination={false}
-                                            size="small"
-                                            bordered
-                                            columns={[
-                                                { title: '#', render: (t,r,i) => i+1, width: 50, align: 'center' },
-                                                { title: 'Item', dataIndex: 'item' },
-                                                { title: 'Description', dataIndex: 'description' },
-                                                { title: 'Qty', dataIndex: 'quantity', width: 80, align: 'center' },
-                                                { title: 'Rate', dataIndex: 'unit_price', width: 100, align: 'right', render: v => formatCurrency(v) },
-                                                { title: 'Total', render: (_, r) => <strong>{formatCurrency(r.quantity * r.unit_price)}</strong>, align: 'right', width: 120 }
-                                            ]}
-                                        />
-
-                                        {/* Scope & Totals */}
-                                        <Row gutter={16} className="mt-4">
-                                            <Col span={14}>
-                                                <div className="p-3 bg-gray-50 rounded">
-                                                    <div className="font-bold text-xs text-gray-500 mb-1">SCOPE OF WORK</div>
-                                                    <p className="text-sm m-0">{quote.scope_of_work}</p>
-                                                </div>
+                                        {/* Quotation Summary */}
+                                        <Row gutter={16} className="mb-4">
+                                            <Col span={12}>
+                                                <Card size="small" title="Quotation Summary">
+                                                    <Descriptions column={1} size="small">
+                                                        <Descriptions.Item label="Price">{formatCurrency(quote.price)}</Descriptions.Item>
+                                                        <Descriptions.Item label="Discount">{quote.discount_percent || 0}%</Descriptions.Item>
+                                                        <Descriptions.Item label="Grand Total">
+                                                            <strong>{formatCurrency(quote.grand_total || quote.price)}</strong>
+                                                        </Descriptions.Item>
+                                                    </Descriptions>
+                                                </Card>
                                             </Col>
-                                            <Col span={10}>
-                                                <div className="text-right">
-                                                    <div className="text-2xl font-bold text-purple-700 mt-2">
-                                                        Total: {formatCurrency(quote.grand_total)}
-                                                    </div>
-                                                    <div className="text-xs text-gray-500">Duration: {quote.duration_days} Days</div>
-                                                </div>
+                                            <Col span={12}>
+                                                <Card size="small" title="Freelancer Details">
+                                                    <Descriptions column={1} size="small">
+                                                        <Descriptions.Item label="Name">
+                                                            {quote.created_by?.name?.first_name} {quote.created_by?.name?.last_name}
+                                                        </Descriptions.Item>
+                                                        <Descriptions.Item label="Email">{quote.created_by?.email}</Descriptions.Item>
+                                                        <Descriptions.Item label="Mobile">
+                                                            {formatMobileNumber(quote.created_by?.mobile)}
+                                                        </Descriptions.Item>
+                                                    </Descriptions>
+                                                </Card>
                                             </Col>
                                         </Row>
 
-                                        {/* Action Button */}
-                                        <div className="mt-6 pt-4 border-t text-right">
+                                        {/* Scope of Work */}
+                                        <Card size="small" title="Scope of Work" className="mb-4">
+                                            <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
+                                                {quote.scope_of_work || 'No scope of work provided.'}
+                                            </p>
+                                        </Card>
+
+                                        {/* Action Buttons */}
+                                        <div className="flex justify-between gap-2">
                                             <Button 
-                                                type="primary" 
-                                                icon={<CheckOutlined />} 
-                                                onClick={() => handleCopyFreelancerData(quote)}
-                                                style={{ background: PURPLE_THEME.success, borderColor: PURPLE_THEME.success }}
+                                                type="default"
+                                                icon={<CalculatorFilled />}
+                                                onClick={() => {
+                                                    openMarginCalculator(quote);
+                                                    setReviewQuotesModalVisible(false);
+                                                    setFinalQuotationModalVisible(true);
+                                                }}
                                             >
-                                                Use & Create Final
+                                                Add Margin & Create Final
                                             </Button>
+                                            <Space>
+                                                <Button 
+                                                    type="primary" 
+                                                    icon={<CheckOutlined />} 
+                                                    onClick={() => handleCopyFreelancerData(quote)}
+                                                    style={{ background: PURPLE_THEME.success, borderColor: PURPLE_THEME.success }}
+                                                >
+                                                    Use This Quotation
+                                                </Button>
+                                            </Space>
                                         </div>
                                     </div>
-                                    {/* --- END FORMAL VIEW --- */}
                                 </Panel>
                             ))}
                         </Collapse>
 
                         {quotations.length === 0 && <Alert message="No quotations received yet." type="warning" />}
-                        
-                        <div className="text-center pt-4">
-                            <Button type="dashed" onClick={() => { setReviewQuotesModalVisible(false); openFinalQuotationModal(selectedLead); }}>
-                                Skip & Create Empty Final Quotation
-                            </Button>
-                        </div>
                     </div>
                 )}
             </Modal>
 
-            {/* --- MODAL: CREATE FINAL QUOTATION (INVOICE STYLE) --- */}
+            {/* --- MODAL: CREATE FINAL QUOTATION (WITH MARGIN CALCULATOR) --- */}
             <Modal
                 title={null}
                 open={finalQuotationModalVisible}
-                onCancel={() => setFinalQuotationModalVisible(false)}
+                onCancel={() => {
+                    setFinalQuotationModalVisible(false);
+                    setSelectedFreelancerQuotationId(null);
+                }}
                 footer={null}
-                width={900}
+                width={1100}
                 style={{ top: 20 }}
                 bodyStyle={{ padding: 0 }} 
             >
-                <Form form={finalQuotationForm} layout="vertical" onFinish={handleCreateFinalQuotation}>
-                    {/* INVOICE HEADER WITH LOGO */}
-                    <div className="p-8 bg-white rounded-t-lg">
+                <Form 
+                    form={finalQuotationForm} 
+                    layout="vertical" 
+                    onFinish={handleCreateFinalQuotation}
+                    initialValues={{
+                        discount_percent: 0,
+                        scope_of_work: selectedLead?.description || ""
+                    }}
+                >
+                    {/* INVOICE HEADER */}
+                    <div className="p-6 bg-white rounded-t-lg">
                         <div className="flex justify-between items-start border-b pb-6 mb-6">
                             <div>
                                 <img src={logo} alt="Company Logo" style={{ height: 60, marginBottom: 10 }} />
                                 <div className="text-gray-500 text-sm">
-                                    123 Landscape Avenue<br/>Dubai, UAE<br/>contact@company.com
+                                    Professional Quotation<br/>For Customer Approval
                                 </div>
                             </div>
                             <div className="text-right">
@@ -1095,60 +1305,449 @@ const AssignedLeadsList = () => {
                                 <div className="mt-2 text-gray-600">
                                     <div><strong>Date:</strong> {new Date().toLocaleDateString()}</div>
                                     <div><strong>Ref:</strong> {selectedLead?._id?.substring(0,8).toUpperCase()}</div>
-                                    <div><strong>Customer:</strong> {getCustomerName(selectedLead?.customer)}</div>
+                                 
                                 </div>
                             </div>
                         </div>
 
-                        {/* ITEMS TABLE */}
-                        <Card title="Quotation Items" size="small" type="inner" className="mb-6 bg-gray-50">
-                            <Table 
-                                columns={itemColumns} 
-                                dataSource={items} 
-                                pagination={false} 
-                                size="small" 
-                                rowKey="sno" 
-                                footer={() => <Button type="dashed" onClick={addItem} icon={<PlusOutlined />} block>Add Line Item</Button>}
-                            />
-                        </Card>
+                        <Row gutter={16}>
+                            {/* Left Column - Margin Calculator */}
+                            <Col span={8}>
+                                <Card 
+                                    title={
+                                        <span className="flex items-center gap-2">
+                                            <CalculatorFilled /> Margin Calculator
+                                        </span>
+                                    }
+                                    className="h-full"
+                                >
+                                    <div className="space-y-4">
+                                        {/* Source Price */}
+                                        <div className="bg-gray-50 p-3 rounded">
+                                            <div className="text-sm text-gray-500 mb-1">Freelancer Quotation Price</div>
+                                            <div className="text-xl font-bold text-gray-800">
+                                                {formatCurrency(basePrice)}
+                                            </div>
+                                            {selectedQuotation?.created_by && (
+                                                <div className="text-xs text-gray-500 mt-1">
+                                                    By: {selectedQuotation.created_by.name?.first_name} {selectedQuotation.created_by.name?.last_name}
+                                                </div>
+                                            )}
+                                        </div>
 
-                        <Row gutter={24}>
-                            <Col span={14}>
-                                <Form.Item name="scope_of_work" label="Scope of Work & Terms" rules={[{ required: true }]}>
-                                    <TextArea rows={6} placeholder="Detailed scope..." />
-                                </Form.Item>
+                                        {/* Margin Type */}
+                                        <div>
+                                            <div className="font-medium mb-2">Margin Type</div>
+                                            <Radio.Group 
+                                                value={marginType} 
+                                                onChange={(e) => {
+                                                    setMarginType(e.target.value);
+                                                    updateMarginCalculation();
+                                                }}
+                                                buttonStyle="solid"
+                                                className="w-full"
+                                            >
+                                                <Radio.Button value="percentage" className="w-1/2 text-center">Percentage (%)</Radio.Button>
+                                                <Radio.Button value="fixed" className="w-1/2 text-center">Fixed Amount</Radio.Button>
+                                            </Radio.Group>
+                                        </div>
+
+                                        {/* Margin Value */}
+                                        <div>
+                                            <div className="font-medium mb-2">
+                                                {marginType === 'percentage' ? 'Margin Percentage' : 'Fixed Margin Amount'}
+                                            </div>
+                                            <InputNumber
+                                                style={{ width: '100%' }}
+                                                value={marginValue}
+                                                onChange={(value) => {
+                                                    setMarginValue(value || 0);
+                                                    updateMarginCalculation();
+                                                }}
+                                                min={0}
+                                                max={marginType === 'percentage' ? 100 : 1000000}
+                                                addonAfter={marginType === 'percentage' ? '%' : 'AED'}
+                                            />
+                                        </div>
+
+                                        {/* Margin Calculation Results */}
+                                        <Card size="small" title="Margin Calculation">
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between">
+                                                    <span>Freelancer Price:</span>
+                                                    <span className="font-medium">{formatCurrency(basePrice)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span>Margin ({marginType === 'percentage' ? `${marginValue}%` : 'Fixed'}):</span>
+                                                    <span className="font-medium text-green-600">
+                                                        +{formatCurrency(marginAmount)}
+                                                    </span>
+                                                </div>
+                                                <Divider style={{ margin: '8px 0' }} />
+                                                <div className="flex justify-between text-lg font-bold text-purple-700">
+                                                    <span>Price After Margin:</span>
+                                                    <span>{formatCurrency(priceAfterMargin)}</span>
+                                                </div>
+                                            </div>
+                                        </Card>
+
+                                        <Button 
+                                            type="primary"
+                                            onClick={handleApplyMargin}
+                                            block
+                                            style={{ background: PURPLE_THEME.primary }}
+                                        >
+                                            Apply Margin
+                                        </Button>
+                                    </div>
+                                </Card>
                             </Col>
-                            <Col span={10}>
-                                <div className="bg-purple-50 p-4 rounded">
-                                    <div className="flex justify-between mb-2">
-                                        <span>Subtotal:</span>
-                                        <span className="font-semibold">{formatCurrency(subtotal)}</span>
+
+                            {/* Right Column - Quotation Details */}
+                            <Col span={16}>
+                                <Card title="Quotation Details" className="h-full">
+                                    <Row gutter={16}>
+                                        <Col span={12}>
+                                            <Card size="small" title="Customer Information" className="mb-4">
+                                                <Descriptions column={1} size="small">
+                                                    <Descriptions.Item label="Name">
+                                                        {getCustomerName(selectedLead?.customer)}
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="Email">
+                                                        {selectedLead?.customer?.email}
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="Mobile">
+                                                        {formatMobileNumber(selectedLead?.customer?.mobile)}
+                                                    </Descriptions.Item>
+                                                </Descriptions>
+                                            </Card>
+                                        </Col>
+                                        <Col span={12}>
+                                            <Card size="small" title="Service Details" className="mb-4">
+                                                <Descriptions column={1} size="small">
+                                                    <Descriptions.Item label="Estimate Type">
+                                                        <Tag color="purple">{selectedLead?.type?.label}</Tag>
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="Subcategory">
+                                                        <Tag color="blue">{selectedLead?.subcategory?.label}</Tag>
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="Area">
+                                                        <strong>{selectedLead?.area_sqft} sq.ft</strong>
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="Estimate ID">
+                                                        <code>{selectedLead?._id?.substring(0,8)}</code>
+                                                    </Descriptions.Item>
+                                                </Descriptions>
+                                            </Card>
+                                        </Col>
+                                    </Row>
+
+                                    {/* Scope of Work */}
+                                    <div className="mb-4">
+                                        <Form.Item 
+                                            name="scope_of_work" 
+                                            label="Scope of Work" 
+                                            rules={[{ required: true, message: 'Please enter scope of work' }]}
+                                        >
+                                            <TextArea 
+                                                rows={4} 
+                                                placeholder="Detailed description of the work to be performed, materials to be used, timelines, and any specific requirements..."
+                                                style={{ fontSize: '14px' }}
+                                            />
+                                        </Form.Item>
                                     </div>
-                                    <Form.Item name="discount_percent" label="Discount %">
-                                        <InputNumber min={0} max={100} style={{ width: '100%' }} onChange={() => { const { grandTotal } = calculateTotals(); /* force update if needed */ }} />
-                                    </Form.Item>
-                                    <div className="flex justify-between mb-2 text-red-500">
-                                        <span>Discount Amount:</span>
-                                        <span>- {formatCurrency(discountAmount)}</span>
-                                    </div>
-                                    <Divider style={{ margin: '10px 0' }} />
-                                    <div className="flex justify-between text-xl font-bold text-purple-800">
-                                        <span>Grand Total:</span>
-                                        <span>{formatCurrency(grandTotal)}</span>
-                                    </div>
-                                </div>
+
+                                    {/* Discount and Final Price */}
+                                    <Card size="small" className="mb-4">
+                                        <div className="space-y-4">
+                                            {/* <Form.Item 
+                                                name="discount_percent" 
+                                                label="Discount Percentage"
+                                                help="Enter discount percentage (0-100)"
+                                            >
+                                                <InputNumber 
+                                                    min={0} 
+                                                    max={100} 
+                                                    style={{ width: '100%' }} 
+                                                    addonAfter="%"
+                                                    onChange={() => updateLiveFinalPrice()}
+                                                />
+                                            </Form.Item> */}
+
+                                            {/* Live Price Calculation */}
+                                            <div className="bg-purple-50 p-4 rounded border border-purple-100">
+                                                <div className="space-y-3">
+                                                    <div className="flex justify-between">
+                                                        <span className="font-medium">Price After Margin:</span>
+                                                        <span className="font-semibold">{formatCurrency(priceAfterMargin)}</span>
+                                                    </div>
+                                                    
+                                                    <div className="flex justify-between text-red-500">
+                                                        <span>Discount Amount:</span>
+                                                        <span>- {formatCurrency((priceAfterMargin * (finalQuotationForm.getFieldValue('discount_percent') || 0)) / 100)}</span>
+                                                    </div>
+                                                    
+                                                    <Divider style={{ margin: '8px 0' }} />
+                                                    
+                                                    <div className="flex justify-between text-xl font-bold text-purple-800">
+                                                        <span>Final Price:</span>
+                                                        <span>{formatCurrency(liveFinalPrice)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                </Card>
                             </Col>
                         </Row>
+
+                        {/* Hidden fields for estimate_type and estimate_subcategory */}
+                        <Form.Item name="estimate_type" hidden initialValue={selectedLead?.type?._id}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="estimate_subcategory" hidden initialValue={selectedLead?.subcategory?._id}>
+                            <Input />
+                        </Form.Item>
+
+                        {/* Validation Message */}
+                        {!selectedFreelancerQuotationId && (
+                            <Alert 
+                                message="No Freelancer Quotation Selected"
+                                description="Please select a freelancer quotation first before creating the final quotation."
+                                type="warning"
+                                showIcon
+                                className="mb-4"
+                                action={
+                                    <Button 
+                                        size="small" 
+                                        onClick={() => {
+                                            setFinalQuotationModalVisible(false);
+                                            setReviewQuotesModalVisible(true);
+                                        }}
+                                    >
+                                        Select Quotation
+                                    </Button>
+                                }
+                            />
+                        )}
                     </div>
 
                     {/* FOOTER ACTIONS */}
-                    <div className="p-4 bg-gray-100 flex justify-end gap-3 rounded-b-lg border-t">
-                        <Button onClick={() => setFinalQuotationModalVisible(false)}>Cancel</Button>
-                        <Button type="primary" htmlType="submit" size="large" icon={<CheckCircleOutlined />} style={{ background: PURPLE_THEME.primary }}>
-                            Create & Submit for Approval
-                        </Button>
+                    <div className="p-4 bg-gray-100 flex justify-between items-center rounded-b-lg border-t">
+                        <div>
+                            {selectedFreelancerQuotationId ? (
+                                <Tag color="green" icon={<CheckCircleOutlined />}>
+                                    Using freelancer quotation 
+                                </Tag>
+                            ) : (
+                                <Tag color="orange" icon={<InfoCircleOutlined />}>
+                                    No freelancer quotation selected
+                                </Tag>
+                            )}
+                        </div>
+                        <div className="flex gap-3">
+                            <Button 
+                                onClick={() => {
+                                    setFinalQuotationModalVisible(false);
+                                    setSelectedFreelancerQuotationId(null);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                type="primary" 
+                                htmlType="submit" 
+                                size="large" 
+                                icon={<FileDoneOutlined />} 
+                                style={{ background: PURPLE_THEME.primary }}
+                                disabled={!selectedFreelancerQuotationId}
+                            >
+                                Create Final Quotation
+                            </Button>
+                        </div>
                     </div>
                 </Form>
+            </Modal>
+
+            {/* --- MODAL: VIEW FINAL QUOTATION --- */}
+            <Modal
+                open={viewFinalQuotationModalVisible}
+                onCancel={() => setViewFinalQuotationModalVisible(false)}
+                footer={null}
+                width={900}
+                style={{ top: 20 }}
+            >
+                {selectedLead?.final_quotation ? (
+                    <div className="space-y-6">
+                        {/* Quotation Header */}
+                        <div className="flex justify-between items-start border-b pb-4 mb-4">
+                            <div>
+                                <img src={logo} alt="Company Logo" style={{ height: 50, marginBottom: 8 }} />
+                                {/* <div className="text-xs text-gray-500">Final Quotation</div> */}
+                            </div>
+                            <div className="text-right">
+                                <div className="text-lg font-bold text-purple-700">FINAL QUOTATION</div>
+                                <div className="text-xs text-gray-500">Date: {formatDate(selectedLead.final_quotation.createdAt)}</div>
+                                {/* <div className="mt-2">
+                                    {selectedLead.final_quotation.superadmin_approved ? (
+                                        <Tag color="success" icon={<CheckCircleOutlined />}>Approved</Tag>
+                                    ) : (
+                                        <Tag color="warning" icon={<ClockCircleOutlined />}>Pending Approval</Tag>
+                                    )}
+                                </div> */}
+                            </div>
+                        </div>
+
+                        {/* Customer & Service Info */}
+                        <Row gutter={16} className="mb-4">
+                            <Col span={12}>
+                                <Card size="small" title="Customer Information">
+                                    <Descriptions column={1} size="small">
+                                        <Descriptions.Item label="Name">
+                                            {getCustomerName(selectedLead.customer)}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Email">
+                                            {selectedLead.customer?.email}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Mobile">
+                                            {formatMobileNumber(selectedLead.customer?.mobile)}
+                                        </Descriptions.Item>
+                                    </Descriptions>
+                                </Card>
+                            </Col>
+                            <Col span={12}>
+                                <Card size="small" title="Service Details">
+                                    <Descriptions column={1} size="small">
+                                        <Descriptions.Item label="Service Type">
+                                            <Tag color="purple">{selectedLead.service_type}</Tag>
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Subcategory">
+                                            <Tag color="blue">{selectedLead.subcategory?.label}</Tag>
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Type">
+                                            <Tag color="green">{selectedLead.type?.label}</Tag>
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Area">
+                                            <strong>{selectedLead.area_sqft} sq.ft</strong>
+                                        </Descriptions.Item>
+                                    </Descriptions>
+                                </Card>
+                            </Col>
+                        </Row>
+
+                        {/* Final Quotation Details */}
+                        <Card title="Quotation Details" className="mb-4">
+                            <Row gutter={16}>
+                                <Col span={16}>
+                                    <div className="mb-4">
+                                        <div className="font-medium mb-2">Scope of Work:</div>
+                                        <div className="p-3 bg-gray-50 rounded border border-gray-200">
+                                            <p className="text-gray-700 whitespace-pre-wrap">
+                                                {selectedLead.final_quotation.scope_of_work || 'No scope of work provided.'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </Col>
+                                <Col span={8}>
+                                    <div className="bg-purple-50 p-4 rounded border border-purple-100">
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between">
+                                                <span className="font-medium">Price:</span>
+                                                <span className="font-semibold">{formatCurrency(selectedLead.final_quotation.price)}</span>
+                                            </div>
+                                            
+                                            <div className="flex justify-between">
+                                                <span className="font-medium">Discount:</span>
+                                                <span className="font-semibold text-red-500">
+                                                    {selectedLead.final_quotation.discount_percent || 0}%
+                                                </span>
+                                            </div>
+                                            
+                                            <Divider style={{ margin: '8px 0' }} />
+                                            
+                                            <div className="flex justify-between text-lg font-bold text-purple-800">
+                                                <span>Grand Total:</span>
+                                                <span>{formatCurrency(selectedLead.final_quotation.grand_total || selectedLead.final_quotation.price)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Col>
+                            </Row>
+                        </Card>
+
+                        {/* Source Information */}
+                        {/* {selectedLead.freelancer_selected_quotation && (
+                            <Card title="Source Information" size="small" className="mb-4">
+                                <Descriptions column={2} size="small">
+                                    <Descriptions.Item label="Based on Freelancer Quotation">
+                                        <Tag color="green">
+                                            #{selectedLead.freelancer_selected_quotation.substring(0,8)}
+                                        </Tag>
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Freelancer">
+                                        {(() => {
+                                            const selectedQuotation = getSelectedFreelancerQuotation(selectedLead);
+                                            if (selectedQuotation?.created_by) {
+                                                return `${selectedQuotation.created_by.name?.first_name} ${selectedQuotation.created_by.name?.last_name}`;
+                                            }
+                                            return 'N/A';
+                                        })()}
+                                    </Descriptions.Item>
+                                </Descriptions>
+                            </Card>
+                        )} */}
+
+                        {/* Timeline */}
+                        {/* <Card title="Timeline" size="small">
+                            <Timeline mode="left" size="small">
+                                <Timeline.Item color="green" label={formatDate(selectedLead.createdAt)}>
+                                    Estimate Created
+                                </Timeline.Item>
+                                <Timeline.Item color="blue" label={formatDate(selectedLead.assigned_at)}>
+                                    Assigned to Supervisor
+                                </Timeline.Item>
+                                {selectedLead.freelancer_quotations?.length > 0 && (
+                                    <Timeline.Item color="purple" label={formatDate(selectedLead.freelancer_quotations[0].submitted_at)}>
+                                        First Quotation Received
+                                    </Timeline.Item>
+                                )}
+                                <Timeline.Item color="orange" label={formatDate(selectedLead.final_quotation.createdAt)}>
+                                    Final Quotation Created
+                                </Timeline.Item>
+                            </Timeline>
+                        </Card> */}
+
+                        {/* Action Buttons */}
+                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+                            <Button 
+                                icon={<DownloadOutlined />}
+                                onClick={handleDownloadFinalQuotation}
+                            >
+                                Download
+                            </Button>
+                            <Button 
+                                icon={<PrinterOutlined />}
+                                onClick={handlePrintFinalQuotation}
+                            >
+                                Print
+                            </Button>
+                            <Button 
+                                type="primary"
+                                style={{ background: PURPLE_THEME.primary }}
+                                onClick={() => setViewFinalQuotationModalVisible(false)}
+                            >
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <Alert 
+                        message="No Final Quotation Found"
+                        description="This estimate doesn't have a final quotation yet."
+                        type="warning"
+                        showIcon
+                    />
+                )}
             </Modal>
         </div>
     );

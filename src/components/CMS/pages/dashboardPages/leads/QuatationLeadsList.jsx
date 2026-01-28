@@ -227,7 +227,7 @@ const QuotationLeadsList = () => {
       
       // Calculate final price after discount
       const discountAmount = (quotationPrice * discountPercent) / 100;
-      const finalPrice = quotationPrice - discountAmount;
+      const finalPrice = quotationPrice;
 
       // Send simplified JSON format as requested
       const quotationData = { 
@@ -495,14 +495,7 @@ const QuotationLeadsList = () => {
                         <div className="font-bold text-lg">{selectedEstimate?.area_sqft} sq.ft</div>
                       </div>
                     </Col>
-                    <Col span={12}>
-                      <div className="mb-2">
-                        <div className="text-xs text-gray-500">ESTIMATE VALUE</div>
-                        <div className="font-bold text-lg text-purple-700">
-                          {formatCurrency(selectedEstimate?.estimated_amount)}
-                        </div>
-                      </div>
-                    </Col>
+                
                   </Row>
                 </Col>
               </Row>

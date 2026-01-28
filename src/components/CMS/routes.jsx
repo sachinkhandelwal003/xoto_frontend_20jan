@@ -65,6 +65,8 @@ import Questions from "./pages/estimateMaster/Questions";
 import CreateDeveloper from "./pages/Properties/createDeveloper";
 import Propertymanagement from "./pages/Properties/Propertymanagement";
 import Blog from "./pages/Blog/CreateBlog";
+import SubmittedQuotation from "./pages/dashboardPages/leads/quotation/SubmittedQuotation";
+import ApprovedQuotation from "./pages/dashboardPages/leads/quotation/ApprovedQuotation";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
 const roleSlugMap = {
   0: "superadmin",
@@ -199,6 +201,8 @@ const CmsRoutes = () => {
           )
         }
       />
+      <Route path="quotation/submitted" element={<SubmittedQuotation />} />
+      <Route path="quotation/approved" element={<ApprovedQuotation />} />
 
       <Route path="myprofile" element={<MyProfile />} />
             <Route path="products" element={<ProductReview />} />
