@@ -10,6 +10,31 @@ import { useFreelancer } from '../../../../../src/context/FreelancerContext';
 import logoNew from '../../../../assets/img/logoNew.png'; 
 import favicon from '../../../../assets/img/logonewww.png'; 
 
+/* --- NEW CUSTOM LINKS CONFIGURATION --- */
+const CUSTOM_ROLE_LINKS = {
+  "0": [
+   
+  ],
+  "1": [
+  
+  ],
+  "2": [
+  ],
+  "4": [
+
+  ],
+  "7": [
+    {
+      title: "Quotations", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
+      submenus: [
+        { title: "Submitted Quotation", path: "/dashboard/{roleSlug}/quotation/submitted" },
+                { title: "Approved Quotation", path: "/dashboard/{roleSlug}/quotation/approved" },
+
+      ],
+    },
+  ],
+};
+
 const roleSlugMap = {
   '0': 'superadmin', '1': 'admin', '2': "customer",
   '5': 'vendor-b2c', '6': 'vendor-b2b', '7': 'freelancer',
@@ -17,7 +42,7 @@ const roleSlugMap = {
 };
 
 const ROLE_MODULE_ORDER = {
-  '0': ['Dashboard',"All Estimation","Deals", 'Xoto Partners' ,'Projects','Packages','Estimate master','Consultation Bookings','All Users', 'Products', 'Seller B2C','Request', 'Payout', 'Module', 'Permission', 'Role', 'Inventory','Settings'],
+  '0': ['Dashboard', "All Estimation", "Deals", 'Xoto Partners', 'Projects', 'Packages', 'Estimate master', 'Consultation Bookings', 'All Users', 'Products', 'Seller B2C', 'Request', 'Payout', 'Module', 'Permission', 'Role', 'Inventory', 'Settings'],
   '1': ['Dashboard', 'Products', 'Xoto Partners', 'Projects', 'Payout', 'Request', 'Settings'],
   '5': ['Dashboard', 'Products', 'My Products', 'Orders', 'Payout', 'Settings'],
   '6': ['Dashboard', 'Products', 'Projects', 'Inventory', 'Payout'],
@@ -27,7 +52,6 @@ const ROLE_MODULE_ORDER = {
 };
 
 const Sidebar = () => {
-  // --- 1. HOOKS (Must always be at the top) ---
   const { 
     sidebarCollapsed, 
     mobileSidebarCollapsed,
@@ -41,7 +65,6 @@ const Sidebar = () => {
   const [openModule, setOpenModule] = useState(null);
   const sidebarRef = useRef(null);
 
-  // --- 2. EFFECTS ---
   useEffect(() => {
     if (!mobileSidebarCollapsed) {
       setMobileSidebarCollapsed(true); 
@@ -58,8 +81,6 @@ const Sidebar = () => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [mobileSidebarCollapsed, setMobileSidebarCollapsed]);
 
-  // --- 3. PRE-CALCULATIONS (Safe for hooks) ---
-  // We use optional chaining here so these don't crash when user is null during logout
   const roleCode = user?.role?.code?.toString() || '0';
   const roleSlug = roleSlugMap[roleCode] ?? 'dashboard';
   const basePath = `/dashboard/${roleSlug}`;
@@ -67,13 +88,14 @@ const Sidebar = () => {
   const isPendingApproval = isFreelancer && freelancer && freelancer.status_info?.status !== 1;
 
   const navTree = useMemo(() => {
-    // If no user, return empty tree but keep the hook active
     if (!user || !token) return [];
 
     const tree = [{ title: 'Dashboard', icon: 'fas fa-home', to: basePath, exact: true, submenus: [] }];
     if (isPendingApproval) return tree;
 
     const modulesMap = {};
+
+    // --- 1. PROCESS DYNAMIC PERMISSIONS FROM BACKEND ---
     Object.entries(permissions ?? {}).forEach(([key, p]) => {
       if (!p?.canView || !p?.route) return;
       const [module, sub] = key.split('→').map(s => s.trim());
@@ -85,6 +107,27 @@ const Sidebar = () => {
       else modulesMap[module].submenus.push({ title: sub, to: fullPath, icon: p.icon || 'fas fa-circle' });
     });
 
+    // --- 2. MERGE CUSTOM HARDCODED LINKS (CUSTOM_ROLE_LINKS) ---
+    const customLinks = CUSTOM_ROLE_LINKS[roleCode] || [];
+    customLinks.forEach(link => {
+      // Replace placeholder in path
+      const processedPath = link.path.replace('{roleSlug}', roleSlug);
+      
+      const processedSubmenus = link.submenus?.map(sub => ({
+        ...sub,
+        to: sub.path.replace('{roleSlug}', roleSlug)
+      })) || [];
+
+      // Add to map (This will overwrite backend permission if title is identical, or add if new)
+      modulesMap[link.title] = {
+        title: link.title,
+        icon: link.icon,
+        to: link.submenus ? null : processedPath,
+        submenus: processedSubmenus
+      };
+    });
+
+    // --- 3. SORT BASED ON ROLE_MODULE_ORDER ---
     const ordered = [];
     const customOrder = ROLE_MODULE_ORDER[roleCode] || [];
     customOrder.forEach(t => { 
@@ -93,14 +136,15 @@ const Sidebar = () => {
         delete modulesMap[t]; 
       } 
     });
+    
+    // Add remaining modules that weren't in the explicit order list
     ordered.push(...Object.values(modulesMap));
+    
     return [...tree, ...ordered];
-  }, [permissions, basePath, isPendingApproval, roleCode, user, token]);
+  }, [permissions, basePath, isPendingApproval, roleCode, user, token, roleSlug]);
 
-  // --- 4. EARLY RETURN (Only after all Hooks!) ---
   if (!user || !token) return null;
 
-  // --- 5. EVENT HANDLERS ---
   const toggleModule = (mod) => setOpenModule(openModule === mod ? null : mod);
   const isParentActive = (item) => item.submenus.some(s => location.pathname.startsWith(s.to));
   const handleNavClick = () => !mobileSidebarCollapsed && setMobileSidebarCollapsed(true);
@@ -127,7 +171,6 @@ const Sidebar = () => {
           .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         `}</style>
 
-        {/* Header Section */}
         <div className={`flex items-center p-4 border-b border-purple-800/50 ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
           <div className="flex flex-col items-center gap-3 flex-1 overflow-hidden">
             <div className="flex flex-col items-center flex-shrink-0">
@@ -158,10 +201,9 @@ const Sidebar = () => {
           )}
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 no-scrollbar">
           {navTree.map((item) => {
-            const hasSub = item.submenus.length > 0;
+            const hasSub = item.submenus && item.submenus.length > 0;
             const active = location.pathname === item.to || (hasSub && isParentActive(item));
             const expanded = openModule === item.title;
 
@@ -215,7 +257,6 @@ const Sidebar = () => {
           })}
         </nav>
 
-        {/* Footer */}
         <div className="p-4 border-t border-purple-900/40 text-center text-xs text-purple-400">
           {!sidebarCollapsed ? <span>v2.0.0</span> : <span title="Version 2.0.0">v2</span>}
         </div>
