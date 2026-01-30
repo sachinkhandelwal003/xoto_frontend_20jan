@@ -1,19 +1,32 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "../../../../manageApi/store/authSlice";
 import { useCmsContext } from "../../contexts/CmsContext";
+import { apiService } from "../../../../manageApi/utils/custom.apiservice";
 
-// Ant Design Imports
-import { Input, Dropdown, Avatar, Badge, Space, Typography } from "antd";
-import { 
-  SearchOutlined, 
-  BellOutlined, 
-  UserOutlined, 
-  LogoutOutlined, 
+// Ant Design
+import {
+  Input,
+  Dropdown,
+  Avatar,
+  Badge,
+  Typography,
+  List,
+  Empty,
+  Card,
+  Button
+} from "antd";
+
+import {
+  SearchOutlined,
+  BellOutlined,
+  UserOutlined,
+  LogoutOutlined,
   SettingOutlined,
   MenuUnfoldOutlined,
-  MenuFoldOutlined 
+  MenuFoldOutlined,
+  ClockCircleOutlined
 } from "@ant-design/icons";
 
 import { getRoleColors } from "../../../../manageApi/utils/roleColors";
@@ -24,122 +37,239 @@ const Topbar = () => {
   const { toggleSidebar, sidebarCollapsed, toggleMobileSidebar } = useCmsContext();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const user = useSelector((s) => s.auth?.user);
+  const { user } = useSelector((s) => s.auth);
 
   const colors = getRoleColors(user?.role?.code);
+
+  /* ---------------- NOTIFICATIONS ---------------- */
+  const [notifications, setNotifications] = useState([]);
+  const lastCountRef = useRef(0); // prevents unnecessary re-renders
+
+  const fetchNotifications = async () => {
+    if (!user?.id) return;
+
+    try {
+      const res = await apiService.get(
+        `/notifications/receiver-notification/${user.id}`
+      );
+
+      if (res?.success && Array.isArray(res.data)) {
+        // update state ONLY if count changes
+        if (res.data.length !== lastCountRef.current) {
+          lastCountRef.current = res.data.length;
+          setNotifications(res.data);
+        }
+      }
+    } catch (err) {
+      console.error("Notification error:", err);
+    }
+  };
+
+  // ⏱ Auto refresh every 2 seconds (silent)
+  useEffect(() => {
+    fetchNotifications(); // initial fetch
+  }, [user?.id]);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  /* ---------------- ROLE LOGIC ---------------- */
+  const roleCode = user?.role?.code?.toString();
+  const roleSlug = {
+    "0": "superadmin",
+    "1": "admin",
+    "2": "customer",
+    "5": "vendor-b2c",
+    "6": "vendor-b2b",
+    "7": "freelancer",
+    "11": "accountant",
+    "12": "supervisor",
+  }[roleCode] ?? "dashboard";
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
     navigate("/");
   };
 
-  // Profile Link Logic
-  const roleCode = user?.role?.code?.toString();
-  const roleSlug = {
-    "0": "superadmin", "1": "admin", "2": "customer", "5": "vendor-b2c",
-    "6": "vendor-b2b", "7": "freelancer", "11": "accountant", "12": "supervisor",
-  }[roleCode] ?? "dashboard";
-
-  const getProfileUrl = () => `/dashboard/${roleSlug}/myprofile`;
-
-  // Ant Design Dropdown Items
-  const menuItems = [
+  /* ---------------- PROFILE DROPDOWN ---------------- */
+  const profileMenuItems = [
     {
-      key: '1',
-      label: 'Your Profile',
+      key: "profile-info",
+      label: (
+        <div className="px-2 py-1">
+          <Text strong className="block text-sm">
+            {user?.name || "User"}
+          </Text>
+          <Text type="secondary" className="text-xs">
+            {user?.email}
+          </Text>
+        </div>
+      ),
+      disabled: true
+    },
+    { type: "divider" },
+    {
+      key: "1",
+      label: "Your Profile",
       icon: <UserOutlined />,
-      onClick: () => navigate(getProfileUrl()),
+      onClick: () => navigate(`/dashboard/${roleSlug}/myprofile`)
     },
     {
-      key: '2',
-      label: 'Settings',
-      icon: <SettingOutlined />,
+      key: "2",
+      label: "Settings",
+      icon: <SettingOutlined />
     },
+    { type: "divider" },
     {
-      type: 'divider',
-    },
-    {
-      key: '3',
-      label: 'Sign out',
+      key: "3",
+      label: "Sign out",
       icon: <LogoutOutlined />,
       danger: true,
-      onClick: handleLogout,
-    },
+      onClick: handleLogout
+    }
   ];
 
+  /* ---------------- NOTIFICATION DROPDOWN ---------------- */
+  const notificationDropdown = (
+    <Card
+      title={
+        <div className="flex justify-between items-center">
+          <span>Notifications</span>
+          <Badge count={unreadCount} size="small" />
+        </div>
+      }
+      style={{ width: 320 }}
+      bodyStyle={{ padding: 0 }}
+      className="shadow-lg"
+    >
+      <div className="max-h-96 overflow-y-auto">
+        {notifications.length === 0 ? (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="No notifications"
+          />
+        ) : (
+          <List
+            dataSource={notifications.slice(0, 10)}
+            renderItem={(item) => (
+              <List.Item
+                className={`px-4 hover:bg-purple-50 ${
+                  !item.isRead ? "bg-purple-50/30" : ""
+                }`}
+              >
+                <List.Item.Meta
+                  avatar={
+                    <Avatar
+                      icon={<BellOutlined />}
+                      style={{
+                        backgroundColor: "#f9f0ff",
+                        color: "#722ed1"
+                      }}
+                    />
+                  }
+                  title={
+                    <Text strong style={{ fontSize: 13 }}>
+                      {item.title}
+                    </Text>
+                  }
+                  description={
+                    <>
+                      <Text type="secondary" className="text-xs line-clamp-2">
+                        {item.message}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: 10 }}>
+                        <ClockCircleOutlined />{" "}
+                        {new Date(item.createdAt).toLocaleTimeString()}
+                      </Text>
+                    </>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        )}
+      </div>
+
+      <div className="p-2 border-t text-center">
+        <Button
+          type="link"
+          size="small"
+          onClick={() =>
+            navigate(`/dashboard/${roleSlug}/notifications/view`)
+          }
+        >
+          View all notifications
+        </Button>
+      </div>
+    </Card>
+  );
+
+  /* ---------------- UI ---------------- */
   return (
     <header
-      className={`
-        fixed top-0 right-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 h-16
-        transition-all duration-300 ease-in-out flex flex-col justify-center
-        ${sidebarCollapsed ? 'left-0 lg:left-20' : 'left-0 lg:left-64'}
-      `}
+      className={`fixed top-0 right-0 z-30 bg-white/80 backdrop-blur-md h-16 transition-all
+      ${sidebarCollapsed ? "left-0 lg:left-20" : "left-0 lg:left-64"}`}
     >
-      <div className="flex justify-between items-center w-full px-4 lg:px-6">
-        
-        {/* LEFT: Toggles + Search */}
+      <div className="flex justify-between items-center h-full px-4 lg:px-6">
+
+        {/* LEFT */}
         <div className="flex items-center gap-4">
-          {/* Mobile Toggle */}
-          <button 
-            className="lg:hidden text-xl text-gray-600" 
-            onClick={toggleMobileSidebar}
-          >
+          <button className="lg:hidden text-xl" onClick={toggleMobileSidebar}>
             <MenuUnfoldOutlined />
           </button>
 
-          {/* Desktop Toggle */}
-          <button 
-            className="hidden lg:block text-xl text-gray-600 hover:text-blue-600 transition-colors" 
-            onClick={toggleSidebar}
-          >
+          <button className="hidden lg:block text-xl" onClick={toggleSidebar}>
             {sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
           </button>
 
-          {/* Ant Design Search (Desktop) */}
-          <div className="hidden md:block w-64">
-            <Input 
-              prefix={<SearchOutlined className="text-gray-400" />} 
-              placeholder="Search..." 
-              allowClear
-              className="rounded-full bg-gray-50"
-            />
-          </div>
+          <Input
+            prefix={<SearchOutlined />}
+            placeholder="Search..."
+            allowClear
+            className="hidden md:flex w-64 rounded-full bg-gray-50"
+          />
         </div>
 
-        {/* RIGHT: Notifications + Profile */}
-        <div className="flex items-center gap-3 lg:gap-6">
-          <Badge count={3} size="small" offset={[-2, 5]}>
-            <button className="text-xl text-gray-500 hover:text-blue-600 flex items-center">
-              <BellOutlined />
-            </button>
-          </Badge>
+        {/* RIGHT */}
+        <div className="flex items-center gap-6">
 
-          <Dropdown 
-            menu={{ items: menuItems }} 
-            placement="bottomRight" 
-            arrow={{ pointAtCenter: true }}
-            trigger={['click']}
+          {/* 🔔 Notifications */}
+          <Dropdown
+            dropdownRender={() => notificationDropdown}
+            trigger={["click"]}
+            placement="bottomRight"
           >
-            <div className="flex items-center gap-2 cursor-pointer group">
+            <Badge count={unreadCount} size="small">
+              <button className="text-xl text-gray-500 hover:text-purple-600">
+                <BellOutlined />
+              </button>
+            </Badge>
+          </Dropdown>
+
+          {/* 👤 Profile */}
+          <Dropdown
+            menu={{ items: profileMenuItems }}
+            placement="bottomRight"
+            trigger={["click"]}
+          >
+            <div className="flex items-center gap-2 cursor-pointer">
               <Avatar
-                size="middle"
-                style={{ 
-                  backgroundColor: colors.primary || "#6366f1",
-                  verticalAlign: 'middle' 
-                }}
+                title={user?.email}
+                style={{ backgroundColor: colors.primary || "#722ed1" }}
               >
-                {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                {user?.email?.charAt(0)?.toUpperCase()}
               </Avatar>
-              <div className="hidden md:flex flex-col items-start leading-none">
-                <Text strong className="text-sm group-hover:text-blue-600 transition-colors">
-                  {user?.name?.split(" ")[0] || "User"}
+
+              <div className="hidden md:flex flex-col leading-tight">
+                <Text strong className="text-sm">
+                  {user?.name || "User"}
                 </Text>
-                <Text type="secondary" style={{ fontSize: '10px' }}>
-                  {roleSlug.toUpperCase()}
+                <Text type="secondary" className="text-[11px]">
+                  {user?.email}
                 </Text>
               </div>
             </div>
           </Dropdown>
+
         </div>
       </div>
     </header>

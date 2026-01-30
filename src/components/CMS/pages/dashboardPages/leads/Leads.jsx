@@ -201,7 +201,7 @@ const Leads = () => {
       const newStats = { ...prev };
       if (type === 'accepted') {
         newStats.accepted = data.length;
-        newStats.potential_revenue = data.reduce((sum, item) => sum + (item.final_quotation?.grand_total || 0), 0);
+        newStats.potential_revenue = data.reduce((sum, item) => sum + (item.admin_final_quotation?.grand_total || item.final_quotation?.grand_total || 0), 0);
       } else if (type === 'rejected') {
         newStats.rejected = data.length;
       }
@@ -214,7 +214,7 @@ const Leads = () => {
     setStats(prev => ({
       ...prev,
       deals: data.length,
-      secured_revenue: data.reduce((sum, item) => sum + (item.final_quotation?.grand_total || 0), 0)
+      secured_revenue: data.reduce((sum, item) => sum + (item.admin_final_quotation?.grand_total || item.final_quotation?.grand_total || 0), 0)
     }));
   };
 
@@ -272,14 +272,24 @@ const Leads = () => {
     {
       title: 'Value',
       width: 150,
-      render: (_, r) => (
-        <div>
-          <div className={`font-bold ${activeTab === 'rejected' ? 'text-red-500' : 'text-green-600'}`}>
-            {formatCurrency(r.final_quotation?.grand_total)}
+      render: (_, r) => {
+        // Use admin_final_quotation if available, otherwise fall back to final_quotation
+        const quotation = r.admin_final_quotation || r.final_quotation;
+        return (
+          <div>
+            <div className={`font-bold ${activeTab === 'rejected' ? 'text-red-500' : 'text-green-600'}`}>
+              {formatCurrency(quotation?.grand_total)}
+            </div>
+            <div className="text-xs text-gray-400">Grand Total</div>
+            {/* Show badge if it's admin_final_quotation */}
+            {r.admin_final_quotation && (
+              <Tag color="green" size="small" className="text-xs mt-1">
+                Admin Approved
+              </Tag>
+            )}
           </div>
-          <div className="text-xs text-gray-400">Grand Total</div>
-        </div>
-      )
+        );
+      }
     },
     // Only show Rejection Reason if on Rejected Tab
     ...(activeTab === 'rejected' ? [{
@@ -662,71 +672,92 @@ const Leads = () => {
                          )}
 
                          {/* FINANCIAL SUMMARY CARD */}
-                         {viewDetailsModal.data.final_quotation ? (
-                             <Card 
-                               title={<span className="text-green-700"><FileTextOutlined /> Final Quotation Summary</span>}
-                               className="border-green-200 bg-green-50"
-                               size="small"
-                             >
-                                 <div className="text-center py-4">
-                                     <div className="text-3xl font-bold text-green-700">
-                                         {formatCurrency(viewDetailsModal.data.final_quotation.grand_total)}
-                                     </div>
-                                     <div className="text-xs text-gray-500 mb-4">Approved Amount</div>
-                                     
-                                     <div className="text-left text-sm space-y-1 mb-4">
-                                       <div className="flex justify-between">
-                                         <span>Subtotal:</span>
-                                         <span>{formatCurrency(viewDetailsModal.data.final_quotation.subtotal)}</span>
-                                       </div>
-                                       {viewDetailsModal.data.final_quotation.discount_amount > 0 && (
-                                         <div className="flex justify-between text-red-500">
-                                           <span>Discount ({viewDetailsModal.data.final_quotation.discount_percent}%):</span>
-                                           <span>-{formatCurrency(viewDetailsModal.data.final_quotation.discount_amount)}</span>
-                                         </div>
-                                       )}
-                                       <Divider className="my-2" />
-                                       <div className="flex justify-between font-bold">
-                                         <span>Grand Total:</span>
-                                         <span>{formatCurrency(viewDetailsModal.data.final_quotation.grand_total)}</span>
-                                       </div>
-                                     </div>
-                                     
-                                     <Button 
-                                       block 
-                                       icon={<EyeOutlined />}
-                                       onClick={() => setQuotationModal({ visible: true, data: viewDetailsModal.data.final_quotation })}
-                                     >
-                                        View Full Invoice
-                                     </Button>
+                         {/* Use admin_final_quotation if available, otherwise fall back to final_quotation */}
+                      {(() => {
+  const quotation =
+    viewDetailsModal.data.admin_final_quotation ||
+    viewDetailsModal.data.final_quotation;
 
-                                     {viewDetailsModal.data.status === 'customer_accepted' && !viewDetailsModal.data.project_reference && (
-                                        <div className="mt-4 pt-4 border-t border-green-200">
-                                            <Popconfirm 
-                                              title="Convert to Deal" 
-                                              description="Create a project from this accepted quotation?"
-                                              onConfirm={() => handleConvertToDeal(viewDetailsModal.data._id)}
-                                              okText="Yes, Convert"
-                                              okButtonProps={{ loading: convertingDeal === viewDetailsModal.data._id }}
-                                            >
-                                                <Button 
-                                                  type="primary" 
-                                                  block 
-                                                  className="bg-purple-600 hover:bg-purple-500 border-purple-600" 
-                                                  icon={<RocketOutlined />}
-                                                  loading={convertingDeal === viewDetailsModal.data._id}
-                                                >
-                                                    Convert to Deal Now
-                                                </Button>
-                                            </Popconfirm>
-                                        </div>
-                                     )}
-                                 </div>
-                             </Card>
-                         ) : (
-                            <Empty description="No Quotation Data" />
-                         )}
+  if (!quotation) return <Empty description="No Quotation Data" />;
 
+  return (
+    <Card
+      title={
+        <span className="text-green-700">
+          <FileTextOutlined />{' '}
+          {quotation.role === 'admin'
+            ? 'Admin Final Quotation'
+            : 'Final Quotation'}
+          {quotation.superadmin_approved && (
+            <Tag color="green" className="ml-2">
+              Admin Approved
+            </Tag>
+          )}
+        </span>
+      }
+      className="border-green-200 bg-green-50"
+      size="small"
+    >
+      <div className="text-center py-4">
+        <div className="text-3xl font-bold text-green-700">
+          {formatCurrency(quotation.grand_total)}
+        </div>
+
+        <div className="text-xs text-gray-500 mb-4">
+          Approved Amount
+        </div>
+
+        <div className="text-left text-sm space-y-1 mb-4">
+          <div className="flex justify-between">
+            <span>Subtotal:</span>
+            <span>{formatCurrency(quotation.subtotal)}</span>
+          </div>
+
+          {quotation.discount_amount > 0 && (
+            <div className="flex justify-between text-red-500">
+              <span>
+                Discount ({quotation.discount_percent}%):
+              </span>
+              <span>-{formatCurrency(quotation.discount_amount)}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between">
+            <span>Margin ({quotation.margin_percent}%):</span>
+            <span>+{formatCurrency(quotation.margin_amount)}</span>
+          </div>
+
+          <Divider className="my-2" />
+
+          <div className="flex justify-between font-bold">
+            <span>Grand Total:</span>
+            <span>{formatCurrency(quotation.grand_total)}</span>
+          </div>
+        </div>
+
+        <div className="text-xs text-gray-500 mt-2">
+          Created by:{' '}
+          {quotation.role === 'admin'
+            ? 'Administrator'
+            : quotation.role === 'supervisor'
+            ? 'Supervisor'
+            : 'Freelancer'}
+        </div>
+
+        <Button
+          block
+          icon={<EyeOutlined />}
+          onClick={() =>
+            setQuotationModal({ visible: true, data: quotation })
+          }
+          className="mt-4"
+        >
+          View Full Invoice
+        </Button>
+      </div>
+    </Card>
+  );
+})()}
                          {/* Package Details */}
                          {viewDetailsModal.data.package && (
                            <DetailCard title="Package Details" icon={<GoldOutlined />}>
@@ -756,7 +787,7 @@ const Leads = () => {
       </Modal>
 
       {/* ========================================================= */}
-      {/* INVOICE MODAL (Final Quotation View)                       */}
+      {/* INVOICE MODAL (Quotation View)                       */}
       {/* ========================================================= */}
       <Modal
         title={null}
@@ -781,11 +812,16 @@ const Leads = () => {
                             </div>
                         </div>
                         <div className="text-right">
-                            <Title level={2} style={{ color: PURPLE_THEME.primary, margin: 0 }}>FINAL QUOTATION</Title>
+                            <Title level={2} style={{ color: PURPLE_THEME.primary, margin: 0 }}>
+                                {quotationModal.data.role === 'admin' ? 'ADMIN FINAL QUOTATION' : 'FINAL QUOTATION'}
+                            </Title>
                             <div className="mt-2 text-gray-600">
                                 <div><strong>Date:</strong> {formatDate(quotationModal.data.createdAt || quotationModal.data.created_at)}</div>
-                                <div><strong>Status:</strong> <Tag color="green">APPROVED</Tag></div>
+                                <div><strong>Status:</strong> <Tag color={quotationModal.data.superadmin_approved ? "green" : "blue"}>
+                                  {quotationModal.data.superadmin_approved ? "ADMIN APPROVED" : "PENDING"}
+                                </Tag></div>
                                 <div><strong>Quotation ID:</strong> {quotationModal.data._id?.substring(0,8).toUpperCase()}</div>
+                                <div><strong>Created by:</strong> {quotationModal.data.role === 'admin' ? 'Administrator' : quotationModal.data.role === 'supervisor' ? 'Supervisor' : 'Freelancer'}</div>
                             </div>
                         </div>
                     </div>
@@ -819,6 +855,12 @@ const Leads = () => {
                                 <div className="flex justify-between text-red-500">
                                     <span>Discount ({quotationModal.data.discount_percent}%):</span>
                                     <span>- {formatCurrency(quotationModal.data.discount_amount)}</span>
+                                </div>
+                            )}
+                            {quotationModal.data.margin_amount > 0 && (
+                                <div className="flex justify-between text-green-600">
+                                    <span>Margin ({quotationModal.data.margin_percent}%):</span>
+                                    <span>+ {formatCurrency(quotationModal.data.margin_amount)}</span>
                                 </div>
                             )}
                             <div className="flex justify-between text-xl font-bold text-purple-800 border-t pt-3">

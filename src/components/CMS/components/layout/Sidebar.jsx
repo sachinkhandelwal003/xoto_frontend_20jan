@@ -13,12 +13,28 @@ import favicon from '../../../../assets/img/logonewww.png';
 /* --- NEW CUSTOM LINKS CONFIGURATION --- */
 const CUSTOM_ROLE_LINKS = {
   "0": [
-   
+      {
+      title: "Setting", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
+      submenus: [
+        { title: "Email Setting", path: "/dashboard/{roleSlug}/setting/email" },
+           
+
+      ],
+    }
   ],
   "1": [
-  
+
   ],
   "2": [
+     {
+      title: "Estimates", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
+      submenus: [
+        { title: "Submitted Estimates", path: "/dashboard/{roleSlug}/estimate/submitted" },
+                { title: "Received Quotation", path: "/dashboard/{roleSlug}/quotation/received" },
+                { title: "Response Submitted", path: "/dashboard/{roleSlug}/quotation/response" },
+
+      ],
+    }
   ],
   "4": [
 
