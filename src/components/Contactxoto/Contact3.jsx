@@ -156,10 +156,87 @@ if (phoneError) {
   };
 
   // --- SUBMIT FUNCTION (RESTORED) ---
+// const onSubmit = async (e) => {
+//   e.preventDefault();
+
+//   // 1. Existing basic validation
+//   const validationError = validateForm();
+//   if (validationError) {
+//     openNotification(
+//       "error",
+//       t("notification.errorTitle") || "Validation Error",
+//       validationError
+//     );
+//     return;
+//   }
+
+//   // 2. 🔥 REAL PHONE VALIDATION (libphonenumber-js)
+//   const phoneError = validatePhone(
+//     formData.country_code,
+//     formData.number
+//   );
+
+//   if (phoneError) {
+//     openNotification(
+//       "error",
+//       t("notification.errorTitle") || "Validation Error",
+//       phoneError
+//     );
+//     return;
+//   }
+
+//   // 3. Now safe to submit
+//   setLoading(true);
+// const phoneObj = parsePhoneNumberFromString(
+//   `+${formData.country_code}${formData.number}`
+// );
+
+//   try {
+//     await apiService.post("/property/lead", {
+//       type: "enquiry",
+//       name: {
+//         first_name: formData.first_name.trim(),
+//         last_name: formData.last_name.trim(),
+//       },
+//       mobile: {
+//   country_code: formData.country_code,
+//   number: formData.number,
+//   full: phoneObj.number, // +9715XXXXXXXX
+// },
+
+//       email: formData.email.trim().toLowerCase(),
+//       message: formData.message.trim(),
+//     });
+
+//     openNotification(
+//       "success",
+//       t("notification.successTitle") || "Success",
+//       t("notification.successMessage") || "Enquiry submitted successfully!"
+//     );
+
+//     setFormData({
+//       first_name: "",
+//       last_name: "",
+//       email: "",
+//       country_code: "971",
+//       number: "",
+//       message: "",
+//     });
+//     setErrors({});
+//   } catch (err) {
+//     openNotification(
+//       "error",
+//       t("notification.errorTitle") || "Error",
+//       err.response?.data?.message || "Something went wrong"
+//     );
+//   } finally {
+//     setLoading(false);
+//   }
+// };
 const onSubmit = async (e) => {
   e.preventDefault();
 
-  // 1. Existing basic validation
+  // 1️⃣ Existing validation
   const validationError = validateForm();
   if (validationError) {
     openNotification(
@@ -170,7 +247,7 @@ const onSubmit = async (e) => {
     return;
   }
 
-  // 2. 🔥 REAL PHONE VALIDATION (libphonenumber-js)
+  // 2️⃣ Phone validation (libphonenumber-js)
   const phoneError = validatePhone(
     formData.country_code,
     formData.number
@@ -185,44 +262,69 @@ const onSubmit = async (e) => {
     return;
   }
 
-  // 3. Now safe to submit
   setLoading(true);
-const phoneObj = parsePhoneNumberFromString(
-  `+${formData.country_code}${formData.number}`
-);
+
+  const phoneObj = parsePhoneNumberFromString(
+    `+${formData.country_code}${formData.number}`
+  );
 
   try {
-    await apiService.post("/property/lead", {
+    // 3️⃣ CREATE ENQUIRY
+    const res = await apiService.post("/property/lead", {
       type: "enquiry",
       name: {
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
       },
       mobile: {
-  country_code: formData.country_code,
-  number: formData.number,
-  full: phoneObj.number, // +9715XXXXXXXX
-},
-
+        country_code: formData.country_code,
+        number: formData.number,
+        full: phoneObj?.number,
+      },
       email: formData.email.trim().toLowerCase(),
       message: formData.message.trim(),
     });
 
-    openNotification(
-      "success",
-      t("notification.successTitle") || "Success",
-      t("notification.successMessage") || "Enquiry submitted successfully!"
-    );
+    // 4️⃣ On success → create notification
+    if (res?.success || res?.status === 200 || res?.status === 201) {
+      const notificationPayload = {
+        sender: formData.email.trim().toLowerCase(), // ✅ STRING ONLY
+        receiverType: "admin",
+        senderType: "user",
+        notificationType: "NEW_INQUIRY",
+        title: "Quick Enquiry",
+        message: "A new quick enquiry has been submitted.",
+      };
 
-    setFormData({
-      first_name: "",
-      last_name: "",
-      email: "",
-      country_code: "971",
-      number: "",
-      message: "",
-    });
-    setErrors({});
+      // 🔁 Non-blocking notification
+      try {
+        await apiService.post(
+          "/notifications/create-notification",
+          notificationPayload
+        );
+      } catch (notificationError) {
+        console.error("Notification failed", notificationError);
+      }
+
+      // 5️⃣ Success UI
+      openNotification(
+        "success",
+        t("notification.successTitle") || "Success",
+        t("notification.successMessage") ||
+          "Enquiry submitted successfully!"
+      );
+
+      setFormData({
+        first_name: "",
+        last_name: "",
+        email: "",
+        country_code: "971",
+        number: "",
+        message: "",
+      });
+
+      setErrors({});
+    }
   } catch (err) {
     openNotification(
       "error",
