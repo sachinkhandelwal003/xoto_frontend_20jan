@@ -276,8 +276,8 @@ const discountPercent = Form.useWatch('discount_percent', finalQuotationForm) ||
 
     const updateLiveFinalPrice = () => {
     const discountPercent = finalQuotationForm.getFieldValue('discount_percent') || 0;
-    const discountAmount = (priceAfterMargin * discountPercent) / 100;
-    const finalPriceAfterDiscount = priceAfterMargin - discountAmount;
+    // const discountAmount = (priceAfterMargin * discountPercent) / 100;
+    const finalPriceAfterDiscount = priceAfterMargin;
     setLiveFinalPrice(Number(finalPriceAfterDiscount.toFixed(2)));
 };
 useEffect(() => {
@@ -353,7 +353,7 @@ useEffect(() => {
     const fetchQuotations = async (estimateId) => {
         setQuotationsLoading(true);
         try {
-            const response = await apiService.get(`/estimates/quatation?estimate_id=${estimateId}`);
+            const response = await apiService.get(`/estimates/quotation-by-estimate-id?estimate_id=${estimateId}`);
             if (response.success) setQuotations(response.data || []);
         } catch (error) {
             showErrorAlert('Error', 'Failed to fetch quotations');
@@ -1482,10 +1482,7 @@ useEffect(() => {
                                                         <span className="font-semibold">{formatCurrency(priceAfterMargin)}</span>
                                                     </div>
                                                     
-                                                    <div className="flex justify-between text-red-500">
-                                                        <span>Discount Amount:</span>
-                                                        <span>- {formatCurrency((priceAfterMargin * (finalQuotationForm.getFieldValue('discount_percent') || 0)) / 100)}</span>
-                                                    </div>
+                                                  
                                                     
                                                     <Divider style={{ margin: '8px 0' }} />
                                                     
