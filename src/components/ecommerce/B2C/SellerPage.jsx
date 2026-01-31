@@ -54,6 +54,12 @@ const SellerPage = () => {
   const [enteredOtp, setEnteredOtp] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
 
+  // --- EMAIL OTP STATES ---
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailOtpVerified, setEmailOtpVerified] = useState(false);
+  const [enteredEmailOtp, setEnteredEmailOtp] = useState("");
+  const [emailOtpLoading, setEmailOtpLoading] = useState(false);
+
   const themeColor = 'var(--color-primary)'; 
 
   const {
@@ -76,6 +82,7 @@ const SellerPage = () => {
   const selectedCountry = watch('store_details.country');
   const selectedState = watch('store_details.state');
   const watchedMobileNumber = watch('mobile.number');
+  const watchedEmail = watch('email');
 
   const countryPhoneData = useMemo(() => {
     const allCountries = Country.getAllCountries();
@@ -212,13 +219,72 @@ const SellerPage = () => {
     // Note: We don't clear the mobile number value, just unlock the input
   };
 
+  // --- EMAIL OTP HANDLERS ---
+  const handleSendEmailOtp = async () => {
+    const email = getValues('email');
+
+    if (!email) {
+        message.error("Please enter a valid email first.");
+        return;
+    }
+
+    setEmailOtpLoading(true);
+    try {
+        const payload = {
+            email
+        };
+        await apiService.post("/otp/email-otp/send", payload);
+        message.success("OTP sent successfully! Please check your mail.");
+        setEmailOtpSent(true);
+        setEmailOtpVerified(false);
+    } catch (error) {
+        const errMsg = error?.response?.data?.message || "Failed to send OTP";
+        notification.error({ message: "OTP Error", description: errMsg });
+    } finally {
+        setEmailOtpLoading(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    if (!enteredEmailOtp) {
+        message.error("Please enter the OTP");
+        return;
+    }
+    setEmailOtpLoading(true);
+    try {
+        const payload = {
+            email: getValues('email'),
+            otp: enteredEmailOtp
+        };
+        await apiService.post("/otp/email-otp/verify", payload);
+        message.success("Email Verified Successfully!");
+        setEmailOtpVerified(true);
+        setEmailOtpSent(false); // Hide OTP input
+    } catch (error) {
+        notification.error({
+            message: "Verification Failed",
+            description: error?.response?.data?.message || "Invalid OTP"
+        });
+    } finally {
+        setEmailOtpLoading(false);
+    }
+  };
+
+  // ✅ New Handler to Change Email even after verification
+  const handleChangeEmail = () => {
+    setEmailOtpSent(false);
+    setEmailOtpVerified(false);
+    setEnteredEmailOtp("");
+    // Note: We don't clear the email value, just unlock the input
+  };
+
 
   const handleNext = async () => {
     let fieldsToValidate = [];
 
     if (currentStep === 0) {
-      if (!otpVerified) {
-          message.error("Please verify your mobile number to continue.");
+      if (!otpVerified || !emailOtpVerified) {
+          message.error("Please verify your mobile number and email to continue.");
           return;
       }
       fieldsToValidate = ['first_name', 'last_name', 'email', 'mobile.country_code', 'mobile.number', 'password', 'confirmPassword'];
@@ -256,8 +322,8 @@ const SellerPage = () => {
       return;
     }
 
-    if (!otpVerified) {
-        message.error("Mobile number not verified.");
+    if (!otpVerified || !emailOtpVerified) {
+        message.error("Mobile number or email not verified.");
         setCurrentStep(0);
         return;
     }
@@ -436,9 +502,103 @@ const SellerPage = () => {
                         </Col>
                       </Row>
 
-                      <Form.Item label="Email Address" required validateStatus={errors.email ? 'error' : ''} help={errors.email?.message || apiErrors.email}>
-                        <Controller name="email" control={control} rules={{ required: 'Required', pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' } }} render={({ field }) => <Input size="large" {...field} />} />
-                      </Form.Item>
+                      {/* --- EMAIL FIELD --- */}
+                      <div className="mb-4">
+                        <Form.Item label="Email Address" required validateStatus={errors.email ? 'error' : ''} help={errors.email?.message || apiErrors.email} style={{marginBottom: 0}}>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                                {/* Email Input */}
+                                <div style={{ flex: 1 }}>
+                                    <Controller
+                                        name="email"
+                                        control={control}
+                                        rules={{ 
+                                            required: 'Required',
+                                            pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' } 
+                                        }}
+                                        render={({ field }) => (
+                                            <Input 
+                                                size="large"
+                                                {...field}
+                                                disabled={emailOtpSent && !emailOtpVerified} 
+                                                style={{ borderColor: errors.email ? 'red' : '#d1d5db' }}
+                                                onChange={(e) => {
+                                                    field.onChange(e);
+                                                    if (emailOtpVerified) {
+                                                        setEmailOtpVerified(false); // Reset if user changes verified email manually
+                                                    }
+                                                }}
+                                            />
+                                        )} 
+                                    />
+                                </div>
+
+                                {/* Action Button Logic */}
+                                <div style={{ width: '100px' }}>
+                                    {!emailOtpVerified && !emailOtpSent ? (
+                                        <Button 
+                                            type="primary" 
+                                            disabled={!watchedEmail}
+                                            style={{ 
+                                                height: '42px', 
+                                                width: '100%',
+                                                backgroundColor: !watchedEmail ? 'white' : "#1677ff", 
+                                                borderColor: !watchedEmail ? '#d9d9d9' : "#1677ff",
+                                                color: !watchedEmail ? 'rgba(0,0,0,0.25)' : 'white'
+                                            }}
+                                            onClick={handleSendEmailOtp}
+                                            loading={emailOtpLoading}
+                                        >
+                                            Send OTP
+                                        </Button>
+                                    ) : (
+                                        <Button 
+                                            danger={!emailOtpVerified} // Red if cancelling, Default if changing verified
+                                            style={{ height: '42px', width: '100%' }}
+                                            onClick={handleChangeEmail}
+                                            icon={<EditOutlined />}
+                                        >
+                                            Change
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        </Form.Item>
+
+                        {/* EMAIL OTP Input Section */}
+                        {emailOtpSent && !emailOtpVerified && (
+                            <div style={{ marginTop: 16, display: 'flex', gap: 8, animation: 'fadeIn 0.3s ease' }}>
+                                <div style={{ flex: 1 }}>
+                                    <Input 
+                                        size="large"
+                                        placeholder="Enter 6-digit OTP"
+                                        prefix={<SafetyCertificateOutlined style={{ color: themeColor }}/>} 
+                                        value={enteredEmailOtp}
+                                        onChange={(e) => setEnteredEmailOtp(e.target.value.replace(/\D/g, ""))}
+                                        maxLength={6}
+                                    />
+                                    <Text type="secondary" style={{ fontSize: 12, marginLeft: 4 }}>
+                                        OTP sent to {getValues('email')}
+                                    </Text>
+                                </div>
+                                <Button 
+                                    type="primary" 
+                                    size="large" 
+                                    onClick={handleVerifyEmailOtp} 
+                                    loading={emailOtpLoading}
+                                    style={{ background: themeColor, borderColor: themeColor }}
+                                >
+                                    Verify
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* Verified Success Message */}
+                        {emailOtpVerified && (
+                            <div style={{ marginTop: 8, color: '#52c41a', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+                                <CheckCircleFilled /> Email Verified
+                            </div>
+                        )}
+                      </div>
 
                       {/* --- MOBILE FIELD --- */}
                       <div className="mb-4">
@@ -772,6 +932,7 @@ const SellerPage = () => {
                           size="large"
                           htmlType="submit"
                           loading={submitting}
+                          disabled={!otpVerified || !emailOtpVerified}
                           style={{ background: themeColor, borderColor: themeColor }}
                           icon={<CheckCircleOutlined />}
                         >
