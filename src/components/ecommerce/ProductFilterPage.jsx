@@ -48,7 +48,7 @@ const ProductFilterPage = () => {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      let query = `${BASE_URL}/api/products/get-all-products?page=1&limit=20`;
+      let query = `${BASE_URL}/api/products/get-all-products?page=1&limit=500`;
 
       if (selectedCategories.length) query += `&category_id=${selectedCategories.join(',')}`;
       if (selectedBrands.length) query += `&brand_id=${selectedBrands.join(',')}`;

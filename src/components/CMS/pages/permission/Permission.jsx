@@ -120,110 +120,116 @@ const Permission = () => {
   const getPermValue = (value) => value === 1 || value === true;
 
   /* -------------------------- FETCH DATA -------------------------- */
-const fetchData = useCallback(
-  async (page = 1, itemsPerPage = 10, filters = {}) => {
-    if (!perm.canView) {
-      setLoading(false);
-      return;
-    }
+  const fetchData = useCallback(
+    async (page = 1, itemsPerPage = 10, filters = {}) => {
+      if (!perm.canView) {
+        setLoading(false);
+        return;
+      }
 
-    setLoading(true);
+      setLoading(true);
 
-    try {
-      // ✅ Extract filters
-      const search = filtersArg?.search?.trim();
-      const isActive = filtersArg?.isActive;
+      try {
+        const search = filters?.search?.trim();
+        const isActive = filters?.isActive;
 
-      // ✅ BUILD PARAMS FOR API
-      const roleParams = {
-        page,
-        limit: itemsPerPage,
-        ...(typeof isActive === 'boolean' ? { isActive } : {}),
-        ...(search ? { search } : {}), // ✅ IMPORTANT
-      };
-
-      const [rolesRes, modulesRes, permissionsRes] = await Promise.all([
-        apiService.get('/roles', roleParams), // ✅ now search will go in API
-        moduleService.getAll(),
-        apiService.get('/permission', { limit: 100 }) // 👈 HERE
-      ]);
-
-      const sortedModules = (modulesRes.data || []).sort(
-        (a, b) => a.position - b.position
-      );
-
-      setModules(sortedModules);
-
-      setRoles(rolesRes.roles || []);
-      setPermissions(permissionsRes.permissions || []);
-
-      setPagination({
-        currentPage: rolesRes.pagination?.currentPage || page,
-        totalPages: rolesRes.pagination?.totalPages || 1,
-        totalResults: rolesRes.pagination?.totalRecords || 0,
-        itemsPerPage: rolesRes.pagination?.perPage || itemsPerPage,
-      });
-
-      const map = {};
-      let grantedCount = 0;
-
-      permissionsRes.permissions.forEach(p => {
-        const roleId = p.role._id;
-        const modId = p.module._id;
-        const subId = p.subModule?._id || '__module__';
-
-        map[roleId] ??= {};
-        map[roleId][modId] ??= {};
-
-        const permObj = {
-          id: p._id,
-          canAdd: getPermValue(p.permissions.canAdd),
-          canEdit: getPermValue(p.permissions.canEdit),
-          canView: getPermValue(p.permissions.canView),
-          canDelete: getPermValue(p.permissions.canDelete),
-          canViewAll: getPermValue(p.permissions.canViewAll),
+        const roleParams = {
+          page,
+          limit: itemsPerPage,
+          ...(typeof isActive === 'boolean' ? { isActive } : {}),
+          ...(search ? { search } : {}),
         };
 
-        if (Object.values(permObj).some(Boolean)) {
-          grantedCount++;
-        }
+        const [rolesRes, modulesRes, permissionsRes] = await Promise.all([
+          apiService.get('/roles', roleParams),
+          moduleService.getAll(),
+          apiService.get('/permission', { limit: 100 })
+        ]);
 
-        map[roleId][modId][subId] = permObj;
-      });
+        const sortedModules = (modulesRes.data || []).sort(
+          (a, b) => a.position - b.position
+        );
 
-      const totalItems =
-        sortedModules.reduce((c, m) => c + 1 + m.subModules.length, 0) *
-        (rolesRes.roles?.length || 0);
+        setModules(sortedModules);
+        setRoles(rolesRes.roles || []);
+        setPermissions(permissionsRes.permissions || []);
 
-      const activeRoles =
-        rolesRes.roles?.filter(r => r.isActive)?.length || 0;
+        setPagination({
+          currentPage: rolesRes.pagination?.currentPage || page,
+          totalPages: rolesRes.pagination?.totalPages || 1,
+          totalResults: rolesRes.pagination?.totalRecords || 0,
+          itemsPerPage: rolesRes.pagination?.perPage || itemsPerPage,
+        });
 
-      setStats({
-        totalPermissions: totalItems,
-        activeRoles,
-        grantedPermissions: grantedCount,
-      });
+        const map = {};
+        let grantedCount = 0;
 
-      setRolePermMap(map);
-    } catch (err) {
-      showToast(
-        err.response?.data?.message || 'Failed to load data',
-        'error'
-      );
-    } finally {
-      setLoading(false);
-    }
-  },
-  [perm.canView]
-);
+        // Build role permission map
+        permissionsRes.permissions?.forEach(p => {
+          const roleId = p.role?._id;
+          const modId = p.module?._id;
+          
+          // Handle submodule - check if subModule exists and has _id
+          let subId = '__module__';
+          if (p.subModule && p.subModule._id) {
+            subId = p.subModule._id;
+          }
 
+          if (!roleId || !modId) return;
+
+          // Initialize nested structure
+          if (!map[roleId]) map[roleId] = {};
+          if (!map[roleId][modId]) map[roleId][modId] = {};
+
+          const permObj = {
+            id: p._id,
+            canAdd: getPermValue(p.permissions?.canAdd),
+            canEdit: getPermValue(p.permissions?.canEdit),
+            canView: getPermValue(p.permissions?.canView),
+            canDelete: getPermValue(p.permissions?.canDelete),
+            canViewAll: getPermValue(p.permissions?.canViewAll),
+          };
+
+          if (Object.values(permObj).some(Boolean)) grantedCount++;
+
+          map[roleId][modId][subId] = permObj;
+        });
+
+        // Calculate total possible permissions
+        const totalModulesAndSubmodules = sortedModules.reduce((total, module) => {
+          const subModuleCount = module.subModules?.filter(sm => !sm.isDeleted).length || 0;
+          return total + 1 + subModuleCount; // +1 for module itself
+        }, 0);
+
+        const totalItems = totalModulesAndSubmodules * (rolesRes.roles?.length || 0);
+
+        const activeRoles = rolesRes.roles?.filter(r => r.isActive)?.length || 0;
+
+        setStats({
+          totalPermissions: totalItems,
+          activeRoles,
+          grantedPermissions: grantedCount,
+        });
+
+        setRolePermMap(map);
+      } catch (err) {
+        showToast(
+          err.response?.data?.message || 'Failed to load data',
+          'error'
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [perm.canView]
+  );
 
   useEffect(() => {
     if (token) {
       localStorage.setItem('token', token);
       fetchData(pagination.currentPage, pagination.itemsPerPage, filters);
     }
-  }, [token, fetchData]); // ✅ keep stable
+  }, [token, fetchData, filters, pagination.currentPage, pagination.itemsPerPage]);
 
   const handlePageChange = (page, itemsPerPage) => fetchData(page, itemsPerPage, filters);
 
@@ -254,7 +260,9 @@ const fetchData = useCallback(
   const updatePerm = useCallback((moduleId, subId, type, value) => {
     setRolePermMap(prev => {
       const copy = deepClone(prev);
-      const roleId = selectedRole._id;
+      const roleId = selectedRole?._id;
+
+      if (!roleId) return copy;
 
       if (!copy[roleId]) copy[roleId] = {};
       if (!copy[roleId][moduleId]) copy[roleId][moduleId] = {};
@@ -262,6 +270,7 @@ const fetchData = useCallback(
       const key = subId || '__module__';
       if (!copy[roleId][moduleId][key]) {
         copy[roleId][moduleId][key] = {
+          id: undefined,
           canAdd: false,
           canEdit: false,
           canView: false,
@@ -279,6 +288,11 @@ const fetchData = useCallback(
   const savePermissions = async () => {
     if (!perm.canEdit) {
       showToast('You do not have permission to edit', 'warning');
+      return;
+    }
+
+    if (!selectedRole) {
+      showToast('No role selected', 'error');
       return;
     }
 
@@ -303,18 +317,38 @@ const fetchData = useCallback(
           canViewAll: p.canViewAll ? 1 : 0,
         };
 
-        if (hasAny && p.id) toUpdate.push({ id: p.id, data: payload });
-        else if (hasAny && !p.id) toCreate.push({ roleId, moduleId: modId, subModuleId: subId, ...payload });
-        else if (!hasAny && p.id) toDelete.push(p.id);
+        if (hasAny && p.id) {
+          toUpdate.push({ id: p.id, data: payload });
+        } else if (hasAny && !p.id) {
+          toCreate.push({ 
+            roleId, 
+            moduleId: modId, 
+            subModuleId: subId, 
+            ...payload 
+          });
+        } else if (!hasAny && p.id) {
+          toDelete.push(p.id);
+        }
       });
     });
 
     try {
-      if (toDelete.length) await Promise.all(toDelete.map(id => apiService.delete(`/permission/${id}`)));
-      if (toUpdate.length) await Promise.all(toUpdate.map(({ id, data }) => apiService.put(`/permission/${id}`, data)));
-      if (toCreate.length) await apiService.post('/permission', toCreate);
+      if (toDelete.length) {
+        await Promise.all(toDelete.map(id => apiService.delete(`/permission/${id}`)));
+      }
+      if (toUpdate.length) {
+        await Promise.all(toUpdate.map(({ id, data }) => 
+          apiService.put(`/permission/${id}`, data)
+        ));
+      }
+      if (toCreate.length) {
+        await apiService.post('/permission', toCreate);
+      }
 
-      showSuccessAlert('Success', `${toCreate.length} created, ${toUpdate.length} updated, ${toDelete.length} removed`);
+      showSuccessAlert(
+        'Success', 
+        `${toCreate.length} created, ${toUpdate.length} updated, ${toDelete.length} removed`
+      );
 
       closeDrawer();
       fetchData(pagination.currentPage, pagination.itemsPerPage, filters);
@@ -356,19 +390,28 @@ const fetchData = useCallback(
       key: 'permissions',
       title: 'Permissions',
       render: (_, r) => {
-        const totalItems = modules.reduce((c, m) => c + 1 + (m.subModules?.length || 0), 0);
+        const totalModulesAndSubmodules = modules.reduce((total, module) => {
+          const subModuleCount = module.subModules?.filter(sm => !sm.isDeleted).length || 0;
+          return total + 1 + subModuleCount;
+        }, 0);
 
         const granted = Object.values(rolePermMap[r._id] || {}).reduce(
-          (c, mod) => c + Object.keys(mod).length,
+          (count, mod) =>
+            count +
+            Object.values(mod).filter(p =>
+              p.canAdd || p.canEdit || p.canView || p.canDelete || p.canViewAll
+            ).length,
           0
         );
 
-        const percent = totalItems > 0 ? Math.round((granted / totalItems) * 100) : 0;
+        const percent = totalModulesAndSubmodules > 0 
+          ? Math.round((granted / totalModulesAndSubmodules) * 100) 
+          : 0;
 
         return (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="font-medium">{granted} / {totalItems}</span>
+              <span className="font-medium">{granted} / {totalModulesAndSubmodules}</span>
               <span className="font-semibold" style={{ color: PURPLE_THEME.primary }}>
                 {percent}%
               </span>
@@ -597,7 +640,7 @@ const fetchData = useCallback(
           }
         }}
       >
-        {/* Drawer content same as your code */}
+        {/* Drawer content */}
         <Alert
           message="Permission Configuration"
           description={`Click the switches to enable or disable permissions for ${selectedRole?.name}. Changes are saved when you click "Save Permissions".`}
@@ -605,6 +648,118 @@ const fetchData = useCallback(
           showIcon
           style={{ background: '#e6f7ff', border: '1px solid #91d5ff' }}
         />
+
+        {/* Modules List with Permissions */}
+        <div className="mt-6 space-y-6 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+          {modules.map(module => {
+            const roleId = selectedRole?._id;
+            const modulePerms = rolePermMap?.[roleId]?.[module._id] || {};
+
+            return (
+              <Card
+                key={module._id}
+                size="small"
+                title={
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">{module.name}</span>
+                    {module.description && (
+                      <Typography.Text type="secondary" className="text-sm">
+                        {module.description}
+                      </Typography.Text>
+                    )}
+                  </div>
+                }
+                className="shadow-sm border border-gray-200"
+              >
+                {/* Module Level Permissions */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <Typography.Text strong style={{ color: PURPLE_THEME.dark }}>
+                      Module Permissions
+                    </Typography.Text>
+                    <Tag color={PURPLE_THEME.primaryLight}>
+                      Route: {module.route}
+                    </Tag>
+                  </div>
+                  <Space wrap className="gap-3">
+                    {['canView', 'canAdd', 'canEdit', 'canDelete', 'canViewAll'].map(p => (
+                      <Tooltip key={p} title={p.replace('can', 'Allow ')}>
+                        <div className="flex flex-col items-center">
+                          <Switch
+                            checked={modulePerms['__module__']?.[p] || false}
+                            onChange={val => updatePerm(module._id, null, p, val)}
+                            checkedChildren={p.replace('can', '')}
+                            unCheckedChildren={p.replace('can', '')}
+                            style={{
+                              backgroundColor: modulePerms['__module__']?.[p] 
+                                ? PURPLE_THEME.primary 
+                                : undefined
+                            }}
+                          />
+                          <Typography.Text type="secondary" className="text-xs mt-1">
+                            {p.replace('can', '')}
+                          </Typography.Text>
+                        </div>
+                      </Tooltip>
+                    ))}
+                  </Space>
+                </div>
+
+                {/* Sub-Modules */}
+                {module.subModules && module.subModules.length > 0 && (
+                  <div className="mt-6 pt-4 border-t border-gray-100">
+                    <Typography.Title level={5} style={{ marginBottom: 16, color: PURPLE_THEME.dark }}>
+                      Sub-Modules
+                    </Typography.Title>
+                    <div className="space-y-4">
+                      {module.subModules
+                        ?.filter(sm => !sm.isDeleted)
+                        .map(sub => {
+                          const subPerm = modulePerms[sub._id] || {};
+                          return (
+                            <Card
+                              key={sub._id}
+                              size="small"
+                              className="bg-gray-50 border border-gray-100"
+                              title={
+                                <div className="flex justify-between items-center">
+                                  <span className="font-medium">{sub.name}</span>
+                                  <Tag color="blue">{sub.route}</Tag>
+                                </div>
+                              }
+                            >
+                              <Space wrap className="gap-3">
+                                {['canView', 'canAdd', 'canEdit', 'canDelete', 'canViewAll'].map(p => (
+                                  <Tooltip key={p} title={p.replace('can', 'Allow ')}>
+                                    <div className="flex flex-col items-center">
+                                      <Switch
+                                        checked={subPerm[p] || false}
+                                        onChange={val => updatePerm(module._id, sub._id, p, val)}
+                                        checkedChildren={p.replace('can', '')}
+                                        unCheckedChildren={p.replace('can', '')}
+                                        style={{
+                                          backgroundColor: subPerm[p] 
+                                            ? PURPLE_THEME.primary 
+                                            : undefined
+                                        }}
+                                      />
+                                      <Typography.Text type="secondary" className="text-xs mt-1">
+                                        {p.replace('can', '')}
+                                      </Typography.Text>
+                                    </div>
+                                  </Tooltip>
+                                ))}
+                              </Space>
+                            </Card>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
 
         {/* Footer */}
         <div className="mt-8 flex justify-between items-center sticky bottom-0 bg-white p-4 border-t rounded-b-lg shadow-lg">
@@ -621,7 +776,7 @@ const fetchData = useCallback(
               icon={<SaveOutlined />}
               onClick={savePermissions}
               loading={saving}
-              disabled={!perm.canEdit}
+              disabled={!perm.canEdit || !selectedRole}
               size="large"
               style={{
                 background: PURPLE_THEME.primary,
