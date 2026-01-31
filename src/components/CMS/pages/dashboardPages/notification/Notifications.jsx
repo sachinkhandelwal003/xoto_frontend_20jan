@@ -49,11 +49,13 @@ const Notifications = () => {
 
   // --- 1. Mark Single Notification as Read ---
   const markSingleAsRead = async (id) => {
+    console.log(id)
     setActionLoading(id);
     try {
       // Using your router.patch("/read-notification/:id") structure
       // Note: Ensure your apiService.patch is configured
-      const res = await apiService.patch(`/notifications/read-notification/${id}`);
+      const res = await apiService.put(`/notifications/read-notification/${id}`);
+      console.log(res)
       
       if (res.success) {
         // Update local state without full refresh for better UX
@@ -125,7 +127,6 @@ const Notifications = () => {
                       type="link" 
                       size="small" 
                       onClick={() => markSingleAsRead(item._id)}
-                      loading={actionLoading === item._id}
                     >
                       Mark Read
                     </Button>
