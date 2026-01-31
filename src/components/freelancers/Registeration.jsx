@@ -15,7 +15,6 @@ import { apiService } from "../../manageApi/utils/custom.apiservice";
 // --- Libraries ---
 import CountryList from 'country-list-with-dial-code-and-flag';
 import { Country, State, City } from 'country-state-city';
-// Import validation function
 import { isValidPhoneNumber } from 'libphonenumber-js';
 
 const { Option } = Select;
@@ -47,6 +46,8 @@ const Registration = () => {
     submitting: false,
     otpSending: false,
     otpVerifying: false,
+    emailOtpSending: false,
+    emailOtpVerifying: false,
   });
   const [success, setSuccess] = useState(false);
 
@@ -54,10 +55,14 @@ const Registration = () => {
   const [countryCode, setCountryCode] = useState("+971");
   const [mobileNumber, setMobileNumber] = useState("");
   const mobileCountryOptions = useMemo(() => CountryList.getAll(), []);
-  
   const [isMobileVerified, setIsMobileVerified] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpValue, setOtpValue] = useState("");
+
+  // --- Email Verification State ---
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [showEmailOtpInput, setShowEmailOtpInput] = useState(false);
+  const [emailOtpValue, setEmailOtpValue] = useState("");
 
   // --- React Hook Form ---
   const {
@@ -71,6 +76,8 @@ const Registration = () => {
     clearErrors,
     formState: { errors },
   } = useForm({ mode: "onChange" });
+
+  const watchEmail = watch("email");
 
   useEffect(() => {
     register("mobile_number", { 
@@ -138,29 +145,59 @@ const Registration = () => {
   const addService = () => setServices(prev => [...prev, { subcategoryId: "", types: [], description: "", unit: "per job" }]);
   const removeService = (index) => setServices(prev => prev.filter((_, i) => i !== index));
 
-  // --- OTP Handlers ---
+  // --- Email OTP Handlers ---
+  const handleSendEmailOtp = async () => {
+    const isEmailValid = await trigger("email");
+    if (!isEmailValid) return;
+
+    setLoading(prev => ({ ...prev, emailOtpSending: true }));
+    try {
+      await apiService.post("https://xoto.ae/api/otp/email-otp/send", { email: watchEmail });
+      message.success("OTP sent! Please check your email inbox.");
+      setShowEmailOtpInput(true);
+    } catch (error) {
+      message.error(error.response?.data?.message || "Failed to send Email OTP");
+    } finally {
+      setLoading(prev => ({ ...prev, emailOtpSending: false }));
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    if (!emailOtpValue || emailOtpValue.length < 4) {
+      return message.error("Please enter a valid OTP");
+    }
+
+    setLoading(prev => ({ ...prev, emailOtpVerifying: true }));
+    try {
+      await apiService.post("https://xoto.ae/api/otp/email-otp/verify", {
+        email: watchEmail,
+        otp: emailOtpValue
+      });
+      message.success("Email verified successfully!");
+      setIsEmailVerified(true);
+      setShowEmailOtpInput(false);
+    } catch (error) {
+      message.error(error.response?.data?.message || "Invalid OTP. Please try again.");
+    } finally {
+      setLoading(prev => ({ ...prev, emailOtpVerifying: false }));
+    }
+  };
+
+  // --- Mobile OTP Handlers ---
   const handleSendOtp = async () => {
     if (!mobileNumber) {
       setError("mobile_number", { type: "manual", message: "Mobile number is required" });
       return;
     }
-
     const fullNumber = `${countryCode}${mobileNumber}`;
-    
     if (!isValidPhoneNumber(fullNumber)) {
-        setError("mobile_number", { 
-            type: "manual", 
-            message: `Invalid number format for ${countryCode}` 
-        });
+        setError("mobile_number", { type: "manual", message: `Invalid number format for ${countryCode}` });
         return;
     }
     
     setLoading(prev => ({ ...prev, otpSending: true }));
     try {
-      // await apiService.post("/otp/send-otp", {
-      //   country_code: countryCode,
-      //   phone_number: mobileNumber
-      // });
+      // await apiService.post("/otp/send-otp", { country_code: countryCode, phone_number: mobileNumber });
       message.success(`OTP sent to ${fullNumber}`);
       setShowOtpInput(true);
       clearErrors("mobile_number");
@@ -172,10 +209,7 @@ const Registration = () => {
   };
 
   const handleVerifyOtp = async () => {
-    if (!otpValue || otpValue.length < 4) {
-      return message.error("Please enter a valid OTP");
-    }
-
+    if (!otpValue || otpValue.length < 4) return message.error("Please enter a valid OTP");
     setLoading(prev => ({ ...prev, otpVerifying: true }));
     try {
       await apiService.post("/otp/verify-otp", {
@@ -183,7 +217,6 @@ const Registration = () => {
         phone_number: mobileNumber,
         otp: otpValue
       });
-      
       message.success("Mobile number verified successfully!");
       setIsMobileVerified(true);
       setShowOtpInput(false);
@@ -195,28 +228,23 @@ const Registration = () => {
     }
   };
 
-  const handleChangeNumber = () => {
-    setIsMobileVerified(false);
-    setShowOtpInput(false);
-    setOtpValue("");
-  };
+  const handleChangeNumber = () => { setIsMobileVerified(false); setShowOtpInput(false); setOtpValue(""); };
+  const handleChangeEmail = () => { setIsEmailVerified(false); setShowEmailOtpInput(false); setEmailOtpValue(""); };
 
   // --- Navigation ---
   const next = async () => {
     let isValid = true;
-
     if (step === 0) {
       const fields = ["first_name", "last_name", "email", "password", "confirmPassword", "mobile_number"];
       const formValid = await trigger(fields);
       
       if (!isMobileVerified) {
-        setError("mobile_number", {
-          type: "manual",
-          message: "Please verify your mobile number first",
-        });
+        setError("mobile_number", { type: "manual", message: "Please verify mobile number" });
         isValid = false;
-      } else {
-        if (formValid) clearErrors("mobile_number");
+      }
+      if (!isEmailVerified) {
+        setError("email", { type: "manual", message: "Please verify your email first" });
+        isValid = false;
       }
 
       if (!formValid) isValid = false;
@@ -226,23 +254,21 @@ const Registration = () => {
       const formValid = await trigger(fields);
       if (!formValid) isValid = false;
     }
-
     if (isValid) setStep(s => s + 1);
   };
 
   const back = () => setStep(s => s - 1);
 
   const onSubmit = async (data) => {
+    if (!isEmailVerified || !isMobileVerified) return message.error("Please verify all contacts");
     if (data.password !== data.confirmPassword) {
       setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
       return;
     }
-    
     if (selectedLanguages.length === 0) return message.error("Please select at least one language");
     if (services.some(s => !s.subcategoryId || s.types.length === 0 || !s.description)) return message.error("Please complete all service fields");
 
     setLoading(prev => ({ ...prev, submitting: true }));
-
     const countryName = locationCountries.find(c => c.isoCode === data.country)?.name || data.country;
     const stateName = availableStates.find(s => s.isoCode === data.state)?.name || data.state;
 
@@ -253,18 +279,11 @@ const Registration = () => {
       name: { first_name: data.first_name, last_name: data.last_name },
       mobile: { country_code: countryCode, number: mobileNumber.replace(/\D/g, "") },
       is_mobile_verified: isMobileVerified,
+      is_email_verified: isEmailVerified, // added flag
       location: { country: countryName, state: stateName, city: data.city },
-      professional: {
-        experience_years: Number(data.experience_years),
-        bio: data.bio,
-        skills: [],
-        availability: "Full-time",
-      },
+      professional: { experience_years: Number(data.experience_years), bio: data.bio, skills: [], availability: "Full-time" },
       services_offered: services.map(s => ({
-        category: s.subcategoryId,
-        subcategories: s.types,
-        description: s.description,
-        unit: s.unit,
+        category: s.subcategoryId, subcategories: s.types, description: s.description, unit: s.unit,
       })),
       payment: { preferred_method: data.preferred_method },
       languages: selectedLanguages,
@@ -276,8 +295,7 @@ const Registration = () => {
       setSuccess(true);
       message.success("Registration successful!");
     } catch (err) {
-      const res = err.response?.data;
-      message.error(res?.message || "Registration failed");
+      message.error(err.response?.data?.message || "Registration failed");
     } finally {
       setLoading(prev => ({ ...prev, submitting: false }));
     }
@@ -336,35 +354,73 @@ const Registration = () => {
                       <Controller name="last_name" control={control} rules={{ required: "Required" }} render={({ field }) => <Input prefix={<User />} size="large" {...field} />} />
                     </Form.Item>
                   </div>
-                  <Form.Item label="Email" required validateStatus={errors.email ? "error" : ""} help={errors.email?.message}>
-                    <Controller name="email" control={control} rules={{ required: "Required", pattern: { value: /^\S+@\S+$/i, message: "Invalid email" } }} render={({ field }) => <Input prefix={<Mail />} size="large" {...field} />} />
+
+                  {/* --- EMAIL WITH INLINE OTP --- */}
+                  <Form.Item 
+                    label={<Space><span>Email Address</span>{isEmailVerified && <Tag color="success" icon={<Check size={12} />}>Verified</Tag>}</Space>}
+                    required 
+                    validateStatus={errors.email ? "error" : ""} 
+                    help={errors.email?.message}
+                  >
+                    <Space.Compact style={{ width: '100%' }}>
+                      <Controller 
+                        name="email" 
+                        control={control} 
+                        rules={{ required: "Required", pattern: { value: /^\S+@\S+$/i, message: "Invalid email" } }} 
+                        render={({ field }) => (
+                          <Input 
+                            {...field}
+                            prefix={<Mail size={16} />} 
+                            size="large" 
+                            placeholder="example@mail.com"
+                            style={{ width: '80%' }}
+                            disabled={showEmailOtpInput || isEmailVerified}
+                          />
+                        )} 
+                      />
+                      {!isEmailVerified && !showEmailOtpInput && (
+                         <Button 
+                            type="primary" size="large" onClick={handleSendEmailOtp}
+                            disabled={!watchEmail} loading={loading.emailOtpSending}
+                            style={{ width: '20%', minWidth: '100px' }}
+                         >Send OTP</Button>
+                      )}
+                      {(showEmailOtpInput || isEmailVerified) && (
+                         <Button 
+                            size="large" icon={<Edit size={16} />} onClick={handleChangeEmail}
+                            style={{ width: '20%', minWidth: '100px' }}
+                         >Change</Button>
+                      )}
+                    </Space.Compact>
+
+                    {showEmailOtpInput && (
+                        <div className="mt-4 p-4 bg-gray-50 border border-purple-100 rounded-lg">
+                             <Text type="secondary" className="block mb-3">Check your mail! Enter the code sent to <strong>{watchEmail}</strong></Text>
+                             <div className="flex gap-3 items-center">
+                                 <Input 
+                                    placeholder="Enter Email OTP" maxLength={6}
+                                    value={emailOtpValue} onChange={(e) => setEmailOtpValue(e.target.value)} 
+                                    size="large" style={{ width: '200px' }}
+                                 />
+                                 <Button 
+                                    type="primary" onClick={handleVerifyEmailOtp} 
+                                    loading={loading.emailOtpVerifying} size="large"
+                                 >Verify Email</Button>
+                             </div>
+                        </div>
+                    )}
                   </Form.Item>
 
                   {/* --- MOBILE NUMBER WITH INLINE OTP --- */}
                   <Form.Item 
-                    label={
-                        <Space>
-                            <span>Mobile Number</span>
-                            {isMobileVerified && <Tag color="success" icon={<Check size={12} />}>Verified</Tag>}
-                        </Space>
-                    }
-                    required 
-                    validateStatus={errors.mobile_number ? "error" : ""} 
-                    help={errors.mobile_number?.message}
+                    label={<Space><span>Mobile Number</span>{isMobileVerified && <Tag color="success" icon={<Check size={12} />}>Verified</Tag>}</Space>}
+                    required validateStatus={errors.mobile_number ? "error" : ""} help={errors.mobile_number?.message}
                   >
                     <Space.Compact style={{ width: '100%' }}>
                         <Select
-                            showSearch
-                            value={countryCode}
-                            onChange={(val) => {
-                                setCountryCode(val);
-                                if (errors.mobile_number?.type === 'manual') clearErrors("mobile_number");
-                            }}
-                            style={{ width: '30%', minWidth: '110px' }}
-                            placeholder="Code"
-                            size="large"
-                            optionFilterProp="label"
-                            filterOption={filterOption}
+                            showSearch value={countryCode} size="large"
+                            onChange={(val) => { setCountryCode(val); if (errors.mobile_number?.type === 'manual') clearErrors("mobile_number"); }}
+                            style={{ width: '30%', minWidth: '110px' }} optionFilterProp="label" filterOption={filterOption}
                             disabled={showOtpInput || isMobileVerified}
                         >
                             {mobileCountryOptions.map((country, index) => (
@@ -374,72 +430,33 @@ const Registration = () => {
                             ))}
                         </Select>
                         <Input 
-                            prefix={<Phone size={16} />} 
-                            value={mobileNumber} 
+                            prefix={<Phone size={16} />} value={mobileNumber} size="large" 
                             onChange={e => {
                                 const val = e.target.value.replace(/\D/g, "");
                                 setMobileNumber(val);
                                 setValue("mobile_number", val, { shouldValidate: true });
                                 if (errors.mobile_number?.type === 'manual') clearErrors("mobile_number");
                             }}
-                            placeholder="501234567" 
-                            size="large" 
-                            style={{ width: '50%' }} 
-                            disabled={showOtpInput || isMobileVerified}
+                            placeholder="501234567" style={{ width: '50%' }} disabled={showOtpInput || isMobileVerified}
                         />
-                        
                         {!isMobileVerified && !showOtpInput && (
                              <Button 
-                                type="primary" 
-                                size="large" 
-                                onClick={handleSendOtp}
-                                disabled={!mobileNumber}
-                                loading={loading.otpSending}
+                                type="primary" size="large" onClick={handleSendOtp}
+                                disabled={!mobileNumber} loading={loading.otpSending}
                                 style={{ width: '20%', minWidth: '100px' }}
-                             >
-                                Send OTP
-                             </Button>
+                             >Send OTP</Button>
                         )}
-
                         {(showOtpInput || isMobileVerified) && (
-                            <Button 
-                                size="large" 
-                                icon={<Edit size={16} />}
-                                onClick={handleChangeNumber}
-                                style={{ width: '20%', minWidth: '100px' }}
-                            >
-                                Change
-                            </Button>
+                            <Button size="large" icon={<Edit size={16} />} onClick={handleChangeNumber} style={{ width: '20%', minWidth: '100px' }}>Change</Button>
                         )}
                     </Space.Compact>
-
-                    {/* UPDATED: Normal Input Field for OTP */}
                     {showOtpInput && (
                         <div className="mt-4 p-4 bg-gray-50 border border-purple-100 rounded-lg">
-                             <Text type="secondary" className="block mb-3">
-                                Enter the 6-digit code sent to <strong>{countryCode} {mobileNumber}</strong>
-                             </Text>
-                             
+                             <Text type="secondary" className="block mb-3">Enter the 6-digit code sent to <strong>{countryCode} {mobileNumber}</strong></Text>
                              <div className="flex gap-3 items-center">
-                                 <Input 
-                                    placeholder="Enter OTP"
-                                    maxLength={6}
-                                    value={otpValue} 
-                                    onChange={(e) => setOtpValue(e.target.value)} 
-                                    size="large"
-                                    style={{ width: '200px' }}
-                                 />
-                                 <Button 
-                                    type="primary" 
-                                    onClick={handleVerifyOtp} 
-                                    loading={loading.otpVerifying}
-                                    style={{ backgroundColor: '#1677ff', borderColor: '#1677ff' }}
-                                    size="large"
-                                 >
-                                    Verify OTP
-                                 </Button>
+                                 <Input placeholder="Enter OTP" maxLength={6} value={otpValue} onChange={(e) => setOtpValue(e.target.value)} size="large" style={{ width: '200px' }} />
+                                 <Button type="primary" onClick={handleVerifyOtp} loading={loading.otpVerifying} size="large">Verify OTP</Button>
                              </div>
-                             {/* Resend button removed as requested */}
                         </div>
                     )}
                   </Form.Item>
@@ -454,7 +471,11 @@ const Registration = () => {
                   </div>
                   
                   <div className="text-right mt-8">
-                    <Button type="primary" size="large" onClick={next} style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}>
+                    <Button 
+                        type="primary" size="large" onClick={next} 
+                        style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}
+                        disabled={!isEmailVerified || !isMobileVerified}
+                    >
                       Next <ChevronRight className="inline" />
                     </Button>
                   </div>
@@ -530,14 +551,11 @@ const Registration = () => {
 
                       <Form.Item label="What service do you offer?" required>
                         <Select
-                          size="large"
-                          placeholder="Select a service category"
+                          size="large" placeholder="Select a service category"
                           value={service.subcategoryId || undefined}
                           onChange={(value) => handleSubcategorySelect(index, value)}
                           loading={loading.subcategories}
-                          showSearch
-                          optionFilterProp="children"
-                          className="w-full"
+                          showSearch optionFilterProp="children" className="w-full"
                         >
                           {subcategories.map(sub => (
                             <Option key={sub._id} value={sub._id}>{sub.label}</Option>
@@ -548,12 +566,9 @@ const Registration = () => {
                       {service.subcategoryId && (
                         <Form.Item label="Specializations (Multiple)" required className="mb-6">
                           <Select
-                            mode="multiple"
-                            loading={loading.types[index]}
-                            value={service.types}
-                            onChange={(vals) => handleTypesSelect(index, vals)}
-                            placeholder="Select your specializations"
-                            size="large"
+                            mode="multiple" loading={loading.types[index]}
+                            value={service.types} onChange={(vals) => handleTypesSelect(index, vals)}
+                            placeholder="Select your specializations" size="large"
                           >
                             {(typesMap[index] || []).map(t => (
                               <Option key={t.value} value={t.value}>{t.label}</Option>
@@ -564,15 +579,13 @@ const Registration = () => {
 
                       <Form.Item label="Service Description" required>
                         <Input.TextArea
-                          rows={4}
-                          value={service.description}
+                          rows={4} value={service.description} size="large"
                           onChange={e => {
                             const updated = [...services];
                             updated[index].description = e.target.value;
                             setServices(updated);
                           }}
                           placeholder="Describe your expertise..."
-                          size="large"
                         />
                       </Form.Item>
                     </div>
@@ -590,9 +603,7 @@ const Registration = () => {
 
                   <Form.Item label="Preferred Payment Method" required>
                     <Controller
-                      name="preferred_method"
-                      control={control}
-                      rules={{ required: "Required" }}
+                      name="preferred_method" control={control} rules={{ required: "Required" }}
                       render={({ field }) => (
                         <Select size="large" placeholder="Select method" {...field}>
                           {paymentOptions.map(p => <Option key={p.value} value={p.value}>{p.label}</Option>)}
@@ -603,9 +614,7 @@ const Registration = () => {
 
                   <Form.Item>
                     <Controller
-                      name="agreed_to_terms"
-                      control={control}
-                      rules={{ required: "You must agree" }}
+                      name="agreed_to_terms" control={control} rules={{ required: "You must agree" }}
                       render={({ field }) => (
                         <Checkbox checked={field.value} onChange={e => field.onChange(e.target.checked)}>
                           I agree to <a href="#" className="text-purple-600">Terms</a> & <a href="#" className="text-purple-600">Privacy Policy</a>
@@ -617,8 +626,11 @@ const Registration = () => {
 
                   <div className="flex justify-between mt-12">
                     <Button size="large" onClick={back}><ChevronLeft /> Back</Button>
-                    <Button type="primary" htmlType="submit" loading={loading.submitting} size="large"
-                      style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}>
+                    <Button 
+                        type="primary" htmlType="submit" loading={loading.submitting} size="large"
+                        style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}
+                        disabled={!isEmailVerified || !isMobileVerified}
+                    >
                       Complete Registration <Check className="ml-2" />
                     </Button>
                   </div>
