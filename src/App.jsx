@@ -10,6 +10,7 @@ import { ProductProvider } from "./context/ProductContext"; // BASE LOGIC ADDED
 import { FreelancerProvider } from "./context/FreelancerContext";
 import { useSelector } from "react-redux";
 
+// ... (All your imports remain the same) ...
 import Navbar from "./components/navbar/index.jsx";
 import Footer from "./components/footer/footer";
 import FloatingIcons from "./components/FloatingIcons";
@@ -102,20 +103,16 @@ const Registration = lazy(() => import("./components/freelancers/Registeration")
 const Magazine = lazy(() => import("./components/magazines/Index"));
 
 function PrivateRoute({ children, allowedRoles }) {
-  // 1. Get real data from Redux (or your Auth Context)
+  // ... (Code remains the same)
   const { user, token, loading } = useSelector((state) => state.auth);
   const location = useLocation();
 
-  // 2. If the app is still checking for a saved token, show the loader
   if (loading) return <Loader />;
 
-  // 3. CRITICAL: If no user or token, redirect immediately to login
-  // This prevents the "Dashboard flicker" during logout
   if (!user || !token || !user.role?.code) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 4. Role-based access control
   const userRole = user.role.code.toString();
   if (allowedRoles && !allowedRoles.includes(userRole)) {
     return <Navigate to="/" replace />;
@@ -125,9 +122,10 @@ function PrivateRoute({ children, allowedRoles }) {
 }
 
 function LayoutWrapper({ children }) {
-const location = useLocation();
+  // ... (Code remains the same)
+  const location = useLocation();
   const { user, token } = useSelector((state) => state.auth);
-    const hideNavbarPaths = [
+  const hideNavbarPaths = [
     "/login", "/quotation", "/freelancer/browse-category", "/freelancer/category",
     "/freelancer/free-listing", "/ecommerce", "/freelancer/create-business",
     "/designs/Tool", "/dashboard", "/customer/dashboard", "/admin/login",
@@ -135,11 +133,11 @@ const location = useLocation();
     "/aiPlanner/landscape", "/estimate/calculator", "/estimate/calculator/interior",
     "/accountant/login", "/ecommerce/seller", "/ecommerce/cart",
   ];
-const isDashboard = location.pathname.startsWith("/dashboard");
-const hideNavbar = hideNavbarPaths.includes(location.pathname) || isDashboard;
+  const isDashboard = location.pathname.startsWith("/dashboard");
+  const hideNavbar = hideNavbarPaths.includes(location.pathname) || isDashboard;
 
 
-if (isDashboard && (!user || !token)) {
+  if (isDashboard && (!user || !token)) {
     return <div className="min-h-screen">{children}</div>;
   }
 
@@ -161,7 +159,7 @@ if (isDashboard && (!user || !token)) {
     "/freelancer/registration",
   ];
 
-const hideFooter = hideFooterPaths.includes(location.pathname) || isDashboard || location.pathname.startsWith("/profile/");
+  const hideFooter = hideFooterPaths.includes(location.pathname) || isDashboard || location.pathname.startsWith("/profile/");
 
   return (
     <div className="min-h-screen relative">
@@ -181,6 +179,10 @@ function App() {
           <ScrollToTop />
           <Suspense fallback={<Loader />}>
             <Routes>
+              {/* --- ADDED REDIRECT HERE --- */}
+              <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+              {/* --------------------------- */}
+
               <Route path="/dashboard" element={<Navigate to="/" replace />} />
               <Route path="/" element={<Home />} />
               <Route path="/landscaping" element={<Landspackng />} />
@@ -229,24 +231,24 @@ function App() {
               <Route path="/explore" element={<Page3 />} />
               <Route path="/contact" element={<Page />} />
               <Route path="/quotation" element={<Quotation />} />
-           <Route path="/ecommerce" element={<MainEcommercePage />} />
-<Route path="/ecommerce/b2c" element={<HomeB2C />} />
+              <Route path="/ecommerce" element={<MainEcommercePage />} />
+              <Route path="/ecommerce/b2c" element={<HomeB2C />} />
 
-{/* ✅ Developer Routes */}
-<Route path="/developer/dashboard" element={<DeveloperDashboard />} />
-<Route
-  path="/developer/property-management"
-  element={<DeveloperPropertyManagement />}
-/>
-<Route path="/developer/registration" element={<DeveloperRegistration />} />
-<Route path="/developer/sidebar" element={<DeveloperSidebar />} />
+              {/* ✅ Developer Routes */}
+              <Route path="/developer/dashboard" element={<DeveloperDashboard />} />
+              <Route
+                path="/developer/property-management"
+                element={<DeveloperPropertyManagement />}
+              />
+              <Route path="/developer/registration" element={<DeveloperRegistration />} />
+              <Route path="/developer/sidebar" element={<DeveloperSidebar />} />
 
-{/* ✅ Agency Route */}
-<Route path="/agency/registration" element={<RegistrationAgency />} />
+              {/* ✅ Agency Route */}
+              <Route path="/agency/registration" element={<RegistrationAgency />} />
 
-<Route path="/ecommerce/seller" element={<SellerPage />} />
-<Route path="/ecommerce/seller/b2b" element={<Sellerb2b />} />
-<Route path="/ecommerce/b2b" element={<HomeB2B />} />
+              <Route path="/ecommerce/seller" element={<SellerPage />} />
+              <Route path="/ecommerce/seller/b2b" element={<Sellerb2b />} />
+              <Route path="/ecommerce/b2b" element={<HomeB2B />} />
               <Route path="/ecommerce/cart" element={<CartPage />} />
               <Route path="/ecommerce/filter" element={<ProductFilterPage />} />
               <Route path="/ecommerce/product/:id" element={<Productdetails />} />
@@ -272,7 +274,7 @@ function App() {
               <Route path="/magazines" element={<Magazine />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/customer/dashboard" element={<Customerdashboard />} />
-                            <Route path="/check" element={<Checker />} />
+              <Route path="/check" element={<Checker />} />
 
               <Route
                 path="/dashboard/:roleSlug/*"

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; 
+import axios from 'axios';
 import {
   Button, Modal, Form, Input, Popconfirm, Card, Table,
-  Typography, Avatar, Row, Col, Statistic, Space, Divider, message, notification, Tooltip, Switch, Tag
+  Typography, Avatar, Row, Col, Statistic, Space, Divider, message, notification, Tooltip, Switch, Tag, Upload
 } from 'antd';
 import {
   PlusOutlined,
-  DeleteOutlined, EditOutlined, SearchOutlined, AppstoreOutlined
+  DeleteOutlined, EditOutlined, SearchOutlined, AppstoreOutlined, LoadingOutlined, EyeOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -23,6 +23,7 @@ const AddCategory = () => {
  
   // Base URL
   const BASE_URL = "https://xoto.ae/api/products"; 
+  const UPLOAD_URL = "https://xoto.ae/api/upload";
 
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,9 @@ const AddCategory = () => {
   
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null); 
+  const [iconLoading, setIconLoading] = useState(false);
+  const [iconUrl, setIconUrl] = useState(""); 
+  const [previewVisible, setPreviewVisible] = useState(false);
   const [form] = Form.useForm();
 
   // --- 1. GET ALL CATEGORIES ---
@@ -68,7 +72,34 @@ const AddCategory = () => {
     return () => clearTimeout(delayDebounce);
   }, [currentPage, pageSize, searchText]);
 
-  // --- 2. GET SINGLE CATEGORY ---
+  // --- 2. UPLOAD ICON LOGIC (Fixed for S3 Response) ---
+  const handleUpload = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setIconLoading(true);
+    try {
+      const response = await axios.post(UPLOAD_URL, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      // ✅ S3 Response Fix: Mapping to response.data.file.url
+      const uploadedUrl = response.data?.file?.url;
+      
+      if (uploadedUrl) {
+        setIconUrl(uploadedUrl);
+        message.success("Icon uploaded successfully");
+      }
+    } catch (err) {
+      message.error("Icon upload failed.");
+      console.error(err);
+    } finally {
+      setIconLoading(false);
+    }
+    return false; 
+  };
+
+  // --- 3. GET SINGLE CATEGORY ---
   const fetchCategoryById = async (id) => {
     setLoading(true);
     try {
@@ -82,6 +113,7 @@ const AddCategory = () => {
           description: cat.description,
           isActive: cat.isActive 
         });
+        setIconUrl(cat.icon || "");
         setEditingId(id);
         setModalVisible(true);
       }
@@ -92,25 +124,23 @@ const AddCategory = () => {
     }
   };
 
-  // --- 3. CREATE OR UPDATE CATEGORY (UPDATED) ---
+  // --- 4. CREATE OR UPDATE CATEGORY ---
   const handleSave = async (values) => {
     setLoading(true);
     try {
-      // JSON Payload construction
       const payload = {
         name: values.name,
         description: values.description,
-        isActive: values.isActive || false, 
+        isActive: values.isActive || false,
+        icon: iconUrl,
       };
 
       let response;
       if (editingId) {
-        // ✅ UPDATED: /edit-category-by-id endpoint use kiya hai
         response = await axios.post(`${BASE_URL}/edit-category-by-id`, payload, {
-          params: { id: editingId } // Query param mein ID jayega
+          params: { id: editingId } 
         });
       } else {
-        // Create Logic
         response = await axios.post(`${BASE_URL}/create-category`, payload);
       }
       
@@ -131,7 +161,7 @@ const AddCategory = () => {
     }
   };
 
-  // --- 4. DELETE CATEGORY ---
+  // --- 5. DELETE CATEGORY ---
   const deleteCategory = async (id) => {
     try {
       setLoading(true);
@@ -151,11 +181,26 @@ const AddCategory = () => {
   const closeModal = () => {
     setModalVisible(false);
     setEditingId(null);
+    setIconUrl("");
     form.resetFields();
   };
 
   // Table Columns
   const columns = [
+    {
+      title: 'Icon',
+      dataIndex: 'icon',
+      key: 'icon',
+      width: 80,
+      render: (url) => (
+        <Avatar 
+          shape="square" 
+          src={url} 
+          icon={!url && <AppstoreOutlined />} 
+          style={{ backgroundColor: !url ? '#f5f5f5' : 'transparent', color: THEME.primary }} 
+        />
+      ),
+    },
     {
       title: 'Category Name',
       dataIndex: 'name',
@@ -302,6 +347,33 @@ const AddCategory = () => {
             onFinish={handleSave} 
             initialValues={{ isActive: true }}
         >
+          <Form.Item label="Category Icon">
+            <div className="flex items-center gap-4">
+              <Upload
+                listType="picture-card"
+                className="avatar-uploader"
+                showUploadList={false}
+                beforeUpload={handleUpload}
+              >
+                {iconUrl ? (
+                  <div className="relative w-full h-full group">
+                    <img src={iconUrl} alt="icon" className="w-full h-full object-cover rounded-lg" />
+                    {/* Hover Icons: Eye and Trash */}
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-3 rounded-lg">
+                      <EyeOutlined className="text-white text-lg cursor-pointer" onClick={(e) => { e.stopPropagation(); setPreviewVisible(true); }} />
+                      <DeleteOutlined className="text-red-500 text-lg cursor-pointer" onClick={(e) => { e.stopPropagation(); setIconUrl(""); }} />
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    {iconLoading ? <LoadingOutlined /> : <PlusOutlined />}
+                    <div style={{ marginTop: 8 }}>Upload</div>
+                  </div>
+                )}
+              </Upload>
+            </div>
+          </Form.Item>
+
           <Form.Item 
             name="name" 
             label="Category Name" 
@@ -331,7 +403,6 @@ const AddCategory = () => {
             <Switch 
                 checkedChildren="Active" 
                 unCheckedChildren="Inactive" 
-                defaultChecked 
             />
           </Form.Item>
 
@@ -348,6 +419,11 @@ const AddCategory = () => {
             </Button>
           </div>
         </Form>
+      </Modal>
+
+      {/* Image Preview Modal */}
+      <Modal open={previewVisible} footer={null} onCancel={() => setPreviewVisible(false)} centered>
+        <img alt="preview" className="w-full h-auto" src={iconUrl} />
       </Modal>
     </div>
   );

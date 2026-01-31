@@ -277,7 +277,7 @@ const Step3 = ({ formData, handleChange, errors }) => {
     </div>
   );
 };
-
+ 
 // --- Modal Component ---
 const SuccessModal = ({ email, navigate }) => {
   useEffect(() => {

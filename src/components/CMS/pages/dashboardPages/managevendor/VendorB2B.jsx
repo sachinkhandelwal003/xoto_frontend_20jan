@@ -306,7 +306,7 @@ const VendorB2B = () => {
       render: (value, item) => (
         <div className="flex space-x-2">
           <Link
-            to={`/sawtar/cms/vendors/b2b/${item._id}`}
+            // to={`/sawtar/cms/vendors/b2b/${item._id}`}
             className="text-blue-600 hover:text-blue-800 p-1 rounded"
             title="View Details"
           >
@@ -348,7 +348,7 @@ const VendorB2B = () => {
             <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
           </button>
           <Link
-            to="/sawtar/cms/vendor/b2b/request"
+            // to="/sawtar/cms/vendor/b2b/request"
             className="flex items-center gap-2 border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-medium py-1 px-3 transition-colors duration-200"
           >
             <FiPlus className="text-lg" />

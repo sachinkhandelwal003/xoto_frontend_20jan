@@ -156,7 +156,7 @@ const FreelancerCard = ({ service }) => {
                 </h3>
                 <span className="hidden sm:block text-gray-400">|</span>
                 <button 
-                  onClick={() => navigate(`/sawtar/freelancer/profile`)}
+                  // onClick={() => navigate(`/sawtar/freelancer/profile`)}
                   className="text-[#D26C44] hover:text-[#c05a38] text-sm font-medium flex items-center gap-1 transition-colors"
                 >
                   <FaLink className="text-xs" />
@@ -276,7 +276,7 @@ const FreelancerCard = ({ service }) => {
         <button 
           onClick={(e) => {
             e.stopPropagation();
-            navigate(`/sawtar/login`);
+            // navigate(`/sawtar/login`);
           }}
           className="flex-1 flex items-center justify-center gap-2 bg-[#1A132F] hover:bg-[#2a1d4a] text-white font-semibold rounded-lg px-4 py-3 transition-colors"
         >
@@ -302,7 +302,7 @@ const FreelancerCard = ({ service }) => {
           ({service.completedProjects || 42} projects completed)
         </span>
         <button 
-          onClick={() => navigate(`/sawtar/freelancer/profile#reviews`)}
+          // onClick={() => navigate(`/sawtar/freelancer/profile#reviews`)}
           className="text-[#1A132F] hover:underline font-normal ml-auto text-sm"
         >
           Read Reviews

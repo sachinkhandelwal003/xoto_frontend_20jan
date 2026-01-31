@@ -294,7 +294,7 @@ const Inventory = () => {
                 type="text" 
                 shape="circle" 
                 icon={<FiClock className="text-blue-500" />}
-                onClick={() => navigate(`/sawtar/cms/seller/b2c/product/inventory/${productId}/history?sku=${r.sku}`)}
+                // onClick={() => navigate(`/sawtar/cms/seller/b2c/product/inventory/${productId}/history?sku=${r.sku}`)}
              />
           </Tooltip>
           <Tooltip title="Edit Stock">

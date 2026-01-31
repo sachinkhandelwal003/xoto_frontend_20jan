@@ -58,7 +58,7 @@ export default function ServiceSection() {
           >
             <button
               className="px-8 py-3 bg-white text-indigo-900 rounded-full font-semibold hover:bg-[#D26C44] hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-              onClick={() => navigate('/sawtar/freelancer')}
+              // onClick={() => navigate('/sawtar/freelancer')}
             >
               Explore Marketplace
             </button>
@@ -432,14 +432,14 @@ export default function ServiceSection() {
               
               <button
                 className="relative overflow-hidden px-8 py-3 font-semibold text-white border-2 border-white rounded-full shadow-lg transform transition duration-300 hover:scale-105 group"
-                onClick={() => navigate('/sawtar/freelancer/browse-category')}
+                // onClick={() => navigate('/sawtar/freelancer/browse-category')}
               >
                 <span className="relative z-10">Browse Professionals</span>
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 -left-full group-hover:left-full transition-all duration-700"></span>
               </button>
               <button
                 className="relative overflow-hidden px-8 py-3 font-semibold text-[var(--color-text-dark)] bg-white rounded-full shadow-lg transform transition duration-300 hover:scale-105 group"
-                onClick={() => navigate('/sawtar/freelancer/registration')}
+                // onClick={() => navigate('/sawtar/freelancer/registration')}
               >
                 <span className="relative z-10">Registration for Freelancers</span>
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 -left-full group-hover:left-full transition-all duration-700"></span>

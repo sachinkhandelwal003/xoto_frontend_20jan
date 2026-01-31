@@ -56,7 +56,7 @@ const B2BEcommerce = () => {
                 transition={{ duration: 0.6, delay: 0.4 }}
               >
                 <button
-                  onClick={() => navigate('/sawtar/ecommerce/seller/b2b')}
+                  // onClick={() => navigate('/sawtar/ecommerce/seller/b2b')}
                   className="bg-[#6C4DF6] hover:bg-[#5b3de5] text-white font-bold py-2 px-6 sm:py-3 sm:px-8 rounded-full transition duration-300 text-base sm:text-lg"
                 >
                   Register You as business

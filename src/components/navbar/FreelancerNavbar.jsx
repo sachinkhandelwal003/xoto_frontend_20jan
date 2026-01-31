@@ -131,7 +131,7 @@ const FreelancerNavbar = () => {
               transition: 'color 0.2s ease',
               cursor: 'pointer'
             }}
-            onClick={() => navigate("/sawtar/")}
+            onClick={() => navigate("/")}
           >
             XOTO
           </Typography>
@@ -142,7 +142,7 @@ const FreelancerNavbar = () => {
             <Button 
     className="bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-2 rounded-lg shadow-sm"
               sx={{ fontWeight: 500 }}
-              onClick={() => navigate("/sawtar/freelancer/free-listing")}
+              // onClick={() => navigate("/sawtar/freelancer/free-listing")}
             >
               Free Listing
             </Button>
@@ -333,9 +333,9 @@ const FreelancerNavbar = () => {
           </Box>
           <Divider sx={{ my: 1 }} />
           <List>
-            <ListItem button onClick={() => { navigate("/sawtar/freelancer/free-listing"); handleDrawerToggle(); }}>
-              <ListItemText primary="Free Listing" />
-            </ListItem>
+            {/* <ListItem button onClick={() => { navigate("/sawtar/freelancer/free-listing"); handleDrawerToggle(); }}> */}
+              {/* <ListItemText primary="Free Listing" /> */}
+            {/* </ListItem> */}
             <ListItem button onClick={() => { setNotificationsOpen(true); handleDrawerToggle(); }}>
               <ListItemText primary="Notifications" />
               <StyledBadge color="error" variant="dot" invisible={!hasNotifications}>

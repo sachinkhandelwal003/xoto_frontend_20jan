@@ -40,7 +40,7 @@ const TrendSlider = () => {
   const navigate = useNavigate();
 
   const handleSeeNow = () => {
-    navigate("/sawtar/project-view");
+    // navigate("/sawtar/project-view");
   };
 
   return (

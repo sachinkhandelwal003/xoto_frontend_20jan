@@ -265,7 +265,7 @@ const BusinessRequest = () => {
       render: (value, item) => (
         <div className="flex space-x-2">
           <Link
-            to={`/sawtar/cms/business/request/${item._id}`}
+            // to={`/sawtar/cms/business/request/${item._id}`}
             className="text-teal-600 hover:text-teal-800 p-1 rounded"
             title="View Details"
           >
@@ -309,7 +309,7 @@ const BusinessRequest = () => {
               <FaSyncAlt className={`text-lg ${loading ? 'animate-spin' : ''}`} />
             </button>
             <Link
-              to="/sawtar/cms/business/request"
+              // to="/sawtar/cms/business/request"
               className="flex items-center gap-2 bg-white text-teal-600 hover:bg-teal-100 font-medium py-2 px-4 rounded-md transition-colors duration-200"
             >
               <FaBuilding className="text-lg" />

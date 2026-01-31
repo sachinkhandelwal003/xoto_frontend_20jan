@@ -278,7 +278,7 @@ const CreateBusiness = () => {
   };
 
   const viewBusinessPage = () => {
-    navigate('/sawtar/freelancer/business');
+    // navigate('/sawtar/freelancer/business');
   };
 
   // Step Components

@@ -19,19 +19,19 @@ const FloatingIcons = () => {
     {
       icon: <FaYoutube size={24} color="white" />,
       bg: 'bg-red-600',
-      href: 'https://www.youtube.com/@sawtarluxeInteriors',
+      // href: 'https://www.youtube.com/@sawtarluxeInteriors',
       tooltip: 'YouTube Channel'
     },
     {
       icon: <FaInstagram size={24} color="white" />,
       bg: 'bg-gradient-to-tr from-purple-500 to-pink-500',
-      href: 'https://www.instagram.com/sawtarluxe_interior/',
+      // href: 'https://www.instagram.com/sawtarluxe_interior/',
       tooltip: 'Instagram'
     },
     {
       icon: <FaLinkedin size={24} color="white" />,
       bg: 'bg-[#0A66C2]',
-      href: 'https://www.linkedin.com/company/sawtar-luxeinterior',
+      // href: 'https://www.linkedin.com/company/sawtar-luxeinterior',
       tooltip: 'LinkedIn Page'
     }
   ];

@@ -2,6 +2,11 @@ import React, { useState, useMemo } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
+import {
+  parsePhoneNumberFromString,
+  validatePhoneNumberLength,
+} from "libphonenumber-js";
+
 import { Select } from "antd"; 
 import { Country, State, City } from "country-state-city"; // Location Package
 
@@ -20,6 +25,49 @@ const COUNTRY_CONFIG = {
 const getPhoneConfig = (code) => {
   return COUNTRY_CONFIG[code] || { country: "Unknown", digits: 10, startsWith: /^\d/ }; 
 };
+
+const validatePhone = (countryCode, phone) => {
+  if (!phone) return "Phone number is required";
+
+  const fullNumber = `+${countryCode}${phone}`;
+  const phoneObj = parsePhoneNumberFromString(fullNumber);
+
+  if (!phoneObj) {
+    return "Invalid phone number";
+  }
+
+  // Proper length validation
+  const lengthError = validatePhoneNumberLength(
+    phoneObj.nationalNumber,
+    phoneObj.country
+  );
+
+  if (lengthError === "TOO_SHORT") return "Phone number is too short";
+  if (lengthError === "TOO_LONG") return "Phone number is too long";
+
+  // Structure check
+  if (!phoneObj.isValid()) {
+    return "Invalid phone number for selected country";
+  }
+
+  // Block landlines
+  if (phoneObj.getType() === "FIXED_LINE") {
+    return "Landline numbers are not allowed";
+  }
+
+  // UAE strict rule (real prefixes)
+  if (countryCode === "971" && !/^(50|52|54|55|56|58)/.test(phone)) {
+    return "Invalid UAE mobile number";
+  }
+
+  // India strict rule
+  if (countryCode === "91" && !/^[6-9]/.test(phone)) {
+    return "Invalid Indian mobile number";
+  }
+
+  return ""; // ✅ valid
+};
+
 
 export default function HeroSection() {
   const { t } = useTranslation("buy7");
@@ -101,63 +149,171 @@ export default function HeroSection() {
   };
 
   /* ---------------- SUBMIT ---------------- */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
 
-    const { countryCode, phone } = form;
-    const config = getPhoneConfig(countryCode);
+//     const { countryCode, phone } = form;
+//     const config = getPhoneConfig(countryCode);
 
-    // Validation
-    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.location_country) {
-      toast.error(t("error")); // "Please fill all required fields"
-      return;
-    }
+//     // Validation
+//     if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.location_country) {
+//       toast.error(t("error")); // "Please fill all required fields"
+//       return;
+//     }
 
-    if (COUNTRY_CONFIG[countryCode] && phone.length !== config.digits) {
-      toast.error(`${config.country} phone number must be ${config.digits} digits`);
-      return;
-    }
+//   const phoneError = validatePhone(countryCode, phone);
+// if (phoneError) {
+//   toast.error(phoneError);
+//   return;
+// }
 
-    setLoading(true);
 
-    // Resolve Names
-    const countryName = Country.getCountryByCode(form.location_country)?.name || "";
-    const stateName = State.getStateByCodeAndCountry(form.state, form.location_country)?.name || "";
+//     setLoading(true);
+//   const phoneObj = parsePhoneNumberFromString(
+//   `+${form.countryCode}${form.phone}`
+// );
 
-    try {
-      const res = await apiService.post("/property/lead", {
-        type: form.lookingFor ? form.lookingFor.toLowerCase() : "inquiry",
-        name: {
-          first_name: form.firstName.trim(),
-          last_name: form.lastName.trim(),
-        },
-        mobile: {
-          country_code: form.countryCode,
-          number: form.phone,
-        },
-        email: form.email.trim().toLowerCase(),
+//     // Resolve Names
+//     const countryName = Country.getCountryByCode(form.location_country)?.name || "";
+//     const stateName = State.getStateByCodeAndCountry(form.state, form.location_country)?.name || "";
+
+//     try {
+//       const res = await apiService.post("/property/lead", {
+//         type: form.lookingFor ? form.lookingFor.toLowerCase() : "inquiry",
+//         name: {
+//           first_name: form.firstName.trim(),
+//           last_name: form.lastName.trim(),
+//         },
+//       mobile: {
+//   country_code: form.countryCode,
+//   number: form.phone,
+//   full: phoneObj.number, // +9715XXXXXXX
+// },
+
+//         email: form.email.trim().toLowerCase(),
         
-        // Location Data
-        country: countryName,
-        state: stateName,
-        preferred_city: form.city || stateName, // Use City if available
+//         // Location Data
+//         country: countryName,
+//         state: stateName,
+//         preferred_city: form.city || stateName, // Use City if available
         
-        budget: form.budget,
-      });
+//         budget: form.budget,
+//       });
 
-      if (res?.success) {
-        toast.success(t("success"));
-        setForm({
-          firstName: "", lastName: "", email: "", countryCode: "971", phone: "",
-          lookingFor: "", budget: "", location_country: null, state: null, city: null
-        });
+//       if (res?.success) {
+//         toast.success(t("success"));
+//         setForm({
+//           firstName: "", lastName: "", email: "", countryCode: "971", phone: "",
+//           lookingFor: "", budget: "", location_country: null, state: null, city: null
+//         });
+//       }
+//     } catch {
+//       toast.error(t("genericError"));
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const { countryCode, phone } = form;
+
+  // Required field validation
+  if (
+    !form.firstName.trim() ||
+    !form.lastName.trim() ||
+    !form.email.trim() ||
+    !form.location_country
+  ) {
+    toast.error(t("error"));
+    return;
+  }
+
+  // Phone validation
+  const phoneError = validatePhone(countryCode, phone);
+  if (phoneError) {
+    toast.error(phoneError);
+    return;
+  }
+
+  setLoading(true);
+
+  const phoneObj = parsePhoneNumberFromString(
+    `+${form.countryCode}${form.phone}`
+  );
+
+  // Resolve location names
+  const countryName =
+    Country.getCountryByCode(form.location_country)?.name || "";
+  const stateName =
+    State.getStateByCodeAndCountry(
+      form.state,
+      form.location_country
+    )?.name || "";
+
+  try {
+    // 1️⃣ CREATE INQUIRY
+    const res = await apiService.post("/property/lead", {
+      type: form.lookingFor ? form.lookingFor.toLowerCase() : "inquiry",
+      name: {
+        first_name: form.firstName.trim(),
+        last_name: form.lastName.trim(),
+      },
+      mobile: {
+        country_code: form.countryCode,
+        number: form.phone,
+        full: phoneObj?.number,
+      },
+      email: form.email.trim().toLowerCase(),
+      country: countryName,
+      state: stateName,
+      preferred_city: form.city || stateName,
+      budget: form.budget,
+    });
+
+    if (res?.success) {
+      // 2️⃣ CREATE NOTIFICATION (sender must be STRING)
+      const notificationPayload = {
+        sender: form.email.trim().toLowerCase(), // ✅ STRING ONLY
+        receiverType: "admin",
+        senderType: "user",
+        notificationType: "NEW_INQUIRY",
+        title: "Property Inquiry",
+        message: "A user has submitted a new property inquiry.",
+      };
+
+      // Non-blocking notification (recommended)
+      try {
+        await apiService.post(
+          "/notifications/create-notification",
+          notificationPayload
+        );
+      } catch (notificationError) {
+        console.error("Notification failed", notificationError);
       }
-    } catch {
-      toast.error(t("genericError"));
-    } finally {
-      setLoading(false);
+
+      // 3️⃣ SUCCESS UI
+      toast.success(t("success"));
+
+      setForm({
+        firstName: "",
+        lastName: "",
+        email: "",
+        countryCode: "971",
+        phone: "",
+        lookingFor: "",
+        budget: "",
+        location_country: null,
+        state: null,
+        city: null,
+      });
     }
-  };
+  } catch (error) {
+    toast.error(t("genericError"));
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <>

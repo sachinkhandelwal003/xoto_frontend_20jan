@@ -10,7 +10,7 @@ const Freelisting = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const handleStart = (e) => {
-      navigate('/sawtar/freelancer/create-business');
+      // navigate('/sawtar/freelancer/create-business');
   
   };
 

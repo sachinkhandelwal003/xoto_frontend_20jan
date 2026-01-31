@@ -133,7 +133,7 @@ const VendorRejected = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">Rejected Vendors</h1>
         <Link
-          to="/sawtar/cms/vendor/request"
+          // to="/sawtar/cms/vendor/request"
           className="flex items-center gap-2 border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-medium py-1 px-2 transition-colors duration-200"
         >
           <FiPlus className="text-lg" />

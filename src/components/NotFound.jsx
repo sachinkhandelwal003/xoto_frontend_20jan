@@ -24,7 +24,7 @@ const NotFound = () => {
         
         <div className="flex flex-col sm:flex-row justify-center gap-3">
           <Link
-            to="/sawtar/"
+            to="/"
             className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition duration-300 shadow-md"
           >
             Go to Homepage
@@ -38,9 +38,9 @@ const NotFound = () => {
         </div>
         
         <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-sm text-gray-500">
+          {/* <p className="text-sm text-gray-500">
             Need help? <Link to="/sawtar/consultation" className="text-indigo-600 hover:underline">Contact our support</Link>
-          </p>
+          </p> */}
         </div>
       </div>
     </div>

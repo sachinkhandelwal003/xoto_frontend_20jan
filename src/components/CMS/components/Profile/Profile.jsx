@@ -28,9 +28,9 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   // Redirect to login if not authenticated
-  if (!user || !token) {
-    return <Navigate to="/sawtar/login" replace />;
-  }
+  // if (!user || !token) {
+  //   return <Navigate to="/sawtar/login" replace />;
+  // }
 
   // Fetch user data
   useEffect(() => {
@@ -147,7 +147,7 @@ const Profile = () => {
               <div className="w-full mt-6 space-y-3">
                 <button
                   className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded"
-                  onClick={() => navigate('/sawtar/cms?role=customer')}
+                  // onClick={() => navigate('/sawtar/cms?role=customer')}
                 >
                   Dashboard
                 </button>

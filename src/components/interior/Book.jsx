@@ -8,36 +8,28 @@ import { Country } from "country-state-city";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
 import helloImage from "../../assets/img/hello.jpg";
 
-const { Option } = Select;
+// --- IMPORT VALIDATION FUNCTIONS ---
+import { validatePhoneNumberLength, parsePhoneNumberFromString } from 'libphonenumber-js';
 
-// 1. Defined strict lengths for priority countries
-const PHONE_LENGTH_RULES = {
-  "971": 9,  // UAE
-  "91": 10,  // India
-  "966": 9,  // KSA
-  "1": 10,   // US
-  "44": 10,  // UK
-  "61": 9,   // Australia
-};
+const { Option } = Select;
 
 export default function ConsultationSection() {
   const { t } = useTranslation("book");
   const [loading, setLoading] = useState(false);
   const [api, contextHolder] = notification.useNotification();
 
-  // 2. Errors State for Client-Side Validation
   const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
     email: "",
-    country_code: "971", 
+    country_code: "971", // Default to India or UAE as needed
     number: "",
     message: "",
   });
 
-  // 3. Prepare Country Data (Memoized)
+  // Prepare Country List
   const countryOptions = useMemo(() => {
     const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"];
     return Country.getAllCountries().map((country) => ({
@@ -53,125 +45,234 @@ export default function ConsultationSection() {
     });
   }, []);
 
-  // 4. Handle Text Change & Remove Error
+  // --- UPDATED & FIXED VALIDATION LOGIC ---
+  const validateLiveNumber = (phoneValue, countryCode) => {
+    if (!phoneValue) return "";
+
+    const fullNumber = `+${countryCode}${phoneValue}`;
+    const phoneNumber = parsePhoneNumberFromString(fullNumber);
+
+    // 1. Length Check
+    const lengthError = validatePhoneNumberLength(fullNumber);
+    if (lengthError === 'TOO_SHORT') return "Number is too short";
+    if (lengthError === 'TOO_LONG') return "Number is too long";
+
+    // 2. Validity Check
+    if (!phoneNumber || !phoneNumber.isValid()) {
+        return "Invalid mobile number";
+    }
+
+    // 3. RELAXED TYPE CHECK (Fix for valid numbers showing error)
+    // Hum strictly 'MOBILE' check nahi karenge. 
+    // Hum sirf ye check karenge ki ye LANDLINE to nahi hai na.
+    const type = phoneNumber.getType();
+    
+    // Agar number explicitly FIXED_LINE (Landline) hai, tabhi roko.
+    // Baaki cases (Mobile, FixedOrMobile, Unknown) ko allow karo.
+    if (type === 'FIXED_LINE') {
+        return "Landline numbers are not allowed";
+    }
+
+    return ""; // No Error (Valid)
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // 5. Handle Country Change
   const handleCountryCodeChange = (value) => {
-    const limit = PHONE_LENGTH_RULES[value] || 15;
-    setFormData((prev) => ({ 
-      ...prev, 
-      country_code: value, 
-      number: prev.number.slice(0, limit) 
-    }));
+    setFormData((prev) => ({ ...prev, country_code: value }));
+    
+    if (formData.number) {
+        const errorMsg = validateLiveNumber(formData.number, value);
+        setErrors(prev => ({ ...prev, number: errorMsg }));
+    }
   };
 
-  // 6. Handle Number Input
   const handleNumber = (e) => {
-    const value = e.target.value.replace(/\D/g, "");
-    const maxLength = PHONE_LENGTH_RULES[formData.country_code] || 15;
-    const validatedValue = value.slice(0, maxLength);
+    const value = e.target.value.replace(/\D/g, ""); // Only digits
     
-    setFormData((prev) => ({ ...prev, number: validatedValue }));
-    if (errors.number) setErrors((prev) => ({ ...prev, number: "" }));
+    setFormData((prev) => ({ ...prev, number: value }));
+
+    const errorMsg = validateLiveNumber(value, formData.country_code);
+    setErrors(prev => ({ ...prev, number: errorMsg }));
   };
 
   const openNotification = (type, title, description) => {
     api[type]({ message: title, description, placement: "topRight" });
   };
 
-  // 7. Client-Side Validation Logic
   const validateForm = () => {
     let newErrors = {};
     let isValid = true;
 
-    if (!formData.first_name.trim()) {
-      newErrors.first_name = t("errors.firstName") || "First Name is required";
-      isValid = false;
-    }
-    if (!formData.last_name.trim()) {
-      newErrors.last_name = t("errors.lastName") || "Last Name is required";
-      isValid = false;
-    }
+    if (!formData.first_name.trim()) newErrors.first_name = t("errors.firstName") || "First Name is required";
+    if (!formData.last_name.trim()) newErrors.last_name = t("errors.lastName") || "Last Name is required";
+    
     if (!formData.email.trim()) {
       newErrors.email = t("errors.email") || "Email is required";
-      isValid = false;
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Invalid Email Format";
-      isValid = false;
     }
 
-    const requiredLength = PHONE_LENGTH_RULES[formData.country_code];
     if (!formData.number.trim()) {
       newErrors.number = t("errors.mobile") || "Mobile is required";
       isValid = false;
-    } else if (requiredLength && formData.number.length !== requiredLength) {
-      newErrors.number = `Enter exactly ${requiredLength} digits`;
-      isValid = false;
+    } else {
+       const mobileError = validateLiveNumber(formData.number, formData.country_code);
+       if (mobileError) {
+           newErrors.number = mobileError;
+           isValid = false;
+       }
     }
 
-    if (!formData.message.trim()) {
-      newErrors.message = t("errors.message") || "Message is required";
-      isValid = false;
-    }
+    if (!formData.message.trim()) newErrors.message = t("errors.message") || "Message is required";
+
+    if (Object.keys(newErrors).length > 0) isValid = false;
 
     setErrors(newErrors);
     return isValid;
   };
 
-  // 8. Submit Logic
-  const onSubmit = async (e) => {
-    e.preventDefault();
+  // const onSubmit = async (e) => {
+  //   e.preventDefault();
 
-    if (!validateForm()) {
-      openNotification("error", t("errors.validationTitle") || "Validation Error", "Please fill all fields correctly.");
-      return;
-    }
+  //   if (!validateForm()) {
+  //     openNotification("error", t("errors.validationTitle") || "Validation Error", "Please fill all fields correctly.");
+  //     return;
+  //   }
 
-    setLoading(true);
+  //   setLoading(true);
 
-    const payload = {
-      type: "consultation",
-      consultant_type: "interior",
-      name: {
-        first_name: formData.first_name.trim(),
-        last_name: formData.last_name.trim(),
+  //   const payload = {
+  //     type: "consultation",
+  //     consultant_type: "interior",
+  //     name: {
+  //       first_name: formData.first_name.trim(),
+  //       last_name: formData.last_name.trim(),
+  //     },
+  //     mobile: {
+  //       country_code: formData.country_code,
+  //       number: formData.number,
+  //     },
+  //     email: formData.email.trim().toLowerCase(),
+  //     message: formData.message.trim(),
+  //   };
+
+  //   try {
+  //     await apiService.post("/property/lead", payload);
+  //     openNotification("success", t("success.title"), t("success.message"));
+  //     setFormData({
+  //       first_name: "", last_name: "", email: "",
+  //       country_code: "91", number: "", message: "",
+  //     });
+  //     setErrors({}); 
+  //   } catch (err) {
+  //     const errorData = err.response?.data;
+  //     let errorMessage = t("errors.submit") || "Something went wrong";
+
+  //     if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
+  //       errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
+  //     } else if (errorData?.message) {
+  //       errorMessage = errorData.message;
+  //     }
+
+  //     openNotification("error", t("errors.submitTitle"), errorMessage);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+const onSubmit = async (e) => {
+  e.preventDefault();
+
+  // 1️⃣ Validate form
+  if (!validateForm()) {
+    openNotification(
+      "error",
+      t("errors.validationTitle") || "Validation Error",
+      "Please fill all fields correctly."
+    );
+    return;
+  }
+
+  setLoading(true);
+
+  // 2️⃣ Inquiry payload
+  const inquiryPayload = {
+    type: "consultation",
+    consultant_type: "interior",
+    name: {
+      first_name: formData.first_name.trim(),
+      last_name: formData.last_name.trim(),
+    },
+    mobile: {
+      country_code: formData.country_code,
+      number: formData.number,
+    },
+    email: formData.email.trim().toLowerCase(),
+    message: formData.message.trim(),
+  };
+
+  try {
+    // 3️⃣ Create inquiry
+    await apiService.post("/property/lead", inquiryPayload);
+
+    // 4️⃣ Notification payload (from inquiry data)
+    const notificationPayload = {
+      sender: {
+        email: inquiryPayload.email,
+        full_name: `${inquiryPayload.name.first_name} ${inquiryPayload.name.last_name}`,
+        mobile: {
+          country_code: inquiryPayload.mobile.country_code,
+          number: inquiryPayload.mobile.number,
+        },
       },
-      mobile: {
-        country_code: formData.country_code,
-        number: formData.number,
-      },
-      email: formData.email.trim().toLowerCase(),
-      message: formData.message.trim(),
+      receiverType: "admin",
+      senderType: "user",
+      notificationType: "NEW_INQUIRY",
+      title: "Interior Consultation",
+      message: "A user has requested an interior consultation for your property.",
     };
 
-    try {
-      await apiService.post("/property/lead", payload);
-      openNotification("success", t("success.title"), t("success.message"));
-      setFormData({
-        first_name: "", last_name: "", email: "",
-        country_code: "971", number: "", message: "",
-      });
-      setErrors({}); 
-    } catch (err) {
-      const errorData = err.response?.data;
-      let errorMessage = t("errors.submit") || "Something went wrong";
+    // 5️⃣ Create notification
+    await apiService.post(
+      "/notifications/create-notification",
+      notificationPayload
+    );
 
-      if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
-        errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
-      } else if (errorData?.message) {
-        errorMessage = errorData.message;
-      }
+    // 6️⃣ Success UI
+    openNotification("success", t("success.title"), t("success.message"));
 
-      openNotification("error", t("errors.submitTitle"), errorMessage);
-    } finally {
-      setLoading(false);
+    // 7️⃣ Reset form
+    setFormData({
+      first_name: "",
+      last_name: "",
+      email: "",
+      country_code: "91",
+      number: "",
+      message: "",
+    });
+
+    setErrors({});
+  } catch (err) {
+    // 8️⃣ Error handling
+    const errorData = err.response?.data;
+    let errorMessage = t("errors.submit") || "Something went wrong";
+
+    if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
+      errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
+    } else if (errorData?.message) {
+      errorMessage = errorData.message;
     }
-  };
+
+    openNotification("error", t("errors.submitTitle"), errorMessage);
+  } finally {
+    // 9️⃣ Stop loader
+    setLoading(false);
+  }
+};
 
   return (
     <section className="relative w-full overflow-hidden bg-gray-900">
@@ -257,7 +358,7 @@ export default function ConsultationSection() {
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
 
-              {/* ----- UPDATED MOBILE SECTION ----- */}
+              {/* ----- MOBILE SECTION ----- */}
               <div className="flex flex-col">
                 <label className="text-sm font-semibold text-gray-700 mb-1">{t("form.mobile")}*</label>
                 <div className="flex w-full gap-2">
@@ -304,7 +405,7 @@ export default function ConsultationSection() {
                     />
                   </div>
                 </div>
-                {errors.number && <p className="text-red-500 text-xs mt-1">{errors.number}</p>}
+                {errors.number && <p className="text-red-500 text-xs mt-1 animate-pulse font-medium">{errors.number}</p>}
               </div>
               {/* ---------------------------------- */}
 
@@ -339,28 +440,24 @@ export default function ConsultationSection() {
         </motion.div>
       </div>
 
-      {/* Global Style for Antd Select Customization */}
       <style jsx global>{`
         .custom-select-consultation .ant-select-selector {
-          border-radius: 0.75rem !important; /* rounded-xl (12px) */
-          border-color: #d1d5db !important; /* border-gray-300 */
+          border-radius: 0.75rem !important;
+          border-color: #d1d5db !important;
           height: 46px !important;
           display: flex !important;
           align-items: center !important;
           background-color: white !important;
           box-shadow: none !important;
         }
-        
         .custom-select-consultation .ant-select-selection-item {
           display: flex !important;
           align-items: center !important;
           line-height: 1 !important;
         }
-
         .custom-select-consultation:hover .ant-select-selector {
-          border-color: #a855f7 !important; /* purple-500 */
+          border-color: #a855f7 !important;
         }
-        
         .custom-select-consultation.ant-select-focused .ant-select-selector {
           border-color: #a855f7 !important;
           box-shadow: 0 0 0 1px #a855f7 !important;

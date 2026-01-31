@@ -8,11 +8,10 @@ import { apiService } from "../../manageApi/utils/custom.apiservice";
 import helloImage from "../../assets/img/hello.jpg";
 import { useTranslation } from "react-i18next";
 
-const { Option } = Select;
+// --- IMPORT VALIDATION FUNCTIONS ---
+import { validatePhoneNumberLength, parsePhoneNumberFromString } from 'libphonenumber-js';
 
-const PHONE_LENGTH_RULES = {
-  "971": 9, "91": 10, "966": 9, "1": 10, "44": 10, "61": 9,
-};
+const { Option } = Select;
 
 export default function Consultation() {
   const { t } = useTranslation("consultation");
@@ -43,6 +42,33 @@ export default function Consultation() {
     });
   }, []);
 
+  // --- ROBUST VALIDATION LOGIC ---
+  const validateLiveNumber = (phoneValue, countryCode) => {
+    if (!phoneValue) return "";
+
+    const fullNumber = `+${countryCode}${phoneValue}`;
+    const phoneNumber = parsePhoneNumberFromString(fullNumber);
+
+    // 1. Length Check
+    const lengthError = validatePhoneNumberLength(fullNumber);
+    if (lengthError === 'TOO_SHORT') return "Number is too short";
+    if (lengthError === 'TOO_LONG') return "Number is too long";
+
+    // 2. Validity Check
+    if (!phoneNumber || !phoneNumber.isValid()) {
+        return "Invalid mobile number";
+    }
+
+    // 3. Type Check (Block Landlines)
+    // We only block explicit FIXED_LINE. We allow MOBILE and FIXED_LINE_OR_MOBILE
+    const type = phoneNumber.getType();
+    if (type === 'FIXED_LINE') {
+        return "Landline numbers are not allowed";
+    }
+
+    return ""; // Valid
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -53,22 +79,24 @@ export default function Consultation() {
   };
 
   const handleCountryCodeChange = (value) => {
-    const limit = PHONE_LENGTH_RULES[value] || 15;
-    setFormData((prev) => ({ 
-      ...prev, country_code: value, number: prev.number.slice(0, limit)
-    }));
+    setFormData((prev) => ({ ...prev, country_code: value }));
+    
+    // Re-validate number immediately when country changes
+    if (formData.number) {
+        const errorMsg = validateLiveNumber(formData.number, value);
+        setErrors(prev => ({ ...prev, number: errorMsg }));
+    }
   };
 
   const handleNumber = (e) => {
+    // Only allow digits
     const value = e.target.value.replace(/\D/g, "");
-    const maxLength = PHONE_LENGTH_RULES[formData.country_code] || 15;
-    const validatedValue = value.slice(0, maxLength);
     
-    setFormData((prev) => ({ ...prev, number: validatedValue }));
+    setFormData((prev) => ({ ...prev, number: value }));
     
-    if (errors.number) {
-      setErrors((prev) => ({ ...prev, number: "" }));
-    }
+    // Live Validation
+    const errorMsg = validateLiveNumber(value, formData.country_code);
+    setErrors(prev => ({ ...prev, number: errorMsg }));
   };
 
   const openNotification = (type, title, description) => {
@@ -95,13 +123,16 @@ export default function Consultation() {
       isValid = false;
     }
     
-    const requiredLength = PHONE_LENGTH_RULES[formData.country_code];
+    // --- FINAL MOBILE CHECK ON SUBMIT ---
     if (!formData.number.trim()) {
       newErrors.number = "Mobile number is required";
       isValid = false;
-    } else if (requiredLength && formData.number.length !== requiredLength) {
-      newErrors.number = `Enter exactly ${requiredLength} digits`;
-      isValid = false;
+    } else {
+       const mobileError = validateLiveNumber(formData.number, formData.country_code);
+       if (mobileError) {
+           newErrors.number = mobileError;
+           isValid = false;
+       }
     }
 
     if (!formData.message.trim()) {
@@ -113,43 +144,96 @@ export default function Consultation() {
     return isValid;
   };
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
+const onSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!validateForm()) {
-      openNotification("error", "Validation Error", "Please fill all required fields correctly.");
-      return; 
-    }
+  // 1️⃣ Validate form
+  if (!validateForm()) {
+    openNotification(
+      "error",
+      t("errors.validationTitle") || "Validation Error",
+      "Please fill all fields correctly."
+    );
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
 
-    const payload = {
-      type: "consultation",
-      consultant_type: "landscape",
-      name: { first_name: formData.first_name.trim(), last_name: formData.last_name.trim() },
-      mobile: { country_code: formData.country_code, number: formData.number },
-      email: formData.email.trim().toLowerCase(),
-      message: formData.message.trim(),
+  // 2️⃣ Inquiry payload
+  const inquiryPayload = {
+    type: "consultation",
+    consultant_type: "interior",
+    name: {
+      first_name: formData.first_name.trim(),
+      last_name: formData.last_name.trim(),
+    },
+    mobile: {
+      country_code: formData.country_code,
+      number: formData.number,
+    },
+    email: formData.email.trim().toLowerCase(),
+    message: formData.message.trim(),
+  };
+
+  try {
+    // 3️⃣ Create inquiry
+    await apiService.post("/property/lead", inquiryPayload);
+
+    // 4️⃣ Notification payload (from inquiry data)
+    const notificationPayload = {
+      sender: {
+        email: inquiryPayload.email,
+        full_name: `${inquiryPayload.name.first_name} ${inquiryPayload.name.last_name}`,
+        mobile: {
+          country_code: inquiryPayload.mobile.country_code,
+          number: inquiryPayload.mobile.number,
+        },
+      },
+      receiverType: "admin",
+      senderType: "user",
+      notificationType: "NEW_INQUIRY",
+      title: "Interior Consultation",
+      message: "A user has requested an interior consultation for your property.",
     };
 
-    try {
-      await apiService.post("/property/lead", payload);
-      openNotification("success", "Thank You!", "Your consultation request has been submitted successfully.");
-      setFormData({ first_name: "", last_name: "", email: "", country_code: "971", number: "", message: "" });
-      setErrors({});
-    } catch (err) {
-      const errorData = err.response?.data;
-      let errorMessage = "Something went wrong. Please try again.";
-      if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
-        errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
-      } else if (errorData?.message) {
-        errorMessage = errorData.message;
-      }
-      openNotification("error", "Submission Failed", errorMessage);
-    } finally {
-      setLoading(false);
+    // 5️⃣ Create notification
+    await apiService.post(
+      "/notifications/create-notification",
+      notificationPayload
+    );
+
+    // 6️⃣ Success UI
+    openNotification("success", t("success.title"), t("success.message"));
+
+    // 7️⃣ Reset form
+    setFormData({
+      first_name: "",
+      last_name: "",
+      email: "",
+      country_code: "91",
+      number: "",
+      message: "",
+    });
+
+    setErrors({});
+  } catch (err) {
+    // 8️⃣ Error handling
+    const errorData = err.response?.data;
+    let errorMessage = t("errors.submit") || "Something went wrong";
+
+    if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
+      errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
+    } else if (errorData?.message) {
+      errorMessage = errorData.message;
     }
-  };
+
+    openNotification("error", t("errors.submitTitle"), errorMessage);
+  } finally {
+    // 9️⃣ Stop loader
+    setLoading(false);
+  }
+};
+
 
   return (
     <section className="relative w-full overflow-hidden bg-gray-900">
@@ -234,7 +318,8 @@ export default function Consultation() {
                     />
                   </div>
                 </div>
-                {errors.number && <p className="text-red-500 text-xs mt-1">{errors.number}</p>}
+                {/* Live Error Display */}
+                {errors.number && <p className="text-red-500 text-xs mt-1 font-medium animate-pulse">{errors.number}</p>}
               </div>
               {/* ---------------------------------- */}
 

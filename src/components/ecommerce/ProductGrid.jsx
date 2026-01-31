@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
+import { useLocation, useNavigate } from "react-router-dom"; // Added useLocation
 import {
   Row,
   Col,
@@ -27,7 +28,6 @@ import {
   CalendarOutlined,
   ClockCircleOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const { Text, Title } = Typography;
@@ -42,6 +42,29 @@ const ProductGrid = ({
   setSortOption,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation(); // URL se category nikalne ke liye
+  
+  // --- NAYA LOGIC START (Kuch purana nahi hataya) ---
+  const [showAll, setShowAll] = useState(false);
+  const queryParams = new URLSearchParams(location.search);
+  const selectedCategorySlug = queryParams.get('category');
+
+  // Jab bhi category change ho, reset "See More"
+  useEffect(() => {
+    setShowAll(false);
+  }, [selectedCategorySlug]);
+
+  // Pehle data filter karenge category ke basis pe
+  const filteredByCategory = (!showAll && selectedCategorySlug) 
+    ? products.filter(p => {
+        // API mein category object hai ya string uske hisaab se slug matching
+        const categoryName = p.category?.name || p.category || "";
+        const slug = categoryName.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and');
+        return slug === selectedCategorySlug;
+      })
+    : products;
+  // --- NAYA LOGIC END ---
+
   const [hoveredProduct, setHoveredProduct] = useState(null);
   const [showDesignerModal, setShowDesignerModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -57,11 +80,12 @@ const ProductGrid = ({
 
   const handleSortChange = ({ key }) => setSortOption(key);
 
-  const totalProducts = products.length;
+  // Pagination ab 'filteredByCategory' use karega
+  const totalProducts = filteredByCategory.length;
   const totalPages = Math.ceil(totalProducts / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, totalProducts);
-  const paginatedProducts = products.slice(startIndex, endIndex);
+  const paginatedProducts = filteredByCategory.slice(startIndex, endIndex);
 
   const designers = [
     {
@@ -105,19 +129,25 @@ const ProductGrid = ({
 
   if (loading) return <div className="w-full h-64 flex justify-center items-center"><Spin size="large" /></div>;
 
-  if (products.length === 0) {
+  if (filteredByCategory.length === 0) {
     return (
       <div className="text-center py-16 w-full">
         <div className="text-4xl mb-4">😔</div>
         <Title level={4} style={{ color: "#64748b" }}>No products match your filters</Title>
         <Text type="secondary">Try adjusting your filters to see more products</Text>
+        {/* Agar category filtered hai aur kuch nahi mil raha, toh See More dikha do */}
+        {!showAll && (
+            <div className="mt-4">
+                <Button onClick={() => setShowAll(true)}>Show All Products</Button>
+            </div>
+        )}
       </div>
     );
   }
 
   return (
     <div className={`p-6  ${showFilters ? "" : "w-full"} `}>
-      {/* Header - responsive stacking */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-gray-200 gap-4">
         <div>
           <Text className="text-sm text-gray-600">
@@ -145,7 +175,7 @@ const ProductGrid = ({
         </Space>
       </div>
 
-      {/* Grid - only responsive columns changed */}
+      {/* Grid */}
       <Row gutter={[24, 32]}>
         {paginatedProducts.map((product, index) => {
           const discountPercent = product.price && product.discountedPrice
@@ -264,6 +294,19 @@ const ProductGrid = ({
         })}
       </Row>
 
+      {/* SEE MORE BUTTON - Only show if not all products are visible */}
+      {!showAll && selectedCategorySlug && products.length > filteredByCategory.length && (
+        <div className="flex justify-center mt-12">
+            <Button 
+                onClick={() => setShowAll(true)}
+                size="large"
+                className="px-10 h-12 rounded-xl font-bold border-2 border-[#5C039B] text-[#5C039B] hover:bg-[#5C039B] hover:text-white transition-all"
+            >
+                See More Products
+            </Button>
+        </div>
+      )}
+
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex flex-col items-center mt-12 space-y-6">
@@ -312,7 +355,7 @@ const ProductGrid = ({
         </div>
       )}
 
-      {/* Modal - same as before, just added max width for small screens */}
+      {/* Modal */}
       <Modal
         title={
           <div className="text-center">
@@ -330,9 +373,7 @@ const ProductGrid = ({
         centered
         style={{ maxWidth: '95vw' }}
       >
-
-        {/* Modal content same as your original - no change .. */}
-        {/* ... paste your full modal content here if needed ... */}
+          {/* Modal content */}
       </Modal>
     </div>
   );

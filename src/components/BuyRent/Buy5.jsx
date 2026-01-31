@@ -8,6 +8,11 @@ import { useNavigate } from "react-router-dom";
 import { notification, Select } from "antd"; // Antd Select
 import { Country, State, City } from "country-state-city"; // Location Package
 import { apiService } from "../../manageApi/utils/custom.apiservice";
+import {
+  parsePhoneNumberFromString,
+  validatePhoneNumberLength,
+} from "libphonenumber-js";
+
 import { useTranslation } from "react-i18next";
 import "swiper/css";
 import "swiper/css/navigation";
@@ -25,6 +30,44 @@ const { Option } = Select;
 const PHONE_LENGTH_RULES = {
   "971": 9, "91": 10, "966": 9, "1": 10, "44": 10, "61": 9,
 };
+
+const validatePhone = (countryCode, mobile) => {
+  if (!mobile) return "Mobile is required";
+
+  const fullNumber = `+${countryCode}${mobile}`;
+  const phoneNumber = parsePhoneNumberFromString(fullNumber);
+
+  if (!phoneNumber) {
+    return "Invalid mobile number";
+  }
+
+  // Length validation (proper way)
+  const lengthError = validatePhoneNumberLength(
+    phoneNumber.nationalNumber,
+    phoneNumber.country
+  );
+
+  if (lengthError === "TOO_SHORT") return "Number is too short";
+  if (lengthError === "TOO_LONG") return "Number is too long";
+
+  // Structural validation
+  if (!phoneNumber.isValid()) {
+    return "Invalid mobile number for selected country";
+  }
+
+  // Block landlines
+  if (phoneNumber.getType() === "FIXED_LINE") {
+    return "Landline numbers are not allowed";
+  }
+
+  // UAE-specific rule (real one)
+  if (countryCode === "971" && !/^(50|52|54|55|56|58)/.test(mobile)) {
+    return "Invalid UAE mobile prefix";
+  }
+
+  return ""; // ✅ valid
+};
+
 
 const OurProperty = () => {
   const { t } = useTranslation("buy5");
@@ -124,6 +167,10 @@ const OurProperty = () => {
     const value = e.target.value.replace(/\D/g, "");
     const maxLength = PHONE_LENGTH_RULES[formData.country_code] || 15;
     const validatedValue = value.slice(0, maxLength);
+    const phoneObj = parsePhoneNumberFromString(
+  `+${formData.country_code}${formData.mobile}`
+);
+
     setFormData((prev) => ({ ...prev, mobile: validatedValue }));
     if (errors.mobile) setErrors((prev) => ({ ...prev, mobile: "" }));
   };
@@ -164,12 +211,16 @@ const OurProperty = () => {
     if (!formData.email.trim()) { newErrors.email = "Required"; isValid = false; }
     else if (!/\S+@\S+\.\S+/.test(formData.email)) { newErrors.email = "Invalid email"; isValid = false; }
 
-    const requiredLength = PHONE_LENGTH_RULES[formData.country_code];
-    if (!formData.mobile.trim()) { newErrors.mobile = "Required"; isValid = false; }
-    else if (requiredLength && formData.mobile.length !== requiredLength) {
-      newErrors.mobile = `Enter ${requiredLength} digits`;
-      isValid = false;
-    }
+   const phoneError = validatePhone(
+  formData.country_code,
+  formData.mobile
+);
+
+if (phoneError) {
+  newErrors.mobile = phoneError;
+  isValid = false;
+}
+
 
     if (!formData.occupation.trim()) { newErrors.occupation = "Required"; isValid = false; }
     

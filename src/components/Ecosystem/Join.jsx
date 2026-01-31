@@ -84,36 +84,115 @@ const PartnerEcosystemSection = () => {
     return isValid;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    setLoading(true);
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   if (!validateForm()) return;
+  //   setLoading(true);
 
-    const payload = {
-      type: "partner",
-      name: { first_name: formData.firstName.trim(), last_name: formData.lastName.trim() },
-      email: formData.email.toLowerCase().trim(),
-      company: formData.company.trim(),
-      stakeholder_type: formData.stakeholder,
-      mobile: { country_code: formData.countryCode, number: formData.contact },
-      message: formData.message.trim(),
-    };
+  //   const payload = {
+  //     type: "partner",
+  //     name: { first_name: formData.firstName.trim(), last_name: formData.lastName.trim() },
+  //     email: formData.email.toLowerCase().trim(),
+  //     company: formData.company.trim(),
+  //     stakeholder_type: formData.stakeholder,
+  //     mobile: { country_code: formData.countryCode, number: formData.contact },
+  //     message: formData.message.trim(),
+  //   };
 
-    try {
-      const res = await apiService.post("/property/lead", payload);
-      if (res?.success || res?.status === 200 || res?.status === 201) {
-        openNotification("success", "Success", "Your request has been submitted!");
-        setFormData({ firstName: "", lastName: "", email: "", company: "", stakeholder: "", countryCode: "971", contact: "", message: "" });
-        setErrors({});
-      }
-    } catch (err) {
-      openNotification("error", "Failed", err.response?.data?.message || "Server Error");
-    } finally {
-      setLoading(false);
-    }
-  };
+  //   try {
+  //     const res = await apiService.post("/property/lead", payload);
+  //     if (res?.success || res?.status === 200 || res?.status === 201) {
+  //       openNotification("success", "Success", "Your request has been submitted!");
+  //       setFormData({ firstName: "", lastName: "", email: "", company: "", stakeholder: "", countryCode: "971", contact: "", message: "" });
+  //       setErrors({});
+  //     }
+  //   } catch (err) {
+  //     openNotification("error", "Failed", err.response?.data?.message || "Server Error");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   // Common Input Class
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+
+  setLoading(true);
+
+  const payload = {
+    type: "partner",
+    name: {
+      first_name: formData.firstName.trim(),
+      last_name: formData.lastName.trim(),
+    },
+    email: formData.email.toLowerCase().trim(),
+    company: formData.company.trim(),
+    stakeholder_type: formData.stakeholder,
+    mobile: {
+      country_code: formData.countryCode,
+      number: formData.contact,
+    },
+    message: formData.message.trim(),
+  };
+
+  try {
+    // 1️⃣ CREATE PARTNER INQUIRY
+    const res = await apiService.post("/property/lead", payload);
+
+    if (res?.success || res?.status === 200 || res?.status === 201) {
+      // 2️⃣ CREATE NOTIFICATION (sender must be STRING)
+      const notificationPayload = {
+        sender: payload.email, // ✅ string only
+        receiverType: "admin",
+        senderType: "user",
+        notificationType: "NEW_INQUIRY",
+        title: "Partner Ecosystem Inquiry",
+        message: "A new partner inquiry has been submitted.",
+      };
+
+      // 🔁 Non-blocking notification (recommended)
+      try {
+        await apiService.post(
+          "/notifications/create-notification",
+          notificationPayload
+        );
+      } catch (notificationError) {
+        console.error("Notification failed", notificationError);
+      }
+
+      // 3️⃣ SUCCESS UI
+      openNotification(
+        "success",
+        "Success",
+        "Your request has been submitted!"
+      );
+
+      // 4️⃣ RESET FORM
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        company: "",
+        stakeholder: "",
+        countryCode: "971",
+        contact: "",
+        message: "",
+      });
+
+      setErrors({});
+    }
+  } catch (err) {
+    openNotification(
+      "error",
+      "Failed",
+      err.response?.data?.message || "Server Error"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
   const inputClass = `w-full h-[42px] border rounded-md px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500 bg-white transition-all flex items-center`;
   const errorClass = "border-red-500 focus:ring-red-200";
   const normalClass = "border-gray-300";

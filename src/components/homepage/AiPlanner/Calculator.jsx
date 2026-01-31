@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Card,
   Button,
@@ -52,7 +52,13 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const BRAND_PURPLE = "#5C039B";
-const BASE_URL = "https://xoto.ae"; // ✅ Your API Base URL for images
+const BASE_URL = "https://xoto.ae"; 
+
+// Helper to handle absolute vs relative URLs
+const getImageUrl = (url) => {
+  if (!url) return "";
+  return url.startsWith("http") ? url : `${BASE_URL}${url}`;
+};
 
 const steps = [
   { title: "Location", icon: <CompassOutlined /> },
@@ -95,7 +101,7 @@ const reverseGeocode = async (lat, lng) => {
 
 // Map Picker Component
 const MapPicker = ({ coords, onChange }) => {
-  const position = React.useMemo(
+  const position = useMemo(
     () =>
       coords.lat && coords.lng
         ? [coords.lat, coords.lng]
@@ -116,7 +122,7 @@ const MapPicker = ({ coords, onChange }) => {
     <MapContainer
       center={position}
       zoom={15}
-      style={{ height: 300, width: "100%", borderRadius: "1rem" }}
+      style={{ height: 300, width: "100%", borderRadius: "1rem", zIndex:1 }}
     >
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <LocationMarker />
@@ -124,6 +130,139 @@ const MapPicker = ({ coords, onChange }) => {
   );
 };
 
+// UI Component: Selection Card
+const SelectionCard = ({ item, isSelected, onClick, colorClass }) => (
+  <motion.div
+    whileHover={{ y: -5 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={onClick}
+    className={`relative h-full p-6 rounded-3xl cursor-pointer transition-all border-2
+      ${
+        isSelected
+          ? `bg-purple-50 shadow-xl`
+          : "border-gray-100 bg-white hover:border-gray-200"
+      }`}
+    style={{ borderColor: isSelected ? BRAND_PURPLE : "transparent" }}
+  >
+    {isSelected && <Badge.Ribbon text="Selected" color={BRAND_PURPLE} />}
+    <div
+      className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-4 ${colorClass}`}
+    >
+      {item.label ? item.label[0] : "G"}
+    </div>
+    <Title level={4} className="mb-1">
+      {item.label}
+    </Title>
+    <Text type="secondary" className="text-xs line-clamp-2">
+      {item.description || "Professional architectural landscaping."}
+    </Text>
+  </motion.div>
+);
+
+// Question Field Component
+const QuestionField = React.memo(function QuestionField({
+  question,
+  value,
+  onChange,
+}) {
+  const id = `q-${question._id}`;
+  const isYesNo = question.questionType === "yesorno";
+  const isOptions = question.questionType === "options";
+
+  return (
+    <Form.Item
+      label={question.question}
+      required
+      className="mb-6"
+    >
+      {question.questionType === "text" && (
+        <Input
+          id={id}
+          value={value ?? ""}
+          onChange={(e) => onChange(question._id, e.target.value)}
+          size="large"
+          className="rounded-xl"
+        />
+      )}
+
+      {question.questionType === "number" && (
+        <Input
+          id={id}
+          type="number"
+          value={value ?? ""}
+          onChange={(e) => onChange(question._id, e.target.value)}
+          size="large"
+          className="rounded-xl"
+        />
+      )}
+
+      {(isOptions || isYesNo) && (
+        <Radio.Group
+          value={value}
+          onChange={(e) => onChange(question._id, e.target.value)}
+          className="w-full"
+        >
+          <Space direction={isYesNo ? "horizontal" : "vertical"} wrap className="w-full">
+            {question.options?.map((opt) => (
+              <Radio key={opt._id} value={opt.title}>
+                {opt.title}
+              </Radio>
+            ))}
+          </Space>
+        </Radio.Group>
+      )}
+    </Form.Item>
+  );
+});
+
+// Step 3 Container
+const Step3Questions = React.memo(function Step3Questions({
+  questions,
+  answers,
+  loading,
+  onAnswerChange,
+}) {
+  if (loading) {
+    return (
+      <div className="py-20 text-center">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (!questions?.length) {
+    return (
+      <div className="py-20 text-center">
+        <h2 className="text-2xl font-bold">NO QUESTIONS AVAILABLE</h2>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-10">
+      <div className="max-w-3xl mx-auto">
+        <Title level={3} className="text-center mb-8">
+          Project Details
+        </Title>
+
+        <Card className="rounded-xl shadow-sm">
+          <Form layout="vertical">
+            {questions.map((q) => (
+              <QuestionField
+                key={q._id}
+                question={q}
+                value={answers[q._id]}
+                onChange={onAnswerChange}
+              />
+            ))}
+          </Form>
+        </Card>
+      </div>
+    </div>
+  );
+});
+
+// MAIN CALCULATOR COMPONENT
 const Calculator = () => {
   const navigate = useNavigate();
 
@@ -133,7 +272,7 @@ const Calculator = () => {
   const [subcategories, setSubcategories] = useState([]);
   const [types, setTypes] = useState([]);
   const [packages, setPackages] = useState([]);
-const [step3Form] = Form.useForm();
+  
   const [coords, setCoords] = useState({
     lat: null,
     lng: null,
@@ -156,35 +295,16 @@ const [step3Form] = Form.useForm();
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
 
-  const [galleryImages, setGalleryImages] = useState([]); // ✅ This holds your images
+  // Gallery States
+  const [galleryImages, setGalleryImages] = useState([]); 
+  const [previewImage, setPreviewImage] = useState(null); 
+  const [selectedImages, setSelectedImages] = useState([]);
+
+
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
 
-  const [step3Errors, setStep3Errors] = useState({});
-  const [toastLock, setToastLock] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
-
-  const showLockedToast = (
-    text = "Please fill the required field to continue."
-  ) => {
-    if (toastLock) return;
-    setToastLock(true);
-
-    messageApi.open({
-      type: "error",
-      content: text,
-      duration: 1.2,
-      style: {
-        fontSize: "16px",
-        marginTop: "10vh",
-        padding: "10px 14px",
-        borderRadius: "10px",
-      },
-      onClose: () => {
-        setToastLock(false);
-      },
-    });
-  };
 
   const areaSqFt =
     length && width ? Math.round(parseFloat(length) * parseFloat(width)) : 0;
@@ -222,12 +342,14 @@ const [step3Form] = Form.useForm();
     submitting: false,
     geocoding: false,
     questions: false,
+    gallery: false,
   });
 
-  const handleSelectType = React.useCallback(
-  (id) => setSelectedType(id),
-  []
-);
+  const handleSelectType = useCallback(
+    (id) => setSelectedType(id),
+    []
+  );
+
   const handlePhoneChange = (e) => {
     const value = e.target.value.replace(/\D/g, "");
     const rule = COUNTRY_PHONE_RULES[countryCode];
@@ -250,30 +372,58 @@ const [step3Form] = Form.useForm();
     setPhoneError("");
   };
 
-  const toggleImageSelect = (img) => {
-    setSelectedImages((prev) => {
-      const exists = prev.some((i) => i.id === img.id);
-      if (exists) return prev.filter((i) => i.id !== img.id);
-      return [...prev, img];
-    });
-  };
+  // ✅ UPDATED: Fetch BOTH images (Moodboard & Preview) via POST method
+  // ✅ UPDATED: Fetch BOTH images (Moodboard & Preview) via POST method
+  // ✅ SINGLE SOURCE OF TRUTH
+const getAllImages = useCallback(async () => {
+  if (!selectedType) return;
 
- const getAllImages = async () => {
-    try {
-      const res = await fetch(
-        `https://xoto.ae/api/estimate/master/category/types/${selectedType}/gallery`
-      );
-      const data = await res.json();
-      // Ensure we set the moodboardImages array from your response structure
-      setGalleryImages(data?.gallery?.moodboardImages || []); 
-    } catch (error) {
-      console.error(error);
+  setLoading(prev => ({ ...prev, gallery: true }));
+  console.log("Fetching gallery via GET for Type:", selectedType);
+
+  try {
+    const res = await apiService.get(
+      `/estimate/master/category/types/${selectedType}/gallery`
+    );
+
+    const gallery = res.gallery || res.data?.gallery;
+
+    if (gallery) {
+      // ✅ Preview (object)
+      setPreviewImage(gallery.previewFile || null);
+
+      // ✅ Moodboard (array)
+      setGalleryImages(gallery.moodboardImages || []);
+    } else {
+      setPreviewImage(null);
+      setGalleryImages([]);
     }
-  };
 
+  } catch (error) {
+    console.error("Gallery fetch failed:", error);
+    setPreviewImage(null);
+    setGalleryImages([]);
+  } finally {
+    setLoading(prev => ({ ...prev, gallery: false }));
+  }
+}, [selectedType]);
+
+const toggleImageSelect = (img) => {
+  setSelectedImages((prev) => {
+    const exists = prev.find(i => i.url === img.url);
+    if (exists) {
+      return prev.filter(i => i.url !== img.url);
+    }
+    return [...prev, img];
+  });
+};
+
+
+
+  // Trigger Image Fetch on Type Selection
   useEffect(() => {
     if (selectedType) getAllImages();
-  }, [selectedType]);
+  }, [selectedType, getAllImages]);
 
   // Fetch subcategories
   useEffect(() => {
@@ -306,7 +456,6 @@ const [step3Form] = Form.useForm();
         if (res.success) {
           setQuestions(res.data || []);
           setAnswers({});
-          setStep3Errors({});
         }
       } catch (error) {
         messageApi.error("Error loading questions");
@@ -430,25 +579,31 @@ const [step3Form] = Form.useForm();
     }
   };
 
-const handleAnswerChange = React.useCallback((questionId, newValue) => {
-  let valueChanged = false;
+  
+  const handleAnswerChange = useCallback((questionId, newValue) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: newValue }));
+  }, []);
 
-  setAnswers((prev) => {
-    if (prev[questionId] === newValue) return prev;
-    valueChanged = true;
-    return { ...prev, [questionId]: newValue };
-  });
-
-  // Only clear error if value actually changed
-  if (valueChanged) {
-    setStep3Errors((prev) => {
-      if (!prev[questionId]) return prev;
-      const copy = { ...prev };
-      delete copy[questionId];
-      return copy;
-    });
-  }
-}, []);
+  
+  const isStepValid = () => {
+    if (activeStep === 0) return !!coords.lat; // Step 1: Location required
+    if (activeStep === 1) return !!selectedSubcategory; // Step 2: Service required
+    if (activeStep === 2) return !!selectedType; // Step 3: Style required
+    if (activeStep === 3) {
+      // Step 4: All questions must be answered
+      if (!questions || questions.length === 0) return true;
+      return questions.every(q => {
+        const val = answers[q._id];
+        return val !== undefined && val !== null && val !== "";
+      });
+    }
+    if (activeStep === 4) {
+        // Step 5: Contact details
+        const isPhoneValid = phone.length === COUNTRY_PHONE_RULES[countryCode]?.digits;
+        return !!firstName && !!lastName && !!email && isPhoneValid && !phoneError;
+    }
+    return true;
+  };
 
   const buildEstimateAnswersPayload = () => {
     return questions.map((q) => {
@@ -485,114 +640,189 @@ const handleAnswerChange = React.useCallback((questionId, newValue) => {
     });
   };
 
-  const onFinalSubmit = async () => {
-    const estimateAnswers = buildEstimateAnswersPayload();
+//  const onFinalSubmit = async () => {
+//     // Safety check again
+//     if (!isStepValid()) {
+//         messageApi.error("Please fill all required fields");
+//         return;
+//     }
 
-    if (!firstName.trim() || !lastName.trim()) {
-      messageApi.error("Please enter both first and last name");
-      return;
-    }
-    if (!email.trim()) {
-      messageApi.error("Please enter your email");
-      return;
-    }
-    if (!phone.trim()) {
-      messageApi.error("Please enter your phone number");
-      return;
-    }
-    if (phoneError) {
-      messageApi.error("Please enter a valid phone number");
-      return;
-    }
+//     const estimateAnswers = buildEstimateAnswersPayload();
 
-    setLoading((prev) => ({ ...prev, submitting: true }));
+//     setLoading((prev) => ({ ...prev, submitting: true }));
 
-    const selectedTypeData = types.find((t) => t._id === selectedType);
+//     const selectedTypeData = types.find((t) => t._id === selectedType);
 
-    const payload = {
-      service_type: "landscape",
-      customer_name: {
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-      },
-      customer_email: email.trim(),
-      customer_mobile: {
-        country_code: countryCode,
-        number: phone.trim(),
-      },
-      type: selectedType,
-      subcategory: selectedSubcategory,
-      package: selectedPackage,
-      area_length: parseFloat(length) || 0,
-      area_width: parseFloat(width) || 0,
-      area_sqft: areaSqFt,
-      description: `Landscaping project for ${areaSqFt} sqft area with ${
-        selectedTypeData?.label || "selected"
-      } style`,
-      location: {
-        lat: coords.lat,
-        lng: coords.lng,
-        country: coords.country,
-        state: coords.state,
-        city: coords.city,
-        area: coords.area,
-        address: coords.address,
-      },
-      answers: estimateAnswers,
-    };
+//     const payload = {
+//       service_type: "landscape",
+//       customer_name: {
+//         first_name: firstName.trim(),
+//         last_name: lastName.trim(),
+//       },
+//       customer_email: email.trim(),
+//       customer_mobile: {
+//         country_code: countryCode,
+//         number: phone.trim(),
+//       },
+//       type: selectedType,
+//       subcategory: selectedSubcategory,
+//       package: selectedPackage,
+//       area_length: parseFloat(length) || 0,
+//       area_width: parseFloat(width) || 0,
+//       area_sqft: areaSqFt,
+//       description: `Landscaping project for ${areaSqFt} sqft area with ${
+//         selectedTypeData?.label || "selected"
+//       } style`,
+//       location: {
+//         lat: coords.lat,
+//         lng: coords.lng,
+//         country: coords.country,
+//         state: coords.state,
+//         city: coords.city,
+//         area: coords.area,
+//         address: coords.address,
+//       },
+//       answers: estimateAnswers,
+//     };
 
-    try {
-      const response = await apiService.post("/estimates/submit", payload);
+//     try {
+//       const response = await apiService.post("/estimates/submit", payload);
 
-      if (response.success) {
-        setActiveStep(5);
-        messageApi.success("Estimate submitted successfully!");
-        setEstimationValue(response.final_price);
-      } else {
-        messageApi.error(response.message || "Submission failed");
-      }
-    } catch (err) {
-      messageApi.error(
-        err.response?.data?.message || "Submission failed. Please try again."
-      );
-    } finally {
-      setLoading((prev) => ({ ...prev, submitting: false }));
-    }
+//       if (response.success) {
+//         setActiveStep(5);
+//         messageApi.success("Estimate submitted successfully!");
+//         setEstimationValue(response.final_price);
+
+//         // ✅ CHECK: Use snapshot images if available, otherwise use already fetched images
+//         const snapshotImages = response.updatedEstimate?.type_gallery_snapshot?.moodboardImages;
+        
+//         if (snapshotImages && snapshotImages.length > 0) {
+//             console.log("Using Snapshot Images from Response");
+//             setGalleryImages(snapshotImages);
+//         } else {
+//             console.log("Snapshot empty, checking existing gallery images...");
+//             if (galleryImages.length === 0) {
+//                 // If we have nothing (Step 2 failed or API didn't run), try fetching again
+//                 getAllImages();
+//             }
+//         }
+
+//       } else {
+//         messageApi.error(response.message || "Submission failed");
+//       }
+//     } catch (err) {
+//       console.error(err);
+//       messageApi.error(
+//         err.response?.data?.message || "Submission failed. Please try again."
+//       );
+//     } finally {
+//       setLoading((prev) => ({ ...prev, submitting: false }));
+//     }
+//   };
+const onFinalSubmit = async () => {
+  // Safety check
+  if (!isStepValid()) {
+    messageApi.error("Please fill all required fields");
+    return;
+  }
+
+  const estimateAnswers = buildEstimateAnswersPayload();
+  setLoading((prev) => ({ ...prev, submitting: true }));
+
+  const selectedTypeData = types.find((t) => t._id === selectedType);
+
+  const payload = {
+    service_type: "landscape",
+    customer_name: {
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+    },
+    customer_email: email.trim().toLowerCase(),
+    customer_mobile: {
+      country_code: countryCode,
+      number: phone.trim(),
+    },
+    type: selectedType,
+    subcategory: selectedSubcategory,
+    package: selectedPackage,
+    area_length: parseFloat(length) || 0,
+    area_width: parseFloat(width) || 0,
+    area_sqft: areaSqFt,
+    description: `Landscaping project for ${areaSqFt} sqft area with ${
+      selectedTypeData?.label || "selected"
+    } style`,
+    location: {
+      lat: coords.lat,
+      lng: coords.lng,
+      country: coords.country,
+      state: coords.state,
+      city: coords.city,
+      area: coords.area,
+      address: coords.address,
+    },
+    answers: estimateAnswers,
   };
 
-  const validateStep3 = () => {
-    if (!questions || questions.length === 0) return true;
+  try {
+    // 1️⃣ SUBMIT ESTIMATE
+    const response = await apiService.post("/estimates/submit", payload);
 
-    const missing = questions.find((q) => {
-      const val = answers[q._id];
-      return val === undefined || val === null || val === "";
-    });
+    if (response.success) {
+      setActiveStep(5);
+      setEstimationValue(response.final_price);
+      messageApi.success("Estimate submitted successfully!");
 
-    if (!missing) return true;
+      // 2️⃣ CREATE NOTIFICATION (NON-BLOCKING)
+      const notificationPayload = {
+        sender: email.trim().toLowerCase(), // ✅ STRING ONLY
+        receiverType: "admin",
+        senderType: "user",
+        notificationType: "NEW_ESTIMATE",
+        title: "New Landscaping Estimate",
+        message: "A user has submitted a new landscaping estimate request.",
+      };
 
-    setStep3Errors({ [missing._id]: true });
-    showLockedToast("Please fill the required field to continue.");
-
-    setTimeout(() => {
-      const el = document.getElementById(`q-${missing._id}`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.focus?.();
+      try {
+        await apiService.post(
+          "/notifications/create-notification",
+          notificationPayload
+        );
+      } catch (notificationError) {
+        console.error("Notification failed", notificationError);
       }
-    }, 200);
 
-    return false;
-  };
+      // 3️⃣ HANDLE GALLERY SNAPSHOT (existing logic)
+      const snapshotImages =
+        response.updatedEstimate?.type_gallery_snapshot?.moodboardImages;
+
+      if (snapshotImages && snapshotImages.length > 0) {
+        setGalleryImages(snapshotImages);
+      } else if (galleryImages.length === 0) {
+        getAllImages();
+      }
+    } else {
+      messageApi.error(response.message || "Submission failed");
+    }
+  } catch (err) {
+    console.error(err);
+    messageApi.error(
+      err.response?.data?.message ||
+        "Submission failed. Please try again."
+    );
+  } finally {
+    setLoading((prev) => ({ ...prev, submitting: false }));
+  }
+};
 
   const handleNext = () => {
+    if (!isStepValid()) {
+        messageApi.warning("Please complete the required fields to continue");
+        return;
+    }
+
     if (activeStep === 5) {
       navigate("/");
       return;
-    }
-
-    if (activeStep === 3) {
-      const ok = validateStep3();
-      if (!ok) return;
     }
 
     if (activeStep === 4) {
@@ -608,166 +838,7 @@ const handleAnswerChange = React.useCallback((questionId, newValue) => {
     setActiveStep((prev) => prev - 1);
   };
 
-  const validateStep = () => {
-    // Basic validation logic
-    if (activeStep === 3 && (!questions || questions.length === 0)) {
-      // If there are no questions in step 3, we usually allow continue unless logic says otherwise
-      // But based on your original code, we can keep it strict if needed.
-      // Since we auto-allow in validateStep3 if empty, let's allow here too.
-      return true; 
-    }
-    return true;
-  };
-//  B. Memoized single question (prevents re-render of other fields)
-const QuestionField = React.memo(function QuestionField({
-  question,
-  value,
-  hasError,
-  onChange,
-}) {
-  const id = `q-${question._id}`;
-
-  if (question.questionType === "text") {
-    return (
-      <Form.Item
-        label={question.question}
-        required
-        validateStatus={hasError ? "error" : ""}
-        help={hasError ? "This field is required." : null}
-      >
-        <Input
-          id={id}
-          value={value ?? ""}
-          onChange={(e) => onChange(question._id, e.target.value)}
-        />
-      </Form.Item>
-    );
-  }
-
-  if (question.questionType === "number") {
-    return (
-      <Form.Item
-        label={question.question}
-        required
-        validateStatus={hasError ? "error" : ""}
-        help={hasError ? "This field is required." : null}
-      >
-        <Input
-          id={id}
-          type="number"
-          value={value ?? ""}
-          onChange={(e) => onChange(question._id, e.target.value)}
-        />
-      </Form.Item>
-    );
-  }
-
-  if (question.questionType === "options" || question.questionType === "yesorno") {
-    return (
-      <Form.Item
-        label={question.question}
-        required
-        validateStatus={hasError ? "error" : ""}
-        help={hasError ? "This field is required." : null}
-      >
-        <Radio.Group
-          value={value}
-          onChange={(e) => onChange(question._id, e.target.value)}
-        >
-          <Space direction="vertical">
-            {question.options?.map((opt) => (
-              <Radio key={opt._id} value={opt.title}>
-                {opt.title}
-              </Radio>
-            ))}
-          </Space>
-        </Radio.Group>
-      </Form.Item>
-    );
-  }
-
-  return null;
-});
-
-// ────────────────────────────────────────────────
-//  C. Main questions container – now very lean
-const Step3Questions = React.memo(function Step3Questions({
-  form,
-  questions,
-  answers,
-  step3Errors,
-  loading,
-}) {
-  if (loading) {
-    return (
-      <div className="py-20 text-center">
-        <Spin size="large" />
-      </div>
-    );
-  }
-
-  if (!questions?.length) {
-    return (
-      <div className="py-20 text-center">
-        <h2 className="text-2xl font-bold">NO QUESTIONS AVAILABLE</h2>
-      </div>
-    );
-  }
-
-  return (
-    <div className="py-10">
-      <div className="max-w-3xl mx-auto">
-        <Title level={3} className="text-center mb-8">
-          Project Details
-        </Title>
-
-        <Card className="rounded-xl shadow-sm">
-          <Form form={form} layout="vertical" preserve>
-            {questions.map((q) => (
-              <QuestionField
-                key={q._id}
-                question={q}
-                value={answers[q._id]}
-                hasError={!!step3Errors[q._id]}
-                onChange={handleAnswerChange}
-              />
-            ))}
-          </Form>
-        </Card>
-      </div>
-    </div>
-  );
-});
-  // --- UI COMPONENTS ---
-  const SelectionCard = ({ item, isSelected, onClick, colorClass }) => (
-    <motion.div
-      whileHover={{ y: -5 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={`relative h-full p-6 rounded-3xl cursor-pointer transition-all border-2
-        ${
-          isSelected
-            ? `bg-purple-50 shadow-xl`
-            : "border-gray-100 bg-white hover:border-gray-200"
-        }`}
-      style={{ borderColor: isSelected ? BRAND_PURPLE : "transparent" }}
-    >
-      {isSelected && <Badge.Ribbon text="Selected" color={BRAND_PURPLE} />}
-      <div
-        className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-4 ${colorClass}`}
-      >
-        {item.label ? item.label[0] : "G"}
-      </div>
-      <Title level={4} className="mb-1">
-        {item.label}
-      </Title>
-      <Text type="secondary" className="text-xs line-clamp-2">
-        {item.description || "Professional architectural landscaping."}
-      </Text>
-    </motion.div>
-  );
-
-  // --- FIX: THIS IS NOW A HELPER FUNCTION, NOT A COMPONENT ---
+  // Main Render Helper
   const renderStepContent = () => {
     const variants = {
       initial: { opacity: 0, y: 20 },
@@ -778,9 +849,26 @@ const Step3Questions = React.memo(function Step3Questions({
     switch (activeStep) {
       case 0:
         return (
-          <motion.div
-            className="text-center py-10"
-          >
+         <motion.div className="relative text-center py-10">
+
+      {/* 🔙 SUBTLE BACK LINK */}
+      <div className="absolute -top-12 left-0">
+  <Button
+    onClick={() => navigate("/")}
+    icon={<ArrowLeftOutlined />}
+    className="h-16 px-10 rounded-2xl font-semibold shadow-md transition-all"
+    style={{
+      backgroundColor: "#ffffff",
+      border: `1px solid ${BRAND_PURPLE}33`,
+      color: BRAND_PURPLE,
+      fontSize: "16px",
+    }}
+  >
+    Back
+  </Button>
+</div>
+
+
             <div className="mb-6 inline-block p-6 rounded-full bg-purple-50">
               <CompassOutlined style={{ color: BRAND_PURPLE, fontSize: "3rem" }} />
             </div>
@@ -886,16 +974,16 @@ const Step3Questions = React.memo(function Step3Questions({
           </motion.div>
         );
 
-case 3:
-  return (
-    <Step3Questions
-  form={step3Form}
-questions={questions}
-answers={answers}
-step3Errors={step3Errors}
-loading={loading.questions}
-    />
-  );
+      case 3:
+        return (
+            <Step3Questions
+                questions={questions}
+                answers={answers}
+                loading={loading.questions}
+                onAnswerChange={handleAnswerChange}
+            />
+        );
+
       case 4:
         return (
           <motion.div
@@ -914,11 +1002,19 @@ loading={loading.questions}
                   <div className="space-y-8">
                     <div>
                       <Text className="text-purple-300 block text-xs uppercase tracking-widest mb-1">
-                        Area
+                        Service
                       </Text>
                       <Text strong className="text-white text-xl">
-                        {areaSqFt} SQ FT
+                        {subcategories.find(s => s._id === selectedSubcategory)?.label || "-"}
                       </Text>
+                    </div>
+                    <div>
+                        <Text className="text-purple-300 block text-xs uppercase tracking-widest mb-1">
+                            Style
+                        </Text>
+                        <Text strong className="text-white text-xl">
+                            {types.find(t => t._id === selectedType)?.label || "-"}
+                        </Text>
                     </div>
                   </div>
                 </div>
@@ -1049,8 +1145,8 @@ loading={loading.questions}
               </div>
             </div>
 
-            {/* 2. Moodboard / Gallery Section */}
-            {galleryImages && galleryImages.length > 0 && (
+            {/* 2. Style Inspiration Section (Preview & Moodboard) */}
+            {(previewImage || (galleryImages && galleryImages.length > 0)) && (
               <div className="max-w-6xl mx-auto px-4">
                 <div className="flex items-center justify-center gap-4 mb-8">
                   <div className="h-[1px] bg-gray-200 w-20"></div>
@@ -1060,28 +1156,101 @@ loading={loading.questions}
                   <div className="h-[1px] bg-gray-200 w-20"></div>
                 </div>
 
-                <Row gutter={[24, 24]} justify="center">
-                  {galleryImages.map((img, index) => (
-                    <Col xs={24} sm={12} md={8} lg={6} key={index}>
-                      <motion.div
-                        whileHover={{ y: -5 }}
-                        className="rounded-2xl overflow-hidden shadow-lg h-full bg-white"
-                      >
-                        <Image
-                          src={`${BASE_URL}${img.url}`} // ✅ Combine Base URL + Image Path
-                          alt="Moodboard"
-                          className="object-cover w-full h-64"
-                          style={{ objectFit: "cover", height: "250px", width: "100%" }}
-                          fallback="https://via.placeholder.com/300?text=No+Image"
-                        />
-                      </motion.div>
-                    </Col>
-                  ))}
-                </Row>
-                
-                <Text type="secondary" className="mt-6 block text-sm">
-                  Based on your selection of {types.find(t => t._id === selectedType)?.label || "style"}
+                <Text type="secondary" className="block text-center mb-8">
+                  Based on your selection of <strong>{types.find(t => t._id === selectedType)?.label || "style"}</strong>
                 </Text>
+
+               {/* ✅ PREVIEW IMAGE (Hero Section) */}
+{previewImage && (
+  <motion.div
+    whileHover={{ scale: 1.01 }}
+    className="mb-10 rounded-3xl overflow-hidden shadow-2xl border-4 border-white mx-auto max-w-4xl bg-white"
+  >
+    <Image
+      src={getImageUrl(previewImage.url)}
+      alt={previewImage.title || previewImage.name || "Preview"}
+      className="object-cover w-full"
+      style={{ maxHeight: "500px", width: "100%" }}
+      preview={false}
+    />
+
+    {/* ✅ PREVIEW TITLE */}
+    {(previewImage.title || previewImage.name || previewImage.label) && (
+      <div className="p-4 border-t border-gray-100 text-left">
+        <Text className="text-base font-semibold text-gray-800">
+          {previewImage.title ||
+            previewImage.name ||
+            previewImage.label}
+        </Text>
+      </div>
+    )}
+  </motion.div>
+)}
+
+
+                {/* ✅ MOODBOARD GRID */}
+                {galleryImages && galleryImages.length > 0 && (
+                  <>
+                     <Title level={4} className="text-left text-gray-500 mb-6 pl-2">Moodboard Details</Title>
+                    <Row gutter={32} className="mt-12">
+  
+  {/* RIGHT – ALL IMAGES */}
+  <Col xs={24} lg={18}>
+    <Row gutter={[24, 24]}>
+      {galleryImages.map((img, index) => {
+        const isSelected = selectedImages.some(i => i.url === img.url);
+
+        return (
+          <Col xs={24} sm={12} md={8} key={index}>
+         <motion.div
+  whileHover={{ scale: 1.02 }}
+  onClick={() => toggleImageSelect(img)}
+  className={`relative rounded-2xl overflow-hidden cursor-pointer border-2 bg-white transition-all
+    ${isSelected ? "border-purple-600 shadow-lg" : "border-transparent"}
+  `}
+>
+  {/* IMAGE */}
+  <Image
+    src={getImageUrl(img.url)}
+    preview={false}
+    className="w-full h-64 object-cover"
+  />
+
+  {/* SELECTED OVERLAY */}
+  {isSelected && (
+    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+      <div
+        className="w-14 h-14 rounded-full flex items-center justify-center shadow-xl"
+        style={{ backgroundColor: BRAND_PURPLE }}
+      >
+        <CheckOutlined className="text-white text-2xl font-bold" />
+      </div>
+    </div>
+  )}
+
+  {/* ✅ IMAGE TITLE (FIXED) */}
+  {(img.title || img.name || img.label || img.caption || img.originalName) && (
+    <div className="p-3 border-t border-gray-100 text-center">
+      <Text className="text-sm font-semibold text-gray-700 line-clamp-2">
+        {img.title ||
+          img.name ||
+          img.label ||
+          img.caption ||
+          img.originalName}
+      </Text>
+    </div>
+  )}
+</motion.div>
+
+          </Col>
+        );
+      })}
+    </Row>
+  </Col>
+</Row>
+
+                  </>
+                )}
               </div>
             )}
           </motion.div>
@@ -1144,7 +1313,6 @@ loading={loading.questions}
 
       <div className="max-w-7xl mx-auto mt-16 px-6">
         <AnimatePresence mode="wait">
-          {/* FIX: Call the function instead of using a Component tag */}
           <div key={activeStep}>{renderStepContent()}</div>
         </AnimatePresence>
       </div>
@@ -1183,14 +1351,15 @@ loading={loading.questions}
                 type="primary"
                 size="large"
                 onClick={handleNext}
-                disabled={!validateStep()}
+                disabled={!isStepValid()}
                 className="h-14 px-12 rounded-2xl border-none text-lg shadow-xl transition-all"
                 style={{
-                  backgroundColor: !validateStep() ? "#f5f5f5" : BRAND_PURPLE,
-                  color: !validateStep() ? "#ccc" : "white",
+                  backgroundColor: !isStepValid() ? "#e5e7eb" : BRAND_PURPLE,
+                  color: !isStepValid() ? "#9ca3af" : "white",
+                  cursor: !isStepValid() ? "not-allowed" : "pointer"
                 }}
               >
-                {activeStep === 4 ? "Continue to Contact" : "Continue"}
+                {activeStep === 4 ? "Submit Estimate" : "Continue"}
                 <ArrowRightOutlined className="ml-2" />
               </Button>
             </div>
