@@ -71,24 +71,31 @@ const Notifications = () => {
     }
   };
 
-  // --- 2. Mark All as Read ---
-  const markAllAsRead = async () => {
-    const unreadIds = notifications.filter(n => !n.isRead).map(n => n._id);
-    if (unreadIds.length === 0) return showSuccessAlert("Info", "All notifications are already read");
+const markAllAsRead = async () => {
+  if (notifications.every(n => n.isRead)) {
+    return showSuccessAlert("Info", "All notifications are already read");
+  }
 
-    setLoading(true);
-    try {
-      // If you have a bulk endpoint, use it. Otherwise, we map through unread.
-      await Promise.all(unreadIds.map(id => apiService.patch(`/notifications/read-notification/${id}`)));
-      
+  setLoading(true);
+  try {
+    const res = await apiService.put("/notifications/read-all-notifications", {
+      userId: user.id
+    });
+
+    if (res.success) {
+      // Optimistic UI update (no refetch needed)
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, isRead: true }))
+      );
+
       showSuccessAlert("Success", "All notifications marked as read");
-      fetchNotifications();
-    } catch (error) {
-      showErrorAlert("Error", "Failed to update all notifications");
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    showErrorAlert("Error", "Failed to update all notifications");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -101,13 +108,14 @@ const Notifications = () => {
           </Space>
         }
         extra={
-          <Button 
-            icon={<MailOutlined />} 
-            onClick={markAllAsRead}
-            disabled={notifications.every(n => n.isRead)}
-          >
-            Mark all as read
-          </Button>
+         <Button
+  icon={<MailOutlined />}
+  onClick={markAllAsRead}
+  disabled={notifications.every(n => n.isRead)}
+>
+  Mark all as read
+</Button>
+
         }
       >
         {loading ? (

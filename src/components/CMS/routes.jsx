@@ -225,7 +225,7 @@ const CmsRoutes = () => {
             <Route path="setting/email" element={<EmailSetting />} />
 
             <Route path="seller/product/:id" element={<ProductRequestB2C />} />
-<Route path="freelancer" element={<FreelancerProfile />} />
+<Route path="freelancer/view" element={<FreelancerProfile />} />
 <Route path="notifications/view" element={<Notifications />} />
 
       <Route path="freelancer/myprofile" element={<MyprofileFreelancer />} />

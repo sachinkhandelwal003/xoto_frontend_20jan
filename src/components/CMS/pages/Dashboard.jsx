@@ -1,255 +1,226 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area
+  PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar
 } from 'recharts';
 import { 
-  DollarOutlined, 
   TeamOutlined, 
-  ShoppingCartOutlined, 
   EnvironmentOutlined, 
-  RiseOutlined,
   ArrowUpOutlined,
   PlusOutlined,
   FileTextOutlined,
   UserAddOutlined,
-  BellOutlined,
-  SettingOutlined
+  SettingOutlined,
+  HomeOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  DeploymentUnitOutlined
 } from '@ant-design/icons';
-import { Card, Row, Col, Select, Button, Typography, Tag, Avatar, List, Statistic } from 'antd';
+import { Card, Row, Col, Select, Button, Typography, Tag, Avatar, List, Statistic, Spin, Alert,Space  } from 'antd';
+import { apiService } from '../../../manageApi/utils/custom.apiservice';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
+const PURPLE_THEME = {
+  primary: '#722ed1',
+  primaryBg: '#f9f0ff',
+  success: '#52c41a',
+  info: '#1890ff',
+  warning: '#faad14',
+  error: '#f5222d'
+};
+
 const Dashboard = () => {
-  const [timeRange, setTimeRange] = useState('7d');
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [error, setError] = useState(null);
 
-  // === CHART DATA ===
-  const salesData = [
-    { name: 'Mon', sales: 2400, orders: 24 },
-    { name: 'Tue', sales: 3210, orders: 32 },
-    { name: 'Wed', sales: 2800, orders: 28 },
-    { name: 'Thu', sales: 3980, orders: 40 },
-    { name: 'Fri', sales: 4500, orders: 45 },
-    { name: 'Sat', sales: 5200, orders: 52 },
-    { name: 'Sun', sales: 3800, orders: 38 },
-  ];
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const categoryData = [
-    { name: 'Garden Tools', value: 35, color: '#10b981' },
-    { name: 'Plants & Seeds', value: 28, color: '#8b5cf6' },
-    { name: 'Outdoor Decor', value: 20, color: '#f59e0b' },
-    { name: 'Irrigation', value: 12, color: '#3b82f6' },
-    { name: 'Services', value: 5, color: '#6b7280' },
-  ];
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.get('/dashboard/view/superadmin');
+      if (response.success) {
+        setDashboardData(response.data);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error loading dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const freelancerStats = [
-    { month: 'Jan', active: 45, completed: 120 },
-    { month: 'Feb', active: 52, completed: 138 },
-    { month: 'Mar', active: 48, completed: 142 },
-    { month: 'Apr', active: 61, completed: 165 },
-    { month: 'May', active: 72, completed: 180 },
-    { month: 'Jun', active: 68, completed: 192 },
-  ];
+  // --- Data Transformers for Recharts ---
+  
+  const getTimelineData = () => {
+    if (!dashboardData?.leads?.timeline) return [];
+    return dashboardData.leads.timeline.map(item => ({
+      name: new Date(item._id).toLocaleDateString('en-US', { day: '2-digit', month: 'short' }),
+      total: item.total
+    }));
+  };
 
-  // === QUICK STATS ===
-  const stats = [
-    { label: 'Total Revenue', value: 'AED48,921', change: 18.2, icon: <DollarOutlined />, color: '#722ed1', bg: '#f9f0ff' },
-    { label: 'Active Freelancers', value: '68', change: 12, icon: <TeamOutlined />, color: '#1890ff', bg: '#e6f7ff' },
-    { label: 'Orders', value: '1,234', change: 22, icon: <ShoppingCartOutlined />, color: '#52c41a', bg: '#f6ffed' },
-    { label: 'Projects', value: '342', change: 28, icon: <EnvironmentOutlined />, color: '#faad14', bg: '#fff7e6' },
-  ];
+  const getLeadTypePieData = () => {
+    if (!dashboardData?.leads?.types) return [];
+    const colors = ['#722ed1', '#13c2c2', '#52c41a', '#fadb14', '#fa8c16', '#eb2f96', '#2f54eb'];
+    return dashboardData.leads.types.map((item, index) => ({
+      name: item._id.replace('_', ' ').toUpperCase(),
+      value: item.count,
+      color: colors[index % colors.length]
+    }));
+  };
 
-  const recentActivity = [
-    { title: 'New landscaping project', user: 'Rajesh Kumar', time: '10 mins ago', type: 'project' },
-    { title: 'Order #7892 Delivered', user: 'Priya Sharma', time: '25 mins ago', type: 'order' },
-    { title: 'Lawn design completed', user: 'Amit Patel', time: '1 hr ago', type: 'freelancer' },
-    { title: '5★ Review received', user: 'Neha Gupta', time: '2 hrs ago', type: 'review' },
+  const getLeadStatusBarData = () => {
+    if (!dashboardData?.leads?.status) return [];
+    return dashboardData.leads.status.map(item => ({
+      name: item._id.toUpperCase(),
+      count: item.count
+    }));
+  };
+
+  if (loading) return <div className="flex justify-center items-center min-h-screen"><Spin size="large" tip="Loading Stats..." /></div>;
+  if (error) return <div className="p-6"><Alert message="Error" description={error} type="error" showIcon /></div>;
+
+  const statsCards = [
+    { label: 'Total Leads', value: dashboardData.leads.total, icon: <FileTextOutlined />, color: PURPLE_THEME.primary, bg: PURPLE_THEME.primaryBg },
+    { label: 'Active Freelancers', value: dashboardData.users.freelancers, icon: <TeamOutlined />, color: PURPLE_THEME.info, bg: '#e6f7ff' },
+    { label: 'Total Properties', value: dashboardData.properties.total, icon: <HomeOutlined />, color: PURPLE_THEME.success, bg: '#f6ffed' },
+    { label: 'Verified Developers', value: dashboardData.developers.verified, icon: <CheckCircleOutlined />, color: PURPLE_THEME.warning, bg: '#fff7e6' },
   ];
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <Title level={2} style={{ margin: 0, color: '#1f2937' }}>Dashboard Overview</Title>
-          <Text type="secondary">Welcome back, here's what's happening with your store today.</Text>
+          <Title level={2} style={{ margin: 0 }}> Dashboard  View</Title>
+          <Text type="secondary">Real-time overview of leads, properties, and users.</Text>
         </div>
-        <div className="flex gap-3 mt-4 md:mt-0">
-           <Select defaultValue="7d" style={{ width: 120 }} onChange={setTimeRange} size="large">
-              <Option value="7d">Last 7 Days</Option>
-              <Option value="30d">Last 30 Days</Option>
-              <Option value="90d">Last Quarter</Option>
-           </Select>
-           <Button type="primary" size="large" icon={<BellOutlined />} style={{ background: '#722ed1', borderColor: '#722ed1' }}>
-              Notifications
-           </Button>
-        </div>
+        {/* <Space>
+          <Button icon={<PlusOutlined />} type="primary" style={{ background: PURPLE_THEME.primary }}>New Property</Button>
+          <Button icon={<SettingOutlined />} />
+        </Space> */}
       </div>
 
-      {/* STATS CARDS */}
+      {/* STATS ROW */}
       <Row gutter={[16, 16]} className="mb-8">
-        {stats.map((stat, i) => (
+        {statsCards.map((stat, i) => (
           <Col xs={24} sm={12} lg={6} key={i}>
-            <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow rounded-xl h-full">
-              <div className="flex justify-between items-start">
-                <div>
-                  <Text type="secondary" className="block mb-1">{stat.label}</Text>
-                  <Title level={3} style={{ margin: 0 }}>{stat.value}</Title>
-                </div>
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center text-xl" style={{ backgroundColor: stat.bg, color: stat.color }}>
-                  {stat.icon}
-                </div>
-              </div>
-              <div className="mt-4 flex items-center">
-                <Tag color={stat.change > 0 ? 'success' : 'error'} icon={stat.change > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}>
-                  {Math.abs(stat.change)}%
-                </Tag>
-                <Text type="secondary" style={{ fontSize: '12px' }}>vs last period</Text>
-              </div>
+            <Card bordered={false} className="shadow-sm rounded-xl">
+              <Statistic 
+                title={<Text type="secondary">{stat.label}</Text>}
+                value={stat.value}
+                prefix={<span className="p-2 rounded-lg mr-2" style={{ backgroundColor: stat.bg, color: stat.color }}>{stat.icon}</span>}
+              />
+              <div className="mt-2"><Tag color="green"><ArrowUpOutlined /> 12%</Tag> <Text type="secondary" size="small">Growth</Text></div>
             </Card>
           </Col>
         ))}
       </Row>
 
-      {/* MAIN CHARTS SECTION */}
+      {/* CHARTS SECTION */}
       <Row gutter={[16, 16]} className="mb-8">
         <Col xs={24} lg={16}>
-          <Card bordered={false} className="shadow-sm rounded-xl h-full" title="Revenue & Orders Trend">
+          <Card bordered={false} className="shadow-sm rounded-xl" title="Lead Generation Timeline">
             <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={salesData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <AreaChart data={getTimelineData()}>
                 <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={PURPLE_THEME.primary} stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor={PURPLE_THEME.primary} stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af' }} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                />
-                <Legend verticalAlign="top" height={36} iconType="circle" />
-                <Area type="monotone" dataKey="sales" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" name="Revenue (AED)" />
-                <Area type="monotone" dataKey="orders" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorOrders)" name="Orders" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <YAxis axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Area type="monotone" dataKey="total" stroke={PURPLE_THEME.primary} fillOpacity={1} fill="url(#colorTotal)" strokeWidth={3} />
               </AreaChart>
             </ResponsiveContainer>
           </Card>
         </Col>
-        
+
         <Col xs={24} lg={8}>
-          <Card bordered={false} className="shadow-sm rounded-xl h-full" title="Sales by Category">
-            <div className="relative h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-              {/* Center Text */}
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                <Text type="secondary" className="block text-xs">Total</Text>
-                <Title level={4} style={{ margin: 0 }}>100%</Title>
-              </div>
-            </div>
-            
-            <div className="mt-4 space-y-3">
-              {categoryData.slice(0, 3).map((item, i) => (
-                <div key={i} className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-                    <Text className="text-gray-600">{item.name}</Text>
-                  </div>
-                  <Text strong>{item.value}%</Text>
-                </div>
-              ))}
-            </div>
+          <Card bordered={false} className="shadow-sm rounded-xl" title="Leads by Category">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie data={getLeadTypePieData()} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                  {getLeadTypePieData().map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                </Pie>
+                <Tooltip />
+                <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+              </PieChart>
+            </ResponsiveContainer>
           </Card>
         </Col>
       </Row>
 
-      {/* BOTTOM SECTION */}
+      {/* LOWER SECTION */}
       <Row gutter={[16, 16]}>
-        <Col xs={24} md={12} lg={8}>
-           <Card bordered={false} className="shadow-sm rounded-xl h-full" title="Quick Actions">
-              <div className="grid grid-cols-2 gap-4">
-                 {[
-                    { label: 'Add Product', icon: <PlusOutlined />, color: '#52c41a', bg: '#f6ffed' },
-                    { label: 'Post Job', icon: <FileTextOutlined />, color: '#722ed1', bg: '#f9f0ff' },
-                    { label: 'Add User', icon: <UserAddOutlined />, color: '#1890ff', bg: '#e6f7ff' },
-                    { label: 'Settings', icon: <SettingOutlined />, color: '#faad14', bg: '#fff7e6' },
-                 ].map((action, i) => (
-                    <div key={i} className="flex flex-col items-center justify-center p-4 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors border border-dashed border-gray-200">
-                       <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl mb-2" style={{ backgroundColor: action.bg, color: action.color }}>
-                          {action.icon}
-                       </div>
-                       <Text strong>{action.label}</Text>
-                    </div>
-                 ))}
-              </div>
-           </Card>
+        {/* User Stats Card */}
+        <Col xs={24} md={8}>
+          <Card title="User Overview" bordered={false} className="shadow-sm rounded-xl h-full">
+            <List itemLayout="horizontal">
+              <List.Item extra={<Text strong>{dashboardData.users.freelancers}</Text>}>
+                <List.Item.Meta avatar={<Avatar icon={<TeamOutlined />} style={{backgroundColor: '#e6f7ff', color: '#1890ff'}} />} title="Freelancers" />
+              </List.Item>
+              <List.Item extra={<Text strong style={{color: '#faad14'}}>{dashboardData.users.pendingFreelancers}</Text>}>
+                <List.Item.Meta avatar={<Avatar icon={<ClockCircleOutlined />} style={{backgroundColor: '#fff7e6', color: '#faad14'}} />} title="Pending Freelancers" />
+              </List.Item>
+              <List.Item extra={<Text strong>{dashboardData.users.vendors}</Text>}>
+                <List.Item.Meta avatar={<Avatar icon={<DeploymentUnitOutlined />} style={{backgroundColor: '#f9f0ff', color: '#722ed1'}} />} title="Vendors" />
+              </List.Item>
+            </List>
+          </Card>
         </Col>
 
-        <Col xs={24} md={12} lg={8}>
-           <Card bordered={false} className="shadow-sm rounded-xl h-full" title="Freelancer Activity">
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={freelancerStats}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} />
-                  <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px' }} />
-                  <Bar dataKey="active" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={20} />
-                  <Bar dataKey="completed" fill="#e5e7eb" radius={[4, 4, 0, 0]} barSize={20} />
-                </BarChart>
-              </ResponsiveContainer>
-           </Card>
+        {/* Lead Status Bar Chart */}
+        <Col xs={24} md={8}>
+          <Card title="Lead Type Distribution" bordered={false} className="shadow-sm rounded-xl h-full">
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={getLeadStatusBarData()} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 10}} axisLine={false} />
+                <Tooltip cursor={{fill: 'transparent'}} />
+                <Bar dataKey="count" fill={PURPLE_THEME.primary} radius={[0, 4, 4, 0]} barSize={15} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
         </Col>
 
-        <Col xs={24} lg={8}>
-           <Card bordered={false} className="shadow-sm rounded-xl h-full" title="Recent Activity">
-              <List
-                itemLayout="horizontal"
-                dataSource={recentActivity}
-                renderItem={(item) => (
-                  <List.Item className="border-b-0 py-3">
-                    <List.Item.Meta
-                      avatar={
-                        <Avatar style={{ backgroundColor: '#f0f2f5', color: '#1f2937' }}>
-                          {item.user.charAt(0)}
-                        </Avatar>
-                      }
-                      title={<Text strong>{item.title}</Text>}
-                      description={
-                        <div className="flex justify-between items-center text-xs">
-                           <Text type="secondary">{item.user}</Text>
-                           <Text type="secondary">{item.time}</Text>
-                        </div>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
-           </Card>
+        {/* Property Status Grid */}
+        <Col xs={24} md={8}>
+          <Card title="Property Inventory" bordered={false} className="shadow-sm rounded-xl h-full">
+            <Row gutter={[12, 12]}>
+              <Col span={12}>
+                <Card size="small" className="bg-gray-50 text-center">
+                  <Statistic title="Available" value={dashboardData.properties.available} valueStyle={{color: PURPLE_THEME.success, fontSize: '18px'}} />
+                </Card>
+              </Col>
+              <Col span={12}>
+                <Card size="small" className="bg-gray-50 text-center">
+                  <Statistic title="Featured" value={dashboardData.properties.featured} valueStyle={{color: PURPLE_THEME.info, fontSize: '18px'}} />
+                </Card>
+              </Col>
+              <Col span={12}>
+                <Card size="small" className="bg-gray-50 text-center">
+                  <Statistic title="Not Ready" value={dashboardData.properties.notReady} valueStyle={{color: PURPLE_THEME.error, fontSize: '18px'}} />
+                </Card>
+              </Col>
+              <Col span={12}>
+                <Card size="small" className="bg-gray-50 text-center">
+                  <Statistic title="Verified Devs" value={dashboardData.developers.verified} valueStyle={{color: PURPLE_THEME.warning, fontSize: '18px'}} />
+                </Card>
+              </Col>
+            </Row>
+          </Card>
         </Col>
       </Row>
-
     </div>
   );
 };

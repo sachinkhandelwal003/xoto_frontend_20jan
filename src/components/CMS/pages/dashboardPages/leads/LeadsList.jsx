@@ -1580,7 +1580,7 @@ const QuotationHeader = ({ title, statusTag, date }) => (
           renderItem={item => (
             <List.Item
               actions={[
-                <Button type="link" size="small" onClick={() => assignSupervisor(item._id)}>Assign</Button>
+                <Button type="link" size="small" className='border' onClick={() => assignSupervisor(item._id)}>Assign</Button>
               ]}
             >
               <List.Item.Meta

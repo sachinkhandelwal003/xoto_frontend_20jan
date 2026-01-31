@@ -38,6 +38,7 @@ const Topbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((s) => s.auth);
+const [notifOpen, setNotifOpen] = useState(false);
 
   const colors = getRoleColors(user?.role?.code);
 
@@ -191,11 +192,12 @@ const Topbar = () => {
 
       <div className="p-2 border-t text-center">
         <Button
-          type="link"
-          size="small"
-          onClick={() =>
-            navigate(`/dashboard/${roleSlug}/notifications/view`)
-          }
+        type="link"
+  size="small"
+  onClick={() => {
+    setNotifOpen(false);   // 👈 CLOSE DROPDOWN
+    navigate(`/dashboard/${roleSlug}/notifications/view`);
+  }}
         >
           View all notifications
         </Button>
@@ -234,9 +236,11 @@ const Topbar = () => {
 
           {/* 🔔 Notifications */}
           <Dropdown
-            dropdownRender={() => notificationDropdown}
-            trigger={["click"]}
-            placement="bottomRight"
+           open={notifOpen}
+  onOpenChange={setNotifOpen}
+  dropdownRender={() => notificationDropdown}
+  trigger={["click"]}
+  placement="bottomRight"
           >
             <Badge count={unreadCount} size="small">
               <button className="text-xl text-gray-500 hover:text-purple-600">
