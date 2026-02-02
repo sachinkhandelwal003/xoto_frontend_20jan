@@ -36,6 +36,16 @@ const CUSTOM_ROLE_LINKS = {
       ],
     }
   ],
+   "12": [
+     {
+      title: "Projects", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects/view",
+      submenus: [
+        { title: "Manage Projects", path: "/dashboard/{roleSlug}/projects/manage" },
+         
+
+      ],
+    }
+  ],
   "4": [
 
   ],

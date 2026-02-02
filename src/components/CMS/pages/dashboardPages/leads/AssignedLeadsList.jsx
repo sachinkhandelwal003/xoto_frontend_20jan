@@ -167,6 +167,20 @@ const discountPercent = Form.useWatch('discount_percent', finalQuotationForm) ||
         customer_rejected: { label: 'Customer Rejected', color: 'error', bgColor: '#fff1f0', textColor: '#cf1322', icon: <CloseOutlined /> }
     };
 
+    const leadStatusConfig = {
+  new: { color: 'blue', label: 'New' },
+  in_progress: { color: 'orange', label: 'In Progress' },
+  deal: { color: 'green', label: 'Deal' },
+  cancelled: { color: 'red', label: 'Cancelled' },
+};
+
+const customerResponseConfig = {
+  pending: { color: 'gold', label: 'Pending' },
+  accepted: { color: 'green', label: 'Accepted' },
+  rejected: { color: 'red', label: 'Rejected' },
+  no_response: { color: 'default', label: 'No Response' },
+};
+
     const supervisorProgressConfig = {
         none: { label: 'Not Started', color: 'default', bgColor: '#f5f5f5', textColor: '#8c8c8c' },
         request_sent: { label: 'Request Sent', color: 'purple', bgColor: '#f9f0ff', textColor: '#722ed1' },
@@ -538,23 +552,38 @@ useEffect(() => {
     showErrorAlert("Error", "Failed to create final quotation");
   }
 };
-    const handleTabChange = (tabKey) => {
-        let filterParams = { status: 'assigned' };
-        if (tabKey === 'assigned') filterParams.supervisor_progress = 'none';
-        else if (tabKey === 'request_sent') filterParams.supervisor_progress = 'request_sent';
-        else if (tabKey === 'quotations_received') filterParams.supervisor_progress = 'request_completed';
-        else if (tabKey === 'final_created') filterParams.status = 'final_created';
-        
-        setFilters(filterParams);
-        fetchLeads(1, pagination.itemsPerPage, filterParams);
-    };
+const handleTabChange = (tabKey) => {
+    let filterParams = { status: 'assigned' };
 
-    const getActiveTabKey = () => {
-        if (filters.status === 'final_created') return 'final_created';
-        if (filters.supervisor_progress === 'request_completed') return 'quotations_received';
-        if (filters.supervisor_progress === 'request_sent') return 'request_sent';
-        return 'assigned';
-    };
+    if (tabKey === 'assigned') {
+        filterParams.supervisor_progress = 'none';
+    } 
+    else if (tabKey === 'request_sent') {
+        filterParams.supervisor_progress = 'request_sent';
+    } 
+    else if (tabKey === 'quotations_received') {
+        filterParams.supervisor_progress = 'request_completed';
+    } 
+    else if (tabKey === 'final_created') {
+        filterParams.status = 'final_created';
+    }
+    else if (tabKey === 'submitted') {
+        filterParams.status = 'supervisor_submitted';
+    }
+
+    setFilters(filterParams);
+    fetchLeads(1, pagination.itemsPerPage, filterParams);
+};
+
+
+   const getActiveTabKey = () => {
+    if (filters.status === 'supervisor_submitted') return 'submitted';
+    if (filters.status === 'final_created') return 'final_created';
+    if (filters.supervisor_progress === 'request_completed') return 'quotations_received';
+    if (filters.supervisor_progress === 'request_sent') return 'request_sent';
+    return 'assigned';
+};
+
 
     const handleViewFinalQuotation = (lead) => {
         setSelectedLead(lead);
@@ -594,148 +623,141 @@ useEffect(() => {
         { title: 'Total', dataIndex: 'total', width: 100, align: 'right', render: (t) => <span style={{ color: PURPLE_THEME.success, fontWeight: 'bold' }}>{t?.toLocaleString()}</span> },
     ];
 
-    // Columns for different tabs
-    const getColumnsForTab = (activeTab) => {
-        const baseColumns = [
-            {
-                title: 'Customer Info',
-                width: 250,
-                render: (_, r) => {
-                    const customerName = getCustomerName(r.customer);
-                    const customerEmail = r.customer?.email || r.customer_email || 'N/A';
-                    const customerMobile = r.customer?.mobile || r.customer_mobile;
-                    
-                    return (
-                        <div className="flex items-center gap-3">
-                            <Avatar size={40} icon={<UserOutlined />} style={{ background: PURPLE_THEME.primaryBg, color: PURPLE_THEME.primary }} />
-                            <div>
-                                <div className="font-semibold">{customerName}</div>
-                                <div className="text-xs text-gray-500">{customerEmail}</div>
-                                <div className="text-xs text-gray-400">{formatMobileNumber(customerMobile)}</div>
-                            </div>
-                        </div>
-                    );
-                }
-            },
-            {
-                title: 'Service',
-                render: (_, r) => (
+const getColumnsForTab = (activeTab) => {
+    const columns = [
+        {
+            title: 'Customer Info',
+            width: 250,
+            render: (_, r) => (
+                <div className="flex items-center gap-3">
+                    <Avatar size={40} icon={<UserOutlined />} />
                     <div>
-                        <Tag color="purple">{r.service_type}</Tag>
-                        <div className="text-sm font-medium mt-1">{r.subcategory?.label}</div>
-                        <div className="text-xs text-gray-500">{r.type?.label}</div>
-                    </div>
-                )
-            },
-            {
-                title: 'Area',
-                width: 120,
-                render: (_, r) => (
-                     <div>
-                        <div className="font-bold text-gray-700">{r.area_sqft} <span className="text-xs font-normal">sq.ft</span></div>
-                     </div>
-                )
-            },
-            {
-                title: 'Progress',
-                render: (_, r) => {
-                    const cfg = supervisorProgressConfig[r.supervisor_progress] || supervisorProgressConfig.none;
-                    return <Tag color={cfg.color}>{cfg.label}</Tag>;
-                }
-            },
-            {
-                title: 'Quotations',
-                width: 100,
-                render: (_, r) => (
-                    <Badge 
-                        count={r.freelancer_quotations?.length || 0} 
-                        style={{ backgroundColor: r.freelancer_quotations?.length > 0 ? PURPLE_THEME.success : PURPLE_THEME.gray }}
-                    />
-                )
-            }
-        ];
-
-        if (activeTab === 'final_created') {
-            return [
-                ...baseColumns,
-                {
-                    title: 'Final Quotation',
-                    width: 200,
-                    render: (_, r) => (
-                        <div>
-                            <div className="font-bold text-purple-700">
-                                {formatCurrency(r.final_quotation?.price || 0)}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                                Created: {formatDate(r.final_quotation?.createdAt)}
-                            </div>
+                        <div className="font-semibold">{getCustomerName(r.customer)}</div>
+                        <div className="text-xs text-gray-500">{r.customer?.email}</div>
+                        <div className="text-xs text-gray-400">
+                            {formatMobileNumber(r.customer?.mobile)}
                         </div>
-                    )
-                },
-                {
-                    title: 'Status',
-                    width: 120,
-                    render: (_, r) => {
-                        if (r.final_quotation?.superadmin_approved) {
-                            return <Tag color="success" icon={<CheckCircleOutlined />}>Approved</Tag>;
-                        }
-                        return <Tag color="processing">Pending Approval</Tag>;
-                    }
-                },
-                {
-                    title: 'Actions',
-                    fixed: 'right',
-                    width: 150,
-                    render: (_, r) => (
-                        <Space>
-                            <Tooltip title="View Full Details">
-                                <Button icon={<EyeOutlined />} onClick={() => { setSelectedLead(r); setDrawerVisible(true); }} />
-                            </Tooltip>
-                            <Tooltip title="View Final Quotation">
-                                <Button 
-                                    type="primary" 
-                                    size="small" 
-                                    style={{ background: PURPLE_THEME.primary }}
-                                    onClick={() => handleViewFinalQuotation(r)}
-                                >
-                                    View Final
-                                </Button>
-                            </Tooltip>
-                        </Space>
-                    )
-                }
-            ];
+                    </div>
+                </div>
+            )
+        },
+        {
+            title: 'Service',
+            render: (_, r) => (
+                <>
+                    <Tag color="purple">{r.service_type}</Tag>
+                    <div className="text-sm">{r.subcategory?.label}</div>
+                </>
+            )
+        },
+        {
+            title: 'Area',
+            width: 100,
+            render: (_, r) => <b>{r.area_sqft} sq.ft</b>
         }
+    ];
 
-        // For other tabs
-        return [
-            ...baseColumns,
-            {
-                title: 'Actions',
-                fixed: 'right',
-                width: 200,
-                render: (_, r) => (
-                    <Space>
-                        <Tooltip title="View Full Details">
-                            <Button icon={<EyeOutlined />} onClick={() => { setSelectedLead(r); setDrawerVisible(true); }} />
-                        </Tooltip>
-                        
-                        {r.status === 'assigned' && r.supervisor_progress === 'none' && (
-                            <Button type="primary" size="small" style={{ background: PURPLE_THEME.primary }} onClick={() => openFreelancerDrawer(r)}>
-                                Send to Freelancer
-                            </Button>
-                        )}
-                        
-                        {r.supervisor_progress === 'request_completed' && (
-                            <Button type="primary" size="small" style={{ background: PURPLE_THEME.success, borderColor: PURPLE_THEME.success }} onClick={() => openReviewModal(r)}>
-                                Review ({r.freelancer_quotations?.length || 0})
-                            </Button>
-                        )}
-                    </Space>
-                )
+    /* ✅ PROGRESS — hide for submitted */
+    if (activeTab !== 'submitted') {
+        columns.push({
+            title: 'Progress',
+            render: (_, r) => {
+                const cfg =
+                    supervisorProgressConfig[r.supervisor_progress] ||
+                    supervisorProgressConfig.none;
+                return <Tag color={cfg.color}>{cfg.label}</Tag>;
             }
-        ];
-    };
+        });
+    }
+
+    /* ✅ STATUS — show ONLY for submitted */
+    if (activeTab === 'submitted') {
+        columns.push({
+            title: 'Status',
+            render: (_, r) => (
+                <Space direction="vertical" size={0}>
+                    <Tag color="blue">
+                        Main: {r.status}
+                    </Tag>
+
+                    <Tag
+                        color={
+                            r.customer_response?.status === 'accepted'
+                                ? 'green'
+                                : r.customer_response?.status === 'rejected'
+                                ? 'red'
+                                : 'orange'
+                        }
+                    >
+                        Customer: {r.customer_response?.status || 'Pending'}
+                    </Tag>
+                </Space>
+            )
+        });
+    }
+
+    /* ✅ QUOTATIONS — hide for submitted */
+    if (activeTab !== 'submitted') {
+        columns.push({
+            title: 'Quotations',
+            width: 100,
+            render: (_, r) => (
+                <Badge count={r.freelancer_quotations?.length || 0} />
+            )
+        });
+    }
+
+    /* ✅ FINAL CREATED EXTRA COLUMN */
+    if (activeTab === 'final_created') {
+        columns.push({
+            title: 'Final Amount',
+            render: (_, r) => (
+                <b className="text-purple-700">
+                    {formatCurrency(r.final_quotation?.price)}
+                </b>
+            )
+        });
+    }
+
+    /* ✅ ACTIONS */
+    columns.push({
+        title: 'Actions',
+        fixed: 'right',
+        width: 180,
+        render: (_, r) => (
+            <Space>
+                <Button
+                    icon={<EyeOutlined />}
+                    onClick={() => {
+                        setSelectedLead(r);
+                        setDrawerVisible(true);
+                    }}
+                />
+
+                {activeTab === 'assigned' && (
+                    <Button type="primary" onClick={() => openFreelancerDrawer(r)}>
+                        Send
+                    </Button>
+                )}
+
+                {activeTab === 'quotations_received' && (
+                    <Button type="primary" onClick={() => openReviewModal(r)}>
+                        Review
+                    </Button>
+                )}
+
+                {(activeTab === 'submitted' || activeTab === 'final_created') && (
+                    <Button onClick={() => handleViewFinalQuotation(r)}>
+                        View Final
+                    </Button>
+                )}
+                   
+            </Space>
+        )
+    });
+
+    return columns;
+};
 
     const DetailCard = ({ title, icon, children, extra }) => (
         <Card 
@@ -805,6 +827,14 @@ useEffect(() => {
                         <Tabs.TabPane tab="Request Sent" key="request_sent" />
                         <Tabs.TabPane tab={<Badge count={leads.filter(l => l.supervisor_progress === 'request_completed').length} offset={[10, 0]}>Quotations Received</Badge>} key="quotations_received" />
                         <Tabs.TabPane tab={<Badge count={leads.filter(l => l.status === 'final_created').length} offset={[10, 0]}>Final Created</Badge>} key="final_created" />
+<Tabs.TabPane 
+  tab={
+    <Badge count={leads.filter(l => l.status === 'supervisor_submitted').length} offset={[10, 0]}>
+      Submitted
+    </Badge>
+  } 
+  key="submitted" 
+/>
                     </Tabs>
                 </Card>
 
@@ -825,28 +855,44 @@ useEffect(() => {
             {/* --- DRAWER: FULL DETAILS (LEFT SIDE) --- */}
             <Drawer 
                 title={<span className="text-purple-700"><FileTextOutlined /> Lead Full Information</span>} 
-                width={1100} 
+                width={1300} 
                 onClose={() => setDrawerVisible(false)} 
                 open={drawerVisible}
             >
                 {selectedLead && (
                     <div className="p-2">
                         {/* Lead Status Header */}
-                        <div className="flex justify-between items-center mb-6 p-5 bg-purple-50 rounded-xl border border-purple-100 shadow-sm">
-                            <div>
-                                <h3 className="text-xl font-bold text-purple-800 m-0">
-                                    {selectedLead.service_type} - {selectedLead.subcategory?.label}
-                                </h3>
-                            </div>
-                            {/* <div className="flex flex-col items-end gap-2">
-                                <Tag color={statusConfig[selectedLead.status]?.color} style={{ fontSize: '14px', padding: '4px 12px' }}>
-                                    {statusConfig[selectedLead.status]?.icon} {statusConfig[selectedLead.status]?.label}
-                                </Tag>
-                                <Tag color={supervisorProgressConfig[selectedLead.supervisor_progress]?.color}>
-                                    Supervisor: {supervisorProgressConfig[selectedLead.supervisor_progress]?.label}
-                                </Tag>
-                            </div> */}
-                        </div>
+                    <div className="flex justify-between items-center mb-6 p-5 bg-purple-50 rounded-xl border border-purple-100 shadow-sm">
+  <div>
+    <h3 className="text-xl font-bold text-purple-800 m-0">
+      {selectedLead.service_type} - {selectedLead.subcategory?.label}
+    </h3>
+  </div>
+
+  <div className="flex flex-col items-end gap-2">
+    <Tag
+      color={leadStatusConfig[selectedLead.status]?.color}
+      style={{ fontSize: '14px', padding: '4px 12px' }}
+    >
+      Main Status: {leadStatusConfig[selectedLead.status]?.label}
+    </Tag>
+
+    <Tag
+      color={customerResponseConfig[selectedLead.customer_response?.status]?.color}
+      style={{ fontSize: '14px', padding: '4px 12px' }}
+    >
+      Customer Response: {customerResponseConfig[selectedLead.customer_response?.status]?.label}
+    </Tag>
+
+    {/* <Tag
+      color={supervisorProgressConfig[selectedLead.supervisor_progress]?.color}
+      style={{ fontSize: '14px', padding: '4px 12px' }}
+    >
+      Supervisor: {supervisorProgressConfig[selectedLead.supervisor_progress]?.label}
+    </Tag> */}
+  </div>
+</div>
+
 
                         <Row gutter={16}>
                             <Col span={14}>
@@ -1288,7 +1334,7 @@ useEffect(() => {
                     onFinish={handleCreateFinalQuotation}
                     initialValues={{
                         discount_percent: 0,
-                        scope_of_work: selectedLead?.description || ""
+                        scope_of_work: selectedLead?.scope_of_work || ""
                     }}
                 >
                     {/* INVOICE HEADER */}
@@ -1574,6 +1620,7 @@ useEffect(() => {
                 width={900}
                 style={{ top: 20 }}
             >
+                <>
                 {selectedLead?.final_quotation ? (
                     <div className="space-y-6">
                         {/* Quotation Header */}
@@ -1714,28 +1761,60 @@ useEffect(() => {
                             </Timeline>
                         </Card> */}
 
-                        {/* Action Buttons */}
-                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-                            <Button 
-                                icon={<DownloadOutlined />}
-                                onClick={handleDownloadFinalQuotation}
-                            >
-                                Download
-                            </Button>
-                            <Button 
-                                icon={<PrinterOutlined />}
-                                onClick={handlePrintFinalQuotation}
-                            >
-                                Print
-                            </Button>
-                            <Button 
-                                type="primary"
-                                style={{ background: PURPLE_THEME.primary }}
-                                onClick={() => setViewFinalQuotationModalVisible(false)}
-                            >
-                                Close
-                            </Button>
-                        </div>
+                     
+                    </div>
+                ) : (
+                    <Alert 
+                        message="No Final Quotation Found"
+                        description="This estimate doesn't have a final quotation yet."
+                        type="warning"
+                        showIcon
+                    />
+                )}
+                </>
+                
+                 {selectedLead?.admin_final_quotation ? (
+                    <div className="space-y-6">
+                  
+
+                        {/* Final Quotation Details */}
+                        <Card title="Admin quotaion details" className="mb-4">
+                            <Row gutter={16}>
+                                
+                                <Col span={14}>
+                                    <div className="bg-purple-50 p-4 rounded border border-purple-100">
+                                        <div className="space-y-3">
+                                              <div className="flex justify-between">
+  <span className="font-medium">Margin on Supervisor Quotation:</span>
+  <span className="font-semibold">
+    {selectedLead?.admin_final_quotation?.margin_percent}% (
+    {formatCurrency(selectedLead?.admin_final_quotation?.margin_amount)})
+  </span>
+</div>
+
+                                            <div className="flex justify-between">
+                                                <span className="font-medium">Price:</span>
+                                                <span className="font-semibold">{formatCurrency(selectedLead.admin_final_quotation.price)}</span>
+                                            </div>
+                                            
+                                            
+                                            
+                                            <Divider style={{ margin: '8px 0' }} />
+                                            
+                                            <div className="flex justify-between text-lg font-bold text-purple-800">
+                                                <span>Grand Total:</span>
+                                                <span>{formatCurrency(selectedLead.admin_final_quotation.grand_total || selectedLead.final_quotation.price)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Col>
+                            </Row>
+                        </Card>
+
+                     
+
+
+                        
                     </div>
                 ) : (
                     <Alert 
@@ -1746,6 +1825,7 @@ useEffect(() => {
                     />
                 )}
             </Modal>
+            
         </div>
     );
 };

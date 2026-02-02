@@ -71,6 +71,8 @@ import ReceivedQuotation from "./pages/dashboardPages/leads/quotation/Customer/R
 import CustomerSubmittedQuotation from "./pages/dashboardPages/leads/quotation/Customer/CustomerSubmittedQuotation";
 import EmailSetting from "./pages/settings/EmailSetting";
 import Notifications from "./pages/dashboardPages/notification/Notifications";
+import ManageProjectsSupervisor from "./pages/dashboardPages/managefreelancer/freelancer/Projects/ManageProjectsSupervisor";
+import ManageProjectFreelancer from "./pages/dashboardPages/managefreelancer/freelancer/Projects/ManageProjectFreelancer";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
 const roleSlugMap = {
   0: "superadmin",
@@ -207,6 +209,8 @@ const CmsRoutes = () => {
       />
       <Route path="quotation/submitted" element={<SubmittedQuotation />} />
       <Route path="quotation/approved" element={<ApprovedQuotation />} />
+      <Route path="projects/manage" element={<ManageProjectsSupervisor />} />
+      <Route path="projects/manage/:projectId" element={<ManageProjectFreelancer />} />
 
       <Route path="myprofile" element={<MyProfile />} />
             <Route path="products" element={<ProductReview />} />
@@ -214,6 +218,7 @@ const CmsRoutes = () => {
       <Route path="tags/add" element={<AddTags />} />
  {/* <Route path="/create" element={<Blog />} /> */}
       <Route path="products/view" element={<ProductProfile />} />
+             <Route path="products/edit/:id" element={<UpdateProduct />} />
              <Route path="products/edit/:id" element={<UpdateProduct />} />
 
        <Route path="product/inventory/:id" element={<Inventory />} />
