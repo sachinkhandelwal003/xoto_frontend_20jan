@@ -263,22 +263,11 @@ const Freelancers = () => {
     [activeTab, token, perm.canView]
   );
 
-  // Initial Fetch of Stats
-  const fetchStats = useCallback(async () => {
-    try {
-      const allRes = await apiService.get("/freelancer", { limit: 1 });
-      if (allRes.success && allRes.stats) {
-        setStats(allRes.stats);
-      }
-    } catch (err) {
-      console.error("Error fetching stats:", err);
-    }
-  }, []);
+  
 
   useEffect(() => {
     fetchFreelancers(pagination.currentPage, pagination.itemsPerPage);
-    fetchStats();
-  }, [activeTab, fetchFreelancers, fetchStats]);
+  }, [activeTab, fetchFreelancers]);
 
   const handleTabChange = (key) => {
     setActiveTab(key);
@@ -291,7 +280,6 @@ const Freelancers = () => {
 
   const handleRefresh = () => {
     fetchFreelancers(pagination.currentPage, pagination.itemsPerPage);
-    fetchStats();
   };
 
   const handleApprove = async (id) => {
@@ -348,7 +336,7 @@ const Freelancers = () => {
   };
 
   const handleViewDetails = (freelancer) => {
-    navigate(`/dashboard/${roleSlug}/freelancer?freelancerId=${freelancer._id}`);
+    navigate(`/dashboard/${roleSlug}/freelancer/view?freelancerId=${freelancer._id}`);
   };
 
   const handleViewRateCard = (record) => {

@@ -140,52 +140,146 @@ export default function Sixth() {
   };
 
   // --- SUBMIT ---
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
 
-    if (!validateForm()) {
-        api.error({ message: "Validation Error", description: "Please fill all fields correctly." });
-        return;
-    }
+  //   if (!validateForm()) {
+  //       api.error({ message: "Validation Error", description: "Please fill all fields correctly." });
+  //       return;
+  //   }
 
-    // --- FIX 3: Start Loading ---
-    setLoading(true);
+  //   // --- FIX 3: Start Loading ---
+  //   setLoading(true);
 
-    const fullMobile = formData.countryCode + formData.phone;
+  //   const fullMobile = formData.countryCode + formData.phone;
 
-    const payload = {
-      type: "mortgage",
-      name: { first_name: formData.firstName, last_name: formData.lastName },
-      email: formData.email.toLowerCase().trim(),
-      company: "Individual",
-      mobile: { country_code: formData.countryCode, number: formData.phone },
-      stakeholder_type: "Investor",
+  //   const payload = {
+  //     type: "mortgage",
+  //     name: { first_name: formData.firstName, last_name: formData.lastName },
+  //     email: formData.email.toLowerCase().trim(),
+  //     company: "Individual",
+  //     mobile: { country_code: formData.countryCode, number: formData.phone },
+  //     stakeholder_type: "Investor",
       
-      // Sending City in Message as per original structure requirement
-      message: `Looking For: ${formData.lookingFor}, City: ${formData.city}, Country: ${formData.location_country}, Budget: ${formData.budget}`,
-    };
+  //     // Sending City in Message as per original structure requirement
+  //     message: `Looking For: ${formData.lookingFor}, City: ${formData.city}, Country: ${formData.location_country}, Budget: ${formData.budget}`,
+  //   };
 
-    try {
-      const res = await apiService.post("/property/lead", payload);
-      if (res?.success || res?.status === 200) {
-        api.success({ message: "Success", description: "Inquiry Submitted!" });
-        setFormData({ firstName: "", lastName: "", email: "", countryCode: "971", phone: "", lookingFor: "", budget: "", location_country: null, state: null, city: null });
-        setErrors({});
-      }
-    } catch (err) {
-      const errorData = err.response?.data;
-      let errorMessage = "Server Error";
-      if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
-        errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
-      } else if (errorData?.message) {
-        errorMessage = errorData.message;
-      }
-      api.error({ message: "Failed", description: errorMessage });
-    } finally {
-      // --- FIX 4: Stop Loading ---
-      setLoading(false);
-    }
+  //   try {
+  //     const res = await apiService.post("/property/lead", payload);
+  //     if (res?.success || res?.status === 200) {
+  //       api.success({ message: "Success", description: "Inquiry Submitted!" });
+  //       setFormData({ firstName: "", lastName: "", email: "", countryCode: "971", phone: "", lookingFor: "", budget: "", location_country: null, state: null, city: null });
+  //       setErrors({});
+  //     }
+  //   } catch (err) {
+  //     const errorData = err.response?.data;
+  //     let errorMessage = "Server Error";
+  //     if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
+  //       errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
+  //     } else if (errorData?.message) {
+  //       errorMessage = errorData.message;
+  //     }
+  //     api.error({ message: "Failed", description: errorMessage });
+  //   } finally {
+  //     // --- FIX 4: Stop Loading ---
+  //     setLoading(false);
+  //   }
+  // };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  // 1️⃣ Validation
+  if (!validateForm()) {
+    api.error({
+      message: "Validation Error",
+      description: "Please fill all fields correctly.",
+    });
+    return;
+  }
+
+  setLoading(true);
+
+  // 2️⃣ Inquiry Payload
+  const payload = {
+    type: "mortgage",
+    name: {
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+    },
+    email: formData.email.toLowerCase().trim(),
+    company: "Individual",
+    mobile: {
+      country_code: formData.countryCode,
+      number: formData.phone,
+    },
+    stakeholder_type: "Investor",
+    message: `Looking For: ${formData.lookingFor}, City: ${formData.city}, Country: ${formData.location_country}, Budget: ${formData.budget}`,
   };
+
+  try {
+    // 3️⃣ Create Inquiry
+    const res = await apiService.post("/property/lead", payload);
+
+    if (res?.success || res?.status === 200) {
+      // 4️⃣ Notification Payload (SENDER MUST BE STRING)
+      const notificationPayload = {
+        sender: payload.email, // ✅ string only
+        receiverType: "SuperAdmin",
+        senderType: "user",
+        notificationType: "NEW_INQUIRY",
+        title: "Mortgage Inquiry",
+        message: "A user has submitted a new mortgage inquiry.",
+      };
+
+      // 5️⃣ Create Notification
+      await apiService.post(
+        "/notifications/create-notification",
+        notificationPayload
+      );
+
+      // 6️⃣ Success UI
+      api.success({
+        message: "Success",
+        description: "Inquiry Submitted!",
+      });
+
+      // 7️⃣ Reset Form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        countryCode: "971",
+        phone: "",
+        lookingFor: "",
+        budget: "",
+        location_country: null,
+        state: null,
+        city: null,
+      });
+
+      setErrors({});
+    }
+  } catch (err) {
+    // 8️⃣ Error Handling
+    const errorData = err.response?.data;
+    let errorMessage = "Server Error";
+
+    if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
+      errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
+    } else if (errorData?.message) {
+      errorMessage = errorData.message;
+    }
+
+    api.error({
+      message: "Failed",
+      description: errorMessage,
+    });
+  } finally {
+    // 9️⃣ Stop Loader
+    setLoading(false);
+  }
+};
 
   return (
     <>

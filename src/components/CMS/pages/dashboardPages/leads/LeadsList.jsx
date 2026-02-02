@@ -33,7 +33,8 @@ import {
   Upload,
   message,
   Popconfirm,
-  Alert
+  Alert,
+  InputNumber
 } from 'antd';
 
 import {
@@ -70,7 +71,8 @@ import {
   SafetyOutlined,
   FileImageOutlined,
   AppstoreOutlined,
-  BarsOutlined
+  BarsOutlined,
+  PercentageOutlined
 } from '@ant-design/icons';
 
 import { showSuccessAlert, showErrorAlert, showConfirmDialog } from '../../../../../manageApi/utils/sweetAlert';
@@ -105,13 +107,23 @@ const LeadsList = () => {
   const [supervisorsLoading, setSupervisorsLoading] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
-
+const [adminQuotationViewModal, setAdminQuotationViewModal] = useState({
+  visible: false,
+  data: null
+});
   // ✅ Prevent double call in React strict mode
   const dataFetchedRef = useRef(false);
 
   // Search & Modals
   const [viewDetailsModal, setViewDetailsModal] = useState({ visible: false, data: null });
-  const [quotationModal, setQuotationModal] = useState({ visible: false, data: null, estimateStatus: null });
+  const [quotationModal, setQuotationModal] = useState({ 
+    visible: false, 
+    data: null, 
+    estimateStatus: null,
+    // Add margin editing state
+    marginPercent: 0,
+    isMarginEditing: false
+  });
   const [imageViewer, setImageViewer] = useState({ visible: false, images: [], currentIndex: 0 });
   const [editQuotationModal, setEditQuotationModal] = useState({ visible: false, data: null });
   const [answersModal, setAnswersModal] = useState({ visible: false, data: null });
@@ -149,10 +161,6 @@ const LeadsList = () => {
     assigned: { label: 'Assigned', color: 'processing', icon: <TeamOutlined />, bgColor: '#e6f7ff', textColor: '#1890ff' },
     final_created: { label: 'Final Created', color: 'purple', icon: <FileTextOutlined />, bgColor: '#f9f0ff', textColor: '#722ed1' },
     superadmin_approved: { label: 'Approved & Sent', color: 'success', icon: <CheckOutlined />, bgColor: '#f6ffed', textColor: '#52c41a' },
-    // customer_accepted: { label: 'Customer Accepted', color: 'green', icon: <CheckCircleOutlined />, bgColor: '#f6ffed', textColor: '#52c41a' },
-    // customer_rejected: { label: 'Customer Rejected', color: 'red', icon: <CloseCircleOutlined />, bgColor: '#fff1f0', textColor: '#ff4d4f' },
-    // cancelled: { label: 'Cancelled', color: 'default', icon: <CloseCircleOutlined />, bgColor: '#fafafa', textColor: '#d9d9d9' },
-    // deal: { label: 'Deal Closed', color: 'gold', icon: <GoldOutlined />, bgColor: '#fffbe6', textColor: '#faad14' }
   };
 
   const progressConfig = {
@@ -273,6 +281,22 @@ const LeadsList = () => {
     }
   };
 
+  // --- MARGIN FUNCTIONS ---
+  const calculateMarginAmount = (baseAmount, marginPercent) => {
+    if (!baseAmount || !marginPercent) return 0;
+    return (baseAmount * marginPercent) / 100;
+  };
+
+  const calculateGrandTotal = (baseAmount, marginPercent, discountPercent = 0) => {
+    if (!baseAmount) return 0;
+    
+    const discountAmount = discountPercent ? (baseAmount * discountPercent) / 100 : 0;
+    const amountAfterDiscount = baseAmount - discountAmount;
+    const marginAmount = marginPercent ? (amountAfterDiscount * marginPercent) / 100 : 0;
+    
+    return amountAfterDiscount + marginAmount;
+  };
+
   // --- ACTIONS ---
   const handleTabChange = (key) => {
     const newFilters = { status: key };
@@ -305,16 +329,65 @@ const LeadsList = () => {
     }
   };
 
-  const approveQuotation = async (estimateId) => {
-    const confirm = await showConfirmDialog('Approve & Send', 'Send quotation to customer?', 'Approve');
+  const openQuotationModal = (lead) => {
+    const finalQuotation = lead.final_quotation;
+    const supervisorMarginPercent = finalQuotation?.margin_percent || 0;
+    
+    setQuotationModal({
+      visible: true,
+      data: lead,
+      estimateStatus: lead.status,
+      marginPercent: supervisorMarginPercent, // Default to supervisor's margin
+      isMarginEditing: false // Start with margin not being edited
+    });
+  };
+
+const handleMarginPercentChange = (value) => {
+  setQuotationModal(prev => ({
+    ...prev,
+    marginPercent: value || 0
+  }));
+};
+
+  const approveQuotation = async () => {
+    if (!quotationModal.data) return;
+    
+    const finalQuotation = quotationModal.data.final_quotation;
+    if (!finalQuotation) {
+      showErrorAlert('Error', 'No quotation found');
+      return;
+    }
+
+    // Prepare approval data
+    const approvalData = {
+      scope_of_work: finalQuotation.scope_of_work || '',
+      price: finalQuotation.grand_total || finalQuotation.price || 0,
+      discount_percent: finalQuotation.discount_percent || 0,
+      estimate_type: quotationModal.data.type?._id || '',
+      estimate_subcategory: quotationModal.data.subcategory?._id || '',
+      freelancer_quotation_id: finalQuotation.freelancer_quotation_id || '',
+      margin_percent: quotationModal.marginPercent || 0,
+margin_amount: adminMarginAmount,
+      margin_type: 'percentage'
+    };
+
+    const confirmMessage = quotationModal.marginPercent > 0 
+      ? `Approve quotation with ${quotationModal.marginPercent}% margin (${formatCurrency(adminMarginAmount)})?`
+      : 'Approve quotation without any additional margin?';
+
+    const confirm = await showConfirmDialog('Approve & Send', confirmMessage, 'Approve');
+    
     if (confirm.isConfirmed) {
       try {
-        await apiService.put(`/estimates/${estimateId}/approve-quotation`);
-        showSuccessAlert('Success', 'Quotation sent to customer');
-        fetchLeads(pagination.currentPage, pagination.itemsPerPage, filters);
-        setQuotationModal({ visible: false, data: null });
+        await apiService.post(`/estimates/approve-quotation-by-admin?id=${quotationModal.data._id}`, approvalData);
+        showSuccessAlert('Success', 'Quotation approved and sent to customer');
+        
+        // Close modals and refresh data
+        setQuotationModal({ visible: false, data: null, estimateStatus: null, marginPercent: 0, marginAmount: 0, isMarginEditing: false });
         setViewDetailsModal({ visible: false, data: null });
+        fetchLeads(pagination.currentPage, pagination.itemsPerPage, filters);
       } catch (error) {
+        console.error('Approval error:', error);
         showErrorAlert('Error', 'Failed to approve quotation');
       }
     }
@@ -327,14 +400,12 @@ const LeadsList = () => {
         await apiService.put(`/estimates/${estimateId}/reject-quotation`);
         showSuccessAlert('Success', 'Quotation rejected and sent back to supervisor');
         fetchLeads(pagination.currentPage, pagination.itemsPerPage, filters);
-        setQuotationModal({ visible: false, data: null });
+        setQuotationModal({ visible: false, data: null, estimateStatus: null, marginPercent: 0, marginAmount: 0, isMarginEditing: false });
       } catch (error) {
         showErrorAlert('Error', 'Failed to reject quotation');
       }
     }
   };
-
-
 
   const downloadQuotationPDF = (lead) => {
     // Implement PDF download functionality
@@ -364,7 +435,6 @@ const LeadsList = () => {
     setStats(statCounts);
   };
 
-
   const calculateEstimatedTotal = (lead) => {
     if (!lead.EstimateAnswers) return 0;
     return lead.EstimateAnswers.reduce((total, answer) => {
@@ -374,7 +444,6 @@ const LeadsList = () => {
 
   // --- COLUMNS ---
   const columns = useMemo(() => [
- 
     {
       title: 'Customer',
       key: 'customer',
@@ -412,8 +481,6 @@ const LeadsList = () => {
       )
     },
     
- 
-  
     {
       title: 'Area',
       key: 'area',
@@ -445,7 +512,6 @@ const LeadsList = () => {
       }
     },
   
-   
     {
       title: 'Actions',
       fixed: 'right',
@@ -477,19 +543,11 @@ const LeadsList = () => {
                   type="primary"
                   size="small"
                   style={{ background: PURPLE_THEME.success }}
-                  onClick={() => setQuotationModal({ 
-                    visible: true, 
-                    data: r,
-                    estimateStatus: r.status 
-                  })}
+                  onClick={() => openQuotationModal(r)}
                 >
-                  <FileTextOutlined /> View
+                  <FileTextOutlined /> View & Approve
                 </Button>
               </Tooltip>
-              
-             
-              
-            
             </>
           )}
           
@@ -504,7 +562,22 @@ const LeadsList = () => {
               Assign
             </Button>
           )}
-          
+          {r.status === 'superadmin_approved' && r.admin_final_quotation && (
+  <Tooltip title="View Admin Quotation">
+    <Button
+      size="small"
+      icon={<FileDoneOutlined />}
+      onClick={() =>
+        setAdminQuotationViewModal({
+          visible: true,
+          data: r
+        })
+      }
+    >
+      View Quotation
+    </Button>
+  </Tooltip>
+)}
           {/* Additional actions for other statuses */}
           {r.status === 'superadmin_approved' && (
             <Tag color="success">Sent to Customer</Tag>
@@ -678,13 +751,61 @@ const LeadsList = () => {
     fetchLeads(1, 10, filters);
   }, []);
 
+  const adminMarginAmount = useMemo(() => {
+  if (!quotationModal.data?.final_quotation) return 0;
+
+  const baseAmount =
+    quotationModal.data.final_quotation.grand_total || 0;
+
+  return (baseAmount * (quotationModal.marginPercent || 0)) / 100;
+}, [quotationModal.marginPercent, quotationModal.data]);
+  // Calculate grand total with margins
+  const calculateFinalGrandTotal = () => {
+    if (!quotationModal.data?.final_quotation) return 0;
+    
+    const finalQuotation = quotationModal.data.final_quotation;
+    const baseAmount = finalQuotation.grand_total || finalQuotation.price || 0;
+    const discountPercent = finalQuotation.discount_percent || 0;
+    const adminMarginPercent = quotationModal.marginPercent || 0;
+    
+    // Calculate discount amount
+    const discountAmount = discountPercent ? (baseAmount * discountPercent) / 100 : 0;
+    const amountAfterDiscount = baseAmount;
+    
+    // Calculate supervisor margin
+    
+    console.log(adminMarginPercent)
+    // Calculate admin margin
+    const adminMarginAmount = adminMarginPercent ? (amountAfterDiscount * adminMarginPercent) / 100 : 0;
+        console.log("adminMarginAmountadminMarginAmount" ,adminMarginAmount)
+
+    // Total = base amount - discount + supervisor margin + admin margin
+    return amountAfterDiscount + adminMarginAmount;
+  };
+const QuotationHeader = ({ title, statusTag, date }) => (
+  <div className="p-4 bg-gray-50 border-b mb-4">
+    <div className="flex justify-between items-start">
+      <div>
+        <img src={logo} alt="Company Logo" style={{ height: 40, marginBottom: 8 }} />
+        <div className="text-gray-500 text-sm">
+          <strong>Date:</strong> {formatDate(date)}
+        </div>
+      </div>
+      <div className="text-right">
+        <Title level={4} style={{ color: PURPLE_THEME.primary, margin: 0 }}>
+          {title}
+        </Title>
+        {statusTag}
+      </div>
+    </div>
+  </div>
+);
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="mb-6">
         <div className="flex justify-between items-center mb-6">
           <Title level={3}>Leads Management</Title>
           <div className="flex gap-2">
-           
             <Button 
               type="primary" 
               icon={<UploadOutlined />}
@@ -695,33 +816,6 @@ const LeadsList = () => {
             </Button>
           </div>
         </div>
-
-        {/* <Row gutter={[16, 16]}>
-          {Object.entries(stats).map(([key, value]) => (
-            <Col key={key} xs={12} sm={6} md={4} lg={3}>
-              <Card 
-                size="small" 
-                hoverable 
-                className="text-center border-t-4"
-                style={{ borderTopColor: statusConfig[key]?.color || PURPLE_THEME.primary }}
-              >
-                <Statistic
-                  title={
-                    <span className="flex items-center justify-center gap-2">
-                      {statusConfig[key]?.icon}
-                      {key.replace(/_/g, ' ').toUpperCase()}
-                    </span>
-                  }
-                  value={value}
-                  valueStyle={{ color: statusConfig[key]?.color || PURPLE_THEME.primary }}
-                />
-                <div className="text-xs text-gray-500 mt-2">
-                  {((value / stats.total) * 100 || 0).toFixed(1)}% of total
-                </div>
-              </Card>
-            </Col>
-          ))}
-        </Row> */}
       </div>
 
       <Card bodyStyle={{ padding: 0 }} className="mb-6 overflow-hidden rounded-lg shadow-sm">
@@ -763,7 +857,7 @@ const LeadsList = () => {
       </Card>
 
       {/* ======================= VIEW DETAILS MODAL ======================= */}
-      <Modal
+           <Modal
         title={null}
         open={viewDetailsModal.visible}
         onCancel={() => setViewDetailsModal({ visible: false, data: null })}
@@ -1102,138 +1196,315 @@ const LeadsList = () => {
         )}
       </Modal>
 
-      {/* ======================= QUOTATION MODAL ======================= */}
+      {/* ======================= QUOTATION MODAL WITH MARGIN EDITING ======================= */}
       <Modal
-        title="Quotation Details"
+        title="Approve Quotation"
         footer={[
-          <Button key="cancel" onClick={() => setQuotationModal({ visible: false, data: null, estimateStatus: null })}>
-            Close
+          <Button key="cancel" onClick={() => setQuotationModal({ 
+            visible: false, 
+            data: null, 
+            estimateStatus: null,
+            marginPercent: 0,
+            marginAmount: 0,
+            isMarginEditing: false
+          })}>
+            Cancel
           </Button>,
           <Button 
-            key="download" 
-            icon={<DownloadOutlined />}
-            onClick={() => downloadQuotationPDF(quotationModal.data)}
+            key="reject" 
+            danger
+            icon={<CloseCircleOutlined />}
+            onClick={() => rejectQuotation(quotationModal.data?._id)}
           >
-            Download PDF
+            Reject
           </Button>,
-          // Show Approve button only for final_created status
-          quotationModal.estimateStatus === 'final_created' && quotationModal.data?.final_quotation && (
-            <Button
-              key="approve"
-              type="primary"
-              style={{ background: PURPLE_THEME.success }}
-              icon={<CheckOutlined />}
-              onClick={() => approveQuotation(quotationModal.data._id)}
-            >
-              Approve & Send to Customer
-            </Button>
-          )
-        ].filter(Boolean)}
+          <Button
+            key="approve"
+            type="primary"
+            style={{ background: PURPLE_THEME.success }}
+            icon={<CheckOutlined />}
+            onClick={approveQuotation}
+            loading={loading}
+          >
+            Approve & Send to Customer
+          </Button>
+        ]}
         open={quotationModal.visible}
-        onCancel={() => setQuotationModal({ visible: false, data: null, estimateStatus: null })}
+        onCancel={() => setQuotationModal({ 
+          visible: false, 
+          data: null, 
+          estimateStatus: null,
+          marginPercent: 0,
+          marginAmount: 0,
+          isMarginEditing: false
+        })}
         width={900}
-        bodyStyle={{ padding: 0 }}
         centered
       >
         {quotationModal.data?.final_quotation && (
           <div className="bg-white">
-            <div className="p-6 bg-gray-50 border-b">
+            <div className="p-4 bg-gray-50 border-b mb-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <img src={logo} alt="Company Logo" style={{ height: 50, marginBottom: 10 }} />
+                  <img src={logo} alt="Company Logo" style={{ height: 40, marginBottom: 8 }} />
                   <div className="text-gray-500 text-sm">
-                    123 Landscape Avenue<br />Dubai, UAE<br />contact@company.com
+                    <strong>Quotation #:</strong> {quotationModal.data._id?.substring(0, 8).toUpperCase()}<br />
+                    <strong>Date:</strong> {formatDate(quotationModal.data.createdAt)}
                   </div>
                 </div>
                 <div className="text-right">
-                  <Title level={3} style={{ color: PURPLE_THEME.primary, margin: 0 }}>FINAL QUOTATION</Title>
-                  <div className="mt-2 text-gray-600">
-                    <div><strong>Quotation #:</strong> {quotationModal.data._id?.substring(0, 8).toUpperCase()}</div>
-                    <div><strong>Date:</strong> {formatDate(quotationModal.data.createdAt)}</div>
-                    <div><strong>Status:</strong> 
-                      <Tag color={statusConfig[quotationModal.data.status]?.color} style={{ marginLeft: 8 }}>
-                        {statusConfig[quotationModal.data.status]?.label?.toUpperCase()}
-                      </Tag>
-                    </div>
-                  </div>
+                  <Title level={4} style={{ color: PURPLE_THEME.primary, margin: 0 }}>FINAL QUOTATION</Title>
+                  <Tag color={statusConfig[quotationModal.data.status]?.color} style={{ marginTop: 8 }}>
+                    {statusConfig[quotationModal.data.status]?.label?.toUpperCase()}
+                  </Tag>
                 </div>
               </div>
             </div>
 
-            {/* Customer Info */}
-            <div className="p-6 border-b">
+            {/* Customer & Service Info */}
+            <div className="mb-6">
               <Row gutter={[16, 16]}>
                 <Col span={12}>
-                  <div>
+                  <div className="p-3 bg-gray-50 rounded">
                     <Text strong>Customer:</Text>
-                    <div>
+                    <div className="font-medium">
                       {quotationModal.data.customer?.name?.first_name} {quotationModal.data.customer?.name?.last_name}
                     </div>
-                    <div className="text-gray-500">
+                    <div className="text-gray-500 text-sm">
                       {quotationModal.data.customer?.email}
                     </div>
                   </div>
                 </Col>
                 <Col span={12}>
-                  <div>
+                  <div className="p-3 bg-gray-50 rounded">
                     <Text strong>Service:</Text>
                     <div>
                       <Tag color="purple">{quotationModal.data.service_type?.toUpperCase()}</Tag>
-                      <span className="ml-2">{quotationModal.data.subcategory?.label} - {quotationModal.data.type?.label}</span>
-                    </div>
-                    <div className="text-gray-500">
-                      Area: {quotationModal.data.area_sqft} sq.ft
+                      <div className="text-sm text-gray-600 mt-1">
+                        {quotationModal.data.subcategory?.label} - {quotationModal.data.type?.label}
+                      </div>
                     </div>
                   </div>
                 </Col>
               </Row>
             </div>
 
-            <div className="p-6">
-              {/* Scope of Work */}
-              {quotationModal.data.final_quotation.scope_of_work && (
-                <div className="mb-6">
-                  <Text strong>Scope of Work:</Text>
-                  <Paragraph className="mt-2 bg-gray-50 p-3 rounded">
-                    {quotationModal.data.final_quotation.scope_of_work}
-                  </Paragraph>
+            {/* Scope of Work */}
+            {quotationModal.data.final_quotation.scope_of_work && (
+              <div className="mb-6">
+                <Text strong>Scope of Work:</Text>
+                <Paragraph className="mt-2 bg-gray-50 p-3 rounded">
+                  {quotationModal.data.final_quotation.scope_of_work}
+                </Paragraph>
+              </div>
+            )}
+
+            {/* Price Breakdown */}
+            <div className="mb-6 p-4 border rounded">
+              <Text strong className="block mb-3">Price Breakdown:</Text>
+              
+              <div className="space-y-3">
+                {/* Base Price */}
+                <div className="flex justify-between">
+                  <span>Base Price:</span>
+                  <span className="font-medium">
+                    {formatCurrency(quotationModal.data.final_quotation.price || quotationModal.data.final_quotation.subtotal || 0)}
+                  </span>
                 </div>
-              )}
-
-      
-
-              {/* Total Summary */}
-              <div className="flex justify-end">
-                <div className="w-64 space-y-3">
                 
-                  
-                  {quotationModal.data.final_quotation.discount_percent > 0 && (
-                    <div className="flex justify-between text-gray-600">
-                      <span>Discount ({quotationModal.data.final_quotation.discount_percent}%):</span>
-                      <span>-{formatCurrency(quotationModal.data.final_quotation.discount_amount)}</span>
-                    </div>
-                  )}
-                  
-                  {quotationModal.data.final_quotation.margin_percent > 0 && (
-                    <div className="flex justify-between text-gray-600">
-                      <span>Margin ({quotationModal.data.final_quotation.margin_percent}%):</span>
-                      <span>+{formatCurrency(quotationModal.data.final_quotation.margin_amount)}</span>
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-between text-xl font-bold text-purple-800 border-t pt-3">
-                    <span>Grand Total:</span>
-                    <span>{formatCurrency(quotationModal.data.final_quotation.grand_total)}</span>
+                {/* Discount */}
+                {quotationModal.data.final_quotation.discount_percent > 0 && (
+                  <div className="flex justify-between text-red-500">
+                    <span>Discount ({quotationModal.data.final_quotation.discount_percent}%):</span>
+                    <span>-{formatCurrency(quotationModal.data.final_quotation.discount_amount || 0)}</span>
                   </div>
+                )}
+                
+                {/* Supervisor Margin */}
+                {quotationModal.data.final_quotation.margin_percent > 0 && (
+                  <div className="flex justify-between text-blue-600">
+                    <span>Supervisor Margin ({quotationModal.data.final_quotation.margin_percent}%):</span>
+                    <span>+{formatCurrency(quotationModal.data.final_quotation.margin_amount || 0)}</span>
+                  </div>
+                )}
+                
+                {/* Superadmin Margin - Editable */}
+                <div className="flex justify-between items-center pt-3 border-t">
+                  <div className="flex items-center gap-2">
+                    <Text strong>Admin Margin:</Text>
+                    {quotationModal.isMarginEditing ? (
+                      <div className="flex items-center gap-2">
+                        <InputNumber
+                          min={0}
+                          max={100}
+                          value={quotationModal.marginPercent}
+                          onChange={handleMarginPercentChange}
+                          style={{ width: 80 }}
+                          addonAfter="%"
+                          size="small"
+                        />
+                        <Button 
+                          size="small" 
+                          onClick={() => setQuotationModal(prev => ({ ...prev, isMarginEditing: false }))}
+                        >
+                          Save
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button 
+                        type="link" 
+                        size="small" 
+                        icon={<EditOutlined />}
+                        onClick={() => setQuotationModal(prev => ({ ...prev, isMarginEditing: true }))}
+                      >
+                        {quotationModal.marginPercent > 0 ? `${quotationModal.marginPercent}%` : 'Add Margin'}
+                      </Button>
+                    )}
+                  </div>
+                  <span className="font-bold text-purple-700">
++{formatCurrency(adminMarginAmount)}                  </span>
+                </div>
+                
+                {/* Grand Total */}
+                <div className="flex justify-between text-xl font-bold text-purple-800 border-t pt-3">
+                  <span>Grand Total:</span>
+                  <span>{formatCurrency(calculateFinalGrandTotal())}</span>
                 </div>
               </div>
+              
+              {/* {quotationModal.marginPercent > 0 && (
+                <Alert
+                  message={`Adding ${quotationModal.marginPercent}% admin margin (${formatCurrency(quotationModal.marginAmount)})`}
+                  type="info"
+                  showIcon
+                  className="mt-3"
+                />
+              )} */}
+            </div>
+
+            {/* Notes */}
+            <div className="text-xs text-gray-500 italic">
+              Note: This quotation will be sent to the customer for approval after you click "Approve & Send to Customer"
             </div>
           </div>
         )}
       </Modal>
+<Modal
+  title={null}
+  open={adminQuotationViewModal.visible}
+  onCancel={() => setAdminQuotationViewModal({ visible: false, data: null })}
+  footer={[
+    <Button
+      key="close"
+      onClick={() =>
+        setAdminQuotationViewModal({ visible: false, data: null })
+      }
+    >
+      Close
+    </Button>
+  ]}
+  width={900}
+  centered
+>
+  {adminQuotationViewModal.data?.admin_final_quotation && (() => {
+    const lead = adminQuotationViewModal.data;
+    const q = lead.admin_final_quotation;
 
+    return (
+      <div className="bg-white">
+        {/* 🔥 HEADER WITH LOGO */}
+        <QuotationHeader
+          title="FINAL QUOTATION"
+          date={q.createdAt}
+          statusTag={
+            <Tag color="success" style={{ marginTop: 8 }}>
+              APPROVED & SENT
+            </Tag>
+          }
+        />
+
+        {/* CUSTOMER & SERVICE INFO */}
+        <div className="mb-6">
+          <Row gutter={[16, 16]}>
+            <Col span={12}>
+              <div className="p-3 bg-gray-50 rounded">
+                <Text strong>Customer:</Text>
+                <div className="font-medium">
+                  {lead.customer?.name?.first_name}{' '}
+                  {lead.customer?.name?.last_name}
+                </div>
+                <div className="text-gray-500 text-sm">
+                  {lead.customer?.email}
+                </div>
+              </div>
+            </Col>
+            <Col span={12}>
+              <div className="p-3 bg-gray-50 rounded">
+                <Text strong>Service:</Text>
+                <Tag color="purple">
+                  {lead.service_type?.toUpperCase()}
+                </Tag>
+                <div className="text-sm text-gray-600 mt-1">
+                  {lead.subcategory?.label} – {lead.type?.label}
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
+
+        {/* SCOPE OF WORK */}
+        {q.scope_of_work && (
+          <div className="mb-6">
+            <Text strong>Scope of Work:</Text>
+            <Paragraph className="mt-2 bg-gray-50 p-3 rounded">
+              {q.scope_of_work}
+            </Paragraph>
+          </div>
+        )}
+
+        {/* PRICE BREAKDOWN */}
+        <div className="mb-6 p-4 border rounded">
+          <Text strong className="block mb-3">Price Breakdown:</Text>
+
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span>Base Price:</span>
+              <span className="font-medium">
+                {formatCurrency(q.price)}
+              </span>
+            </div>
+
+            {q.discount_percent > 0 && (
+              <div className="flex justify-between text-red-500">
+                <span>Discount ({q.discount_percent}%):</span>
+                <span>-{formatCurrency(q.discount_amount)}</span>
+              </div>
+            )}
+
+            <div className="flex justify-between text-purple-700">
+              <span>Admin Margin ({q.margin_percent}%):</span>
+              <span className="font-bold">
+                +{formatCurrency(q.margin_amount)}
+              </span>
+            </div>
+
+            <div className="flex justify-between text-xl font-bold text-purple-800 border-t pt-3">
+              <span>Grand Total:</span>
+              <span>{formatCurrency(q.grand_total)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* FOOTER NOTE */}
+        <div className="text-xs text-gray-500 italic">
+          This quotation has been approved and sent to the customer.
+        </div>
+      </div>
+    );
+  })()}
+</Modal>
       {/* ======================= EDIT QUOTATION MODAL ======================= */}
-     
+      {/* ... (existing edit quotation modal) ... */}
 
       {/* ======================= ANSWERS MODAL ======================= */}
       <Modal

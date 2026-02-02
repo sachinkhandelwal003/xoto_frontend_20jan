@@ -149,70 +149,171 @@ export default function HeroSection() {
   };
 
   /* ---------------- SUBMIT ---------------- */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
 
-    const { countryCode, phone } = form;
-    const config = getPhoneConfig(countryCode);
+//     const { countryCode, phone } = form;
+//     const config = getPhoneConfig(countryCode);
 
-    // Validation
-    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.location_country) {
-      toast.error(t("error")); // "Please fill all required fields"
-      return;
-    }
+//     // Validation
+//     if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.location_country) {
+//       toast.error(t("error")); // "Please fill all required fields"
+//       return;
+//     }
 
+//   const phoneError = validatePhone(countryCode, phone);
+// if (phoneError) {
+//   toast.error(phoneError);
+//   return;
+// }
+
+
+//     setLoading(true);
+//   const phoneObj = parsePhoneNumberFromString(
+//   `+${form.countryCode}${form.phone}`
+// );
+
+//     // Resolve Names
+//     const countryName = Country.getCountryByCode(form.location_country)?.name || "";
+//     const stateName = State.getStateByCodeAndCountry(form.state, form.location_country)?.name || "";
+
+//     try {
+//       const res = await apiService.post("/property/lead", {
+//         type: form.lookingFor ? form.lookingFor.toLowerCase() : "inquiry",
+//         name: {
+//           first_name: form.firstName.trim(),
+//           last_name: form.lastName.trim(),
+//         },
+//       mobile: {
+//   country_code: form.countryCode,
+//   number: form.phone,
+//   full: phoneObj.number, // +9715XXXXXXX
+// },
+
+//         email: form.email.trim().toLowerCase(),
+        
+//         // Location Data
+//         country: countryName,
+//         state: stateName,
+//         preferred_city: form.city || stateName, // Use City if available
+        
+//         budget: form.budget,
+//       });
+
+//       if (res?.success) {
+//         toast.success(t("success"));
+//         setForm({
+//           firstName: "", lastName: "", email: "", countryCode: "971", phone: "",
+//           lookingFor: "", budget: "", location_country: null, state: null, city: null
+//         });
+//       }
+//     } catch {
+//       toast.error(t("genericError"));
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const { countryCode, phone } = form;
+
+  // Required field validation
+  if (
+    !form.firstName.trim() ||
+    !form.lastName.trim() ||
+    !form.email.trim() ||
+    !form.location_country
+  ) {
+    toast.error(t("error"));
+    return;
+  }
+
+  // Phone validation
   const phoneError = validatePhone(countryCode, phone);
-if (phoneError) {
-  toast.error(phoneError);
-  return;
-}
+  if (phoneError) {
+    toast.error(phoneError);
+    return;
+  }
 
+  setLoading(true);
 
-    setLoading(true);
   const phoneObj = parsePhoneNumberFromString(
-  `+${form.countryCode}${form.phone}`
-);
+    `+${form.countryCode}${form.phone}`
+  );
 
-    // Resolve Names
-    const countryName = Country.getCountryByCode(form.location_country)?.name || "";
-    const stateName = State.getStateByCodeAndCountry(form.state, form.location_country)?.name || "";
+  // Resolve location names
+  const countryName =
+    Country.getCountryByCode(form.location_country)?.name || "";
+  const stateName =
+    State.getStateByCodeAndCountry(
+      form.state,
+      form.location_country
+    )?.name || "";
 
-    try {
-      const res = await apiService.post("/property/lead", {
-        type: form.lookingFor ? form.lookingFor.toLowerCase() : "inquiry",
-        name: {
-          first_name: form.firstName.trim(),
-          last_name: form.lastName.trim(),
-        },
+  try {
+    // 1️⃣ CREATE INQUIRY
+    const res = await apiService.post("/property/lead", {
+      type: form.lookingFor ? form.lookingFor.toLowerCase() : "inquiry",
+      name: {
+        first_name: form.firstName.trim(),
+        last_name: form.lastName.trim(),
+      },
       mobile: {
-  country_code: form.countryCode,
-  number: form.phone,
-  full: phoneObj.number, // +9715XXXXXXX
-},
+        country_code: form.countryCode,
+        number: form.phone,
+        full: phoneObj?.number,
+      },
+      email: form.email.trim().toLowerCase(),
+      country: countryName,
+      state: stateName,
+      preferred_city: form.city || stateName,
+      budget: form.budget,
+    });
 
-        email: form.email.trim().toLowerCase(),
-        
-        // Location Data
-        country: countryName,
-        state: stateName,
-        preferred_city: form.city || stateName, // Use City if available
-        
-        budget: form.budget,
-      });
+    if (res?.success) {
+      // 2️⃣ CREATE NOTIFICATION (sender must be STRING)
+      const notificationPayload = {
+        sender: form.email.trim().toLowerCase(), // ✅ STRING ONLY
+        receiverType: "admin",
+        senderType: "user",
+        notificationType: "NEW_INQUIRY",
+        title: "Property Inquiry",
+        message: "A user has submitted a new property inquiry.",
+      };
 
-      if (res?.success) {
-        toast.success(t("success"));
-        setForm({
-          firstName: "", lastName: "", email: "", countryCode: "971", phone: "",
-          lookingFor: "", budget: "", location_country: null, state: null, city: null
-        });
+      // Non-blocking notification (recommended)
+      try {
+        await apiService.post(
+          "/notifications/create-notification",
+          notificationPayload
+        );
+      } catch (notificationError) {
+        console.error("Notification failed", notificationError);
       }
-    } catch {
-      toast.error(t("genericError"));
-    } finally {
-      setLoading(false);
+
+      // 3️⃣ SUCCESS UI
+      toast.success(t("success"));
+
+      setForm({
+        firstName: "",
+        lastName: "",
+        email: "",
+        countryCode: "971",
+        phone: "",
+        lookingFor: "",
+        budget: "",
+        location_country: null,
+        state: null,
+        city: null,
+      });
     }
-  };
+  } catch (error) {
+    toast.error(t("genericError"));
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <>

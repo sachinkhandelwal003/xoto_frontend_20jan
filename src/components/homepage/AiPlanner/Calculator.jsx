@@ -640,85 +640,179 @@ const toggleImageSelect = (img) => {
     });
   };
 
- const onFinalSubmit = async () => {
-    // Safety check again
-    if (!isStepValid()) {
-        messageApi.error("Please fill all required fields");
-        return;
-    }
+//  const onFinalSubmit = async () => {
+//     // Safety check again
+//     if (!isStepValid()) {
+//         messageApi.error("Please fill all required fields");
+//         return;
+//     }
 
-    const estimateAnswers = buildEstimateAnswersPayload();
+//     const estimateAnswers = buildEstimateAnswersPayload();
 
-    setLoading((prev) => ({ ...prev, submitting: true }));
+//     setLoading((prev) => ({ ...prev, submitting: true }));
 
-    const selectedTypeData = types.find((t) => t._id === selectedType);
+//     const selectedTypeData = types.find((t) => t._id === selectedType);
 
-    const payload = {
-      service_type: "landscape",
-      customer_name: {
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-      },
-      customer_email: email.trim(),
-      customer_mobile: {
-        country_code: countryCode,
-        number: phone.trim(),
-      },
-      type: selectedType,
-      subcategory: selectedSubcategory,
-      package: selectedPackage,
-      area_length: parseFloat(length) || 0,
-      area_width: parseFloat(width) || 0,
-      area_sqft: areaSqFt,
-      description: `Landscaping project for ${areaSqFt} sqft area with ${
-        selectedTypeData?.label || "selected"
-      } style`,
-      location: {
-        lat: coords.lat,
-        lng: coords.lng,
-        country: coords.country,
-        state: coords.state,
-        city: coords.city,
-        area: coords.area,
-        address: coords.address,
-      },
-      answers: estimateAnswers,
-    };
+//     const payload = {
+//       service_type: "landscape",
+//       customer_name: {
+//         first_name: firstName.trim(),
+//         last_name: lastName.trim(),
+//       },
+//       customer_email: email.trim(),
+//       customer_mobile: {
+//         country_code: countryCode,
+//         number: phone.trim(),
+//       },
+//       type: selectedType,
+//       subcategory: selectedSubcategory,
+//       package: selectedPackage,
+//       area_length: parseFloat(length) || 0,
+//       area_width: parseFloat(width) || 0,
+//       area_sqft: areaSqFt,
+//       description: `Landscaping project for ${areaSqFt} sqft area with ${
+//         selectedTypeData?.label || "selected"
+//       } style`,
+//       location: {
+//         lat: coords.lat,
+//         lng: coords.lng,
+//         country: coords.country,
+//         state: coords.state,
+//         city: coords.city,
+//         area: coords.area,
+//         address: coords.address,
+//       },
+//       answers: estimateAnswers,
+//     };
 
-    try {
-      const response = await apiService.post("/estimates/submit", payload);
+//     try {
+//       const response = await apiService.post("/estimates/submit", payload);
 
-      if (response.success) {
-        setActiveStep(5);
-        messageApi.success("Estimate submitted successfully!");
-        setEstimationValue(response.final_price);
+//       if (response.success) {
+//         setActiveStep(5);
+//         messageApi.success("Estimate submitted successfully!");
+//         setEstimationValue(response.final_price);
 
-        // ✅ CHECK: Use snapshot images if available, otherwise use already fetched images
-        const snapshotImages = response.updatedEstimate?.type_gallery_snapshot?.moodboardImages;
+//         // ✅ CHECK: Use snapshot images if available, otherwise use already fetched images
+//         const snapshotImages = response.updatedEstimate?.type_gallery_snapshot?.moodboardImages;
         
-        if (snapshotImages && snapshotImages.length > 0) {
-            console.log("Using Snapshot Images from Response");
-            setGalleryImages(snapshotImages);
-        } else {
-            console.log("Snapshot empty, checking existing gallery images...");
-            if (galleryImages.length === 0) {
-                // If we have nothing (Step 2 failed or API didn't run), try fetching again
-                getAllImages();
-            }
-        }
+//         if (snapshotImages && snapshotImages.length > 0) {
+//             console.log("Using Snapshot Images from Response");
+//             setGalleryImages(snapshotImages);
+//         } else {
+//             console.log("Snapshot empty, checking existing gallery images...");
+//             if (galleryImages.length === 0) {
+//                 // If we have nothing (Step 2 failed or API didn't run), try fetching again
+//                 getAllImages();
+//             }
+//         }
 
-      } else {
-        messageApi.error(response.message || "Submission failed");
-      }
-    } catch (err) {
-      console.error(err);
-      messageApi.error(
-        err.response?.data?.message || "Submission failed. Please try again."
-      );
-    } finally {
-      setLoading((prev) => ({ ...prev, submitting: false }));
-    }
+//       } else {
+//         messageApi.error(response.message || "Submission failed");
+//       }
+//     } catch (err) {
+//       console.error(err);
+//       messageApi.error(
+//         err.response?.data?.message || "Submission failed. Please try again."
+//       );
+//     } finally {
+//       setLoading((prev) => ({ ...prev, submitting: false }));
+//     }
+//   };
+const onFinalSubmit = async () => {
+  // Safety check
+  if (!isStepValid()) {
+    messageApi.error("Please fill all required fields");
+    return;
+  }
+
+  const estimateAnswers = buildEstimateAnswersPayload();
+  setLoading((prev) => ({ ...prev, submitting: true }));
+
+  const selectedTypeData = types.find((t) => t._id === selectedType);
+
+  const payload = {
+    service_type: "landscape",
+    customer_name: {
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+    },
+    customer_email: email.trim().toLowerCase(),
+    customer_mobile: {
+      country_code: countryCode,
+      number: phone.trim(),
+    },
+    type: selectedType,
+    subcategory: selectedSubcategory,
+    package: selectedPackage,
+    area_length: parseFloat(length) || 0,
+    area_width: parseFloat(width) || 0,
+    area_sqft: areaSqFt,
+    description: `Landscaping project for ${areaSqFt} sqft area with ${
+      selectedTypeData?.label || "selected"
+    } style`,
+    location: {
+      lat: coords.lat,
+      lng: coords.lng,
+      country: coords.country,
+      state: coords.state,
+      city: coords.city,
+      area: coords.area,
+      address: coords.address,
+    },
+    answers: estimateAnswers,
   };
+
+  try {
+    // 1️⃣ SUBMIT ESTIMATE
+    const response = await apiService.post("/estimates/submit", payload);
+
+    if (response.success) {
+      setActiveStep(5);
+      setEstimationValue(response.final_price);
+      messageApi.success("Estimate submitted successfully!");
+
+      // 2️⃣ CREATE NOTIFICATION (NON-BLOCKING)
+      const notificationPayload = {
+        sender: email.trim().toLowerCase(), // ✅ STRING ONLY
+        receiverType: "admin",
+        senderType: "user",
+        notificationType: "NEW_ESTIMATE",
+        title: "New Landscaping Estimate",
+        message: "A user has submitted a new landscaping estimate request.",
+      };
+
+      try {
+        await apiService.post(
+          "/notifications/create-notification",
+          notificationPayload
+        );
+      } catch (notificationError) {
+        console.error("Notification failed", notificationError);
+      }
+
+      // 3️⃣ HANDLE GALLERY SNAPSHOT (existing logic)
+      const snapshotImages =
+        response.updatedEstimate?.type_gallery_snapshot?.moodboardImages;
+
+      if (snapshotImages && snapshotImages.length > 0) {
+        setGalleryImages(snapshotImages);
+      } else if (galleryImages.length === 0) {
+        getAllImages();
+      }
+    } else {
+      messageApi.error(response.message || "Submission failed");
+    }
+  } catch (err) {
+    console.error(err);
+    messageApi.error(
+      err.response?.data?.message ||
+        "Submission failed. Please try again."
+    );
+  } finally {
+    setLoading((prev) => ({ ...prev, submitting: false }));
+  }
+};
 
   const handleNext = () => {
     if (!isStepValid()) {

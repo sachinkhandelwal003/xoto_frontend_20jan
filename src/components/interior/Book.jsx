@@ -136,54 +136,143 @@ export default function ConsultationSection() {
     return isValid;
   };
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
+  // const onSubmit = async (e) => {
+  //   e.preventDefault();
 
-    if (!validateForm()) {
-      openNotification("error", t("errors.validationTitle") || "Validation Error", "Please fill all fields correctly.");
-      return;
-    }
+  //   if (!validateForm()) {
+  //     openNotification("error", t("errors.validationTitle") || "Validation Error", "Please fill all fields correctly.");
+  //     return;
+  //   }
 
-    setLoading(true);
+  //   setLoading(true);
 
-    const payload = {
-      type: "consultation",
-      consultant_type: "interior",
-      name: {
-        first_name: formData.first_name.trim(),
-        last_name: formData.last_name.trim(),
+  //   const payload = {
+  //     type: "consultation",
+  //     consultant_type: "interior",
+  //     name: {
+  //       first_name: formData.first_name.trim(),
+  //       last_name: formData.last_name.trim(),
+  //     },
+  //     mobile: {
+  //       country_code: formData.country_code,
+  //       number: formData.number,
+  //     },
+  //     email: formData.email.trim().toLowerCase(),
+  //     message: formData.message.trim(),
+  //   };
+
+  //   try {
+  //     await apiService.post("/property/lead", payload);
+  //     openNotification("success", t("success.title"), t("success.message"));
+  //     setFormData({
+  //       first_name: "", last_name: "", email: "",
+  //       country_code: "91", number: "", message: "",
+  //     });
+  //     setErrors({}); 
+  //   } catch (err) {
+  //     const errorData = err.response?.data;
+  //     let errorMessage = t("errors.submit") || "Something went wrong";
+
+  //     if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
+  //       errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
+  //     } else if (errorData?.message) {
+  //       errorMessage = errorData.message;
+  //     }
+
+  //     openNotification("error", t("errors.submitTitle"), errorMessage);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+const onSubmit = async (e) => {
+  e.preventDefault();
+
+  // 1️⃣ Validate form
+  if (!validateForm()) {
+    openNotification(
+      "error",
+      t("errors.validationTitle") || "Validation Error",
+      "Please fill all fields correctly."
+    );
+    return;
+  }
+
+  setLoading(true);
+
+  // 2️⃣ Inquiry payload
+  const inquiryPayload = {
+    type: "consultation",
+    consultant_type: "interior",
+    name: {
+      first_name: formData.first_name.trim(),
+      last_name: formData.last_name.trim(),
+    },
+    mobile: {
+      country_code: formData.country_code,
+      number: formData.number,
+    },
+    email: formData.email.trim().toLowerCase(),
+    message: formData.message.trim(),
+  };
+
+  try {
+    // 3️⃣ Create inquiry
+    await apiService.post("/property/lead", inquiryPayload);
+
+    // 4️⃣ Notification payload (from inquiry data)
+    const notificationPayload = {
+      sender: {
+        email: inquiryPayload.email,
+        full_name: `${inquiryPayload.name.first_name} ${inquiryPayload.name.last_name}`,
+        mobile: {
+          country_code: inquiryPayload.mobile.country_code,
+          number: inquiryPayload.mobile.number,
+        },
       },
-      mobile: {
-        country_code: formData.country_code,
-        number: formData.number,
-      },
-      email: formData.email.trim().toLowerCase(),
-      message: formData.message.trim(),
+      receiverType: "admin",
+      senderType: "user",
+      notificationType: "NEW_INQUIRY",
+      title: "Interior Consultation",
+      message: "A user has requested an interior consultation for your property.",
     };
 
-    try {
-      await apiService.post("/property/lead", payload);
-      openNotification("success", t("success.title"), t("success.message"));
-      setFormData({
-        first_name: "", last_name: "", email: "",
-        country_code: "91", number: "", message: "",
-      });
-      setErrors({}); 
-    } catch (err) {
-      const errorData = err.response?.data;
-      let errorMessage = t("errors.submit") || "Something went wrong";
+    // 5️⃣ Create notification
+    await apiService.post(
+      "/notifications/create-notification",
+      notificationPayload
+    );
 
-      if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
-        errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
-      } else if (errorData?.message) {
-        errorMessage = errorData.message;
-      }
+    // 6️⃣ Success UI
+    openNotification("success", t("success.title"), t("success.message"));
 
-      openNotification("error", t("errors.submitTitle"), errorMessage);
-    } finally {
-      setLoading(false);
+    // 7️⃣ Reset form
+    setFormData({
+      first_name: "",
+      last_name: "",
+      email: "",
+      country_code: "91",
+      number: "",
+      message: "",
+    });
+
+    setErrors({});
+  } catch (err) {
+    // 8️⃣ Error handling
+    const errorData = err.response?.data;
+    let errorMessage = t("errors.submit") || "Something went wrong";
+
+    if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
+      errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
+    } else if (errorData?.message) {
+      errorMessage = errorData.message;
     }
-  };
+
+    openNotification("error", t("errors.submitTitle"), errorMessage);
+  } finally {
+    // 9️⃣ Stop loader
+    setLoading(false);
+  }
+};
 
   return (
     <section className="relative w-full overflow-hidden bg-gray-900">
