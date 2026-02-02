@@ -368,7 +368,7 @@ const PropertyManagement = () => {
             {/* New: price_min and price_max */}
             <Col xs={12} md={5}><Form.Item name="price_min" label="Min Price"><InputNumber className="w-full" formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} /></Form.Item></Col>
             <Col xs={12} md={5}><Form.Item name="price_max" label="Max Price"><InputNumber className="w-full" formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} /></Form.Item></Col>
-            <Col xs={24} md={5}><Form.Item name="downPayment" label="Down Payment"><InputNumber className="w-full" /></Form.Item></Col>
+            <Col xs={24} md={5}><Form.Item name="downPayment" label="Down Payment"><InputNumber className="w-full" suffix="%" /></Form.Item></Col>
           </Row>
           <Row gutter={16}>
             <Col xs={12} md={12}><Form.Item name="paymentPlan_initialPercentage" label="Payment Plan (Initial %)"><InputNumber className="w-full" suffix="%" /></Form.Item></Col>

@@ -37,6 +37,10 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useNavigate } from "react-router-dom";
 
+// --- NEW PACKAGE IMPORTS ---
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css"; 
+
 // Fix for default marker icons in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -52,7 +56,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const BRAND_PURPLE = "#5C039B";
-const BASE_URL = "https://xoto.ae"; 
+const BASE_URL = "https://xoto.ae";
 
 // Helper to handle absolute vs relative URLs
 const getImageUrl = (url) => {
@@ -122,7 +126,7 @@ const MapPicker = ({ coords, onChange }) => {
     <MapContainer
       center={position}
       zoom={15}
-      style={{ height: 300, width: "100%", borderRadius: "1rem", zIndex:1 }}
+      style={{ height: 300, width: "100%", borderRadius: "1rem", zIndex: 1 }}
     >
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <LocationMarker />
@@ -170,11 +174,7 @@ const QuestionField = React.memo(function QuestionField({
   const isOptions = question.questionType === "options";
 
   return (
-    <Form.Item
-      label={question.question}
-      required
-      className="mb-6"
-    >
+    <Form.Item label={question.question} required className="mb-6">
       {question.questionType === "text" && (
         <Input
           id={id}
@@ -202,7 +202,11 @@ const QuestionField = React.memo(function QuestionField({
           onChange={(e) => onChange(question._id, e.target.value)}
           className="w-full"
         >
-          <Space direction={isYesNo ? "horizontal" : "vertical"} wrap className="w-full">
+          <Space
+            direction={isYesNo ? "horizontal" : "vertical"}
+            wrap
+            className="w-full"
+          >
             {question.options?.map((opt) => (
               <Radio key={opt._id} value={opt.title}>
                 {opt.title}
@@ -272,7 +276,7 @@ const Calculator = () => {
   const [subcategories, setSubcategories] = useState([]);
   const [types, setTypes] = useState([]);
   const [packages, setPackages] = useState([]);
-  
+
   const [coords, setCoords] = useState({
     lat: null,
     lng: null,
@@ -288,18 +292,22 @@ const Calculator = () => {
   const [selectedPackage, setSelectedPackage] = useState("");
   const [length, setLength] = useState("");
   const [width, setWidth] = useState("");
-  const [countryCode, setCountryCode] = useState("+971");
+  
+  // --- UPDATED PHONE STATES ---
+  // fullPhone stores the entire string from the library (e.g. "971501234567")
+  const [fullPhone, setFullPhone] = useState(""); 
+  const [countryCode, setCountryCode] = useState("971"); // Default UAE
+  const [phoneError, setPhoneError] = useState("");
+  const [isValidPhone, setIsValidPhone] = useState(false);
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [phoneError, setPhoneError] = useState("");
 
   // Gallery States
-  const [galleryImages, setGalleryImages] = useState([]); 
-  const [previewImage, setPreviewImage] = useState(null); 
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [previewImage, setPreviewImage] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]);
-
 
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
@@ -308,32 +316,6 @@ const Calculator = () => {
 
   const areaSqFt =
     length && width ? Math.round(parseFloat(length) * parseFloat(width)) : 0;
-
-  const countryCodes = [
-    { value: "+971", label: "UAE (+971)" },
-    { value: "+966", label: "KSA (+966)" },
-    { value: "+974", label: "Qatar (+974)" },
-    { value: "+968", label: "Oman (+968)" },
-    { value: "+973", label: "Bahrain (+973)" },
-    { value: "+965", label: "Kuwait (+965)" },
-    { value: "+91", label: "India (+91)" },
-    { value: "+92", label: "Pakistan (+92)" },
-    { value: "+44", label: "UK (+44)" },
-    { value: "+1", label: "USA/Canada (+1)" },
-  ];
-
-  const COUNTRY_PHONE_RULES = {
-    "+971": { country: "UAE", digits: 9 },
-    "+91": { country: "India", digits: 10 },
-    "+966": { country: "KSA", digits: 9 },
-    "+974": { country: "Qatar", digits: 8 },
-    "+968": { country: "Oman", digits: 8 },
-    "+973": { country: "Bahrain", digits: 8 },
-    "+965": { country: "Kuwait", digits: 8 },
-    "+92": { country: "Pakistan", digits: 10 },
-    "+44": { country: "UK", digits: 10 },
-    "+1": { country: "USA/Canada", digits: 10 },
-  };
 
   const [loading, setLoading] = useState({
     subcat: true,
@@ -345,80 +327,50 @@ const Calculator = () => {
     gallery: false,
   });
 
-  const handleSelectType = useCallback(
-    (id) => setSelectedType(id),
-    []
-  );
+  const handleSelectType = useCallback((id) => setSelectedType(id), []);
 
-  const handlePhoneChange = (e) => {
-    const value = e.target.value.replace(/\D/g, "");
-    const rule = COUNTRY_PHONE_RULES[countryCode];
-    if (!rule) return;
-
-    if (value.length > rule.digits) return;
-
-    setPhone(value);
-
-    if (value.length < rule.digits) {
-      setPhoneError(`Phone number must be ${rule.digits} digits`);
-    } else {
-      setPhoneError("");
-    }
-  };
-
-  const handleCountryChange = (code) => {
-    setCountryCode(code);
-    setPhone("");
-    setPhoneError("");
-  };
-
-  // ✅ UPDATED: Fetch BOTH images (Moodboard & Preview) via POST method
-  // ✅ UPDATED: Fetch BOTH images (Moodboard & Preview) via POST method
   // ✅ SINGLE SOURCE OF TRUTH
-const getAllImages = useCallback(async () => {
-  if (!selectedType) return;
+  const getAllImages = useCallback(async () => {
+    if (!selectedType) return;
 
-  setLoading(prev => ({ ...prev, gallery: true }));
-  console.log("Fetching gallery via GET for Type:", selectedType);
+    setLoading((prev) => ({ ...prev, gallery: true }));
+    console.log("Fetching gallery via GET for Type:", selectedType);
 
-  try {
-    const res = await apiService.get(
-      `/estimate/master/category/types/${selectedType}/gallery`
-    );
+    try {
+      const res = await apiService.get(
+        `/estimate/master/category/types/${selectedType}/gallery`
+      );
 
-    const gallery = res.gallery || res.data?.gallery;
+      const gallery = res.gallery || res.data?.gallery;
 
-    if (gallery) {
-      // ✅ Preview (object)
-      setPreviewImage(gallery.previewFile || null);
+      if (gallery) {
+        // ✅ Preview (object)
+        setPreviewImage(gallery.previewFile || null);
 
-      // ✅ Moodboard (array)
-      setGalleryImages(gallery.moodboardImages || []);
-    } else {
+        // ✅ Moodboard (array)
+        setGalleryImages(gallery.moodboardImages || []);
+      } else {
+        setPreviewImage(null);
+        setGalleryImages([]);
+      }
+    } catch (error) {
+      console.error("Gallery fetch failed:", error);
       setPreviewImage(null);
       setGalleryImages([]);
+    } finally {
+      setLoading((prev) => ({ ...prev, gallery: false }));
     }
+  }, [selectedType]);
 
-  } catch (error) {
-    console.error("Gallery fetch failed:", error);
-    setPreviewImage(null);
-    setGalleryImages([]);
-  } finally {
-    setLoading(prev => ({ ...prev, gallery: false }));
-  }
-}, [selectedType]);
-
-const toggleImageSelect = (img) => {
-  setSelectedImages((prev) => {
-    const exists = prev.find(i => i.url === img.url);
-    if (exists) {
-      return prev.filter(i => i.url !== img.url);
-    }
-    return [...prev, img];
-  });
-};
-
-
+  const toggleImageSelect = (img) => {
+    setSelectedImages((prev) => {
+      const exists = prev.find((i) => i.url === img.url);
+      if (exists) {
+        return prev.filter((i) => i.url !== img.url);
+      }
+      return [...prev, img];
+    });
+  };
 
   // Trigger Image Fetch on Type Selection
   useEffect(() => {
@@ -579,12 +531,10 @@ const toggleImageSelect = (img) => {
     }
   };
 
-  
   const handleAnswerChange = useCallback((questionId, newValue) => {
     setAnswers((prev) => ({ ...prev, [questionId]: newValue }));
   }, []);
 
-  
   const isStepValid = () => {
     if (activeStep === 0) return !!coords.lat; // Step 1: Location required
     if (activeStep === 1) return !!selectedSubcategory; // Step 2: Service required
@@ -592,15 +542,15 @@ const toggleImageSelect = (img) => {
     if (activeStep === 3) {
       // Step 4: All questions must be answered
       if (!questions || questions.length === 0) return true;
-      return questions.every(q => {
+      return questions.every((q) => {
         const val = answers[q._id];
         return val !== undefined && val !== null && val !== "";
       });
     }
     if (activeStep === 4) {
-        // Step 5: Contact details
-        const isPhoneValid = phone.length === COUNTRY_PHONE_RULES[countryCode]?.digits;
-        return !!firstName && !!lastName && !!email && isPhoneValid && !phoneError;
+      // Step 5: Contact details
+      // Check validation state from PhoneInput
+      return !!firstName && !!lastName && !!email && isValidPhone;
     }
     return true;
   };
@@ -640,182 +590,98 @@ const toggleImageSelect = (img) => {
     });
   };
 
-//  const onFinalSubmit = async () => {
-//     // Safety check again
-//     if (!isStepValid()) {
-//         messageApi.error("Please fill all required fields");
-//         return;
-//     }
-
-//     const estimateAnswers = buildEstimateAnswersPayload();
-
-//     setLoading((prev) => ({ ...prev, submitting: true }));
-
-//     const selectedTypeData = types.find((t) => t._id === selectedType);
-
-//     const payload = {
-//       service_type: "landscape",
-//       customer_name: {
-//         first_name: firstName.trim(),
-//         last_name: lastName.trim(),
-//       },
-//       customer_email: email.trim(),
-//       customer_mobile: {
-//         country_code: countryCode,
-//         number: phone.trim(),
-//       },
-//       type: selectedType,
-//       subcategory: selectedSubcategory,
-//       package: selectedPackage,
-//       area_length: parseFloat(length) || 0,
-//       area_width: parseFloat(width) || 0,
-//       area_sqft: areaSqFt,
-//       description: `Landscaping project for ${areaSqFt} sqft area with ${
-//         selectedTypeData?.label || "selected"
-//       } style`,
-//       location: {
-//         lat: coords.lat,
-//         lng: coords.lng,
-//         country: coords.country,
-//         state: coords.state,
-//         city: coords.city,
-//         area: coords.area,
-//         address: coords.address,
-//       },
-//       answers: estimateAnswers,
-//     };
-
-//     try {
-//       const response = await apiService.post("/estimates/submit", payload);
-
-//       if (response.success) {
-//         setActiveStep(5);
-//         messageApi.success("Estimate submitted successfully!");
-//         setEstimationValue(response.final_price);
-
-//         // ✅ CHECK: Use snapshot images if available, otherwise use already fetched images
-//         const snapshotImages = response.updatedEstimate?.type_gallery_snapshot?.moodboardImages;
-        
-//         if (snapshotImages && snapshotImages.length > 0) {
-//             console.log("Using Snapshot Images from Response");
-//             setGalleryImages(snapshotImages);
-//         } else {
-//             console.log("Snapshot empty, checking existing gallery images...");
-//             if (galleryImages.length === 0) {
-//                 // If we have nothing (Step 2 failed or API didn't run), try fetching again
-//                 getAllImages();
-//             }
-//         }
-
-//       } else {
-//         messageApi.error(response.message || "Submission failed");
-//       }
-//     } catch (err) {
-//       console.error(err);
-//       messageApi.error(
-//         err.response?.data?.message || "Submission failed. Please try again."
-//       );
-//     } finally {
-//       setLoading((prev) => ({ ...prev, submitting: false }));
-//     }
-//   };
-const onFinalSubmit = async () => {
-  // Safety check
-  if (!isStepValid()) {
-    messageApi.error("Please fill all required fields");
-    return;
-  }
-
-  const estimateAnswers = buildEstimateAnswersPayload();
-  setLoading((prev) => ({ ...prev, submitting: true }));
-
-  const selectedTypeData = types.find((t) => t._id === selectedType);
-
-  const payload = {
-    service_type: "landscape",
-    customer_name: {
-      first_name: firstName.trim(),
-      last_name: lastName.trim(),
-    },
-    customer_email: email.trim().toLowerCase(),
-    customer_mobile: {
-      country_code: countryCode,
-      number: phone.trim(),
-    },
-    type: selectedType,
-    subcategory: selectedSubcategory,
-    package: selectedPackage,
-    area_length: parseFloat(length) || 0,
-    area_width: parseFloat(width) || 0,
-    area_sqft: areaSqFt,
-    description: '',
-    location: {
-      lat: coords.lat,
-      lng: coords.lng,
-      country: coords.country,
-      state: coords.state,
-      city: coords.city,
-      area: coords.area,
-      address: coords.address,
-    },
-    answers: estimateAnswers,
-  };
-
-  try {
-    // 1️⃣ SUBMIT ESTIMATE
-    const response = await apiService.post("/estimates/submit", payload);
-
-    if (response.success) {
-      setActiveStep(5);
-      setEstimationValue(response.final_price);
-      messageApi.success("Estimate submitted successfully!");
-
-      // 2️⃣ CREATE NOTIFICATION (NON-BLOCKING)
-      const notificationPayload = {
-        sender: email.trim().toLowerCase(), // ✅ STRING ONLY
-        receiverType: "admin",
-        senderType: "user",
-        notificationType: "NEW_ESTIMATE",
-        title: "New Landscaping Estimate",
-        message: "A user has submitted a new landscaping estimate request.",
-      };
-
-      try {
-        await apiService.post(
-          "/notifications/create-notification",
-          notificationPayload
-        );
-      } catch (notificationError) {
-        console.error("Notification failed", notificationError);
-      }
-
-      // 3️⃣ HANDLE GALLERY SNAPSHOT (existing logic)
-      const snapshotImages =
-        response.updatedEstimate?.type_gallery_snapshot?.moodboardImages;
-
-      if (snapshotImages && snapshotImages.length > 0) {
-        setGalleryImages(snapshotImages);
-      } else if (galleryImages.length === 0) {
-        getAllImages();
-      }
-    } else {
-      messageApi.error(response.message || "Submission failed");
+  const onFinalSubmit = async () => {
+    // Safety check again
+    if (!isStepValid()) {
+      messageApi.error("Please fill all required fields");
+      return;
     }
-  } catch (err) {
-    console.error(err);
-    messageApi.error(
-      err.response?.data?.message ||
-        "Submission failed. Please try again."
-    );
-  } finally {
-    setLoading((prev) => ({ ...prev, submitting: false }));
-  }
-};
+
+    const estimateAnswers = buildEstimateAnswersPayload();
+
+    setLoading((prev) => ({ ...prev, submitting: true }));
+
+    const selectedTypeData = types.find((t) => t._id === selectedType);
+
+    // EXTRACT LOCAL NUMBER FOR API
+    // fullPhone is like "971501234567"
+    // countryCode is like "971"
+    // We want local number "501234567"
+    const localNumber = fullPhone.startsWith(countryCode) 
+        ? fullPhone.slice(countryCode.length) 
+        : fullPhone;
+
+    const payload = {
+      service_type: "landscape",
+      customer_name: {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+      },
+      customer_email: email.trim(),
+      customer_mobile: {
+        country_code: `+${countryCode}`, // Add plus sign for API
+        number: localNumber,
+      },
+      type: selectedType,
+      subcategory: selectedSubcategory,
+      package: selectedPackage,
+      area_length: parseFloat(length) || 0,
+      area_width: parseFloat(width) || 0,
+      area_sqft: areaSqFt,
+      description: `Landscaping project for ${areaSqFt} sqft area with ${
+        selectedTypeData?.label || "selected"
+      } style`,
+      location: {
+        lat: coords.lat,
+        lng: coords.lng,
+        country: coords.country,
+        state: coords.state,
+        city: coords.city,
+        area: coords.area,
+        address: coords.address,
+      },
+      answers: estimateAnswers,
+    };
+
+    try {
+      const response = await apiService.post("/estimates/submit", payload);
+
+      if (response.success) {
+        setActiveStep(5);
+        messageApi.success("Estimate submitted successfully!");
+        setEstimationValue(response.final_price);
+
+        // ✅ CHECK: Use snapshot images if available, otherwise use already fetched images
+        const snapshotImages =
+          response.updatedEstimate?.type_gallery_snapshot?.moodboardImages;
+
+        if (snapshotImages && snapshotImages.length > 0) {
+          console.log("Using Snapshot Images from Response");
+          setGalleryImages(snapshotImages);
+        } else {
+          console.log("Snapshot empty, checking existing gallery images...");
+          if (galleryImages.length === 0) {
+            // If we have nothing (Step 2 failed or API didn't run), try fetching again
+            getAllImages();
+          }
+        }
+      } else {
+        messageApi.error(response.message || "Submission failed");
+      }
+    } catch (err) {
+      console.error(err);
+      messageApi.error(
+        err.response?.data?.message || "Submission failed. Please try again."
+      );
+    } finally {
+      setLoading((prev) => ({ ...prev, submitting: false }));
+    }
+  };
 
   const handleNext = () => {
     if (!isStepValid()) {
-        messageApi.warning("Please complete the required fields to continue");
-        return;
+      messageApi.warning("Please complete the required fields to continue");
+      return;
     }
 
     if (activeStep === 5) {
@@ -847,34 +713,34 @@ const onFinalSubmit = async () => {
     switch (activeStep) {
       case 0:
         return (
-         <motion.div className="relative text-center py-10">
-
-      {/* 🔙 SUBTLE BACK LINK */}
-      <div className="absolute -top-12 left-0">
-  <Button
-    onClick={() => navigate("/")}
-    icon={<ArrowLeftOutlined />}
-    className="h-16 px-10 rounded-2xl font-semibold shadow-md transition-all"
-    style={{
-      backgroundColor: "#ffffff",
-      border: `1px solid ${BRAND_PURPLE}33`,
-      color: BRAND_PURPLE,
-      fontSize: "16px",
-    }}
-  >
-    Back
-  </Button>
-</div>
-
+          <motion.div className="relative text-center py-10">
+            {/* 🔙 SUBTLE BACK LINK */}
+            <div className="absolute -top-12 left-0">
+              <Button
+                onClick={() => navigate("/")}
+                icon={<ArrowLeftOutlined />}
+                className="h-16 px-10 rounded-2xl font-semibold shadow-md transition-all"
+                style={{
+                  backgroundColor: "#ffffff",
+                  border: `1px solid ${BRAND_PURPLE}33`,
+                  color: BRAND_PURPLE,
+                  fontSize: "16px",
+                }}
+              >
+                Back
+              </Button>
+            </div>
 
             <div className="mb-6 inline-block p-6 rounded-full bg-purple-50">
-              <CompassOutlined style={{ color: BRAND_PURPLE, fontSize: "3rem" }} />
+              <CompassOutlined
+                style={{ color: BRAND_PURPLE, fontSize: "3rem" }}
+              />
             </div>
 
             <Title level={2}>Locate Your Address</Title>
             <Text className="text-lg text-gray-400 block mb-10">
-              We use GPS coordinates for accurate site analysis. Click on the map to adjust your
-              exact location.
+              We use GPS coordinates for accurate site analysis. Click on the
+              map to adjust your exact location.
             </Text>
 
             <Button
@@ -892,13 +758,20 @@ const onFinalSubmit = async () => {
             {coords.lat && (
               <div className="space-y-4">
                 <div className="mt-6">
-                  <Tag color="purple" className="px-4 py-1 rounded-full text-sm">
-                    Coordinates: {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
+                  <Tag
+                    color="purple"
+                    className="px-4 py-1 rounded-full text-sm"
+                  >
+                    Coordinates: {coords.lat.toFixed(6)},{" "}
+                    {coords.lng.toFixed(6)}
                   </Tag>
                 </div>
 
                 {coords.address && (
-                  <Text type="secondary" className="block mt-4 max-w-xl mx-auto">
+                  <Text
+                    type="secondary"
+                    className="block mt-4 max-w-xl mx-auto"
+                  >
                     <strong>Full Address:</strong> {coords.address}
                   </Text>
                 )}
@@ -909,7 +782,10 @@ const onFinalSubmit = async () => {
                       <Spin size="large" />
                     </div>
                   ) : (
-                    <MapPicker coords={coords} onChange={handleMapLocationChange} />
+                    <MapPicker
+                      coords={coords}
+                      onChange={handleMapLocationChange}
+                    />
                   )}
                   <Text className="text-xs text-gray-400 mt-2 block">
                     Click anywhere on the map to set your exact location
@@ -922,8 +798,7 @@ const onFinalSubmit = async () => {
 
       case 1:
         return (
-          <motion.div
-          >
+          <motion.div>
             <Title level={2} className="text-center mb-10">
               What are we designing?
             </Title>
@@ -945,8 +820,7 @@ const onFinalSubmit = async () => {
 
       case 2:
         return (
-          <motion.div
-          >
+          <motion.div>
             <Title level={2} className="text-center mb-10">
               Select Your Aesthetic Style
             </Title>
@@ -974,19 +848,17 @@ const onFinalSubmit = async () => {
 
       case 3:
         return (
-            <Step3Questions
-                questions={questions}
-                answers={answers}
-                loading={loading.questions}
-                onAnswerChange={handleAnswerChange}
-            />
+          <Step3Questions
+            questions={questions}
+            answers={answers}
+            loading={loading.questions}
+            onAnswerChange={handleAnswerChange}
+          />
         );
 
       case 4:
         return (
-          <motion.div
-            className="max-w-5xl mx-auto"
-          >
+          <motion.div className="max-w-5xl mx-auto">
             <Row gutter={48}>
               <Col xs={24} lg={10}>
                 <div
@@ -1003,16 +875,19 @@ const onFinalSubmit = async () => {
                         Service
                       </Text>
                       <Text strong className="text-white text-xl">
-                        {subcategories.find(s => s._id === selectedSubcategory)?.label || "-"}
+                        {subcategories.find(
+                          (s) => s._id === selectedSubcategory
+                        )?.label || "-"}
                       </Text>
                     </div>
                     <div>
-                        <Text className="text-purple-300 block text-xs uppercase tracking-widest mb-1">
-                            Style
-                        </Text>
-                        <Text strong className="text-white text-xl">
-                            {types.find(t => t._id === selectedType)?.label || "-"}
-                        </Text>
+                      <Text className="text-purple-300 block text-xs uppercase tracking-widest mb-1">
+                        Style
+                      </Text>
+                      <Text strong className="text-white text-xl">
+                        {types.find((t) => t._id === selectedType)?.label ||
+                          "-"}
+                      </Text>
                     </div>
                   </div>
                 </div>
@@ -1069,41 +944,60 @@ const onFinalSubmit = async () => {
                         Contact Number *
                       </Text>
 
-                      <Row gutter={8}>
-                        <Col span={8}>
-                          <Select
-                            value={countryCode}
-                            onChange={handleCountryChange}
-                            className="w-full"
-                            size="large"
-                          >
-                            {countryCodes.map((code) => (
-                              <Option key={code.value} value={code.value}>
-                                {code.label}
-                              </Option>
-                            ))}
-                          </Select>
-                        </Col>
+                      {/* --- NEW PHONE INPUT PACKAGE IMPLEMENTATION --- */}
+                      <PhoneInput
+                        country={"ae"} // Default to UAE
+                        value={fullPhone}
+                        onChange={(phone, countryData, e, formattedValue) => {
+                          setFullPhone(phone);
+                          setCountryCode(countryData.dialCode);
+                          
+                          // Basic validation: Check if length matches format
+                          // remove spaces/dashes from format to count digits
+                          const formatLength = countryData.format.replace(/[^.]/g, "").length;
+                          const phoneLength = phone.length;
+                          
+                          // Rough check if phone length is sufficient
+                          // react-phone-input-2 usually ensures format, but we check isValid 
+                          // NOTE: react-phone-input-2 doesn't expose strict validation directly in onChange 
+                          // without using an isValid prop separately, so we check if length > country code + min digits
+                          if (phone.length > countryData.dialCode.length + 5) {
+                              setIsValidPhone(true);
+                              setPhoneError("");
+                          } else {
+                              setIsValidPhone(false);
+                              setPhoneError("Invalid phone number");
+                          }
+                        }}
+                        enableSearch={true}
+                        disableSearchIcon={true}
+                        searchStyle={{ width: "90%", margin: "0 auto", padding: "10px" }}
+                        inputStyle={{
+                          width: "100%",
+                          height: "56px",
+                          borderRadius: "0.75rem", // matches rounded-xl
+                          border: phoneError ? "1px solid #ff4d4f" : "1px solid #d9d9d9",
+                          paddingLeft: "48px",
+                          fontSize: "16px",
+                        }}
+                        buttonStyle={{
+                          borderRadius: "0.75rem 0 0 0.75rem",
+                          backgroundColor: "transparent",
+                          border: "none",
+                          borderRight: "1px solid #d9d9d9",
+                        }}
+                        dropdownStyle={{
+    bottom: '100%',    // List ka bottom input ke top pe set karega
+    top: 'auto',       // Default top behavior ko cancel karega
+    borderRadius: "1rem 1rem 0 0", // Upar ke corners rounded karega
+    marginBottom: "10px" // Thoda space dene ke liye (optional)
+  }}
+                        
+                      />
 
-                        <Col span={16}>
-                          <Input
-                            size="large"
-                            value={phone}
-                            onChange={handlePhoneChange}
-                            placeholder={`Enter ${
-                              COUNTRY_PHONE_RULES[countryCode]?.digits || ""
-                            } digit number`}
-                            prefix={<PhoneFilled />}
-                            maxLength={COUNTRY_PHONE_RULES[countryCode]?.digits}
-                            status={phoneError ? "error" : ""}
-                            className="rounded-xl"
-                          />
-                        </Col>
-                      </Row>
-
-                      {phoneError && (
+                      {phoneError && !isValidPhone && fullPhone.length > 0 && (
                         <Text type="danger" className="text-xs mt-1 block">
-                          {phoneError}
+                           Please enter a valid phone number
                         </Text>
                       )}
                     </div>
@@ -1138,7 +1032,9 @@ const onFinalSubmit = async () => {
                 </Text>
                 <div className="text-6xl md:text-8xl font-black text-gray-900">
                   {estimationValue || 0}{" "}
-                  <small className="text-2xl md:text-3xl font-light">AED</small>
+                  <small className="text-2xl md:text-3xl font-light">
+                    AED
+                  </small>
                 </div>
               </div>
             </div>
@@ -1155,98 +1051,115 @@ const onFinalSubmit = async () => {
                 </div>
 
                 <Text type="secondary" className="block text-center mb-8">
-                  Based on your selection of <strong>{types.find(t => t._id === selectedType)?.label || "style"}</strong>
+                  Based on your selection of{" "}
+                  <strong>
+                    {types.find((t) => t._id === selectedType)?.label ||
+                      "style"}
+                  </strong>
                 </Text>
 
-               {/* ✅ PREVIEW IMAGE (Hero Section) */}
-{previewImage && (
-  <motion.div
-    whileHover={{ scale: 1.01 }}
-    className="mb-10 rounded-3xl overflow-hidden shadow-2xl border-4 border-white mx-auto max-w-4xl bg-white"
-  >
-    <Image
-      src={getImageUrl(previewImage.url)}
-      alt={previewImage.title || previewImage.name || "Preview"}
-      className="object-cover w-full"
-      style={{ maxHeight: "500px", width: "100%" }}
-      preview={false}
-    />
+                {/* ✅ PREVIEW IMAGE (Hero Section) */}
+                {previewImage && (
+                  <motion.div
+                    whileHover={{ scale: 1.01 }}
+                    className="mb-10 rounded-3xl overflow-hidden shadow-2xl border-4 border-white mx-auto max-w-4xl bg-white"
+                  >
+                    <Image
+                      src={getImageUrl(previewImage.url)}
+                      alt={
+                        previewImage.title || previewImage.name || "Preview"
+                      }
+                      className="object-cover w-full"
+                      style={{ maxHeight: "500px", width: "100%" }}
+                      preview={false}
+                    />
 
-    {/* ✅ PREVIEW TITLE */}
-    {(previewImage.title || previewImage.name || previewImage.label) && (
-      <div className="p-4 border-t border-gray-100 text-left">
-        <Text className="text-base font-semibold text-gray-800">
-          {previewImage.title ||
-            previewImage.name ||
-            previewImage.label}
-        </Text>
-      </div>
-    )}
-  </motion.div>
-)}
-
+                    {/* ✅ PREVIEW TITLE */}
+                    {(previewImage.title ||
+                      previewImage.name ||
+                      previewImage.label) && (
+                      <div className="p-4 border-t border-gray-100 text-left">
+                        <Text className="text-base font-semibold text-gray-800">
+                          {previewImage.title ||
+                            previewImage.name ||
+                            previewImage.label}
+                        </Text>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
 
                 {/* ✅ MOODBOARD GRID */}
                 {galleryImages && galleryImages.length > 0 && (
                   <>
-                     <Title level={4} className="text-left text-gray-500 mb-6 pl-2">Moodboard Details</Title>
+                    <Title
+                      level={4}
+                      className="text-left text-gray-500 mb-6 pl-2"
+                    >
+                      Moodboard Details
+                    </Title>
                     <Row gutter={32} className="mt-12">
-  
-  {/* RIGHT – ALL IMAGES */}
-  <Col xs={24} lg={18}>
-    <Row gutter={[24, 24]}>
-      {galleryImages.map((img, index) => {
-        const isSelected = selectedImages.some(i => i.url === img.url);
+                      {/* RIGHT – ALL IMAGES */}
+                      <Col xs={24} lg={18}>
+                        <Row gutter={[24, 24]}>
+                          {galleryImages.map((img, index) => {
+                            const isSelected = selectedImages.some(
+                              (i) => i.url === img.url
+                            );
 
-        return (
-          <Col xs={24} sm={12} md={8} key={index}>
-         <motion.div
-  whileHover={{ scale: 1.02 }}
-  onClick={() => toggleImageSelect(img)}
-  className={`relative rounded-2xl overflow-hidden cursor-pointer border-2 bg-white transition-all
+                            return (
+                              <Col xs={24} sm={12} md={8} key={index}>
+                                <motion.div
+                                  whileHover={{ scale: 1.02 }}
+                                  onClick={() => toggleImageSelect(img)}
+                                  className={`relative rounded-2xl overflow-hidden cursor-pointer border-2 bg-white transition-all
     ${isSelected ? "border-purple-600 shadow-lg" : "border-transparent"}
   `}
->
-  {/* IMAGE */}
-  <Image
-    src={getImageUrl(img.url)}
-    preview={false}
-    className="w-full h-64 object-cover"
-  />
+                                >
+                                  {/* IMAGE */}
+                                  <Image
+                                    src={getImageUrl(img.url)}
+                                    preview={false}
+                                    className="w-full h-64 object-cover"
+                                  />
 
-  {/* SELECTED OVERLAY */}
-  {isSelected && (
-    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-      <div
-        className="w-14 h-14 rounded-full flex items-center justify-center shadow-xl"
-        style={{ backgroundColor: BRAND_PURPLE }}
-      >
-        <CheckOutlined className="text-white text-2xl font-bold" />
-      </div>
-    </div>
-  )}
+                                  {/* SELECTED OVERLAY */}
+                                  {isSelected && (
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                      <div
+                                        className="w-14 h-14 rounded-full flex items-center justify-center shadow-xl"
+                                        style={{
+                                          backgroundColor: BRAND_PURPLE,
+                                        }}
+                                      >
+                                        <CheckOutlined className="text-white text-2xl font-bold" />
+                                      </div>
+                                    </div>
+                                  )}
 
-  {/* ✅ IMAGE TITLE (FIXED) */}
-  {(img.title || img.name || img.label || img.caption || img.originalName) && (
-    <div className="p-3 border-t border-gray-100 text-center">
-      <Text className="text-sm font-semibold text-gray-700 line-clamp-2">
-        {img.title ||
-          img.name ||
-          img.label ||
-          img.caption ||
-          img.originalName}
-      </Text>
-    </div>
-  )}
-</motion.div>
-
-          </Col>
-        );
-      })}
-    </Row>
-  </Col>
-</Row>
-
+                                  {/* ✅ IMAGE TITLE (FIXED) */}
+                                  {(img.title ||
+                                    img.name ||
+                                    img.label ||
+                                    img.caption ||
+                                    img.originalName) && (
+                                    <div className="p-3 border-t border-gray-100 text-center">
+                                      <Text className="text-sm font-semibold text-gray-700 line-clamp-2">
+                                        {img.title ||
+                                          img.name ||
+                                          img.label ||
+                                          img.caption ||
+                                          img.originalName}
+                                      </Text>
+                                    </div>
+                                  )}
+                                </motion.div>
+                              </Col>
+                            );
+                          })}
+                        </Row>
+                      </Col>
+                    </Row>
                   </>
                 )}
               </div>
@@ -1283,7 +1196,9 @@ const onFinalSubmit = async () => {
                       ? "bg-green-50 text-green-600 border-green-100"
                       : "border-gray-100"
                   }`}
-                  style={{ backgroundColor: i === activeStep ? BRAND_PURPLE : "" }}
+                  style={{
+                    backgroundColor: i === activeStep ? BRAND_PURPLE : "",
+                  }}
                 >
                   {i < activeStep ? <CheckOutlined /> : i + 1}
                 </div>
@@ -1296,7 +1211,9 @@ const onFinalSubmit = async () => {
                   {s.title}
                 </span>
 
-                {i < steps.length - 1 && <div className="w-4 h-[2px] bg-gray-100" />}
+                {i < steps.length - 1 && (
+                  <div className="w-4 h-[2px] bg-gray-100" />
+                )}
               </div>
             ))}
           </div>
@@ -1354,7 +1271,7 @@ const onFinalSubmit = async () => {
                 style={{
                   backgroundColor: !isStepValid() ? "#e5e7eb" : BRAND_PURPLE,
                   color: !isStepValid() ? "#9ca3af" : "white",
-                  cursor: !isStepValid() ? "not-allowed" : "pointer"
+                  cursor: !isStepValid() ? "not-allowed" : "pointer",
                 }}
               >
                 {activeStep === 4 ? "Submit Estimate" : "Continue"}
