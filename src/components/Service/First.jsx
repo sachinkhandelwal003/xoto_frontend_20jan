@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import CTAButtons from "./CTAButtons.jsx";
-import herobg from "../../assets/img/serviceimg1.png";
+// import herobg from "../../assets/img/serviceimg1.png";
 
 /* Inject DM Sans font inside component */
 const dmSans = {
@@ -18,7 +18,7 @@ export default function HomeLoanHero() {
     <section
       dir={isRTL ? "rtl" : "ltr"}
       className="relative bg-cover bg-center w-full h-140 text-center"
-      style={{ backgroundImage: `url(${herobg})`, ...dmSans }}
+      style={{ backgroundImage: `url(${"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1770010679861-serviceimg1.png"})`, ...dmSans }}
     >
       {/* Bottom shapes */}
       <div className="absolute bottom-0 left-0 w-70 h-10 bg-[var(--color-body)] z-[5] clip-left-shape"></div>
