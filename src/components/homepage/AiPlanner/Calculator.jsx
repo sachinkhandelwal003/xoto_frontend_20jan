@@ -748,9 +748,7 @@ const onFinalSubmit = async () => {
     area_length: parseFloat(length) || 0,
     area_width: parseFloat(width) || 0,
     area_sqft: areaSqFt,
-    description: `Landscaping project for ${areaSqFt} sqft area with ${
-      selectedTypeData?.label || "selected"
-    } style`,
+    description: '',
     location: {
       lat: coords.lat,
       lng: coords.lng,
