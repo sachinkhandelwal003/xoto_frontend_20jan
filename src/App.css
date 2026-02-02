@@ -1,4 +1,5 @@
    
+   
    /* linear-gradient(135deg, #D26C44   0%, #8B3F2B  100%) */
    .zigzag-card:nth-child(odd) {
       transform: translateY(10%);
@@ -6,6 +7,7 @@
     .zigzag-card:nth-child(even) {
       transform: translateY(-10%);
     }
+    
 
 
     @keyframes blob {
