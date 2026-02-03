@@ -268,6 +268,20 @@ const ViewProjects = () => {
         }
     };
 
+    const handleFinalApproveMilestone = async (milestoneId) => {
+    try {
+        await apiService.post(
+            `/freelancer/projects/update-milestone?milestoneId=${milestoneId}&projectId=${project._id}`,
+            { status: "approved" }
+        );
+
+        message.success("Milestone finally approved");
+        fetchProjectDetails();
+    } catch (err) {
+        message.error("Failed to final approve milestone");
+    }
+};
+
     const handleDeleteMilestone = async (milestoneId) => {
         Modal.confirm({
             title: 'Delete Milestone',
@@ -411,13 +425,12 @@ const ViewProjects = () => {
                             </div>
                         </div>
 
-                        {isAdmin && (
                             <Space>
-                                <Button icon={<BankOutlined />} onClick={openMoveModal} disabled={!!project.accountant || project.status !== "completed"}>
+                                <Button icon={<BankOutlined />} onClick={openMoveModal} >
                                     Move to Accounts
                                 </Button>
                             </Space>
-                        )}
+                 
                     </div>
 
                     {/* Quick Stats Row */}
@@ -548,6 +561,21 @@ const ViewProjects = () => {
                                 </div>
 
                                 <Divider style={{ margin: '8px 0' }} />
+{project.assigned_freelancer && (
+    <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 flex items-center gap-3">
+        <Avatar
+            icon={<UserOutlined />}
+            style={{ backgroundColor: COLORS.primary }}
+        />
+        <div>
+            <div className="font-medium text-blue-900">
+                {project.assigned_freelancer.name?.first_name}{" "}
+                {project.assigned_freelancer.name?.last_name}
+            </div>
+            <div className="text-xs text-blue-600">Email:{project.assigned_freelancer.email}</div>
+        </div>
+    </div>
+)}
 
                                 {/* Accountant Details */}
                                 {project.accountant && (
@@ -689,37 +717,50 @@ const ViewProjects = () => {
                                                             {item.daily_updates?.length || 0} Daily Updates
                                                         </Button>
 
-                                                        <Space>
-                                                            {isFreelancer && item.status !== 'approved' && (
-                                                                <>
-                                                                    <Button 
-                                                                        size="small" 
-                                                                        onClick={() => updateMilestoneProgress(item._id, Math.min(100, item.progress + 10))}
-                                                                    >
-                                                                        +10%
-                                                                    </Button>
-                                                                    {item.progress === 100 && item.status === 'in_progress' && (
-                                                                        <Button 
-                                                                            type="primary" 
-                                                                            size="small" 
-                                                                            onClick={() => requestPaymentRelease(item._id)}
-                                                                        >
-                                                                            Request Release
-                                                                        </Button>
-                                                                    )}
-                                                                </>
-                                                            )}
-                                                            {isAdmin && item.status === 'release_requested' && (
-                                                                <Button 
-                                                                    type="primary" 
-                                                                    size="small" 
-                                                                    className="bg-green-600" 
-                                                                    onClick={() => approveMilestone(item._id)}
-                                                                >
-                                                                    Approve & Pay
-                                                                </Button>
-                                                            )}
-                                                        </Space>
+                                                     <Space>
+    
+
+    {/* CUSTOMER APPROVED */}
+    {item.customer_approval_after_completion && (
+        <Tag color="cyan">Customer Approved</Tag>
+    )}
+
+    {/* FREELANCER APPROVED */}
+    {item.freelancer_approv_after_completion && (
+        <Tag color="blue">Freelancer Approved</Tag>
+    )}
+
+    {/* FINAL APPROVE BUTTON */}
+    {isAdmin &&
+        item.progress === 100 &&
+        item.customer_approval_after_completion &&
+        item.freelancer_approv_after_completion &&
+        item.status !== "approved" && (
+            <Popconfirm
+                title="Final approve this milestone?"
+                description="This will mark the milestone as fully approved."
+                okText="Yes, Approve"
+                cancelText="Cancel"
+                onConfirm={() => handleFinalApproveMilestone(item._id)}
+            >
+                <Button
+                    type="primary"
+                    size="small"
+                    icon={<CheckCircleOutlined />}
+                >
+                    Final Approve
+                </Button>
+            </Popconfirm>
+        )}
+
+    {/* FINAL APPROVED TAG */}
+    {item.status === "approved" && (
+        <Tag color="green" icon={<CheckCircleOutlined />}>
+            Fully Approved
+        </Tag>
+    )}
+</Space>
+
                                                     </div>
                                                 </div>
                                             </Card>

@@ -249,97 +249,58 @@ const ManageProjectFreelancer = () => {
   };
 
   /* -------------------- FIXED: Submit Daily Update Function ---------------- */
-  const submitDailyUpdate = async (values) => {
-    if (!project || !selectedMilestone) {
-      message.error("Project or milestone not selected");
-      return;
-    }
+const submitDailyUpdate = async (values) => {
+  if (!project || !selectedMilestone) return;
 
-    setSubmittingDaily(true);
-    setDailyErrors([]);
+  setSubmittingDaily(true);
 
-    try {
-      // 1. Collect photo URLs from the form
-      let photoUrls = [];
-      const photos = values.photos || [];
+  try {
+    let uploadedPhotos = [];
 
-      // Check if photos is a fileList object or array
-      const photoList = Array.isArray(photos) ? photos : (photos.fileList || []);
+    // ✅ Upload new images & keep existing URLs
+    if (values.photos && values.photos.length > 0) {
+      for (const file of values.photos) {
+        if (file.originFileObj) {
+          const formData = new FormData();
+          formData.append("file", file.originFileObj);
 
-      for (const photo of photoList) {
-        if (photo.originFileObj) {
-          // Upload new photo file
-          const photoFormData = new FormData();
-          photoFormData.append("file", photo.originFileObj);
+          const uploadRes = await apiService.post("/upload", formData);
 
-          const uploadRes = await apiService.post("upload", photoFormData);
-          if (uploadRes.success && uploadRes.file && uploadRes.file.url) {
-            photoUrls.push(uploadRes.file.url);
-          } else {
-            console.error("Upload failed for file:", photo);
+          if (uploadRes?.success && uploadRes?.file?.url) {
+            uploadedPhotos.push(uploadRes.file.url);
           }
-        } else if (photo.url) {
-          // Already uploaded URL
-          photoUrls.push(photo.url);
-        } else if (photo.response?.file?.url) {
-          // From previous upload response
-          photoUrls.push(photo.response.file.url);
+        } else if (file.url) {
+          // existing image
+          uploadedPhotos.push(file.url);
         }
       }
-
-      // 2. Prepare payload exactly as specified
-      const payload = {
-        work_done: values.work_done,
-        date: values.date.format("YYYY-MM-DD"),
-        notes: values.notes || "",
-        photos: photoUrls
-      };
-
-      console.log("Submitting daily update with payload:", payload);
-      console.log("To URL: /api/freelancer/projects/daily-update");
-      console.log("Params:", {
-        projectId: project._id,
-        milestoneId: selectedMilestone._id
-      });
-
-      // 3. Submit the daily update
-     const res = await apiService.post(
-  `freelancer/projects/daily-update?projectId=${project._id}&milestoneId=${selectedMilestone._id}`,
-  payload
-);
-
-      if (res.success) {
-        message.success("Daily update submitted successfully!");
-        fetchProjectDetails();
-        closeDailyDrawer();
-      } else {
-        message.error(res.message || "Failed to submit daily update");
-        
-        // Handle validation errors
-        if (res.errors) {
-          const errorMessages = res.errors.map(err => err.msg || err.message);
-          setDailyErrors(errorMessages);
-        }
-      }
-    } catch (err) {
-      console.error("Daily update error:", err);
-      
-      if (err.response) {
-        // Handle API response errors
-        const errorData = err.response.data;
-        if (errorData.errors) {
-          const errorMessages = errorData.errors.map(e => e.msg || e.message);
-          setDailyErrors(errorMessages);
-        } else {
-          message.error(errorData.message || "Failed to submit daily update");
-        }
-      } else {
-        message.error("Network error. Please check your connection.");
-      }
-    } finally {
-      setSubmittingDaily(false);
     }
-  };
+
+    const payload = {
+      work_done: values.work_done,
+      date: values.date.format("YYYY-MM-DD"),
+      notes: values.notes || "",
+      photos: uploadedPhotos, // ✅ array of URLs
+    };
+
+    await apiService.post(
+      `freelancer/projects/daily-update?projectId=${project._id}&milestoneId=${selectedMilestone._id}`,
+      payload
+    );
+
+    message.success("Daily update submitted successfully");
+    fetchProjectDetails();
+    closeDailyDrawer();
+  } catch (err) {
+    console.error(err);
+    message.error("Failed to submit daily update");
+  } finally {
+    setSubmittingDaily(false);
+  }
+};
+
+
+
 
   const requestPaymentRelease = async (milId) => {
     const ok = await showConfirmDialog({
@@ -363,6 +324,24 @@ const ManageProjectFreelancer = () => {
       message.error("Error requesting release");
     }
   };
+
+  const handleFreelancerApproveCompletion = async (milestone) => {
+  try {
+    await apiService.post(
+      `/freelancer/projects/update-milestone?milestoneId=${milestone._id}&projectId=${project._id}`,
+      {
+        freelancer_approv_after_completion: true,
+      }
+    );
+
+    message.success("Milestone approved by freelancer");
+
+    fetchProjectDetails();
+  } catch (err) {
+    console.error("Freelancer approval failed", err);
+    message.error("Failed to approve milestone");
+  }
+};
 
   /* --------------------------- Helpers ------------------------------------- */
   const getClientName = () => {
@@ -425,14 +404,36 @@ const ManageProjectFreelancer = () => {
         <Space>
           <Button 
             icon={<ArrowLeftOutlined />} 
-            onClick={() => navigate("/freelancer/projects")}
+            onClick={() => navigate(-1)}
           >
             Back to Projects
           </Button>
-          <Title level={2}>{project.title}</Title>
-          <Tag color={getStatusColor(project.status)}>
-            {project.status.replace("_", " ").toUpperCase()}
-          </Tag>
+        <Space wrap align="center">
+  {/* SERVICE TYPE */}
+  {project.estimate_reference?.service_type && (
+    <Tag color="green" className="text-sm">
+      {project.estimate_reference.service_type.toUpperCase()}
+    </Tag>
+  )}
+
+  {/* SUBCATEGORY */}
+  {project.estimate_reference?.subcategory?.label && (
+    <Tag color="cyan" className="text-sm">
+      {project.estimate_reference.subcategory.label}
+    </Tag>
+  )}
+
+  {/* TYPE */}
+  {project.estimate_reference?.type?.label && (
+    <Tag color="purple" className="text-sm">
+      {project.estimate_reference.type.label}
+    </Tag>
+  )}
+
+  {/* PROJECT STATUS */}
+ 
+</Space>
+
         </Space>
         <Button 
           icon={<ReloadOutlined />} 
@@ -445,35 +446,39 @@ const ManageProjectFreelancer = () => {
 
       {/* Project Info Card */}
       <Card className="mb-6">
-        <Descriptions title="Project Information" bordered column={2}>
+        <Descriptions  title={
+    <div className="flex justify-between items-center">
+      <span>Project Information</span>
+      <Tag color={getStatusColor(project.status)}>
+        {project.status.replace("_", " ").toUpperCase()}
+      </Tag>
+    </div>
+  }
+  bordered
+  column={2}>
           <Descriptions.Item label="Project Code">
             <Tag color="blue">{project.Code || "—"}</Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Budget">
-            <Text strong>${(project.budget || 0).toLocaleString()}</Text>
+            <Text strong>AED{(project.budget || 0).toLocaleString()}</Text>
           </Descriptions.Item>
-          <Descriptions.Item label="Client">
-            {getClientName()}
-            {project.client_company && (
-              <Text type="secondary"> ({project.client_company})</Text>
-            )}
-          </Descriptions.Item>
-          <Descriptions.Item label="Client Email">
-            {project.customer?.email || "—"}
-          </Descriptions.Item>
-          <Descriptions.Item label="Location">
-            {project.city || "—"}
-          </Descriptions.Item>
+       <Descriptions.Item label="Customer">
+  {project.customer?.name
+    ? `${project.customer.name.first_name} ${project.customer.name.last_name}`
+    : "—"}
+</Descriptions.Item>
+
+<Descriptions.Item label="Customer Email">
+  {project.customer?.email || "—"}
+</Descriptions.Item>
+
+       
           <Descriptions.Item label="Duration">
             {project.start_date ? moment(project.start_date).format("DD MMM YYYY") : "—"}
             {" to "}
             {project.end_date ? moment(project.end_date).format("DD MMM YYYY") : "—"}
           </Descriptions.Item>
-          <Descriptions.Item label="Supervisor">
-            {project.assigned_supervisor?.name?.first_name || "—"} 
-            {" "}
-            {project.assigned_supervisor?.name?.last_name || ""}
-          </Descriptions.Item>
+          
           <Descriptions.Item label="Created">
             {project.createdAt ? moment(project.createdAt).format("DD MMM YYYY") : "—"}
           </Descriptions.Item>
@@ -582,7 +587,7 @@ const ManageProjectFreelancer = () => {
                                 : `(${Math.abs(dueDays)} day${Math.abs(dueDays) !== 1 ? "s" : ""} overdue)`}
                             </Text>
 
-                            <Text strong>Amount: ${(mil.amount || 0).toLocaleString()}</Text>
+                            <Text strong>Amount: AED{(mil.amount || 0).toLocaleString()}</Text>
                             
                             {mil.description && (
                               <Text type="secondary">{mil.description}</Text>
@@ -606,40 +611,54 @@ const ManageProjectFreelancer = () => {
                           status={milestoneProgress === 100 ? "success" : "active"}
                         />
 
-                        <Space wrap>
-                          <Button
-                            type="primary"
-                            size="small"
-                            icon={<PlusOutlined />}
-                            onClick={() => openDailyDrawer(mil)}
-                          >
-                            Add Daily Update
-                          </Button>
+                     <Space wrap>
+  {/* Add Daily Update */}
+<Button
+  type="primary"
+  size="small"
+  icon={<PlusOutlined />}
+  onClick={() => openDailyDrawer(mil)}
+  disabled={mil.customer_approval_after_completion}
+>
+  Add Daily Update
+</Button>
 
-                          {dailyUpdates.length > 0 && (
-                            <Button
-                              size="small"
-                              icon={<FileTextOutlined />}
-                              onClick={() => {
-                                setSelectedMilestone(mil);
-                                setDailyDrawerOpen(true);
-                              }}
-                            >
-                              View Updates ({dailyUpdates.length})
-                            </Button>
-                          )}
 
-                          {milestoneProgress === 100 && mil.status === "in_progress" && (
-                            <Popconfirm
-                              title="Request for approval?"
-                              onConfirm={() => requestPaymentRelease(mil._id)}
-                            >
-                              <Button type="dashed" size="small" icon={<DollarOutlined />}>
-                                Approval Request
-                              </Button>
-                            </Popconfirm>
-                          )}
-                        </Space>
+
+
+  
+
+  {/* CUSTOMER APPROVAL STATUS */}
+  {mil.customer_approval_after_completion && (
+    <Tag color="cyan">Customer Approved</Tag>
+  )}
+
+  {/* FREELANCER FINAL APPROVAL */}
+  {mil.customer_approval_after_completion &&
+    !mil.freelancer_approv_after_completion && (
+      <Popconfirm
+        title="Confirm milestone completion?"
+        onConfirm={() => handleFreelancerApproveCompletion(mil)}
+      >
+        <Button
+          type="primary"
+          size="small"
+          icon={<CheckOutlined />}
+        >
+          Approve Completion
+        </Button>
+      </Popconfirm>
+    )}
+
+  {/* BOTH APPROVED */}
+  {mil.customer_approval_after_completion &&
+    mil.freelancer_approv_after_completion && (
+      <Tag color="green">
+        Approved by  Freelancer
+      </Tag>
+    )}
+</Space>
+
 
                         {/* Daily Updates List */}
                         {dailyUpdates.length > 0 && (
@@ -831,44 +850,33 @@ const ManageProjectFreelancer = () => {
               <TextArea rows={2} />
             </Form.Item>
 
-            <Form.Item
-              name="photos"
-              label="Photos (Optional, max 10)"
-              extra="Upload photos of completed work"
-            >
-              <Upload
-                listType="picture-card"
-                multiple
-                beforeUpload={() => false}
-                accept="image/*"
-                maxCount={10}
-                onChange={({ fileList }) => {
-                  dailyForm.setFieldsValue({ photos: fileList });
-                }}
-              >
-                <div>
-                  <UploadOutlined />
-                  <div style={{ marginTop: 8 }}>Upload</div>
-                </div>
-              </Upload>
-            </Form.Item>
+  <Form.Item
+  name="photos"
+  label="Photos"
+  valuePropName="fileList"
+  getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+>
+  <Upload
+    listType="picture-card"
+    beforeUpload={() => false}   // ❌ no auto upload
+    maxCount={10}
+    multiple
+    accept="image/*"
+    fileList={dailyForm.getFieldValue("photos") || []}
+    onChange={({ fileList }) =>
+      dailyForm.setFieldsValue({ photos: fileList })
+    }
+  >
+    <div>
+      <UploadOutlined />
+      <div style={{ marginTop: 8 }}>Upload</div>
+    </div>
+  </Upload>
+</Form.Item>
 
-            <Button
-              type="dashed"
-              block
-              icon={<PictureOutlined />}
-              onClick={() => setUploadModalVisible(true)}
-              className="mb-4"
-            >
-              Upload Single File via API Endpoint
-            </Button>
 
-            <Alert
-              message="Note: Files will be uploaded to {{base_url}}/api/upload"
-              type="info"
-              showIcon
-              className="mb-4"
-            />
+
+
 
             <Form.Item>
               <Button
