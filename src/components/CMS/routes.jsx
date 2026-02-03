@@ -73,6 +73,7 @@ import EmailSetting from "./pages/settings/EmailSetting";
 import Notifications from "./pages/dashboardPages/notification/Notifications";
 import ManageProjectsSupervisor from "./pages/dashboardPages/managefreelancer/freelancer/Projects/ManageProjectsSupervisor";
 import ManageProjectFreelancer from "./pages/dashboardPages/managefreelancer/freelancer/Projects/ManageProjectFreelancer";
+import CustomerProjects from "./pages/dashboardPages/managefreelancer/freelancer/Projects/CustomerProjects";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
 const roleSlugMap = {
   0: "superadmin",
@@ -211,6 +212,7 @@ const CmsRoutes = () => {
       <Route path="quotation/approved" element={<ApprovedQuotation />} />
       <Route path="projects/manage" element={<ManageProjectsSupervisor />} />
       <Route path="projects/manage/:projectId" element={<ManageProjectFreelancer />} />
+      <Route path="projects/ongoing" element={<CustomerProjects />} />
 
       <Route path="myprofile" element={<MyProfile />} />
             <Route path="products" element={<ProductReview />} />

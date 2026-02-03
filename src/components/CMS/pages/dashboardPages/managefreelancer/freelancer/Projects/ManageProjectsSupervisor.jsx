@@ -51,6 +51,8 @@ const ManageProjectsSupervisor = () => {
     6: "vendor-b2b",
     7: "freelancer",
     11: "accountant",
+        12: "supervisor",
+
   };
   const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
 
@@ -212,7 +214,7 @@ const ManageProjectsSupervisor = () => {
         width: 150,
         render: (v) => (
           <span className="font-semibold text-gray-700">
-            ${Number(v || 0).toLocaleString()}
+            AED{Number(v || 0).toLocaleString()}
           </span>
         ),
       },
@@ -336,7 +338,7 @@ const ManageProjectsSupervisor = () => {
                 title="Page Budget"
                 value={stats.budget}
                 precision={2}
-                prefix={<DollarCircleOutlined style={{ color: THEME.secondary }} />}
+               
               />
             </Card>
           </Col>

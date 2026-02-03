@@ -34,6 +34,14 @@ const CUSTOM_ROLE_LINKS = {
                 { title: "Response Submitted", path: "/dashboard/{roleSlug}/quotation/response" },
 
       ],
+    },
+      {
+      title: "My Projects", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects",
+      submenus: [
+        { title: "Ongoing Projects", path: "/dashboard/{roleSlug}/projects/ongoing" },
+                
+
+      ],
     }
   ],
    "12": [

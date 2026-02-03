@@ -1,18 +1,6 @@
 // src/pages/accountant/ManageProjects.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import {
-  Briefcase,
-  Calendar,
-  DollarSign,
-  FileText,
-  Download,
-  ChevronDown,
-  ChevronUp,
-  Plus,
-  Eye,
-  FileCheck,
-} from "lucide-react";
 import {
   Tabs,
   Table,
@@ -33,17 +21,58 @@ import {
   message,
   Popconfirm,
   Alert,
+  Row,
+  Col,
+  Statistic,
+  Badge,
+  Descriptions,
+  Avatar,
+  Tooltip,
+  Typography,
 } from "antd";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import dayjs from "dayjs";
 import { apiService } from "../../../../../manageApi/utils/custom.apiservice";
+import CustomTable from '../../../pages/custom/CustomTable';
+import {
+  Briefcase,
+  Calendar,
+  DollarSign,
+  FileText,
+  Download,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Eye,
+  FileCheck,
+  Send,
+  CheckCircle,
+  AlertCircle,
+  RefreshCw,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+} from "lucide-react";
 
 const { TabPane } = Tabs;
 const { Panel } = Collapse;
 const { TextArea } = Input;
+const { Title, Text, Paragraph } = Typography;
 
 const XOTO_LOGO = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMTUwIDUwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjUwIiBmaWxsPSIjMjg3NEE2Ii8+CjxwYXRoIGQ9Ik0zMCAxNUw0MCAzNUw1MCAxNUg2MEw0NSw0MEg1NUwzMCwxNVoiIGZpbGw9IndoaXRlIi8+Cjx0ZXh0IHg9Ijc1IiB5PSIzMCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmaWxsPSJ3aGl0ZSI+WFBPVE8gQ09SUDwvdGV4dD4KPC9zdmc+";
+
+// --- THEME CONFIGURATION ---
+const THEME = {
+  primary: "#722ed1",
+  secondary: "#1890ff",
+  success: "#52c41a",
+  warning: "#faad14",
+  error: "#ff4d4f",
+  bgLight: "#f9f0ff",
+};
 
 const ManageProjects = () => {
   const [projects, setProjects] = useState([]);
@@ -51,34 +80,130 @@ const ManageProjects = () => {
   const [error, setError] = useState(null);
   const [expandedProject, setExpandedProject] = useState(null);
   const [invoiceModalVisible, setInvoiceModalVisible] = useState(false);
+  const [billModalVisible, setBillModalVisible] = useState(false);
   const [invoiceType, setInvoiceType] = useState("tax"); // "po" or "tax"
   const [selectedProject, setSelectedProject] = useState(null);
+  const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [form] = Form.useForm();
+  const [billForm] = Form.useForm();
+  const [sendingBill, setSendingBill] = useState(false);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalResults: 0,
+    itemsPerPage: 10,
+  });
+
+  // Flatten projects for CustomTable
+  const flattenProjectsForSearch = (list = []) => {
+    const normalize = (str) => (str || "").toString().trim();
+    
+    return list.map((project) => {
+      const title = project?.title || "";
+      const budget = project?.budget || 0;
+      const status = project?.status || "";
+      const clientName = project?.customer?.name 
+        ? `${project.customer.name.first_name || ""} ${project.customer.name.last_name || ""}`.trim()
+        : "";
+      const clientEmail = project?.customer?.email || "";
+      
+      const totalMilestones = project.milestones?.length || 0;
+      const completedMilestones = project.completed_milestones || 0;
+      const progressPercentage = project.progress_percentage || 0;
+      
+      return {
+        ...project,
+        __search_title: normalize(title),
+        __search_budget: normalize(budget),
+        __search_status: normalize(status),
+        __search_client: normalize(clientName),
+        __search_email: normalize(clientEmail),
+        __search_milestones: normalize(`${completedMilestones}/${totalMilestones}`),
+        __search_progress: normalize(`${progressPercentage}%`),
+      };
+    });
+  };
 
   // Fetch Accountant's Assigned Projects
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        setLoading(true);
-        const response = await apiService.get("freelancer/projects/my/get");
-        console.log(response)
-        if (response.success) {
-          setProjects(response.projects || []);
-        } else {
-          throw new Error(response.message || "Failed to load projects");
+  const fetchProjects = async (page = 1, limit = 10) => {
+    try {
+      setLoading(true);
+      const response = await apiService.get("freelancer/projects/my/get", { page, limit });
+      
+      if (response.success) {
+        const flattenedProjects = flattenProjectsForSearch(response.projects || []);
+        setProjects(flattenedProjects);
+        
+        if (response.pagination) {
+          setPagination({
+            currentPage: response.pagination.page || 1,
+            totalPages: response.pagination.totalPages || 1,
+            totalResults: response.pagination.total || response.projects?.length || 0,
+            itemsPerPage: response.pagination.limit || limit,
+          });
         }
-      } catch (err) {
-        console.error("Error fetching projects:", err);
-        setError(err.message || "Failed to load assigned projects");
-        message.error("Could not load projects");
-      } finally {
-        setLoading(false);
+      } else {
+        throw new Error(response.message || "Failed to load projects");
       }
-    };
+    } catch (err) {
+      console.error("Error fetching projects:", err);
+      setError(err.message || "Failed to load assigned projects");
+      message.error("Could not load projects");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchProjects();
   }, []);
 
+  // API to send milestone bill to customer
+  const sendMilestoneBill = async (values) => {
+    if (!selectedProject || !selectedMilestone) return;
+    
+    setSendingBill(true);
+    try {
+      const payload = {
+        project_id: selectedProject._id,
+        customer_id: selectedProject.customer?._id,
+        milestone_id: selectedMilestone._id,
+        price: values.price,
+        estimate_id: selectedProject.estimate_reference?._id || null,
+        notes: values.notes || "",
+      };
+
+      const response = await apiService.post(
+        "/freelancer/projects/send-milestone-bill-to-customer",
+        payload
+      );
+        message.success(response.message);
+
+  
+    } catch (err) {
+      console.error("Error sending bill:", err);
+      message.error(err.response?.data?.message || "Failed to send bill");
+    } finally {
+      setSendingBill(false);
+    }
+  };
+
+  // Open Bill Modal
+  const openBillModal = (project, milestone) => {
+    setSelectedProject(project);
+    setSelectedMilestone(milestone);
+    setBillModalVisible(true);
+    
+    billForm.setFieldsValue({
+      project: project.title,
+      milestone: milestone.title,
+      customer: `${project.customer?.name?.first_name} ${project.customer?.name?.last_name}`,
+      price: milestone.amount,
+      notes: "",
+    });
+  };
+
+  // Open Invoice Modal
   const openInvoiceModal = (project, type) => {
     setSelectedProject(project);
     setInvoiceType(type);
@@ -96,6 +221,7 @@ const ManageProjects = () => {
     });
   };
 
+  // Download PDF
   const downloadPDF = (project, values, type) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -176,121 +302,500 @@ const ManageProjects = () => {
       pending: "orange",
       approved: "green",
       release_requested: "gold",
+      draft: "gray",
+      assigned: "purple",
     };
     return map[status] || "default";
   };
 
-  if (loading) return <div className="flex justify-center py-20"><Spin size="large" tip="Loading your projects..." /></div>;
-  if (error) return <Alert message="Error" description={error} type="error" showIcon className="m-6" />;
-  if (projects.length === 0) return <Empty description="No projects assigned yet" className="mt-20" />;
+  const formatStatus = (s) => {
+    const map = {
+      completed: "Completed",
+      in_progress: "In Progress",
+      pending: "Pending",
+      approved: "Approved",
+      release_requested: "Payment Requested",
+      draft: "Draft",
+      assigned: "Assigned",
+    };
+    return map[s] || s.replace(/_/g, " ").toUpperCase();
+  };
+
+  // Table Columns for CustomTable
+  const columns = useMemo(
+    () => [
+      {
+        key: "project_info",
+        title: "Project Details",
+        width: 300,
+        render: (_, record) => (
+          <div className="flex items-center gap-3">
+            <Avatar
+              shape="square"
+              size="large"
+              icon={<Briefcase size={16} />}
+              style={{ backgroundColor: THEME.bgLight, color: THEME.primary }}
+            />
+            <div>
+              <div className="font-semibold text-gray-800 text-base">{record.title}</div>
+              <div className="flex items-center gap-2 mt-1">
+                <Text type="secondary">Client: {record.customer?.name?.first_name} {record.customer?.name?.last_name}</Text>
+                <Badge 
+                  count={record.milestones?.length || 0} 
+                  style={{ backgroundColor: THEME.primary }}
+                  title="Total Milestones"
+                />
+              </div>
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: "budget",
+        title: "Budget",
+        width: 140,
+        render: (_, record) => (
+          <span className="font-semibold text-gray-700">
+            ₹{Number(record.budget || 0).toLocaleString()}
+          </span>
+        ),
+      },
+      {
+        key: "progress",
+        title: "Progress",
+        width: 180,
+        render: (_, record) => {
+          const progress = record.progress_percentage || 0;
+          const completed = record.completed_milestones || 0;
+          const total = record.milestones?.length || 0;
+          
+          return (
+            <div className="w-full">
+              <div className="flex justify-between text-xs mb-1 text-gray-500">
+                <span>
+                  {completed}/{total} Milestones
+                </span>
+                <span>{progress}%</span>
+              </div>
+              <Progress 
+                percent={progress} 
+                size="small" 
+                status={progress === 100 ? 'success' : 'active'}
+                showInfo={false}
+                strokeColor={THEME.primary}
+              />
+            </div>
+          );
+        },
+      },
+      {
+        key: "status",
+        title: "Status",
+        width: 140,
+        render: (_, record) => {
+          const status = record.status;
+          const color = getStatusColor(status);
+          
+          return (
+            <Tag color={color} style={{ borderRadius: 12, padding: "2px 10px" }}>
+              {formatStatus(status)}
+            </Tag>
+          );
+        },
+      },
+      {
+        key: "milestone_status",
+        title: "Milestone Status",
+        width: 180,
+        render: (_, record) => {
+          const milestones = record.milestones || [];
+          const pendingBills = milestones.filter(m => 
+            m.status === "approved" && !m.bill_sent
+          ).length;
+          
+          const sentBills = milestones.filter(m => 
+            m.bill_sent
+          ).length;
+          
+          return (
+            <Space direction="vertical" size="small">
+              <div className="flex items-center">
+                <Badge count={pendingBills} style={{ backgroundColor: THEME.warning }} />
+                <Text type="secondary" className="ml-2">Pending Bills</Text>
+              </div>
+              <div className="flex items-center">
+                <Badge count={sentBills} style={{ backgroundColor: THEME.success }} />
+                <Text type="secondary" className="ml-2">Sent Bills</Text>
+              </div>
+            </Space>
+          );
+        },
+      },
+      {
+        key: "actions",
+        title: "Actions",
+        width: 120,
+        align: "center",
+        render: (_, record) => (
+          <Space>
+            <Tooltip title="View Details">
+              <Button
+                type="primary"
+                ghost
+                size="small"
+                shape="circle"
+                icon={<Eye size={14} />}
+                onClick={() => setExpandedProject(expandedProject === record._id ? null : record._id)}
+                style={{ borderColor: THEME.primary, color: THEME.primary }}
+              />
+            </Tooltip>
+            <Tooltip title="Generate Documents">
+              <Button
+                type="default"
+                size="small"
+                shape="circle"
+                icon={<FileCheck size={14} />}
+                onClick={() => openInvoiceModal(record, "po")}
+              />
+            </Tooltip>
+          </Space>
+        ),
+      },
+    ],
+    [THEME, expandedProject]
+  );
+
+  // Calculate statistics
+  const stats = useMemo(() => {
+    return {
+      totalProjects: pagination.totalResults,
+      totalBudget: projects.reduce((sum, p) => sum + (p.budget || 0), 0),
+      pendingBills: projects.reduce((sum, p) => {
+        const milestones = p.milestones || [];
+        return sum + milestones.filter(m => 
+          m.status === "approved" && !m.bill_sent
+        ).length;
+      }, 0),
+      completedProjects: projects.filter(p => p.status === "completed").length,
+    };
+  }, [projects, pagination.totalResults]);
+
+  const handlePageChange = (page, limit) => {
+    fetchProjects(page, limit);
+  };
+
+  if (loading && projects.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Spin size="large" tip="Loading your projects..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert 
+        message="Error Loading Projects" 
+        description={error} 
+        type="error" 
+        showIcon 
+        className="m-6"
+      />
+    );
+  }
+
+  if (projects.length === 0 && !loading) {
+    return (
+      <Empty 
+        description="No projects assigned yet" 
+        className="mt-20"
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-          <Briefcase className="text-green-600" /> Assigned Projects
-        </h1>
-        <p className="text-gray-600 mt-2">Manage finances, generate POs & Tax Invoices</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <Title level={2} className="flex items-center gap-3">
+              <Briefcase className="text-green-600" /> Accountant Projects Management
+            </Title>
+            <Text type="secondary">Manage finances, generate bills, POs & Tax Invoices</Text>
+          </div>
+          <Button 
+            icon={<RefreshCw size={16} />} 
+            onClick={() => fetchProjects()}
+            loading={loading}
+          >
+            Refresh
+          </Button>
+        </div>
       </motion.div>
 
-      <div className="space-y-6">
-        {projects.map((project, idx) => (
-          <motion.div
-            key={project._id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
+      {/* Summary Stats */}
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col xs={24} sm={6}>
+          <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.primary }}>
+            <Statistic 
+              title="Total Projects" 
+              value={stats.totalProjects} 
+              prefix={<Briefcase style={{ color: THEME.primary }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.secondary }}>
+            <Statistic
+              title="Total Budget"
+              value={stats.totalBudget}
+              precision={0}
+              prefix={<DollarSign style={{ color: THEME.secondary }} />}
+              formatter={value => `₹${value.toLocaleString()}`}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.warning }}>
+            <Statistic
+              title="Pending Bills"
+              value={stats.pendingBills}
+              prefix={<AlertCircle style={{ color: THEME.warning }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.success }}>
+            <Statistic
+              title="Completed Projects"
+              value={stats.completedProjects}
+              prefix={<CheckCircle style={{ color: THEME.success }} />}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* CustomTable */}
+      <Card bordered={false} className="shadow-md rounded-lg mb-6" bodyStyle={{ padding: 0 }}>
+        <CustomTable
+          columns={columns}
+          data={projects}
+          loading={loading}
+          totalItems={pagination.totalResults}
+          currentPage={pagination.currentPage}
+          itemsPerPage={pagination.itemsPerPage}
+          onPageChange={handlePageChange}
+          scroll={{ x: 1200 }}
+        />
+      </Card>
+
+      {/* Expanded Project Details */}
+      {expandedProject && projects.find(p => p._id === expandedProject) && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card className="shadow-lg mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <Title level={4} className="mb-0">
+                {projects.find(p => p._id === expandedProject)?.title}
+              </Title>
+              <Button
+                type="text"
+                size="large"
+                icon={<ChevronUp />}
+                onClick={() => setExpandedProject(null)}
+              />
+            </div>
+            
+            <Tabs defaultActiveKey="milestones">
+              <TabPane tab={`Milestones (${projects.find(p => p._id === expandedProject)?.milestones?.length || 0})`} key="milestones">
+                <Collapse accordion>
+                  {projects.find(p => p._id === expandedProject)?.milestones?.map((milestone) => (
+                    <Panel
+                      key={milestone._id}
+                      header={
+                        <div className="flex justify-between items-center w-full">
+                          <Space>
+                            <Text strong>{milestone.title}</Text>
+                            <Tag color={getStatusColor(milestone.status)}>
+                              {formatStatus(milestone.status)}
+                            </Tag>
+                            {milestone.bill_sent && (
+                              <Tag color="green" icon={<CheckCircle size={12} />}>
+                                Bill Sent
+                              </Tag>
+                            )}
+                          </Space>
+                          <Space>
+                            <Text strong>₹{milestone.amount?.toLocaleString()}</Text>
+                            {milestone.status === "approved" && !milestone.bill_sent && (
+                              <Button
+                                type="primary"
+                                size="small"
+                                icon={<Send size={12} />}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openBillModal(
+                                    projects.find(p => p._id === expandedProject),
+                                    milestone
+                                  );
+                                }}
+                              >
+                                Send Bill
+                              </Button>
+                            )}
+                          </Space>
+                        </div>
+                      }
+                    >
+                      <Descriptions column={2} bordered size="small" className="mb-4">
+                        <Descriptions.Item label="Description" span={2}>
+                          {milestone.description}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Amount">
+                          ₹{milestone.amount?.toLocaleString()}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Progress">
+                          {milestone.progress}%
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Start Date">
+                          {dayjs(milestone.start_date).format("DD MMM YYYY")}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="End Date">
+                          {dayjs(milestone.end_date).format("DD MMM YYYY")}
+                        </Descriptions.Item>
+                      </Descriptions>
+                      
+                      <div className="my-3">
+                        <Progress percent={milestone.progress} status={milestone.progress === 100 ? 'success' : 'active'} />
+                      </div>
+                      
+                      {milestone.daily_updates?.length > 0 && (
+                        <div className="bg-gray-50 p-3 rounded mt-3">
+                          <Text strong>Recent Updates:</Text>
+                          {milestone.daily_updates.slice(0, 3).map((update) => (
+                            <div key={update._id} className="text-sm mt-1">
+                              • {dayjs(update.date).format("DD MMM YYYY")}: {update.work_done}
+                              {update.approval_status && (
+                                <Tag color="green" className="ml-2 text-xs">APPROVED</Tag>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </Panel>
+                  ))}
+                </Collapse>
+              </TabPane>
+
+              <TabPane tab="Generate Documents" key="documents">
+                <Space size="middle" wrap>
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<FileCheck className="mr-2" />}
+                    onClick={() => openInvoiceModal(
+                      projects.find(p => p._id === expandedProject),
+                      "po"
+                    )}
+                    style={{ background: "#52c41a", borderColor: "#52c41a" }}
+                  >
+                    Generate Purchase Order (PO)
+                  </Button>
+                  <Button
+                    type="primary"
+                    size="large"
+                    danger
+                    icon={<FileText className="mr-2" />}
+                    onClick={() => openInvoiceModal(
+                      projects.find(p => p._id === expandedProject),
+                      "tax"
+                    )}
+                  >
+                    Generate Tax Invoice (GST)
+                  </Button>
+                </Space>
+              </TabPane>
+            </Tabs>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Send Bill Modal */}
+      <Modal
+        title="Send Milestone Bill to Customer"
+        open={billModalVisible}
+        onCancel={() => {
+          setBillModalVisible(false);
+          billForm.resetFields();
+        }}
+        footer={null}
+        width={600}
+        destroyOnClose
+      >
+        <Form form={billForm} layout="vertical" onFinish={sendMilestoneBill}>
+          <Alert
+            message="Bill Information"
+            description="This will send a bill notification to the customer for the selected milestone."
+            type="info"
+            showIcon
+            className="mb-4"
+          />
+          
+          <Form.Item label="Project" name="project">
+            <Input disabled />
+          </Form.Item>
+          
+          <Form.Item label="Milestone" name="milestone">
+            <Input disabled />
+          </Form.Item>
+          
+          <Form.Item label="Customer" name="customer">
+            <Input disabled />
+          </Form.Item>
+          
+          <Form.Item 
+            label="Price" 
+            name="price"
+            rules={[
+              { required: true, message: 'Please enter the price' },
+              { type: 'number', min: 1, message: 'Price must be greater than 0' }
+            ]}
           >
-            <Card className="shadow-lg">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-800">{project.title}</h3>
-                  <Space size="middle" className="mt-3">
-                    <Tag color={getStatusColor(project.status)}>
-                      {project.status.toUpperCase()}
-                    </Tag>
-                    <span className="text-lg font-medium">₹{project.budget.toLocaleString()}</span>
-                    <span>{project.category?.name} → {project.subcategory?.name}</span>
-                    <Progress percent={project.progress_percentage} size="small" className="w-32" />
-                  </Space>
-                </div>
-                <Button
-                  type="text"
-                  size="large"
-                  icon={expandedProject === project._id ? <ChevronUp /> : <ChevronDown />}
-                  onClick={() => setExpandedProject(expandedProject === project._id ? null : project._id)}
-                />
-              </div>
-
-              {expandedProject === project._id && (
-                <Tabs defaultActiveKey="milestones">
-                  <TabPane tab={`Milestones (${project.milestones_count})`} key="milestones">
-                    <Collapse accordion>
-                      {project.milestones.map((m) => (
-                        <Panel
-                          key={m._id}
-                          header={
-                            <div className="flex justify-between">
-                              <span className="font-medium">{m.title}</span>
-                              <Space>
-                                <Tag color={getStatusColor(m.status)}>
-                                  {m.status.replace(/_/g, " ").toUpperCase()}
-                                </Tag>
-                                <span className="font-medium">₹{m.amount.toLocaleString()}</span>
-                              </Space>
-                            </div>
-                          }
-                        >
-                          <p className="text-gray-600">{m.description}</p>
-                          <div className="my-3">
-                            <Progress percent={m.progress} status={m.progress === 100 ? "success" : "active"} />
-                          </div>
-                          {m.daily_updates?.length > 0 && (
-                            <div className="bg-gray-50 p-3 rounded mt-3">
-                              <strong>Recent Updates:</strong>
-                              {m.daily_updates.slice(0, 3).map((u) => (
-                                <div key={u._id} className="text-sm mt-1">
-                                  • {dayjs(u.date).format("DD MMM YYYY")}: {u.work_done}
-                                  {u.approval_status && (
-                                    <Tag color="green" className="ml-2 text-xs">APPROVED</Tag>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </Panel>
-                      ))}
-                    </Collapse>
-                  </TabPane>
-
-                  <TabPane tab="Generate Documents" key="documents">
-                    <Space size="middle" wrap>
-                      <Button
-                        type="primary"
-                        size="large"
-                        icon={<FileCheck className="mr-2" />}
-                        onClick={() => openInvoiceModal(project, "po")}
-                        style={{ background: "#52c41a", borderColor: "#52c41a" }}
-                      >
-                        Generate Purchase Order (PO)
-                      </Button>
-                      <Button
-                        type="primary"
-                        size="large"
-                        danger
-                        icon={<FileText className="mr-2" />}
-                        onClick={() => openInvoiceModal(project, "tax")}
-                      >
-                        Generate Tax Invoice (GST)
-                      </Button>
-                    </Space>
-                  </TabPane>
-                </Tabs>
-              )}
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+            <InputNumber
+              style={{ width: '100%' }}
+              prefix="₹"
+              placeholder="Enter bill amount"
+            />
+          </Form.Item>
+          
+          <Form.Item label="Notes (Optional)" name="notes">
+            <TextArea
+              rows={3}
+              placeholder="Add any notes for the customer..."
+              maxLength={500}
+              showCount
+            />
+          </Form.Item>
+          
+          <div className="flex justify-end gap-3 mt-6">
+            <Button onClick={() => setBillModalVisible(false)}>
+              Cancel
+            </Button>
+            <Button 
+              type="primary" 
+              htmlType="submit"
+              loading={sendingBill}
+              icon={<Send size={16} />}
+            >
+              Send Bill to Customer
+            </Button>
+          </div>
+        </Form>
+      </Modal>
 
       {/* Invoice / PO Modal */}
       <Modal
@@ -302,6 +807,7 @@ const ManageProjects = () => {
         }}
         footer={null}
         width={800}
+        destroyOnClose
       >
         <Form form={form} layout="vertical" onFinish={handleCreateInvoice}>
           <div className="grid grid-cols-2 gap-4">
