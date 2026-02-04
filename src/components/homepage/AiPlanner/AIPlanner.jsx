@@ -286,11 +286,13 @@ const [pendingGeneration, setPendingGeneration] = useState(false);
     }
   };
 
+
+
  const downloadImage = async (url, name) => {
-  // 1️⃣ Open preview in new tab
+  
   window.open(url, "_blank", "noopener,noreferrer");
 
-  // 2️⃣ Force download
+ xoto
   const res = await fetch(url);
   const blob = await res.blob();
 

@@ -212,6 +212,7 @@ function App() {
               <Route path="/case-studies" element={<Casestudy />} />
               <Route path="/training" element={<Training />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/grid/login" element={<Login />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/user/login" element={<CustomerLogin />} />
               <Route path="/accountant/login" element={<AccountantLogin />} />
