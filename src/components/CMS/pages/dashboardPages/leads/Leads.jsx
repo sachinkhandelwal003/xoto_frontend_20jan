@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { apiService } from '../../../../../manageApi/utils/custom.apiservice';
 import CustomTable from '../../../pages/custom/CustomTable';
 // 1. IMPORT YOUR LOGO HERE
@@ -26,7 +26,8 @@ import {
   Empty,
   Image,
   List,
-  Collapse
+  Collapse,
+  Input
 } from 'antd';
 import {
   UserOutlined,
@@ -50,13 +51,16 @@ import {
   TeamOutlined,
   HistoryOutlined,
   DollarOutlined,
-  CheckOutlined
+  CheckOutlined,
+  FileDoneOutlined,
+  SearchOutlined
 } from '@ant-design/icons';
 import { showSuccessAlert, showErrorAlert } from '../../../../../manageApi/utils/sweetAlert';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 const { Panel } = Collapse;
+const { Search } = Input;
 
 // Purple Theme Colors (Same as LeadsList)
 const PURPLE_THEME = {
@@ -83,10 +87,39 @@ const Leads = () => {
   const [rejectedLeads, setRejectedLeads] = useState([]);
   const [deals, setDeals] = useState([]);
 
+  // Pagination States
+  const [acceptedPagination, setAcceptedPagination] = useState({
+    currentPage: 1,
+    itemsPerPage: 10,
+    totalItems: 0
+  });
+
+  const [rejectedPagination, setRejectedPagination] = useState({
+    currentPage: 1,
+    itemsPerPage: 10,
+    totalItems: 0
+  });
+
+  const [dealsPagination, setDealsPagination] = useState({
+    currentPage: 1,
+    itemsPerPage: 10,
+    totalItems: 0
+  });
+
   // Action States
   const [convertingDeal, setConvertingDeal] = useState(null);
   const [viewDetailsModal, setViewDetailsModal] = useState({ visible: false, data: null });
   const [quotationModal, setQuotationModal] = useState({ visible: false, data: null });
+  const [adminQuotationViewModal, setAdminQuotationViewModal] = useState({
+    visible: false,
+    data: null
+  });
+  
+  // Search State
+  const [searchText, setSearchText] = useState('');
+  
+  // Prevent double call in React strict mode
+  const dataFetchedRef = useRef(false);
 
   // Stats
   const [stats, setStats] = useState({
@@ -129,44 +162,110 @@ const Leads = () => {
 
   // --- API CALLS ---
 
-  const fetchLeads = async (status) => {
+  const flattenLeadsForSearch = (list = []) => {
+    return list.map((lead) => {
+      const first = lead.customer?.name?.first_name || '';
+      const last = lead.customer?.name?.last_name || '';
+      const fullName = `${first} ${last}`.trim();
+
+      const email = lead.customer?.email || lead.customer_email || '';
+
+      const phone = lead.customer?.mobile
+        ? `${lead.customer.mobile.country_code || ''} ${lead.customer.mobile.number || ''}`.trim()
+        : `${lead.customer_mobile?.country_code || ''} ${lead.customer_mobile?.number || ''}`.trim();
+
+      const location = lead.customer?.location
+        ? [
+          lead.customer.location.area,
+          lead.customer.location.city,
+          lead.customer.location.state,
+          lead.customer.location.country,
+          lead.customer.location.address
+        ]
+          .filter(Boolean)
+          .join(' ')
+        : '';
+
+      const service = [
+        lead.service_type,
+        lead.subcategory?.label,
+        lead.type?.label
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      return {
+        ...lead,
+
+        // ✅ Flat searchable fields
+        __search_customerName: fullName,
+        __search_email: email,
+        __search_mobile: phone,
+        __search_location: location,
+        __search_service: service,
+      };
+    });
+  };
+
+  const fetchLeads = async (status, page = 1, limit = 10) => {
     setLoading(true);
     try {
-      const response = await apiService.get('/estimates', {
-        status: status === 'accepted' ? 'customer_accepted' : 'customer_rejected',
-        page: 1,
-        limit: 100
+      const response = await apiService.get("/estimates", {
+        status: status === "accepted" ? "customer_accepted" : "customer_rejected",
+        page: page,
+        limit: limit,
       });
 
-      if (response.success) {
-        console.log(`${status} Leads Response:`, response.data); // Debug log
-        if (status === 'accepted') {
-          setAcceptedLeads(response.data || []);
+      if (response?.success) {
+        const rawData = response.data || [];
+        const formattedData = flattenLeadsForSearch(rawData);
+
+        console.log(`${status} Leads Response:`, rawData);
+
+        if (status === "accepted") {
+          setAcceptedLeads(formattedData);
+          setAcceptedPagination({
+            currentPage: response.pagination?.page || page,
+            itemsPerPage: response.pagination?.limit || limit,
+            totalItems: response.pagination?.total || 0
+          });
         } else {
-          setRejectedLeads(response.data || []);
+          setRejectedLeads(formattedData);
+          setRejectedPagination({
+            currentPage: response.pagination?.page || page,
+            itemsPerPage: response.pagination?.limit || limit,
+            totalItems: response.pagination?.total || 0
+          });
         }
-        updateStats(response.data || [], status);
+
+        updateStats(rawData, status);
       }
     } catch (error) {
       console.error(error);
-      showErrorAlert('Error', `Failed to load ${status} leads`);
+      showErrorAlert("Error", `Failed to load ${status} leads`);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchDeals = async () => {
+  const fetchDeals = async (page = 1, limit = 10) => {
     setLoading(true);
     try {
       const response = await apiService.get('/estimates', {
         status: 'deal',
-        page: 1,
-        limit: 100
+        page: page,
+        limit: limit
       });
 
       if (response.success) {
-        console.log('Deals Response:', response.data); // Debug log
-        setDeals(response.data || []);
+        console.log('Deals Response:', response.data);
+        const formattedData = flattenLeadsForSearch(response.data || []);
+        setDeals(formattedData);
+        setDealsPagination({
+          currentPage: response.pagination?.page || page,
+          itemsPerPage: response.pagination?.limit || limit,
+          totalItems: response.pagination?.total || 0
+        });
         updateDealStats(response.data || []);
       }
     } catch (error) {
@@ -184,13 +283,24 @@ const Leads = () => {
       if (response.success) {
         showSuccessAlert('Success', 'Converted to deal successfully');
         setViewDetailsModal({ visible: false, data: null });
-        fetchLeads('accepted');
-        fetchDeals();
+        fetchLeads('accepted', acceptedPagination.currentPage, acceptedPagination.itemsPerPage);
+        fetchDeals(dealsPagination.currentPage, dealsPagination.itemsPerPage);
       }
     } catch (error) {
       showErrorAlert('Error', 'Failed to convert to deal');
     } finally {
       setConvertingDeal(null);
+    }
+  };
+
+  // Handle page change
+  const handlePageChange = (page, pageSize) => {
+    if (activeTab === 'accepted') {
+      fetchLeads('accepted', page, pageSize);
+    } else if (activeTab === 'rejected') {
+      fetchLeads('rejected', page, pageSize);
+    } else if (activeTab === 'deals') {
+      fetchDeals(page, pageSize);
     }
   };
 
@@ -218,15 +328,69 @@ const Leads = () => {
     }));
   };
 
+  // Get current pagination based on active tab
+  const getCurrentPagination = () => {
+    if (activeTab === 'accepted') return acceptedPagination;
+    if (activeTab === 'rejected') return rejectedPagination;
+    return dealsPagination;
+  };
+
+  // Get current data based on active tab
+  const getCurrentData = () => {
+    if (activeTab === 'accepted') return acceptedLeads;
+    if (activeTab === 'rejected') return rejectedLeads;
+    return deals;
+  };
+
+  // Filter data based on search text
+  const filteredData = useMemo(() => {
+    const currentData = getCurrentData();
+    if (!searchText) return currentData;
+
+    const text = searchText.toLowerCase();
+
+    return currentData.filter(item =>
+      [
+        item.__search_customerName,
+        item.__search_email,
+        item.__search_mobile,
+        item.__search_location,
+        item.__search_service
+      ]
+        .filter(Boolean)
+        .some(field =>
+          field.toLowerCase().includes(text)
+        )
+    );
+  }, [searchText, activeTab, acceptedLeads, rejectedLeads, deals]);
+
   // --- EFFECTS ---
 
   useEffect(() => {
+    if (dataFetchedRef.current) return;
+    dataFetchedRef.current = true;
+
     if (activeTab === 'deals') {
       fetchDeals();
     } else {
       fetchLeads(activeTab);
     }
   }, [activeTab]);
+
+  // Handle tab change
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+    setSearchText(''); // Clear search on tab change
+    
+    // Reset to first page when changing tabs
+    if (key === 'accepted') {
+      fetchLeads('accepted', 1, acceptedPagination.itemsPerPage);
+    } else if (key === 'rejected') {
+      fetchLeads('rejected', 1, rejectedPagination.itemsPerPage);
+    } else if (key === 'deals') {
+      fetchDeals(1, dealsPagination.itemsPerPage);
+    }
+  };
 
   // --- COLUMNS ---
 
@@ -303,21 +467,7 @@ const Leads = () => {
         </Tooltip>
       )
     }] : []),
-    // Only show Project Ref if on Deals Tab
-    ...(activeTab === 'deals' ? [{
-      title: 'Project Ref',
-      width: 150,
-      render: (_, r) => (
-        <div>
-          <span className="font-mono bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
-            #{r.project_reference?.substring(0, 8) || 'N/A'}
-          </span>
-          <div className="text-xs text-gray-400 mt-1">
-             Converted: {formatDate(r.deal_converted_at)}
-          </div>
-        </div>
-      )
-    }] : []),
+    
     {
       title: 'Status',
       width: 140,
@@ -333,7 +483,7 @@ const Leads = () => {
     {
       title: 'Actions',
       fixed: 'right',
-      width: 180,
+      width: 250,
       render: (_, r) => (
         <Space>
           <Tooltip title="View Details">
@@ -343,6 +493,24 @@ const Leads = () => {
                 onClick={() => setViewDetailsModal({ visible: true, data: r })}
             />
           </Tooltip>
+          
+          {/* View Admin Quotation Button */}
+          {r.admin_final_quotation && (
+            <Tooltip title="View Admin Quotation">
+              <Button
+                size="small"
+                icon={<FileDoneOutlined />}
+                onClick={() =>
+                  setAdminQuotationViewModal({
+                    visible: true,
+                    data: r
+                  })
+                }
+              >
+                View Quotation
+              </Button>
+            </Tooltip>
+          )}
           
           {/* Conversion Button only for Accepted Leads */}
           {r.status === 'customer_accepted' && !r.project_reference && (
@@ -369,12 +537,6 @@ const Leads = () => {
     }
   ];
 
-  const currentData = useMemo(() => {
-    if (activeTab === 'accepted') return acceptedLeads;
-    if (activeTab === 'rejected') return rejectedLeads;
-    return deals;
-  }, [activeTab, acceptedLeads, rejectedLeads, deals]);
-
   // --- SUB-COMPONENTS ---
   const DetailCard = ({ title, icon, children, className }) => (
     <Card 
@@ -387,6 +549,25 @@ const Leads = () => {
     </Card>
   );
 
+  const QuotationHeader = ({ title, statusTag, date }) => (
+    <div className="p-4 bg-gray-50 border-b mb-4">
+      <div className="flex justify-between items-start">
+        <div>
+          <img src={logo} alt="Company Logo" style={{ height: 40, marginBottom: 8 }} />
+          <div className="text-gray-500 text-sm">
+            <strong>Date:</strong> {formatDate(date)}
+          </div>
+        </div>
+        <div className="text-right">
+          <Title level={4} style={{ color: PURPLE_THEME.primary, margin: 0 }}>
+            {title}
+          </Title>
+          {statusTag}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       
@@ -396,56 +577,13 @@ const Leads = () => {
         <Text type="secondary">Manage accepted quotations, handle rejections, and monitor converted deals.</Text>
       </div>
 
-      {/* STATS ROW */}
-      <Row gutter={[16, 16]} className="mb-6">
-        <Col xs={12} sm={6} md={4}>
-            <Card size="small" hoverable className="text-center border-t-4 border-green-500">
-                <Statistic 
-                  title="ACCEPTED LEADS" 
-                  value={stats.accepted} 
-                  valueStyle={{ color: '#52c41a' }} 
-                  prefix={<CheckCircleOutlined />}
-                />
-            </Card>
-        </Col>
-        <Col xs={12} sm={6} md={5}>
-            <Card size="small" hoverable className="text-center border-t-4 border-purple-500">
-                <Statistic 
-                  title="ACTIVE DEALS" 
-                  value={stats.deals} 
-                  valueStyle={{ color: PURPLE_THEME.primary }} 
-                  prefix={<RocketOutlined />}
-                />
-            </Card>
-        </Col>
-        <Col xs={12} sm={6} md={4}>
-            <Card size="small" hoverable className="text-center border-t-4 border-red-400">
-                <Statistic 
-                  title="REJECTED" 
-                  value={stats.rejected} 
-                  valueStyle={{ color: '#ff4d4f' }} 
-                  prefix={<CloseCircleOutlined />}
-                />
-            </Card>
-        </Col>
-        <Col xs={24} sm={12} md={5}>
-            <Card size="small" hoverable className="text-center border-t-4 border-green-600 bg-green-50">
-                <Statistic 
-                  title="SECURED REVENUE" 
-                  value={stats.secured_revenue} 
-                  precision={0}
-                  prefix="AED"
-                  valueStyle={{ color: '#135200', fontWeight: 'bold' }} 
-                />
-            </Card>
-        </Col>
-      </Row>
+      
 
       {/* TABS FILTER */}
       <Card bodyStyle={{ padding: 0 }} className="mb-6 overflow-hidden rounded-lg shadow-sm">
         <Tabs 
             activeKey={activeTab} 
-            onChange={setActiveTab} 
+            onChange={handleTabChange} 
             type="card" 
             size="large"
             tabBarStyle={{ margin: 0, background: '#fff' }}
@@ -454,7 +592,7 @@ const Leads = () => {
                 tab={
                    <span className="px-4">
                       <CheckCircleOutlined style={{color: '#52c41a'}} /> Accepted
-                      <Badge count={acceptedLeads.length} style={{ backgroundColor: '#52c41a', marginLeft: 8 }} />
+                      <Badge count={acceptedPagination.totalItems} style={{ backgroundColor: '#52c41a', marginLeft: 8 }} />
                    </span>
                 } 
                 key="accepted" 
@@ -463,7 +601,7 @@ const Leads = () => {
                 tab={
                    <span className="px-4">
                       <CloseCircleOutlined style={{color: '#ff4d4f'}} /> Rejected
-                      <Badge count={rejectedLeads.length} style={{ backgroundColor: '#ff4d4f', marginLeft: 8 }} />
+                      <Badge count={rejectedPagination.totalItems} style={{ backgroundColor: '#ff4d4f', marginLeft: 8 }} />
                    </span>
                 } 
                 key="rejected" 
@@ -472,7 +610,7 @@ const Leads = () => {
                 tab={
                    <span className="px-4">
                       <RocketOutlined style={{color: '#722ed1'}} /> Active Deals
-                      <Badge count={deals.length} style={{ backgroundColor: '#722ed1', marginLeft: 8 }} />
+                      <Badge count={dealsPagination.totalItems} style={{ backgroundColor: '#722ed1', marginLeft: 8 }} />
                    </span>
                 } 
                 key="deals" 
@@ -480,14 +618,19 @@ const Leads = () => {
         </Tabs>
       </Card>
 
+     
+
       {/* DATA TABLE */}
       <Card bodyStyle={{ padding: '0px' }}>
-          <CustomTable
-            columns={getColumns()}
-            data={currentData}
-            loading={loading}
-            pagination={false} 
-          />
+        <CustomTable
+          columns={getColumns()}
+          data={filteredData}
+          loading={loading}
+          totalItems={getCurrentPagination().totalItems}
+          currentPage={getCurrentPagination().currentPage}
+          itemsPerPage={getCurrentPagination().itemsPerPage}
+          onPageChange={handlePageChange}
+        />
       </Card>
 
       {/* ========================================================= */}
@@ -594,13 +737,10 @@ const Leads = () => {
                                 <Descriptions.Item label="Service Type">
                                   <Tag color="purple">{viewDetailsModal.data.service_type}</Tag>
                                 </Descriptions.Item>
-                                <Descriptions.Item label="Package">
-                                  <Tag color="gold">{viewDetailsModal.data.package?.name}</Tag>
-                                </Descriptions.Item>
+                                
                                 <Descriptions.Item label="Subcategory">{viewDetailsModal.data.subcategory?.label}</Descriptions.Item>
                                 <Descriptions.Item label="Type">{viewDetailsModal.data.type?.label}</Descriptions.Item>
                                 <Descriptions.Item label="Area">{viewDetailsModal.data.area_sqft} sq.ft</Descriptions.Item>
-                                <Descriptions.Item label="Dimensions">{viewDetailsModal.data.area_length} x {viewDetailsModal.data.area_width}</Descriptions.Item>
                            </Descriptions>
                            <div className="mt-3">
                               <Text strong>Description:</Text>
@@ -672,92 +812,79 @@ const Leads = () => {
                          )}
 
                          {/* FINANCIAL SUMMARY CARD */}
-                         {/* Use admin_final_quotation if available, otherwise fall back to final_quotation */}
                       {(() => {
-  const quotation =
-    viewDetailsModal.data.admin_final_quotation ||
-    viewDetailsModal.data.final_quotation;
+                        const quotation =
+                          viewDetailsModal.data.admin_final_quotation ||
+                          viewDetailsModal.data.final_quotation;
 
-  if (!quotation) return <Empty description="No Quotation Data" />;
+                        if (!quotation) return <Empty description="No Quotation Data" />;
 
-  return (
-    <Card
-      title={
-        <span className="text-green-700">
-          <FileTextOutlined />{' '}
-          {quotation.role === 'admin'
-            ? 'Admin Final Quotation'
-            : 'Final Quotation'}
-          {quotation.superadmin_approved && (
-            <Tag color="green" className="ml-2">
-              Admin Approved
-            </Tag>
-          )}
-        </span>
-      }
-      className="border-green-200 bg-green-50"
-      size="small"
-    >
-      <div className="text-center py-4">
-        <div className="text-3xl font-bold text-green-700">
-          {formatCurrency(quotation.grand_total)}
-        </div>
+                        return (
+                          <Card
+                            title={
+                              <span className="text-green-700">
+                                <FileTextOutlined />{' '}
+                                {quotation.role === 'admin'
+                                  ? 'Admin Final Quotation'
+                                  : 'Final Quotation'}
+                                {quotation.superadmin_approved && (
+                                  <Tag color="green" className="ml-2">
+                                    Admin Approved
+                                  </Tag>
+                                )}
+                              </span>
+                            }
+                            className="border-green-200 bg-green-50"
+                            size="small"
+                          >
+                            <div className="text-center py-4">
+                              <div className="text-3xl font-bold text-green-700">
+                                {formatCurrency(quotation.grand_total)}
+                              </div>
 
-        <div className="text-xs text-gray-500 mb-4">
-          Approved Amount
-        </div>
+                              <div className="text-xs text-gray-500 mb-4">
+                                Approved Amount
+                              </div>
 
-        <div className="text-left text-sm space-y-1 mb-4">
-          <div className="flex justify-between">
-            <span>Subtotal:</span>
-            <span>{formatCurrency(quotation.subtotal)}</span>
-          </div>
+                              <div className="text-left text-sm space-y-1 mb-4">
+                                
 
-          {quotation.discount_amount > 0 && (
-            <div className="flex justify-between text-red-500">
-              <span>
-                Discount ({quotation.discount_percent}%):
-              </span>
-              <span>-{formatCurrency(quotation.discount_amount)}</span>
-            </div>
-          )}
+                                {quotation.discount_amount > 0 && (
+                                  <div className="flex justify-between text-red-500">
+                                    <span>
+                                      Discount ({quotation.discount_percent}%):
+                                    </span>
+                                    <span>-{formatCurrency(quotation.discount_amount)}</span>
+                                  </div>
+                                )}
 
-          <div className="flex justify-between">
-            <span>Margin ({quotation.margin_percent}%):</span>
-            <span>+{formatCurrency(quotation.margin_amount)}</span>
-          </div>
+                                <div className="flex justify-between">
+                                  <span>Margin ({quotation.margin_percent}%):</span>
+                                  <span>+{formatCurrency(quotation.margin_amount)}</span>
+                                </div>
 
-          <Divider className="my-2" />
+                                <Divider className="my-2" />
 
-          <div className="flex justify-between font-bold">
-            <span>Grand Total:</span>
-            <span>{formatCurrency(quotation.grand_total)}</span>
-          </div>
-        </div>
+                                <div className="flex justify-between font-bold">
+                                  <span>Grand Total:</span>
+                                  <span>{formatCurrency(quotation.grand_total)}</span>
+                                </div>
+                              </div>
 
-        <div className="text-xs text-gray-500 mt-2">
-          Created by:{' '}
-          {quotation.role === 'admin'
-            ? 'Administrator'
-            : quotation.role === 'supervisor'
-            ? 'Supervisor'
-            : 'Freelancer'}
-        </div>
+                              <div className="text-xs text-gray-500 mt-2">
+                                Created by:{' '}
+                                {quotation.role === 'admin'
+                                  ? 'Administrator'
+                                  : quotation.role === 'supervisor'
+                                  ? 'Supervisor'
+                                  : 'Freelancer'}
+                              </div>
 
-        <Button
-          block
-          icon={<EyeOutlined />}
-          onClick={() =>
-            setQuotationModal({ visible: true, data: quotation })
-          }
-          className="mt-4"
-        >
-          View Full Invoice
-        </Button>
-      </div>
-    </Card>
-  );
-})()}
+                            
+                            </div>
+                          </Card>
+                        );
+                      })()}
                          {/* Package Details */}
                          {viewDetailsModal.data.package && (
                            <DetailCard title="Package Details" icon={<GoldOutlined />}>
@@ -884,6 +1011,124 @@ const Leads = () => {
                 </div>
             </div>
         )}
+      </Modal>
+
+      {/* ========================================================= */}
+      {/* ADMIN QUOTATION VIEW MODAL (Same as LeadsList)           */}
+      {/* ========================================================= */}
+      <Modal
+        title={null}
+        open={adminQuotationViewModal.visible}
+        onCancel={() => setAdminQuotationViewModal({ visible: false, data: null })}
+        footer={[
+          <Button
+            key="close"
+            onClick={() =>
+              setAdminQuotationViewModal({ visible: false, data: null })
+            }
+          >
+            Close
+          </Button>
+        ]}
+        width={900}
+        centered
+      >
+        {adminQuotationViewModal.data?.admin_final_quotation && (() => {
+          const lead = adminQuotationViewModal.data;
+          const q = lead.admin_final_quotation;
+
+          return (
+            <div className="bg-white">
+              {/* 🔥 HEADER WITH LOGO */}
+              <QuotationHeader
+                title="FINAL QUOTATION"
+                date={q.createdAt}
+                statusTag={
+                  <Tag color="success" style={{ marginTop: 8 }}>
+                    APPROVED & SENT
+                  </Tag>
+                }
+              />
+
+              {/* CUSTOMER & SERVICE INFO */}
+              <div className="mb-6">
+                <Row gutter={[16, 16]}>
+                  <Col span={12}>
+                    <div className="p-3 bg-gray-50 rounded">
+                      <Text strong>Customer:</Text>
+                      <div className="font-medium">
+                        {lead.customer?.name?.first_name}{' '}
+                        {lead.customer?.name?.last_name}
+                      </div>
+                      <div className="text-gray-500 text-sm">
+                        {lead.customer?.email}
+                      </div>
+                    </div>
+                  </Col>
+                  <Col span={12}>
+                    <div className="p-3 bg-gray-50 rounded">
+                      <Text strong>Service:</Text>
+                      <Tag color="purple">
+                        {lead.service_type?.toUpperCase()}
+                      </Tag>
+                      <div className="text-sm text-gray-600 mt-1">
+                        {lead.subcategory?.label} – {lead.type?.label}
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+              </div>
+
+              {/* SCOPE OF WORK */}
+              {q.scope_of_work && (
+                <div className="mb-6">
+                  <Text strong>Scope of Work:</Text>
+                  <Paragraph className="mt-2 bg-gray-50 p-3 rounded">
+                    {q.scope_of_work}
+                  </Paragraph>
+                </div>
+              )}
+
+              {/* PRICE BREAKDOWN */}
+              <div className="mb-6 p-4 border rounded">
+                <Text strong className="block mb-3">Price Breakdown:</Text>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span>Base Price:</span>
+                    <span className="font-medium">
+                      {formatCurrency(q.price)}
+                    </span>
+                  </div>
+
+                  {q.discount_percent > 0 && (
+                    <div className="flex justify-between text-red-500">
+                      <span>Discount ({q.discount_percent}%):</span>
+                      <span>-{formatCurrency(q.discount_amount)}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-purple-700">
+                    <span>Admin Margin ({q.margin_percent}%):</span>
+                    <span className="font-bold">
+                      +{formatCurrency(q.margin_amount)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between text-xl font-bold text-purple-800 border-t pt-3">
+                    <span>Grand Total:</span>
+                    <span>{formatCurrency(q.grand_total)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* FOOTER NOTE */}
+              <div className="text-xs text-gray-500 italic">
+                This quotation has been approved and sent to the customer.
+              </div>
+            </div>
+          );
+        })()}
       </Modal>
 
     </div>

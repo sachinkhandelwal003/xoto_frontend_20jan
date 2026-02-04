@@ -657,7 +657,7 @@ const Freelancers = () => {
           </div>
         </div>
 
-        <Row gutter={[16, 16]}>
+        {/* <Row gutter={[16, 16]}>
           <Col xs={24} sm={8}>
             <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.primary }}>
               <Statistic
@@ -685,7 +685,7 @@ const Freelancers = () => {
               />
             </Card>
           </Col>
-        </Row>
+        </Row> */}
       </div>
 
       {/* 2. Main Content */}
