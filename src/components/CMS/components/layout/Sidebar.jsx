@@ -42,6 +42,14 @@ const CUSTOM_ROLE_LINKS = {
                 
 
       ],
+    }, {
+      title: "Bills", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects",
+      submenus: [
+        { title: "My Bills", path: "/dashboard/{roleSlug}/projects/milestone/bills" },
+                        { title: "My Invoice", path: "/dashboard/{roleSlug}/projects/invoices" },
+
+
+      ],
     }
   ],
    "12": [

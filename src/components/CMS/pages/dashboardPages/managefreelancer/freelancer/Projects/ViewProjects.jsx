@@ -48,7 +48,7 @@ import {
     Divider,
     Tooltip,
     Descriptions,
-    Popconfirm
+    Popconfirm 
 } from "antd";
 import moment from "moment";
 import { apiService } from "../../../../../../../manageApi/utils/custom.apiservice";
@@ -979,6 +979,28 @@ const ViewProjects = () => {
                                     {du.notes && (
                                         <div className="text-sm text-gray-500 bg-gray-50 p-2 rounded mb-2">{du.notes}</div>
                                     )}
+                                    {/* Photos Section */}
+{Array.isArray(du.photos) && du.photos.length > 0 && (
+  <div className="mt-3">
+    <div className="text-xs text-gray-500 mb-1">Photos</div>
+
+    <Image.PreviewGroup>
+      <div className="flex flex-wrap gap-2">
+        {du.photos.map((photo, idx) => (
+          <Image
+            key={idx}
+            src={photo}
+            width={70}
+            height={70}
+            className="rounded border border-gray-200 object-cover"
+            alt={`Daily update photo ${idx + 1}`}
+          />
+        ))}
+      </div>
+    </Image.PreviewGroup>
+  </div>
+)}
+
 
                                     {/* Admin Approval UI */}
                                     {isAdmin && du.approval_status === 'pending' && (
