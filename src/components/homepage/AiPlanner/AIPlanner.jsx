@@ -17,6 +17,26 @@ import logoNew from "../../../assets/img/logonew2.png";
 
 const { Paragraph, Title, Text } = Typography;
 
+const getProgressText = (progress) => {
+  if (progress < 20) {
+    return { title: "Reading Your Inputs", subtitle: "Understanding your preferences and space details…" };
+  }
+  if (progress < 40) {
+    return { title: "Setting the Scene", subtitle: "Creating the base layout…" };
+  }
+  if (progress < 60) {
+    return { title: "Adding Greenery & Elements", subtitle: "Placing key elements…" };
+  }
+  if (progress < 80) {
+    return { title: "Enhancing Visual Details", subtitle: "Adjusting lighting and textures…" };
+  }
+  if (progress < 90) {
+    return { title: "Rendering Image", subtitle: "Finalizing details…" };
+  }
+  return { title: "Finalizing Design", subtitle: "Almost done…" };
+};
+
+
 // --- Constants ---
 const BRAND_PURPLE = "#5C039B"; 
 
@@ -63,6 +83,11 @@ const AIPlanner = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [loadingSaved, setLoadingSaved] = useState(false);
+  const progress = Math.floor(generationProgress);
+const { title, subtitle } = getProgressText(progress);
+const [pendingGeneration, setPendingGeneration] = useState(false);
+
+
   
   // Modals
   const [showGeneratedModal, setShowGeneratedModal] = useState(false);
@@ -146,16 +171,23 @@ const AIPlanner = () => {
     }
 
     if (!isCustomerLoggedIn) {
-      setShowAuthModal(true);
-      return;
-    }
+    setPendingGeneration(true); 
+    setShowAuthModal(true);
+    return;
+  }
 
     generateAIDesigns(user);
   };
 
   const handleAuthSuccess = (userData) => {
-    setShowAuthModal(false);
-  };
+  setShowAuthModal(false);
+
+  if (pendingGeneration) {
+    setPendingGeneration(false);
+    generateAIDesigns(userData);
+  }
+};
+
 
   const generateAIDesigns = async (currentUser) => {
     setIsGenerating(true);
@@ -254,14 +286,22 @@ const AIPlanner = () => {
     }
   };
 
-  const downloadImage = (url, name) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${name}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+ const downloadImage = async (url, name) => {
+  // 1️⃣ Open preview in new tab
+  window.open(url, "_blank", "noopener,noreferrer");
+
+  // 2️⃣ Force download
+  const res = await fetch(url);
+  const blob = await res.blob();
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${name}.png`;
+  a.click();
+
+  URL.revokeObjectURL(a.href);
+};
+
 
   // --- Mobile Tab Item ---
   const MobileTabItem = ({ icon: Icon, label, id, onClick }) => (
@@ -580,7 +620,7 @@ const AIPlanner = () => {
                 {upgradeMessage || "You've reached your limit. Upgrade to Pro to continue designing."}
             </p>
             <div className="space-y-3">
-                <Link to="/subscription/plans">
+                <Link to="">
                     <Button type="primary" size="large" block className="h-12 text-base font-bold rounded-xl shadow-lg shadow-purple-200" style={{ background: 'linear-gradient(135deg, #5C039B 0%, #8E2DE2 100%)', border: 'none' }} onClick={() => setShowUpgradeModal(false)}>View Upgrade Plans</Button>
                 </Link>
                 <Button type="text" block className="text-gray-400" onClick={() => setShowUpgradeModal(false)}>Maybe Later</Button>
@@ -677,13 +717,25 @@ const AIPlanner = () => {
               Reimagining your outdoor space with premium flora...
             </p>
           </div>
-          <div className="w-full max-w-xs lg:w-80">
-            <Progress percent={Math.floor(generationProgress)} strokeColor={{ '0%': '#8E2DE2', '100%': BRAND_PURPLE }} status="active" strokeWidth={10} showInfo={false} />
-            <div className="flex justify-between mt-3 text-[10px] lg:text-xs font-bold text-gray-400 uppercase tracking-widest">
-              <span>Analyzing Geometry</span>
-              <span>{Math.floor(generationProgress)}%</span>
-            </div>
-          </div>
+       <div className="w-full max-w-xs lg:w-80">
+  <Progress
+    percent={progress}
+    strokeColor={{ "0%": "#8E2DE2", "100%": BRAND_PURPLE }}
+    status="active"
+    strokeWidth={10}
+    showInfo={false}
+  />
+
+  <div className="flex justify-between mt-3 text-[10px] lg:text-xs font-bold uppercase tracking-widest text-gray-400">
+    <span>{title}</span>
+    <span>{progress}%</span>
+  </div>
+
+  <div className="mt-1 text-[10px] lg:text-xs text-gray-400 text-left">
+    {subtitle}
+  </div>
+</div>
+
         </div>
       )}
     </div>
