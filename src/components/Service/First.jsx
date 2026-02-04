@@ -4,6 +4,7 @@ import CTAButtons from "./CTAButtons.jsx";
 // import herobg from "../../assets/img/serviceimg1.png";
 
 /* Inject DM Sans font inside component */
+//w3e2e3e
 const dmSans = {
   fontFamily: "'DM Sans', sans-serif",
 }; 

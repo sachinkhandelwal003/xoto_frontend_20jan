@@ -385,7 +385,7 @@ const AddCategory = () => {
           <Form.Item 
             name="description" 
             label="Description" 
-            rules={[{ required: true, message: 'Please enter description' }]}
+            rules={[{ required: false, message: 'Please enter description' }]}
           >
             <TextArea 
                 rows={4} 

@@ -108,10 +108,10 @@ const LeadGenerationModal = ({
       setOtpLoading(true);
       
       // API Call
-      await apiService.post("/otp/send-otp", {
-        country_code: formattedCode,
-        phone_number: mobileVal
-      });
+      // await apiService.post("/otp/send-otp", {
+      //   country_code: formattedCode,
+      //   phone_number: mobileVal
+      // });
 
       notification.success({ message: "OTP Sent", description: "Please check your mobile." });
       setOtpSent(true);

@@ -32,21 +32,19 @@ export const languages = [
 /* ------------------- NAV ITEMS ------------------- */
 const navItems = [
   { key: "home", path: "/" },
-  {
+  { key: "mortgages", path: "/mortgage/services" },
+ { key: "properties", path: "/marketplace" },
+ 
+
+   {
     key: "homeUpgrade",
     children: [
+       { key: "interiors", path: "/services/interior" },
       { key: "landscaping", path: "/landscaping" },
-      { key: "interiors", path: "/services/interior" },
+     
+        { key: "store", path: "/ecommerce/b2c" },
     ],
   },
-  {
-    key: "homeOwnership",
-    children: [
-      { key: "mortgages", path: "/mortgage/services" },
-      { key: "properties", path: "/marketplace" },
-    ],
-  },
-  { key: "store", path: "/ecommerce/b2c" },
   {   
     key: "knowledgeHub",
     children: [
