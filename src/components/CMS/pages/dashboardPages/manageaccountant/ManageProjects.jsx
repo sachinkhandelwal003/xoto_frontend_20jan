@@ -460,34 +460,57 @@ const ManageProjects = () => {
           </span>
         ),
       },
-      {
-        key: "progress",
-        title: "Progress",
-        width: 180,
-        render: (_, record) => {
-          const progress = record.progress_percentage || 0;
-          const completed = record.completed_milestones || 0;
-          const total = record.milestones?.length || 0;
-          
-          return (
-            <div className="w-full">
-              <div className="flex justify-between text-xs mb-1 text-gray-500">
-                <span>
-                  {completed}/{total} Milestones
-                </span>
-                <span>{progress}%</span>
-              </div>
-              <Progress 
-                percent={progress} 
-                size="small" 
-                status={progress === 100 ? 'success' : 'active'}
-                showInfo={false}
-                strokeColor={THEME.primary}
-              />
-            </div>
-          );
-        },
-      },
+     {
+  key: "progress",
+  title: "Progress",
+  width: 180,
+  render: (_, record) => {
+    const milestones = (record.milestones || []).filter(m => !m.is_deleted);
+
+    let totalWeight = 0;
+    let weightedProgress = 0;
+    let completedCount = 0;
+
+    milestones.forEach((m) => {
+      const weight = m.milestone_weightage || 0;
+      const progress = m.progress || 0;
+
+      totalWeight += weight;
+      weightedProgress += (progress * weight) / 100;
+
+      if (["approved", "completed"].includes(m.status)) {
+        completedCount += 1;
+      }
+    });
+
+    const percent =
+      totalWeight > 0
+        ? Math.round((weightedProgress / totalWeight) * 100)
+        : 0;
+
+    const total = milestones.length;
+
+    return (
+      <div className="w-full">
+        <div className="flex justify-between text-xs mb-1 text-gray-500">
+          <span>
+            {completedCount}/{total} Milestones
+          </span>
+          <span>{percent}%</span>
+        </div>
+
+        <Progress
+          percent={percent}
+          size="small"
+          status={percent === 100 ? "success" : "active"}
+          showInfo={false}
+          strokeColor={THEME.primary}
+        />
+      </div>
+    );
+  },
+}
+,
       {
         key: "status",
         title: "Status",

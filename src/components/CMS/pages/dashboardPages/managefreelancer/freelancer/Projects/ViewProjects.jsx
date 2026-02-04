@@ -128,23 +128,27 @@ const ViewProjects = () => {
         const diff = moment(end).diff(moment(), 'days');
         return diff > 0 ? diff : 0;
     };
+const calculateWeightedProgress = () => {
+  if (!project?.milestones?.length) return 0;
 
-    const calculateWeightedProgress = () => {
-        if (!project?.milestones?.length) return 0;
+  const activeMilestones = project.milestones.filter(
+    (m) => !m.is_deleted
+  );
 
-        let totalWeightedProgress = 0;
-        let totalWeightage = 0;
+  const totalWeightage = activeMilestones.reduce(
+    (sum, m) => sum + (m.milestone_weightage || 0),
+    0
+  );
 
-        project.milestones.forEach(milestone => {
-            const weightage = milestone.milestone_weightage || 0;
-            const progress = milestone.progress || 0;
+  const approvedWeightage = activeMilestones
+    .filter((m) => m.status === "approved")
+    .reduce((sum, m) => sum + (m.milestone_weightage || 0), 0);
 
-            totalWeightedProgress += (progress * weightage) / 100;
-            totalWeightage += weightage;
-        });
+  return totalWeightage > 0
+    ? Math.round((approvedWeightage / totalWeightage) * 100)
+    : 0;
+};
 
-        return totalWeightage > 0 ? Math.round((totalWeightedProgress / totalWeightage) * 100) : 0;
-    };
 
     const fetchAccountants = async () => {
         const res = await apiService.get("/users?role=accountant");
@@ -427,7 +431,7 @@ const ViewProjects = () => {
 
                             <Space>
                                 <Button icon={<BankOutlined />} onClick={openMoveModal} >
-                                    Move to Accounts
+                                    Move to Accountant
                                 </Button>
                             </Space>
                  
@@ -444,14 +448,15 @@ const ViewProjects = () => {
                             />
                         </Col>
                         <Col xs={12} sm={6}>
-                            <Statistic
-                                title="Progress"
-                                value={calculateWeightedProgress()}
-                                suffix="%"
-                                valueStyle={{ color: COLORS.success, fontWeight: 600 }}
-                                prefix={<CheckCircleOutlined className="mr-1" />}
-                            />
-                        </Col>
+  <Statistic
+    title="Progress"
+    value={calculateWeightedProgress()}
+    suffix="%"
+    valueStyle={{ color: COLORS.success, fontWeight: 600 }}
+    prefix={<CheckCircleOutlined className="mr-1" />}
+  />
+</Col>
+
                         <Col xs={12} sm={6}>
                             <Statistic
                                 title="Days Remaining"
