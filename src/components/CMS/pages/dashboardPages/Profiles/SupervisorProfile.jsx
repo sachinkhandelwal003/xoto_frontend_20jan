@@ -3,15 +3,14 @@ import { Card, Avatar, Badge, Descriptions, Tag, Space } from "antd";
 import {
   UserOutlined,
   MailOutlined,
+  PhoneOutlined,
   CalendarOutlined,
   CheckCircleOutlined,
   StopOutlined,
-  PhoneOutlined,
-  ShopOutlined,
 } from "@ant-design/icons";
 import { apiService } from "../../../../../manageApi/utils/custom.apiservice";
 
-const VendorMYProfile = () => {
+const SupervisorProfile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -30,18 +29,19 @@ const VendorMYProfile = () => {
     getProfile();
   }, []);
 
-  const fullName = profile?.full_name
-    || `${profile?.name?.first_name || ""} ${profile?.name?.last_name || ""}`;
+  const fullName = `${profile?.name?.first_name || ""} ${profile?.name?.last_name || ""}`;
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center ">
       <Card
         loading={loading}
         className="w-full max-w-8xl rounded-xl overflow-hidden shadow-lg"
-        cover={<div className="h-32 bg-gradient-to-br from-purple-600 to-black" />}
+        cover={
+          <div className="h-32 bg-gradient-to-br from-purple-600 to-black" />
+        }
       >
-        {/* Header (UNCHANGED UI) */}
-        <div className="text-center -mt-16 mb-5">
+        {/* Header */}
+        <div className="text-center -mt-16 mb-6">
           <Badge
             dot
             status={profile?.isActive ? "success" : "error"}
@@ -54,17 +54,17 @@ const VendorMYProfile = () => {
             />
           </Badge>
 
-          <h2 className="mt-4 mb-0 text-xl font-semibold">
-            {fullName || "Vendor"}
+          <h2 className="mt-4 text-xl font-semibold">
+            {fullName || "Supervisor"}
           </h2>
 
           <Tag color="purple" className="mt-2">
-            Vendor
+            Supervisor
           </Tag>
         </div>
 
-        {/* Details (SAME UI) */}
-        <Descriptions bordered column={1} size="small">
+        {/* Details */}
+        <Descriptions bordered column={1} size="middle">
           <Descriptions.Item
             label={
               <span className="flex items-center gap-1">
@@ -82,53 +82,18 @@ const VendorMYProfile = () => {
               </span>
             }
           >
-            {profile?.mobile?.country_code} {profile?.mobile?.number}
+            {profile?.mobile || "N/A"}
           </Descriptions.Item>
 
           <Descriptions.Item
             label={
               <span className="flex items-center gap-1">
-                <ShopOutlined /> Store Name
+                <CheckCircleOutlined /> Status
               </span>
             }
           >
-            {profile?.store_details?.store_name}
-          </Descriptions.Item>
-
-          <Descriptions.Item label="Store Description">
-            {profile?.store_details?.store_description}
-          </Descriptions.Item>
-
-          <Descriptions.Item label="Store Address">
-            <div>
-              <div>{profile?.store_details?.store_address}</div>
-              <div className="text-sm text-gray-500">
-                {profile?.store_details?.city},{" "}
-                {profile?.store_details?.country} -{" "}
-                {profile?.store_details?.pincode}
-              </div>
-            </div>
-          </Descriptions.Item>
-
-          <Descriptions.Item label="Categories">
-            <Space wrap>
-              {profile?.store_details?.categories?.map((cat) => (
-                <Tag key={cat._id} color="blue">
-                  {cat.name}
-                </Tag>
-              ))}
-            </Space>
-          </Descriptions.Item>
-
-          <Descriptions.Item
-            label={
-              <span className="flex items-center gap-1">
-                <CheckCircleOutlined /> Onboarding
-              </span>
-            }
-          >
-            <Tag color="green">
-              {profile?.onboarding_status?.toUpperCase()}
+            <Tag color={profile?.isActive ? "green" : "red"}>
+              {profile?.isActive ? "Active" : "Inactive"}
             </Tag>
           </Descriptions.Item>
 
@@ -162,4 +127,4 @@ const VendorMYProfile = () => {
   );
 };
 
-export default VendorMYProfile;
+export default SupervisorProfile;

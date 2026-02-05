@@ -257,14 +257,14 @@ function App() {
               <Route path="/how-it-works" element={<Howitworks />} />
               <Route path="/project-view" element={<Completeproductview />} />
               <Route path="/designers" element={<Designers />} />
-              <Route path="/freelancer" element={<Freelancers />} />
+              {/* <Route path="/freelancer" element={<Freelancers />} /> */}
               <Route path="/freelancer/browse-subcategory/:id" element={<Browsecategory />} />
               <Route path="/services/landscaping/:id" element={<Category />} />
-              <Route path="/freelancer/home" element={<Mainfreelancers />} />
-              <Route path="/freelancer/profile" element={<FreelancerProfile />} />
-              <Route path="/freelancer/free-listing" element={<Freelisting />} />
-              <Route path="/freelancer/create-business" element={<CreateBusiness />} />
-              <Route path="/freelancer/business" element={<Businesspage />} />
+              {/* <Route path="/freelancer/home" element={<Mainfreelancers />} /> */}
+              {/* <Route path="/freelancer/profile" element={<FreelancerProfile />} /> */}
+              {/* <Route path="/freelancer/free-listing" element={<Freelisting />} /> */}
+              {/* <Route path="/freelancer/create-business" element={<CreateBusiness />} /> */}
+              {/* <Route path="/freelancer/business" element={<Businesspage />} /> */}
               <Route path="/freelancer/registration" element={<Registration />} />
               <Route path="/interior/living-room" element={<LivingRoom />} />
               <Route path="/interior/bathroom" element={<Bathroom />} />
