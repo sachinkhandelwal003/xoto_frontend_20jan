@@ -44,7 +44,7 @@ import Leads from "./pages/dashboardPages/leads/Leads";
 import Customerdashboard from "./pages/Customerdashboard";
 import MyProfileB2C from "./pages/dashboardPages/managevendor/vendorprofile/Vendorb2c-Myprofile";
 import MyProfileb2b from "./pages/dashboardPages/managevendor/vendorprofile/Vendorb2b-MyProfile";
-import MyProfile from "./pages/dashboardPages/Profiles/MyProfile";
+import MyProfile from "./pages/dashboardPages/Profiles/FreelancerProfile";
 import UpdateFreelancerProfile from "./pages/dashboardPages/managefreelancer/freelancer/UpdateFreelancerProfile";
 import Bookings from "./pages/dashboardPages/consult/Bookings";
 import Packages from "./pages/packages/Packages";
@@ -76,6 +76,7 @@ import ManageProjectFreelancer from "./pages/dashboardPages/managefreelancer/fre
 import CustomerProjects from "./pages/dashboardPages/managefreelancer/freelancer/Projects/CustomerProjects";
 import CustomerBillsview from "./pages/dashboardPages/Bills/CustomerBillsview";
 import CustomerInvoicesview from "./pages/dashboardPages/Bills/CustomerInvoicesview";
+import Profile from "./pages/dashboardPages/Profiles/Profile";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
 const roleSlugMap = {
   0: "superadmin",
@@ -216,7 +217,7 @@ const CmsRoutes = () => {
       <Route path="projects/manage/:projectId" element={<ManageProjectFreelancer />} />
       <Route path="projects/ongoing" element={<CustomerProjects />} />
 
-      <Route path="myprofile" element={<MyProfile />} />
+      <Route path="myprofile" element={<Profile />} />
             <Route path="products" element={<ProductReview />} />
       <Route path="attributes/add" element={<AddAttributes />} />
       <Route path="tags/add" element={<AddTags />} />
