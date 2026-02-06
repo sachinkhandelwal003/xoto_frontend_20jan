@@ -1,58 +1,86 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import dayjs from 'dayjs';
 import {
-  AreaChart, Area, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { 
   UserOutlined, 
   FileTextOutlined, 
   CheckCircleOutlined, 
-  ClockCircleOutlined,
+  ShoppingOutlined,
+  ProjectOutlined,
   SyncOutlined,
-  PlusOutlined,
-  PhoneOutlined,
-  CalendarOutlined,
+  WalletOutlined,
   ExportOutlined
 } from '@ant-design/icons';
-import { Card, Row, Col, Select, Button, Typography, Tag, Avatar, List, Statistic } from 'antd';
+import { Card, Row, Col, Button, Typography, Tag, Statistic,Avatar, Spin, Alert } from 'antd';
+import { apiService } from '../../../manageApi/utils/custom.apiservice';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
-const Customerdashboard = () => {
-  const [timeRange, setTimeRange] = useState('7d');
+const PURPLE_THEME = {
+  primary: '#722ed1',
+  primaryBg: '#f9f0ff',
+  success: '#52c41a',
+  info: '#1890ff',
+  warning: '#faad14',
+};
 
-  // === ANALYTICS DATA ===
-  const pipelineData = [
-    { name: 'Mon', leads: 4, converted: 1 },
-    { name: 'Tue', leads: 7, converted: 2 },
-    { name: 'Wed', leads: 5, converted: 1 },
-    { name: 'Thu', leads: 8, converted: 3 },
-    { name: 'Fri', leads: 12, converted: 4 },
-    { name: 'Sat', leads: 9, converted: 2 },
-    { name: 'Sun', leads: 6, converted: 1 },
-  ];
+const CustomerDashboard = () => {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
 
-  const sourceData = [
-    { name: 'Website', value: 40, color: '#722ed1' },
-    { name: 'Referral', value: 25, color: '#52c41a' },
-    { name: 'Social', value: 20, color: '#1890ff' },
-    { name: 'Other', value: 15, color: '#bfbfbf' },
-  ];
+  // Redux se user info nikalna
+  const user = useSelector((state) => state.auth?.user);
 
-  // === STATS CONFIG ===
-  const stats = [
-    { label: 'Total Leads', value: '156', change: 12, icon: <UserOutlined />, color: '#722ed1', bg: '#f9f0ff' },
-    { label: 'Follow Ups', value: '42', change: -3, icon: <PhoneOutlined />, color: '#faad14', bg: '#fff7e6' },
-    { label: 'Converted', value: '18', change: 8, icon: <CheckCircleOutlined />, color: '#52c41a', bg: '#f6ffed' },
-    { label: 'Tasks Due', value: '7', change: 2, icon: <ClockCircleOutlined />, color: '#ff4d4f', bg: '#fff1f0' },
-  ];
+  // Dates setup (Aaj se 1 saal peeche tak)
+  const fromDate = dayjs().subtract(1, 'year').format('DD-MM-YYYY');
+  const toDate = dayjs().add(1, 'day').format('DD-MM-YYYY');
 
-  const recentActivity = [
-    { action: 'Added new lead #4567', user: 'John Smith', time: '15 mins ago', type: 'lead' },
-    { action: 'Completed follow-up call', user: 'Sarah Johnson', time: '1 hr ago', type: 'call' },
-    { action: 'Generated proposal doc', user: 'System', time: '2 hrs ago', type: 'doc' },
-    { action: 'Scheduled client meeting', user: 'Michael Brown', time: '5 hrs ago', type: 'meeting' },
+  useEffect(() => {
+    if (user?.id || user?._id) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      // API integration
+      const res = await apiService.get('/dashboard/view/customer', {
+        customer_id: user?.id || user?._id,
+        from: fromDate,
+        to: toDate
+      });
+
+      if (res.success) {
+        setData(res.data);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load customer dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Graph data formatting
+  const chartData = data?.purchase_graph?.map(item => ({
+    name: dayjs(item.date).format('DD MMM'),
+    spent: item.total_spent
+  })) || [];
+
+  if (loading) return <div className="flex justify-center items-center min-h-screen"><Spin size="large" tip="Loading Dashboard..." /></div>;
+  if (error) return <div className="p-6"><Alert message="Error" description={error} type="error" showIcon closable /></div>;
+
+  // Stats Configuration based on API response
+  const statsCards = [
+    { label: 'Total Spent', value: `₹${data?.total_spent?.toLocaleString()}`, icon: <WalletOutlined />, color: PURPLE_THEME.primary, bg: PURPLE_THEME.primaryBg },
+    { label: 'Total Orders', value: data?.total_orders, icon: <ShoppingOutlined />, color: PURPLE_THEME.info, bg: '#e6f7ff' },
+    { label: 'Total Projects', value: data?.total_projects, icon: <ProjectOutlined />, color: PURPLE_THEME.success, bg: '#f6ffed' },
+    { label: 'Total Estimates', value: data?.total_estimates, icon: <FileTextOutlined />, color: PURPLE_THEME.warning, bg: '#fff7e6' },
   ];
 
   return (
@@ -61,163 +89,106 @@ const Customerdashboard = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-8">
         <div>
-          <Title level={2} style={{ margin: 0, color: '#1f2937' }}>Customer Insights</Title>
-          <Text type="secondary">Manage your leads pipeline and conversion activities.</Text>
+          <Title level={2} style={{ margin: 0 }}>Customer Insights</Title>
+          <Text type="secondary">Welcome back! Here is your purchase summary.</Text>
         </div>
-        <div className="flex gap-3 mt-4 md:mt-0">
+        {/* <div className="flex gap-3 mt-4 md:mt-0">
            <Button icon={<ExportOutlined />}>Export</Button>
-           <Button type="primary" icon={<SyncOutlined />} style={{ background: '#722ed1', borderColor: '#722ed1' }}>
-              Refresh Data
+           <Button 
+            type="primary" 
+            icon={<SyncOutlined />} 
+            onClick={fetchDashboardData}
+            style={{ background: PURPLE_THEME.primary, borderColor: PURPLE_THEME.primary }}
+           >
+             Refresh Data
            </Button>
-        </div>
+        </div> */}
       </div>
-
-      {/* QUICK ACTIONS */}
-      <Row gutter={[16, 16]} className="mb-8">
-        {[
-          { label: 'Add Lead', icon: <PlusOutlined />, color: '#722ed1', bg: '#f9f0ff' },
-          { label: 'Create Task', icon: <ClockCircleOutlined />, color: '#1890ff', bg: '#e6f7ff' },
-          { label: 'Generate Doc', icon: <FileTextOutlined />, color: '#52c41a', bg: '#f6ffed' },
-          { label: 'Schedule', icon: <CalendarOutlined />, color: '#faad14', bg: '#fff7e6' },
-        ].map((action, i) => (
-          <Col xs={12} sm={6} key={i}>
-            <Card hoverable className="text-center rounded-xl border-none shadow-sm transition-all" bodyStyle={{ padding: '20px' }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl mb-2 mx-auto" style={{ backgroundColor: action.bg, color: action.color }}>
-                {action.icon}
-              </div>
-              <Text strong>{action.label}</Text>
-            </Card>
-          </Col>
-        ))}
-      </Row>
 
       {/* STATS CARDS */}
       <Row gutter={[16, 16]} className="mb-8">
-        {stats.map((stat, i) => (
+        {statsCards.map((s, i) => (
           <Col xs={24} sm={12} lg={6} key={i}>
-            <Card bordered={false} className="shadow-sm rounded-xl h-full">
-              <div className="flex justify-between items-start">
-                <div>
-                  <Text type="secondary" className="block mb-1 text-xs uppercase tracking-wider">{stat.label}</Text>
-                  <Title level={3} style={{ margin: 0 }}>{stat.value}</Title>
-                </div>
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center text-xl" style={{ backgroundColor: stat.bg, color: stat.color }}>
-                  {stat.icon}
-                </div>
-              </div>
-              <div className="mt-4">
-                <Tag color={stat.change > 0 ? 'success' : 'error'} bordered={false}>
-                  {stat.change > 0 ? '+' : ''}{stat.change}%
-                </Tag>
-                <Text type="secondary" style={{ fontSize: '12px' }}>vs last week</Text>
+            <Card bordered={false} className="shadow-sm rounded-xl overflow-hidden">
+              <Statistic
+                title={<Text type="secondary" className="uppercase text-xs font-bold tracking-wider">{s.label}</Text>}
+                value={s.value || 0}
+                valueStyle={{ color: '#1f2937', fontWeight: '700' }}
+                prefix={
+                  <span className="p-3 rounded-lg mr-3 flex items-center justify-center" style={{ background: s.bg, color: s.color }}>
+                    {s.icon}
+                  </span>
+                }
+              />
+              <div className="mt-3">
+                <Tag color="green">Live Data</Tag>
               </div>
             </Card>
           </Col>
         ))}
       </Row>
 
-      {/* MAIN CHARTS SECTION */}
-      <Row gutter={[16, 16]} className="mb-8">
-        <Col xs={24} lg={16}>
-          <Card bordered={false} className="shadow-sm rounded-xl h-full" 
-            title="Leads & Conversion Pipeline"
-            extra={
-              <Select defaultValue="7d" size="small" onChange={setTimeRange}>
-                <Option value="7d">Last 7 Days</Option>
-                <Option value="30d">Last 30 Days</Option>
-              </Select>
-            }
+      {/* CHART SECTION */}
+      <Row gutter={[16, 16]}>
+        <Col span={24}>
+          <Card 
+            title={<span className="flex items-center gap-2"><ShoppingOutlined /> Purchase Spending Timeline</span>} 
+            bordered={false} 
+            className="shadow-sm rounded-xl"
           >
-            <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={pipelineData}>
-                <defs>
-                  <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#722ed1" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#722ed1" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af' }} />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                <Legend verticalAlign="top" height={36} />
-                <Area type="monotone" dataKey="leads" stroke="#722ed1" strokeWidth={3} fillOpacity={1} fill="url(#colorLeads)" name="New Leads" />
-                <Area type="monotone" dataKey="converted" stroke="#52c41a" strokeWidth={3} fillOpacity={0} name="Converted" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-        
-        <Col xs={24} lg={8}>
-          <Card bordered={false} className="shadow-sm rounded-xl h-full" title="Lead Sources">
-            <div className="relative h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={sourceData}
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {sourceData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                <Text type="secondary" className="block text-xs">Primary</Text>
-                <Title level={4} style={{ margin: 0 }}>40%</Title>
-              </div>
-            </div>
-            
-            <div className="mt-4 space-y-3">
-              {sourceData.map((item, i) => (
-                <div key={i} className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
-                    <Text className="text-gray-600">{item.name}</Text>
-                  </div>
-                  <Text strong>{item.value}%</Text>
-                </div>
-              ))}
+            <div style={{ width: '100%', height: 400 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                    <defs>
+                    <linearGradient id="colorSpent" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={PURPLE_THEME.primary} stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor={PURPLE_THEME.primary} stopOpacity={0}/>
+                    </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#8c8c8c'}} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#8c8c8c'}} />
+                    <Tooltip 
+                        contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        formatter={(value) => [`₹${value.toLocaleString()}`, 'Spent']}
+                    />
+                    <Area 
+                    type="monotone" 
+                    dataKey="spent" 
+                    stroke={PURPLE_THEME.primary} 
+                    strokeWidth={4}
+                    fillOpacity={1} 
+                    fill="url(#colorSpent)" 
+                    />
+                </AreaChart>
+                </ResponsiveContainer>
             </div>
           </Card>
         </Col>
       </Row>
 
-      {/* RECENT ACTIVITY */}
-      <Card bordered={false} className="shadow-sm rounded-xl" title="Recent Activity">
-        <List
-          itemLayout="horizontal"
-          dataSource={recentActivity}
-          renderItem={(item) => (
-            <List.Item className="py-4">
-              <List.Item.Meta
-                avatar={
-                  <Avatar style={{ backgroundColor: '#f9f0ff', color: '#722ed1' }} icon={<UserOutlined />} />
-                }
-                title={
-                  <div className="flex justify-between">
-                    <Text strong>{item.action}</Text>
-                    <Text type="secondary" className="text-xs">{item.time}</Text>
+      {/* ADDITIONAL INFO */}
+      <Row gutter={[16, 16]} className="mt-8">
+          <Col span={24}>
+              <Card bordered={false} className="shadow-sm rounded-xl">
+                  <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                          <Avatar size={64} icon={<UserOutlined />} style={{ backgroundColor: PURPLE_THEME.primaryBg, color: PURPLE_THEME.primary }} />
+                          <div>
+                              <Title level={4} style={{ margin: 0 }}>{user?.name || 'Customer'}</Title>
+                              <Text type="secondary">{user?.email}</Text>
+                          </div>
+                      </div>
+                      <div className="text-right">
+                          <Text type="secondary" className="block">Total Products Purchased</Text>
+                          <Title level={3} style={{ margin: 0, color: PURPLE_THEME.primary }}>{data?.total_products || 0}</Title>
+                      </div>
                   </div>
-                }
-                description={
-                  <div className="flex items-center gap-2">
-                    <Text type="secondary">Action by: {item.user}</Text>
-                    <Tag bordered={false} color="purple" className="text-[10px] px-1">Verified</Tag>
-                  </div>
-                }
-              />
-            </List.Item>
-          )}
-        />
-      </Card>
+              </Card>
+          </Col>
+      </Row>
     </div>
   );
 };
 
-export default Customerdashboard;
+export default CustomerDashboard;

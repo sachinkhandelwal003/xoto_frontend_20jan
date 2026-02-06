@@ -99,14 +99,26 @@ const getActiveMilestones = (milestones = []) => {
 };
 
 const calculateProjectProgress = (project) => {
-  const activeMilestones = getActiveMilestones(project.milestones);
-  if (!activeMilestones.length) return 0;
-  
-  const completed = activeMilestones.filter((m) => 
-    ["approved", "completed"].includes(m.status)
-  ).length;
-  return Math.round((completed / activeMilestones.length) * 100);
+  if (!project?.milestones?.length) return 0;
+
+  const activeMilestones = project.milestones.filter(
+    (m) => !m.is_deleted
+  );
+
+  const totalWeightage = activeMilestones.reduce(
+    (sum, m) => sum + (m.milestone_weightage || 0),
+    0
+  );
+
+  const approvedWeightage = activeMilestones
+    .filter((m) => ["approved", "completed"].includes(m.status))
+    .reduce((sum, m) => sum + (m.milestone_weightage || 0), 0);
+
+  return totalWeightage > 0
+    ? Math.round((approvedWeightage / totalWeightage) * 100)
+    : 0;
 };
+
 
 const getClientName = (project) => {
   if (project?.client_name) return project.client_name;
@@ -458,7 +470,7 @@ const serviceTypeColor = {
         title: "Budget",
         width: 120,
         render: (_, record) => (
-          <Text strong>{formatCurrency(record.budget)}</Text>
+          <Text strong>AED{record.budget}</Text>
         ),
       },
    

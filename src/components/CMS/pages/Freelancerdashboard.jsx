@@ -1,494 +1,189 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import dayjs from 'dayjs';
 import {
-  Briefcase,
-  DollarSign,
-  TrendingUp,
-  Award,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  AlertTriangle, // Added for the warning
-  Edit3,
-  MapPin,
-  Languages,
-  Hammer
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useFreelancer } from "../../../../src/context/FreelancerContext"; // Adjust path if needed
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from 'recharts';
+import {
+  FileTextOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  ProjectOutlined,
+  ArrowUpOutlined,
+  CalendarOutlined
+} from '@ant-design/icons';
+import {
+  Card, Row, Col, Typography, Tag, Statistic,
+  Spin, Alert, Progress, Table, Empty
+} from 'antd';
+import { apiService } from '../../../manageApi/utils/custom.apiservice';
 
-const FreelancerDashboard = () => {
-  const navigate = useNavigate();
-  const { freelancer, progress, stats, loading } = useFreelancer();
-console.log(freelancer)
-  // 1. Loading State
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+const { Title, Text } = Typography;
 
-  // 2. Error/Empty State
-  if (!freelancer || !progress) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center bg-white p-8 rounded-2xl shadow-lg">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            Profile Not Found
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Unable to load your freelancer profile.
-          </p>
-          <button
-            onClick={() => navigate("/dashboard/freelancer/complete-profile")}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition"
-          >
-            Complete Your Profile
-          </button>
-        </div>
-      </div>
-    );
-  }
+const PURPLE_THEME = {
+  primary: '#722ed1',
+  primaryBg: '#f9f0ff',
+  success: '#52c41a',
+  warning: '#faad14',
+  info: '#1890ff',
+  error: '#f5222d'
+};
 
-  // 3. Check Approval Status (Check both fields as requested)
-  const isApproved =
-    freelancer?.onboarding_status === "approved" &&
-    freelancer?.status_info?.status === 1;
+const Freelancerdashboard = () => {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
 
-  // 4. Render Data
-  const dashboardStats = [
-    {
-      title: "Total Jobs",
-      value: stats?.totalJobs || 0,
-      icon: <Briefcase className="w-6 h-6 text-blue-600" />,
-      color: "bg-blue-50 border border-blue-200",
-      trend: "+12%",
-      description: "All time jobs",
-    },
-    {
-      title: "Pending Jobs",
-      value: stats?.pendingJobs || 0,
-      icon: <Clock className="w-6 h-6 text-orange-600" />,
-      color: "bg-orange-50 border border-orange-200",
-      trend: "+5%",
-      description: "Under review",
-    },
-    {
-      title: "Completed Jobs",
-      value: stats?.completedJobs || 0,
-      icon: <CheckCircle className="w-6 h-6 text-green-600" />,
-      color: "bg-green-50 border border-green-200",
-      trend: "+8%",
-      description: "Successfully delivered",
-    },
-    {
-      title: "Total Earnings",
-      value: `AED${(stats?.totalEarnings || 0).toLocaleString()}`,
-      icon: <DollarSign className="w-6 h-6 text-purple-600" />,
-      color: "bg-purple-50 border border-purple-200",
-      trend: "+15%",
-      description: "Lifetime earnings",
-    },
-    {
-      title: "This Month",
-      value: `AED${(stats?.currentMonthEarnings || 0).toLocaleString()}`,
-      icon: <TrendingUp className="w-6 h-6 text-green-600" />,
-      color: "bg-green-50 border border-green-200",
-      trend: "+20%",
-      description: "Current month payout",
-    },
-    {
-      title: "Performance",
-      value: `${stats?.performanceScore || 85}%`,
-      icon: <Award className="w-6 h-6 text-yellow-600" />,
-      color: "bg-yellow-50 border border-yellow-200",
-      trend: "+2%",
-      description: "Client satisfaction",
-    },
+  const user = useSelector((state) => state.auth?.user);
+
+  const fromDate = dayjs().subtract(1, 'year').format('DD-MM-YYYY');
+  const toDate = dayjs().add(1, 'day').format('DD-MM-YYYY');
+
+  useEffect(() => {
+    if (user?.id || user?._id) fetchDashboardData();
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const res = await apiService.get('/dashboard/view/freelancer', {
+        freelancer_id: user?.id || user?._id,
+        from: fromDate,
+        to: toDate
+      });
+      if (res.success) setData(res.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const timelineData = data?.estimate_graph?.map(item => ({
+    name: dayjs(item.date).format('DD MMM'),
+    total: item.total
+  })) || [];
+
+  if (loading) return <div className="flex justify-center items-center min-h-screen"><Spin size="large" /></div>;
+  if (error) return <Alert message="Error" description={error} type="error" showIcon />;
+
+  const statsCards = [
+    { label: 'Assigned Estimates', value: data?.assigned_estimates, icon: <FileTextOutlined />, color: PURPLE_THEME.primary, bg: PURPLE_THEME.primaryBg },
+    { label: 'Pending Estimates', value: data?.pending_estimates, icon: <ClockCircleOutlined />, color: PURPLE_THEME.warning, bg: '#fff7e6' },
+    { label: 'Pending Projects', value: data?.pending_projects, icon: <ProjectOutlined />, color: PURPLE_THEME.info, bg: '#e6f7ff' },
+    { label: 'Completed Projects', value: data?.completed_projects, icon: <CheckCircleOutlined />, color: PURPLE_THEME.success, bg: '#f6ffed' }
   ];
 
-  const quickActions = [
+  const projectColumns = [
     {
-      title: "Update Profile",
-      description: "Complete your profile details",
-      icon: <Edit3 className="w-5 h-5" />,
-      color: "bg-blue-500 hover:bg-blue-600",
-      onClick: () => navigate(`/dashboard/freelancer/update`),
-      completed: progress.completionPercentage === 100,
+      title: 'Project',
+      dataIndex: 'title',
+      render: (t, r) => (
+        <>
+          <Text strong style={{ color: PURPLE_THEME.primary }}>{t}</Text>
+          <br />
+          <Text type="secondary" className="text-xs">
+            ID: {r.Code} | Client: {r.client_name}
+          </Text>
+        </>
+      )
     },
     {
-      title: "View Jobs",
-      description: "Check available landscaping jobs",
-      icon: <Briefcase className="w-5 h-5" />,
-      color: isApproved ? "bg-green-500 hover:bg-green-600" : "bg-gray-400 cursor-not-allowed",
-      onClick: () => isApproved && navigate("/dashboard/freelancer/jobs"),
-      completed: false,
+      title: 'Timeline',
+      render: (_, r) => (
+        <Text className="text-xs">
+          <CalendarOutlined /> {dayjs(r.start_date).format('DD MMM')} – {dayjs(r.end_date).format('DD MMM')}
+        </Text>
+      )
     },
     {
-      title: "My Portfolio",
-      description: "Manage your work portfolio",
-      icon: <Award className="w-5 h-5" />,
-      color: "bg-purple-500 hover:bg-purple-600",
-      onClick: () => navigate("/dashboard/freelancer/portfolio"),
-      completed: freelancer.portfolio?.length > 0,
+      title: 'Progress',
+      dataIndex: 'project_completion_percentage',
+      render: p => <Progress percent={p} strokeColor={PURPLE_THEME.primary} size="small" />
     },
     {
-      title: "Earnings",
-      description: "View your earnings and payments",
-      icon: <DollarSign className="w-5 h-5" />,
-      color: isApproved ? "bg-orange-500 hover:bg-orange-600" : "bg-gray-400 cursor-not-allowed",
-      onClick: () => isApproved && navigate("/dashboard/freelancer/earnings"),
-      completed: false,
-    },
-  ];
-
-  const profileSummary = [
-    {
-      label: "Location",
-      value: `${freelancer.location?.city || "Not set"}, ${
-        freelancer.location?.country || "Not set"
-      }`,
-      icon: <MapPin className="w-4 h-4" />,
-      completed: !!freelancer.location?.city,
-    },
-    {
-      label: "Languages",
-      value: freelancer.languages?.join(", ") || "Not set",
-      icon: <Languages className="w-4 h-4" />,
-      completed: freelancer.languages?.length > 0,
-    },
-    {
-      label: "Services",
-      value: `${freelancer.services_offered?.length || 0} services offered`,
-      icon: <Hammer className="w-4 h-4" />,
-      completed: freelancer.services_offered?.length > 0,
-    },
-    {
-      label: "Experience",
-      value: `${freelancer.professional?.experience_years || 0} years`,
-      icon: <Briefcase className="w-4 h-4" />,
-      completed: !!freelancer.professional?.experience_years,
-    },
+      title: 'Status',
+      dataIndex: 'status',
+      render: s => <Tag color={s === 'pending' ? 'orange' : 'green'}>{s.toUpperCase()}</Tag>
+    }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      {/* ===== HEADER ===== */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="mb-8"
-      >
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              Welcome back, {freelancer?.name?.first_name || "Freelancer"}! 👋
-            </h1>
-            <p className="text-gray-600 text-lg">
-              Here's what's happening with your landscaping business today.
-            </p>
-          </div>
-          {/* <div className="flex items-center gap-4 mt-4 lg:mt-0">
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Status</p>
-              <div
-                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
-                  isApproved
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
-                }`}
-              >
-               
-              </div>
-            </div>
-          </div> */}
-        </div>
-      </motion.div>
+    <div className="p-6 bg-gray-50 min-h-screen">
 
-      {/* ===== RED ALERT BOX (NEW) ===== */}
-      {/* {!isApproved && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 bg-red-50 border border-red-200 rounded-2xl p-6 shadow-sm flex items-start gap-4"
-        >
-          <div className="p-3 bg-red-100 rounded-full shrink-0">
-            <AlertTriangle className="w-6 h-6 text-red-600" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-red-800 mb-1">
-              Profile Under Review
-            </h3>
-            <p className="text-red-700 leading-relaxed">
-              Your profile is currently under review. While you can update your
-              profile details, access to Jobs and Earnings will be restricted
-              until your <strong>Onboarding Status is Approved</strong> and your
-              account status is active.
-            </p>
-          </div>
-        </motion.div>
-      )} */}
-
-      {/* ===== STATS GRID ===== */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-10"
-      >
-        {dashboardStats.map((item, index) => (
-          <motion.div
-            key={index}
-            whileHover={{ scale: 1.02, y: -2 }}
-            className={`p-5 rounded-2xl shadow-sm ${item.color} backdrop-blur-sm`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2 bg-white rounded-lg shadow-xs">
-                {item.icon}
-              </div>
-              <span className="text-xs font-medium bg-white px-2 py-1 rounded-full text-green-600">
-                {item.trend}
-              </span>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-1">
-                {item.value}
-              </h2>
-              <p className="text-sm font-medium text-gray-700">{item.title}</p>
-              <p className="text-xs text-gray-500 mt-1">{item.description}</p>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* ===== LEFT COLUMN ===== */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* ===== PROFILE COMPLETION ===== */}
-          <motion.div
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200"
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-800">
-                Profile Completion
-              </h2>
-              <span
-                className={`text-sm font-semibold px-3 py-1 rounded-full ${
-                  progress.completionPercentage === 100
-                    ? "bg-green-100 text-green-800"
-                    : "bg-blue-100 text-blue-800"
-                }`}
-              >
-                {progress.completionPercentage}% Complete
-              </span>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="w-full bg-gray-100 h-4 rounded-full overflow-hidden mb-6">
-              <motion.div
-                className={`h-4 rounded-full ${
-                  progress.completionPercentage >= 100
-                    ? "bg-gradient-to-r from-green-500 to-green-600"
-                    : "bg-gradient-to-r from-blue-500 to-purple-600"
-                }`}
-                initial={{ width: 0 }}
-                animate={{ width: `${progress.completionPercentage}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-              />
-            </div>
-
-            <p className="text-gray-600 mb-6">{progress.summary}</p>
-
-            <button
-              className={`w-full px-6 py-3 rounded-xl font-semibold transition-all ${
-                progress.completionPercentage >= 100
-                  ? "bg-gray-100 text-gray-600 cursor-not-allowed"
-                  : "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg"
-              }`}
-              onClick={() => navigate(`/dashboard/freelancer/update`)}
-              disabled={progress.completionPercentage >= 100}
-            >
-              {progress.completionPercentage < 100
-                ? "Complete Your Profile →"
-                : "🎉 Profile Fully Completed!"}
-            </button>
-          </motion.div>
-
-          {/* ===== SECTION PROGRESS ===== */}
-          <motion.div
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200"
-          >
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">
-              Profile Sections
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.entries(progress.sections).map(([section, value]) => (
-                <div
-                  key={section}
-                  className="bg-gray-50 p-4 rounded-xl border border-gray-200 hover:border-blue-300 transition"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="font-medium capitalize text-gray-700">
-                      {section.replace(/([A-Z])/g, " AED1")}
-                    </p>
-                    <span
-                      className={`text-sm font-semibold ${
-                        value === 100 ? "text-green-600" : "text-blue-600"
-                      }`}
-                    >
-                      {value}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                    <motion.div
-                      className={`h-2 rounded-full ${
-                        value === 100
-                          ? "bg-green-500"
-                          : "bg-gradient-to-r from-blue-500 to-purple-500"
-                      }`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${value}%` }}
-                      transition={{ duration: 0.8, delay: 0.2 }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* ===== RIGHT COLUMN ===== */}
-        <div className="space-y-8">
-          {/* ===== QUICK ACTIONS ===== */}
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200"
-          >
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">
-              Quick Actions
-            </h2>
-            <div className="space-y-3">
-              {quickActions.map((action, index) => (
-                <motion.button
-                  key={index}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={action.onClick}
-                  // Disable visually if action is disabled logic (like not approved)
-                  className={`w-full text-white ${action.color} p-4 rounded-xl flex items-center gap-4 transition shadow-sm hover:shadow-md`}
-                >
-                  <div className="p-2 bg-white bg-opacity-20 rounded-lg">
-                    {action.icon}
-                  </div>
-                  <div className="text-left flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold">{action.title}</p>
-                      {action.completed && (
-                        <CheckCircle className="w-4 h-4 text-white" />
-                      )}
-                    </div>
-                    <p className="text-sm text-white text-opacity-90">
-                      {action.description}
-                    </p>
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* ===== PROFILE SUMMARY ===== */}
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200"
-          >
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">
-              Profile Summary
-            </h2>
-            <div className="space-y-4">
-              {profileSummary.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg"
-                >
-                  <div
-                    className={`p-2 rounded-lg ${
-                      item.completed
-                        ? "bg-green-100 text-green-600"
-                        : "bg-gray-200 text-gray-600"
-                    }`}
-                  >
-                    {item.icon}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-700">
-                      {item.label}
-                    </p>
-                    <p
-                      className={`text-sm ${
-                        item.completed ? "text-gray-600" : "text-gray-500"
-                      }`}
-                    >
-                      {item.value}
-                    </p>
-                  </div>
-                  {item.completed && (
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                  )}
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* ===== PERFORMANCE METRICS ===== */}
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.7 }}
-            className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg p-6 text-white"
-          >
-            <h2 className="text-xl font-semibold mb-4">Performance Score</h2>
-            <div className="text-center mb-4">
-              <div className="text-4xl font-bold mb-2">
-                {stats?.performanceScore || 85}%
-              </div>
-              <p className="text-blue-100">Client Satisfaction Rate</p>
-            </div>
-            <div className="flex justify-between text-sm text-blue-200">
-              <span>Response Time</span>
-              <span>Excellent</span>
-            </div>
-            <div className="flex justify-between text-sm text-blue-200 mt-2">
-              <span>Job Completion</span>
-              <span>Perfect</span>
-            </div>
-            <div className="flex justify-between text-sm text-blue-200 mt-2">
-              <span>Client Reviews</span>
-              <span>4.9/5</span>
-            </div>
-          </motion.div>
-        </div>
+      {/* HEADER */}
+      <div className="mb-8">
+        <Title level={2} style={{ margin: 0 }}>Freelancer Dashboard</Title>
+        <Text type="secondary">Performance overview & project tracking</Text>
       </div>
+
+      {/* STATS */}
+      <Row gutter={[16, 16]} className="mb-8">
+        {statsCards.map((s, i) => (
+          <Col xs={24} sm={12} lg={6} key={i}>
+            <Card bordered={false} className="shadow-sm rounded-xl">
+              <Statistic
+                title={<Text type="secondary">{s.label}</Text>}
+                value={s.value || 0}
+                prefix={
+                  <span className="p-2 rounded-lg mr-2" style={{ background: s.bg, color: s.color }}>
+                    {s.icon}
+                  </span>
+                }
+              />
+              <div className="mt-2">
+                <Tag color="green"><ArrowUpOutlined /> Live</Tag>
+              </div>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+
+      {/* CHART */}
+      <Row gutter={[16, 16]} className="mb-8">
+        <Col span={24}>
+          <Card title="Estimate Submission Timeline" bordered={false} className="shadow-sm rounded-xl">
+            <ResponsiveContainer width="100%" height={350}>
+              <AreaChart data={timelineData}>
+                <defs>
+                  <linearGradient id="estimateFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={PURPLE_THEME.primary} stopOpacity={0.25} />
+                    <stop offset="95%" stopColor={PURPLE_THEME.primary} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <YAxis axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Area
+                  type="monotone"
+                  dataKey="total"
+                  stroke={PURPLE_THEME.primary}
+                  strokeWidth={3}
+                  fill="url(#estimateFill)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* TABLE */}
+      <Row gutter={[16, 16]}>
+        <Col span={24}>
+          <Card title="Assigned Projects" bordered={false} className="shadow-sm rounded-xl">
+            <Table
+              columns={projectColumns}
+              dataSource={data?.top_five_projects || []}
+              rowKey="_id"
+              pagination={false}
+              locale={{ emptyText: <Empty description="No projects found" /> }}
+            />
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 };
 
-export default FreelancerDashboard;
+export default Freelancerdashboard;

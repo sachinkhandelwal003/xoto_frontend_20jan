@@ -7,11 +7,11 @@ import {
   CheckCircleOutlined,
   StopOutlined,
   PhoneOutlined,
-  ShopOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
 import { apiService } from "../../../../../manageApi/utils/custom.apiservice";
 
-const VendorMYProfile = () => {
+const CustomerProfile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -30,8 +30,7 @@ const VendorMYProfile = () => {
     getProfile();
   }, []);
 
-  const fullName = profile?.full_name
-    || `${profile?.name?.first_name || ""} ${profile?.name?.last_name || ""}`;
+  const fullName = `${profile?.name?.first_name || ""} ${profile?.name?.last_name || ""}`;
 
   return (
     <div className="flex justify-center">
@@ -55,15 +54,15 @@ const VendorMYProfile = () => {
           </Badge>
 
           <h2 className="mt-4 mb-0 text-xl font-semibold">
-            {fullName || "Vendor"}
+            {fullName || "Customer"}
           </h2>
 
-          <Tag color="purple" className="mt-2">
-            Vendor
+          <Tag color="blue" className="mt-2">
+            Customer
           </Tag>
         </div>
 
-        {/* Details (SAME UI) */}
+        {/* Details (SAME UI, MORE DATA) */}
         <Descriptions bordered column={1} size="small">
           <Descriptions.Item
             label={
@@ -88,47 +87,32 @@ const VendorMYProfile = () => {
           <Descriptions.Item
             label={
               <span className="flex items-center gap-1">
-                <ShopOutlined /> Store Name
+                <EnvironmentOutlined /> Location
               </span>
             }
           >
-            {profile?.store_details?.store_name}
-          </Descriptions.Item>
-
-          <Descriptions.Item label="Store Description">
-            {profile?.store_details?.store_description}
-          </Descriptions.Item>
-
-          <Descriptions.Item label="Store Address">
             <div>
-              <div>{profile?.store_details?.store_address}</div>
-              <div className="text-sm text-gray-500">
-                {profile?.store_details?.city},{" "}
-                {profile?.store_details?.country} -{" "}
-                {profile?.store_details?.pincode}
+              <div>
+                {profile?.location?.city}, {profile?.location?.state}
               </div>
+              <div>{profile?.location?.country}</div>
+              {profile?.location?.address && (
+                <div className="text-gray-500 text-xs mt-1">
+                  {profile.location.address}
+                </div>
+              )}
             </div>
-          </Descriptions.Item>
-
-          <Descriptions.Item label="Categories">
-            <Space wrap>
-              {profile?.store_details?.categories?.map((cat) => (
-                <Tag key={cat._id} color="blue">
-                  {cat.name}
-                </Tag>
-              ))}
-            </Space>
           </Descriptions.Item>
 
           <Descriptions.Item
             label={
               <span className="flex items-center gap-1">
-                <CheckCircleOutlined /> Onboarding
+                <CheckCircleOutlined /> Status
               </span>
             }
           >
-            <Tag color="green">
-              {profile?.onboarding_status?.toUpperCase()}
+            <Tag color={profile?.isActive ? "green" : "red"}>
+              {profile?.isActive ? "Active" : "Inactive"}
             </Tag>
           </Descriptions.Item>
 
@@ -162,4 +146,4 @@ const VendorMYProfile = () => {
   );
 };
 
-export default VendorMYProfile;
+export default CustomerProfile;

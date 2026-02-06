@@ -110,15 +110,11 @@ const [notifOpen, setNotifOpen] = useState(false);
     { type: "divider" },
     {
       key: "1",
-      label: "Your Profile",
+      label: "My Profile",
       icon: <UserOutlined />,
       onClick: () => navigate(`/dashboard/${roleSlug}/myprofile`)
     },
-    {
-      key: "2",
-      label: "Settings",
-      icon: <SettingOutlined />
-    },
+  
     { type: "divider" },
     {
       key: "3",
