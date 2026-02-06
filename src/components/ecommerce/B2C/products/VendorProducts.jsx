@@ -1,339 +1,497 @@
-// src/pages/vendor/VendorProducts.jsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
-import { FiPlus, FiRefreshCw, FiEye, FiShoppingBag, FiSearch, FiEdit,FiClock ,FiX , FiTrash2 ,FiCheck } from 'react-icons/fi';
-import { Button, Tag, Input, Tabs, Card, Statistic, Row, Col, Badge, Space, Tooltip, Avatar, Typography } from 'antd';
-import CustomTable from '../../../CMS/pages/custom/CustomTable';
-import { apiService } from '../../../../manageApi/utils/custom.apiservice';
-import { showToast } from '../../../../manageApi/utils/toast';
-import { format } from 'date-fns';
+import React, { useState, useEffect } from 'react';
+import { useSelector } from "react-redux";
+import axios from 'axios';
+import {
+  Button, Modal, Form, Input, Popconfirm, Card, Table,
+  Typography, Row, Col, Statistic, Space, Divider, App,
+  InputNumber, Select, Switch, Tag, Upload
+} from 'antd';
+import {
+  PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined,
+  ShoppingOutlined, CheckOutlined, CloseOutlined
+} from '@ant-design/icons';
 
 const { Title, Text } = Typography;
+const { Option } = Select;
+const { TextArea } = Input;
 
-// --- THEME ---
-const THEME = {
-  primary: "#722ed1",
-  secondary: "#1890ff",
-  success: "#52c41a",
-  warning: "#faad14",
-  error: "#ff4d4f",
-  bgLight: "#f9f0ff",
-};
+const THEME = { primary: "#7c3aed" };
+// const BASE_URL = "https://xoto.ae";
+const BASE_URL = "http://localhost:5000";
 
-// --- ROLE MAPPING (for dynamic links) ---
-const ROLE_SLUG_MAP = {
-  0: "superadmin",
-  1: "admin",
-  5: "vendor-b2c",
-  6: "vendor-b2b",
-  7: "freelancer",
-  11: "accountant",
-};
+// Standard Color Options for Preview
+const COLOR_OPTIONS = [
+  { label: 'Black', value: 'Black', hex: '#000000' },
+  { label: 'White', value: 'White', hex: '#ffffff' },
+  { label: 'Grey', value: 'Grey', hex: '#808080' },
+  { label: 'Walnut', value: 'Walnut', hex: '#5d4037' },
+  { label: 'Oak', value: 'Oak', hex: '#b5835a' },
+  { label: 'Beige', value: 'Beige', hex: '#f5f5dc' },
+  { label: 'Blue', value: 'Blue', hex: '#1d4ed8' },
+  { label: 'Red', value: 'Red', hex: '#dc2626' },
+];
 
-const VendorProducts = () => {
-  const { user } = useSelector((state) => state.auth);
-  const navigate = useNavigate();
-  
-  // Dynamic role slug for links
-  const roleSlug = ROLE_SLUG_MAP[user?.role?.code] ?? "dashboard";
-  
-  // State
+const ProductManagementContent = () => {
+  const { message, notification } = App.useApp();
+  const [form] = Form.useForm();
+    const { user } = useSelector((state) => state.auth);
+        const vendor_id=user.id
+
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('all');
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    itemsPerPage: 10,
-    totalResults: 0,
-    totalPages: 1
-  });
-  
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    approved: 0,
-    rejected: 0
-  });
+  const [brands, setBrands] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchText, setSearchText] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const normFile = (e) => (Array.isArray(e) ? e : e?.fileList);
 
-  // --- FETCH DATA ---
-  const fetchProducts = useCallback(async (page = 1, limit = 10, status = activeTab) => {
+  const fetchBrands = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/products/get-all-brand`, { params: { limit: 100 } });
+      setBrands(response.data?.data || response.data?.brands || []);
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/products/get-all-category`, { params: { limit: 100 } });
+      setCategories(response.data?.data || response.data?.categories || []);
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchProducts = async (page = 1, limit = 10, search = '') => {
+      const vendor_id = user._id || user.id;
+
     setLoading(true);
     try {
-      // Build query params
-      const params = {
-        page,
-        limit,
-        search: searchTerm || undefined,
+      const response = await axios.get(`${BASE_URL}/api/products/get-all-products`, {
+        params: { page, limit,vendor_id, search: search || undefined }
+      });
+      setProducts(response.data?.data?.products || []);
+      setTotal(response.data?.data?.pagination?.total || 0);
+    } catch (err) { message.error("Failed to load products."); } 
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    fetchBrands();
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      fetchProducts(currentPage, pageSize, searchText);
+    }, 400);
+    return () => clearTimeout(delayDebounce);
+  }, [currentPage, pageSize, searchText]);
+
+
+  const customUploadRequest = async ({ file, onSuccess, onError }) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const response = await axios.post(`${BASE_URL}/api/upload`, formData);
+      console.log("responseresponseresponse",response)
+      const imageUrl = response.data?.url || response.data?.secure_url || response.data?.data?.url || response.data;
+            console.log("imageUrlimageUrlimageUrlimageUrl",response)
+
+      onSuccess(imageUrl);
+      message.success("Uploaded");
+    } catch (err) {
+      onError(err);
+      message.error("Upload failed");
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      const values = await form.validateFields();
+      setSaving(true);
+
+      const extractUrl = (f) => {
+        if (typeof f === 'string') return f;
+        const res = f.response;
+        if (res) return typeof res === 'string' ? res : (res.url || res.secure_url || res.file?.url);
+        return f.url || null;
       };
 
-      // Map tabs to API verification_status param
-      // 'all' tab sends no status filter
-      if (status !== 'all') {
-          params.verification_status = status;
+
+      const payload = {
+        product: {
+          name: values.name,
+          photos: values.mainImage ? values.mainImage.map(extractUrl).filter(Boolean).slice(0, 1) : [""],
+          category: values.category,
+          brandName: values.brandName,
+          description: values.description || "",
+          price: Number(values.price) || 0,
+          discountedPrice: Number(values.discountedPrice) || 0,
+          currency: "AED",
+          quantity: Number(values.quantity) || 0,
+          warrantyYears: Number(values.warrantyYears) || 0,
+          returnPolicyDays: Number(values.returnPolicyDays) || 0,
+          noCostEmiAvailable: !!values.noCostEmiAvailable,
+          isActive: values.isActive ?? true,
+          isFeatured: values.isFeatured ?? true,
+          finish: values.finish || "",
+          originCountry: values.originCountry || "",
+          careInstructions: values.careInstructions || "",
+          assemblyRequired: !!values.assemblyRequired,
+          assemblyToolsProvided: !!values.assemblyToolsProvided,
+          keyFeatures: typeof values.keyFeatures === 'string' 
+            ? values.keyFeatures.split(',').map(s => s.trim()).filter(Boolean) 
+            : [],
+          material: typeof values.material === 'string' 
+            ? values.material.split(',').map(s => s.trim()).filter(Boolean) 
+            : [],
+        },
+        colours: (values.colours || []).map(col => ({
+          colourName: col.colourName || "",
+          photos: col.photos ? col.photos.map(extractUrl).filter(Boolean) : [],
+          isActive: col.isActive ?? true
+        })),
+        vendorId:vendor_id
+      };
+
+      const url = editingId 
+        ? `${BASE_URL}/api/products/edit-product-by-id?id=${editingId}`
+        : `${BASE_URL}/api/products/create-products`;
+
+      const response = await axios.post(url, payload);
+      if (response.data.success) {
+        notification.success({ message: 'Success', description: 'Product saved in AED.', placement: 'topRight' });
+        closeModal();
+        fetchProducts(currentPage, pageSize);
       }
-
-      // API call (Token is handled by interceptor)
-      const res = await apiService.get('/products/vendor/my-products', params);
-      
-      setProducts(res.products || []);
-      
-      setPagination({
-        currentPage: res.pagination?.currentPage || 1,
-        itemsPerPage: res.pagination?.perPage || 10,
-        totalResults: res.pagination?.totalRecords || 0,
-        totalPages: res.pagination?.totalPages || 1
-      });
-
-      // Update stats if provided in response (or calculate locally if needed)
-      // Assuming your API might return stats in future or separate call.
-      // For now, we update total based on 'all' tab fetch.
-      if (status === 'all' && res.pagination) {
-         setStats(prev => ({ ...prev, total: res.pagination.totalRecords }));
-      }
-
-    } catch (error) {
-      showToast(error.response?.data?.message || 'Failed to fetch products', 'error');
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, searchTerm]);
-
-  // Initial Fetch & Tab Change
-  useEffect(() => {
-    fetchProducts(1, pagination.itemsPerPage, activeTab);
-  }, [activeTab, searchTerm]); // Fetch on tab or search change
-
-  // --- HANDLERS ---
-  const handleTabChange = (key) => {
-    setActiveTab(key);
-    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1
+    } catch (err) {
+      message.error(err.response?.data?.message || "Format Error: Check your fields");
+    } finally { setSaving(false); }
   };
 
-  const handlePageChange = (page, pageSize) => {
-    fetchProducts(page, pageSize, activeTab);
+  const closeModal = () => {
+    setModalVisible(false);
+    setEditingId(null);
+    form.resetFields();
   };
 
-  const handleRefresh = () => {
-    fetchProducts(pagination.currentPage, pagination.itemsPerPage, activeTab);
-  };
-
-  // --- COLUMNS ---
   const columns = [
     {
-      title: 'Product Info',
-      width: 300,
-      render: (_, r) => {
-          // Get primary image
-          const primaryImg = r.color_variants?.[0]?.images?.find(i => i.is_primary)?.url 
-                          || r.color_variants?.[0]?.images?.[0]?.url;
-          
-          return (
-            <div className="flex items-center gap-3">
-              <Avatar 
-                shape="square" 
-                size={50} 
-                src={primaryImg ? `http://localhost:5000/${primaryImg}` : null}
-                icon={<FiShoppingBag />}
-                style={{ backgroundColor: THEME.bgLight, color: THEME.primary }}
-              />
-              <div>
-                <div className="font-semibold text-gray-800">{r.name}</div>
-                <div className="text-xs text-gray-500">Code: {r.product_code}</div>
-                <div className="text-xs text-purple-600">{r.category?.name}</div>
-              </div>
-            </div>
-          )
-      },
-    },
-    {
-      title: 'Pricing',
-      width: 150,
-      render: (_, r) => {
-          const price = r.pricing?.sale_price || r.pricing?.base_price || 0;
-          const currency = r.pricing?.currency?.symbol || "₹";
-          return (
-              <div>
-                  <div className="font-medium text-gray-700">
-                      {currency} {price.toFixed(2)}
-                  </div>
-                  {r.pricing?.discount?.value > 0 && (
-                      <div className="text-xs text-green-600">
-                          {r.pricing.discount.type === 'percentage' ? `${r.pricing.discount.value}% Off` : `-${r.pricing.discount.value}`}
-                      </div>
-                  )}
-              </div>
-          )
-      }
-    },
-    {
-      title: 'Stock',
-      width: 120,
+      title: 'Product',
+      key: 'product',
       render: (_, r) => (
-          <Tag color={r.stock?.total_available > 0 ? "green" : "red"}>
-              {r.stock?.total_available || 0} Available
-          </Tag>
-      )
+        <Space>
+          <div className="border rounded bg-white flex justify-center items-center shadow-sm" style={{ width: '50px', height: '50px' }}>
+            <img src={r.photos?.[0]} alt="p" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { e.target.src = "https://placehold.co/50"; }} />
+          </div>
+          <div>
+            <Text strong className="block">{r.name}</Text>
+            <Tag color="blue" className="text-xs">{r.brandName?.brandName || 'No Brand'}</Tag>
+          </div>
+        </Space>
+      ),
+    },
+    {
+      title: 'Pricing & Stock',
+      key: 'pricing',
+      render: (_, r) => (
+        <div>
+          <Text strong>AED {r.discountedPrice}</Text> 
+          <Text delete type="secondary" className="text-xs ml-2">AED {r.price}</Text>
+          <div className="mt-1"><Tag color={r.quantity > 5 ? 'success' : 'warning'}>{r.quantity} in Stock</Tag></div>
+        </div>
+      ),
     },
     {
       title: 'Status',
-      width: 140,
-      render: (_, r) => {
-          const status = r.verification_status?.status || 'pending';
-          const map = {
-              pending: { color: 'warning', text: 'Pending' },
-              approved: { color: 'success', text: 'Approved' },
-              rejected: { color: 'error', text: 'Rejected' }
-          };
-          const config = map[status] || map.pending;
-
-          return <Badge status={config.color} text={config.text} />;
-      }
-    },
-    {
-      title: 'Date',
-      width: 120,
-      render: (_, r) => <span className="text-gray-500 text-xs">{format(new Date(r.createdAt), 'dd MMM yyyy')}</span>
-    },
-    {
-      title: 'Actions',
-      fixed: 'right',
-      width: 150,
-      render: (_, r) => (
-        <Space>
-            <Tooltip title="View Details">
-                <Link to={`/dashboard/${roleSlug}/products/view?productId=${r._id}`}>
-                    <Button type="text" shape="circle" icon={<FiEye className="text-blue-600"/>} />
-                </Link>
-            </Tooltip>
-            
-            {/* Inventory Link - Only if Approved */}
-            {r.verification_status?.status === 'approved' && (
-                <Tooltip title="Manage Inventory">
-                    <Link to={`/dashboard/${roleSlug}/product/inventory/${r._id}`}>
-                        <Button type="text" shape="circle" icon={<FiShoppingBag className="text-purple-600"/>} />
-                    </Link>
-                </Tooltip>
-            )}
-
-            {/* Edit Link (If not rejected or specific logic) */}
-            <Tooltip title="Edit Product">
-                <Link to={`/dashboard/${roleSlug}/products/edit/${r._id}`}>
-                    <Button type="text" shape="circle" icon={<FiEdit className="text-gray-600"/>} />
-                </Link>
-            </Tooltip>
-        </Space>
+      dataIndex: 'isActive',
+      key: 'isActive',
+      render: (isActive) => (
+        <Tag color={isActive ? 'success' : 'error'} icon={isActive ? <CheckOutlined /> : <CloseOutlined />}>
+          {isActive ? 'Active' : 'Inactive'}
+        </Tag>
       )
-    }
-  ];
-
-  // --- TAB ITEMS ---
-  const tabItems = [
-      { key: 'all', label: 'All Products' },
-      { 
-          key: 'approved', 
-          label: (
-              <span>
-                 <FiCheck className="inline mr-1"/> Approved
-              </span>
-          )
-      },
-      { 
-          key: 'pending', 
-          label: (
-              <span>
-                 <FiClock className="inline mr-1"/> Pending
-              </span>
-          )
-      },
-      { 
-          key: 'rejected', 
-          label: (
-              <span>
-                 <FiX className="inline mr-1"/> Rejected
-              </span>
-          )
-      }
+    },
+    {
+      title: 'Action',
+      align: 'right',
+      render: (_, record) => (
+        <Space>
+          <Button type="text" icon={<EditOutlined className="text-blue-600" />} onClick={() => {
+            setEditingId(record._id);
+            form.setFieldsValue({
+              ...record,
+              brandName: record.brandName?._id || record.brandName,
+              category: record.category?._id || record.category,
+              mainImage: (record.photos || []).map((url, i) => ({ uid: i, name: `img`, status: 'done', url })),
+              keyFeatures: record.keyFeatures?.join(', '),
+              material: record.material?.join(', '),
+              colours: (record.ProductColors || []).map((col, i) => ({
+                ...col,
+                photos: (col.photos || []).map((url, pi) => ({ uid: `${i}-${pi}`, status: 'done', url }))
+              }))
+            });
+            setModalVisible(true);
+          }} />
+          <Popconfirm title="Delete Product?" onConfirm={async () => { await axios.post(`${BASE_URL}/api/products/delete-product-by-id?id=${record._id}`); fetchProducts(); }}>
+            <Button type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
+      ),
+    },
   ];
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+    <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-          <Title level={3} style={{ margin: 0 }}>My Products</Title>
-          <Text type="secondary">Manage your product catalog and inventory.</Text>
+          <Title level={3} style={{ margin: 0 }}>Product Management</Title>
+          <Text type="secondary">Create and manage your furniture inventory in AED.</Text>
         </div>
-        <Space>
-          
-            <Link to={`/dashboard/${roleSlug}/products/add`}>
-                <Button 
-                    type="primary" 
-                    icon={<FiPlus />} 
-                    size="large"
-                    style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}
-                >
-                    Add Product
-                </Button>
-            </Link>
-        </Space>
+        <Button 
+          type="primary" 
+          size="large" 
+          icon={<PlusOutlined />}
+          onClick={() => { setEditingId(null); form.resetFields(); setModalVisible(true); }} 
+          style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}
+          className="w-full md:w-auto"
+        >
+          Add New Product
+        </Button>
       </div>
 
-      {/* Stats Cards (Optional - using total count from pagination for now) */}
       <Row gutter={[16, 16]} className="mb-6">
-         <Col xs={24} sm={8}>
-            <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.primary }}>
-                <Statistic title="Total Products" value={pagination.totalResults} prefix={<FiShoppingBag />} />
-            </Card>
-         </Col>
-         {/* You can fetch detailed counts if API supports it */}
+        <Col xs={24} sm={12} md={8}>
+          <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.primary }}>
+            <Statistic title="Total Products" value={total} prefix={<ShoppingOutlined style={{ color: THEME.primary }} />} />
+          </Card>
+        </Col>
       </Row>
 
-      {/* Main Content */}
-      <Card bordered={false} className="shadow-md rounded-lg" bodyStyle={{ padding: 0 }}>
-        
-        {/* Filters & Search */}
-        <div className="p-4 border-b border-gray-100 flex flex-wrap gap-4 justify-between items-center bg-white rounded-t-lg">
-            <Tabs 
-                activeKey={activeTab} 
-                onChange={handleTabChange} 
-                items={tabItems} 
-                className="custom-tabs"
-                style={{ marginBottom: 0 }}
-            />
-            
-            <Input 
-                prefix={<FiSearch className="text-gray-400"/>}
-                placeholder="Search products..."
-                style={{ maxWidth: 300 }}
-                allowClear
-                size="large"
-                onPressEnter={(e) => setSearchTerm(e.target.value)}
-                onChange={(e) => { if(!e.target.value) setSearchTerm('') }}
-            />
+      <Card bordered={false} className="shadow-md" bodyStyle={{ padding: 0 }}>
+        <div className="p-4 border-b bg-white rounded-t-lg">
+          <Input 
+            prefix={<SearchOutlined className="text-gray-400" />} 
+            placeholder="Search products..." 
+            className="w-full md:max-w-md"
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+            size="large"
+          />
         </div>
-
-        {/* Table */}
-        <div className="p-0">
-            <CustomTable
-                columns={columns}
-                data={products}
-                loading={loading}
-                totalItems={pagination.totalResults}
-                currentPage={pagination.currentPage}
-                itemsPerPage={pagination.itemsPerPage}
-                onPageChange={handlePageChange}
-                scroll={{ x: 1000 }}
-            />
-        </div>
+        <Table 
+          columns={columns} 
+          dataSource={products} 
+          loading={loading} 
+          rowKey="_id" 
+          scroll={{ x: 800 }}
+          pagination={{
+            current: currentPage,
+            pageSize: pageSize,
+            total: total,
+            onChange: (p) => setCurrentPage(p)
+          }}
+        />
       </Card>
 
+      <Modal 
+        title={<div className="font-bold text-lg">{editingId ? 'Edit Product' : 'Create New Product'}</div>} 
+        open={modalVisible} 
+        onCancel={closeModal} 
+        footer={null} 
+        centered 
+        width={1000} 
+        destroyOnClose
+      >
+        <Divider style={{ margin: '10px 0 25px 0' }} />
+        <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ isActive: true, isFeatured: true }}>
+          
+          <Text strong className="text-gray-400 text-xs mb-4 block uppercase tracking-wider">Basic Information</Text>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item name="mainImage" label="Main Product Image" valuePropName="fileList" getValueFromEvent={normFile}>
+                <Upload customRequest={customUploadRequest} listType="picture-card" maxCount={1}>
+                  <div><PlusOutlined /><div style={{ marginTop: 8 }}>Upload</div></div>
+                </Upload>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item name="name" label="Product Name" rules={[{ required: true }]}>
+                <Input size="large" placeholder="e.g. Modern Wooden Dining Table" />
+              </Form.Item>
+            </Col>
+            <Col xs={12} md={6}>
+              <Form.Item name="brandName" label="Brand" rules={[{ required: true }]}>
+                <Select showSearch size="large" placeholder="Select Brand">
+                  {brands.map(b => <Option key={b._id} value={b._id}>{b.brandName}</Option>)}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={12} md={6}>
+              <Form.Item name="category" label="Category" rules={[{ required: true }]}>
+                <Select size="large" placeholder="Select Category">
+                  {categories.map(c => <Option key={c._id} value={c._id}>{c.name}</Option>)}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={6}>
+              <Form.Item name="price" label="MRP (AED)">
+                <InputNumber size="large" className="w-full" prefix="AED" min={0} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="discountedPrice" label="Selling Price (AED)">
+                <InputNumber size="large" className="w-full" prefix="AED" min={0} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="quantity" label="Stock Quantity">
+                <InputNumber size="large" className="w-full" min={0} placeholder="0" />
+              </Form.Item>
+            </Col>
+            <Col span={3}>
+              <Form.Item name="isActive" label="Active" valuePropName="checked">
+                <Switch />
+              </Form.Item>
+            </Col>
+            <Col span={3}>
+              <Form.Item name="isFeatured" label="Featured" valuePropName="checked">
+                <Switch />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Divider style={{ margin: '20px 0' }} />
+          <Text strong className="text-gray-400 text-xs mb-4 block uppercase tracking-wider">Specifications & Policy</Text>
+          
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="description" label="Description">
+                <TextArea rows={3} placeholder="Tell us about the product..." />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="careInstructions" label="Care Instructions">
+                <TextArea rows={3} placeholder="e.g. Clean with a dry cloth..." />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col xs={12} md={6}><Form.Item name="warrantyYears" label="Warranty (Years)"><InputNumber className="w-full" size="large" min={0}/></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="returnPolicyDays" label="Return Policy (Days)"><InputNumber className="w-full" size="large" min={0}/></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="finish" label="Finish"><Input size="large" placeholder="Matte/Glossy" /></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="originCountry" label="Origin Country"><Input size="large" placeholder="India/UAE" /></Form.Item></Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}><Form.Item name="keyFeatures" label="Key Features (Comma Separated)"><Input size="large" placeholder="Scratch Resistant, 6 Seater..." /></Form.Item></Col>
+            <Col span={12}><Form.Item name="material" label="Materials (Comma Separated)"><Input size="large" placeholder="Solid Wood, Fabric..." /></Form.Item></Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={8}><Form.Item name="noCostEmiAvailable" label="No Cost EMI" valuePropName="checked"><Switch /></Form.Item></Col>
+            <Col span={8}><Form.Item name="assemblyRequired" label="Assembly Required" valuePropName="checked"><Switch /></Form.Item></Col>
+            <Col span={8}><Form.Item name="assemblyToolsProvided" label="Tools Provided" valuePropName="checked"><Switch /></Form.Item></Col>
+          </Row>
+
+          {/* UPDATED VARIANTS SECTION WITH COLOR PREVIEW */}
+          <Divider orientation="left" className="text-gray-400 uppercase text-xs">Variants & Colors</Divider>
+          <Form.List name="colours">
+            {(fields, { add, remove }) => (
+              <div className="flex flex-col gap-4">
+                {fields.map(({ key, name, ...restField }) => (
+                  <Card 
+                    key={key} 
+                    size="small" 
+                    title={
+                      <Space>
+                        <div 
+                          className="w-4 h-4 rounded-full border shadow-sm" 
+                          style={{ 
+                            backgroundColor: COLOR_OPTIONS.find(c => c.value === form.getFieldValue(['colours', name, 'colourName']))?.hex || '#e5e7eb' 
+                          }} 
+                        />
+                        <span className="text-sm">Color Variant: {form.getFieldValue(['colours', name, 'colourName']) || 'New'}</span>
+                      </Space>
+                    } 
+                    extra={<DeleteOutlined className="text-red-500 hover:text-red-700 cursor-pointer" onClick={() => remove(name)} />} 
+                    className="bg-gray-50 border-dashed"
+                  >
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Form.Item 
+                          {...restField} 
+                          name={[name, 'colourName']} 
+                          label="Select Color" 
+                          rules={[{required: true}]}
+                        >
+                          <Select 
+                            placeholder="Pick color" 
+                            onChange={() => setProducts([...products])} // Simple trick to refresh the card title preview
+                            options={COLOR_OPTIONS.map(c => ({
+                              label: (
+                                <Space>
+                                  <div style={{ width: 14, height: 14, borderRadius: '50%', backgroundColor: c.hex, border: '1px solid #ccc' }} />
+                                  {c.label}
+                                </Space>
+                              ),
+                              value: c.value
+                            }))}
+                          />
+                        </Form.Item>
+                        <Form.Item {...restField} name={[name, 'isActive']} valuePropName="checked" initialValue={true}>
+                          <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={16}>
+                        <Form.Item 
+                          {...restField} 
+                          name={[name, 'photos']} 
+                          label="Variant Images" 
+                          valuePropName="fileList" 
+                          getValueFromEvent={normFile}
+                        >
+                          <Upload 
+                            customRequest={customUploadRequest} 
+                            listType="picture-card" 
+                            multiple
+                          >
+                            <div><PlusOutlined /><div style={{ marginTop: 8 }}>Upload Photos</div></div>
+                          </Upload>
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  </Card>
+                ))}
+                <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />} size="large">
+                  Add Colour Variant
+                </Button>
+              </div>
+            )}
+          </Form.List>
+
+          <div className="flex justify-end gap-3 mt-8 border-t pt-4">
+            <Button size="large" onClick={closeModal}>Cancel</Button>
+            <Button type="primary" htmlType="submit" loading={saving} size="large" style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}>
+              {editingId ? 'Update Product' : 'Create Product'}
+            </Button>
+          </div>
+        </Form>
+      </Modal>
     </div>
   );
 };
+
+const VendorProducts = () => (
+  <App><ProductManagementContent /></App>
+);
 
 export default VendorProducts;

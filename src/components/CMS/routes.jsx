@@ -227,7 +227,9 @@ const CmsRoutes = () => {
              <Route path="products/edit/:id" element={<UpdateProduct />} />
 
        <Route path="product/inventory/:id" element={<Inventory />} />
+       
       <Route path="seller/:id" element={<VendorB2CProfile />} />
+
             <Route path="projects/:id" element={<ViewProject/>} />
             <Route path="quotation/received" element={<ReceivedQuotation />} />
             <Route path="estimate/submitted" element={<CustomerSubmittedQuotation />} />

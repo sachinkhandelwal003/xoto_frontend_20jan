@@ -15,7 +15,8 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const THEME = { primary: "#7c3aed" };
-const BASE_URL = "https://xoto.ae";
+// const BASE_URL = "https://xoto.ae";
+const BASE_URL = "http://localhost:5000";
 
 // Standard Color Options for Preview
 const COLOR_OPTIONS = [
