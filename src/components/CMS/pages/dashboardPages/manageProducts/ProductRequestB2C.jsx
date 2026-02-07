@@ -9,6 +9,8 @@ import {
   PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined,
   ShoppingOutlined, CheckOutlined, CloseOutlined
 } from '@ant-design/icons';
+import { Tooltip } from "antd";
+import { PercentageOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -45,6 +47,9 @@ const ProductManagementContent = () => {
   const [searchText, setSearchText] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null);
+const [marginModalVisible, setMarginModalVisible] = useState(false);
+const [selectedProduct, setSelectedProduct] = useState(null);
+const [marginForm] = Form.useForm();
 
   const normFile = (e) => (Array.isArray(e) ? e : e?.fileList);
 
@@ -185,13 +190,29 @@ const ProductManagementContent = () => {
       ),
     },
     {
-      title: 'Pricing & Stock',
+      title: 'Stock',
+      key: 'stock',
+      render: (_, r) => (
+        <div>
+          <div className="mt-1"><Tag color={r.quantity > 5 ? 'success' : 'warning'}>{r.quantity} in Stock</Tag></div>
+        </div>
+      ),
+    },
+    {
+      title: 'Base Price',
       key: 'pricing',
       render: (_, r) => (
         <div>
-          <Text strong>AED {r.discountedPrice}</Text> 
-          <Text delete type="secondary" className="text-xs ml-2">AED {r.price}</Text>
-          <div className="mt-1"><Tag color={r.quantity > 5 ? 'success' : 'warning'}>{r.quantity} in Stock</Tag></div>
+          <Text strong>AED {r.price}</Text> 
+        </div>
+      ),
+    },{
+      title: 'Sale Price',
+      key: 'pricing',
+      render: (_, r) => (
+        <div>
+          <Text strong>AED {r.salePrice}</Text> 
+
         </div>
       ),
     },
@@ -210,6 +231,21 @@ const ProductManagementContent = () => {
       align: 'right',
       render: (_, record) => (
         <Space>
+         <Tooltip title="Add Margin">
+  <Button
+    type="text"
+    icon={<PercentageOutlined />}
+    onClick={() => {
+      setSelectedProduct(record);
+      marginForm.setFieldsValue({
+        marginType: record.marginType || "fixed",
+        marginValue: record.marginValue || 0
+      });
+      setMarginModalVisible(true);
+    }}
+  />
+</Tooltip>
+
           <Button type="text" icon={<EditOutlined className="text-blue-600" />} onClick={() => {
             setEditingId(record._id);
             form.setFieldsValue({
@@ -475,6 +511,77 @@ const ProductManagementContent = () => {
           </div>
         </Form>
       </Modal>
+
+<Modal
+  title="Add Product Margin"
+  open={marginModalVisible}
+  onCancel={() => {
+    setMarginModalVisible(false);
+    setSelectedProduct(null);
+    marginForm.resetFields();
+  }}
+  onOk={() => marginForm.submit()}
+  okText="Save Margin"
+>
+  <Form
+    form={marginForm}
+    layout="vertical"
+    onFinish={async (values) => {
+      try {
+        await axios.post(
+          `${BASE_URL}/api/products/add-margin-products`,
+          {
+            productId: selectedProduct._id,
+            marginType: values.marginType,
+            marginValue: values.marginValue
+          }
+        );
+
+        notification.success({
+          message: "Margin added successfully"
+        });
+
+        setMarginModalVisible(false);
+        marginForm.resetFields();
+        fetchProducts(currentPage, pageSize, searchText);
+
+      } catch (err) {
+        message.error(err.response?.data?.message || "Failed to add margin");
+      }
+    }}
+  >
+    <Form.Item
+      name="marginType"
+      label="Margin Type"
+      rules={[{ required: true }]}
+    >
+      <Select>
+        <Select.Option value="fixed">Fixed (AED)</Select.Option>
+        <Select.Option value="percentage">Percentage (%)</Select.Option>
+      </Select>
+    </Form.Item>
+
+    <Form.Item
+      name="marginValue"
+      label="Margin Value"
+      rules={[{ required: true }]}
+    >
+      <InputNumber
+        className="w-full"
+        min={0}
+        placeholder="Enter margin"
+      />
+    </Form.Item>
+
+    <Divider />
+
+    <Text type="secondary">
+      Base Price: AED {selectedProduct?.price || 0}
+    </Text>
+  </Form>
+</Modal>
+
+
     </div>
   );
 };
