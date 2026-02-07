@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useSelector } from "react-redux";
 import axios from "axios";
 import {
   Button,
@@ -61,6 +62,7 @@ const DeveloperPropertyManagement = () => {
   const [brochureUrl, setBrochureUrl] = useState("");
 
   const [form] = Form.useForm();
+const { user } = useSelector((state) => state.auth);
 
   // ✅ FETCH DEVELOPERS
   const fetchDevelopers = async () => {
@@ -145,6 +147,7 @@ const DeveloperPropertyManagement = () => {
         builtUpArea: Number(values.builtUpArea || 0),
         plotArea: Number(values.plotArea || 0),
         handoverYear: values.handoverYear ? Number(values.handoverYear) : null,
+  developer: user?.id || user?._id,
 
         // media
         photos: finalPhotos,
@@ -422,21 +425,12 @@ const DeveloperPropertyManagement = () => {
               </Form.Item>
             </Col>
 
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="developer"
-                label="Developer"
-                rules={[{ required: true, message: "Select developer" }]}
-              >
-                <Select placeholder="Select Developer">
-                  {developers.map((d) => (
-                    <Option key={d._id} value={d._id}>
-                      {d.name}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
+        <Col xs={24} md={8}>
+  <Form.Item label="Developer">
+    <Input value={user?.name} disabled />
+  </Form.Item>
+</Col>
+
 
             <Col xs={24} md={8}>
               <Form.Item
