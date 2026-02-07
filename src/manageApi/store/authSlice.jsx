@@ -3,22 +3,40 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 
-// Set base URL globally
-// const API_BASE = 'https://kotiboxglobaltech.online/api';
-// const API_BASE = 'http://localhost:5000/api';
-const API_BASE = 'https://xoto.ae/api';
+// ================= BASE API =================
+const API_BASE = "https://xoto.ae/api";
 
+// ================= USER NORMALIZER =================
+// 🔥 IS FILE KA SABSE IMPORTANT PART
+const normalizeUser = (decoded) => {
+  if (!decoded) return null;
 
-// Load from localStorage
+  return {
+    ...decoded,
+    name: decoded.name || decoded.fullName || "User",
+    email: decoded.email || "",
+    role:
+      typeof decoded.role === "string"
+        ? { name: decoded.role }
+        : decoded.role
+        ? decoded.role
+        : { name: "developer" },
+  };
+};
+
+// ================= LOAD INITIAL STATE =================
 const loadInitialState = () => {
   const token = localStorage.getItem("token");
+
   if (token) {
     try {
       const decoded = jwtDecode(token);
+
       if (decoded.exp * 1000 > Date.now()) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+
         return {
-          user: decoded,
+          user: normalizeUser(decoded),
           token,
           permissions: {},
           loading: false,
@@ -28,10 +46,11 @@ const loadInitialState = () => {
       } else {
         localStorage.removeItem("token");
       }
-    } catch (error) {
+    } catch {
       localStorage.removeItem("token");
     }
   }
+
   return {
     user: null,
     token: null,
@@ -42,38 +61,40 @@ const loadInitialState = () => {
   };
 };
 
-// LOGIN - Using the correct endpoint
+// ================= LOGIN =================
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async ({ payload, endpoint }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(endpoint, payload); // ← Use payload directly
+      const response = await axios.post(endpoint, payload);
       const data = response.data;
 
-      if (!data.success && !data.token) {
-        return rejectWithValue(data.message || data.error || "Login failed");
+      if (!data.token) {
+        return rejectWithValue(data.message || "Login failed");
       }
 
       const token = data.token;
-      localStorage.setItem("token", token);
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
       const decoded = jwtDecode(token);
 
+      localStorage.setItem("token", token);
+      axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+
       return {
-        user: decoded,
+        user: normalizeUser(decoded),
         token,
         message: data.message || "Login successful",
       };
     } catch (err) {
-      const errorMsg = err.response?.data?.message || err.response?.data?.error || "Login failed";
-      return rejectWithValue(errorMsg);
+      return rejectWithValue(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Login failed"
+      );
     }
   }
 );
 
-
-// LOGOUT
+// ================= LOGOUT =================
 export const logoutUser = createAsyncThunk(
   "auth/logoutUser",
   async (logoutUrl, { getState }) => {
@@ -81,21 +102,24 @@ export const logoutUser = createAsyncThunk(
       const { token } = getState().auth;
 
       if (token && logoutUrl) {
-        await axios.post(logoutUrl, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.post(
+          logoutUrl,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
       }
-    } catch (error) {
-      console.warn("Logout error:", error);
+    } catch (err) {
+      console.warn("Logout error:", err);
     } finally {
       localStorage.removeItem("token");
-      delete axios.defaults.headers.common["Authorization"];
+      delete axios.defaults.headers.common.Authorization;
     }
   }
 );
 
-
-// REFRESH TOKEN
+// ================= REFRESH TOKEN =================
 export const refreshToken = createAsyncThunk(
   "auth/refreshToken",
   async (_, { getState, rejectWithValue }) => {
@@ -108,31 +132,41 @@ export const refreshToken = createAsyncThunk(
       const decoded = jwtDecode(newToken);
 
       localStorage.setItem("token", newToken);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      return { user: decoded, token: newToken };
-    } catch (err) {
+      axios.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+
+      return {
+        user: normalizeUser(decoded),
+        token: newToken,
+      };
+    } catch {
       localStorage.removeItem("token");
-      delete axios.defaults.headers.common['Authorization'];
+      delete axios.defaults.headers.common.Authorization;
       return rejectWithValue("Refresh failed");
     }
   }
 );
 
-// FETCH MY PERMISSIONS
+// ================= FETCH PERMISSIONS =================
 export const fetchMyPermissions = createAsyncThunk(
   "auth/fetchMyPermissions",
   async (_, { getState, rejectWithValue }) => {
     try {
-      const { token } = getState().auth;
+      const { token, user } = getState().auth;
+
+      // 🔥 Developer / Agent → permissions skip
+      if (!user?.role || user.role.name === "developer") {
+        return [];
+      }
+
       const res = await axios.get(`${API_BASE}/permission/my/get`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.data.success) {
         return res.data.permissions;
-      } else {
-        return rejectWithValue(res.data.message);
       }
+
+      return rejectWithValue(res.data.message);
     } catch (err) {
       return rejectWithValue(
         err.response?.data?.message || "Failed to fetch permissions"
@@ -141,55 +175,49 @@ export const fetchMyPermissions = createAsyncThunk(
   }
 );
 
-// SLICE
+// ================= SLICE =================
 const authSlice = createSlice({
   name: "auth",
   initialState: loadInitialState(),
   reducers: {
     setAuthFromToken: (state, action) => {
-const token = action.payload;
-const decoded = jwtDecode(token);
+      const token = action.payload;
+      const decoded = jwtDecode(token);
 
+      state.token = token;
+      state.user = normalizeUser(decoded);
+      state.isAuthenticated = true;
+      state.error = null;
 
-state.token = token;
-state.user = decoded;
-state.isAuthenticated = true;
-state.error = null;
+      localStorage.setItem("token", token);
+      axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+    },
 
-
-localStorage.setItem("token", token);
-axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-},
     rehydrateAuthState: (state) => {
       const token = localStorage.getItem("token");
-      if (token) {
-        try {
-          const decoded = jwtDecode(token);
-          if (decoded.exp * 1000 > Date.now()) {
-            state.user = decoded;
-            state.token = token;
-            state.isAuthenticated = true;
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          } else {
-            localStorage.removeItem("token");
-            state.user = null;
-            state.token = null;
-            state.isAuthenticated = false;
-            delete axios.defaults.headers.common['Authorization'];
-          }
-        } catch {
+      if (!token) return;
+
+      try {
+        const decoded = jwtDecode(token);
+
+        if (decoded.exp * 1000 > Date.now()) {
+          state.user = normalizeUser(decoded);
+          state.token = token;
+          state.isAuthenticated = true;
+          axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+        } else {
           localStorage.removeItem("token");
-          state.user = null;
-          state.token = null;
-          state.isAuthenticated = false;
-          delete axios.defaults.headers.common['Authorization'];
         }
+      } catch {
+        localStorage.removeItem("token");
       }
     },
+
     clearError: (state) => {
       state.error = null;
     },
   },
+
   extraReducers: (builder) => {
     builder
       // LOGIN
@@ -202,11 +230,10 @@ axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
-        state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "Login failed";
+        state.error = action.payload;
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
@@ -218,7 +245,6 @@ axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         state.token = null;
         state.permissions = {};
         state.isAuthenticated = false;
-        state.error = null;
       })
 
       // REFRESH
@@ -234,30 +260,32 @@ axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         state.isAuthenticated = false;
       })
 
-      // FETCH PERMISSIONS
+      // PERMISSIONS
       .addCase(fetchMyPermissions.pending, (state) => {
         state.loading = true;
       })
       .addCase(fetchMyPermissions.fulfilled, (state, action) => {
         state.loading = false;
-        state.permissions = action.payload.reduce((map, p) => {
-          const key = p.subModule
-            ? `${p.module.name}→${p.subModule.name}`
-            : p.module.name;
+        state.permissions = Array.isArray(action.payload)
+          ? action.payload.reduce((map, p) => {
+              const key = p.subModule
+                ? `${p.module.name}→${p.subModule.name}`
+                : p.module.name;
 
-          map[key] = {
-            canView: p.permissions.canView,
-            canAdd: p.permissions.canAdd,
-            canEdit: p.permissions.canEdit,
-            canDelete: p.permissions.canDelete,
-            canViewAll: p.permissions.canViewAll,
-            route: p.subModule?.route || p.module.route,
-            icon: p.subModule?.icon || p.module.icon,
-            name: p.subModule?.name || p.module.name,
-            moduleName: p.module.name,
-          };
-          return map;
-        }, {});
+              map[key] = {
+                canView: p.permissions.canView,
+                canAdd: p.permissions.canAdd,
+                canEdit: p.permissions.canEdit,
+                canDelete: p.permissions.canDelete,
+                canViewAll: p.permissions.canViewAll,
+                route: p.subModule?.route || p.module.route,
+                icon: p.subModule?.icon || p.module.icon,
+                name: p.subModule?.name || p.module.name,
+                moduleName: p.module.name,
+              };
+              return map;
+            }, {})
+          : {};
       })
       .addCase(fetchMyPermissions.rejected, (state, action) => {
         state.loading = false;
@@ -267,5 +295,10 @@ axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   },
 });
 
-export const { rehydrateAuthState, clearError,setAuthFromToken } = authSlice.actions;
+export const {
+  rehydrateAuthState,
+  clearError,
+  setAuthFromToken,
+} = authSlice.actions;
+
 export default authSlice.reducer;

@@ -72,11 +72,12 @@ import MortgagesProduct from "./components/homepage/MortgagesProduct";
 import UploadDocuments from "./components/homepage/UploadDocuments";
 import ProductRequirementsEdit from "./components/homepage/ProductRequirementsEdit";
 import MyApplications from "./components/homepage/MyApplications";
-
+import { CmsProvider } from "./components/CMS/contexts/CmsContext";
 import DeveloperDashboard from "./components/ecommerce/B2C/developerdashboard";
+import DeveloperLayout from "./components/ecommerce/B2C/DeveloperLayout";
 import DeveloperPropertyManagement from "./components/ecommerce/B2C/developerpropertymanagement";
 import DeveloperRegistration from "./components/ecommerce/B2C/developerregistration";
-import DeveloperSidebar from "./components/ecommerce/B2C/developersidebar";
+// import DeveloperSidebar from "./components/ecommerce/B2C/developersidebar";
 import RegistrationAgency from "./components/ecommerce/B2C/registrationagency";
 import Checker from "./Checker";
 
@@ -114,7 +115,8 @@ function PrivateRoute({ children, allowedRoles }) {
   }
 
   const userRole = user.role.code.toString();
-  if (allowedRoles && !allowedRoles.includes(userRole)) {
+  const userRoleName = user.role.name?.toLowerCase();
+  if (allowedRoles && !allowedRoles.includes(userRole) && !allowedRoles.includes(userRoleName)) {
     return <Navigate to="/" replace />;
   }
 
@@ -173,6 +175,7 @@ function LayoutWrapper({ children }) {
 
 function App() {
   return (
+    <CmsProvider>
     <BlogProvider>
       <FreelancerProvider><ProductProvider>
         <LayoutWrapper>
@@ -236,13 +239,26 @@ function App() {
               <Route path="/ecommerce/b2c" element={<HomeB2C />} />
 
               {/* ✅ Developer Routes */}
-              <Route path="/developer/dashboard" element={<DeveloperDashboard />} />
+ {/* App.js ke andar DeveloperLayout waale section ko aise update karein */}
+<Route path="/dashboard/developer" element={<DeveloperLayout />}>
+  {/* Default dashboard page */}
+  <Route index element={<DeveloperDashboard />} />
+  
+  {/* ✅ Naya Property Management Route */}
+  <Route 
+    path="property-management" 
+    element={<DeveloperPropertyManagement />} 
+  />
+  
+  {/* Agar aapne sub-pages banaye hain toh wo bhi yahan ayenge */}
+  <Route path="property-management/list" element={<DeveloperPropertyManagement />} />
+</Route>
               <Route
                 path="/developer/property-management"
                 element={<DeveloperPropertyManagement />}
               />
               <Route path="/developer/registration" element={<DeveloperRegistration />} />
-              <Route path="/developer/sidebar" element={<DeveloperSidebar />} />
+              {/* <Route path="/developer/sidebar" element={<DeveloperSidebar />} /> */}
 
               {/* ✅ Agency Route */}
               <Route path="/agency/registration" element={<RegistrationAgency />} />
@@ -293,6 +309,7 @@ function App() {
       </FreelancerProvider>
 
     </BlogProvider>
+    </CmsProvider>
   );
 }
 

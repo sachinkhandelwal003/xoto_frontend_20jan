@@ -17,7 +17,8 @@ import {
   CodeOutlined, 
   SafetyOutlined,
   SafetyCertificateOutlined,
-  CheckCircleFilled
+  CheckCircleFilled,
+  EditOutlined
 } from "@ant-design/icons";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -37,11 +38,17 @@ const DeveloperRegistration = () => {
   const [statesList, setStatesList] = useState([]);
   const [citiesList, setCitiesList] = useState([]);
 
-  // --- OTP STATES ---
+  // --- MOBILE OTP STATES ---
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
   const [enteredOtp, setEnteredOtp] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
+
+  // --- EMAIL OTP STATES (Added) ---
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailOtpVerified, setEmailOtpVerified] = useState(false);
+  const [enteredEmailOtp, setEnteredEmailOtp] = useState("");
+  const [emailOtpLoading, setEmailOtpLoading] = useState(false);
 
   const themeColor = "#F97316";
 
@@ -80,9 +87,8 @@ const DeveloperRegistration = () => {
   // Watchers
   const selectedCountry = watch("country");
   const selectedState = watch("state");
-  
-  // 🟢 Change 1: Phone Number ko watch kiya taaki button disable kar sakein
   const watchedPhoneNumber = watch("phone_number");
+  const watchedEmail = watch("email"); // Watch Email for button disable logic
 
   // Load States when Country changes
   useEffect(() => {
@@ -116,7 +122,9 @@ const DeveloperRegistration = () => {
     }));
   }, []);
 
-  // --- OTP HANDLERS ---
+  // -----------------------------------------------------------
+  // 🟢 MOBILE OTP HANDLERS (FAKE/MOCK LOGIC)
+  // -----------------------------------------------------------
   const handleSendOtp = async () => {
     const countryCode = getValues("country_code");
     const number = getValues("phone_number");
@@ -127,21 +135,13 @@ const DeveloperRegistration = () => {
     }
 
     setOtpLoading(true);
-    try {
-        const payload = {
-            country_code: countryCode,
-            phone_number: number
-        };
-        await apiService.post("/otp/send-otp", payload);
+    // Fake Timeout instead of API
+    setTimeout(() => {
         message.success("OTP sent successfully!");
         setOtpSent(true);
         setOtpVerified(false);
-    } catch (error) {
-        const errMsg = error?.response?.data?.message || "Failed to send OTP";
-        notification.error({ message: "OTP Error", description: errMsg });
-    } finally {
         setOtpLoading(false);
-    }
+    }, 500);
   };
 
   const handleVerifyOtp = async () => {
@@ -150,25 +150,74 @@ const DeveloperRegistration = () => {
         return;
     }
     setOtpLoading(true);
-    try {
-        const payload = {
-            country_code: getValues("country_code"),
-            phone_number: getValues("phone_number"),
-            otp: enteredOtp
-        };
-        await apiService.post("/otp/verify-otp", payload);
+    // Fake Timeout instead of API
+    setTimeout(() => {
         message.success("Phone Verified Successfully!");
         setOtpVerified(true);
         setOtpSent(false); // Hide OTP input
+        setOtpLoading(false);
+    }, 500);
+  };
+
+  // -----------------------------------------------------------
+  // 🟢 EMAIL OTP HANDLERS (REAL API LOGIC)
+  // -----------------------------------------------------------
+  const handleSendEmailOtp = async () => {
+    const email = getValues('email');
+    if (!email) {
+        message.error("Please enter a valid email first.");
+        return;
+    }
+
+    setEmailOtpLoading(true);
+    try {
+        const payload = { email };
+        await apiService.post("/otp/email-otp/send", payload);
+        message.success("OTP sent successfully! Please check your mail.");
+        setEmailOtpSent(true);
+        setEmailOtpVerified(false);
+    } catch (error) {
+        const errMsg = error?.response?.data?.message || "Failed to send OTP";
+        notification.error({ message: "OTP Error", description: errMsg });
+    } finally {
+        setEmailOtpLoading(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    if (!enteredEmailOtp) {
+        message.error("Please enter the OTP");
+        return;
+    }
+    setEmailOtpLoading(true);
+    try {
+        const payload = {
+            email: getValues('email'),
+            otp: enteredEmailOtp
+        };
+        await apiService.post("/otp/email-otp/verify", payload);
+        message.success("Email Verified Successfully!");
+        setEmailOtpVerified(true);
+        setEmailOtpSent(false); 
     } catch (error) {
         notification.error({
             message: "Verification Failed",
             description: error?.response?.data?.message || "Invalid OTP"
         });
     } finally {
-        setOtpLoading(false);
+        setEmailOtpLoading(false);
     }
   };
+
+  const handleChangeEmail = () => {
+    setEmailOtpSent(false);
+    setEmailOtpVerified(false);
+    setEnteredEmailOtp("");
+  };
+
+  // -----------------------------------------------------------
+  // POPUPS & SUBMIT
+  // -----------------------------------------------------------
 
   const showSuccessPopup = () => {
     Modal.success({
@@ -201,9 +250,13 @@ const DeveloperRegistration = () => {
   };
 
   const onSubmit = async (data) => {
-    // --- CHECK OTP VERIFICATION ---
+    // --- CHECK BOTH VERIFICATIONS ---
     if (!otpVerified) {
         message.error("Please verify your phone number to continue.");
+        return;
+    }
+    if (!emailOtpVerified) {
+        message.error("Please verify your email to continue.");
         return;
     }
 
@@ -257,6 +310,8 @@ const DeveloperRegistration = () => {
       setSubmitting(false);
     }
   };
+
+  const inputClass = `w-full h-[42px] border rounded-md px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500 bg-white transition-all flex items-center border-gray-300`;
 
   return (
     <div className="min-h-screen bg-[var(--color-primary)] flex items-center justify-center py-10 px-4">
@@ -323,28 +378,84 @@ const DeveloperRegistration = () => {
                     />
                   </Form.Item>
 
-                  {/* Email */}
-                  <Form.Item
-                    label="Email"
-                    required
-                    validateStatus={errors.email ? "error" : ""}
-                    help={errors.email?.message}
-                  >
-                    <Controller
-                      name="email"
-                      control={control}
-                      rules={{
-                        required: "Email is required",
-                        pattern: {
-                          value: /^\S+@\S+$/i,
-                          message: "Enter a valid email",
-                        },
-                      }}
-                      render={({ field }) => (
-                        <Input size="large" placeholder="Email" {...field} />
-                      )}
-                    />
-                  </Form.Item>
+                  {/* ================= EMAIL SECTION (WITH OTP) ================= */}
+                  <div className="mb-6">
+                    <Form.Item label="Email" required validateStatus={errors.email ? 'error' : ''} help={errors.email?.message} style={{marginBottom: 0}}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                            <div style={{ flex: 1 }}>
+                                <Controller
+                                    name="email"
+                                    control={control}
+                                    rules={{ 
+                                        required: 'Required',
+                                        pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' } 
+                                    }}
+                                    render={({ field }) => (
+                                        <Input 
+                                            size="large"
+                                            {...field}
+                                            disabled={emailOtpSent && !emailOtpVerified} 
+                                            style={{ borderColor: errors.email ? 'red' : '#d1d5db' }}
+                                            onChange={(e) => {
+                                                field.onChange(e);
+                                                if (emailOtpVerified) setEmailOtpVerified(false);
+                                            }}
+                                            placeholder="Email Address"
+                                        />
+                                    )} 
+                                />
+                            </div>
+                            <div style={{ width: '100px' }}>
+                                {!emailOtpVerified && !emailOtpSent ? (
+                                    <Button 
+                                        type="primary" 
+                                        size="large"
+                                        disabled={!watchedEmail}
+                                        style={{ 
+                                            width: '100%', 
+                                            backgroundColor: !watchedEmail ? 'white' : themeColor, 
+                                            borderColor: !watchedEmail ? '#d9d9d9' : themeColor, 
+                                            color: !watchedEmail ? 'rgba(0,0,0,0.25)' : 'white' 
+                                        }}
+                                        onClick={handleSendEmailOtp}
+                                        loading={emailOtpLoading}
+                                    >
+                                        Send OTP
+                                    </Button>
+                                ) : (
+                                    <Button danger={!emailOtpVerified} size="large" style={{ width: '100%' }} onClick={handleChangeEmail} icon={<EditOutlined />}>
+                                        Change
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    </Form.Item>
+
+                    {/* Email OTP Input */}
+                    {emailOtpSent && !emailOtpVerified && (
+                        <div style={{ marginTop: 16, display: 'flex', gap: 8, animation: 'fadeIn 0.3s ease' }}>
+                            <div style={{ flex: 1 }}>
+                                <Input 
+                                    size="large" 
+                                    placeholder="Enter 6-digit OTP" 
+                                    prefix={<SafetyCertificateOutlined style={{ color: themeColor }}/>} 
+                                    value={enteredEmailOtp} 
+                                    onChange={(e) => setEnteredEmailOtp(e.target.value.replace(/\D/g, ""))} 
+                                    maxLength={6} 
+                                />
+                                <Text type="secondary" style={{ fontSize: 12, marginLeft: 4 }}>OTP sent to {getValues('email')}</Text>
+                            </div>
+                            <Button type="primary" size="large" onClick={handleVerifyEmailOtp} loading={emailOtpLoading} style={{ background: themeColor, borderColor: themeColor }}>Verify</Button>
+                        </div>
+                    )}
+                    {emailOtpVerified && (
+                        <div style={{ marginTop: 8, color: '#52c41a', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+                            <CheckCircleFilled /> Email Verified Successfully
+                        </div>
+                    )}
+                  </div>
+                  {/* ================= END EMAIL SECTION ================= */}
+
 
                   {/* ================= PHONE NUMBER SECTION WITH OTP ================= */}
                   <div className="mb-6">
@@ -360,7 +471,7 @@ const DeveloperRegistration = () => {
                                         <Select
                                             size="large"
                                             showSearch
-                                            disabled={otpVerified || otpSent} // Lock if verifying
+                                            disabled={otpVerified || otpSent}
                                             optionFilterProp="children"
                                             filterOption={(input, option) => (option["data-search"] || "").toLowerCase().includes(input.toLowerCase())}
                                             {...field}
@@ -399,11 +510,11 @@ const DeveloperRegistration = () => {
                                             size="large"
                                             placeholder="e.g. 501234567"
                                             maxLength={15}
-                                            disabled={otpVerified || otpSent} // Lock if verifying
+                                            disabled={otpVerified || otpSent} 
                                             {...field}
                                             onChange={(e) => {
                                                 field.onChange(e.target.value.replace(/\D/g, ""));
-                                                setOtpSent(false); // Reset on change
+                                                setOtpSent(false); 
                                                 setOtpVerified(false);
                                             }}
                                         />
@@ -411,25 +522,23 @@ const DeveloperRegistration = () => {
                                 />
                             </div>
 
-                            {/* Send OTP Button */}
-                          {/* Send OTP Button - UPDATED */}
-{!otpVerified && !otpSent && (
-    <Button 
-        type="primary" 
-        size="large"
-        style={{ 
-            // Logic: Agar number nahi hai toh White BG, warna Blue BG
-            backgroundColor: !watchedPhoneNumber ? 'white' : '#1677ff', 
-            borderColor: !watchedPhoneNumber ? '#d9d9d9' : '#1677ff',
-            color: !watchedPhoneNumber ? 'rgba(0,0,0,0.25)' : 'white', // Disabled text color
-        }}
-        onClick={handleSendOtp}
-        loading={otpLoading}
-        disabled={!watchedPhoneNumber} 
-    >
-        Send OTP
-    </Button>
-)}
+                            {/* Send OTP Button (FAKE LOGIC) */}
+                            {!otpVerified && !otpSent && (
+                                <Button 
+                                    type="primary" 
+                                    size="large"
+                                    style={{ 
+                                        backgroundColor: !watchedPhoneNumber ? 'white' : themeColor, 
+                                        borderColor: !watchedPhoneNumber ? '#d9d9d9' : themeColor,
+                                        color: !watchedPhoneNumber ? 'rgba(0,0,0,0.25)' : 'white', 
+                                    }}
+                                    onClick={handleSendOtp}
+                                    loading={otpLoading}
+                                    disabled={!watchedPhoneNumber} 
+                                >
+                                    Send OTP
+                                </Button>
+                            )}
 
                             {/* Change Number Button */}
                             {otpSent && !otpVerified && (
@@ -444,7 +553,7 @@ const DeveloperRegistration = () => {
                         </div>
                     </Form.Item>
 
-                    {/* OTP Verify Input Section */}
+                    {/* OTP Verify Input Section (FAKE LOGIC) */}
                     {otpSent && !otpVerified && (
                         <div style={{ marginTop: 16, display: 'flex', gap: 8, animation: 'fadeIn 0.3s ease' }}>
                             <div style={{ flex: 1 }}>
@@ -562,11 +671,9 @@ const DeveloperRegistration = () => {
                       </Form.Item>
                     </Col>
 
-                    {/* Added State Field (Necessary for City logic) */}
                     <Col xs={24} md={8}>
                       <Form.Item
                         label="State / Province"
-                        // required // Optional based on if country has states
                       >
                         <Controller
                           name="state"
@@ -734,6 +841,7 @@ const DeveloperRegistration = () => {
                     block
                     size="large"
                     loading={submitting}
+                    disabled={!otpVerified || !emailOtpVerified}
                     style={{
                       height: 52,
                       background: themeColor,
