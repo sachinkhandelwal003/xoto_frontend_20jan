@@ -217,9 +217,6 @@ const SellerPage = () => {
 
   const themeColor = "var(--color-primary)";
 
-  useEffect(() => {
-  setEmailOtpVerified(true);
-}, []);
 
 
   const {
@@ -250,14 +247,7 @@ const SellerPage = () => {
         primary_contact: { designation: "Owner" },
         support_contact: { designation: "Support Manager" },
       },
-      documents: {
-  trade_license: "",
-  vat_certificate: "",
-  emirates_id: "",
-  bank_letter: "",
-  moa_document: "",
-},
-
+      documents: {},
     },
   });
 
@@ -457,8 +447,8 @@ const SellerPage = () => {
     let fieldsToValidate = [];
 
     if (currentStep === 0) {
-      // if (!otpVerified || !emailOtpVerified) {
-      if (!otpVerified) {
+      if (!otpVerified || !emailOtpVerified) {
+   
 
         message.error("Please verify mobile and email first.");
         return;
@@ -472,9 +462,6 @@ const SellerPage = () => {
         "password",
         "confirmPassword",
       ];
-      console.log("OTP:", otpVerified);
-// console.log("Email:", emailOtpVerified);
-
     } else if (currentStep === 1) {
       fieldsToValidate = [
         "store_details.store_name",
@@ -550,7 +537,7 @@ const SellerPage = () => {
       },
       password: data.password,
       confirmPassword: data.confirmPassword,
-      // is_email_verified: emailOtpVerified, // Send verification status
+      is_email_verified: emailOtpVerified, // Send verification status
       is_mobile_verified: otpVerified,     // Send verification status
 
       store_details: {
@@ -577,8 +564,7 @@ const SellerPage = () => {
 
       bank_details: {
         ...data.bank_details,
-      
-      },
+              },
 
       contacts: data.contacts,
 
