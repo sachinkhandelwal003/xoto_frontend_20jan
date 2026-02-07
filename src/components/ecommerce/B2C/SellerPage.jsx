@@ -267,6 +267,9 @@ const SellerPage = () => {
   }, []);
 
   useEffect(() => {
+    setEmailOtpVerified(true);
+  }, []);
+  useEffect(() => {
     if (selectedCountry) {
       const updatedStates = State.getStatesOfCountry(selectedCountry);
       setStatesList(updatedStates);
@@ -402,7 +405,7 @@ const SellerPage = () => {
     setEmailOtpLoading(true);
     try {
       const payload = { email: email };
-      await apiService.post("/otp/email-otp/send", payload);
+      // await apiService.post("/otp/email-otp/send", payload);
       message.success("OTP sent successfully! Please check your mail.");
       setEmailOtpSent(true);
       setEmailOtpVerified(false);
@@ -447,8 +450,9 @@ const SellerPage = () => {
     let fieldsToValidate = [];
 
     if (currentStep === 0) {
-      if (!otpVerified || !emailOtpVerified) {
-   
+      // if (!otpVerified || !emailOtpVerified) {
+
+      if (!otpVerified) {
 
         message.error("Please verify mobile and email first.");
         return;
@@ -537,7 +541,7 @@ const SellerPage = () => {
       },
       password: data.password,
       confirmPassword: data.confirmPassword,
-      is_email_verified: emailOtpVerified, // Send verification status
+      // is_email_verified: emailOtpVerified, // Send verification status
       is_mobile_verified: otpVerified,     // Send verification status
 
       store_details: {
@@ -564,7 +568,7 @@ const SellerPage = () => {
 
       bank_details: {
         ...data.bank_details,
-              },
+      },
 
       contacts: data.contacts,
 
@@ -1257,6 +1261,8 @@ const SellerPage = () => {
                       <Col span={12}>
                         <Form.Item
                           label="Trade License Number"
+                            validateStatus={errors.registration?.trade_license_number ? "error" : ""}
+
                           required
                           help={
                             errors.registration?.trade_license_number?.message
@@ -1265,7 +1271,15 @@ const SellerPage = () => {
                           <Controller
                             name="registration.trade_license_number"
                             control={control}
-                            rules={{ required: "Required" }}
+                          rules={{
+  required: "Trade License Number is required",
+  minLength: { value: 5, message: "Minimum 5 characters" },
+  pattern: {
+    value: /^[A-Za-z0-9\-\/]+$/,
+    message: "Only letters, numbers, - and / allowed",
+  },
+}}
+
                             render={({ field }) => (
                               <Input
                                 size="large"
@@ -1280,12 +1294,20 @@ const SellerPage = () => {
                         <Form.Item
                           label="VAT / TRN Number"
                           required
+                                                      validateStatus={errors.registration?.trn_number ? "error" : ""}
+
                           help={errors.registration?.trn_number?.message}
                         >
                           <Controller
                             name="registration.trn_number"
                             control={control}
-                            rules={{ required: "Required" }}
+rules={{
+  required: "TRN number is required",
+  pattern: {
+    value: /^\d{15}$/,
+    message: "TRN must be exactly 15 digits",
+  },
+}}
                             render={({ field }) => (
                               <Input
                                 size="large"
@@ -1297,7 +1319,7 @@ const SellerPage = () => {
                         </Form.Item>
                       </Col>
                     </Row>
-                    <Row gutter={16}>
+                    {/* <Row gutter={16}>
                       <Col span={12}>
                         <Form.Item label="Chamber of Commerce No.">
                           <Controller
@@ -1309,7 +1331,7 @@ const SellerPage = () => {
                           />
                         </Form.Item>
                       </Col>
-                    </Row>
+                    </Row> */}
 
                     <Title level={4} className="mt-6 mb-6 text-gray-700">
                       <BankOutlined /> Bank Details (UAE)
@@ -1318,11 +1340,19 @@ const SellerPage = () => {
                       label="Account Holder Name"
                       required
                       help={errors.bank_details?.account_holder_name?.message}
+                       validateStatus={errors.bank_details?.account_holder_name ? "error" : ""}
+
                     >
                       <Controller
                         name="bank_details.account_holder_name"
                         control={control}
-                        rules={{ required: "Required" }}
+rules={{
+  required: "Account holder name is required",
+  pattern: {
+    value: /^[A-Za-z ]+$/,
+    message: "Only letters and spaces allowed",
+  },
+}}
                         render={({ field }) => (
                           <Input size="large" {...field} />
                         )}
@@ -1334,11 +1364,19 @@ const SellerPage = () => {
                           label="Bank Name"
                           required
                           help={errors.bank_details?.bank_name?.message}
+                        validateStatus={errors.bank_details?.bank_name ? "error" : ""}
+
                         >
                           <Controller
                             name="bank_details.bank_name"
                             control={control}
-                            rules={{ required: "Required" }}
+rules={{
+  required: "Bank name is required",
+  pattern: {
+    value: /^[A-Za-z ]+$/,
+    message: "Invalid bank name",
+  },
+}}
                             render={({ field }) => (
                               <Input size="large" {...field} />
                             )}
@@ -1352,11 +1390,19 @@ const SellerPage = () => {
                           help={
                             errors.bank_details?.bank_account_number?.message
                           }
+                            validateStatus={errors.bank_details?.bank_account_number ? "error" : ""}
+
                         >
                           <Controller
                             name="bank_details.bank_account_number"
                             control={control}
-                            rules={{ required: "Required" }}
+rules={{
+  required: "Account number is required",
+  pattern: {
+    value: /^\d{6,20}$/,
+    message: "Account number must be 6–20 digits",
+  },
+}}
                             render={({ field }) => (
                               <Input size="large" {...field} />
                             )}
@@ -1369,18 +1415,21 @@ const SellerPage = () => {
                         <Form.Item
                           label="IBAN"
                           required
+                            validateStatus={errors.bank_details?.iban ? "error" : ""}
+
                           help={errors.bank_details?.iban?.message}
                         >
                           <Controller
                             name="bank_details.iban"
                             control={control}
-                            rules={{
-                              required: "Required",
-                              minLength: {
-                                value: 23,
-                                message: "Invalid IBAN length",
-                              },
-                            }}
+                          rules={{
+  required: "IBAN is required",
+  pattern: {
+    value: /^AE\d{21}$/,
+    message: "Invalid UAE IBAN (must start with AE)",
+  },
+}}
+
                             render={({ field }) => (
                               <Input
                                 size="large"
@@ -1392,10 +1441,17 @@ const SellerPage = () => {
                         </Form.Item>
                       </Col>
                       <Col span={12}>
-                        <Form.Item label="Swift / BIC Code">
+                        <Form.Item label="Swift / BIC Code" >
                           <Controller
                             name="bank_details.swift_code"
                             control={control}
+                            rules={{
+  pattern: {
+    value: /^[A-Za-z0-9]{8,11}$/,
+    message: "Invalid SWIFT/BIC code",
+  },
+}}
+
                             render={({ field }) => (
                               <Input size="large" {...field} />
                             )}
