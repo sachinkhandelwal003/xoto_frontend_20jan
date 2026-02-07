@@ -533,6 +533,8 @@ const SellerPage = () => {
       },
       password: data.password,
       confirmPassword: data.confirmPassword,
+      is_email_verified: emailOtpVerified, // Send verification status
+      is_mobile_verified: otpVerified,     // Send verification status
 
       store_details: {
         store_name: data.store_details.store_name,
