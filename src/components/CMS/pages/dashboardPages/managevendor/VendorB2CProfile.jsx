@@ -132,16 +132,28 @@ const VendorDetails = () => {
               <Descriptions.Item label="Account Holder">{val(bank_details?.account_holder_name)}</Descriptions.Item>
               <Descriptions.Item label="Bank Name">{val(bank_details?.bank_name)}</Descriptions.Item>
               <Descriptions.Item label="Account No.">{val(bank_details?.bank_account_number)}</Descriptions.Item>
-              <Descriptions.Item label="IFSC Code">{val(bank_details?.ifsc_code)}</Descriptions.Item>
-              <Descriptions.Item label="UPI ID">{val(bank_details?.upi_id)}</Descriptions.Item>
-              <Descriptions.Item label="Currency">
-                <Tag color="gold">{bank_details?.preferred_currency?.code} ({bank_details?.preferred_currency?.symbol})</Tag>
-              </Descriptions.Item>
+             <Descriptions.Item label="IBAN">
+  {val(bank_details?.iban)}
+</Descriptions.Item>
+
+<Descriptions.Item label="SWIFT Code">
+  {val(bank_details?.swift_code)}
+</Descriptions.Item>
+
+            
             </Descriptions>
             <Divider orientation="left" plain><Text type="secondary" style={{fontSize: 12}}>Tax Info</Text></Divider>
             <Space direction="vertical" className="w-full">
-              <div className="flex justify-between"><span>PAN:</span> <b>{val(registration?.pan_number)}</b></div>
-              <div className="flex justify-between"><span>GSTIN:</span> <b>{val(registration?.gstin)}</b></div>
+             <div className="flex justify-between">
+  <span>TRN Number:</span>
+  <b>{val(registration?.trn_number)}</b>
+</div>
+
+<div className="flex justify-between">
+  <span>Trade License:</span>
+  <b>{val(registration?.trade_license_number)}</b>
+</div>
+
             </Space>
           </Card>
 

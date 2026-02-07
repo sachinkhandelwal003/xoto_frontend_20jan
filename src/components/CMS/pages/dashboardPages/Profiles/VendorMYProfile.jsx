@@ -109,12 +109,20 @@ const VendorMYProfile = () => {
               </Descriptions>
 
               {/* Registration Section */}
-              <Descriptions title={<><FileTextOutlined /> Compliance & Registration</>} bordered column={2}>
-                <Descriptions.Item label="PAN Number"><Text strong>{val(profile?.registration?.pan_number)}</Text></Descriptions.Item>
-                <Descriptions.Item label="GSTIN"><Text strong>{val(profile?.registration?.gstin)}</Text></Descriptions.Item>
-                <Descriptions.Item label="Business License">{val(profile?.registration?.business_license_number)}</Descriptions.Item>
-                <Descriptions.Item label="Shop Act License">{val(profile?.registration?.shop_act_license)}</Descriptions.Item>
-              </Descriptions>
+             <Descriptions
+  title={<><FileTextOutlined /> Compliance & Registration</>}
+  bordered
+  column={2}
+>
+  <Descriptions.Item label="TRN Number">
+    <Text strong>{val(profile?.registration?.trn_number)}</Text>
+  </Descriptions.Item>
+
+  <Descriptions.Item label="Trade License Number">
+    <Text strong>{val(profile?.registration?.trade_license_number)}</Text>
+  </Descriptions.Item>
+</Descriptions>
+
 
               {/* Document Preview Grid */}
               <div className="bg-gray-50 p-4 rounded-xl border">
@@ -145,16 +153,38 @@ const VendorMYProfile = () => {
             <Space direction="vertical" className="w-full" size="large">
               
               {/* Bank Details */}
-              <Card size="small" title={<><BankOutlined /> Banking Details</>} className="rounded-xl shadow-xs border">
-                <Descriptions column={1} size="small" labelStyle={{ color: '#8c8c8c' }}>
-                  <Descriptions.Item label="Account Holder">{val(profile?.bank_details?.account_holder_name)}</Descriptions.Item>
-                  <Descriptions.Item label="Bank Name">{val(profile?.bank_details?.bank_name)}</Descriptions.Item>
-                  <Descriptions.Item label="A/C Number">{val(profile?.bank_details?.bank_account_number)}</Descriptions.Item>
-                  <Descriptions.Item label="IFSC Code">{val(profile?.bank_details?.ifsc_code)}</Descriptions.Item>
-                  <Descriptions.Item label="Branch">{val(profile?.bank_details?.branch_name)}</Descriptions.Item>
-                  <Descriptions.Item label="UPI ID">{val(profile?.bank_details?.upi_id)}</Descriptions.Item>
-                </Descriptions>
-              </Card>
+           <Card
+  size="small"
+  title={<><BankOutlined /> Banking Details</>}
+  className="rounded-xl shadow-xs border"
+>
+  <Descriptions column={1} size="small">
+    <Descriptions.Item label="Account Holder">
+      {val(profile?.bank_details?.account_holder_name)}
+    </Descriptions.Item>
+
+    <Descriptions.Item label="Bank Name">
+      {val(profile?.bank_details?.bank_name)}
+    </Descriptions.Item>
+
+    <Descriptions.Item label="Account Number">
+      {val(profile?.bank_details?.bank_account_number)}
+    </Descriptions.Item>
+
+    <Descriptions.Item label="IBAN">
+      {val(profile?.bank_details?.iban)}
+    </Descriptions.Item>
+
+    <Descriptions.Item label="SWIFT Code">
+      {val(profile?.bank_details?.swift_code)}
+    </Descriptions.Item>
+
+    <Descriptions.Item label="Branch">
+      {val(profile?.bank_details?.branch_name)}
+    </Descriptions.Item>
+  </Descriptions>
+</Card>
+
 
               {/* Contacts */}
               <Card size="small" title={<><UserOutlined /> Points of Contact</>} className="rounded-xl shadow-xs border">

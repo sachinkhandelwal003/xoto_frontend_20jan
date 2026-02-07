@@ -16,8 +16,8 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const THEME = { primary: "#7c3aed" };
-// const BASE_URL = "https://xoto.ae";
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = "https://xoto.ae";
+// const BASE_URL = "http://localhost:5000";
 
 // Standard Color Options for Preview
 const COLOR_OPTIONS = [
@@ -200,8 +200,7 @@ const ProductManagementContent = () => {
       key: 'pricing',
       render: (_, r) => (
         <div>
-          <Text strong>AED {r.discountedPrice}</Text> 
-          <Text delete type="secondary" className="text-xs ml-2">AED {r.price}</Text>
+          <Text strong>AED {r.price}</Text> 
           <div className="mt-1"><Tag color={r.quantity > 5 ? 'success' : 'warning'}>{r.quantity} in Stock</Tag></div>
         </div>
       ),
@@ -346,11 +345,7 @@ const ProductManagementContent = () => {
                 <InputNumber size="large" className="w-full" prefix="AED" min={0} />
               </Form.Item>
             </Col>
-            <Col span={6}>
-              <Form.Item name="discountedPrice" label="Selling Price (AED)">
-                <InputNumber size="large" className="w-full" prefix="AED" min={0} />
-              </Form.Item>
-            </Col>
+            
             <Col span={6}>
               <Form.Item name="quantity" label="Stock Quantity">
                 <InputNumber size="large" className="w-full" min={0} placeholder="0" />
