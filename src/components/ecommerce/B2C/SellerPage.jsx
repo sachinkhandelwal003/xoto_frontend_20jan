@@ -279,6 +279,9 @@ meta: {
   }, []);
 
   useEffect(() => {
+    setEmailOtpVerified(true);
+  }, []);
+  useEffect(() => {
     if (selectedCountry) {
       const updatedStates = State.getStatesOfCountry(selectedCountry);
       setStatesList(updatedStates);
@@ -460,9 +463,8 @@ meta: {
 
     if (currentStep === 0) {
       // if (!otpVerified || !emailOtpVerified) {
-      if (!otpVerified) {
 
-   
+      if (!otpVerified) {
 
         message.error("Please verify mobile and email first.");
         return;
@@ -578,7 +580,7 @@ meta: {
 
       bank_details: {
         ...data.bank_details,
-              },
+      },
 
       contacts: data.contacts,
 
@@ -1278,6 +1280,8 @@ meta: {
                       <Col span={12}>
                         <Form.Item
                           label="Trade License Number"
+                            validateStatus={errors.registration?.trade_license_number ? "error" : ""}
+
                           required
                           help={
                             errors.registration?.trade_license_number?.message
@@ -1286,21 +1290,15 @@ meta: {
                           <Controller
                             name="registration.trade_license_number"
                             control={control}
-                            rules={{
-    required: "Trade license number is required",
-    minLength: {
-      value: 5,
-      message: "Minimum 5 characters",
-    },
-    maxLength: {
-      value: 30,
-      message: "Maximum 30 characters",
-    },
-    pattern: {
-      value: /^[A-Za-z0-9\-\/]+$/,
-      message: "Only letters, numbers, - and / allowed",
-    },
-  }}
+                          rules={{
+  required: "Trade License Number is required",
+  minLength: { value: 5, message: "Minimum 5 characters" },
+  pattern: {
+    value: /^[A-Za-z0-9\-\/]+$/,
+    message: "Only letters, numbers, - and / allowed",
+  },
+}}
+
                             render={({ field }) => (
                               <Input
                                 size="large"
@@ -1315,26 +1313,20 @@ meta: {
                         <Form.Item
                           label="VAT / TRN Number"
                           required
+                                                      validateStatus={errors.registration?.trn_number ? "error" : ""}
+
                           help={errors.registration?.trn_number?.message}
                         >
                           <Controller
                             name="registration.trn_number"
                             control={control}
-                             rules={{
-    required: "TRN is required",
-    minLength: {
-      value: 15,
-      message: "TRN must be 15 digits",
-    },
-    maxLength: {
-      value: 15,
-      message: "TRN must be 15 digits",
-    },
-    pattern: {
-      value: /^[0-9]{15}$/,
-      message: "TRN must contain only 15 digits",
-    },
-  }}
+rules={{
+  required: "TRN number is required",
+  pattern: {
+    value: /^\d{15}$/,
+    message: "TRN must be exactly 15 digits",
+  },
+}}
                             render={({ field }) => (
                              <Input
   size="large"
@@ -1351,7 +1343,19 @@ meta: {
                         </Form.Item>
                       </Col>
                     </Row>
-                   
+                    {/* <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item label="Chamber of Commerce No.">
+                          <Controller
+                            name="registration.chamber_of_commerce"
+                            control={control}
+                            render={({ field }) => (
+                              <Input size="large" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row> */}
 
                     <Title level={4} className="mt-6 mb-6 text-gray-700">
                       <BankOutlined /> Bank Details (UAE)
@@ -1360,22 +1364,19 @@ meta: {
                       label="Account Holder Name"
                       required
                       help={errors.bank_details?.account_holder_name?.message}
+                       validateStatus={errors.bank_details?.account_holder_name ? "error" : ""}
+
                     >
                       <Controller
                         name="bank_details.account_holder_name"
                         control={control}
-                       rules={{
+rules={{
   required: "Account holder name is required",
-  minLength: {
-    value: 3,
-    message: "Minimum 3 characters",
-  },
   pattern: {
     value: /^[A-Za-z ]+$/,
-    message: "Only letters allowed",
+    message: "Only letters and spaces allowed",
   },
 }}
-
                         render={({ field }) => (
                           <Input size="large" {...field} />
                         )}
@@ -1387,18 +1388,19 @@ meta: {
                           label="Bank Name"
                           required
                           help={errors.bank_details?.bank_name?.message}
+                        validateStatus={errors.bank_details?.bank_name ? "error" : ""}
+
                         >
                           <Controller
                             name="bank_details.bank_name"
                             control={control}
-                            rules={{
+rules={{
   required: "Bank name is required",
-  minLength: {
-    value: 3,
-    message: "Minimum 3 characters",
+  pattern: {
+    value: /^[A-Za-z ]+$/,
+    message: "Invalid bank name",
   },
 }}
-
                             render={({ field }) => (
                               <Input size="large" {...field} />
                             )}
@@ -1412,31 +1414,21 @@ meta: {
                           help={
                             errors.bank_details?.bank_account_number?.message
                           }
+                            validateStatus={errors.bank_details?.bank_account_number ? "error" : ""}
+
                         >
                           <Controller
                             name="bank_details.bank_account_number"
                             control={control}
-                           rules={{
+rules={{
   required: "Account number is required",
-  minLength: {
-    value: 8,
-    message: "Minimum 8 digits",
-  },
-  maxLength: {
-    value: 20,
-    message: "Maximum 20 digits",
-  },
   pattern: {
-    value: /^[0-9]+$/,
-    message: "Only numbers allowed",
+    value: /^\d{6,20}$/,
+    message: "Account number must be 6–20 digits",
   },
 }}
-
                             render={({ field }) => (
-                              <Input size="large" {...field} onChange={(e) =>
-  field.onChange(e.target.value.replace(/\D/g, ""))
-}
- />
+                              <Input size="large" {...field} />
                             )}
                           />
                         </Form.Item>
@@ -1447,6 +1439,8 @@ meta: {
                         <Form.Item
                           label="IBAN"
                           required
+                            validateStatus={errors.bank_details?.iban ? "error" : ""}
+
                           help={errors.bank_details?.iban?.message}
                         >
                           <Controller
@@ -1456,7 +1450,7 @@ meta: {
   required: "IBAN is required",
   pattern: {
     value: /^AE\d{21}$/,
-    message: "Invalid UAE IBAN (AE + 21 digits)",
+    message: "Invalid UAE IBAN (must start with AE)",
   },
 }}
 
@@ -1475,14 +1469,14 @@ meta: {
                         </Form.Item>
                       </Col>
                       <Col span={12}>
-                        <Form.Item label="Swift / BIC Code">
+                        <Form.Item label="Swift / BIC Code" >
                           <Controller
                             name="bank_details.swift_code"
                             control={control}
                             rules={{
   pattern: {
-    value: /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/,
-    message: "Invalid SWIFT code",
+    value: /^[A-Za-z0-9]{8,11}$/,
+    message: "Invalid SWIFT/BIC code",
   },
 }}
 

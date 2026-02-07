@@ -23,21 +23,18 @@ import {
   Radio, // Radio import kiya hai
 } from "antd";
 import {
-  PlusOutlined,
-  DeleteOutlined,
-  EditOutlined,
-  SearchOutlined,
-  ShoppingOutlined,
-  CheckOutlined,
-  CloseOutlined,
-} from "@ant-design/icons";
-
+  PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined,
+  ShoppingOutlined, CheckOutlined, CloseOutlined
+} from '@ant-design/icons';
+import { Tooltip } from "antd";
+import { PercentageOutlined } from "@ant-design/icons";
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 const THEME = { primary: "#7c3aed" };
 const BASE_URL = "https://xoto.ae";
+// const BASE_URL = "http://localhost:5000";
 
 const COLOR_OPTIONS = [
   { label: "Black", value: "Black", hex: "#000000" },
@@ -65,6 +62,10 @@ const ProductManagementContent = () => {
   const [searchText, setSearchText] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null);
+const [marginModalVisible, setMarginModalVisible] = useState(false);
+const [selectedProduct, setSelectedProduct] = useState(null);
+const [marginForm] = Form.useForm();
+const [currentProduct, setCurrentProduct] = useState(null);
 
   const normFile = (e) => (Array.isArray(e) ? e : e?.fileList);
 
@@ -289,19 +290,31 @@ const ProductManagementContent = () => {
       ),
     },
     {
-      title: "Pricing & Stock",
-      key: "pricing",
+      title: 'Stock',
+      key: 'stock',
       render: (_, r) => (
         <div>
-          <Text strong>AED {r.discountedPrice}</Text>
-          <Text delete type="secondary" className="text-xs ml-2">
-            AED {r.price}
-          </Text>
-          <div className="mt-1">
-            <Tag color={r.quantity > 5 ? "success" : "warning"}>
-              {r.quantity} in Stock
-            </Tag>
-          </div>
+          <div className="mt-1"><Tag color={r.quantity > 5 ? 'success' : 'warning'}>{r.quantity} in Stock</Tag></div>
+        </div>
+      ),
+    },
+    {
+      title: 'Base Price',
+      key: 'pricing',
+      render: (_, r) => (
+        <div>
+          <Text strong>AED {r.price}</Text> 
+        </div>
+      ),
+    },{
+      title: 'Sale Price',
+      key: 'pricing',
+      render: (_, r) => (
+        <div>
+<Text strong>
+  {r.salePrice ? `AED ${r.salePrice}` : "--"}
+</Text>
+
         </div>
       ),
     },
@@ -323,53 +336,40 @@ const ProductManagementContent = () => {
       align: "right",
       render: (_, record) => (
         <Space>
-          <Button
-            type="text"
-            icon={<EditOutlined className="text-blue-600" />}
-            onClick={() => {
-              setEditingId(record._id);
-              // Pre-fill form values
-              form.setFieldsValue({
-                ...record,
-                brandName: record.brandName?._id || record.brandName,
-                category: record.category?._id || record.category,
-                mainImage: (record.photos || []).map((url, i) => ({
-                  uid: i,
-                  name: `img`,
-                  status: "done",
-                  url,
-                })),
-                keyFeatures: record.keyFeatures?.join(", "),
-                material: record.material?.join(", "),
+         <Tooltip title="Add Margin">
+  <Button
+    type="text"
+    icon={<PercentageOutlined />}
+    onClick={() => {
+      setSelectedProduct(record);
+      marginForm.setFieldsValue({
+        marginType: record.marginType || "fixed",
+        marginValue: record.marginValue || 0
+      });
+      setMarginModalVisible(true);
+    }}
+  />
+</Tooltip>
 
-                // Calculate initial margin for edit mode (assuming fixed by default if loading)
-                marginType: "fixed",
-                marginValue:
-                  record.discountedPrice && record.price
-                    ? record.discountedPrice - record.price
-                    : 0,
+          <Button type="text" icon={<EditOutlined className="text-blue-600" />} onClick={() => {
+            setEditingId(record._id);
+                setCurrentProduct(record); // ✅ IMPORTANT
 
-                colours: (record.ProductColors || []).map((col, i) => ({
-                  ...col,
-                  photos: (col.photos || []).map((url, pi) => ({
-                    uid: `${i}-${pi}`,
-                    status: "done",
-                    url,
-                  })),
-                })),
-              });
-              setModalVisible(true);
-            }}
-          />
-          <Popconfirm
-            title="Delete Product?"
-            onConfirm={async () => {
-              await axios.post(
-                `${BASE_URL}/api/products/delete-product-by-id?id=${record._id}`,
-              );
-              fetchProducts();
-            }}
-          >
+            form.setFieldsValue({
+              ...record,
+              brandName: record.brandName?._id || record.brandName,
+              category: record.category?._id || record.category,
+              mainImage: (record.photos || []).map((url, i) => ({ uid: i, name: `img`, status: 'done', url })),
+              keyFeatures: record.keyFeatures?.join(', '),
+              material: record.material?.join(', '),
+              colours: (record.ProductColors || []).map((col, i) => ({
+                ...col,
+                photos: (col.photos || []).map((url, pi) => ({ uid: `${i}-${pi}`, status: 'done', url }))
+              }))
+            });
+            setModalVisible(true);
+          }} />
+          <Popconfirm title="Delete Product?" onConfirm={async () => { await axios.post(`${BASE_URL}/api/products/delete-product-by-id?id=${record._id}`); fetchProducts(); }}>
             <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
@@ -501,96 +501,87 @@ const ProductManagementContent = () => {
                 </Upload>
               </Form.Item>
             </Col>
+{editingId && currentProduct && (
+  <>
+    <Divider orientation="left">Vendor & Margin Details</Divider>
 
-            {/* Right Side: Price Calculator */}
-            <Col xs={24} md={16}>
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <Row gutter={16}>
-                  <Col span={12}>
-                    <Form.Item
-                      name="price"
-                      label="MRP (AED)"
-                      rules={[{ required: true }]}
-                    >
-                      <InputNumber
-                        size="large"
-                        className="w-full"
-                        prefix="AED"
-                        min={0}
-                        placeholder="0.00"
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item label="Margin Type" name="marginType">
-                      <Radio.Group buttonStyle="solid" className="w-full">
-                        <Radio.Button
-                          value="fixed"
-                          className="w-1/2 text-center"
-                        >
-                          Fixed
-                        </Radio.Button>
-                        <Radio.Button
-                          value="percentage"
-                          className="w-1/2 text-center"
-                        >
-                          %
-                        </Radio.Button>
-                      </Radio.Group>
-                    </Form.Item>
-                  </Col>
-                </Row>
-                <Row gutter={16}>
-                  <Col span={12}>
-                    {/* Show Margin Input */}
-                    <Form.Item
-                      noStyle
-                      shouldUpdate={(prev, curr) =>
-                        prev.marginType !== curr.marginType
-                      }
-                    >
-                      {({ getFieldValue }) => {
-                        const type = getFieldValue("marginType");
-                        return (
-                      <Form.Item
-  name="marginValue"
-  label={type === "percentage" ? "Margin Percentage (%)" : "Fixed Margin (AED)"}
->
-  <InputNumber
-    size="large"
-    className="w-full"
-    min={0}
-    controls={false}  // <--- YE ADD KAREIN (Arrows hata dega, hilna band ho jayega)
-    placeholder={type === "percentage" ? "e.g. 20" : "e.g. 50"}
-    suffix={type === "percentage" ? "%" : "AED"}
-    style={{ width: '100%' }} // <--- Width stable rakhne ke liye
-  />
-</Form.Item>
-                        );
-                      }}
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item
-                      name="discountedPrice"
-                      label="Final Selling Price"
-                    >
-                      <InputNumber
-                        size="large"
-                        className="w-full !text-blue-700 !font-bold"
-                        prefix="AED"
-                        readOnly
-                        style={{
-                          width: "100%", // <--- Ye add karein (Important)
-                          backgroundColor: "#fff",
-                          borderColor: "#1890ff", // Optional: Highlight karne ke liye
-                        }}
-                      />
-                    </Form.Item>
-                  </Col>
-                </Row>
-              </div>
-            </Col>
+    <Row gutter={[16, 16]}>
+      {/* ================= VENDOR DETAILS ================= */}
+      <Col span={12}>
+        <Card size="small" bordered>
+          <Text strong>Vendor Details</Text>
+
+          <div className="mt-2 text-sm">
+            <div>
+              <b>Name:</b>{" "}
+              {currentProduct.vendorId
+                ? `${currentProduct.vendorId.name.first_name} ${currentProduct.vendorId.name.last_name}`
+                : "--"}
+            </div>
+
+            <div>
+              <b>Store:</b>{" "}
+              {currentProduct.vendorId?.store_details?.store_name || "--"}
+            </div>
+
+            <div>
+              <b>City:</b>{" "}
+              {currentProduct.vendorId?.store_details?.city || "--"}
+            </div>
+
+            <div>
+              <b>Email:</b>{" "}
+              {currentProduct.vendorId?.email || "--"}
+            </div>
+
+            <div>
+              <b>Mobile:</b>{" "}
+              {currentProduct.vendorId?.mobile?.number || "--"}
+            </div>
+          </div>
+        </Card>
+      </Col>
+
+      {/* ================= MARGIN DETAILS ================= */}
+      <Col span={12}>
+        <Card size="small" bordered>
+          <Text strong>Margin Details</Text>
+
+          <div className="mt-2 text-sm">
+            <div>
+              <b>Margin Type:</b>{" "}
+              {currentProduct.marginType
+                ? currentProduct.marginType === "percentage"
+                  ? "Percentage (%)"
+                  : "Fixed (AED)"
+                : "--"}
+            </div>
+
+            <div>
+              <b>Margin Value:</b>{" "}
+              {currentProduct.marginValue ?? "--"}
+            </div>
+
+            <div>
+              <b>Margin Amount:</b>{" "}
+              {currentProduct.marginAmount
+                ? `AED ${currentProduct.marginAmount}`
+                : "--"}
+            </div>
+
+            <div>
+              <b>Sale Price:</b>{" "}
+              {currentProduct.salePrice
+                ? `AED ${currentProduct.salePrice}`
+                : "--"}
+            </div>
+          </div>
+        </Card>
+      </Col>
+    </Row>
+  </>
+)}
+
           </Row>
 
           {/* --- REST OF THE FORM (PRESERVED LAYOUT) --- */}
@@ -949,6 +940,77 @@ const ProductManagementContent = () => {
           </div>
         </Form>
       </Modal>
+
+<Modal
+  title="Add Product Margin"
+  open={marginModalVisible}
+  onCancel={() => {
+    setMarginModalVisible(false);
+    setSelectedProduct(null);
+    marginForm.resetFields();
+  }}
+  onOk={() => marginForm.submit()}
+  okText="Save Margin"
+>
+  <Form
+    form={marginForm}
+    layout="vertical"
+    onFinish={async (values) => {
+      try {
+        await axios.post(
+          `${BASE_URL}/api/products/add-margin-products`,
+          {
+            productId: selectedProduct._id,
+            marginType: values.marginType,
+            marginValue: values.marginValue
+          }
+        );
+
+        notification.success({
+          message: "Margin added successfully"
+        });
+
+        setMarginModalVisible(false);
+        marginForm.resetFields();
+        fetchProducts(currentPage, pageSize, searchText);
+
+      } catch (err) {
+        message.error(err.response?.data?.message || "Failed to add margin");
+      }
+    }}
+  >
+    <Form.Item
+      name="marginType"
+      label="Margin Type"
+      rules={[{ required: true }]}
+    >
+      <Select>
+        <Select.Option value="fixed">Fixed (AED)</Select.Option>
+        <Select.Option value="percentage">Percentage (%)</Select.Option>
+      </Select>
+    </Form.Item>
+
+    <Form.Item
+      name="marginValue"
+      label="Margin Value"
+      rules={[{ required: true }]}
+    >
+      <InputNumber
+        className="w-full"
+        min={0}
+        placeholder="Enter margin"
+      />
+    </Form.Item>
+
+    <Divider />
+
+    <Text type="secondary">
+      Base Price: AED {selectedProduct?.price || 0}
+    </Text>
+  </Form>
+</Modal>
+
+
     </div>
   );
 };

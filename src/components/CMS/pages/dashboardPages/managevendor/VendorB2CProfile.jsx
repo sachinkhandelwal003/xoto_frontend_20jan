@@ -1,435 +1,182 @@
-// src/pages/admin/VendorB2CProfile.jsx
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { apiService } from '../../../../../manageApi/utils/custom.apiservice';
-import { showToast } from '../../../../../manageApi/utils/toast';
-import {
-  FiArrowLeft,
-  FiCheck,
-  FiX,
-  FiUser,
-  FiMail,
-  FiPhone,
-  FiMapPin,
-  FiGlobe,
-  FiFileText,
-  FiShield,
-  FiCreditCard,
-  FiClock,
-  FiPackage,
-  FiDownload,
-  FiZoomIn
-} from 'react-icons/fi';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { 
-  Button, Card, Spin, Avatar, Tag, Modal, Input, 
-  Space, Image, Row, Col, Timeline, Descriptions, Typography, Alert 
-} from 'antd';
+  Card, Col, Row, Typography, Tag, Avatar, 
+  Divider, Descriptions, Image, Space, Button, 
+  Skeleton, Empty, Badge 
+} from "antd";
+import { 
+  ArrowLeftOutlined, ShopOutlined, UserOutlined, 
+  PhoneOutlined, MailOutlined, GlobalOutlined,
+  EnvironmentOutlined, CheckCircleTwoTone, CloseCircleTwoTone,
+  FileTextOutlined, BankOutlined, WhatsAppOutlined
+} from "@ant-design/icons";
+import { apiService } from "../../../../../manageApi/utils/custom.apiservice";
 
-const { TextArea } = Input;
 const { Title, Text } = Typography;
 
-// --- THEME CONFIGURATION ---
-const THEME = {
-  primary: "#722ed1",
-  secondary: "#1890ff",
-  success: "#52c41a",
-  warning: "#faad14",
-  error: "#ff4d4f",
-  bgLight: "#f9f0ff",
-};
-
-const VendorB2CProfile = () => {
+const VendorDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { token } = useSelector((state) => state.auth);
-
   const [vendor, setVendor] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [imagePreview, setImagePreview] = useState(null);
-  
-  // Verification Modal State
-  const [verificationModal, setVerificationModal] = useState({
-    open: false,
-    docKey: null, 
-    approving: false,
-    reason: '',
-    suggestion: '',
-    loading: false
-  });
 
   useEffect(() => {
-    if (token) localStorage.setItem('token', token);
-    fetchVendor();
-  }, [id, token]);
-
-  const fetchVendor = async () => {
-    setLoading(true);
-    try {
-      const res = await apiService.get(`/vendor/b2c?vendorId=${id}`); 
-      setVendor(res.vendor); 
-    } catch (err) {
-      showToast('Failed to load vendor profile', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const openVerification = (docKey, approving) => {
-    setVerificationModal({
-      open: true,
-      docKey,
-      approving,
-      reason: '',
-      suggestion: '',
-      loading: false
-    });
-  };
-
-  const submitVerification = async () => {
-    if (!verificationModal.approving && !verificationModal.reason.trim()) {
-      showToast('Reason is required for rejection', 'error');
-      return;
-    }
-
-    setVerificationModal(prev => ({ ...prev, loading: true }));
-
-    try {
-      const payload = {
-        vendorId: id,
-        documentField: verificationModal.docKey,
-        verified: verificationModal.approving
-      };
-
-      if (!verificationModal.approving) {
-        payload.reason = verificationModal.reason;
-        payload.suggestion = verificationModal.suggestion;
+    const fetchVendorDetails = async () => {
+      try {
+        const res = await apiService.get(`/vendor?vendorId=${id}`);
+        if (res.success) setVendor(res.vendor);
+      } catch (err) {
+        console.error("Failed to fetch vendor details");
+      } finally {
+        setLoading(false);
       }
+    };
+    fetchVendorDetails();
+  }, [id]);
 
-      await apiService.put('/vendor/b2c/document/verification/check', payload);
-      
-      showToast(`Document ${verificationModal.approving ? 'approved' : 'rejected'} successfully`, 'success');
-      setVerificationModal({ ...verificationModal, open: false, loading: false });
-      fetchVendor(); 
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Verification update failed', 'error');
-      setVerificationModal(prev => ({ ...prev, loading: false }));
-    }
-  };
+  if (loading) return <div className="p-8"><Skeleton active avatar paragraph={{ rows: 10 }} /></div>;
+  if (!vendor) return <Empty className="mt-20" description="Vendor not found" />;
 
-  const downloadDoc = (path) => {
-    window.open(`https://kotiboxglobaltech.online/api/${path}`, '_blank');
-  };
+  const { store_details, name, mobile, registration, bank_details, contacts, documents, meta } = vendor;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Spin size="large" tip="Loading Profile..." />
-      </div>
-    );
-  }
-
-  if (!vendor) return null;
-
-  // Helpers
-  const fullName = `${vendor.name?.first_name || ''} ${vendor.name?.last_name || ''}`.trim();
-  const getStatusInfo = () => {
-    const status = vendor.status_info?.status;
-    if (status === 1) return { text: 'Approved', color: 'green' };
-    if (status === 2) return { text: 'Rejected', color: 'red' };
-    return { text: 'Pending', color: 'orange' };
-  };
-  const statusInfo = getStatusInfo();
-
-  const docsConfig = [
-    { key: 'identity_proof', label: 'Identity Proof', icon: <FiUser /> },
-    { key: 'address_proof', label: 'Address Proof', icon: <FiMapPin /> },
-    { key: 'gst_certificate', label: 'GST Certificate', icon: <FiFileText /> },
-    { key: 'pan_card', label: 'PAN Card', icon: <FiCreditCard /> },
-    { key: 'cancelled_cheque', label: 'Cancelled Cheque', icon: <FiFileText /> },
-    { key: 'shop_act_license', label: 'Shop Act License', icon: <FiShield /> },
-  ];
+  // Helper for empty data
+  const val = (data) => data || <Text type="secondary">--</Text>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      
-      {/* 1. Header */}
-      <div className="mb-6 flex justify-between items-center">
-         <div className="flex items-center gap-4">
-            <Button icon={<FiArrowLeft />} onClick={() => navigate(-1)}>Back</Button>
-            <div>
-                <Title level={3} style={{ margin: 0 }}>Vendor Details</Title>
-                <div className="flex gap-2 items-center">
-                    <Text type="secondary">ID: {vendor._id}</Text>
-                    <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
-                </div>
-            </div>
-         </div>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <Space size="middle">
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} />
+          <div>
+            <Title level={3} style={{ margin: 0 }}>Vendor Profile</Title>
+            <Text type="secondary">View complete details for {store_details?.store_name}</Text>
+          </div>
+        </Space>
+        <Tag color={vendor.status === 'approved' ? 'green' : 'orange'} style={{ padding: '4px 12px', borderRadius: 12 }}>
+          {vendor.status?.toUpperCase()}
+        </Tag>
       </div>
 
-      <div className="space-y-6 max-w-7xl mx-auto">
+      <Row gutter={[24, 24]}>
+        {/* Left Column: Store & Personal */}
+        <Col xs={24} lg={16}>
+          <Card bordered={false} className="shadow-sm rounded-xl mb-6">
+            <div className="flex items-start gap-6 mb-6">
+              <Avatar size={100} shape="square" src={store_details?.logo} icon={<ShopOutlined />} className="shadow-sm" />
+              <div className="flex-1">
+                <Title level={4} className="mb-1">{val(store_details?.store_name)}</Title>
+                <Text type="secondary" block className="mb-2">{val(store_details?.store_description)}</Text>
+                <Space split={<Divider type="vertical" />}>
+                  <Tag color="blue">{val(store_details?.store_type)}</Tag>
+                  <Text type="secondary"><UserOutlined /> {name.first_name} {name.last_name}</Text>
+                  <Text type="secondary"><EnvironmentOutlined /> {store_details?.city}, {store_details?.state}</Text>
+                </Space>
+              </div>
+            </div>
 
-        {/* 2. Basic Info & Store (Combined) */}
-        <Card className="shadow-sm rounded-xl border-t-4" style={{ borderColor: THEME.primary }}>
-            <Row gutter={24} align="middle">
-                <Col xs={24} md={4} className="text-center">
-                    <Avatar 
-                        size={100} 
-                        src={vendor.store_details?.logo ? `https://kotiboxglobaltech.online/api/${vendor.store_details.logo}` : null}
-                        icon={<FiUser />}
-                        style={{ backgroundColor: THEME.bgLight, color: THEME.primary }}
-                    />
-                </Col>
-                <Col xs={24} md={20}>
-                    <Descriptions title="Vendor Information" column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}>
-                        <Descriptions.Item label="Full Name"><span className="font-semibold">{fullName}</span></Descriptions.Item>
-                        <Descriptions.Item label="Email"><a href={`mailto:${vendor.email}`}>{vendor.email}</a></Descriptions.Item>
-                        <Descriptions.Item label="Mobile">{vendor.mobile?.country_code} {vendor.mobile?.number}</Descriptions.Item>
-                        <Descriptions.Item label="Store Name"><span className="font-semibold text-purple-700">{vendor.store_details?.store_name}</span></Descriptions.Item>
-                        <Descriptions.Item label="Store Type">{vendor.store_details?.store_type}</Descriptions.Item>
-                        <Descriptions.Item label="Joined">{new Date(vendor.createdAt).toLocaleDateString()}</Descriptions.Item>
-                    </Descriptions>
-                </Col>
+            <Descriptions title="Business Information" bordered column={2}>
+              <Descriptions.Item label="Email"><MailOutlined /> {val(vendor.email)}</Descriptions.Item>
+              <Descriptions.Item label="Mobile"><PhoneOutlined /> {mobile.country_code} {mobile.number}</Descriptions.Item>
+              <Descriptions.Item label="Website" span={2}>
+                <GlobalOutlined /> <a href={store_details?.website} target="_blank" rel="noreferrer">{val(store_details?.website)}</a>
+              </Descriptions.Item>
+              <Descriptions.Item label="Address" span={2}>{val(store_details?.store_address)}</Descriptions.Item>
+              <Descriptions.Item label="Categories">
+                <Space wrap>
+                  {store_details?.categories?.map(c => <Tag key={c._id}>{c.name}</Tag>) || "--"}
+                </Space>
+              </Descriptions.Item>
+              <Descriptions.Item label="Joined On">
+                {new Date(meta?.created_at).toLocaleDateString("en-GB")}
+              </Descriptions.Item>
+            </Descriptions>
+          </Card>
+
+          {/* Document Section */}
+          <Card bordered={false} title={<><FileTextOutlined /> Compliance Documents</>} className="shadow-sm rounded-xl">
+            <Row gutter={[16, 16]}>
+              {Object.keys(documents || {}).map((key) => {
+                const doc = documents[key];
+                return (
+                  <Col span={8} key={key}>
+                    <Card size="small" className="text-center bg-gray-50 border-dashed">
+                      <div className="mb-2">
+                        <Image
+                          width={60}
+                          height={60}
+                          style={{ objectFit: 'cover', borderRadius: 4 }}
+                          src={doc.path}
+                          fallback="https://via.placeholder.com/60?text=PDF"
+                        />
+                      </div>
+                      <Text strong block style={{ fontSize: 12 }}>{doc.type}</Text>
+                      {doc.verified ? (
+                        <Badge status="success" text="Verified" />
+                      ) : (
+                        <Badge status="warning" text="Pending" />
+                      )}
+                    </Card>
+                  </Col>
+                );
+              })}
             </Row>
-        </Card>
+          </Card>
+        </Col>
 
-        {/* 3. Store Details (Full Width) */}
-        <Card title={<span><FiPackage className="mr-2"/> Store & Location</span>} className="shadow-sm rounded-xl">
-             <Descriptions bordered column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }}>
-                <Descriptions.Item label="Description">{vendor.store_details?.store_description || 'N/A'}</Descriptions.Item>
-                <Descriptions.Item label="Website">
-                    {vendor.store_details?.website ? <a href={vendor.store_details.website} target="_blank" rel="noreferrer">{vendor.store_details.website}</a> : 'N/A'}
-                </Descriptions.Item>
-                <Descriptions.Item label="Address">{vendor.store_details?.store_address}</Descriptions.Item>
-                <Descriptions.Item label="City/State">{vendor.store_details?.city}, {vendor.store_details?.state}</Descriptions.Item>
-                <Descriptions.Item label="Pincode">{vendor.store_details?.pincode}</Descriptions.Item>
-                <Descriptions.Item label="Country">{vendor.store_details?.country}</Descriptions.Item>
-                <Descriptions.Item label="Categories">
-                    {vendor.store_details?.categories?.map(cat => <Tag key={cat._id}>{cat.name}</Tag>) || 'None'}
-                </Descriptions.Item>
-             </Descriptions>
-        </Card>
+        {/* Right Column: Financial & Contact */}
+        <Col xs={24} lg={8}>
+          <Card bordered={false} title={<><BankOutlined /> Bank Details</>} className="shadow-sm rounded-xl mb-6">
+            <Descriptions column={1} size="small">
+              <Descriptions.Item label="Account Holder">{val(bank_details?.account_holder_name)}</Descriptions.Item>
+              <Descriptions.Item label="Bank Name">{val(bank_details?.bank_name)}</Descriptions.Item>
+              <Descriptions.Item label="Account No.">{val(bank_details?.bank_account_number)}</Descriptions.Item>
+             <Descriptions.Item label="IBAN">
+  {val(bank_details?.iban)}
+</Descriptions.Item>
 
-        {/* 4. Registration & Bank (Split Row) */}
-        <Row gutter={24}>
-            <Col xs={24} md={12}>
-                <Card title={<span><FiFileText className="mr-2"/> Registration</span>} className="shadow-sm rounded-xl h-full">
-                    <Descriptions column={1} bordered size="small">
-                        <Descriptions.Item label="PAN">{vendor.registration?.pan_number}</Descriptions.Item>
-                        <Descriptions.Item label="GSTIN">{vendor.registration?.gstin}</Descriptions.Item>
-                        <Descriptions.Item label="License">{vendor.registration?.business_license_number || 'N/A'}</Descriptions.Item>
-                    </Descriptions>
-                </Card>
-            </Col>
-            <Col xs={24} md={12}>
-                <Card title={<span><FiCreditCard className="mr-2"/> Bank Details</span>} className="shadow-sm rounded-xl h-full">
-                     <Descriptions column={1} bordered size="small">
-                        <Descriptions.Item label="Account Holder">{vendor.bank_details?.account_holder_name}</Descriptions.Item>
-                        <Descriptions.Item label="Bank & Branch">{vendor.bank_details?.bank_name} ({vendor.bank_details?.branch_name})</Descriptions.Item>
-                        <Descriptions.Item label="Account No">{vendor.bank_details?.bank_account_number}</Descriptions.Item>
-                        <Descriptions.Item label="IFSC">{vendor.bank_details?.ifsc_code}</Descriptions.Item>
-                        <Descriptions.Item label="Currency">
-                            {vendor.bank_details?.preferred_currency?.code} ({vendor.bank_details?.preferred_currency?.symbol})
-                        </Descriptions.Item>
-                    </Descriptions>
-                </Card>
-            </Col>
-        </Row>
+<Descriptions.Item label="SWIFT Code">
+  {val(bank_details?.swift_code)}
+</Descriptions.Item>
 
-        {/* 5. Documents Grid (UPDATED) */}
-        <Card title={<span><FiShield className="mr-2"/> Verification Documents</span>} className="shadow-sm rounded-xl">
-            {/* GRID LAYOUT: 1 column mobile, 2 tablet, 3 desktop */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {docsConfig.map(docType => {
-                    const docData = vendor.documents?.[docType.key];
-                    const hasDoc = !!docData?.path;
-                    const fileUrl = hasDoc ? `https://kotiboxglobaltech.online/api/${docData.path}` : null;
-                    const isImage = hasDoc && /\.(jpg|jpeg|png|webp)$/i.test(docData.path);
-
-                    return (
-                        <div key={docType.key} className="border rounded-xl p-0 bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
-                            
-                            {/* Header */}
-                            <div className="flex justify-between items-center p-3 bg-gray-50 border-b border-gray-100">
-                                <div className="flex items-center gap-2 font-semibold text-gray-700">
-                                    {docType.icon} {docType.label}
-                                </div>
-                                <Tag color={!hasDoc ? 'red' : docData.verified ? 'success' : 'warning'}>
-                                    {!hasDoc ? 'Missing' : docData.verified ? 'Verified' : 'Pending'}
-                                </Tag>
-                            </div>
-
-                            {/* Preview Area (Fixed Height) */}
-                            <div className="flex-1 h-48 bg-gray-100 relative group flex items-center justify-center">
-                                {hasDoc ? (
-                                    isImage ? (
-                                        <>
-                                            <Image 
-                                                src={fileUrl} 
-                                                className="w-full h-full object-cover" 
-                                                preview={false} // Disable default preview to use custom modal or just view
-                                            />
-                                            <div className="absolute inset-0 bg-black/40 hidden group-hover:flex flex-col items-center justify-center gap-2 transition-all">
-                                                 <Button 
-                                                    type="primary" 
-                                                    shape="circle" 
-                                                    icon={<FiZoomIn />} 
-                                                    onClick={() => setImagePreview(fileUrl)} 
-                                                 />
-                                                 <Button 
-                                                    shape="circle" 
-                                                    icon={<FiDownload />} 
-                                                    onClick={() => downloadDoc(docData.path)} 
-                                                 />
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="text-center cursor-pointer" onClick={() => downloadDoc(docData.path)}>
-                                            <FiFileText size={40} className="text-gray-400 mb-2 mx-auto" />
-                                            <span className="text-blue-600 text-sm underline">Download PDF</span>
-                                        </div>
-                                    )
-                                ) : (
-                                    <div className="text-gray-400 flex flex-col items-center">
-                                        <FiX size={30} className="mb-1" />
-                                        <span className="text-xs">No Document</span>
-                                    </div>
-                                )}
-                            </div>
-                            
-                            {/* Status Info (Reason/Suggestion) */}
-                            {docData?.reason && (
-                                <Alert 
-                                    message={docData.reason} 
-                                    type="error" 
-                                    banner 
-                                    className="text-xs border-b border-gray-200"
-                                />
-                            )}
-
-                            {/* Action Buttons */}
-                            {hasDoc && !docData.verified && (
-                                <div className="p-3 grid grid-cols-2 gap-3 mt-auto bg-white">
-                                    <Button 
-                                        type="primary" 
-                                        className="bg-green-600 hover:bg-green-700 border-none w-full" 
-                                        icon={<FiCheck />}
-                                        onClick={() => openVerification(docType.key, true)}
-                                    >
-                                        Approve
-                                    </Button>
-                                    <Button 
-                                        danger 
-                                        className="w-full"
-                                        icon={<FiX />}
-                                        onClick={() => openVerification(docType.key, false)}
-                                    >
-                                        Reject
-                                    </Button>
-                                </div>
-                            )}
-
-                            {/* Verified Info */}
-                            {hasDoc && docData.verified && (
-                                <div className="p-3 text-center bg-green-50 text-green-700 text-xs font-medium mt-auto">
-                                    Verified on {new Date(docData.verified_at || Date.now()).toLocaleDateString()}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-        </Card>
-
-        {/* 6. Activity Timeline */}
-        {vendor.meta?.change_history && (
-            <Card title={<span><FiClock className="mr-2"/> Activity History</span>} className="shadow-sm rounded-xl">
-                <Timeline
-                    items={vendor.meta.change_history.slice(-5).reverse().map((item, idx) => ({
-                        color: idx === 0 ? 'green' : 'gray',
-                        children: (
-                            <>
-                                <Text strong>{item.changes?.[0] || 'Profile Update'}</Text>
-                                <br/>
-                                <Text type="secondary" className="text-xs">
-                                    {new Date(item.updated_at).toLocaleString()}
-                                </Text>
-                            </>
-                        )
-                    }))}
-                />
-            </Card>
-        )}
-
-      </div>
-
-      {/* Image Preview Modal */}
-      <Image.PreviewGroup
-        preview={{
-          visible: !!imagePreview,
-          onVisibleChange: (vis) => !vis && setImagePreview(null),
-        }}
-      >
-        <Image src={imagePreview} style={{ display: 'none' }} />
-      </Image.PreviewGroup>
-
-      {/* Verification Modal */}
-      <Modal
-        open={verificationModal.open}
-        title={verificationModal.approving ? 'Approve Document' : 'Reject Document'}
-        onCancel={() => setVerificationModal({ ...verificationModal, open: false })}
-        footer={null}
-        width={400}
-        centered
-      >
-        <div className="space-y-4 pt-2">
-            <Alert 
-                 message={`You are about to ${verificationModal.approving ? 'approve' : 'reject'} the document.`}
-                 type={verificationModal.approving ? "success" : "warning"}
-                 showIcon
-            />
             
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                     {verificationModal.approving ? "Comments (Optional)" : "Reason for Rejection *"}
-                </label>
-                <Input.TextArea 
-                    rows={3} 
-                    placeholder={verificationModal.approving ? "Any notes..." : "Reason is required..."}
-                    value={verificationModal.reason}
-                    onChange={(e) => setVerificationModal({...verificationModal, reason: e.target.value})}
-                    status={!verificationModal.approving && !verificationModal.reason ? 'error' : ''}
-                />
-            </div>
+            </Descriptions>
+            <Divider orientation="left" plain><Text type="secondary" style={{fontSize: 12}}>Tax Info</Text></Divider>
+            <Space direction="vertical" className="w-full">
+             <div className="flex justify-between">
+  <span>TRN Number:</span>
+  <b>{val(registration?.trn_number)}</b>
+</div>
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Suggestion (Optional)</label>
-                <Input.TextArea 
-                    rows={2} 
-                    placeholder="Suggestion for vendor..."
-                    value={verificationModal.suggestion}
-                    onChange={(e) => setVerificationModal({...verificationModal, suggestion: e.target.value})}
-                />
-            </div>
+<div className="flex justify-between">
+  <span>Trade License:</span>
+  <b>{val(registration?.trade_license_number)}</b>
+</div>
 
-            <div className="flex justify-end gap-2">
-                <Button onClick={() => setVerificationModal({ ...verificationModal, open: false })}>Cancel</Button>
-                <Button 
-                    type="primary" 
-                    danger={!verificationModal.approving}
-                    className={verificationModal.approving ? 'bg-green-600' : ''}
-                    onClick={submitVerification}
-                    loading={verificationModal.loading}
-                    disabled={!verificationModal.approving && !verificationModal.reason.trim()}
-                >
-                    Confirm
-                </Button>
-            </div>
-        </div>
-      </Modal>
+            </Space>
+          </Card>
 
+          <Card bordered={false} title={<><UserOutlined /> Point of Contacts</>} className="shadow-sm rounded-xl">
+            <Title level={5}>Primary Contact</Title>
+            <Space direction="vertical" className="mb-4">
+              <Text strong>{val(contacts?.primary_contact?.name)} ({contacts?.primary_contact?.designation})</Text>
+              <Text type="secondary"><MailOutlined /> {val(contacts?.primary_contact?.email)}</Text>
+              <Text type="secondary"><PhoneOutlined /> {val(contacts?.primary_contact?.mobile)}</Text>
+              <Text type="success"><WhatsAppOutlined /> {val(contacts?.primary_contact?.whatsapp)}</Text>
+            </Space>
+            <Divider />
+            <Title level={5}>Support Contact</Title>
+            <Space direction="vertical">
+              <Text strong>{val(contacts?.support_contact?.name)}</Text>
+              <Text type="secondary"><MailOutlined /> {val(contacts?.support_contact?.email)}</Text>
+              <Text type="secondary"><PhoneOutlined /> {val(contacts?.support_contact?.mobile)}</Text>
+            </Space>
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 };
 
-export default VendorB2CProfile;
+export default VendorDetails;

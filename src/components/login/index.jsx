@@ -295,7 +295,7 @@ const Login = () => {
 
       if (selectedPartnerType === "freelancer") endpoint = "/freelancer/login";
       else if (selectedPartnerType === "vendor-b2c")
-        endpoint = "/vendor/b2c/login";
+        endpoint = "/vendor/login";
       else if (selectedPartnerType === "business-association")
         endpoint = "/association/login";
       else if (selectedPartnerType === "developer")

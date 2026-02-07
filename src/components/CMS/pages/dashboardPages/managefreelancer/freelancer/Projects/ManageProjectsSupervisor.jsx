@@ -310,16 +310,7 @@ const ManageProjectsSupervisor = () => {
             <Title level={3} style={{ margin: 0 }}>Projects Management</Title>
             <Text type="secondary">Track and manage your ongoing and completed projects.</Text>
           </div>
-          <Link to={`/dashboard/${roleSlug}/addProjects`}>
-            <Button
-              type="primary"
-              size="large"
-              icon={<ArrowRightOutlined />}
-              style={{ background: THEME.primary, borderColor: THEME.primary }}
-            >
-              Create New Project
-            </Button>
-          </Link>
+          
         </div>
 
         <Row gutter={[16, 16]}>
