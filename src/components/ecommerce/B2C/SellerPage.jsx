@@ -217,6 +217,8 @@ const SellerPage = () => {
 
   const themeColor = "var(--color-primary)";
 
+
+
   const {
     control,
     handleSubmit,
@@ -446,6 +448,8 @@ const SellerPage = () => {
 
     if (currentStep === 0) {
       if (!otpVerified || !emailOtpVerified) {
+   
+
         message.error("Please verify mobile and email first.");
         return;
       }
@@ -560,8 +564,7 @@ const SellerPage = () => {
 
       bank_details: {
         ...data.bank_details,
-        currency: "AED",
-      },
+              },
 
       contacts: data.contacts,
 
