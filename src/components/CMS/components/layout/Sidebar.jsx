@@ -1,4 +1,3 @@
-// components/layout/Sidebar.js
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -6,91 +5,63 @@ import { useCmsContext } from '../../contexts/CmsContext';
 import { FiX, FiChevronDown } from 'react-icons/fi';
 import { useFreelancer } from '../../../../../src/context/FreelancerContext';
 
-// IMPORT BOTH SEPARATE IMAGES HERE
 import logoNew from '../../../../assets/img/logoNew.png'; 
 import favicon from '../../../../assets/img/logonewww.png'; 
 
-/* --- NEW CUSTOM LINKS CONFIGURATION --- */
+/* --- CUSTOM LINKS CONFIGURATION --- */
 const CUSTOM_ROLE_LINKS = {
   "0": [
-      {
-      title: "Setting", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
+    {
+      title: "Setting", icon: "fas fa-cog", path: "/dashboard/{roleSlug}/quotations",
       submenus: [
         { title: "Email Setting", path: "/dashboard/{roleSlug}/setting/email" },
-           
-
       ],
     }
   ],
-  "1": [
+  "1": [],
+  "2": [ /* Customer links... */ ],
+  "12": [ /* Supervisor links... */ ],
+  "4": [],
+  "7": [ /* Freelancer links... */ ],
 
-  ],
-  "2": [
-     {
-      title: "Estimates", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
-      submenus: [
-        { title: "Submitted Estimates", path: "/dashboard/{roleSlug}/estimate/submitted" },
-                { title: "Received Quotation", path: "/dashboard/{roleSlug}/quotation/received" },
-                { title: "Response Submitted", path: "/dashboard/{roleSlug}/quotation/response" },
-
-      ],
-    },
-      {
-      title: "My Projects", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects",
-      submenus: [
-        { title: "Ongoing Projects", path: "/dashboard/{roleSlug}/projects/ongoing" },
-                
-
-      ],
-    }, {
-      title: "Bills", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects",
-      submenus: [
-        { title: "My Bills", path: "/dashboard/{roleSlug}/projects/milestone/bills" },
-                        { title: "My Invoice", path: "/dashboard/{roleSlug}/projects/invoices" },
-
-
-      ],
-    }
-  ],
-   "12": [
-     {
-      title: "Projects", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects/view",
-      submenus: [
-        { title: "Manage Projects", path: "/dashboard/{roleSlug}/projects/manage" },
-         
-
-      ],
-    }
-  ],
-  "4": [
-
-  ],
-  "7": [
+  // ✅ DEVELOPER LINKS (ID '8') - UPDATED
+  "8": [
+    // 1. Dashboard yahan se hata diya (kyunki wo default tree se aa raha hai)
+    
+    // 2. Sirf Property Management rakha hai
     {
-      title: "Quotations", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
+      title: "Property Management", 
+      icon: "fas fa-building", 
+      path: "/dashboard/developer/property-management", 
       submenus: [
-        { title: "Submitted Quotation", path: "/dashboard/{roleSlug}/quotation/submitted" },
-                { title: "Approved Quotation", path: "/dashboard/{roleSlug}/quotation/approved" },
-
+        { title: "All Properties", path: "/dashboard/developer/property-management/list" },
+        // { title: "Add Property", path: "/dashboard/developer/property-management/add" },
+        // { title: "Unit Management", path: "/dashboard/developer/property-management/units" },
       ],
     },
+    // 3. Lead Management bhi hata diya aapke kehne par
   ],
+
+  "agent": [],
+  "agency": []
 };
 
 const roleSlugMap = {
-  '0': 'superadmin', '1': 'admin', '2': "customer",
-  '5': 'vendor-b2c', '6': 'vendor-b2b', '7': 'freelancer',
-  '11': 'accountant', '12': 'supervisor',
+  '0': 'superadmin', 
+  '1': 'admin', 
+  '2': "customer",
+  '5': 'vendor-b2c', 
+  '6': 'vendor-b2b', 
+  '7': 'freelancer',
+  '11': 'accountant', 
+  '12': 'supervisor',
+  '8': 'developer', 
 };
 
 const ROLE_MODULE_ORDER = {
-  '0': ['Dashboard', "All Estimation", "Deals", 'Xoto Partners', 'Projects', 'Packages', 'Estimate master', 'Consultation Bookings', 'All Users', 'Products', 'Seller B2C', 'Request', 'Payout', 'Module', 'Permission', 'Role', 'Inventory', 'Settings'],
-  '1': ['Dashboard', 'Products', 'Xoto Partners', 'Projects', 'Payout', 'Request', 'Settings'],
-  '5': ['Dashboard', 'Products', 'My Products', 'Orders', 'Payout', 'Settings'],
-  '6': ['Dashboard', 'Products', 'Projects', 'Inventory', 'Payout'],
-  '7': ['Dashboard', 'My Projects', 'All Projects', 'Add Projects', 'Payout'],
-  '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
-  '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
+  '0': ['Dashboard', 'Settings'],
+  // ✅ Updated Order (Removed Lead Management)
+  '8': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
 };
 
 const Sidebar = () => {
@@ -113,31 +84,42 @@ const Sidebar = () => {
     }
   }, [location.pathname, setMobileSidebarCollapsed]);
 
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (!mobileSidebarCollapsed && sidebarRef.current && !sidebarRef.current.contains(e.target)) {
-        setMobileSidebarCollapsed(true);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, [mobileSidebarCollapsed, setMobileSidebarCollapsed]);
+  // --- ROLE DETECTION LOGIC ---
+  let roleCode = '0'; 
+  let displayRoleName = 'User';
 
-  const roleCode = user?.role?.code?.toString() || '0';
+  if (user && user.role) {
+      if (typeof user.role === 'string') {
+          roleCode = user.role; 
+          displayRoleName = user.role;
+      } else {
+          roleCode = user.role.code ? user.role.code.toString() : '0';
+          displayRoleName = user.role.name || 'User';
+      }
+  }
+
+  // FORCE OVERRIDE FROM URL (Fail-safe)
+  if (location.pathname.includes('/dashboard/developer')) {
+      roleCode = '8';
+      displayRoleName = 'Developer';
+  } else if (location.pathname.includes('/dashboard/superadmin')) {
+      roleCode = '0';
+  }
+
   const roleSlug = roleSlugMap[roleCode] ?? 'dashboard';
   const basePath = `/dashboard/${roleSlug}`;
+  
   const isFreelancer = roleCode === '7';
   const isPendingApproval = isFreelancer && freelancer && freelancer.status_info?.status !== 1;
 
   const navTree = useMemo(() => {
-    if (!user || !token) return [];
-
+    // Default Tree already includes "Dashboard" link
     const tree = [{ title: 'Dashboard', icon: 'fas fa-home', to: basePath, exact: true, submenus: [] }];
     if (isPendingApproval) return tree;
 
     const modulesMap = {};
 
-    // --- 1. PROCESS DYNAMIC PERMISSIONS FROM BACKEND ---
+    // 1. Dynamic Permissions from Backend
     Object.entries(permissions ?? {}).forEach(([key, p]) => {
       if (!p?.canView || !p?.route) return;
       const [module, sub] = key.split('→').map(s => s.trim());
@@ -149,18 +131,15 @@ const Sidebar = () => {
       else modulesMap[module].submenus.push({ title: sub, to: fullPath, icon: p.icon || 'fas fa-circle' });
     });
 
-    // --- 2. MERGE CUSTOM HARDCODED LINKS (CUSTOM_ROLE_LINKS) ---
+    // 2. Custom Links
     const customLinks = CUSTOM_ROLE_LINKS[roleCode] || [];
     customLinks.forEach(link => {
-      // Replace placeholder in path
       const processedPath = link.path.replace('{roleSlug}', roleSlug);
-      
       const processedSubmenus = link.submenus?.map(sub => ({
         ...sub,
         to: sub.path.replace('{roleSlug}', roleSlug)
       })) || [];
 
-      // Add to map (This will overwrite backend permission if title is identical, or add if new)
       modulesMap[link.title] = {
         title: link.title,
         icon: link.icon,
@@ -169,7 +148,7 @@ const Sidebar = () => {
       };
     });
 
-    // --- 3. SORT BASED ON ROLE_MODULE_ORDER ---
+    // 3. Sorting
     const ordered = [];
     const customOrder = ROLE_MODULE_ORDER[roleCode] || [];
     customOrder.forEach(t => { 
@@ -179,16 +158,13 @@ const Sidebar = () => {
       } 
     });
     
-    // Add remaining modules that weren't in the explicit order list
     ordered.push(...Object.values(modulesMap));
-    
     return [...tree, ...ordered];
   }, [permissions, basePath, isPendingApproval, roleCode, user, token, roleSlug]);
 
-  if (!user || !token) return null;
-
+  // --- RENDER ---
   const toggleModule = (mod) => setOpenModule(openModule === mod ? null : mod);
-  const isParentActive = (item) => item.submenus.some(s => location.pathname.startsWith(s.to));
+  const isParentActive = (item) => item.submenus && item.submenus.some(s => location.pathname.startsWith(s.to));
   const handleNavClick = () => !mobileSidebarCollapsed && setMobileSidebarCollapsed(true);
 
   const mobileOpen = !mobileSidebarCollapsed;
@@ -231,7 +207,7 @@ const Sidebar = () => {
             {!sidebarCollapsed && (
               <div className="text-center">
                 <div className="text-xs uppercase tracking-widest text-purple-300/80">Welcome</div>
-                <div className="text-sm font-bold text-purple-200">{user.role?.name || 'User'}</div>
+                <div className="text-sm font-bold text-purple-200 capitalize">{displayRoleName}</div>
               </div>
             )}
           </div>

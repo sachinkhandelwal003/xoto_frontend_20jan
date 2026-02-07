@@ -80,15 +80,20 @@ const Navbar = () => {
   const loginMenuRef = useRef(null); // Ref for login dropdown
 
   // Helper to determine dashboard link based on role
-  const getDashboardLink = () => {
-    if (!user?.role?.name) return "/dashboard";
-    const role = user.role.name.toLowerCase();
-    
-    if (role === 'customer') return '/dashboard/customer';
-    if (role === 'admin' || role === 'superadmin') return '/dashboard/superadmin';
-    if (role.includes('vendor')) return '/dashboard/vendor-b2b';
-    return '/dashboard';
-  };
+ const getDashboardLink = () => {
+  if (!user?.role?.name) return "/dashboard";
+
+  const role = user.role.name.toLowerCase();
+
+  if (role === "developer") return "/dashboard/developer";
+  if (role === "customer") return "/dashboard/customer";
+  if (role === "admin" || role === "superadmin")
+    return "/dashboard/superadmin";
+  if (role.includes("vendor")) return "/dashboard/vendor-b2b";
+
+  return "/dashboard";
+};
+
 
   const handleLogout = () => {
     dispatch(logoutUser());

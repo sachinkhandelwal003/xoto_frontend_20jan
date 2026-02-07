@@ -27,8 +27,6 @@ import {
   ArrowLeftOutlined,
   MailOutlined,
   LockOutlined,
-  RocketFilled,
-  ShoppingFilled,
   TeamOutlined,
   CodeOutlined,
   IdcardOutlined,
@@ -203,116 +201,52 @@ const Login = () => {
     partnerTypes.find((t) => t.value === selectedPartnerType) || 
     partnerTypes.find((t) => t.id === selectedPartnerType);
 
-  // ✅ Login success effect
+ // ✅ Login success effect (CORRECTED)
   useEffect(() => {
     if (isAuthenticated && token && !hasRedirected.current) {
       hasRedirected.current = true;
 
-      const userName = user?.name || user?.firstName || "Partner";
-      const roleCode = user?.role?.code?.toString() || user?.role;
-
-      let themeColor = "#5C039B";
-      let themeIcon = <RocketFilled />;
-
-      // Determine theme based on partner type
+      // Safe access for role code
+      const roleCode = user?.role?.code?.toString() || (typeof user?.role === 'string' ? user.role : "");
+      
+      // 1. Priority Check: Agar User ne UI se "Developer" select kiya tha
       if (selectedPartnerType === "developer") {
-        themeColor = "#F97316";
-        themeIcon = <CodeOutlined />;
-      } else if (selectedPartnerType === "agent") {
-        themeColor = "#E11D48";
-        themeIcon = <IdcardOutlined />;
-      } else if (selectedPartnerType === "agency") {
-        themeColor = "#4F46E5"; 
-        themeIcon = <ApartmentOutlined />;
-      } else if (["5", "6"].includes(roleCode)) {
-        themeColor = "#03A4F4";
-        themeIcon = <ShoppingFilled />;
-      } else if (["8", "9"].includes(roleCode)) {
-        themeColor = "#10B981";
-        themeIcon = <TeamOutlined />;
+        toast.success("Welcome Developer! Accessing your dashboard...");
+        setTimeout(() => {
+          navigate("/dashboard/developer", { replace: true });
+        }, 1500);
+        return;
       }
 
-      toast.success(
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div
-            style={{
-              background: "rgba(255,255,255,0.2)",
-              borderRadius: "50%",
-              width: 40,
-              height: 40,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            }}
-          >
-            {React.cloneElement(themeIcon, {
-              style: { color: "#fff", fontSize: 20 },
-            })}
-          </div>
-          <div>
-            <div style={{ fontWeight: "bold", fontSize: "16px" }}>
-              Welcome, {userName}
-            </div>
-            <div style={{ fontSize: "13px", opacity: 0.9 }}>
-              Login Successful
-            </div>
-          </div>
-        </div>,
-        {
-          position: "top-center",
-          autoClose: 2000,
-          style: {
-            background:
-              selectedPartnerType === "agent"
-                ? "linear-gradient(135deg, #E11D48, #BE123C)"
-                : selectedPartnerType === "agency"
-                ? "linear-gradient(135deg, #4F46E5, #4338ca)"
-                : themeColor === "#5C039B"
-                ? "linear-gradient(135deg, #5C039B, #8E44AD)"
-                : themeColor === "#03A4F4"
-                ? "linear-gradient(135deg, #03A4F4, #0077b6)"
-                : themeColor === "#10B981"
-                ? "linear-gradient(135deg, #10B981, #059669)"
-                : "linear-gradient(135deg, #F97316, #EA580C)",
-            color: "#fff",
-            borderRadius: "16px",
-            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.45)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            padding: "16px",
-          },
-        }
-      );
+      // 2. Role Code Based Redirect (Backend ID Logic)
+      const rolePathMap = {
+        "0": "/dashboard/superadmin",
+        "1": "/dashboard/admin",
+        "2": "/dashboard/customer",
+        "5": "/dashboard/vendor-b2c",
+        "6": "/dashboard/vendor-b2b",
+        "7": "/dashboard/freelancer",
+        
+        // ✅ FIX: Ab ID 8 seedha Developer Dashboard par jayegi
+        "8": "/dashboard/developer", 
+        
+        // Agar Business Association bhi use kar rahe ho toh usko nayi ID dedo (eg: 10)
+        "10": "/dashboard/business-association", 
+        "9": "/dashboard/association-admin",
+      };
 
-      // ✅ Redirect after toast
-      setTimeout(() => {
-        if (selectedPartnerType === "developer") {
-          navigate("/dashboard/developer", { replace: true });
-          return;
-        }
-        if (selectedPartnerType === "agent") {
-          navigate("/dashboard/agent", { replace: true });
-          return;
-        }
-        if (selectedPartnerType === "agency") {
-          navigate("/dashboard/agency", { replace: true });
-          return;
-        }
-
-        const rolePathMap = {
-          "0": "/dashboard/superadmin",
-          "1": "/dashboard/admin",
-          "2": "/dashboard/customer",
-          "5": "/dashboard/vendor-b2c",
-          "6": "/dashboard/vendor-b2b",
-          "7": "/dashboard/freelancer",
-          "8": "/dashboard/business-association",
-          "9": "/dashboard/association-admin",
-        };
-
-        const path = rolePathMap[roleCode] || "/dashboard";
-        navigate(path, { replace: true });
-      }, 2000);
+      const path = rolePathMap[roleCode] || "/dashboard";
+      
+      // Agar path mil gaya toh wahan bhejo, nahi toh default dashboard
+      if (rolePathMap[roleCode]) {
+        toast.success(`Welcome back! Redirecting...`);
+        setTimeout(() => {
+          navigate(path, { replace: true });
+        }, 1500);
+      } else {
+        // Fallback agar koi unknown role ID aa gayi
+        navigate("/dashboard", { replace: true });
+      }
     }
   }, [isAuthenticated, user, token, navigate, selectedPartnerType]);
 
