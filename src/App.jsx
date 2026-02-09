@@ -9,7 +9,7 @@ import { ProductProvider } from "./context/ProductContext"; // BASE LOGIC ADDED
 // -----------------------
 import { FreelancerProvider } from "./context/FreelancerContext";
 import { useSelector } from "react-redux";
-
+import { AuthProvider } from "./context/ProfileContext";
 // ... (All your imports remain the same) ...
 import Navbar from "./components/navbar/index.jsx";
 import Footer from "./components/footer/footer";
@@ -175,6 +175,7 @@ function LayoutWrapper({ children }) {
 
 function App() {
   return (
+    <AuthProvider>
     <CmsProvider>
     <BlogProvider>
       <FreelancerProvider><ProductProvider>
@@ -310,6 +311,7 @@ function App() {
 
     </BlogProvider>
     </CmsProvider>
+    </AuthProvider>
   );
 }
 
