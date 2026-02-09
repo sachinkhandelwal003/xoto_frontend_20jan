@@ -18,7 +18,7 @@ const event5 = 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?ixl
 // ArticleCard Component
 const ArticleCard = ({ title, content, image, category, date }) => (
   <article className="border-b border-gray-200 pb-6 last:border-0 last:pb-0">
-    <div className="flex flex-col md:flex-row gap-6">
+    <div className="flex flex-col    md:flex-row gap-6">
       <div className="md:w-1/3">
         <img 
           src={image} 

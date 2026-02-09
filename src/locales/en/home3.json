@@ -7,27 +7,27 @@
   },
 
   "business": {
-    "title": "Business Associates",
-    "desc": "Reimagine your home and outdoors with effortless, AI-powered landscaping and upgrade solutions."
+    "title": "For Business Associates",
+    "desc": "Empower your real estate network with AI tools that streamline clients, convert leads, and close deals faster."
   },
 
   "execution": {
-    "title": "Execution Partners",
-    "desc": "Reimagine your home and outdoors with effortless, AI-powered landscaping and upgrade solutions."
+    "title": "For Execution Partner",
+    "desc": "Deliver projects faster with real-time task allocation, transparent tracking, and seamless cross-team coordination."
   },
 
-  "alliances": {
-    "title": "Strategic Alliances",
-    "desc": "Reimagine your home and outdoors with effortless, AI-powered landscaping and upgrade solutions."
+"alliances": {
+    "title": "For Strategic Alliances",
+    "desc": "Partner with XOTO to expand market presence through an integrated, growth-focused ecosystem."
   },
 
-  "developers": {
-    "title": "Developers",
-    "desc": "Reimagine your home and outdoors with effortless, AI-powered landscaping and upgrade solutions."
+    "developers": {
+    "title": "For Developers",
+    "desc": "Access pre-qualified buyers and accelerate sales with data-driven insights."
   },
 
   "finance": {
-    "title": "Financial Institutions",
-    "desc": "Reimagine your home and outdoors with effortless, AI-powered landscaping and upgrade solutions."
+    "title": "For Financial Institutions",
+    "desc": "Boost mortgage conversions through integrated property and financing solutions."
   }
 }

@@ -7,27 +7,27 @@
   },
 
   "business": {
-    "title": "Geschäftspartner",
-    "desc": "Stärken Sie Ihr Immobiliennetzwerk mit KI-gestützten Tools, die Kundenmanagement vereinfachen, die Lead-Konvertierung steigern und Abschlüsse beschleunigen."
+    "title": "Für Geschäftspartner",
+    "desc": "Stärken Sie Ihr Immobiliennetzwerk mit KI-Tools, die Kundenprozesse optimieren, Leads konvertieren und Abschlüsse schneller ermöglichen."
   },
 
   "execution": {
-    "title": "Ausführungspartner",
-    "desc": "Liefern Sie Projekte effizient mit Echtzeit-Aufgabenzuweisung, transparentem Fortschrittstracking und nahtloser Koordination über Landschaftsbau, Immobilien und Finanzierung."
+    "title": "Für den Umsetzungspartner",
+    "desc": "Liefern Sie Projekte schneller mit Echtzeit-Aufgabenzuweisung, transparenter Nachverfolgung und nahtloser teamübergreifender Zusammenarbeit."
   },
 
-  "alliances": {
-    "title": "Strategische Allianzen",
-    "desc": "Kooperieren Sie mit XOTO, um Ihre Marktpräsenz durch ein integriertes, wachstumsorientiertes Ökosystem zu erweitern."
+   "alliances": {
+    "title": "Für strategische Partnerschaften",
+    "desc": "Arbeiten Sie mit XOTO zusammen, um Ihre Marktpräsenz durch ein integriertes, wachstumsorientiertes Ökosystem auszubauen."
   },
 
   "developers": {
-    "title": "Entwickler",
-    "desc": "Greifen Sie auf vorqualifizierte Käufer zu und beschleunigen Sie Verkäufe mit datengesteuerten Einblicken."
+    "title": "Für Entwickler",
+    "desc": "Greifen Sie auf vorqualifizierte Käufer zu und beschleunigen Sie den Verkauf mit datenbasierten Erkenntnissen."
   },
 
   "finance": {
-    "title": "Finanzinstitute",
-    "desc": "Steigern Sie Hypothekenabschlüsse durch integrierte Immobilien- und Finanzierungslösungen."
+    "title": "Für Finanzinstitute",
+    "desc": "Steigern Sie die Hypothekenabschlüsse durch integrierte Immobilien- und Finanzierungslösungen."
   }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import Imagemain from "../../assets/img/buy.jpg";
+// import Imagemain from "../../assets/img/buy.jpg";
 import { notification, Select } from 'antd';
 import { useTranslation } from "react-i18next";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
@@ -235,7 +235,7 @@ if (!isPhoneValid) {
       {contextHolder}
 
       <section className="relative w-full overflow-hidden font-dm h-140">
-        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${Imagemain})` }}>
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1770010905007-buy.jpg"})` }}>
           <div className="absolute inset-0 bg-black/40" />
         </div>
 

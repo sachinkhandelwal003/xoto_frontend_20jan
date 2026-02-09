@@ -56,15 +56,26 @@ const navItems = [
   { key: "ecosystem", path: "/ecosystem" },
   { key: "about", path: "/about" },
 ];
-
+const roleSlugMap = {
+  '0': 'superadmin', 
+  '1': 'admin', 
+  '2': "customer",
+  '5': 'vendor-b2c', 
+  '6': 'vendor-b2b', 
+  '7': 'freelancer',
+  '11': 'accountant', 
+  '12': 'supervisor',
+  '8': 'developer', 
+};
 const Navbar = () => {
   const { t, i18n } = useTranslation("common");
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   // GET USER FROM REDUX
-  const { user } = useSelector((state) => state.auth);
+  const { user, token } = useSelector((s) => s.auth);
 
+  console.log( "useruser",user)
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -78,7 +89,8 @@ const Navbar = () => {
   const langRef = useRef(null);
   const userMenuRef = useRef(null);
   const loginMenuRef = useRef(null); // Ref for login dropdown
-
+  const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
+  console.log(roleSlug)
   // Helper to determine dashboard link based on role
  const getDashboardLink = () => {
   if (!user?.role?.name) return "/dashboard";
@@ -93,6 +105,9 @@ const Navbar = () => {
 
   return "/dashboard";
 };
+const dashboardNavigate=()=>{
+  navigate(`/dashboard/${roleSlug}`)
+}
 
 
   const handleLogout = () => {
@@ -239,9 +254,9 @@ const Navbar = () => {
                           <p className="text-xs text-gray-500">{user.email}</p>
                       </div>
 
-                      <Link to={getDashboardLink()} onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                      <span onClick={dashboardNavigate} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                           <FaTachometerAlt size={16} className="text-[#5C039B]" /> Dashboard
-                      </Link>
+                      </span>
 
                       <div className="border-t border-gray-100 my-1"></div>
                       
