@@ -355,14 +355,25 @@ const submitDailyUpdate = async (values) => {
   };
 
   const calculateProjectProgress = () => {
-    const activeMilestones = getActiveMilestones(project?.milestones || []);
-    if (!activeMilestones.length) return 0;
-    
-    const completed = activeMilestones.filter((m) => 
-      ["approved", "completed"].includes(m.status)
-    ).length;
-    return Math.round((completed / activeMilestones.length) * 100);
-  };
+  const activeMilestones = getActiveMilestones(project?.milestones || []);
+  if (!activeMilestones.length) return 0;
+
+  let totalWeight = 0;
+  let weightedProgress = 0;
+
+  activeMilestones.forEach((m) => {
+    const weight = m.milestone_weightage || 0;
+    const progress = m.progress || 0;
+
+    totalWeight += weight;
+    weightedProgress += (progress * weight) / 100;
+  });
+
+  return totalWeight > 0
+    ? Math.round((weightedProgress / totalWeight) * 100)
+    : 0;
+};
+
 
   /* ------------------------------ UI --------------------------------------- */
   if (loading) {

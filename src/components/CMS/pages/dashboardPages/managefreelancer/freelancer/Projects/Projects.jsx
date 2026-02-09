@@ -51,6 +51,8 @@ const Projects = () => {
     6: "vendor-b2b",
     7: "freelancer",
     11: "accountant",
+        12: "supervisor",
+
   };
   const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
 
@@ -111,31 +113,38 @@ const Projects = () => {
     };
   }, [projects, pagination.totalResults]);
 
-  const fetchProjects = useCallback(
-    async (page = 1, limit = 10, tab = activeTab) => {
-      setLoading(true);
-      try {
-        const params = { page, limit };
-        if (tab !== "all") params.status = tab;
+ const fetchProjects = useCallback(
+  async (page = 1, limit = 10, tab = activeTab) => {
+    setLoading(true);
+    try {
+      const params = {
+        page,
+        limit,
+      };
 
-        const response = await apiService.get("/freelancer/projects", params);
-
-        setProjects(flattenProjectsForSearch(response.projects || []));
-
-        setPagination({
-          currentPage: response.pagination?.page || 1,
-          totalPages: response.pagination?.totalPages || 1,
-          totalResults: response.pagination?.total || 0,
-          itemsPerPage: response.pagination?.limit || 10,
-        });
-      } catch (err) {
-        showToast(err?.response?.data?.message || "Failed to load projects", "error");
-      } finally {
-        setLoading(false);
+      if (tab !== "all") {
+        params.status = tab;
       }
-    },
-    [activeTab]
-  );
+
+      const response = await apiService.get("/freelancer/projects", params);
+
+      setProjects(flattenProjectsForSearch(response.projects || []));
+
+      setPagination({
+        currentPage: response.pagination?.page || 1,
+        totalPages: response.pagination?.totalPages || 1,
+        totalResults: response.pagination?.total || 0,
+        itemsPerPage: response.pagination?.limit || 10,
+      });
+    } catch (err) {
+      showToast(err?.response?.data?.message || "Failed to load projects", "error");
+    } finally {
+      setLoading(false);
+    }
+  },
+  [activeTab, user?.id] // ✅ include user.id in deps
+);
+
 
   useEffect(() => {
     if (token) {
@@ -175,7 +184,10 @@ const Projects = () => {
               style={{ backgroundColor: THEME.bgLight, color: THEME.primary }}
             />
             <div>
-              <div className="font-semibold text-gray-800 text-base">{record.title}</div>
+              <div className="font-semibold text-gray-800 text-base">{record.estimate_reference.service_type}</div>
+                            <div className="font-semibold text-gray-800 text-base">{record.estimate_reference.subcategory.label}</div>
+              <div className="font-semibold text-gray-800 text-base">{record.estimate_reference.type.label}</div>
+
               <Tooltip title="Project Code">
                 <Tag className="mt-1 mr-0 text-xs">{record.Code || record.code || "—"}</Tag>
               </Tooltip>
@@ -189,11 +201,9 @@ const Projects = () => {
         width: 200,
         render: (_, r) => (
           <div className="flex flex-col">
-            <span className="font-medium text-gray-700">{r.client_name}</span>
-            {r.client_company && (
-              <span className="text-xs text-gray-500">{r.client_company}</span>
-            )}
-            <span className="text-xs text-gray-400">{r.category?.name || "General"}</span>
+            <span className="font-medium text-gray-700">{r.customer.name.first_name}{r.customer.name.last_name}</span>
+                        <span className="font-medium text-gray-700">{r.customer.email}</span>
+
           </div>
         ),
       },
@@ -203,42 +213,59 @@ const Projects = () => {
         width: 150,
         render: (v) => (
           <span className="font-semibold text-gray-700">
-            ${Number(v || 0).toLocaleString()}
+            AED{Number(v || 0).toLocaleString()}
           </span>
         ),
       },
-      {
-        key: "progress",
-        title: "Progress",
-        width: 180,
-        render: (_, r) => {
-          const active = r.milestones?.filter((m) => !m.is_deleted) || [];
-          const completed = active.filter((m) => m.status === "approved").length;
-          const total = active.length;
-          const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+   {
+  key: "progress",
+  title: "Progress",
+  width: 180,
+  render: (_, r) => {
+    const milestones = (r.milestones || []).filter(m => !m.is_deleted);
 
-          return (
-            <div className="w-full">
-              <div className="flex justify-between text-xs mb-1 text-gray-500">
-                <span>
-                  {completed}/{total} Milestones
-                </span>
-                <span>{percent}%</span>
-              </div>
-              <Progress percent={percent} size="small" showInfo={false} strokeColor={THEME.primary} />
-            </div>
-          );
-        },
-      },
+    const totalWeight = milestones.reduce(
+      (sum, m) => sum + (m.milestone_weightage || 0),
+      0
+    );
+
+    const completedWeight = milestones
+      .filter(m => m.status === "approved")
+      .reduce((sum, m) => sum + (m.milestone_weightage || 0), 0);
+
+    const percent =
+      totalWeight > 0
+        ? Math.round((completedWeight / totalWeight) * 100)
+        : 0;
+
+    return (
+      <div className="w-full">
+        <div className="flex justify-between text-xs mb-1 text-gray-500">
+          <span>
+            {completedWeight}/{totalWeight}%
+          </span>
+          {/* <span>{percent}%</span> */}
+        </div>
+
+        <Progress
+          percent={percent}
+          size="small"
+          showInfo={false}
+          strokeColor={THEME.primary}
+        />
+      </div>
+    );
+  },
+}
+,
       {
         key: "status",
         title: "Status",
         width: 140,
         render: (_, r) => {
-          const config = statusConfig[r.status] || statusConfig.default;
           return (
-            <Tag color={config.color} icon={config.icon} style={{ borderRadius: 12, padding: "2px 10px" }}>
-              {config.label}
+            <Tag  style={{ borderRadius: 12, padding: "2px 10px" }}>
+              {r.status}
             </Tag>
           );
         },
@@ -328,7 +355,7 @@ const Projects = () => {
                 title="Page Budget"
                 value={stats.budget}
                 precision={2}
-                prefix={<DollarCircleOutlined style={{ color: THEME.secondary }} />}
+               
               />
             </Card>
           </Col>

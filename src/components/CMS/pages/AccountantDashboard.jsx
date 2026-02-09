@@ -1,248 +1,285 @@
-import React from "react";
-import { motion } from "framer-motion";
-import {
-  Users,
-  FileText,
-  DollarSign,
-  Building,
-  TrendingUp,
-  Calendar,
-  CheckCircle,
-  PieChart
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+import dayjs from "dayjs";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  FileTextOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  ProjectOutlined,
+  ArrowUpOutlined,
+  CalendarOutlined,
+  DollarOutlined,
+} from "@ant-design/icons";
+import {
+  Card,
+  Row,
+  Col,
+  Typography,
+  Tag,
+  Statistic,
+  Spin,
+  Alert,
+  Progress,
+  Table,
+  Empty,
+} from "antd";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
+
+const { Title, Text } = Typography;
+
+const PURPLE_THEME = {
+  primary: "#722ed1",
+  primaryBg: "#f9f0ff",
+  success: "#52c41a",
+  warning: "#faad14",
+  info: "#1890ff",
+  error: "#f5222d",
+};
 
 const AccountantDashboard = () => {
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+
   const user = useSelector((state) => state.auth?.user);
 
-  // Dummy data
-  const accountant = {
-    name: { first_name: "Rahul", last_name: "Sharma" },
-    email: "rahul.sharma@accountant.com",
-    firm_name: "Sharma & Co.",
-    gst_number: "22AAAAA0000A1Z5",
+  const fromDate = dayjs().startOf("month").format("DD-MM-YYYY");
+  const toDate = dayjs().add(1, "day").format("DD-MM-YYYY");
+
+  useEffect(() => {
+    if (user?.id || user?._id) fetchDashboardData();
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res = await apiService.get("/dashboard/view/accountant", {
+        accountant_id: user?.id || user?._id,
+        from: fromDate,
+        to: toDate,
+      });
+
+      if (res.success) setData(res.data);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load dashboard");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const stats = [
+  /* ---------- CHART DATA (Bills Timeline) ---------- */
+  const timelineData =
+    data?.recent_bills?.map((bill) => ({
+      name: dayjs(bill.createdAt).format("DD MMM"),
+      total: bill.price,
+    })) || [];
+
+  if (loading)
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Spin size="large" />
+      </div>
+    );
+
+  if (error)
+    return <Alert message="Error" description={error} type="error" showIcon />;
+
+  /* ---------- STATS CARDS ---------- */
+  const statsCards = [
     {
-      title: "Active Clients",
-      value: "18",
-      icon: <Users className="w-6 h-6 text-white" />,
-      color: "bg-gradient-to-r from-blue-500 to-blue-600",
-      change: "+12%",
-      trend: "up"
+      label: "Total Projects",
+      value: data?.total_projects,
+      icon: <ProjectOutlined />,
+      color: PURPLE_THEME.primary,
+      bg: PURPLE_THEME.primaryBg,
     },
     {
-      title: "Invoices This Month",
-      value: "42",
-      icon: <FileText className="w-6 h-6 text-white" />,
-      color: "bg-gradient-to-r from-green-500 to-green-600",
-      change: "+8%",
-      trend: "up"
+      label: "Total Bills",
+      value: data?.total_bills,
+      icon: <FileTextOutlined />,
+      color: PURPLE_THEME.info,
+      bg: "#e6f7ff",
     },
     {
-      title: "Total Revenue",
-      value: "₹48,750",
-      icon: <DollarSign className="w-6 h-6 text-white" />,
-      color: "bg-gradient-to-r from-purple-500 to-purple-600",
-      change: "+15%",
-      trend: "up"
+      label: "Collected Amount",
+      value: `AED${data?.collected_amount?.toLocaleString() || 0}`,
+      icon: <DollarOutlined />,
+      color: PURPLE_THEME.success,
+      bg: "#f6ffed",
     },
     {
-      title: "Pending GST Filings",
-      value: "12",
-      icon: <Building className="w-6 h-6 text-white" />,
-      color: "bg-gradient-to-r from-orange-500 to-orange-600",
-      change: "-3%",
-      trend: "down"
-    }
+      label: "Pending Amount",
+      value: `AED${data?.pending_amount?.toLocaleString() || 0}`,
+      icon: <ClockCircleOutlined />,
+      color: PURPLE_THEME.warning,
+      bg: "#fff7e6",
+    },
   ];
 
-  const quickActions = [
+  /* ---------- TABLE COLUMNS ---------- */
+  const billColumns = [
     {
-      title: "Create Invoice",
-      description: "Generate new invoice for client",
-      icon: <FileText className="w-8 h-8 text-blue-600" />,
-      color: "bg-blue-50 hover:bg-blue-100",
-      onClick: () => navigate("/dashboard/accountant/invoices/create")
+      title: "Project",
+      dataIndex: ["project_id", "title"],
+      render: (t, r) => (
+        <>
+          <Text strong style={{ color: PURPLE_THEME.primary }}>
+            {t}
+          </Text>
+          <br />
+          <Text type="secondary" className="text-xs">
+            Code: {r.project_id?.Code}
+          </Text>
+        </>
+      ),
     },
     {
-      title: "GST Filing",
-      description: "File GST returns",
-      icon: <Building className="w-8 h-8 text-green-600" />,
-      color: "bg-green-50 hover:bg-green-100",
-      onClick: () => navigate("/dashboard/accountant/gst-filing")
+      title: "Customer",
+      dataIndex: ["customer_id", "name"],
+      render: (n) => (
+        <Text className="text-xs">
+          {n?.first_name} {n?.last_name}
+        </Text>
+      ),
     },
     {
-      title: "Client Management",
-      description: "Manage client accounts",
-      icon: <Users className="w-8 h-8 text-purple-600" />,
-      color: "bg-purple-50 hover:bg-purple-100",
-      onClick: () => navigate("/dashboard/accountant/clients")
+      title: "Amount",
+      dataIndex: "price",
+      render: (p) => <Text strong>AED{p.toLocaleString()}</Text>,
     },
     {
-      title: "Financial Reports",
-      description: "View financial analytics",
-      icon: <PieChart className="w-8 h-8 text-orange-600" />,
-      color: "bg-orange-50 hover:bg-orange-100",
-      onClick: () => navigate("/dashboard/accountant/reports")
-    }
-  ];
-
-  const recentActivities = [
-    { id: 1, action: "Invoice generated", client: "ABC Corp", time: "2 hours ago", status: "completed" },
-    { id: 2, action: "GST filed", client: "XYZ Ltd", time: "1 day ago", status: "completed" },
-    { id: 3, action: "Payment received", client: "Global Tech", time: "2 days ago", status: "completed" },
-    { id: 4, action: "New client onboarded", client: "Startup Inc", time: "3 days ago", status: "completed" }
+      title: "Date",
+      dataIndex: "createdAt",
+      render: (d) => (
+        <Text className="text-xs">
+          <CalendarOutlined /> {dayjs(d).format("DD MMM, YYYY")}
+        </Text>
+      ),
+    },
+    {
+      title: "Status",
+      dataIndex: "is_paid",
+      render: (paid) => (
+        <Tag color={paid ? "green" : "orange"}>
+          {paid ? "PAID" : "PENDING"}
+        </Tag>
+      ),
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50/30 p-6">
-      {/* Header */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="mb-8"
-      >
-        <h1 className="text-3xl font-bold text-gray-900">
-          Welcome back, {accountant.name.first_name} 👋
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Here's what's happening with your accounting practice today.
-        </p>
-      </motion.div>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* HEADER */}
+      <div className="mb-8">
+        <Title level={2} style={{ margin: 0 }}>
+          Accountant Dashboard
+        </Title>
+        <Text type="secondary">
+          Financial overview & billing performance
+        </Text>
+      </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((item, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ scale: 1.02 }}
-            className={`${item.color} rounded-2xl p-6 text-white shadow-lg`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-sm font-medium">{item.title}</p>
-                <h3 className="text-2xl font-bold mt-2">{item.value}</h3>
-                <div className={`flex items-center mt-2 text-sm ${item.trend === 'up' ? 'text-green-200' : 'text-red-200'}`}>
-                  <TrendingUp className={`w-4 h-4 mr-1 ${item.trend === 'down' ? 'rotate-180' : ''}`} />
-                  {item.change} from last month
-                </div>
+      {/* STATS */}
+      <Row gutter={[16, 16]} className="mb-8">
+        {statsCards.map((s, i) => (
+          <Col xs={24} sm={12} lg={6} key={i}>
+            <Card bordered={false} className="shadow-sm rounded-xl">
+              <Statistic
+                title={<Text type="secondary">{s.label}</Text>}
+                value={s.value || 0}
+                prefix={
+                  <span
+                    className="p-2 rounded-lg mr-2"
+                    style={{ background: s.bg, color: s.color }}
+                  >
+                    {s.icon}
+                  </span>
+                }
+              />
+              <div className="mt-2">
+                <Tag color="green">
+                  <ArrowUpOutlined /> Live
+                </Tag>
               </div>
-              <div className="p-3 bg-white/20 rounded-xl">
-                {item.icon}
-              </div>
-            </div>
-          </motion.div>
+            </Card>
+          </Col>
         ))}
-      </div>
+      </Row>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className="lg:col-span-2"
-        >
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {quickActions.map((action, index) => (
-                <motion.button
-                  key={index}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={action.onClick}
-                  className={`${action.color} p-4 rounded-xl text-left transition-all duration-200 border border-transparent hover:border-gray-200`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-white rounded-lg shadow-sm">
-                      {action.icon}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{action.title}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{action.description}</p>
-                    </div>
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        </motion.div>
+      {/* CHART */}
+      <Row gutter={[16, 16]} className="mb-8">
+        <Col span={24}>
+          <Card
+            title="Billing Timeline"
+            bordered={false}
+            className="shadow-sm rounded-xl"
+          >
+            <ResponsiveContainer width="100%" height={350}>
+              <AreaChart data={timelineData}>
+                <defs>
+                  <linearGradient id="billFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor={PURPLE_THEME.primary}
+                      stopOpacity={0.25}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={PURPLE_THEME.primary}
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#f0f0f0"
+                />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <YAxis axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Area
+                  type="monotone"
+                  dataKey="total"
+                  stroke={PURPLE_THEME.primary}
+                  strokeWidth={3}
+                  fill="url(#billFill)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Card>
+        </Col>
+      </Row>
 
-        {/* Recent Activities */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.5 }}
-          className="lg:col-span-1"
-        >
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Activities</h2>
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <motion.div
-                  key={activity.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="p-2 bg-green-100 rounded-full">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{activity.action}</p>
-                    <p className="text-sm text-gray-600">{activity.client}</p>
-                    <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Upcoming Deadlines */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Upcoming Deadlines</h2>
-          <Calendar className="w-5 h-5 text-gray-500" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { task: "GST Filing - Q4", date: "Mar 31, 2024", daysLeft: 15, priority: "high" },
-            { task: "TDS Return", date: "Apr 7, 2024", daysLeft: 22, priority: "medium" },
-            { task: "Annual Audit", date: "Apr 15, 2024", daysLeft: 30, priority: "low" }
-          ].map((deadline, index) => (
-            <div key={index} className="p-4 border border-gray-200 rounded-xl hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  deadline.priority === 'high' ? 'bg-red-100 text-red-800' :
-                  deadline.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-green-100 text-green-800'
-                }`}>
-                  {deadline.priority} priority
-                </span>
-                <span className="text-sm text-gray-500">{deadline.daysLeft} days left</span>
-              </div>
-              <h3 className="font-semibold text-gray-900">{deadline.task}</h3>
-              <p className="text-sm text-gray-600 mt-1">Due: {deadline.date}</p>
-            </div>
-          ))}
-        </div>
-      </motion.div>
+      {/* TABLE */}
+      <Row gutter={[16, 16]}>
+        <Col span={24}>
+          <Card
+            title="Recent Bills"
+            bordered={false}
+            className="shadow-sm rounded-xl"
+          >
+            <Table
+              columns={billColumns}
+              dataSource={data?.recent_bills || []}
+              rowKey="_id"
+              pagination={false}
+              locale={{ emptyText: <Empty description="No bills found" /> }}
+            />
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 };

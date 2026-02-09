@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Form,
   Input,
@@ -12,9 +12,10 @@ import {
   Typography,
   message,
   Spin,
-  Space,
-  notification
-} from 'antd';
+  notification,
+  Upload,
+  Divider,
+} from "antd";
 import {
   UserOutlined,
   ShopOutlined,
@@ -26,16 +27,170 @@ import {
   CheckCircleFilled,
   EnvironmentOutlined,
   SafetyCertificateOutlined,
-  EditOutlined 
-} from '@ant-design/icons';
-import { useForm, Controller } from 'react-hook-form';
-import { Country, State, City } from 'country-state-city';
-import { parsePhoneNumberFromString } from 'libphonenumber-js';
-import { apiService } from '../../../manageApi/utils/custom.apiservice'; 
+  EditOutlined,
+  BankOutlined,
+  TeamOutlined,
+  CloudUploadOutlined,
+  PlusOutlined,
+  LinkOutlined,
+  LoadingOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
+import { useForm, Controller } from "react-hook-form";
+import { Country, State, City } from "country-state-city";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
+
+// --- ROBUST GENERIC UPLOADER COMPONENT ---
+const GenericUploader = ({ value, onChange, label, listType = "text" }) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleCustomRequest = async ({ file, onSuccess, onError }) => {
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      console.log(`Uploading ${label}...`);
+      const response = await apiService.post(`/upload`, formData);
+
+      // Handle both standard Axios response and direct data response
+      const responseBody = response.data || response;
+
+      // Deep search for the URL based on common API patterns
+      const url =
+        responseBody.url ||
+        responseBody.secure_url ||
+        responseBody.file?.url ||
+        responseBody.file?.location ||
+        responseBody.file?.path ||
+        responseBody.data?.url ||
+        (typeof responseBody === "string" ? responseBody : null);
+
+      if (url) {
+        onChange(url);
+        onSuccess("ok");
+        message.success(`${label} uploaded!`);
+      } else {
+        throw new Error("Server returned success, but image URL was missing.");
+      }
+    } catch (err) {
+      console.error("Upload Error:", err);
+      onError(err);
+      message.error(`Failed to upload ${label}.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 1. IMAGE CARD VIEW (For Logo)
+  if (listType === "picture-card") {
+    return (
+      <Upload
+        name="avatar"
+        listType="picture-card"
+        className="avatar-uploader"
+        showUploadList={false}
+        customRequest={handleCustomRequest}
+      >
+        {value ? (
+          <div style={{ position: "relative", width: "100%", height: "100%" }}>
+            <img
+              src={value}
+              alt={label}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                padding: 5,
+                borderRadius: 8,
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                top: -5,
+                right: -5,
+                background: "white",
+                borderRadius: "50%",
+                padding: 4,
+                cursor: "pointer",
+                border: "1px solid #eee",
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange("");
+              }}
+            >
+              <DeleteOutlined className="text-red-500" />
+            </div>
+          </div>
+        ) : (
+          <div>
+            {loading ? <LoadingOutlined /> : <PlusOutlined />}
+            <div style={{ marginTop: 8 }}>
+              {loading ? "Uploading" : "Upload"}
+            </div>
+          </div>
+        )}
+      </Upload>
+    );
+  }
+
+  // 2. DRAGGER VIEW (For Documents)
+  return (
+    <Upload.Dragger
+      showUploadList={false}
+      customRequest={handleCustomRequest}
+      height={120}
+      style={{
+        backgroundColor: value ? "#f6ffed" : "#fafafa",
+        border: value ? "1px dashed #52c41a" : "1px dashed #d9d9d9",
+        borderRadius: 8,
+      }}
+    >
+      {loading ? (
+        <div className="py-4">
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+          <p style={{ marginTop: 10 }}>Uploading...</p>
+        </div>
+      ) : value ? (
+        <div className="py-4">
+          <CheckCircleFilled
+            style={{ fontSize: 32, color: "#52c41a", marginBottom: 10 }}
+          />
+          <p className="font-semibold text-green-600">Uploaded Successfully</p>
+          <p className="text-xs text-gray-400 break-all px-4">
+            {value.split("/").pop() || "View File"}
+          </p>
+          <Button
+            size="small"
+            type="text"
+            danger
+            style={{ marginTop: 5 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange("");
+            }}
+          >
+            Remove / Re-upload
+          </Button>
+        </div>
+      ) : (
+        <div className="py-4">
+          <p className="ant-upload-drag-icon">
+            <CloudUploadOutlined />
+          </p>
+          <p className="ant-upload-text">Click to upload {label}</p>
+        </div>
+      )}
+    </Upload.Dragger>
+  );
+};
 
 const SellerPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -60,7 +215,9 @@ const SellerPage = () => {
   const [enteredEmailOtp, setEnteredEmailOtp] = useState("");
   const [emailOtpLoading, setEmailOtpLoading] = useState(false);
 
-  const themeColor = 'var(--color-primary)'; 
+  const themeColor = "var(--color-primary)";
+
+
 
   const {
     control,
@@ -70,31 +227,48 @@ const SellerPage = () => {
     watch,
     setValue,
     getValues,
-    formState: { errors }
+    formState: { errors },
   } = useForm({
-    mode: 'onChange',
+    mode: "onChange",
     defaultValues: {
-      mobile: { country_code: '+971' },
-      store_details: { country: 'AE' }
-    }
+      mobile: { country_code: "+971" }, // UAE Default
+      store_details: {
+        country: "AE", // UAE Default ISO
+        social_links: {
+          facebook: "",
+          instagram: "",
+          twitter: "",
+          linkedin: "",
+          youtube: "",
+        },
+      },
+      operations: { delivery_modes: [], avg_delivery_time_days: 3 },
+      contacts: {
+        primary_contact: { designation: "Owner" },
+        support_contact: { designation: "Support Manager" },
+      },
+      documents: {},
+    },
   });
 
-  const selectedCountry = watch('store_details.country');
-  const selectedState = watch('store_details.state');
-  const watchedMobileNumber = watch('mobile.number');
-  const watchedEmail = watch('email');
+  const selectedCountry = watch("store_details.country");
+  const selectedState = watch("store_details.state");
+  const watchedLogo = watch("store_details.logo");
 
   const countryPhoneData = useMemo(() => {
     const allCountries = Country.getAllCountries();
-    return allCountries.map(c => ({
+    return allCountries.map((c) => ({
       iso: c.isoCode.toLowerCase(),
       name: c.name,
       phone: `+${c.phonecode}`,
       value: `+${c.phonecode}`,
-      searchStr: `${c.name} ${c.phonecode}`
+      searchStr: `${c.name} ${c.phonecode}`,
     }));
   }, []);
 
+  useEffect(() => {
+    setEmailOtpVerified(true);
+  }, []);
   useEffect(() => {
     if (selectedCountry) {
       const updatedStates = State.getStatesOfCountry(selectedCountry);
@@ -106,21 +280,23 @@ const SellerPage = () => {
 
   useEffect(() => {
     if (selectedState && selectedCountry) {
-      const updatedCities = City.getCitiesOfState(selectedCountry, selectedState);
+      const updatedCities = City.getCitiesOfState(
+        selectedCountry,
+        selectedState,
+      );
       setCitiesList(updatedCities);
     } else {
       setCitiesList([]);
     }
   }, [selectedState, selectedCountry]);
 
-
   const businessTypes = [
-    { label: 'Individual / Sole Proprietor', value: 'Individual / Sole Proprietor' },
-    { label: 'Partnership', value: 'Partnership' },
-    { label: 'Limited Liability Partnership (LLP)', value: 'Limited Liability Partnership (LLP)' },
-    { label: 'Private Limited Company', value: 'Private Limited Company' },
-    { label: 'Public Limited Company', value: 'Public Limited Company' },
-    { label: 'Non-profit Organization', value: 'Non-profit Organization' }
+    {
+      label: "Individual / Sole Proprietor",
+      value: "Individual / Sole Proprietor",
+    },
+    { label: "Private Limited", value: "Private Limited" },
+    { label: "Partnership", value: "Partnership" },
   ];
 
   useEffect(() => {
@@ -130,295 +306,340 @@ const SellerPage = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await apiService.get('/products/get-all-category?limit=100');
+      const response = await apiService.get(
+        "/products/get-all-category?limit=100",
+      );
       const categoryData = response.data?.data || response.data || response;
-      
       if (Array.isArray(categoryData)) {
-        const categoryOptions = categoryData.map(category => ({
-          label: category.name,
-          value: category._id
-        }));
-        setCategories(categoryOptions);
+        setCategories(
+          categoryData.map((c) => ({ label: c.name, value: c._id })),
+        );
       } else if (categoryData.categories) {
-        const categoryOptions = categoryData.categories.map(category => ({
-          label: category.parent ? `${category.name} (${category.parent.name})` : category.name,
-          value: category._id
-        }));
-        setCategories(categoryOptions);
+        setCategories(
+          categoryData.categories.map((c) => ({
+            label: c.parent ? `${c.name} (${c.parent.name})` : c.name,
+            value: c._id,
+          })),
+        );
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
-      message.error('Failed to load categories');
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const steps = ['Personal', 'Store', 'Business'];
+  const steps = [
+    { title: "Personal", icon: <UserOutlined /> },
+    { title: "Store Info", icon: <ShopOutlined /> },
+    { title: "Business & Bank", icon: <BankOutlined /> },
+    { title: "Contacts", icon: <TeamOutlined /> },
+    { title: "Documents", icon: <CloudUploadOutlined /> },
+  ];
 
-  // --- OTP HANDLERS ---
+  // --- MOBILE OTP HANDLERS ---
   const handleSendOtp = async () => {
-    const countryCode = getValues('mobile.country_code');
-    const number = getValues('mobile.number');
+    const countryCode = getValues("mobile.country_code");
+    const number = getValues("mobile.number");
 
     if (!countryCode || !number) {
-        message.error("Please enter a valid mobile number first.");
-        return;
+      message.error("Please enter a valid mobile number first.");
+      return;
     }
 
     setOtpLoading(true);
     try {
-        const payload = {
-            country_code: countryCode,
-            phone_number: number
-        };
-        // await apiService.post("/otp/send-otp", payload);
-        message.success("OTP sent successfully!");
-        setOtpSent(true);
-        setOtpVerified(false);
+      const payload = { country_code: countryCode, phone_number: number };
+      // await apiService.post("/otp/send-otp", payload);
+      message.success("OTP sent successfully!");
+      setOtpSent(true);
+      setOtpVerified(false);
     } catch (error) {
-        const errMsg = error?.response?.data?.message || "Failed to send OTP";
-        notification.error({ message: "OTP Error", description: errMsg });
+      const errMsg = error?.response?.data?.message || "Failed to send OTP";
+      notification.error({ message: "OTP Error", description: errMsg });
     } finally {
-        setOtpLoading(false);
+      setOtpLoading(false);
     }
   };
-  
 
   const handleVerifyOtp = async () => {
     if (!enteredOtp) {
-        message.error("Please enter the OTP");
-        return;
+      message.error("Please enter the OTP");
+      return;
     }
     setOtpLoading(true);
     try {
-        const payload = {
-            country_code: getValues('mobile.country_code'),
-            phone_number: getValues('mobile.number'),
-            otp: enteredOtp
-        };
-        await apiService.post("/otp/verify-otp", payload);
-        message.success("Mobile Verified Successfully!");
-        setOtpVerified(true);
-        setOtpSent(false); // Hide OTP input
+      const payload = {
+        country_code: getValues("mobile.country_code"),
+        phone_number: getValues("mobile.number"),
+        otp: enteredOtp,
+      };
+      await apiService.post("/otp/verify-otp", payload);
+      message.success("Mobile Verified Successfully!");
+      setOtpVerified(true);
+      setOtpSent(false);
     } catch (error) {
-        notification.error({
-            message: "Verification Failed",
-            description: error?.response?.data?.message || "Invalid OTP"
-        });
+      const errMsg = error?.response?.data?.message || "Invalid OTP";
+      notification.error({
+        message: "Verification Failed",
+        description: errMsg,
+      });
     } finally {
-        setOtpLoading(false);
+      setOtpLoading(false);
     }
   };
 
-  // ✅ New Handler to Change Number even after verification
   const handleChangeNumber = () => {
     setOtpSent(false);
     setOtpVerified(false);
     setEnteredOtp("");
-    // Note: We don't clear the mobile number value, just unlock the input
   };
 
   // --- EMAIL OTP HANDLERS ---
   const handleSendEmailOtp = async () => {
-    const email = getValues('email');
-
+    const email = getValues("email");
     if (!email) {
-        message.error("Please enter a valid email first.");
-        return;
+      message.error("Please enter a valid email first.");
+      return;
     }
-
     setEmailOtpLoading(true);
     try {
-        const payload = {
-            email
-        };
-        await apiService.post("/otp/email-otp/send", payload);
-        message.success("OTP sent successfully! Please check your mail.");
-        setEmailOtpSent(true);
-        setEmailOtpVerified(false);
+      const payload = { email: email };
+      // await apiService.post("/otp/email-otp/send", payload);
+      message.success("OTP sent successfully! Please check your mail.");
+      setEmailOtpSent(true);
+      setEmailOtpVerified(false);
     } catch (error) {
-        const errMsg = error?.response?.data?.message || "Failed to send OTP";
-        notification.error({ message: "OTP Error", description: errMsg });
+      const errMsg = error?.response?.data?.message || "Failed to send OTP";
+      notification.error({ message: "OTP Error", description: errMsg });
     } finally {
-        setEmailOtpLoading(false);
+      setEmailOtpLoading(false);
     }
   };
 
   const handleVerifyEmailOtp = async () => {
     if (!enteredEmailOtp) {
-        message.error("Please enter the OTP");
-        return;
+      message.error("Please enter the OTP");
+      return;
     }
     setEmailOtpLoading(true);
     try {
-        const payload = {
-            email: getValues('email'),
-            otp: enteredEmailOtp
-        };
-        await apiService.post("/otp/email-otp/verify", payload);
-        message.success("Email Verified Successfully!");
-        setEmailOtpVerified(true);
-        setEmailOtpSent(false); // Hide OTP input
+      const payload = { email: getValues("email"), otp: enteredEmailOtp };
+      await apiService.post("/otp/email-otp/verify", payload);
+      message.success("Email Verified Successfully!");
+      setEmailOtpVerified(true);
+      setEmailOtpSent(false);
     } catch (error) {
-        notification.error({
-            message: "Verification Failed",
-            description: error?.response?.data?.message || "Invalid OTP"
-        });
+      const errMsg = error?.response?.data?.message || "Invalid OTP";
+      notification.error({
+        message: "Verification Failed",
+        description: errMsg,
+      });
     } finally {
-        setEmailOtpLoading(false);
+      setEmailOtpLoading(false);
     }
   };
 
-  // ✅ New Handler to Change Email even after verification
   const handleChangeEmail = () => {
     setEmailOtpSent(false);
     setEmailOtpVerified(false);
     setEnteredEmailOtp("");
-    // Note: We don't clear the email value, just unlock the input
   };
-
 
   const handleNext = async () => {
     let fieldsToValidate = [];
 
     if (currentStep === 0) {
-      if (!otpVerified || !emailOtpVerified) {
-          message.error("Please verify your mobile number and email to continue.");
-          return;
+      // if (!otpVerified || !emailOtpVerified) {
+
+      if (!otpVerified) {
+
+        message.error("Please verify mobile and email first.");
+        return;
       }
-      fieldsToValidate = ['first_name', 'last_name', 'email', 'mobile.country_code', 'mobile.number', 'password', 'confirmPassword'];
-    } else if (currentStep === 1) {
-      fieldsToValidate = ['store_details.store_name', 'store_details.store_type', 'store_details.categories', 'store_details.store_description'];
-    } else if (currentStep === 2) {
       fieldsToValidate = [
-        'registration.pan_number', 
-        'store_details.store_address', 
-        'store_details.country', 
-        'store_details.state', 
-        'store_details.city', 
-        'store_details.pincode', 
-        'meta.agreed_to_terms'
+        "first_name",
+        "last_name",
+        "email",
+        "mobile.country_code",
+        "mobile.number",
+        "password",
+        "confirmPassword",
+      ];
+    } else if (currentStep === 1) {
+      fieldsToValidate = [
+        "store_details.store_name",
+        "store_details.store_type",
+        "store_details.categories",
+        "store_details.store_description",
+        "store_details.store_address",
+        "store_details.country",
+        "store_details.state",
+        "store_details.city",
+        "store_details.pincode",
+      ];
+    } else if (currentStep === 2) {
+      // Updated validation fields for UAE
+      fieldsToValidate = [
+        "registration.trade_license_number",
+        "registration.trn_number",
+        "bank_details.bank_account_number",
+        "bank_details.iban",
+        "bank_details.account_holder_name",
+        "bank_details.bank_name",
+      ];
+    } else if (currentStep === 3) {
+      fieldsToValidate = [
+        "contacts.primary_contact.name",
+        "contacts.primary_contact.mobile",
+        "contacts.primary_contact.email",
+      ];
+    } else if (currentStep === 4) {
+      // Updated doc validation
+      fieldsToValidate = [
+        "meta.agreed_to_terms",
+        "documents.trade_license",
+        "documents.emirates_id",
       ];
     }
 
     const result = await trigger(fieldsToValidate);
-    if (result) {
-      setCurrentStep(prev => prev + 1);
-    }
+    if (result) setCurrentStep((prev) => prev + 1);
   };
 
   const handleBack = () => {
-    if (currentStep === 0) {
-      window.history.back();
-    } else {
-      setCurrentStep(prev => prev - 1);
-    }
+    if (currentStep === 0) window.history.back();
+    else setCurrentStep((prev) => prev - 1);
   };
 
   const onSubmit = async (data) => {
     if (data.password !== data.confirmPassword) {
-      message.error('Passwords do not match');
+      message.error("Passwords do not match");
       return;
     }
-
-    if (!otpVerified || !emailOtpVerified) {
-        message.error("Mobile number or email not verified.");
-        setCurrentStep(0);
-        return;
+    if (!data.meta?.agreed_to_terms) {
+      message.error("You must agree to the terms.");
+      return;
     }
 
     setSubmitting(true);
     setApiErrors({});
 
     const countryObj = Country.getCountryByCode(data.store_details.country);
-    const stateObj = State.getStateByCodeAndCountry(data.store_details.state, data.store_details.country);
-    
+    const stateObj = State.getStateByCodeAndCountry(
+      data.store_details.state,
+      data.store_details.country,
+    );
+
     const payload = {
       first_name: data.first_name,
       last_name: data.last_name,
       email: data.email,
       mobile: {
-        country_code: data.mobile?.country_code,
-        number: data.mobile?.number || ''
+        country_code: data.mobile.country_code,
+        number: data.mobile.number,
       },
       password: data.password,
       confirmPassword: data.confirmPassword,
+      // is_email_verified: emailOtpVerified, // Send verification status
+      is_mobile_verified: otpVerified,     // Send verification status
+
       store_details: {
-        store_name: data.store_details?.store_name,
-        store_description: data.store_details?.store_description || '',
-        store_type: data.store_details?.store_type,
-        store_address: data.store_details?.store_address,
-        country: countryObj ? countryObj.name : data.store_details?.country,
-        state: stateObj ? stateObj.name : data.store_details?.state, 
-        city: data.store_details?.city,
-        pincode: data.store_details?.pincode,
-        categories: data.store_details?.categories || []
+        store_name: data.store_details.store_name,
+        store_description: data.store_details.store_description,
+        store_type: data.store_details.store_type,
+        store_address: data.store_details.store_address,
+        country: countryObj ? countryObj.name : data.store_details.country,
+        state: stateObj ? stateObj.name : data.store_details.state,
+        city: data.store_details.city,
+        pincode: data.store_details.pincode,
+        categories: data.store_details.categories,
+        website: data.store_details.website,
+        logo: data.store_details.logo,
+        social_links: data.store_details.social_links,
       },
+
+      // UAE Specific Fields Mapping
       registration: {
-        pan_number: data.registration?.pan_number,
-        gstin: data.registration?.gstin || ''
+        trade_license_number: data.registration.trade_license_number, // Was PAN
+        trn_number: data.registration.trn_number, // Was GSTIN
+        chamber_of_commerce: data.registration.chamber_of_commerce, // Was Shop Act
       },
-      meta: {
-        agreed_to_terms: data.meta?.agreed_to_terms
-      }
+
+      bank_details: {
+        ...data.bank_details,
+      },
+
+      contacts: data.contacts,
+
+      documents: {
+        trade_license: {
+          type: "Trade License",
+          path: data.documents.trade_license,
+        },
+        vat_certificate: {
+          type: "VAT Certificate",
+          path: data.documents.vat_certificate,
+        },
+        emirates_id: { type: "Emirates ID", path: data.documents.emirates_id },
+        bank_letter: {
+          type: "Bank Letter/Cheque",
+          path: data.documents.bank_letter,
+        },
+        moa_document: { type: "MOA", path: data.documents.moa_document },
+      },
+
+      operations: {
+        ...data.operations,
+        avg_delivery_time_days: Number(data.operations.avg_delivery_time_days),
+      },
+
+      meta: { agreed_to_terms: data.meta.agreed_to_terms },
     };
 
     try {
-      await apiService.post('/vendor/b2c', payload);
+      await apiService.post("/vendor/register", payload);
       setSuccess(true);
-      message.success('Registration successful! Awaiting approval.');
+      message.success("Registration successful! Awaiting approval.");
     } catch (err) {
       const res = err.response?.data;
-
-      if (res?.errors && Array.isArray(res.errors) && res.errors.length > 0) {
-        const errorMap = {};
-        res.errors.forEach(e => {
-          errorMap[e.field] = e.message;
-          setError(e.field, { type: "server", message: e.message });
-        });
-        setApiErrors(errorMap);
-
-        const firstError = res.errors[0];
-
-        if(firstError.field.includes('store_details.country') || firstError.field.includes('registration')) {
-            setCurrentStep(2);
-        } else if (firstError.field.includes('store_details')) {
-            setCurrentStep(1);
-        } else {
-            setCurrentStep(0);
-        }
-
+      if (res?.errors && Array.isArray(res.errors)) {
+        res.errors.forEach((e) =>
+          setError(e.field, { type: "server", message: e.message }),
+        );
         notification.error({
-            message: "Validation Error",
-            description: firstError.message,
-            duration: 5,
+          message: "Validation Error",
+          description: res.errors[0]?.message,
         });
-
       } else {
-        message.error(res?.message || "Registration failed. Please try again.");
+        message.error(res?.message || "Registration failed.");
       }
     } finally {
       setSubmitting(false);
     }
   };
 
-  const inputClass = `w-full h-[42px] border rounded-md px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500 bg-white transition-all flex items-center border-gray-300`;
-
   if (success) {
     return (
       <div className="min-h-screen bg-[var(--color-primary)] flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl shadow-2xl p-10 max-w-md w-full text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircleFilled style={{ fontSize: '48px', color: '#52c41a' }} />
+            <CheckCircleFilled style={{ fontSize: "48px", color: "#52c41a" }} />
           </div>
           <Title level={2}>Registration Successful!</Title>
-          <Text type="secondary" style={{ fontSize: '16px', display: 'block', marginBottom: '32px' }}>
-            Your request has been sent to the <strong>Admin</strong>.<br />
-            You will receive an email once approved.
+          <Text
+            type="secondary"
+            style={{ display: "block", marginBottom: "32px" }}
+          >
+            Your account is under review.
           </Text>
-          <Button type="primary" size="large" href="/login" block
-            style={{ height: '48px', fontSize: '16px', backgroundColor: themeColor, borderColor: themeColor }}>
+          <Button
+            type="primary"
+            size="large"
+            href="/login"
+            block
+            style={{ background: themeColor, borderColor: themeColor }}
+          >
             Go to Login
           </Button>
         </div>
@@ -428,553 +649,1152 @@ const SellerPage = () => {
 
   return (
     <div className="min-h-screen bg-[var(--color-primary)] flex items-center justify-center py-10 px-4">
-      <div style={{ maxWidth: 1200, width: '100%' }}>
-        <div style={{ textAlign: 'center', marginBottom: 40, color: 'white' }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 80,
-            height: 80,
-            background: 'rgba(255,255,255,0.2)',
-            borderRadius: '50%',
-            marginBottom: 20,
-            backdropFilter: 'blur(10px)'
-          }}>
-            <ShopOutlined style={{ fontSize: 36, color: '#fff' }} />
+      <div style={{ maxWidth: 1200, width: "100%" }}>
+        <div style={{ textAlign: "center", marginBottom: 40, color: "white" }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 80,
+              height: 80,
+              background: "rgba(255,255,255,0.2)",
+              borderRadius: "50%",
+              marginBottom: 20,
+              backdropFilter: "blur(10px)",
+            }}
+          >
+            <ShopOutlined style={{ fontSize: 36, color: "#fff" }} />
           </div>
-          <Title level={2} style={{ color: '#fff', margin: 0 }}>Vendor Registration</Title>
-          <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 16 }}>
-            Join our marketplace in 3 simple steps
+          <Title level={2} style={{ color: "#fff", margin: 0 }}>
+            Vendor Registration (UAE)
+          </Title>
+          <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 16 }}>
+            Join the UAE's leading marketplace
           </Text>
         </div>
 
         <Row gutter={[32, 32]}>
-          <Col xs={24} lg={8}>
-            <Card bordered={false} style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', height: '100%', color: 'white' }} bodyStyle={{ padding: 32 }}>
+          <Col xs={24} lg={6}>
+            <Card
+              bordered={false}
+              style={{
+                background: "rgba(255,255,255,0.1)",
+                backdropFilter: "blur(10px)",
+                height: "100%",
+              }}
+              bodyStyle={{ padding: 32 }}
+            >
               <Steps direction="vertical" current={currentStep}>
-                {steps.map((title, index) => (
+                {steps.map((s, index) => (
                   <Steps.Step
                     key={index}
-                    title={<span style={{ color: currentStep >= index ? '#fff' : 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>{title}</span>}
+                    title={
+                      <span
+                        style={{
+                          color:
+                            currentStep >= index
+                              ? "#fff"
+                              : "rgba(255,255,255,0.5)",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {s.title}
+                      </span>
+                    }
                     icon={
-                      <div style={{
-                        background: currentStep >= index ? '#fff' : 'transparent',
-                        color: currentStep >= index ? themeColor : 'rgba(255,255,255,0.5)',
-                        border: `1px solid ${currentStep >= index ? '#fff' : 'rgba(255,255,255,0.5)'}`,
-                        width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                      }}>
-                        {currentStep > index ? <CheckCircleOutlined /> : index === 0 ? <UserOutlined /> : index === 1 ? <ShopOutlined /> : <FileTextOutlined />}
+                      <div
+                        style={{
+                          background:
+                            currentStep >= index ? "#fff" : "transparent",
+                          color:
+                            currentStep >= index
+                              ? themeColor
+                              : "rgba(255,255,255,0.5)",
+                          border: `1px solid ${currentStep >= index ? "#fff" : "rgba(255,255,255,0.5)"}`,
+                          width: 32,
+                          height: 32,
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {currentStep > index ? <CheckCircleOutlined /> : s.icon}
                       </div>
                     }
                   />
                 ))}
               </Steps>
-              <div style={{ marginTop: 40, borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 20 }}>
-                <Text style={{ color: '#fff', display: 'block', marginBottom: 10 }}><CheckCircleOutlined /> Fast Approval</Text>
-                <Text style={{ color: '#fff', display: 'block', marginBottom: 10 }}><CheckCircleOutlined /> Low Commission</Text>
-                <Text style={{ color: '#fff', display: 'block' }}><CheckCircleOutlined /> 24/7 Support</Text>
-              </div>
             </Card>
           </Col>
 
-          <Col xs={24} lg={16}>
-            <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 20px 40px rgba(0,0,0,0.2)', background: '#fff' }} bodyStyle={{ padding: 40 }}>
+          <Col xs={24} lg={18}>
+            <Card
+              bordered={false}
+              style={{
+                borderRadius: 16,
+                boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+              }}
+              bodyStyle={{ padding: 40 }}
+            >
               <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
                 <Spin spinning={submitting}>
-                  
-                  {/* Step 0: Personal Information */}
-                  {currentStep === 0 && (
-                    <>
-                      <Title level={4} style={{ marginBottom: 24, color: '#333' }}>
-                        <UserOutlined style={{ color: themeColor }} /> Personal Information
-                      </Title>
-                      <Row gutter={16}>
-                        <Col span={12}>
-                          <Form.Item label="First Name" required validateStatus={errors.first_name ? 'error' : ''} help={errors.first_name?.message || apiErrors.first_name}>
-                            <Controller name="first_name" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
-                          </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                          <Form.Item label="Last Name" required validateStatus={errors.last_name ? 'error' : ''} help={errors.last_name?.message || apiErrors.last_name}>
-                            <Controller name="last_name" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
-                          </Form.Item>
-                        </Col>
-                      </Row>
-
-                      {/* --- EMAIL FIELD --- */}
-                      <div className="mb-4">
-                        <Form.Item label="Email Address" required validateStatus={errors.email ? 'error' : ''} help={errors.email?.message || apiErrors.email} style={{marginBottom: 0}}>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
-                                {/* Email Input */}
-                                <div style={{ flex: 1 }}>
-                                    <Controller
-                                        name="email"
-                                        control={control}
-                                        rules={{ 
-                                            required: 'Required',
-                                            pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' } 
-                                        }}
-                                        render={({ field }) => (
-                                            <Input 
-                                                size="large"
-                                                {...field}
-                                                disabled={emailOtpSent && !emailOtpVerified} 
-                                                style={{ borderColor: errors.email ? 'red' : '#d1d5db' }}
-                                                onChange={(e) => {
-                                                    field.onChange(e);
-                                                    if (emailOtpVerified) {
-                                                        setEmailOtpVerified(false); // Reset if user changes verified email manually
-                                                    }
-                                                }}
-                                            />
-                                        )} 
-                                    />
-                                </div>
-
-                                {/* Action Button Logic */}
-                                <div style={{ width: '100px' }}>
-                                    {!emailOtpVerified && !emailOtpSent ? (
-                                        <Button 
-                                            type="primary" 
-                                            disabled={!watchedEmail}
-                                            style={{ 
-                                                height: '42px', 
-                                                width: '100%',
-                                                backgroundColor: !watchedEmail ? 'white' : "#1677ff", 
-                                                borderColor: !watchedEmail ? '#d9d9d9' : "#1677ff",
-                                                color: !watchedEmail ? 'rgba(0,0,0,0.25)' : 'white'
-                                            }}
-                                            onClick={handleSendEmailOtp}
-                                            loading={emailOtpLoading}
-                                        >
-                                            Send OTP
-                                        </Button>
-                                    ) : (
-                                        <Button 
-                                            danger={!emailOtpVerified} // Red if cancelling, Default if changing verified
-                                            style={{ height: '42px', width: '100%' }}
-                                            onClick={handleChangeEmail}
-                                            icon={<EditOutlined />}
-                                        >
-                                            Change
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
+                  {/* STEP 0: PERSONAL */}
+                  <div
+                    style={{ display: currentStep === 0 ? "block" : "none" }}
+                  >
+                    <Title level={4} className="mb-6 text-gray-700">
+                      <UserOutlined /> Personal Information
+                    </Title>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          label="First Name"
+                          required
+                          validateStatus={errors.first_name ? "error" : ""}
+                          help={errors.first_name?.message}
+                        >
+                          <Controller
+                            name="first_name"
+                            control={control}
+                            rules={{ required: "Required" }}
+                            render={({ field }) => (
+                              <Input size="large" {...field} />
+                            )}
+                          />
                         </Form.Item>
-
-                        {/* EMAIL OTP Input Section */}
-                        {emailOtpSent && !emailOtpVerified && (
-                            <div style={{ marginTop: 16, display: 'flex', gap: 8, animation: 'fadeIn 0.3s ease' }}>
-                                <div style={{ flex: 1 }}>
-                                    <Input 
-                                        size="large"
-                                        placeholder="Enter 6-digit OTP"
-                                        prefix={<SafetyCertificateOutlined style={{ color: themeColor }}/>} 
-                                        value={enteredEmailOtp}
-                                        onChange={(e) => setEnteredEmailOtp(e.target.value.replace(/\D/g, ""))}
-                                        maxLength={6}
-                                    />
-                                    <Text type="secondary" style={{ fontSize: 12, marginLeft: 4 }}>
-                                        OTP sent to {getValues('email')}
-                                    </Text>
-                                </div>
-                                <Button 
-                                    type="primary" 
-                                    size="large" 
-                                    onClick={handleVerifyEmailOtp} 
-                                    loading={emailOtpLoading}
-                                    style={{ background: themeColor, borderColor: themeColor }}
-                                >
-                                    Verify
-                                </Button>
-                            </div>
-                        )}
-
-                        {/* Verified Success Message */}
-                        {emailOtpVerified && (
-                            <div style={{ marginTop: 8, color: '#52c41a', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-                                <CheckCircleFilled /> Email Verified
-                            </div>
-                        )}
-                      </div>
-
-                      {/* --- MOBILE FIELD --- */}
-                      <div className="mb-4">
-                        <Form.Item label="Mobile Number" required validateStatus={errors.mobile?.number ? 'error' : ''} help={errors.mobile?.number?.message} style={{marginBottom: 0}}>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
-                                {/* Country Code */}
-                                <div style={{ width: '120px' }}>
-                                    <Controller
-                                        name="mobile.country_code"
-                                        control={control}
-                                        rules={{ required: 'Required' }}
-                                        render={({ field }) => (
-                                            <Select 
-                                                {...field} 
-                                                showSearch
-                                                disabled={otpVerified || otpSent} // Disable if verification in progress
-                                                optionFilterProp="children"
-                                                filterOption={(input, option) => (option['data-search'] || "").toLowerCase().includes(input.toLowerCase())}
-                                                className="custom-select-seller"
-                                                style={{ width: '100%', height: '42px' }}
-                                            >
-                                                {countryPhoneData.map((country, index) => (
-                                                    <Option key={`${country.iso}-${index}`} value={country.value} data-search={country.searchStr}>
-                                                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                                                            <img src={`https://flagcdn.com/w20/${country.iso}.png`} width="20" alt={country.name} style={{ marginRight: 6 }} />
-                                                            <span>{country.phone}</span>
-                                                        </div>
-                                                    </Option>
-                                                ))}
-                                            </Select>
-                                        )} 
-                                    />
-                                </div>
-                                
-                                {/* Phone Input */}
-                                <div style={{ flex: 1 }}>
-                                    <Controller
-                                        name="mobile.number"
-                                        control={control}
-                                        rules={{ 
-                                            required: 'Required',
-                                            validate: (value) => {
-                                                const countryCode = getValues('mobile.country_code');
-                                                if(!countryCode) return "Select code";
-                                                const fullNumber = `${countryCode}${value}`;
-                                                const phoneNumber = parsePhoneNumberFromString(fullNumber);
-                                                return (phoneNumber && phoneNumber.isValid()) || "Invalid length";
-                                            }
-                                        }}
-                                        render={({ field }) => (
-                                            <input 
-                                                {...field}
-                                                className={inputClass}
-                                                placeholder="501234567"
-                                                // Only disable if OTP sent but not verified yet. 
-                                                // If Verified, we allow change (via button click logic)
-                                                disabled={otpSent && !otpVerified} 
-                                                style={{ width: '100%', borderColor: errors.mobile?.number ? 'red' : '#d1d5db' }}
-                                                onChange={(e) => {
-                                                    field.onChange(e.target.value.replace(/\D/g, ""));
-                                                    if (otpVerified) {
-                                                        setOtpVerified(false); // Reset if user changes verified number manually
-                                                    }
-                                                }}
-                                            />
-                                        )} 
-                                    />
-                                </div>
-
-                                {/* Action Button Logic */}
-                                <div style={{ width: '100px' }}>
-                                    {!otpVerified && !otpSent ? (
-                                        <Button 
-                                            type="primary" 
-                                            disabled={!watchedMobileNumber}
-                                            style={{ 
-                                                height: '42px', 
-                                                width: '100%',
-                                                backgroundColor: !watchedMobileNumber ? 'white' : "#1677ff", 
-                                                borderColor: !watchedMobileNumber ? '#d9d9d9' : "#1677ff",
-                                                color: !watchedMobileNumber ? 'rgba(0,0,0,0.25)' : 'white'
-                                            }}
-                                            onClick={handleSendOtp}
-                                            loading={otpLoading}
-                                        >
-                                            Send OTP
-                                        </Button>
-                                    ) : (
-                                        <Button 
-                                            // Always show Change button if OTP sent or verified
-                                            danger={!otpVerified} // Red if cancelling, Default if changing verified
-                                            style={{ height: '42px', width: '100%' }}
-                                            onClick={handleChangeNumber}
-                                            icon={<EditOutlined />}
-                                        >
-                                            Change
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          label="Last Name"
+                          required
+                          validateStatus={errors.last_name ? "error" : ""}
+                          help={errors.last_name?.message}
+                        >
+                          <Controller
+                            name="last_name"
+                            control={control}
+                            rules={{ required: "Required" }}
+                            render={({ field }) => (
+                              <Input size="large" {...field} />
+                            )}
+                          />
                         </Form.Item>
+                      </Col>
+                    </Row>
 
-                        {/* OTP Input Section */}
-                        {otpSent && !otpVerified && (
-                            <div style={{ marginTop: 16, display: 'flex', gap: 8, animation: 'fadeIn 0.3s ease' }}>
-                                <div style={{ flex: 1 }}>
-                                    <Input 
-                                        size="large"
-                                        placeholder="Enter 6-digit OTP"
-                                        prefix={<SafetyCertificateOutlined style={{ color: themeColor }}/>} 
-                                        value={enteredOtp}
-                                        onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ""))}
-                                        maxLength={6}
-                                    />
-                                    <Text type="secondary" style={{ fontSize: 12, marginLeft: 4 }}>
-                                        OTP sent to {getValues('mobile.country_code')} {getValues('mobile.number')}
-                                    </Text>
-                                </div>
-                                <Button 
-                                    type="primary" 
-                                    size="large" 
-                                    onClick={handleVerifyOtp} 
-                                    loading={otpLoading}
-                                    style={{ background: themeColor, borderColor: themeColor }}
-                                >
-                                    Verify
-                                </Button>
-                            </div>
-                        )}
-
-                        {/* Verified Success Message */}
-                        {otpVerified && (
-                            <div style={{ marginTop: 8, color: '#52c41a', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-                                <CheckCircleFilled /> Mobile Number Verified
-                            </div>
-                        )}
-                      </div>
-
-                      <Row gutter={16}>
-                        <Col span={12}>
-                          <Form.Item label="Password" required validateStatus={errors.password ? 'error' : ''} help={errors.password?.message}>
-                            <Controller name="password" control={control} rules={{ required: 'Required', minLength: { value: 6, message: 'Min 6 characters' } }} render={({ field }) => <Input.Password size="large" {...field} />} />
-                          </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                          <Form.Item label="Confirm Password" required validateStatus={errors.confirmPassword ? 'error' : ''} help={errors.confirmPassword?.message}>
-                            <Controller name="confirmPassword" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input.Password size="large" {...field} />} />
-                          </Form.Item>
-                        </Col>
-                      </Row>
-                    </>
-                  )}
-
-                  {/* Step 1: Store Information */}
-                  {currentStep === 1 && (
-                    <>
-                      <Title level={4} style={{ marginBottom: 24, color: '#333' }}>
-                        <ShopOutlined style={{ color: themeColor }} /> Store Information
-                      </Title>
-                      <Form.Item label="Store Name" required validateStatus={errors.store_details?.store_name ? 'error' : ''} help={errors.store_details?.store_name?.message}>
-                        <Controller name="store_details.store_name" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
-                      </Form.Item>
-
-                      <Form.Item label="Business Type" required validateStatus={errors.store_details?.store_type ? 'error' : ''} help={errors.store_details?.store_type?.message}>
-                        <Controller name="store_details.store_type" control={control} rules={{ required: 'Required' }} render={({ field }) => (
-                          <Select size="large" options={businessTypes} {...field} />
-                        )} />
-                      </Form.Item>
-
-                      <Form.Item label="Categories" required validateStatus={errors.store_details?.categories ? 'error' : ''} help={errors.store_details?.categories?.message}>
-                        <Controller name="store_details.categories" control={control} rules={{ required: 'Select at least one category' }} render={({ field }) => (
-                          <Select mode="multiple" size="large" loading={loading} options={categories} optionFilterProp="label" {...field} />
-                        )} />
-                      </Form.Item>
-
-                      <Form.Item label="Description">
-                        <Controller name="store_details.store_description" control={control} render={({ field }) => (
-                          <TextArea rows={4} showCount maxLength={500} {...field} />
-                        )} />
-                      </Form.Item>
-                    </>
-                  )}
-
-                  {/* Step 2: Business Details */}
-                  {currentStep === 2 && (
-                    <>
-                      <Title level={4} style={{ marginBottom: 24, color: '#333' }}>
-                        <FileTextOutlined style={{ color: themeColor }} /> Business & Address
-                      </Title>
-                      <Row gutter={16}>
-                        <Col span={12}>
-                          <Form.Item label="TRN Number (PAN)" required validateStatus={errors.registration?.pan_number ? 'error' : ''} help={errors.registration?.pan_number?.message}>
-                            <Controller name="registration.pan_number" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" placeholder="Enter TRN/PAN" {...field} />} />
-                          </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                          <Form.Item label="VAT/GSTIN (Optional)">
-                            <Controller name="registration.gstin" control={control} render={({ field }) => <Input size="large" placeholder="Enter VAT/GSTIN" {...field} />} />
-                          </Form.Item>
-                        </Col>
-                      </Row>
-
-                      <Form.Item label="Street Address" required validateStatus={errors.store_details?.store_address ? 'error' : ''} help={errors.store_details?.store_address?.message}>
-                        <Controller name="store_details.store_address" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" prefix={<EnvironmentOutlined className='text-gray-400'/>} {...field} />} />
-                      </Form.Item>
-
-                      {/* --- DYNAMIC ADDRESS SECTION --- */}
-                      <Row gutter={16}>
-                        <Col span={12}>
-                          <Form.Item label="Country" required validateStatus={errors.store_details?.country ? 'error' : ''} help={errors.store_details?.country?.message}>
-                            <Controller 
-                                name="store_details.country" 
-                                control={control} 
-                                rules={{ required: 'Required' }} 
-                                render={({ field }) => (
-                                <Select 
-                                    size="large" 
-                                    showSearch 
-                                    optionFilterProp="children"
-                                    filterOption={(input, option) => option.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0}
-                                    onChange={(val) => {
-                                        field.onChange(val);
-                                        setValue('store_details.state', undefined); // Reset State
-                                        setValue('store_details.city', undefined); // Reset City
-                                    }}
-                                    value={field.value}
-                                >
-                                    {Country.getAllCountries().map(country => (
-                                        <Option key={country.isoCode} value={country.isoCode}>{country.name}</Option>
-                                    ))}
-                                </Select>
-                            )} />
-                          </Form.Item>
-                        </Col>
-
-                        <Col span={12}>
-                          <Form.Item label="State / Province" required validateStatus={errors.store_details?.state ? 'error' : ''} help={errors.store_details?.state?.message}>
-                            <Controller 
-                                name="store_details.state" 
-                                control={control} 
-                                rules={{ required: 'Required' }} 
-                                render={({ field }) => (
-                                <Select 
-                                    size="large" 
-                                    showSearch 
-                                    disabled={!statesList.length}
-                                    optionFilterProp="children"
-                                    filterOption={(input, option) => option.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0}
-                                    onChange={(val) => {
-                                        field.onChange(val);
-                                        setValue('store_details.city', undefined); // Reset City
-                                    }}
-                                    value={field.value}
-                                >
-                                    {statesList.map(state => (
-                                        <Option key={state.isoCode} value={state.isoCode}>{state.name}</Option>
-                                    ))}
-                                </Select>
-                            )} />
-                          </Form.Item>
-                        </Col>
-                      </Row>
-
-                      <Row gutter={16}>
-                        <Col span={12}>
-                           <Form.Item label="City" required validateStatus={errors.store_details?.city ? 'error' : ''} help={errors.store_details?.city?.message}>
-                            <Controller 
-                                name="store_details.city" 
-                                control={control} 
-                                rules={{ required: 'Required' }} 
-                                render={({ field }) => (
-                                citiesList.length > 0 ? (
-                                    <Select 
-                                        size="large" 
-                                        showSearch
-                                        optionFilterProp="children"
-                                        {...field}
-                                    >
-                                        {citiesList.map(city => (
-                                            <Option key={city.name} value={city.name}>{city.name}</Option>
-                                        ))}
-                                    </Select>
-                                ) : (
-                                    <Input size="large" {...field} />
-                                )
-                            )} />
-                          </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                          <Form.Item label="Zip / PO Code" required validateStatus={errors.store_details?.pincode ? 'error' : ''} help={errors.store_details?.pincode?.message}>
-                            <Controller name="store_details.pincode" control={control} rules={{ required: 'Required' }} render={({ field }) => <Input size="large" {...field} />} />
-                          </Form.Item>
-                        </Col>
-                      </Row>
-                        {/* --- END ADDRESS SECTION --- */}
-
-                      <Form.Item validateStatus={errors.meta?.agreed_to_terms ? 'error' : ''} help={errors.meta?.agreed_to_terms?.message}>
+                    {/* Email Field with OTP */}
+                    <Form.Item
+                      label="Email"
+                      required
+                      validateStatus={errors.email ? "error" : ""}
+                      help={errors.email?.message}
+                    >
+                      <div className="flex gap-2">
                         <Controller
-                          name="meta.agreed_to_terms"
+                          name="email"
                           control={control}
-                          rules={{ required: 'You must agree to terms' }}
+                          rules={{
+                            required: "Required",
+                            pattern: {
+                              value: /^\S+@\S+$/i,
+                              message: "Invalid email",
+                            },
+                          }}
                           render={({ field }) => (
-                            <Checkbox checked={field.value} onChange={e => field.onChange(e.target.checked)}>
-                              I agree to the Terms and Conditions
-                            </Checkbox>
+                            <Input
+                              size="large"
+                              {...field}
+                              disabled={emailOtpVerified}
+                            />
                           )}
                         />
-                      </Form.Item>
-                    </>
-                  )}
+                        <Button
+                          onClick={
+                            !emailOtpVerified
+                              ? handleSendEmailOtp
+                              : handleChangeEmail
+                          }
+                          type={emailOtpVerified ? "default" : "primary"}
+                          loading={emailOtpLoading}
+                        >
+                          {emailOtpVerified ? "Change" : "Send OTP"}
+                        </Button>
+                      </div>
+                      {emailOtpSent && !emailOtpVerified && (
+                        <div className="mt-2 flex gap-2">
+                          <Input
+                            placeholder="Enter Email OTP"
+                            value={enteredEmailOtp}
+                            onChange={(e) => setEnteredEmailOtp(e.target.value)}
+                          />
+                          <Button onClick={handleVerifyEmailOtp} type="primary">
+                            Verify
+                          </Button>
+                        </div>
+                      )}
+                      {emailOtpVerified && (
+                        <span className="text-green-500">
+                          <CheckCircleFilled /> Verified
+                        </span>
+                      )}
+                    </Form.Item>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32, paddingTop: 24, borderTop: '1px solid #f0f0f0' }}>
-                    <Button size="large" onClick={handleBack} icon={<ArrowLeftOutlined />}>
+                    {/* Mobile Field with OTP and LibPhoneNumber Validation */}
+                    <Form.Item
+                      label="Mobile"
+                      required
+                      validateStatus={errors.mobile?.number ? "error" : ""}
+                      help={errors.mobile?.number?.message}
+                    >
+                      <div className="flex gap-2">
+                        <div style={{ width: 100 }}>
+                          <Controller
+                            name="mobile.country_code"
+                            control={control}
+                            render={({ field }) => (
+                              <Select {...field} disabled={otpVerified}>
+                                {countryPhoneData.map((c) => (
+                                  <Option key={c.iso} value={c.value}>
+                                    {c.phone}
+                                  </Option>
+                                ))}
+                              </Select>
+                            )}
+                          />
+                        </div>
+                        <Controller
+                          name="mobile.number"
+                          control={control}
+                          rules={{
+                            required: "Required",
+                            validate: (value) => {
+                              const countryCode = getValues(
+                                "mobile.country_code",
+                              );
+                              if (!countryCode) return "Select code";
+                              const fullNumber = `${countryCode}${value}`;
+                              const phoneNumber =
+                                parsePhoneNumberFromString(fullNumber);
+                              return (
+                                (phoneNumber && phoneNumber.isValid()) ||
+                                "Invalid mobile number"
+                              );
+                            },
+                          }}
+                          render={({ field }) => (
+                            <Input
+                              size="large"
+                              {...field}
+                              disabled={otpVerified}
+                              className="w-full"
+                              onChange={(e) => {
+                                field.onChange(
+                                  e.target.value.replace(/\D/g, ""),
+                                );
+                                if (otpVerified) setOtpVerified(false);
+                              }}
+                            />
+                          )}
+                        />
+                        <Button
+                          onClick={
+                            !otpVerified ? handleSendOtp : handleChangeNumber
+                          }
+                          type={otpVerified ? "default" : "primary"}
+                          loading={otpLoading}
+                        >
+                          {otpVerified ? "Change" : "Send OTP"}
+                        </Button>
+                      </div>
+                      {otpSent && !otpVerified && (
+                        <div className="mt-2 flex gap-2">
+                          <Input
+                            placeholder="Enter Mobile OTP"
+                            value={enteredOtp}
+                            onChange={(e) => setEnteredOtp(e.target.value)}
+                          />
+                          <Button onClick={handleVerifyOtp} type="primary">
+                            Verify
+                          </Button>
+                        </div>
+                      )}
+                      {otpVerified && (
+                        <span className="text-green-500">
+                          <CheckCircleFilled /> Verified
+                        </span>
+                      )}
+                    </Form.Item>
+
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          label="Password"
+                          required
+                          help={errors.password?.message}
+                        >
+                          <Controller
+                            name="password"
+                            control={control}
+                            rules={{
+                              required: "Required",
+                              minLength: { value: 6, message: "Min 6 chars" },
+                            }}
+                            render={({ field }) => (
+                              <Input.Password size="large" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          label="Confirm Password"
+                          required
+                          help={errors.confirmPassword?.message}
+                        >
+                          <Controller
+                            name="confirmPassword"
+                            control={control}
+                            rules={{ required: "Required" }}
+                            render={({ field }) => (
+                              <Input.Password size="large" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  </div>
+
+                  {/* STEP 1: STORE & OPERATIONS */}
+                  <div
+                    style={{ display: currentStep === 1 ? "block" : "none" }}
+                  >
+                    <Title level={4} className="mb-6 text-gray-700">
+                      <ShopOutlined /> Store Details
+                    </Title>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          label="Store Name"
+                          required
+                          help={errors.store_details?.store_name?.message}
+                        >
+                          <Controller
+                            name="store_details.store_name"
+                            control={control}
+                            rules={{ required: "Required" }}
+                            render={({ field }) => (
+                              <Input size="large" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item label="Business Type" required>
+                          <Controller
+                            name="store_details.store_type"
+                            control={control}
+                            rules={{ required: "Required" }}
+                            render={({ field }) => (
+                              <Select
+                                size="large"
+                                options={businessTypes}
+                                {...field}
+                              />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Form.Item label="Website">
+                      <Controller
+                        name="store_details.website"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            size="large"
+                            prefix={<LinkOutlined />}
+                            placeholder="https://"
+                            {...field}
+                          />
+                        )}
+                      />
+                    </Form.Item>
+
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item label="Store Logo">
+                          <Controller
+                            name="store_details.logo"
+                            control={control}
+                            render={({ field }) => (
+                              <GenericUploader
+                                value={field.value}
+                                onChange={field.onChange}
+                                label="Store Logo"
+                                listType="picture-card"
+                              />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item label="Description">
+                          <Controller
+                            name="store_details.store_description"
+                            control={control}
+                            render={({ field }) => (
+                              <TextArea rows={4} {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Form.Item
+                      label="Categories"
+                      required
+                      help={errors.store_details?.categories?.message}
+                    >
+                      <Controller
+                        name="store_details.categories"
+                        control={control}
+                        rules={{ required: "Required" }}
+                        render={({ field }) => (
+                          <Select
+                            mode="multiple"
+                            size="large"
+                            options={categories}
+                            {...field}
+                          />
+                        )}
+                      />
+                    </Form.Item>
+
+                    <Divider>Location</Divider>
+                    <Form.Item
+                      label="Address"
+                      required
+                      help={errors.store_details?.store_address?.message}
+                    >
+                      <Controller
+                        name="store_details.store_address"
+                        control={control}
+                        rules={{ required: "Required" }}
+                        render={({ field }) => (
+                          <Input size="large" {...field} />
+                        )}
+                      />
+                    </Form.Item>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item label="Country" required>
+                          <Controller
+                            name="store_details.country"
+                            control={control}
+                            rules={{ required: "Required" }}
+                            render={({ field }) => (
+                              <Select
+                                size="large"
+                                showSearch
+                                optionFilterProp="children"
+                                onChange={(val) => {
+                                  field.onChange(val);
+                                  setValue("store_details.state", null);
+                                }}
+                                value={field.value}
+                              >
+                                {Country.getAllCountries().map((c) => (
+                                  <Option key={c.isoCode} value={c.isoCode}>
+                                    {c.name}
+                                  </Option>
+                                ))}
+                              </Select>
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item label="State / Emirate" required>
+                          <Controller
+                            name="store_details.state"
+                            control={control}
+                            rules={{ required: "Required" }}
+                            render={({ field }) => (
+                              <Select
+                                size="large"
+                                showSearch
+                                optionFilterProp="children"
+                                onChange={(val) => {
+                                  field.onChange(val);
+                                  setValue("store_details.city", null);
+                                }}
+                                value={field.value}
+                              >
+                                {statesList.map((s) => (
+                                  <Option key={s.isoCode} value={s.isoCode}>
+                                    {s.name}
+                                  </Option>
+                                ))}
+                              </Select>
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item label="City" required>
+                          <Controller
+                            name="store_details.city"
+                            control={control}
+                            rules={{ required: "Required" }}
+                            render={({ field }) => (
+                              <Select
+                                size="large"
+                                showSearch
+                                optionFilterProp="children"
+                                {...field}
+                              >
+                                {citiesList.map((c) => (
+                                  <Option key={c.name} value={c.name}>
+                                    {c.name}
+                                  </Option>
+                                ))}
+                              </Select>
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          label="PO Box / Zip Code"
+                          required
+                          help={errors.store_details?.pincode?.message}
+                        >
+                          <Controller
+                            name="store_details.pincode"
+                            control={control}
+                            rules={{ required: "Required" }}
+                            render={({ field }) => (
+                              <Input size="large" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Divider>Social Media</Divider>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item label="Facebook">
+                          <Controller
+                            name="store_details.social_links.facebook"
+                            control={control}
+                            render={({ field }) => <Input {...field} />}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item label="Instagram">
+                          <Controller
+                            name="store_details.social_links.instagram"
+                            control={control}
+                            render={({ field }) => <Input {...field} />}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Divider>Operations</Divider>
+                    <Form.Item label="Delivery Modes">
+                      <Controller
+                        name="operations.delivery_modes"
+                        control={control}
+                        render={({ field }) => (
+                          <Checkbox.Group
+                            options={["self", "courier", "pickup"]}
+                            {...field}
+                          />
+                        )}
+                      />
+                    </Form.Item>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item label="Return Policy">
+                          <Controller
+                            name="operations.return_policy"
+                            control={control}
+                            render={({ field }) => (
+                              <Input
+                                placeholder="e.g. 7 days return"
+                                {...field}
+                              />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item label="Avg Delivery (Days)">
+                          <Controller
+                            name="operations.avg_delivery_time_days"
+                            control={control}
+                            render={({ field }) => (
+                              <Input type="number" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  </div>
+
+                  {/* STEP 2: BUSINESS & BANK (UAE UPDATE) */}
+                  <div
+                    style={{ display: currentStep === 2 ? "block" : "none" }}
+                  >
+                    <Title level={4} className="mb-6 text-gray-700">
+                      <FileTextOutlined /> Business Registration (UAE)
+                    </Title>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          label="Trade License Number"
+                            validateStatus={errors.registration?.trade_license_number ? "error" : ""}
+
+                          required
+                          help={
+                            errors.registration?.trade_license_number?.message
+                          }
+                        >
+                          <Controller
+                            name="registration.trade_license_number"
+                            control={control}
+                          rules={{
+  required: "Trade License Number is required",
+  minLength: { value: 5, message: "Minimum 5 characters" },
+  pattern: {
+    value: /^[A-Za-z0-9\-\/]+$/,
+    message: "Only letters, numbers, - and / allowed",
+  },
+}}
+
+                            render={({ field }) => (
+                              <Input
+                                size="large"
+                                placeholder="License No."
+                                {...field}
+                              />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          label="VAT / TRN Number"
+                          required
+                                                      validateStatus={errors.registration?.trn_number ? "error" : ""}
+
+                          help={errors.registration?.trn_number?.message}
+                        >
+                          <Controller
+                            name="registration.trn_number"
+                            control={control}
+rules={{
+  required: "TRN number is required",
+  pattern: {
+    value: /^\d{15}$/,
+    message: "TRN must be exactly 15 digits",
+  },
+}}
+                            render={({ field }) => (
+                              <Input
+                                size="large"
+                                placeholder="Tax Registration No."
+                                {...field}
+                              />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    {/* <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item label="Chamber of Commerce No.">
+                          <Controller
+                            name="registration.chamber_of_commerce"
+                            control={control}
+                            render={({ field }) => (
+                              <Input size="large" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row> */}
+
+                    <Title level={4} className="mt-6 mb-6 text-gray-700">
+                      <BankOutlined /> Bank Details (UAE)
+                    </Title>
+                    <Form.Item
+                      label="Account Holder Name"
+                      required
+                      help={errors.bank_details?.account_holder_name?.message}
+                       validateStatus={errors.bank_details?.account_holder_name ? "error" : ""}
+
+                    >
+                      <Controller
+                        name="bank_details.account_holder_name"
+                        control={control}
+rules={{
+  required: "Account holder name is required",
+  pattern: {
+    value: /^[A-Za-z ]+$/,
+    message: "Only letters and spaces allowed",
+  },
+}}
+                        render={({ field }) => (
+                          <Input size="large" {...field} />
+                        )}
+                      />
+                    </Form.Item>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          label="Bank Name"
+                          required
+                          help={errors.bank_details?.bank_name?.message}
+                        validateStatus={errors.bank_details?.bank_name ? "error" : ""}
+
+                        >
+                          <Controller
+                            name="bank_details.bank_name"
+                            control={control}
+rules={{
+  required: "Bank name is required",
+  pattern: {
+    value: /^[A-Za-z ]+$/,
+    message: "Invalid bank name",
+  },
+}}
+                            render={({ field }) => (
+                              <Input size="large" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          label="Account Number"
+                          required
+                          help={
+                            errors.bank_details?.bank_account_number?.message
+                          }
+                            validateStatus={errors.bank_details?.bank_account_number ? "error" : ""}
+
+                        >
+                          <Controller
+                            name="bank_details.bank_account_number"
+                            control={control}
+rules={{
+  required: "Account number is required",
+  pattern: {
+    value: /^\d{6,20}$/,
+    message: "Account number must be 6–20 digits",
+  },
+}}
+                            render={({ field }) => (
+                              <Input size="large" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          label="IBAN"
+                          required
+                            validateStatus={errors.bank_details?.iban ? "error" : ""}
+
+                          help={errors.bank_details?.iban?.message}
+                        >
+                          <Controller
+                            name="bank_details.iban"
+                            control={control}
+                          rules={{
+  required: "IBAN is required",
+  pattern: {
+    value: /^AE\d{21}$/,
+    message: "Invalid UAE IBAN (must start with AE)",
+  },
+}}
+
+                            render={({ field }) => (
+                              <Input
+                                size="large"
+                                placeholder="AE..."
+                                {...field}
+                              />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item label="Swift / BIC Code" >
+                          <Controller
+                            name="bank_details.swift_code"
+                            control={control}
+                            rules={{
+  pattern: {
+    value: /^[A-Za-z0-9]{8,11}$/,
+    message: "Invalid SWIFT/BIC code",
+  },
+}}
+
+                            render={({ field }) => (
+                              <Input size="large" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  </div>
+
+                  {/* STEP 3: CONTACTS */}
+                  <div
+                    style={{ display: currentStep === 3 ? "block" : "none" }}
+                  >
+                    <Title level={4} className="mb-6 text-gray-700">
+                      <TeamOutlined /> Primary Contact
+                    </Title>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          label="Name"
+                          required
+                          help={errors.contacts?.primary_contact?.name?.message}
+                        >
+                          <Controller
+                            name="contacts.primary_contact.name"
+                            control={control}
+                            rules={{ required: "Required" }}
+                            render={({ field }) => (
+                              <Input size="large" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item label="Designation">
+                          <Controller
+                            name="contacts.primary_contact.designation"
+                            control={control}
+                            render={({ field }) => (
+                              <Input size="large" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={16}>
+                      {/* Mobile Field - Only Numbers Allowed */}
+                      <Col span={12}>
+                        <Form.Item
+                          label="Mobile"
+                          required
+                          help={
+                            errors.contacts?.primary_contact?.mobile?.message
+                          }
+                          validateStatus={
+                            errors.contacts?.primary_contact?.mobile
+                              ? "error"
+                              : ""
+                          }
+                        >
+                          <Controller
+                            name="contacts.primary_contact.mobile"
+                            control={control}
+                            rules={{
+                              required: "Required",
+                              minLength: { value: 9, message: "Min 9 digits" },
+                            }}
+                            render={({ field }) => (
+                              <Input
+                                size="large"
+                                {...field}
+                                maxLength={15}
+                                placeholder="Enter mobile number"
+                                onChange={(e) => {
+                                  // Sirf numbers type karne dega
+                                  const value = e.target.value.replace(
+                                    /\D/g,
+                                    "",
+                                  );
+                                  field.onChange(value);
+                                }}
+                              />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+
+                      {/* Email Field - Valid Email Format */}
+                      <Col span={12}>
+                        <Form.Item
+                          label="Email"
+                          required
+                          help={
+                            errors.contacts?.primary_contact?.email?.message
+                          }
+                          validateStatus={
+                            errors.contacts?.primary_contact?.email
+                              ? "error"
+                              : ""
+                          }
+                        >
+                          <Controller
+                            name="contacts.primary_contact.email"
+                            control={control}
+                            rules={{
+                              required: "Required",
+                              pattern: {
+                                value: /^\S+@\S+$/i,
+                                message: "Invalid email address",
+                              },
+                            }}
+                            render={({ field }) => (
+                              <Input
+                                size="large"
+                                placeholder="Enter email address"
+                                {...field}
+                              />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Divider />
+                    <Title level={4} className="mb-6 text-gray-700">
+                      Support Contact
+                    </Title>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item label="Name">
+                          <Controller
+                            name="contacts.support_contact.name"
+                            control={control}
+                            render={({ field }) => (
+                              <Input size="large" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item label="Designation">
+                          <Controller
+                            name="contacts.support_contact.designation"
+                            control={control}
+                            render={({ field }) => (
+                              <Input size="large" {...field} />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          label="Mobile"
+                          help={
+                            errors.contacts?.support_contact?.mobile?.message
+                          }
+                          validateStatus={
+                            errors.contacts?.support_contact?.mobile
+                              ? "error"
+                              : ""
+                          }
+                        >
+                          <Controller
+                            name="contacts.support_contact.mobile"
+                            control={control}
+                            render={({ field }) => (
+                              <Input
+                                size="large"
+                                {...field}
+                                maxLength={15}
+                                placeholder="Enter mobile number"
+                                onChange={(e) =>
+                                  field.onChange(
+                                    e.target.value.replace(/\D/g, ""),
+                                  )
+                                }
+                              />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          label="Email"
+                          help={
+                            errors.contacts?.support_contact?.email?.message
+                          }
+                          validateStatus={
+                            errors.contacts?.support_contact?.email
+                              ? "error"
+                              : ""
+                          }
+                        >
+                          <Controller
+                            name="contacts.support_contact.email"
+                            control={control}
+                            rules={{
+                              pattern: {
+                                value: /^\S+@\S+$/i,
+                                message: "Invalid email address",
+                              },
+                            }}
+                            render={({ field }) => (
+                              <Input
+                                size="large"
+                                placeholder="Enter email address"
+                                {...field}
+                              />
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  </div>
+
+                  {/* STEP 4: DOCUMENTS (UAE UPDATE) */}
+                  <div
+                    style={{ display: currentStep === 4 ? "block" : "none" }}
+                  >
+                    <Title level={4} className="mb-6 text-gray-700">
+                      <CloudUploadOutlined /> Document Uploads (UAE)
+                    </Title>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {[
+                        {
+                          name: "documents.trade_license",
+                          label: "Trade License Copy (Mandatory)",
+                        },
+                        {
+                          name: "documents.vat_certificate",
+                          label: "VAT Certificate (TRN) (Mandatory)",
+                        },
+                        {
+                          name: "documents.emirates_id",
+                          label: "Emirates ID (Owner/Manager) (Mandatory)",
+                        },
+                        {
+                          name: "documents.bank_letter",
+                          label: "Bank Confirmation Letter (with IBAN)",
+                        },
+                        {
+                          name: "documents.moa_document",
+                          label: "Memorandum of Association (MOA)",
+                        },
+                      ].map((doc) => (
+                        <Form.Item
+                          key={doc.name}
+                          label={doc.label}
+                          required={doc.label.includes("Mandatory")}
+                        >
+                          <Controller
+                            name={doc.name}
+                            control={control}
+                            rules={{
+                              required: doc.label.includes("Mandatory")
+                                ? "Required"
+                                : false,
+                            }}
+                            render={({ field }) => (
+                              <GenericUploader
+                                value={field.value}
+                                onChange={field.onChange}
+                                label={doc.label}
+                              />
+                            )}
+                          />
+                        </Form.Item>
+                      ))}
+                    </div>
+
+                    <Divider />
+                    <Form.Item>
+                      <Controller
+                        name="meta.agreed_to_terms"
+                        control={control}
+                        render={({ field }) => (
+                          <Checkbox
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                          >
+                            I agree to the Terms and Conditions
+                          </Checkbox>
+                        )}
+                      />
+                    </Form.Item>
+                  </div>
+
+                  {/* NAVIGATION BUTTONS */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginTop: 32,
+                      paddingTop: 24,
+                      borderTop: "1px solid #f0f0f0",
+                    }}
+                  >
+                    <Button
+                      size="large"
+                      onClick={handleBack}
+                      icon={<ArrowLeftOutlined />}
+                      disabled={currentStep === 0}
+                    >
                       Back
                     </Button>
-
-                    <div>
-                      {currentStep < steps.length - 1 ? (
-                        <Button
-                          type="primary"
-                          size="large"
-                          onClick={handleNext}
-                          style={{ background: themeColor, borderColor: themeColor }}
-                          icon={<ArrowRightOutlined />}
-                        >
-                          Continue
-                        </Button>
-                      ) : (
-                        <Button
-                          type="primary"
-                          size="large"
-                          htmlType="submit"
-                          loading={submitting}
-                          disabled={!otpVerified || !emailOtpVerified}
-                          style={{ background: themeColor, borderColor: themeColor }}
-                          icon={<CheckCircleOutlined />}
-                        >
-                          Register Vendor
-                        </Button>
-                      )}
-                    </div>
+                    {currentStep < steps.length - 1 ? (
+                      <Button
+                        type="primary"
+                        size="large"
+                        onClick={handleNext}
+                        style={{
+                          background: themeColor,
+                          borderColor: themeColor,
+                        }}
+                        icon={<ArrowRightOutlined />}
+                      >
+                        Continue
+                      </Button>
+                    ) : (
+                      <Button
+                        type="primary"
+                        size="large"
+                        htmlType="submit"
+                        loading={submitting}
+                        style={{
+                          background: themeColor,
+                          borderColor: themeColor,
+                        }}
+                        icon={<CheckCircleOutlined />}
+                      >
+                        Complete Registration
+                      </Button>
+                    )}
                   </div>
                 </Spin>
               </Form>
-
-              <div style={{ marginTop: 20, textAlign: 'center' }}>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  <SafetyOutlined style={{ color: '#52c41a' }} /> Your data is encrypted and secure.
-                </Text>
-              </div>
             </Card>
           </Col>
         </Row>
       </div>
-
-      <style jsx global>{`
-        .custom-select-seller .ant-select-selector {
-          border-radius: 0.375rem !important; 
-          border-color: #d1d5db !important;
-          height: 42px !important;
-          display: flex !important;
-          align-items: center !important;
-          padding-left: 4px !important;
-        }
-        .custom-select-seller .ant-select-selector:hover {
-          border-color: #a855f7 !important;
-        }
-        .custom-select-seller.ant-select-focused .ant-select-selector {
-          border-color: #a855f7 !important;
-          box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2) !important;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 };

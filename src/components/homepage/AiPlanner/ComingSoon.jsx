@@ -58,6 +58,47 @@ const roomTypes = [
   { value: 'office', label: 'Home Office', img: 'https://gstatic.ideal.house/interior/Home/Home_Office.webp' },
 ];
 
+const getProgressText = (progress) => {
+  if (progress < 20) {
+    return {
+      title: "Reading Your Inputs",
+      subtitle: "Understanding your preferences and space details…",
+    };
+  }
+  if (progress < 40) {
+    return {
+      title: "Setting the Scene",
+      subtitle: "Creating the base layout for your landscape image…",
+    };
+  }
+  if (progress < 60) {
+    return {
+      title: "Adding Greenery & Elements",
+      subtitle: "Placing plants, lawn, trees, and features…",
+    };
+  }
+  if (progress < 80) {
+    return {
+      title: "Enhancing Visual Details",
+      subtitle: "Adjusting lighting, textures, and colors…",
+    };
+  }
+  if (progress < 90) {
+    return {
+      title: "Rendering Your Landscape Image",
+      subtitle: "Finalizing composition and details…",
+    };
+  }
+  return {
+    title: "Generating Final Design",
+    subtitle: "Generating your final landscape design…",
+  };
+  
+};
+
+
+
+
 const ComingSoon = () => {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
@@ -75,6 +116,8 @@ const ComingSoon = () => {
   const [designs, setDesigns] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const progress = Math.floor(generationProgress);
+const { title, subtitle } = getProgressText(progress);
 
   // Modals
   const [showGeneratedModal, setShowGeneratedModal] = useState(false);
@@ -735,13 +778,30 @@ const ComingSoon = () => {
               Reimagining your interior space with intelligent design...
             </p>
           </div>
-          <div className="w-full max-w-xs lg:w-80">
-            <Progress percent={Math.floor(generationProgress)} strokeColor={{ '0%': '#8E2DE2', '100%': BRAND_PURPLE }} status="active" strokeWidth={10} showInfo={false} />
-            <div className="flex justify-between mt-3 text-[10px] lg:text-xs font-bold text-gray-400 uppercase tracking-widest">
-              <span>Analyzing Geometry</span>
-              <span>{Math.floor(generationProgress)}%</span>
-            </div>
-          </div>
+         <div className="w-full max-w-xs lg:w-80">
+  <Progress
+    percent={progress}
+    strokeColor={{ "0%": "#8E2DE2", "100%": BRAND_PURPLE }}
+    status="active"
+    strokeWidth={10}
+    showInfo={false}
+  />
+
+  <div className="mt-4 text-center">
+    <p className="text-xs lg:text-sm font-bold uppercase tracking-widest text-purple-400">
+      {title}
+    </p>
+    <p className="mt-1 text-[10px] lg:text-xs text-gray-400">
+      {subtitle}
+    </p>
+  </div>
+
+  <div className="flex justify-between mt-3 text-[10px] lg:text-xs font-bold text-gray-400 uppercase tracking-widest">
+    <span>Progress</span>
+    <span>{progress}%</span>
+  </div>
+</div>
+
         </div>
       )}
     </div>

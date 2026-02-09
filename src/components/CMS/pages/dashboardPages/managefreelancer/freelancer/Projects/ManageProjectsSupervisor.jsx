@@ -218,29 +218,47 @@ const ManageProjectsSupervisor = () => {
           </span>
         ),
       },
-      {
-        key: "progress",
-        title: "Progress",
-        width: 180,
-        render: (_, r) => {
-          const active = r.milestones?.filter((m) => !m.is_deleted) || [];
-          const completed = active.filter((m) => m.status === "approved").length;
-          const total = active.length;
-          const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+   {
+  key: "progress",
+  title: "Progress",
+  width: 180,
+  render: (_, r) => {
+    const milestones = (r.milestones || []).filter(m => !m.is_deleted);
 
-          return (
-            <div className="w-full">
-              <div className="flex justify-between text-xs mb-1 text-gray-500">
-                <span>
-                  {completed}/{total} Milestones
-                </span>
-                <span>{percent}%</span>
-              </div>
-              <Progress percent={percent} size="small" showInfo={false} strokeColor={THEME.primary} />
-            </div>
-          );
-        },
-      },
+    const totalWeight = milestones.reduce(
+      (sum, m) => sum + (m.milestone_weightage || 0),
+      0
+    );
+
+    const completedWeight = milestones
+      .filter(m => m.status === "approved")
+      .reduce((sum, m) => sum + (m.milestone_weightage || 0), 0);
+
+    const percent =
+      totalWeight > 0
+        ? Math.round((completedWeight / totalWeight) * 100)
+        : 0;
+
+    return (
+      <div className="w-full">
+        <div className="flex justify-between text-xs mb-1 text-gray-500">
+          <span>
+            {completedWeight}/{totalWeight}%
+          </span>
+          {/* <span>{percent}%</span> */}
+        </div>
+
+        <Progress
+          percent={percent}
+          size="small"
+          showInfo={false}
+          strokeColor={THEME.primary}
+        />
+      </div>
+    );
+  },
+}
+,
       {
         key: "status",
         title: "Status",
@@ -292,16 +310,7 @@ const ManageProjectsSupervisor = () => {
             <Title level={3} style={{ margin: 0 }}>Projects Management</Title>
             <Text type="secondary">Track and manage your ongoing and completed projects.</Text>
           </div>
-          <Link to={`/dashboard/${roleSlug}/addProjects`}>
-            <Button
-              type="primary"
-              size="large"
-              icon={<ArrowRightOutlined />}
-              style={{ background: THEME.primary, borderColor: THEME.primary }}
-            >
-              Create New Project
-            </Button>
-          </Link>
+          
         </div>
 
         <Row gutter={[16, 16]}>

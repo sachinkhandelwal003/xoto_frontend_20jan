@@ -1,4 +1,3 @@
-// src/pages/auth/Login.jsx
 import React, { useState, useEffect, useContext, useRef } from "react";
 import {
   Form,
@@ -13,7 +12,7 @@ import {
   ConfigProvider,
 } from "antd";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../manageApi/context/AuthContext.jsx";
 import { toast } from "react-toastify";
 import styled from "styled-components";
@@ -28,12 +27,10 @@ import {
   ArrowLeftOutlined,
   MailOutlined,
   LockOutlined,
-  RocketFilled,
-  ShoppingFilled,
   TeamOutlined,
   CodeOutlined,
   IdcardOutlined,
-  ApartmentOutlined, // ✅ Icon for Agency
+  ApartmentOutlined,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -109,21 +106,37 @@ const SelectionCard = styled.div`
 const Login = () => {
   const [form] = Form.useForm();
   
+  const navigate = useNavigate();
+  const location = useLocation();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+  const { login, isAuthenticated, user, token } = useContext(AuthContext);
+
+  // ✅ 1. Determine Mode based on Route
+  const isGridMode = location.pathname.includes("/grid/login");
+
   // view states: 'main' | 'xoto-select' | 'login'
-  const [view, setView] = useState("main"); 
+  // If Grid Mode, default view is 'xoto-select', else 'main'
+  const [view, setView] = useState(isGridMode ? "xoto-select" : "main"); 
   const [selectedPartnerType, setSelectedPartnerType] = useState(null);
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState("");
   const hasRedirected = useRef(false);
 
-  const { login, isAuthenticated, user, token } = useContext(AuthContext);
-  const navigate = useNavigate();
-  const screens = useBreakpoint();
-  const isMobile = !screens.md;
+  // Sync view if URL changes manually
+  useEffect(() => {
+    if (location.pathname.includes("/grid/login")) {
+        setView("xoto-select");
+        setSelectedPartnerType(null);
+    } else {
+        setView("main");
+        setSelectedPartnerType(null);
+    }
+  }, [location.pathname]);
 
   // --- Configuration ---
   
-  // 1. Main Categories (First Screen)
+  // 1. Main Categories (Only visible on standard Login)
   const mainCategories = [
     {
       id: "freelancer",
@@ -152,18 +165,10 @@ const Login = () => {
       gradient: "linear-gradient(135deg, #10B981, #059669)",
       type: "direct",
     },
-    // {
-    //   id: "xoto-grid", // Group Trigger
-    //   label: "Xoto Grid",
-    //   desc: "Devs, Agents & Agencies",
-    //   icon: <CodeOutlined style={{ fontSize: "28px" }} />,
-    //   color: "#F97316",
-    //   gradient: "linear-gradient(135deg, #F97316, #EA580C)",
-    //   type: "group", 
-    // },
+    // Note: Xoto Grid removed from here as it has its own route now
   ];
 
-  // 2. All Partner Types (For Login Logic & Sub-selection)
+  // 2. All Partner Types (Used for Login Logic & Grid Menu)
   const partnerTypes = [
     ...mainCategories,
     {
@@ -196,130 +201,62 @@ const Login = () => {
     partnerTypes.find((t) => t.value === selectedPartnerType) || 
     partnerTypes.find((t) => t.id === selectedPartnerType);
 
-  // ✅ Login success effect
+ // ✅ Login success effect (CORRECTED)
   useEffect(() => {
     if (isAuthenticated && token && !hasRedirected.current) {
       hasRedirected.current = true;
 
-      const userName = user?.name || user?.firstName || "Partner";
-      const roleCode = user?.role?.code?.toString() || user?.role;
-
-      let themeColor = "#5C039B";
-      let themeIcon = <RocketFilled />;
-
-      // Determine theme based on partner type
+      // Safe access for role code
+      const roleCode = user?.role?.code?.toString() || (typeof user?.role === 'string' ? user.role : "");
+      
+      // 1. Priority Check: Agar User ne UI se "Developer" select kiya tha
       if (selectedPartnerType === "developer") {
-        themeColor = "#F97316";
-        themeIcon = <CodeOutlined />;
-      } else if (selectedPartnerType === "agent") {
-        themeColor = "#E11D48";
-        themeIcon = <IdcardOutlined />;
-      } else if (selectedPartnerType === "agency") {
-        themeColor = "#4F46E5"; // Indigo for Agency
-        themeIcon = <ApartmentOutlined />;
-      } else if (["5", "6"].includes(roleCode)) {
-        themeColor = "#03A4F4";
-        themeIcon = <ShoppingFilled />;
-      } else if (["8", "9"].includes(roleCode)) {
-        themeColor = "#10B981";
-        themeIcon = <TeamOutlined />;
+        toast.success("Welcome Developer! Accessing your dashboard...");
+        setTimeout(() => {
+          navigate("/dashboard/developer", { replace: true });
+        }, 1500);
+        return;
       }
 
-      toast.success(
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div
-            style={{
-              background: "rgba(255,255,255,0.2)",
-              borderRadius: "50%",
-              width: 40,
-              height: 40,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            }}
-          >
-            {React.cloneElement(themeIcon, {
-              style: { color: "#fff", fontSize: 20 },
-            })}
-          </div>
-          <div>
-            <div style={{ fontWeight: "bold", fontSize: "16px" }}>
-              Welcome, {userName}
-            </div>
-            <div style={{ fontSize: "13px", opacity: 0.9 }}>
-              Login Successful
-            </div>
-          </div>
-        </div>,
-        {
-          position: "top-center",
-          autoClose: 2000,
-          style: {
-            background:
-              selectedPartnerType === "agent"
-                ? "linear-gradient(135deg, #E11D48, #BE123C)"
-                : selectedPartnerType === "agency"
-                ? "linear-gradient(135deg, #4F46E5, #4338ca)"
-                : themeColor === "#5C039B"
-                ? "linear-gradient(135deg, #5C039B, #8E44AD)"
-                : themeColor === "#03A4F4"
-                ? "linear-gradient(135deg, #03A4F4, #0077b6)"
-                : themeColor === "#10B981"
-                ? "linear-gradient(135deg, #10B981, #059669)"
-                : "linear-gradient(135deg, #F97316, #EA580C)",
-            color: "#fff",
-            borderRadius: "16px",
-            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.45)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            padding: "16px",
-          },
-        }
-      );
+      // 2. Role Code Based Redirect (Backend ID Logic)
+      const rolePathMap = {
+        "0": "/dashboard/superadmin",
+        "1": "/dashboard/admin",
+        "2": "/dashboard/customer",
+        "5": "/dashboard/vendor-b2c",
+        "6": "/dashboard/vendor-b2b",
+        "7": "/dashboard/freelancer",
+        
+        // ✅ FIX: Ab ID 8 seedha Developer Dashboard par jayegi
+        "8": "/dashboard/developer", 
+        
+        // Agar Business Association bhi use kar rahe ho toh usko nayi ID dedo (eg: 10)
+        "10": "/dashboard/business-association", 
+        "9": "/dashboard/association-admin",
+      };
 
-      // ✅ Redirect after toast
-      setTimeout(() => {
-        if (selectedPartnerType === "developer") {
-          navigate("/dashboard/developer", { replace: true });
-          return;
-        }
-        if (selectedPartnerType === "agent") {
-          navigate("/dashboard/agent", { replace: true });
-          return;
-        }
-        if (selectedPartnerType === "agency") {
-          navigate("/dashboard/agency", { replace: true });
-          return;
-        }
-
-        const rolePathMap = {
-          "0": "/dashboard/superadmin",
-          "1": "/dashboard/admin",
-          "2": "/dashboard/customer",
-          "5": "/dashboard/vendor-b2c",
-          "6": "/dashboard/vendor-b2b",
-          "7": "/dashboard/freelancer",
-          "8": "/dashboard/business-association",
-          "9": "/dashboard/association-admin",
-        };
-
-        const path = rolePathMap[roleCode] || "/dashboard";
-        navigate(path, { replace: true });
-      }, 2000);
+      const path = rolePathMap[roleCode] || "/dashboard";
+      
+      // Agar path mil gaya toh wahan bhejo, nahi toh default dashboard
+      if (rolePathMap[roleCode]) {
+        toast.success(`Welcome back! Redirecting...`);
+        setTimeout(() => {
+          navigate(path, { replace: true });
+        }, 1500);
+      } else {
+        // Fallback agar koi unknown role ID aa gayi
+        navigate("/dashboard", { replace: true });
+      }
     }
   }, [isAuthenticated, user, token, navigate, selectedPartnerType]);
 
   // --- Handlers ---
   
   const handleMainSelect = (category) => {
-    if (category.type === "group") {
-        setView("xoto-select"); 
-    } else {
-        setSelectedPartnerType(category.id);
-        setView("login");
-        setGeneralError("");
-        form.resetFields();
-    }
+    setSelectedPartnerType(category.id);
+    setView("login");
+    setGeneralError("");
+    form.resetFields();
   };
 
   const handleSubSelect = (type) => {
@@ -334,14 +271,17 @@ const Login = () => {
     form.resetFields();
     
     if (view === "login") {
-        if (["developer", "agent", "agency"].includes(selectedPartnerType)) {
+        if (isGridMode) {
+            // Grid Mode: Back goes to Grid Selection
             setView("xoto-select"); 
         } else {
+            // Normal Mode: Back goes to Main Selection
             setView("main"); 
             setSelectedPartnerType(null);
         }
     } else if (view === "xoto-select") {
-        setView("main");
+        // Grid Mode Top Level Back: Go Home or specific path
+        navigate("/");
     }
   };
 
@@ -355,7 +295,7 @@ const Login = () => {
 
       if (selectedPartnerType === "freelancer") endpoint = "/freelancer/login";
       else if (selectedPartnerType === "vendor-b2c")
-        endpoint = "/vendor/b2c/login";
+        endpoint = "/vendor/login";
       else if (selectedPartnerType === "business-association")
         endpoint = "/association/login";
       else if (selectedPartnerType === "developer")
@@ -363,7 +303,7 @@ const Login = () => {
       else if (selectedPartnerType === "agent")
         endpoint = "/property/login-agent";
       else if (selectedPartnerType === "agency")
-        endpoint = "/property/login-agency"; // ✅ Agency Endpoint
+        endpoint = "/property/login-agency"; 
 
       await login(endpoint, {
         email: values.email,
@@ -389,12 +329,12 @@ const Login = () => {
     else if (selectedPartnerType === "agent")
       navigate("/agent/registration"); 
     else if (selectedPartnerType === "agency")
-      navigate("/agency/registration"); // ✅ Agency Registration
+      navigate("/agency/registration"); 
   };
 
   // --- RENDER CONTENT ---
   
-  // 1. Main Selection Screen
+  // 1. Main Selection Screen (For Standard Login)
   const renderMainSelection = () => (
     <motion.div
       key="main-selection"
@@ -448,7 +388,7 @@ const Login = () => {
     </motion.div>
   );
 
-  // 2. Xoto Sub-Selection Screen (Developer, Agent & Agency)
+  // 2. Xoto Sub-Selection Screen (For Grid Login)
   const renderXotoSelection = () => (
     <motion.div
       key="xoto-selection"
@@ -457,14 +397,16 @@ const Login = () => {
       exit={{ opacity: 0, x: 20 }}
       transition={{ duration: 0.3 }}
     >
-      <Button
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={handleBack}
-          style={{ marginBottom: 16, paddingLeft: 0, color: "#888" }}
-        >
-          Back to Selection
-        </Button>
+      {!isGridMode && (
+         <Button
+           type="text"
+           icon={<ArrowLeftOutlined />}
+           onClick={handleBack}
+           style={{ marginBottom: 16, paddingLeft: 0, color: "#888" }}
+         >
+           Back to Selection
+         </Button>
+      )}
 
       <div style={{ textAlign: "center", marginBottom: 30 }}>
         <Title level={3} style={{ margin: 0, color: "#333" }}>Xoto Grid Access</Title>
@@ -479,24 +421,24 @@ const Login = () => {
             $color="#F97316"
             onClick={() => handleSubSelect("developer")}
           >
-             <div
-                 style={{
-                   width: 60, height: 60, borderRadius: "50%",
-                   background: "#F97316", color: "#fff",
-                   display: "flex", alignItems: "center", justifyContent: "center",
-                   boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-                 }}
-               >
-                 <CodeOutlined style={{ fontSize: "24px" }} />
-               </div>
-               <div>
-                 <div style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
-                   Developer
-                 </div>
-                 <div style={{ fontSize: 13, color: "#888" }}>
-                   Real Estate Developers
-                 </div>
-               </div>
+              <div
+                  style={{
+                    width: 60, height: 60, borderRadius: "50%",
+                    background: "#F97316", color: "#fff",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+                  }}
+                >
+                  <CodeOutlined style={{ fontSize: "24px" }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
+                    Developer
+                  </div>
+                  <div style={{ fontSize: 13, color: "#888" }}>
+                    Real Estate Developers
+                  </div>
+                </div>
           </SelectionCard>
         </Col>
 
@@ -507,24 +449,24 @@ const Login = () => {
             $color="#4F46E5"
             onClick={() => handleSubSelect("agency")}
           >
-             <div
-                 style={{
-                   width: 60, height: 60, borderRadius: "50%",
-                   background: "#4F46E5", color: "#fff",
-                   display: "flex", alignItems: "center", justifyContent: "center",
-                   boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-                 }}
-               >
-                 <ApartmentOutlined style={{ fontSize: "24px" }} />
-               </div>
-               <div>
-                 <div style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
-                   Agency
-                 </div>
-                 <div style={{ fontSize: 13, color: "#888" }}>
-                   Property Agencies
-                 </div>
-               </div>
+              <div
+                  style={{
+                    width: 60, height: 60, borderRadius: "50%",
+                    background: "#4F46E5", color: "#fff",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+                  }}
+                >
+                  <ApartmentOutlined style={{ fontSize: "24px" }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
+                    Agency
+                  </div>
+                  <div style={{ fontSize: 13, color: "#888" }}>
+                    Property Agencies
+                  </div>
+                </div>
           </SelectionCard>
         </Col>
 
@@ -535,24 +477,24 @@ const Login = () => {
             $color="#E11D48"
             onClick={() => handleSubSelect("agent")}
           >
-             <div
-                 style={{
-                   width: 60, height: 60, borderRadius: "50%",
-                   background: "#E11D48", color: "#fff",
-                   display: "flex", alignItems: "center", justifyContent: "center",
-                   boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-                 }}
-               >
-                 <IdcardOutlined style={{ fontSize: "24px" }} />
-               </div>
-               <div>
-                 <div style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
-                   Agent
-                 </div>
-                 <div style={{ fontSize: 13, color: "#888" }}>
-                   Real Estate Agents
-                 </div>
-               </div>
+              <div
+                  style={{
+                    width: 60, height: 60, borderRadius: "50%",
+                    background: "#E11D48", color: "#fff",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+                  }}
+                >
+                  <IdcardOutlined style={{ fontSize: "24px" }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
+                    Agent
+                  </div>
+                  <div style={{ fontSize: 13, color: "#888" }}>
+                    Real Estate Agents
+                  </div>
+                </div>
           </SelectionCard>
         </Col>
       </Row>
@@ -577,7 +519,7 @@ const Login = () => {
           onClick={handleBack}
           style={{ marginBottom: 16, paddingLeft: 0, color: "#888" }}
         >
-          {view === 'xoto-select' ? "Back to Xoto Grid" : "Back to Selection"}
+          {isGridMode ? "Back to Xoto Grid" : "Back to Selection"}
         </Button>
 
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
@@ -747,7 +689,7 @@ const Login = () => {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  Partner <span style={{ color: "#03A4F4" }}>Login</span>
+                  {isGridMode ? "Xoto Grid" : "Partner"} <span style={{ color: "#03A4F4" }}>Access</span>
                 </Title>
 
                 <Text
@@ -760,7 +702,7 @@ const Login = () => {
                   }}
                 >
                   {!selectedPartnerType
-                    ? "Connect, Collaborate, and Grow with our extensive ecosystem."
+                    ? (isGridMode ? "Specialized access for Developers, Agents, and Agencies." : "Connect, Collaborate, and Grow with our extensive ecosystem.")
                     : `Welcome back, ${getSelectedPartner()?.label}. Let's get to work.`}
                 </Text>
               </motion.div>
@@ -771,7 +713,7 @@ const Login = () => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6 }}
-                style={{ width: "100%", maxWidth: 650 }} // Increased slightly for 3 columns
+                style={{ width: "100%", maxWidth: 650 }}
               >
                 <GlassCard bordered={false} $isMobile={isMobile}>
                   <AnimatePresence mode="wait">
