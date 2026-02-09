@@ -7,27 +7,27 @@
   },
 
   "business": {
-    "title": "İş Ortakları",
-    "desc": "Gayrimenkul ağınızı güçlendirin — müşteri yönetimini kolaylaştıran, dönüşümleri artıran ve anlaşmaları hızlandıran AI araçları."
+    "title": "İş Ortakları için",
+    "desc": "Müşteri süreçlerini sadeleştiren, potansiyel müşterileri dönüştüren ve anlaşmaları daha hızlı kapatan yapay zekâ araçlarıyla gayrimenkul ağınızı güçlendirin."
   },
 
   "execution": {
-    "title": "Uygulama Ortakları",
-    "desc": "Görev paylaşımları, ilerleme takibi ve ekip koordinasyonunu gerçek zamanlı kolaylaştırarak projeleri daha verimli teslim edin."
+    "title": "Uygulama Ortağı için",
+    "desc": "Gerçek zamanlı görev ataması, şeffaf takip ve ekipler arası sorunsuz koordinasyonla projeleri daha hızlı teslim edin."
   },
 
   "alliances": {
-    "title": "Stratejik İttifaklar",
-    "desc": "Büyüme odaklı entegre ekosistemimizle pazar erişiminizi genişletin."
+    "title": "Stratejik Ortaklıklar İçin",
+    "desc": "Entegre ve büyüme odaklı bir ekosistemle pazar varlığınızı genişletmek için XOTO ile iş birliği yapın."
   },
 
   "developers": {
-    "title": "Geliştiriciler",
-    "desc": "Ön onaylı alıcılara erişin ve veri odaklı içgörülerle satışlarınızı hızlandırın."
+    "title": "Geliştiriciler İçin",
+    "desc": "Önceden nitelendirilmiş alıcılara erişin ve veri odaklı içgörülerle satışları hızlandırın."
   },
 
   "finance": {
-    "title": "Finansal Kurumlar",
-    "desc": "Entegre gayrimenkul ve finans çözümleriyle mortgage dönüşümlerini artırın."
+    "title": "Finansal Kurumlar İçin",
+    "desc": "Entegre gayrimenkul ve finansman çözümleriyle mortgage dönüşümlerini artırın."
   }
 }

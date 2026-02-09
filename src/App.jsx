@@ -80,7 +80,7 @@ import DeveloperRegistration from "./components/ecommerce/B2C/developerregistrat
 // import DeveloperSidebar from "./components/ecommerce/B2C/developersidebar";
 import RegistrationAgency from "./components/ecommerce/B2C/registrationagency";
 import Checker from "./Checker";
-
+import AgentRegistration from "./components/ecommerce/B2C/AgentRegistration";
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -263,6 +263,10 @@ function App() {
 
               {/* ✅ Agency Route */}
               <Route path="/agency/registration" element={<RegistrationAgency />} />
+
+              {/* ✅ Agent Registration Route */}
+              <Route path="/agent/registration" element={<AgentRegistration />} />
+
 
               <Route path="/ecommerce/seller" element={<SellerPage />} />
               <Route path="/ecommerce/seller/b2b" element={<Sellerb2b />} />

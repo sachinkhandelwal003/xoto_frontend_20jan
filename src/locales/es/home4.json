@@ -2,10 +2,9 @@
   "title": "Nuestro Ecosistema Tecnológico",
 
   "descriptions": {
-    "home": "XOTO Home permite a los clientes planificar y perfeccionar su proyecto de jardinería, desde el concepto hasta la creación, todo en una plataforma intuitiva.",
-    "connect": "Diseñado para profesionales, Xoto Pro conecta paisajistas y contratistas con clientes mediante un potente ecosistema digital.",
-    "blitz": "Un centro que sincroniza herramientas, cronogramas y servicios para simplificar la gestión entre equipos y proyectos.",
-    "grid": "Un centro que sincroniza herramientas, cronogramas y servicios para simplificar la gestión entre equipos y proyectos.",
-    "vault": "Un centro que sincroniza herramientas, cronogramas y servicios para simplificar la gestión entre equipos y proyectos."
+    "vault": "XOTO Vault ofrece a los profesionales hipotecarios una plataforma integral para gestionar y rastrear leads, facilitando el cierre de operaciones.",
+    "grid": "El portal XOTO GRID mejora la productividad de los agentes con paneles de rendimiento y herramientas de gestión automatizadas.",
+    "home": "XOTO Home permite a los clientes planificar y perfeccionar su experiencia de paisajismo desde el concepto hasta la ejecución.",
+    "connect": "XOTO Connect capacita a los agentes con alertas en tiempo real, acceso instantáneo a propiedades y análisis de rendimiento."
   }
 }

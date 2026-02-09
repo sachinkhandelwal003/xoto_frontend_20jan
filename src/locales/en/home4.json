@@ -2,10 +2,9 @@
   "title": "Our Tech Ecosystem",
 
   "descriptions": {
-    "home": "The XOTO Home empowers customers to plan and perfect your landscaping journey, from concept to creation, all in one intuitive platform.",
-    "connect": "Designed for professionals, Xoto Pro connects landscapers and contractors with customers through a powerful digital ecosystem.",
-    "blitz": "A central hub that synchronizes tools, schedules, and services to simplify management across teams and projects.",
-    "grid": "A central hub that synchronizes tools, schedules, and services to simplify management across teams and projects.",
-    "vault": "A central hub that synchronizes tools, schedules, and services to simplify management across teams and projects."
+    "vault": "XOTO Vault provides mortgage professionals with a comprehensive platform for managing and tracking mortgage leads, ensuring a streamlined, efficient process for closing deals.",
+    "grid": "The XOTO GRID Agent Portal enhances agent productivity with performance dashboards, lead and property management tools, and automated client follow-ups, simplifying workflows for seamless real estate transactions.",
+    "home": "The XOTO Home empowers customers to plan and perfect their landscaping journey, from concept to creation, all in one intuitive platform.",
+    "connect": "XOTO Connect empowers agents on the move with real-time alerts, instant property access, seamless communication, and performance insights."
   }
 }
