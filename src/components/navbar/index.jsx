@@ -6,7 +6,8 @@ import { Link, useNavigate } from "react-router-dom";
 import logoNew from "../../assets/img/logonew2.png";
 import { ChevronDown, LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
-
+import { useContext } from "react";
+import { AuthContext  } from "../../context/ProfileContext";
 // REDUX IMPORTS
 import { useDispatch, useSelector } from "react-redux";
 // Adjust this path to match your project structure
@@ -72,6 +73,20 @@ const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+
+  const { fetchProfile ,userProfile } = useContext(AuthContext);
+
+  console.log( "fetchProfilefetchProfilefetchProfilefetchProfile"  ,  userProfile)
+ useEffect(() => {
+    if (!user) {
+      fetchProfile();
+    }
+  }, []);
+
+  const firstName = userProfile?.name?.first_name ?? "";
+const lastName  = userProfile?.name?.last_name ?? "";
+const fullName  = `${firstName} ${lastName}`.trim();
+
   // GET USER FROM REDUX
   const { user, token } = useSelector((s) => s.auth);
 
@@ -91,6 +106,9 @@ const Navbar = () => {
   const loginMenuRef = useRef(null); // Ref for login dropdown
   const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
   console.log(roleSlug)
+
+
+
   // Helper to determine dashboard link based on role
  const getDashboardLink = () => {
   if (!user?.role?.name) return "/dashboard";
@@ -241,7 +259,8 @@ const dashboardNavigate=()=>{
                       {user.name ? user.name.charAt(0).toUpperCase() : "U"}
                     </div>
                     <div className="text-left hidden xl:block">
-                      <p className="text-sm font-bold text-gray-800 leading-none">{user.name?.split(' ')[0]}</p>
+                      <p className="text-sm font-bold text-gray-800 leading-none">  {fullName}
+</p>
                       <p className="text-xs text-gray-500 uppercase">{user.role?.name || "User"}</p>
                     </div>
                     <ChevronDown size={14} className="text-gray-500" />
@@ -254,15 +273,15 @@ const dashboardNavigate=()=>{
                           <p className="text-xs text-gray-500">{user.email}</p>
                       </div>
 
-                      <span onClick={dashboardNavigate} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                      <div onClick={dashboardNavigate} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
                           <FaTachometerAlt size={16} className="text-[#5C039B]" /> Dashboard
-                      </span>
+                      </div>
 
                       <div className="border-t border-gray-100 my-1"></div>
                       
                       <button 
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left transition-colors cursor-pointer"
                       >
                         <LogOut size={16} /> {"Logout"}
                       </button>

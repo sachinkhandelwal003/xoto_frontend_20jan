@@ -4,7 +4,7 @@ import {apiService} from '../../src/manageApi/utils/custom.apiservice'; // Apna 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async () => {
@@ -15,11 +15,11 @@ export const AuthProvider = ({ children }) => {
       if (response && response.data) {
         // Maan lo API response mein data 'response.data.user' mein hai
         // Agar response hi user object hai toh direct response.data rakho
-        setUser(response.data.user || response.data); 
+        setUserProfile(response.data.user || response.data); 
       }
     } catch (error) {
       console.error("AuthContext Error:", error);
-      setUser(null);
+      setUserProfile(null);
     } finally {
       setLoading(false);
     }
@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, fetchProfile }}>
+    <AuthContext.Provider value={{ userProfile, setUserProfile, loading, fetchProfile }}>
       {children}
     </AuthContext.Provider>
   );
