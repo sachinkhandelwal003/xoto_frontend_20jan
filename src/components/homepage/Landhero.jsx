@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { TreePine, Home, Droplets, Tent } from "lucide-react";
-import interiorImage from "../../assets/img/interior.jpg";
+// import interiorImage from "../../assets/img/interior.jpg";
 import { useTranslation } from "react-i18next";
 
 export default function HeroSection() {
@@ -39,7 +39,7 @@ export default function HeroSection() {
       {/* Background Image & Overlay */}
       <div className="absolute inset-0">
         <img
-          src={interiorImage}
+          src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1770009212214-interior.jpg"}
           alt={t("hero.subtitle")}
           className="w-full h-full object-cover"
         />

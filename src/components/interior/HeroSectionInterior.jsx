@@ -2,7 +2,7 @@
 
 import React from "react";
 import { ArrowRight } from "lucide-react";
-import mainbgImage from "../../assets/img/logo/mainbgg.png";
+// import mainbgImage from "../../assets/img/logo/mainbgg.png";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -12,7 +12,7 @@ export default function HeroSectionInterior() {
   return (
     <div
       className="relative w-full bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url(${mainbgImage})` }}
+      style={{ backgroundImage: `url(${ "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1770010584911-mainbgg.png"})` }}
     >
       {/* Bottom clipping shapes */}
       <div className="absolute bottom-0 left-0 w-72 h-12 bg-[var(--color-body)] z-[3] clip-left-shape" />
