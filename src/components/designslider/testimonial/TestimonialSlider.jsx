@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 
 import home from "../../../assets/img/logo/logohome.png";
 import connect from "../../../assets/img/logo/logoconnect.png";
-import blitz from "../../../assets/img/logo/logoblitz.png";
+// import blitz from "../../../assets/img/logo/logoblitz.png";
 import grid from "../../../assets/img/logo/logogrid.png";
 import vault from "../../../assets/img/logo/logovault.png";
 import aaImage from "../../../assets/img/aa.jpg";
@@ -19,7 +19,6 @@ const EcosystemSlider = () => {
   const ecosystemData = [
     { logo: home, key: "home" },
     { logo: connect, key: "connect" },
-    { logo: blitz, key: "blitz" },
     { logo: grid, key: "grid" },
     { logo: vault, key: "vault" },
   ];
