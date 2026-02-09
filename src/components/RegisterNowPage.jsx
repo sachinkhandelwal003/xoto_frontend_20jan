@@ -11,7 +11,7 @@ const { Option } = Select;
 
 // --- Phone Length Rules ---
 const PHONE_LENGTH_RULES = {
-  "AE": 9, "IN": 10, "SA": 9, "US": 10, "CA": 10, "GB": 10, "AU": 9,
+  "AE": 8, "IN": 10, "SA": 9, "US": 10, "CA": 10, "GB": 10, "AU": 9,
 };
 
 const RegisterNowPage = () => {

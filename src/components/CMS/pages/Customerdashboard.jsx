@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import dayjs from 'dayjs';
+import { useNavigate } from "react-router-dom";
+
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { 
   UserOutlined, 
-  FileTextOutlined, 
+  FileTextOutlined,
   CheckCircleOutlined, 
   ShoppingOutlined,
   ProjectOutlined,
@@ -16,6 +18,7 @@ import {
 } from '@ant-design/icons';
 import { Card, Row, Col, Button, Typography, Tag, Statistic,Avatar, Spin, Alert } from 'antd';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
+
 
 const { Title, Text } = Typography;
 
@@ -34,7 +37,7 @@ const CustomerDashboard = () => {
 
   // Redux se user info nikalna
   const user = useSelector((state) => state.auth?.user);
-
+const navigate =useNavigate()
   // Dates setup (Aaj se 1 saal peeche tak)
   const fromDate = dayjs().subtract(1, 'year').format('DD-MM-YYYY');
   const toDate = dayjs().add(1, 'day').format('DD-MM-YYYY');
@@ -44,6 +47,12 @@ const CustomerDashboard = () => {
       fetchDashboardData();
     }
   }, [user]);
+
+
+  const handleProfile=()=>{
+    navigate("/dashboard/customer/myprofile")
+  }
+
 
   const fetchDashboardData = async () => {
     try {
@@ -92,17 +101,16 @@ const CustomerDashboard = () => {
           <Title level={2} style={{ margin: 0 }}>Customer Insights</Title>
           <Text type="secondary">Welcome back! Here is your purchase summary.</Text>
         </div>
-        {/* <div className="flex gap-3 mt-4 md:mt-0">
-           <Button icon={<ExportOutlined />}>Export</Button>
+        <div className="flex gap-3 mt-4 md:mt-0">
            <Button 
             type="primary" 
             icon={<SyncOutlined />} 
-            onClick={fetchDashboardData}
+            onClick={handleProfile}
             style={{ background: PURPLE_THEME.primary, borderColor: PURPLE_THEME.primary }}
            >
-             Refresh Data
+             My Profile
            </Button>
-        </div> */}
+        </div>
       </div>
 
       {/* STATS CARDS */}
