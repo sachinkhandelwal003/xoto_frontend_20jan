@@ -42,7 +42,7 @@
     "antd": "^5.29.3",
     "antd-style": "^3.7.1",
     "aos": "^2.3.4",
-    "axios": "^1.13.2",
+    "axios": "^1.13.5",
     "bootstrap": "^5.3.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
