@@ -405,41 +405,70 @@ const SellerPage = () => {
   };
 
   // --- NAVIGATION ---
-  const handleNext = async () => {
-    let fieldsToValidate = [];
-    if (currentStep === 0) {
-      if (!otpVerified || !emailOtpVerified) {
-        message.error("Please verify mobile and email first.");
-        return;
-      }
-      fieldsToValidate = ["first_name", "last_name", "email", "mobile", "password", "confirmPassword"];
-    } else if (currentStep === 1) {
-      fieldsToValidate = [
-        "store_details.store_name",
-        "store_details.store_type",
-        "store_details.categories",
-        "store_details.store_address",
-        "store_details.country",
-        "store_details.state",
-        "store_details.city",
-        "store_details.pincode",
-      ];
-    } else if (currentStep === 2) {
-      fieldsToValidate = [
-        "registration.trade_license_number",
-        "registration.trn_number",
-        "bank_details.bank_account_number",
-        "bank_details.iban",
-        "bank_details.account_holder_name",
-        "bank_details.bank_name",
-      ];
-    } else if (currentStep === 3) {
-      fieldsToValidate = ["contacts.primary_contact.name", "contacts.primary_contact.mobile", "contacts.primary_contact.email"];
+ const handleNext = async () => {
+  let fieldsToValidate = [];
+
+  if (currentStep === 0) {
+    if (!otpVerified || !emailOtpVerified) {
+      message.error("Please verify mobile and email first.");
+      return;
     }
 
-    const result = await trigger(fieldsToValidate);
-    if (result) setCurrentStep((prev) => prev + 1);
-  };
+    fieldsToValidate = [
+      "first_name",
+      "last_name",
+      "email",
+      "mobile",
+      "password",
+      "confirmPassword",
+    ];
+  }
+
+  else if (currentStep === 1) {
+    fieldsToValidate = [
+      "store_details.store_name",
+      "store_details.store_type",
+      "store_details.categories",
+      "store_details.store_address",
+      "store_details.country",
+      "store_details.state",
+      "store_details.city",
+      "store_details.pincode",
+    ];
+  }
+
+  else if (currentStep === 2) {
+    fieldsToValidate = [
+      "registration.trade_license_number",
+      "registration.trn_number",
+      "bank_details.bank_account_number",
+      "bank_details.iban",
+      "bank_details.account_holder_name",
+      "bank_details.bank_name",
+    ];
+  }
+
+  else if (currentStep === 3) {
+    fieldsToValidate = [
+      "contacts.primary_contact.name",
+      "contacts.primary_contact.mobile",
+      "contacts.primary_contact.email",
+    ];
+  }
+
+  // ✅ STEP 4: DO NOT VALIDATE
+  else if (currentStep === 4) {
+    setCurrentStep((prev) => prev + 1);
+    return;
+  }
+
+  const valid = await trigger(fieldsToValidate);
+
+  if (valid) {
+    setCurrentStep((prev) => prev + 1);
+  }
+};
+
 
   const handleBack = () => {
     if (currentStep === 0) window.history.back();
@@ -453,10 +482,10 @@ const SellerPage = () => {
       if (errors.bank_details || errors.registration) {
         message.error("Please fix errors in Business & Bank Details (Step 3)");
         setCurrentStep(2);
-      } else if (errors.documents) {
-        message.error("Please upload all mandatory documents (Step 5)");
-        setCurrentStep(4);
-      } else if (errors.store_details) {
+      }else if (errors.documents && currentStep === steps.length - 1) {
+  message.error("Please upload all mandatory documents.");
+}
+ else if (errors.store_details) {
         message.error("Please fix errors in Store Info (Step 2)");
         setCurrentStep(1);
       } else {
@@ -550,7 +579,7 @@ const SellerPage = () => {
     );
   }
 
-  return (
+return (
     <div className="min-h-screen bg-[var(--color-primary)] flex items-center justify-center py-10 px-4">
       <div style={{ maxWidth: 1200, width: "100%" }}>
         <div style={{ textAlign: "center", marginBottom: 40, color: "white" }}>
@@ -583,8 +612,12 @@ const SellerPage = () => {
           <Col xs={24} lg={18}>
             <Card bordered={false} style={{ borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }} bodyStyle={{ padding: 40 }}>
               
-              {/* --- IMPORTANT FIX: Changed <Form> to <form> --- */}
-              <form onSubmit={handleSubmit(onSubmit, onError)} className="ant-form ant-form-vertical">
+              {/* --- FIX START: Changed <form> to <Form> with layout="vertical" --- */}
+              <Form 
+                layout="vertical" 
+                onFinish={handleSubmit(onSubmit, onError)} 
+                className="ant-form"
+              >
                 <Spin spinning={submitting}>
                   
                   {/* STEP 0: PERSONAL */}
@@ -856,70 +889,78 @@ const SellerPage = () => {
                   </div>
 
                   {/* STEP 4: DOCUMENTS */}
-             {/* STEP 4: DOCUMENTS (Updated Layout) */}
-{/* STEP 4: DOCUMENTS (Fixed Grid Layout) */}
-<div style={{ display: currentStep === 4 ? "block" : "none" }}>
-  <Title level={4} className="mb-6 text-gray-700 flex items-center gap-2">
-    <CloudUploadOutlined /> Document Uploads (UAE)
-  </Title>
+                  <div style={{ display: currentStep === 4 ? "block" : "none" }}>
+                    <Title level={4} className="mb-6 text-gray-700 flex items-center gap-2">
+                      <CloudUploadOutlined /> Document Uploads (UAE)
+                    </Title>
 
-  {/* Grid container with gap */}
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    {[
-      { name: "documents.trade_license", label: "Trade License Copy (Mandatory)" },
-      { name: "documents.vat_certificate", label: "VAT Certificate (TRN) (Mandatory)" },
-      { name: "documents.emirates_id", label: "Emirates ID (Owner/Manager) (Mandatory)" },
-      { name: "documents.bank_letter", label: "Bank Confirmation Letter (with IBAN)" },
-      { name: "documents.moa_document", label: "Memorandum of Association (MOA)" },
-    ].map((doc) => (
-      // Wrapper div to enforce width
-      <div key={doc.name} className="w-full">
-        <Form.Item
-          label={<span className="font-semibold text-gray-600">{doc.label}</span>}
-          required={doc.label.includes("Mandatory")}
-          help={errors.documents?.[doc.name.split(".")[1]]?.message}
-          validateStatus={errors.documents?.[doc.name.split(".")[1]] ? "error" : ""}
-          // layout="vertical" is KEY here: Label upar, box niche
-          layout="vertical"
-          style={{ marginBottom: 0, width: '100%' }}
-          className="w-full"
-        >
-          <Controller
-            name={doc.name}
-            control={control}
-            rules={{ required: doc.label.includes("Mandatory") ? "Document is required" : false }}
-            render={({ field }) => (
-              <GenericUploader 
-                value={field.value} 
-                onChange={field.onChange} 
-                label={doc.label} 
-              />
-            )}
-          />
-        </Form.Item>
-      </div>
-    ))}
-  </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {[
+                        { name: "documents.trade_license", label: "Trade License Copy (Mandatory)" },
+                        { name: "documents.vat_certificate", label: "VAT Certificate (TRN) (Mandatory)" },
+                        { name: "documents.emirates_id", label: "Emirates ID (Owner/Manager) (Mandatory)" },
+                        { name: "documents.bank_letter", label: "Bank Confirmation Letter (with IBAN)" },
+                        { name: "documents.moa_document", label: "Memorandum of Association (MOA)" },
+                      ].map((doc) => (
+                        <div key={doc.name} className="w-full">
+                          <Form.Item
+                            label={<span className="font-semibold text-gray-600">{doc.label}</span>}
+                            required={doc.label.includes("Mandatory")}
+                            help={errors.documents?.[doc.name.split(".")[1]]?.message}
+                            validateStatus={errors.documents?.[doc.name.split(".")[1]] ? "error" : ""}
+                            style={{ marginBottom: 0, width: '100%' }}
+                            className="w-full"
+                          >
+                          <Controller
+  name={doc.name}
+  control={control}
+  rules={{
+    validate: (value) => {
+      // Step 4 pe nahi ho → validate hi mat karo
+      if (currentStep !== 4) return true;
 
-  <Divider className="my-8" />
-  
-  <Form.Item>
-    <Controller
-      name="meta.agreed_to_terms"
-      control={control}
-      rules={{ required: "You must agree to terms" }}
-      render={({ field }) => (
-        <Checkbox 
-          checked={field.value} 
-          onChange={(e) => field.onChange(e.target.checked)}
-        >
-          I agree to the Terms and Conditions
-        </Checkbox>
-      )}
+      // Step 4 pe ho + Mandatory doc
+      if (doc.label.includes("Mandatory")) {
+        return value ? true : "Document is required";
+      }
+
+      // Optional docs
+      return true;
+    }
+  }}
+  render={({ field }) => (
+    <GenericUploader
+      value={field.value}
+      onChange={field.onChange}
+      label={doc.label}
     />
-    {errors.meta?.agreed_to_terms && <p style={{ color: 'red', marginTop: 5 }}>You must agree to the terms</p>}
-  </Form.Item>
-</div>
+  )}
+/>
+
+                          </Form.Item>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Divider className="my-8" />
+                    
+                    <Form.Item>
+                      <Controller
+                        name="meta.agreed_to_terms"
+                        control={control}
+                        rules={{ required: "You must agree to terms" }}
+                        render={({ field }) => (
+                          <Checkbox 
+                            checked={field.value} 
+                            onChange={(e) => field.onChange(e.target.checked)}
+                          >
+                            I agree to the Terms and Conditions
+                          </Checkbox>
+                        )}
+                      />
+                      {errors.meta?.agreed_to_terms && <p style={{ color: 'red', marginTop: 5 }}>You must agree to the terms</p>}
+                    </Form.Item>
+                  </div>
 
                   {/* NAVIGATION BUTTONS */}
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32, paddingTop: 24, borderTop: "1px solid #f0f0f0" }}>
@@ -931,7 +972,9 @@ const SellerPage = () => {
                     )}
                   </div>
                 </Spin>
-              </form>
+              </Form> 
+              {/* --- FIX END --- */}
+
             </Card>
           </Col>
         </Row>
