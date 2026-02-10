@@ -11,70 +11,20 @@ import favicon from '../../../../assets/img/logonewww.png';
 /* --- CUSTOM LINKS CONFIGURATION --- */
 const CUSTOM_ROLE_LINKS = {
   "0": [
-      {
-      title: "Setting", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
+    {
+      title: "Setting", icon: "fas fa-cog", path: "/dashboard/{roleSlug}/quotations",
       submenus: [
         { title: "Email Setting", path: "/dashboard/{roleSlug}/setting/email" },
-           
-
       ],
     }
   ],
-  "1": [
+  "1": [],
+  "2": [ /* Customer links... */ ],
+  "12": [ /* Supervisor links... */ ],
+  "4": [],
+  "7": [ /* Freelancer links... */ ],
 
-  ],
-  "2": [
-     {
-      title: "Estimates", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
-      submenus: [
-        { title: "Submitted Estimates", path: "/dashboard/{roleSlug}/estimate/submitted" },
-                { title: "Received Quotation", path: "/dashboard/{roleSlug}/quotation/received" },
-                { title: "Response Submitted", path: "/dashboard/{roleSlug}/quotation/response" },
-
-      ],
-    },
-      {
-      title: "My Projects", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects",
-      submenus: [
-        { title: "Ongoing Projects", path: "/dashboard/{roleSlug}/projects/ongoing" },
-                
-
-      ],
-    }, {
-      title: "Bills", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects",
-      submenus: [
-        { title: "My Bills", path: "/dashboard/{roleSlug}/projects/milestone/bills" },
-                        { title: "My Invoice", path: "/dashboard/{roleSlug}/projects/invoices" },
-
-
-      ],
-    }
-  ],
-   "12": [
-     {
-      title: "Projects", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects/view",
-      submenus: [
-        { title: "Manage Projects", path: "/dashboard/{roleSlug}/projects/manage" },
-         
-
-      ],
-    }
-  ],
-  "4": [
-
-  ],
-  "7": [
-    {
-      title: "Quotations", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
-      submenus: [
-        { title: "Submitted Quotation", path: "/dashboard/{roleSlug}/quotation/submitted" },
-                { title: "Approved Quotation", path: "/dashboard/{roleSlug}/quotation/approved" },
-
-      ],
-    },
-  ],
-
-    // ✅ DEVELOPER LINKS (ID '8') - UPDATED
+  // ✅ DEVELOPER LINKS (ID '8') - UPDATED
   "8": [
     // 1. Dashboard yahan se hata diya (kyunki wo default tree se aa raha hai)
     

@@ -123,9 +123,10 @@ const fullName  = `${firstName} ${lastName}`.trim();
 
   return "/dashboard";
 };
-const dashboardNavigate=()=>{
-  navigate(`/dashboard/${roleSlug}`)
-}
+const dashboardNavigate = () => {
+  navigate("/dashboard/developer");
+  setUserMenuOpen(false); // Menu close karna mat bhulna
+};
 
 
   const handleLogout = () => {
@@ -273,9 +274,17 @@ const dashboardNavigate=()=>{
                           <p className="text-xs text-gray-500">{user.email}</p>
                       </div>
 
-                      <div onClick={dashboardNavigate} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
-                          <FaTachometerAlt size={16} className="text-[#5C039B]" /> Dashboard
-                      </div>
+                     {/* Desktop User Menu Item */}
+<div 
+  onClick={(e) => {
+    e.preventDefault();
+    dashboardNavigate();
+  }} 
+  className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer border-b border-gray-50 last:border-none"
+>
+  <FaTachometerAlt size={16} className="text-[#5C039B]" /> 
+  <span>Dashboard</span>
+</div>
 
                       <div className="border-t border-gray-100 my-1"></div>
                       
