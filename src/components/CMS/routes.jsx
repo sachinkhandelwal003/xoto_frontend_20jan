@@ -77,6 +77,8 @@ import CustomerProjects from "./pages/dashboardPages/managefreelancer/freelancer
 import CustomerBillsview from "./pages/dashboardPages/Bills/CustomerBillsview";
 import CustomerInvoicesview from "./pages/dashboardPages/Bills/CustomerInvoicesview";
 import Profile from "./pages/dashboardPages/Profiles/Profile";
+import AgentList from "./pages/Properties/AgentList";
+// import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
 const roleSlugMap = {
   0: "superadmin",
@@ -241,7 +243,8 @@ const CmsRoutes = () => {
             <Route path="seller/product/:id" element={<ProductRequestB2C />} />
 <Route path="freelancer/view" element={<FreelancerProfile />} />
 <Route path="notifications/view" element={<Notifications />} />
-
+<Route path="agent-list" element={<AgentList />} />
+{/* <Route path="agency-list" element={<RegistrationAgency />} /> */}
       <Route path="freelancer/myprofile" element={<MyprofileFreelancer />} />
       <Route path="/update" element={<UpdateProfilePage />} />
 

@@ -71,15 +71,60 @@ export const AuthProvider = ({ children }) => {
 const login = async (endpoint, credentials) => {
   const fullEndpoint = `${API_BASE}${endpoint}`;
 
-  // Use credentials directly — don't force email/password structure
-  return await dispatch(
+  if (endpoint.includes("agent")) {
+    try {
+        // ... (fetch wala purana code) ...
+        const res = await fetch(fullEndpoint, {
+             method: "POST", // Make sure ye POST hai
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify(credentials),
+        });
+
+        const data = await res.json();
+
+        // Check Success
+        if (data.success === true || data?.data?.success === true) {
+            
+            // Token Nikaalo
+            const token = data.token || data.data?.token || data.data?.data?.token;
+            const user = data.user || data.data?.user || data.data?.data?.user;
+
+            if (token) {
+    localStorage.setItem("token", token);
+    if (user) localStorage.setItem("user", JSON.stringify(user));
+
+    console.log("✅ Login Success! Redirecting to Agent Dashboard...");
+
+    // 👇 1. YAHAN CHANGE KARNA HAI (Seedha Agent Dashboard par bhejo)
+    setTimeout(() => {
+        window.location.href = "/dashboard/agent"; 
+    }, 100);
+
+    return data;
+}
+        }
+        
+        throw new Error(data.message || "Login Failed");
+
+    } catch (err) {
+        console.error(err);
+        throw err;
+    }
+}
+  // --- STANDARD FLOW (Baaki sab ke liye) ---
+  const response = await dispatch(
     loginUser({
-      payload: credentials,        // ← Now supports { mobile }, { email, password }, etc.
+      payload: credentials,
       endpoint: fullEndpoint,
     })
   ).unwrap();
-};
 
+  // Standard flow token save
+  const token = response?.token || response?.data?.token;
+  if (token) localStorage.setItem("token", token);
+
+  return response;
+};
 
   // Logout with optional backend call
   const logout = async (logoutEndpoint = '/auth/logout') => {
