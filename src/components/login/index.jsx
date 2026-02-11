@@ -218,6 +218,15 @@ const Login = () => {
         return;
       }
 
+      if (selectedPartnerType === "agent") {
+         toast.success("Welcome Agent! Accessing your dashboard...");
+         setTimeout(() => {
+           // Yahan apna sahi Agent Dashboard route daal dena
+           navigate("/dashboard/agent", { replace: true });
+         }, 1500);
+         return;
+      }
+
       // 2. Role Code Based Redirect (Backend ID Logic)
       const rolePathMap = {
         "0": "/dashboard/superadmin",
@@ -300,10 +309,8 @@ const Login = () => {
         endpoint = "/association/login";
       else if (selectedPartnerType === "developer")
         endpoint = "/property/login-developer"; 
-      else if (selectedPartnerType === "agent")
-        endpoint = "/property/login-agent";
-      else if (selectedPartnerType === "agency")
-        endpoint = "/property/login-agency"; 
+      else if (selectedPartnerType === "agent") endpoint = "/agent/login-agent";
+    else if (selectedPartnerType === "agency") endpoint = "/property/login-agency";
 
       await login(endpoint, {
         email: values.email,
@@ -670,7 +677,7 @@ const Login = () => {
                   alt="Logo"
                   style={{
                     width: isMobile ? 200 : 260,
-                    height: isMobile ? 200 : 260,
+                    // height: isMobile ? 200 : 260,
                     marginBottom: 4,
                     marginLeft: isMobile ? "auto" : 0,
                     marginRight: isMobile ? "auto" : 0,

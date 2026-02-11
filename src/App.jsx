@@ -81,6 +81,8 @@ import DeveloperRegistration from "./components/ecommerce/B2C/developerregistrat
 import RegistrationAgency from "./components/ecommerce/B2C/registrationagency";
 import Checker from "./Checker";
 import AgentRegistration from "./components/ecommerce/B2C/AgentRegistration";
+import AgentDashboard from "./components/ecommerce/B2C/AgentDashboard";
+import AgentList from "./components/CMS/pages/Properties/AgentList";
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -266,6 +268,9 @@ function App() {
 
               {/* ✅ Agent Registration Route */}
               <Route path="/agent/registration" element={<AgentRegistration />} />
+        <Route path="/dashboard/agent" element={<AgentDashboard />} />
+      
+<Route path="agency-list" element={<RegistrationAgency />} />
 
 
               <Route path="/ecommerce/seller" element={<SellerPage />} />
@@ -301,7 +306,7 @@ function App() {
               <Route
                 path="/dashboard/:roleSlug/*"
                 element={
-                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12"]}>
+                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9"]}>
                     <CmsApp />
                   </PrivateRoute>
                 }

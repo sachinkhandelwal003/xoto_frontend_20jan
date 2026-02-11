@@ -13,9 +13,9 @@ import {
   Select,
   Upload,
   message,
-  Space
+  Space // ✅ Added Space
 } from "antd";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import styled from "styled-components";
@@ -30,7 +30,8 @@ import {
   UploadOutlined,
   ApartmentOutlined,
   CheckCircleFilled,
-  SafetyCertificateOutlined
+  SafetyCertificateOutlined,
+  UserOutlined
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -42,7 +43,7 @@ const PageWrapper = styled.div`
   min-height: 100vh;
   position: relative;
   font-family: "Poppins", sans-serif;
-  background: ${(props) => (props.$bgImage ? `url(${props.$bgImage})` : "#f0f2f5")} center/cover no-repeat fixed;
+  background: #f0f2f5 center/cover no-repeat fixed;
   overflow-y: auto;
   padding: 40px 0;
 `;
@@ -52,8 +53,8 @@ const GradientOverlay = styled.div`
   inset: 0;
   background: linear-gradient(
     135deg,
-    rgba(79, 70, 229, 0.85),
-    rgba(67, 56, 202, 0.8)
+    rgba(79, 70, 229, 0.9),
+    rgba(67, 56, 202, 0.85)
   );
   backdrop-filter: blur(4px);
   z-index: 1;
@@ -90,18 +91,34 @@ const RegistrationAgency = () => {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
-  // --- OTP Related States ---
+  // --- OTP States ---
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
-  const [otpLoading, setOtpLoading] = useState(false); // For Send/Verify buttons
+  const [otpLoading, setOtpLoading] = useState(false);
   const [otpValue, setOtpValue] = useState("");
+  
+  // --- Timer State ---
+  const [timer, setTimer] = useState(0);
 
   const themeColor = "#4F46E5";
   const themeGradient = "linear-gradient(135deg, #4F46E5, #4338ca)";
-  const BASE_URL = "https://xoto.ae";
+  
+  const BASE_URL = "https://xoto.ae"; 
 
-  // 🟢 Change 1: Watching mobile number to toggle button state 
+  // Watch inputs
   const watchedMobileNumber = Form.useWatch('mobile_number', form);
+  const watchedCountryCode = Form.useWatch('country_code', form);
+
+  // --- Timer Logic ---
+  useEffect(() => {
+    let interval;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timer]);
 
   // --- Country Data ---
   const countryPhoneData = useMemo(() => {
@@ -120,131 +137,140 @@ const RegistrationAgency = () => {
     return e?.fileList;
   };
 
-  // --- OTP Logic: Send OTP ---
+  // --- File Validation ---
+  const beforeUploadCheck = (file) => {
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error('File must be smaller than 2MB!');
+      return Upload.LIST_IGNORE;
+    }
+    return false;
+  };
+
+  // --- Phone Validation ---
+  const isPhoneValid = useMemo(() => {
+    if (!watchedMobileNumber || !watchedCountryCode) return false;
+    try {
+      const fullNumber = `${watchedCountryCode}${watchedMobileNumber}`;
+      const phoneNumber = parsePhoneNumberFromString(fullNumber);
+      return phoneNumber && phoneNumber.isValid();
+    } catch (e) {
+      return false;
+    }
+  }, [watchedMobileNumber, watchedCountryCode]);
+
+  // --- 🟢 MOCKED Send OTP ---
   const handleSendOtp = async () => {
     try {
-      // Pehle form se values validate karte hain
-      const values = await form.validateFields(['country_code', 'mobile_number']);
-      const { country_code, mobile_number } = values;
-
+      // Validate field pehle
+      await form.validateFields(['country_code', 'mobile_number']);
+      
       setOtpLoading(true);
 
-      const payload = {
-        country_code: country_code,
-        phone_number: mobile_number // API expects 'phone_number'
-      };
-
-      console.log("📡 Sending OTP Payload:", payload);
-
-      const response = await axios.post(`${BASE_URL}/api/otp/send-otp`, payload);
-
-      if (response.data) {
-        toast.success("OTP Sent Successfully!");
+      // --- MOCK API CALL START ---
+      // Asli API call hata di hai.
+      
+      setTimeout(() => {
+        // Fake success response
+        toast.success("OTP Sent! (Use 000033 to verify)");
         setOtpSent(true);
-        setOtpVerified(false); // Reset verified status if sending again
-      }
+        setOtpVerified(false);
+        setTimer(60); 
+        setOtpLoading(false);
+      }, 1000); // 1 sec ka fake delay
+      
+      // --- MOCK API CALL END ---
+
     } catch (error) {
-      console.error("❌ Send OTP Error:", error);
-      // Agar validation error hai (form fields invalid), wo catch mein nahi aayega usually
-      // API error handle karte hain:
-      const msg = error.response?.data?.message || "Failed to send OTP.";
-      toast.error(msg);
-    } finally {
+      console.error("❌ Validation Error:", error);
       setOtpLoading(false);
     }
   };
 
-  // --- OTP Logic: Verify OTP ---
+  // --- 🟢 MOCKED Verify OTP ---
   const handleVerifyOtp = async () => {
     if (!otpValue) {
       toast.error("Please enter the OTP");
       return;
     }
 
-    try {
-      setOtpLoading(true);
-      const values = form.getFieldsValue(['country_code', 'mobile_number']);
-      
-      const payload = {
-        country_code: values.country_code,
-        phone_number: values.mobile_number,
-        otp: otpValue
-      };
+    setOtpLoading(true);
 
-      console.log("📡 Verifying OTP Payload:", payload);
-
-      const response = await axios.post(`${BASE_URL}/api/otp/verify-otp`, payload);
-
-      if (response.data) {
-        toast.success("Mobile Number Verified!");
-        setOtpVerified(true);
-        setOtpSent(false); // Hide OTP field after success
-      }
-    } catch (error) {
-      console.error("❌ Verify OTP Error:", error);
-      const msg = error.response?.data?.message || "Invalid OTP.";
-      toast.error(msg);
-    } finally {
-      setOtpLoading(false);
-    }
+    // --- MOCK VERIFICATION LOGIC ---
+    setTimeout(() => {
+        if (otpValue === "000033") {
+            // Success Case
+            toast.success("Mobile Number Verified!");
+            setOtpVerified(true);
+            setOtpSent(false); // Hide OTP box
+            setTimer(0);
+        } else {
+            // Failure Case
+            toast.error("Invalid OTP. Try 000033");
+        }
+        setOtpLoading(false);
+    }, 800); // 0.8 sec fake delay
   };
 
-  // --- Handle Mobile Number Change ---
-  // Agar user number change kare verify hone ke baad, status reset karo
+  // --- Handle Mobile Change ---
   const handleMobileChange = (e) => {
-    // Standard input processing
     const { value } = e.target;
-    const reg = /^\d*$/;
-    if (reg.test(value)) {
+    if (/^\d*$/.test(value)) {
       form.setFieldsValue({ mobile_number: value });
-      
-      // Reset logic
       if (otpVerified || otpSent) {
         setOtpVerified(false);
         setOtpSent(false);
         setOtpValue("");
+        setTimer(0);
       }
     }
   };
 
+  // --- Submit (Asli Registration API) ---
   const onFinish = async (values) => {
-    // --- Strict Check: OTP must be verified ---
     if (!otpVerified) {
       toast.error("Please verify your mobile number first.");
+      document.getElementById('mobile_number')?.focus();
       return;
     }
 
     setLoading(true);
+
     try {
-      const payload = {
-        email: values.email,
-        password: values.password,
-        country_code: values.country_code,
-        mobile_number: values.mobile_number,
-        
-        profile_photo: values.profile_photo?.[0]?.originFileObj, 
-        letter_of_authority: values.letter_of_authority?.[0]?.originFileObj, 
-      };
+      const formData = new FormData();
 
-      console.log("📡 Sending Registration Payload:", payload);
+      formData.append("agency_name", values.agency_name);
+      formData.append("email", values.email);
+      formData.append("password", values.password);
+      formData.append("country_code", values.country_code);
+      formData.append("mobile_number", values.mobile_number);
 
+      if (values.profile_photo?.[0]?.originFileObj) {
+        formData.append("profile_photo", values.profile_photo[0].originFileObj);
+      }
+
+      if (values.letter_of_authority?.[0]?.originFileObj) {
+        formData.append("letter_of_authority", values.letter_of_authority[0].originFileObj);
+      }
+
+      console.log("📡 Submitting Agency Data...");
+      
       const response = await axios.post(
-        `${BASE_URL}/api/agency/agency-signup`, 
-        payload
+        `${BASE_URL}/api/agency/agency-signup`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
 
       if (response.data) {
-        toast.success("Registration Successful! Please Login.");
-        navigate("/"); 
+        toast.success("Registration Successful! Redirecting to login...");
+        setTimeout(() => navigate("/"), 2000);
       }
 
     } catch (error) {
       console.error("❌ Registration Error:", error);
-      const errorMessage = 
-        error.response?.data?.message || 
-        error.message || 
-        "Registration Failed.";
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || "Registration Failed.");
     } finally {
       setLoading(false);
     }
@@ -258,11 +284,13 @@ const RegistrationAgency = () => {
           borderRadius: 8,
           fontFamily: "Poppins, sans-serif",
         },
+        components: {
+            Button: { fontWeight: 600 }
+        }
       }}
     >
       <PageWrapper>
         <GradientOverlay />
-
         <ContentLayer>
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -274,20 +302,20 @@ const RegistrationAgency = () => {
               
               <div style={{ textAlign: "center", marginBottom: 40 }}>
                  <div style={{ 
-                    width: 70, height: 70, borderRadius: "50%", 
+                    width: 72, height: 72, borderRadius: "50%", 
                     background: themeGradient, color: "#fff", 
                     display: "flex", alignItems: "center", justifyContent: "center",
                     margin: "0 auto 16px auto",
-                    boxShadow: "0 8px 20px rgba(79, 70, 229, 0.3)"
+                    boxShadow: "0 10px 25px rgba(79, 70, 229, 0.3)"
                  }}>
-                    <ApartmentOutlined style={{ fontSize: "32px" }} />
+                    <ApartmentOutlined style={{ fontSize: "36px" }} />
                  </div>
 
                 <Title level={2} style={{ margin: 0, color: "#333", fontWeight: 800 }}>
-                  Agency Registration
+                  Agency Partner Registration
                 </Title>
                 <Text type="secondary" style={{ fontSize: 16 }}>
-                  Create your property agency account
+                  Join us to manage your properties efficiently
                 </Text>
               </div>
 
@@ -297,28 +325,38 @@ const RegistrationAgency = () => {
                 onFinish={onFinish}
                 size="large"
                 scrollToFirstError
-                initialValues={{
-                    country_code: "+971"
-                }}
+                initialValues={{ country_code: "+971" }}
               >
                 {/* --- Account Info --- */}
                 <Divider orientation="left" style={{ borderColor: "#e5e7eb" }}>
-                    <span style={{ color: themeColor, fontSize: 13, fontWeight: "bold", letterSpacing: 1 }}>
-                        ACCOUNT INFO
+                    <span style={{ color: themeColor, fontSize: 12, fontWeight: "800", letterSpacing: 1.2 }}>
+                        AGENCY DETAILS
                     </span>
                 </Divider>
+
+                <Row gutter={24}>
+                  <Col xs={24}>
+                    <Form.Item
+                      name="agency_name"
+                      label="Agency Name"
+                      rules={[{ required: true, message: "Please enter Agency Name" }]}
+                    >
+                      <Input prefix={<ApartmentOutlined style={{color: "#aaa"}} />} placeholder="e.g. Skyline Properties LLC" />
+                    </Form.Item>
+                  </Col>
+                </Row>
 
                 <Row gutter={24}>
                   <Col xs={24} md={12}>
                     <Form.Item
                       name="email"
-                      label="Email Address"
+                      label="Official Email"
                       rules={[
                         { required: true, message: "Email is required" },
                         { type: "email", message: "Invalid email format" }
                       ]}
                     >
-                      <Input prefix={<MailOutlined style={{color: "#aaa"}} />} placeholder="agency@example.com" style={{ borderRadius: 8 }} />
+                      <Input prefix={<MailOutlined style={{color: "#aaa"}} />} placeholder="agency@example.com" />
                     </Form.Item>
                   </Col>
                   <Col xs={24} md={12}>
@@ -327,20 +365,20 @@ const RegistrationAgency = () => {
                       label="Password"
                       rules={[{ required: true, message: "Password is required" }, { min: 6, message: "Min 6 characters" }]}
                     >
-                      <Input.Password prefix={<LockOutlined style={{color: "#aaa"}} />} placeholder="Create Password" style={{ borderRadius: 8 }} />
+                      <Input.Password prefix={<LockOutlined style={{color: "#aaa"}} />} placeholder="Create strong password" />
                     </Form.Item>
                   </Col>
                 </Row>
 
-                {/* --- Contact Details with OTP --- */}
+                {/* --- Contact Details --- */}
                 <Divider orientation="left" style={{ borderColor: "#e5e7eb", marginTop: 30 }}>
-                    <span style={{ color: themeColor, fontSize: 13, fontWeight: "bold", letterSpacing: 1 }}>
-                        CONTACT DETAILS & VERIFICATION
+                    <span style={{ color: themeColor, fontSize: 12, fontWeight: "800", letterSpacing: 1.2 }}>
+                        CONTACT VERIFICATION
                     </span>
                 </Divider>
 
-                <Row gutter={24}>
-                    <Col xs={24} md={6}>
+                <Row gutter={16}>
+                    <Col xs={10} md={6}>
                         <Form.Item
                             name="country_code"
                             label="Code"
@@ -352,11 +390,12 @@ const RegistrationAgency = () => {
                                 filterOption={(input, option) => 
                                     (option['data-search'] || "").toLowerCase().includes(input.toLowerCase())
                                 }
-                                // Reset OTP if country changes
                                 onChange={() => {
                                     setOtpVerified(false);
                                     setOtpSent(false);
+                                    setTimer(0);
                                 }}
+                                dropdownStyle={{ minWidth: 250 }}
                             >
                                 {countryPhoneData.map((country, index) => (
                                     <Option 
@@ -364,29 +403,29 @@ const RegistrationAgency = () => {
                                       value={country.value}
                                       data-search={country.searchStr}
                                     >
-                                      <div style={{ display: "flex", alignItems: "center" }}>
+                                      <Space>
                                         <img 
                                           src={`https://flagcdn.com/w20/${country.iso}.png`} 
                                           srcSet={`https://flagcdn.com/w40/${country.iso}.png 2x`}
                                           width="20" 
                                           alt={country.name} 
-                                          style={{ marginRight: 8, borderRadius: 2 }} 
+                                          style={{ borderRadius: 2 }} 
                                         />
-                                        <span>{country.phone}</span>
-                                      </div>
+                                        {country.phone}
+                                      </Space>
                                     </Option>
                                 ))}
                             </Select>
                         </Form.Item>
                     </Col>
                     
-                    <Col xs={24} md={10}>
+                    <Col xs={14} md={10}>
                         <Form.Item
                             name="mobile_number"
                             label="Mobile Number"
                             dependencies={['country_code']}
                             rules={[
-                                { required: true, message: "Mobile number is required" },
+                                { required: true, message: "Required" },
                                 ({ getFieldValue }) => ({
                                     validator(_, value) {
                                         const countryCode = getFieldValue('country_code');
@@ -396,49 +435,48 @@ const RegistrationAgency = () => {
                                         if (phoneNumber && phoneNumber.isValid()) {
                                             return Promise.resolve();
                                         }
-                                        return Promise.reject(new Error(`Invalid number`));
+                                        return Promise.reject(new Error("Invalid mobile number"));
                                     },
                                 }),
                             ]}
                         >
-                        <Input 
-                            prefix={<PhoneOutlined style={{color: "#aaa"}} />} 
-                            placeholder="e.g. 50 123 4567" 
-                            maxLength={15}
-                            disabled={otpVerified} // Lock input after verification
-                            suffix={otpVerified ? <CheckCircleFilled style={{ color: "#52c41a" }} /> : null}
-                            onChange={handleMobileChange}
-                            style={{ borderRadius: 8 }} 
-                        />
+                            <Input 
+                                prefix={<PhoneOutlined style={{color: "#aaa"}} />} 
+                                placeholder="50 123 4567" 
+                                maxLength={15}
+                                disabled={otpVerified}
+                                onChange={handleMobileChange}
+                                suffix={otpVerified ? <CheckCircleFilled style={{ color: "#52c41a" }} /> : null}
+                            />
                         </Form.Item>
                     </Col>
 
-                    {/* --- Send OTP Button Column --- */}
-                    <Col xs={24} md={8} style={{ display: 'flex', alignItems: 'flex-start', paddingTop: '29px' }}>
+                    {/* --- OTP Button --- */}
+                    <Col xs={24} md={8} style={{ display: 'flex', alignItems: 'flex-start', paddingTop: isMobile ? 0 : '30px' }}>
                         {!otpVerified ? (
                             <Button 
                                 type="primary" 
-                                // 🟢 Change 2: Logic for disabled and white BG
-                                disabled={!watchedMobileNumber}
-                                style={{ 
-                                    height: '38px', 
-                                    borderRadius: 8,
-                                    marginTop: "16px",
-                                    width: '100%',
-                                    backgroundColor: !watchedMobileNumber ? 'white' : "#1677ff", 
-                                    borderColor: !watchedMobileNumber ? '#d9d9d9' : "#1677ff",
-                                    color: !watchedMobileNumber ? 'rgba(0,0,0,0.25)' : 'white'
-                                }}
+                                disabled={!isPhoneValid || timer > 0}
                                 onClick={handleSendOtp}
-                                loading={otpLoading}
+                                loading={otpLoading && !otpSent}
+                                block
+                                style={{ 
+                                    background: (!isPhoneValid || timer > 0) ? undefined : "#1677ff",
+                                }}
                             >
-                                Send OTP
+                                {timer > 0 ? `Resend in ${timer}s` : (otpSent ? "Resend OTP" : "Send OTP")}
                             </Button>
                         ) : (
                             <Button 
-                                type="text" 
-                                icon={<CheckCircleFilled />} 
-                                style={{ color: '#52c41a', cursor: 'default', fontWeight: 'bold' }}
+                                type="dashed" 
+                                block
+                                style={{ 
+                                    borderColor: '#52c41a', 
+                                    color: '#52c41a', 
+                                    background: '#f6ffed',
+                                    cursor: 'default'
+                                }}
+                                icon={<CheckCircleFilled />}
                             >
                                 Verified
                             </Button>
@@ -446,45 +484,52 @@ const RegistrationAgency = () => {
                     </Col>
                 </Row>
 
-                {/* --- OTP Input Row (Visible only when OTP is Sent and Not Verified) --- */}
-                {otpSent && !otpVerified && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                    >
-                        <Row gutter={24} style={{ marginBottom: 24, background: "#f9fafb", padding: "15px", borderRadius: "8px", border: "1px dashed #d9d9d9" }}>
-                            <Col xs={24} md={16}>
-                                <Text strong style={{ display: "block", marginBottom: 8, fontSize: 13 }}>Enter Verification Code</Text>
-                                <Input 
-                                    placeholder="Enter OTP (e.g. 123456)"
-                                    value={otpValue}
-                                    onChange={(e) => setOtpValue(e.target.value)}
-                                    prefix={<SafetyCertificateOutlined style={{color: "#aaa"}} />}
-                                    style={{ borderRadius: 8 }}
-                                    maxLength={6}
-                                />
-                            </Col>
-                            <Col xs={24} md={8} style={{ display: 'flex', alignItems: 'flex-end' }}>
-                                <Button 
-                                    type="primary" 
-                                    onClick={handleVerifyOtp}
-                                    loading={otpLoading}
-                                    block
-                                    style={{ background: "#1677ff", borderColor: "#1677ff", borderRadius: 8 }}
-                                >
-                                    Verify OTP
-                                </Button>
-                            </Col>
-                           
-                        </Row>
-                    </motion.div>
-                )}
+                {/* --- OTP Input Area (Appears after "Send OTP" is clicked) --- */}
+                <AnimatePresence>
+                    {otpSent && !otpVerified && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                            animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                            style={{ overflow: "hidden" }}
+                        >
+                            <div style={{ background: "#f9fafb", padding: 20, borderRadius: 8, border: "1px dashed #d9d9d9" }}>
+                                <Row gutter={16} align="middle">
+                                    <Col xs={24} sm={16}>
+                                        <Text style={{ fontSize: 13, display: 'block', marginBottom: 6 }}>
+                                            Mock OTP Sent (Check Console or use <b>000033</b>)
+                                        </Text>
+                                        <Input 
+                                            placeholder="Enter 000033"
+                                            value={otpValue}
+                                            onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ''))}
+                                            prefix={<SafetyCertificateOutlined />}
+                                            maxLength={6}
+                                            size="large"
+                                            onPressEnter={handleVerifyOtp}
+                                        />
+                                    </Col>
+                                    <Col xs={24} sm={8} style={{ marginTop: isMobile ? 10 : 26 }}>
+                                        <Button 
+                                            type="primary" 
+                                            onClick={handleVerifyOtp} 
+                                            loading={otpLoading}
+                                            block
+                                            style={{ background: "#000" }}
+                                        >
+                                            Verify
+                                        </Button>
+                                    </Col>
+                                </Row>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* --- Documents --- */}
                 <Divider orientation="left" style={{ borderColor: "#e5e7eb", marginTop: 30 }}>
-                    <span style={{ color: themeColor, fontSize: 13, fontWeight: "bold", letterSpacing: 1 }}>
-                        DOCUMENTS & PROFILE
+                    <span style={{ color: themeColor, fontSize: 12, fontWeight: "800", letterSpacing: 1.2 }}>
+                        REQUIRED DOCUMENTS
                     </span>
                 </Divider>
 
@@ -492,41 +537,42 @@ const RegistrationAgency = () => {
                     <Col xs={24} md={12}>
                         <Form.Item
                             name="profile_photo"
-                            label="Agency Profile Photo"
+                            label="Agency Logo / Profile"
                             valuePropName="fileList"
                             getValueFromEvent={normFile}
-                            rules={[{ required: true, message: "Profile photo is required" }]}
+                            rules={[{ required: true, message: "Logo is required" }]}
                         >
                             <Upload 
                                 name="logo" 
-                                listType="picture" 
+                                listType="picture-card"
                                 maxCount={1}
-                                beforeUpload={() => false} 
-                                accept="image/*"
+                                beforeUpload={beforeUploadCheck}
+                                accept="image/png, image/jpeg, image/jpg"
+                                showUploadList={{ showPreviewIcon: false }}
                             >
-                                <Button icon={<UploadOutlined />} block style={{ height: 45, borderRadius: 8 }}>
-                                    Upload Photo
-                                </Button>
+                                <div>
+                                    <UserOutlined />
+                                    <div style={{ marginTop: 8 }}>Upload</div>
+                                </div>
                             </Upload>
                         </Form.Item>
                     </Col>
                     <Col xs={24} md={12}>
                         <Form.Item
                             name="letter_of_authority"
-                            label="Letter of Authority (PDF/Img)"
+                            label="Trade License / Authority Letter"
                             valuePropName="fileList"
                             getValueFromEvent={normFile}
-                            rules={[{ required: true, message: "Authority letter is required" }]}
+                            rules={[{ required: true, message: "Document is required" }]}
+                            extra="PDF or Image (Max 2MB)"
                         >
                             <Upload 
-                                name="file" 
+                                name="doc" 
                                 maxCount={1}
-                                beforeUpload={() => false}
+                                beforeUpload={beforeUploadCheck}
                                 accept=".pdf,.png,.jpg,.jpeg"
                             >
-                                <Button icon={<UploadOutlined />} block style={{ height: 45, borderRadius: 8 }}>
-                                    Upload Document
-                                </Button>
+                                <Button icon={<UploadOutlined />}>Select Document</Button>
                             </Upload>
                         </Form.Item>
                     </Col>
@@ -538,6 +584,7 @@ const RegistrationAgency = () => {
                         htmlType="submit"
                         loading={loading}
                         block
+                        size="large"
                         style={{
                             height: 56,
                             borderRadius: 12,
@@ -546,20 +593,19 @@ const RegistrationAgency = () => {
                             background: themeGradient,
                             border: "none",
                             boxShadow: "0 10px 25px rgba(79, 70, 229, 0.4)",
-                            letterSpacing: 0.5
                         }}
                     >
                         COMPLETE REGISTRATION
                     </Button>
                     
                     <div style={{ textAlign: "center", marginTop: 24 }}>
-                        <Text type="secondary">Already have an Agency account? </Text>
+                        <Text type="secondary">Already registered? </Text>
                         <Button 
                             type="link" 
                             onClick={() => navigate("/")} 
-                            style={{ padding: 0, fontWeight: "bold", color: themeColor, height: "auto" }}
+                            style={{ padding: 0, fontWeight: "bold", color: themeColor }}
                         >
-                            Log In
+                            Login Here
                         </Button>
                     </div>
                 </div>
