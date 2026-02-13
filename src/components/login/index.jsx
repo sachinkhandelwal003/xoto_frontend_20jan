@@ -310,8 +310,8 @@ const Login = () => {
       else if (selectedPartnerType === "developer")
         endpoint = "/property/login-developer"; 
       else if (selectedPartnerType === "agent") endpoint = "/agent/login-agent";
-    else if (selectedPartnerType === "agency") endpoint = "/property/login-agency";
-
+else if (selectedPartnerType === "agency")
+  endpoint = "/agency/agency-login";
       await login(endpoint, {
         email: values.email,
         password: values.password,

@@ -328,15 +328,13 @@ const MasterCategory = () => {
     return (
       <Modal title={`Edit ${level.slice(0, -1)}`} open={editModalOpen} onCancel={() => setEditModalOpen(false)} footer={null} centered destroyOnClose>
         <Form form={form} layout="vertical" onFinish={onUpdate} style={{ marginTop: '16px' }}>
-          {level === 'categories' ? (
-            <Form.Item name="name" label="Category Type" rules={[{ required: true }]}>
-              <Input />
-            </Form.Item>
-          ) : (
-            <Form.Item name="label" label="Name" rules={[{ required: true }]}>
-              <Input />
-            </Form.Item>
-          )}
+        <Form.Item
+  name="name"
+  label={level === 'categories' ? "Category Type" : "Name"}
+  rules={[{ required: true, message: "Name is required" }]}
+>
+  <Input />
+</Form.Item>
           <Form.Item name="description" label="Description">
             <TextArea rows={3} />
           </Form.Item>
