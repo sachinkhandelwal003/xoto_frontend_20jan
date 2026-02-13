@@ -78,6 +78,10 @@ import CustomerBillsview from "./pages/dashboardPages/Bills/CustomerBillsview";
 import CustomerInvoicesview from "./pages/dashboardPages/Bills/CustomerInvoicesview";
 import Profile from "./pages/dashboardPages/Profiles/Profile";
 import AgentList from "./pages/Properties/AgentList";
+import AgencyList from "./pages/Properties/AgencyList";
+import DeveloperDashboard from "../ecommerce/B2C/DeveloperDashboard";
+import AgentDashboard from "../ecommerce/B2C/AgentDashboard";
+import AgentLayout from "../ecommerce/B2C/AgentLayout";
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
 const roleSlugMap = {
@@ -244,9 +248,14 @@ const CmsRoutes = () => {
 <Route path="freelancer/view" element={<FreelancerProfile />} />
 <Route path="notifications/view" element={<Notifications />} />
 <Route path="agent-list" element={<AgentList />} />
-{/* <Route path="agency-list" element={<RegistrationAgency />} /> */}
+<Route path="agency-list" element={<AgencyList />} />
       <Route path="freelancer/myprofile" element={<MyprofileFreelancer />} />
       <Route path="/update" element={<UpdateProfilePage />} />
+      <Route path = "/dashboard/developer" element={<DeveloperDashboard/>} />
+     <Route path="/dashboard/agent" element={<AgentLayout />}>
+  <Route index element={<AgentDashboard />} />
+</Route>
+
 
 
       {/* Catch-all fallback */}

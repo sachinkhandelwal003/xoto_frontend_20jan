@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Select, Tag } from "antd";
 import {
   Card,
   Table,
@@ -63,7 +64,7 @@ const AgentList = () => {
     if (!id) return message.error("Invalid ID");
 
     try {
-      await axios.delete(`${BASE_URL}/agent/${id}`);
+      await axios.delete(`${BASE_URL}/delete-agent/${id}`);
       message.success("Agent deleted");
       fetchAgents();
     } catch (err) {
@@ -72,24 +73,25 @@ const AgentList = () => {
   };
 
   // ✅ ACTIVE / INACTIVE TOGGLE
-  const toggleStatus = async (record, checked) => {
-    const id = record?._id || record?.id;
-    if (!id) return;
+ const updateOnboardingStatus = async (record, status) => {
+  const id = record?._id || record?.id;
+  if (!id) return;
 
-    try {
-      await axios.post(`${BASE_URL}/update-agent`, {
-        id,
-        isActive: checked,
-      });
+  try {
+   await axios.post(
+  `${BASE_URL}/update-agent?id=${id}`,
+  {
+    onboarding_status: status,
+  }
+);
 
-      message.success(
-        `Agent ${checked ? "Activated" : "Deactivated"}`
-      );
-      fetchAgents();
-    } catch (err) {
-      message.error("Status update failed");
-    }
-  };
+    message.success("Status updated successfully");
+    fetchAgents();
+  } catch (err) {
+    message.error("Status update failed");
+  }
+};
+
 
   // ✅ OPEN VIEW MODAL
   const openViewModal = (record) => {
@@ -115,18 +117,22 @@ const AgentList = () => {
       title: "Email",
       dataIndex: "email",
     },
-    {
-      title: "Status",
-      dataIndex: "isActive",
-      render: (checked, record) => (
-        <Switch
-          checked={checked}
-          onChange={(val) => toggleStatus(record, val)}
-          checkedChildren="Active"
-          unCheckedChildren="Inactive"
-        />
-      ),
-    },
+   {
+  title: "Onboarding Status",
+  dataIndex: "onboarding_status",
+  render: (status, record) => (
+    <Select
+      value={status}
+      style={{ width: 140 }}
+      onChange={(value) => updateOnboardingStatus(record, value)}
+      options={[
+        { label: "Registered", value: "registered" },
+        { label: "Approved", value: "approved" },
+        { label: "Completed", value: "completed" },
+      ]}
+    />
+  ),
+},
     {
       title: "Action",
       render: (_, record) => (

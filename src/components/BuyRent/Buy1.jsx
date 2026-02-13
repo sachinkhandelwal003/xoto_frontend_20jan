@@ -246,10 +246,20 @@ if (!isPhoneValid) {
           </h1>
 
           <div className="flex items-center gap-3 flex-wrap justify-center">
-            <button className="px-10 py-4 bg-[#5C039B] text-white font-extrabold rounded-lg shadow-md hover:bg-[#5C039B] hover:scale-105 transition-all">
+            {/* <button className="px-10 py-4 bg-[#5C039B] text-white font-extrabold rounded-lg shadow-md hover:bg-[#5C039B] hover:scale-105 transition-all">
               {t("hero.buttons.rent")}
-            </button>
+            </button> */}
+<div className="relative inline-block">
+  {/* Coming Soon Tag */}
+  <span className="absolute -top-3 -right-1 bg-red-100 text-black text-[10px] font-bold px-2 py-1 rounded-full z-10 shadow-sm uppercase tracking-tighter">
+    Coming Soon
+  </span>
 
+  {/* Your Button */}
+  <button className="px-10 py-4 bg-[#5C039B] text-white font-extrabold rounded-lg shadow-md hover:bg-[#5C039B] hover:scale-105 transition-all">
+    {t("hero.buttons.rent")}
+  </button>
+</div>
             <button onClick={() => handleOpenModal("Buy")} className="px-10 py-4 bg-transparent border-2 border-white text-white font-extrabold rounded-lg shadow-md hover:bg-[#5C039B] hover:border-[#5C039B] hover:scale-105 transition-all">
               {t("hero.buttons.find")}
             </button>

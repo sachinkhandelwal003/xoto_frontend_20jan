@@ -49,6 +49,12 @@ const HeroSection = () => {
           {/* Buttons */}
           <div className="flex flex-row gap-4 justify-center lg:justify-start pt-4">
             <Link
+              to=""
+              className="border-2 border-white px-8 py-3 rounded-md hover:bg-white hover:text-black transition"
+            >
+              {t("hero.buttons.loan")}
+            </Link>
+            <Link
               to="/aiPlanner"
               className="bg-[var(--color-primary)] px-8 py-3 rounded-md shadow-lg"
             >
