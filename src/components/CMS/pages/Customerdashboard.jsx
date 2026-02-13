@@ -9,16 +9,13 @@ import {
 import { 
   UserOutlined, 
   FileTextOutlined,
-  CheckCircleOutlined, 
   ShoppingOutlined,
   ProjectOutlined,
   SyncOutlined,
-  WalletOutlined,
-  ExportOutlined
+  WalletOutlined
 } from '@ant-design/icons';
-import { Card, Row, Col, Button, Typography, Tag, Statistic,Avatar, Spin, Alert } from 'antd';
+import { Card, Row, Col, Button, Typography, Tag, Statistic, Avatar, Spin, Alert } from 'antd';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
-
 
 const { Title, Text } = Typography;
 
@@ -33,12 +30,12 @@ const PURPLE_THEME = {
 const CustomerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [error, setError] = useState(null);
 
-  // Redux se user info nikalna
   const user = useSelector((state) => state.auth?.user);
-const navigate =useNavigate()
-  // Dates setup (Aaj se 1 saal peeche tak)
+  const navigate = useNavigate();
+  
   const fromDate = dayjs().subtract(1, 'year').format('DD-MM-YYYY');
   const toDate = dayjs().add(1, 'day').format('DD-MM-YYYY');
 
@@ -48,17 +45,24 @@ const navigate =useNavigate()
     }
   }, [user]);
 
-
-  const handleProfile=()=>{
-    navigate("/dashboard/customer/myprofile")
-  }
-
+  const handleProfile = () => {
+    navigate("/dashboard/customer/myprofile");
+  };
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
-      // API integration
+      
+      try {
+        const profileRes = await apiService.get('/profile/get-profile-data');
+        if (profileRes.data) {
+          setUserProfile(profileRes.data);
+        }
+      } catch (profileErr) {
+        console.error("Failed to load profile", profileErr);
+      }
+
       const res = await apiService.get('/dashboard/view/customer', {
         customer_id: user?.id || user?._id,
         from: fromDate,
@@ -75,7 +79,28 @@ const navigate =useNavigate()
     }
   };
 
-  // Graph data formatting
+  // ✅ Helper function to safely get the name string
+  const getDisplayName = () => {
+    // Priority 1: userProfile from API
+    if (userProfile?.name) {
+      if (typeof userProfile.name === 'object') {
+        return `${userProfile.name.first_name || ''} ${userProfile.name.last_name || ''}`.trim();
+      }
+      return userProfile.name;
+    }
+    
+    // Priority 2: Redux User
+    if (user?.name) {
+      if (typeof user.name === 'object') {
+        return `${user.name.first_name || ''} ${user.name.last_name || ''}`.trim();
+      }
+      return user.name;
+    }
+
+    // Fallback
+    return 'Customer';
+  };
+
   const chartData = data?.purchase_graph?.map(item => ({
     name: dayjs(item.date).format('DD MMM'),
     spent: item.total_spent
@@ -84,7 +109,6 @@ const navigate =useNavigate()
   if (loading) return <div className="flex justify-center items-center min-h-screen"><Spin size="large" tip="Loading Dashboard..." /></div>;
   if (error) return <div className="p-6"><Alert message="Error" description={error} type="error" showIcon closable /></div>;
 
-  // Stats Configuration based on API response
   const statsCards = [
     { label: 'Total Spent', value: `₹${data?.total_spent?.toLocaleString()}`, icon: <WalletOutlined />, color: PURPLE_THEME.primary, bg: PURPLE_THEME.primaryBg },
     { label: 'Total Orders', value: data?.total_orders, icon: <ShoppingOutlined />, color: PURPLE_THEME.info, bg: '#e6f7ff' },
@@ -98,8 +122,11 @@ const navigate =useNavigate()
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-8">
         <div>
-          <Title level={2} style={{ margin: 0 }}>Customer Insights</Title>
-          <Text type="secondary">Welcome back! Here is your purchase summary.</Text>
+          {/* ✅ Fixed: Simple Welcome + Name */}
+          <Title level={2} style={{ margin: 0 }}>
+            Welcome, {getDisplayName()} 👋
+          </Title>
+          <Text type="secondary">Here is your purchase summary.</Text>
         </div>
         <div className="flex gap-3 mt-4 md:mt-0">
            <Button 
@@ -143,8 +170,9 @@ const navigate =useNavigate()
             title={<span className="flex items-center gap-2"><ShoppingOutlined /> Purchase Spending Timeline</span>} 
             bordered={false} 
             className="shadow-sm rounded-xl"
+            styles={{ body: { padding: '24px', height: '450px' } }}
           >
-            <div style={{ width: '100%', height: 400 }}>
+            <div style={{ width: '100%', height: '100%', minHeight: '300px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                     <defs>
@@ -183,7 +211,8 @@ const navigate =useNavigate()
                       <div className="flex items-center gap-4">
                           <Avatar size={64} icon={<UserOutlined />} style={{ backgroundColor: PURPLE_THEME.primaryBg, color: PURPLE_THEME.primary }} />
                           <div>
-                              <Title level={4} style={{ margin: 0 }}>{user?.name || 'Customer'}</Title>
+                              {/* ✅ Fixed Name Here too */}
+                              <Title level={4} style={{ margin: 0 }}>{getDisplayName()}</Title>
                               <Text type="secondary">{user?.email}</Text>
                           </div>
                       </div>

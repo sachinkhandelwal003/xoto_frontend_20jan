@@ -23,7 +23,6 @@ import {
   BellOutlined,
   UserOutlined,
   LogoutOutlined,
-  SettingOutlined,
   MenuUnfoldOutlined,
   MenuFoldOutlined,
   ClockCircleOutlined
@@ -38,13 +37,58 @@ const Topbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((s) => s.auth);
-const [notifOpen, setNotifOpen] = useState(false);
+  
+  // ✅ State for Profile Data
+  const [userProfile, setUserProfile] = useState(null);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   const colors = getRoleColors(user?.role?.code);
 
+  // ✅ Fetch Profile Data from API
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const res = await apiService.get('/profile/get-profile-data');
+        if (res.data) {
+          setUserProfile(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile data in Topbar", err);
+      }
+    };
+
+    fetchProfileData();
+  }, []);
+
+  // ✅ Helper to safely get Name (Handles Object vs String)
+  const getDisplayName = () => {
+    // 1. Try API Data
+    if (userProfile?.name) {
+      if (typeof userProfile.name === 'object') {
+        return `${userProfile.name.first_name || ''} ${userProfile.name.last_name || ''}`.trim();
+      }
+      return userProfile.name;
+    }
+    
+    // 2. Try Redux Data (Fallback)
+    if (user?.name) {
+      if (typeof user.name === 'object') {
+        return `${user.name.first_name || ''} ${user.name.last_name || ''}`.trim();
+      }
+      return user.name;
+    }
+
+    return "User";
+  };
+
+  // ✅ Helper for Email
+  const getDisplayEmail = () => {
+    return userProfile?.email || user?.email || "";
+  };
+
   /* ---------------- NOTIFICATIONS ---------------- */
   const [notifications, setNotifications] = useState([]);
-  const lastCountRef = useRef(0); // prevents unnecessary re-renders
+  const lastCountRef = useRef(0); 
 
   const fetchNotifications = async () => {
     if (!user?.id) return;
@@ -55,7 +99,6 @@ const [notifOpen, setNotifOpen] = useState(false);
       );
 
       if (res?.success && Array.isArray(res.data)) {
-        // update state ONLY if count changes
         if (res.data.length !== lastCountRef.current) {
           lastCountRef.current = res.data.length;
           setNotifications(res.data);
@@ -66,9 +109,8 @@ const [notifOpen, setNotifOpen] = useState(false);
     }
   };
 
-  // ⏱ Auto refresh every 2 seconds (silent)
   useEffect(() => {
-    fetchNotifications(); // initial fetch
+    fetchNotifications(); 
   }, [user?.id]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -98,10 +140,10 @@ const [notifOpen, setNotifOpen] = useState(false);
       label: (
         <div className="px-2 py-1">
           <Text strong className="block text-sm">
-            {user?.name || "User"}
+            {getDisplayName()} 
           </Text>
           <Text type="secondary" className="text-xs">
-            {user?.email}
+            {getDisplayEmail()} 
           </Text>
         </div>
       ),
@@ -189,11 +231,11 @@ const [notifOpen, setNotifOpen] = useState(false);
       <div className="p-2 border-t text-center">
         <Button
         type="link"
-  size="small"
-  onClick={() => {
-    setNotifOpen(false);   // 👈 CLOSE DROPDOWN
-    navigate(`/dashboard/${roleSlug}/notifications/view`);
-  }}
+        size="small"
+        onClick={() => {
+          setNotifOpen(false);  
+          navigate(`/dashboard/${roleSlug}/notifications/view`);
+        }}
         >
           View all notifications
         </Button>
@@ -232,11 +274,11 @@ const [notifOpen, setNotifOpen] = useState(false);
 
           {/* 🔔 Notifications */}
           <Dropdown
-           open={notifOpen}
-  onOpenChange={setNotifOpen}
-  dropdownRender={() => notificationDropdown}
-  trigger={["click"]}
-  placement="bottomRight"
+            open={notifOpen}
+            onOpenChange={setNotifOpen}
+            dropdownRender={() => notificationDropdown}
+            trigger={["click"]}
+            placement="bottomRight"
           >
             <Badge count={unreadCount} size="small">
               <button className="text-xl text-gray-500 hover:text-purple-600">
@@ -252,19 +294,20 @@ const [notifOpen, setNotifOpen] = useState(false);
             trigger={["click"]}
           >
             <div className="flex items-center gap-2 cursor-pointer">
+              {/* ✅ Change Here: Using Name's First Letter */}
               <Avatar
-                title={user?.email}
+                title={getDisplayName()}
                 style={{ backgroundColor: colors.primary || "#722ed1" }}
               >
-                {user?.email?.charAt(0)?.toUpperCase()}
+                {getDisplayName()?.charAt(0)?.toUpperCase()}
               </Avatar>
 
               <div className="hidden md:flex flex-col leading-tight">
                 <Text strong className="text-sm">
-                  {user?.name || "User"}
+                  {getDisplayName()} 
                 </Text>
                 <Text type="secondary" className="text-[11px]">
-                  {user?.email}
+                  {getDisplayEmail()} 
                 </Text>
               </div>
             </div>
