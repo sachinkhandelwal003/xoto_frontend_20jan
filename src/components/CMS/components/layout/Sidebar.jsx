@@ -111,38 +111,10 @@ const CUSTOM_ROLE_LINKS = {
       ],
     },
   ],
-   "9": [
-  {
-    title: "My Properties",
-    icon: "fas fa-building",
-    path: "/dashboard/agent/properties",
-  },
-  {
-    title: "Leads",
-    icon: "fas fa-user-friends",
-    path: "/dashboard/agent/leads",
-  },
-  {
-    title: "Site Visits",
-    icon: "fas fa-map-marker-alt",
-    path: "/dashboard/agent/site-visits",
-  },
-  {
-    title: "Deals",
-    icon: "fas fa-handshake",
-    path: "/dashboard/agent/deals",
-  },
-  {
-    title: "Profile",
-    icon: "fas fa-user",
-    path: "/dashboard/agent/profile",
-  },
-  {
-    title: "Settings",
-    icon: "fas fa-cog",
-    path: "/dashboard/agent/settings",
-  },
-],
+"9": [],
+"10": []
+
+
 };
 
 
@@ -157,6 +129,8 @@ const roleSlugMap = {
   '12': 'supervisor',
   '8': 'developer', 
   '9': 'agent',
+  '10': 'agency',
+
 };
 
 const ROLE_MODULE_ORDER = {
@@ -168,7 +142,10 @@ const ROLE_MODULE_ORDER = {
   '8': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
   '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
-   '9': ['Dashboard', 'My Properties', 'Leads', 'Site Visits', 'Deals', 'Profile', 'Settings']
+   '9': ['Dashboard'],
+   '10': ['Dashboard']
+
+
 };
 
 
@@ -206,18 +183,20 @@ const Sidebar = () => {
       }
   }
 
-  // FORCE OVERRIDE FROM URL (Fail-safe)
   if (location.pathname.includes('/dashboard/developer')) {
       roleCode = '8';
       displayRoleName = 'Developer';
   } else if (location.pathname.includes('/dashboard/superadmin')) {
       roleCode = '0';
   } 
-  // ✅ ADDED: Agent Override Logic
   else if (location.pathname.includes('/dashboard/agent')) {
       roleCode = '9';
       displayRoleName = 'Agent';
   }
+  else if (location.pathname.includes('/dashboard/agency')) {
+  roleCode = '10';  
+  displayRoleName = 'Agency';
+}
 
   const roleSlug = roleSlugMap[roleCode] ?? 'dashboard';
   const basePath = `/dashboard/${roleSlug}`;

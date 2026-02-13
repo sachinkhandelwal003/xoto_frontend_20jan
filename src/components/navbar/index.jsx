@@ -104,42 +104,21 @@ const Navbar = () => {
   const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
 
   // --- ✅ FIXED: LOGIC MOVED INSIDE COMPONENT ---
-  const getDashboardLink = () => {
+ const getDashboardLink = () => {
   if (!user) return "/login";
 
-  const roleCode =
-    user.role?.code?.toString() ||
-    (typeof user.role === "string" ? user.role : "");
+  const roleName = user.role?.name?.toLowerCase();
 
-  const roleName = user.role?.name
-    ? user.role.name.toLowerCase()
-    : "";
-
-  // 🔥 Numeric Role ID Based Routing
-
-  // Agent (ID 9)
-  if (roleCode === "9") return "/dashboard/agent";
-
-  // Agency (ID 10)
-  if (roleCode === "10") return "/dashboard/agency";
-
-  // Developer (ID 8)
-  if (roleCode === "8") return "/dashboard/developer";
-
-  // Customer (ID 2)
-  if (roleCode === "2") return "/dashboard/customer";
-
-  // Superadmin / Admin (ID 0 or 1)
-  if (roleCode === "0" || roleCode === "1")
+  if (roleName === "agent") return "/dashboard/agent";
+  if (roleName === "agency") return "/dashboard/agency";
+  if (roleName === "developer") return "/dashboard/developer";
+  if (roleName === "customer") return "/dashboard/customer";
+  if (roleName === "superadmin" || roleName === "admin")
     return "/dashboard/superadmin";
 
-  // Vendor
-  if (roleName.includes("vendor"))
-    return "/dashboard/vendor-b2b";
-
-  // Fallback
-  return "/dashboard";
+  return "/dashboard/developer"; // fallback
 };
+
 
 
   const dashboardNavigate = () => {

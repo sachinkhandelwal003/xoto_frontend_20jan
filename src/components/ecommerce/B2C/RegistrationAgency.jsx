@@ -227,54 +227,47 @@ const RegistrationAgency = () => {
   };
 
   // --- Submit (Asli Registration API) ---
-  const onFinish = async (values) => {
-    if (!otpVerified) {
-      toast.error("Please verify your mobile number first.");
-      document.getElementById('mobile_number')?.focus();
-      return;
+ const onFinish = async (values) => {
+  if (!otpVerified) {
+    toast.error("Please verify mobile number");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const payload = {
+      agency_name: values.agency_name,
+      email: values.email,
+      password: values.password,
+      country_code: values.country_code,
+      mobile_number: values.mobile_number,
+
+      // send dummy or uploaded URL
+      profile_photo: "https://picsum.photos/200/201",
+      letter_of_authority: "https://example.com/docs/authority10.pdf",
+    };
+
+    const response = await axios.post(
+      "https://xoto.ae/api/agency/agency-signup",
+      payload
+    );
+
+    if (response.data?.success) {
+      toast.success(response.data.message);
+      navigate("/");
     }
 
-    setLoading(true);
+  } catch (error) {
+    console.log(error.response?.data);
+    toast.error(error.response?.data?.message || "Failed");
+  } finally {
+    setLoading(false);
+  }
+};
 
-    try {
-      const formData = new FormData();
 
-      formData.append("agency_name", values.agency_name);
-      formData.append("email", values.email);
-      formData.append("password", values.password);
-      formData.append("country_code", values.country_code);
-      formData.append("mobile_number", values.mobile_number);
 
-      if (values.profile_photo?.[0]?.originFileObj) {
-        formData.append("profile_photo", values.profile_photo[0].originFileObj);
-      }
-
-      if (values.letter_of_authority?.[0]?.originFileObj) {
-        formData.append("letter_of_authority", values.letter_of_authority[0].originFileObj);
-      }
-
-      console.log("📡 Submitting Agency Data...");
-      
-      const response = await axios.post(
-        `${BASE_URL}/api/agency/agency-signup`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-
-      if (response.data) {
-        toast.success("Registration Successful! Redirecting to login...");
-        setTimeout(() => navigate("/"), 2000);
-      }
-
-    } catch (error) {
-      console.error("❌ Registration Error:", error);
-      toast.error(error.response?.data?.message || "Registration Failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <ConfigProvider
