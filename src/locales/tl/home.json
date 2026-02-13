@@ -1,17 +1,18 @@
 {
   "hero": {
-    "title1": "Isang Panibagong Kahulugan ng Pamumuhay",
-    "title2": "Mula sa Mga Landscape hanggang sa Mga Tahanan",
-    "description": "Tuklasin ang AI-powered designs at piling mga property na nagbibigay-halaga sa bawat sulok ng iyong mundo.",
+    "title1": "Muling pagbibigay-kahulugan sa pamumuhay",
+    "title2": "Mula sa pagpopondo ng bahay hanggang sa magandang disenyo ng espasyo",
+    "description": "Tuklasin ang matatalinong mortgage, piling ari-arian, at AI-powered na landscape na nagpapaganda sa bawat sulok ng iyong buhay.",
     "buttons": {
-      "design": "I-Design ang Aking Space",
-      "explore": "Tuklasin ang Mga Bahay"
+      "design": "I-design ang aking espasyo",
+      "explore": "Tuklasin ang mga bahay",
+      "loan": "Kumuha ng home loan"
     },
     "features": [
-      { "line1": "Isang Hinto", "line2": "na Solusyon" },
-      { "line1": "Mas Mabilis", "line2": "na Turnaround" },
-      { "line1": "Propesyonal", "line2": "na Mga Team" },
-      { "line1": "Pang-UAE", "line2": "Saklaw" }
+      { "line1": "One-stop", "line2": "solution" },
+      { "line1": "Mas mabilis", "line2": "na proseso" },
+      { "line1": "Propesyonal", "line2": "na team" },
+      { "line1": "Presensya sa", "line2": "buong UAE" }
     ]
   }
 }
