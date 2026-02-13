@@ -1,11 +1,12 @@
 {
   "hero": {
     "title1": "Redefining Living",
-    "title2": "From Landscapes to Homes",
-    "description": "Discover AI-powered designs and curated properties that elevate every corner of your world.",
+    "title2": "From Financing Homes to Designing Beautiful Spaces",
+    "description": "Discover smart mortgages, curated properties, and AI-powered landscapes that elevate every corner of your life.",
     "buttons": {
       "design": "Design My Space",
-      "explore": "Explore Homes"
+      "explore": "Explore Homes",
+      "loan":"Get a Home Loan "
     },
     "features": [
       { "line1": "One Stop", "line2": "Solution" },
