@@ -74,6 +74,8 @@ const Navbar = () => {
   const dispatch = useDispatch();
 
   const { fetchProfile, userProfile } = useContext(AuthContext);
+  
+  console.log(userProfile)
 
   // GET USER FROM REDUX
   const { user, token } = useSelector((s) => s.auth);
