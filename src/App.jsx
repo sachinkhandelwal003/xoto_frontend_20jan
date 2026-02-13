@@ -83,6 +83,8 @@ import Checker from "./Checker";
 import AgentRegistration from "./components/ecommerce/B2C/AgentRegistration";
 import AgentDashboard from "./components/ecommerce/B2C/AgentDashboard";
 import AgentList from "./components/CMS/pages/Properties/AgentList";
+import Upcoming from "./components/footer/Upcoming";
+import Finicial from "./components/footer/Finicial";
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -302,7 +304,8 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/customer/dashboard" element={<Customerdashboard />} />
               <Route path="/check" element={<Checker />} />
-
+              <Route path="/upcoming-soon" element={<Upcoming />} />
+              <Route path="/finance-soon" element={<Finicial />} />
               <Route
                 path="/dashboard/:roleSlug/*"
                 element={

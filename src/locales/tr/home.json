@@ -1,17 +1,18 @@
 {
   "hero": {
-    "title1": "Yaşamı Yeniden Tanımlayın",
-    "title2": "Peyzajdan Evlerine",
-    "description": "Dünyanızın her köşesini yükselten yapay zeka destekli tasarımları ve seçilmiş mülkleri keşfedin.",
+    "title1": "Yaşamı yeniden tanımlıyoruz",
+    "title2": "Ev finansmanından güzel alan tasarımına",
+    "description": "Akıllı konut kredileri, seçilmiş mülkler ve yapay zeka destekli peyzajlarla hayatınızın her köşesini geliştirin.",
     "buttons": {
-      "design": "Alanımı Tasarla",
-      "explore": "Evleri Keşfet"
+      "design": "Alanımı tasarla",
+      "explore": "Evleri keşfet",
+      "loan": "Konut kredisi al"
     },
     "features": [
-      { "line1": "Tek Noktadan", "line2": "Çözüm" },
-      { "line1": "Daha Hızlı", "line2": "Teslim Süresi" },
-      { "line1": "Profesyonel", "line2": "Ekipler" },
-      { "line1": "Tüm BAE", "line2": "Geneli" }
+      { "line1": "Tek noktadan", "line2": "çözüm" },
+      { "line1": "Daha hızlı", "line2": "işlem" },
+      { "line1": "Profesyonel", "line2": "ekipler" },
+      { "line1": "BAE genelinde", "line2": "hizmet" }
     ]
   }
 }

@@ -235,16 +235,25 @@ export default function Footer() {
   <h4 className="font-bold text-[24px] mb-4">
     {t("titles.resources")}
   </h4>
+
   {resources.map((i, k) => (
-    <Link 
-      key={k} 
-      to={i.path} 
-      className="block mb-2 text-white/70"
-    >
-      {i.label}
-    </Link>
+    <div key={k} className="flex items-center gap-2 mb-2">
+      <Link
+        to={i.path}
+        className="text-white/70"
+      >
+        {i.label}
+      </Link>
+
+      {i.comingSoon && (
+        <span className="text-xs bg-red-100 text-black  px-1 py-0.5 rounded">
+          {t("comingsoon")} 
+        </span>
+      )}
+    </div>
   ))}
 </div>
+
 
           <div>
             <h4 className="font-bold text-[24px] mb-4">
