@@ -67,7 +67,7 @@ const ProductDetails = () => {
         setLoading(false);
       }
     };
-
+//now 
     if (id) fetchProduct();
   }, [id, BASE_URL]);
 
