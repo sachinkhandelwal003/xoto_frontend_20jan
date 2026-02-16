@@ -16,8 +16,8 @@
     { "label": "Аренда", "path": "/marketplace" },
     { "label": "Купить", "path": "/marketplace" },
     { "label": "Продать", "path": "/marketplace" },
-    { "label": "Ипотека", "path": "/mortgage/services" },
-    { "label": "Обслуживание", "path": "" }
+    { "label": "Ипотека", "path": "/mortgage/services" }
+    
   ],
   "resources": [
     { "label": "Стратегический альянс", "path": "/login" },
@@ -27,7 +27,7 @@
     { "label": "Финансовые институты", "path": "/" }
   ],
   "knowledge": [
-    { "label": "Центр знаний", "path": "/about" },
+    { "label": "Центр знаний", "path": "/explore" },
     { "label": "Наша устойчивость Фокус", "path": "/about" },
 
     { "label": "Оставить отзыв", "path": "/about" },

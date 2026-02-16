@@ -16,8 +16,8 @@
     { "label": "ਕਿਰਾਇਆ", "path": "/marketplace" },
     { "label": "ਖਰੀਦੋ", "path": "/marketplace" },
     { "label": "ਵੇਚੋ", "path": "/marketplace" },
-    { "label": "ਹੋਮ ਲੋਨ", "path": "/mortgage/services" },
-    { "label": "ਰਖ-ਰਖਾਵ", "path": "" }
+    { "label": "ਹੋਮ ਲੋਨ", "path": "/mortgage/services" }
+    
   ],
   "resources": [
     { "label": "रणਨੀਤਿਕ ਭਾਈਚਾਰਾ", "path": "/login" },
@@ -27,7 +27,7 @@
     { "label": "ਵਿੱਤੀ ਸੰਸਥਾਵਾਂ", "path": "/" }
   ],
   "knowledge": [
-    { "label": "ਨੋਲਜ ਸੈਂਟਰ", "path": "/about" },
+    { "label": "ਗਿਆਨ ਕੇਂਦਰ", "path": "/explore" },
     { "label": "ਸਾਡੀ ਟਿਕਾਊਤਾ ਫੋਕਸ", "path": "/about" },
     
     { "label": "ਫੀਡਬੈਕ ਭੇਜੋ", "path": "/about" },

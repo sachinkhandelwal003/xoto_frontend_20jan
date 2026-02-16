@@ -16,8 +16,8 @@
     { "label": "किराया", "path": "/marketplace" },
     { "label": "खरीदें", "path": "/marketplace" },
     { "label": "बेचें", "path": "/marketplace" },
-    { "label": "होम लोन", "path": "/mortgage/services" },
-    { "label": "मेंटेनेंस", "path": "" }
+    { "label": "होम लोन", "path": "/mortgage/services" }
+    
   ],
   "resources": [
     { "label": "रणनीतिक साझेदारी", "path": "/login" },
@@ -27,7 +27,7 @@
     { "label": "वित्तीय संस्थान", "path": "/" }
   ],
   "knowledge": [
-    { "label": "नॉलेज सेंटर", "path": "/about" },
+    { "label": "ज्ञान केंद्र", "path": "/explore" },
     { "label": "हमारी सस्टेनेबिलिटी फोकस", "path": "/about" },
     
     { "label": "फीडबैक दें", "path": "/about" },

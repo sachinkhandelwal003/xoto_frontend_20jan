@@ -16,8 +16,8 @@
     { "label": "الإيجار", "path": "/marketplace" },
     { "label": "شراء", "path": "/marketplace" },
     { "label": "بيع", "path": "/marketplace" },
-    { "label": "الرهون العقارية", "path": "/mortgage/services" },
-    { "label": "الصيانة", "path": "" }
+    { "label": "الرهون العقارية", "path": "/mortgage/services" }
+    
   ],
   "resources": [
     { "label": "تحالف استراتيجي", "path": "/login" },
@@ -27,7 +27,7 @@
     { "label": "المؤسسات المالية", "path": "/" }
   ],
   "knowledge": [
-    { "label": "مركز المعرفة", "path": "/about" },
+    { "label": "مركز المعرفة", "path": "/explore" },
     { "label": "التركيز على الاستدامة", "path": "/about" },
     { "label": "التركي", "path": "/about" },
     { "label": "أرسل ملاحظاتك", "path": "/about" },

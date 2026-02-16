@@ -16,8 +16,8 @@
     { "label": "کرایہ", "path": "/marketplace" },
     { "label": "خریدیں", "path": "/marketplace" },
     { "label": "بیچیں", "path": "/marketplace" },
-    { "label": "ہوم لون", "path": "/mortgage/services" },
-    { "label": "مینٹیننس", "path": "" }
+    { "label": "ہوم لون", "path": "/mortgage/services" }
+    
   ],
   "resources": [
     { "label": "اسٹریٹجک الائنس", "path": "/login" },
@@ -27,7 +27,7 @@
     { "label": "مالیاتی ادارے", "path": "/" }
   ],
   "knowledge": [
-    { "label": "نالج سینٹر", "path": "/about" },
+    { "label": "علمی مرکز", "path": "/explore" },
     { "label": "ہماری پائیداری", "path": "/about" },
     { "label": "فوکس", "path": "/about" },
     { "label": "اپنی رائے دیں", "path": "/about" },

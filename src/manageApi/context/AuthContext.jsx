@@ -70,46 +70,67 @@ export const AuthProvider = ({ children }) => {
 const login = async (endpoint, credentials) => {
   const fullEndpoint = `${API_BASE}${endpoint}`;
 
-  if (endpoint.includes("agent")) {
-    try {
-   
-        const res = await fetch(fullEndpoint, {
-             method: "POST", 
-             headers: { "Content-Type": "application/json" },
-             body: JSON.stringify(credentials),
-        });
+if (
+  endpoint.includes("agent") ||
+  endpoint.includes("agency") ||
+  endpoint.includes("developer")
+) {
+  try {
 
-        const data = await res.json();
+    const res = await fetch(fullEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    });
 
-        
-        if (data.success === true || data?.data?.success === true) {
-            
-            
-            const token = data.token || data.data?.token || data.data?.data?.token;
-            const user = data.user || data.data?.user || data.data?.data?.user;
+    const data = await res.json();
 
-            if (token) {
-    localStorage.setItem("token", token);
-    if (user) localStorage.setItem("user", JSON.stringify(user));
+    if (data.success === true || data?.data?.success === true || data.token || data?.data?.token) {
 
-    console.log("✅ Login Success! Redirecting to Agent Dashboard...");
+      const token =
+        data.token ||
+        data.data?.token ||
+        data.data?.data?.token;
 
-    
-    setTimeout(() => {
-        window.location.href = "/dashboard/agent"; 
-    }, 100);
+      const user =
+        data.user ||
+        data.agency ||
+        data.agent ||
+        data.developer ||
+        data.data?.user ||
+        data.data?.agency ||
+        data.data?.agent ||
+        data.data?.developer;
 
-    return data;
-}
-        }
-        
-        throw new Error(data.message || "Login Failed");
+      if (token) {
+        localStorage.setItem("token", token);
+        if (user) localStorage.setItem("user", JSON.stringify(user));
 
-    } catch (err) {
-        console.error(err);
-        throw err;
+        console.log("✅ Login Success! Redirecting...");
+
+        // 🔥 redirect based on role
+        let redirectPath = "/dashboard";
+
+        if (endpoint.includes("agent")) redirectPath = "/dashboard/agent";
+        if (endpoint.includes("agency")) redirectPath = "/dashboard/agency";
+        if (endpoint.includes("developer")) redirectPath = "/dashboard/developer";
+
+        setTimeout(() => {
+          window.location.href = redirectPath;
+        }, 100);
+
+        return data;
+      }
     }
+
+    throw new Error(data.message || "Login Failed");
+
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
 }
+
   
   const response = await dispatch(
     loginUser({

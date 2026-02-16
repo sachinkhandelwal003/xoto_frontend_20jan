@@ -4,15 +4,15 @@
   "cards": {
     "card1": {
       "title": "Landscaping",
-      "desc": "Baguhin ang iyong tahanan at outdoor space gamit ang AI-powered landscaping at upgrade solutions."
+      "desc": "Baguhin ang iyong bahay at labas gamit ang AI-powered na solusyon."
     },
     "card2": {
-      "title": "Resale",
-      "desc": "Bagong anyo para sa iyong tahanan gamit ang AI-powered solutions."
+      "title": "Muling Pagbenta",
+      "desc": "Dagdagan ang halaga ng ari-arian. Mas mabilis na magbenta."
     },
     "card3": {
-      "title": "Rental",
-      "desc": "Baguhin ang iyong space gamit ang AI-powered upgrade solutions."
+      "title": "Paupahan",
+      "desc": "Umakit ng mas mabubuting tenant. Kumita ng mas malaki."
     }
   }
 }

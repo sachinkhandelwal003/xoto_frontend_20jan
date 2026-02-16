@@ -16,8 +16,8 @@
     { "label": "租赁", "path": "/marketplace" },
     { "label": "购买", "path": "/marketplace" },
     { "label": "出售", "path": "/marketplace" },
-    { "label": "按揭贷款", "path": "/mortgage/services" },
-    { "label": "维护", "path": "" }
+    { "label": "按揭贷款", "path": "/mortgage/services" }
+    
   ],
   "resources": [
     { "label": "战略联盟", "path": "/login" },
@@ -27,7 +27,7 @@
     { "label": "金融机构", "path": "/" }
   ],
   "knowledge": [
-    { "label": "知识中心", "path": "/about" },
+    { "label": "知识中心", "path": "/explore" },
     { "label": "我们的可持续性 重点", "path": "/about" },
     { "label": "", "path": "/about" },
     { "label": "提交反馈", "path": "/about" },
