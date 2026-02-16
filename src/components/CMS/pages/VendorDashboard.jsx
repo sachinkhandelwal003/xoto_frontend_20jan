@@ -196,6 +196,9 @@ const VendorDashboard = () => {
           <Title level={2} style={{ margin: 0 }}>Vendor Overview</Title>
           <Text type="secondary">Real-time performance metrics for your shop.</Text>
         </div>
+         <div className="flex gap-3 bg-primary text-white cursor-pointer p-2 rounded-lg shadow-sm"> 
+        <button className='cursor-pointer' onClick={() => window.location.href = '/'}>Go To Home</button>
+        </div>
       
       </div>
 

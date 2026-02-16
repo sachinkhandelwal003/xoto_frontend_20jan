@@ -96,6 +96,7 @@ const Dashboard = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* HEADER */}
       <div className="flex justify-between items-center mb-8">
+          
         <div>
           <Title level={2} style={{ margin: 0 }}> Dashboard  View</Title>
           <Text type="secondary">Real-time overview of leads, properties, and users.</Text>
