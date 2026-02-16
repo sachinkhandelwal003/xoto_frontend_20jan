@@ -257,7 +257,7 @@ const ProductDetails = () => {
                 <span className="px-6 font-bold text-lg min-w-[60px] text-center">{quantity}</span>
                 <button
                   onClick={() => setQuantity((q) => q + 1)}
-                  className="p-4 hover:bg-gray-50 text-gray-600"
+                  className="p-4 hover:bg-gray-50 text-grey-600"
                 >
                   <FaPlus />
                 </button>
