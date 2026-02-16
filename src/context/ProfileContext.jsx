@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import {apiService} from '../../src/manageApi/utils/custom.apiservice'; // Apna sahi path check kar lena
+import { apiService } from '../../src/manageApi/utils/custom.apiservice'; // Check path
 
 export const AuthContext = createContext();
 
@@ -8,30 +8,25 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Aapki API call jo aapne batayi thi
-      const response = await apiService.get("profile/get-profile-data");
-      console.log("Backend User Data:", response.data);
-      if (response && response.data) {
-        // Maan lo API response mein data 'response.data.user' mein hai
-        // Agar response hi user object hai toh direct response.data rakho
-        setUserProfile(response.data.user || response.data); 
-      }
-    } catch (error) {
-      console.error("AuthContext Error:", error);
-      setUserProfile(null);
+      const res = await apiService.get("profile/get-profile-data");
+      // Assuming your API returns data as shown
+      setUserProfile(res.data.data); 
+    } catch (err) {
+      console.log(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token"); // Check karo aap 'token' hi use karte ho na?
-    if (token) {
-      fetchProfile();
-    } else {
-      setLoading(false);
-    }
+    fetchProfile();
   }, []);
 
   return (

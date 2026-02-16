@@ -26,8 +26,8 @@
     { "label": "Strategic Alliances", "path": "/login" },
     { "label": "Business Associates", "path": "/login" },
     { "label": "Execution Partners", "path": "/login" },
-    { "label": "Developers", "path": "/" },
-    { "label": "Financial Institutions", "path": "/" }
+    { "label": "Developers", "path": "/upcoming-soon" },
+    { "label": "Financial Institutions", "path": "/finance-soon" }
   ],
 
   "knowledge": [

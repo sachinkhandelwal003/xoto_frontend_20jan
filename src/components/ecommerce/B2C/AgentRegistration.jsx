@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   Form,
   Input,
@@ -17,7 +17,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { toast } from "react-toastify";
-import { Country } from "country-state-city";
+import axios from "axios"; 
+import PhoneInput from "react-phone-input-2"; 
+import "react-phone-input-2/lib/style.css"; 
 
 import {
   MailOutlined,
@@ -37,11 +39,24 @@ const { Option } = Select;
 
 const PageWrapper = styled.div`
   min-height: 100vh;
-  background: #5c039b; /* Deep Xoto Purple from Screenshot */
+  background: #5c039b;
   display: flex;
   flex-direction: column;
   align-items: center;
   font-family: 'Inter', sans-serif;
+
+  .react-tel-input .form-control {
+    height: 45px;
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #d9d9d9;
+    font-family: 'Inter', sans-serif;
+  }
+  .react-tel-input .flag-dropdown {
+    border-radius: 8px 0 0 8px;
+    border: 1px solid #d9d9d9;
+    background: #fafafa;
+  }
 `;
 
 const HeaderSection = styled.div`
@@ -121,29 +136,29 @@ const RegistrationAgent = () => {
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpValue, setOtpValue] = useState("");
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const countryPhoneData = useMemo(() => {
-    return Country.getAllCountries().map((c) => ({
-      iso: c.isoCode.toLowerCase(),
-      phone: `+${c.phonecode}`,
-      value: `+${c.phonecode}`,
-    }));
-  }, []);
+  // Phone input state
+  const [phone, setPhone] = useState("");
+  const [countryData, setCountryData] = useState({});
 
+  // 1. Send OTP Handler
   const handleSendOtp = async () => {
-    try {
-      await form.validateFields(["mobile_number"]);
-      setLoading(true);
-      setTimeout(() => {
-        setOtpSent(true);
-        setLoading(false);
-        toast.info("Verification code sent! (Use 000033)");
-      }, 1000);
-    } catch (e) {
-      toast.error("Please enter your mobile number first");
+    if (!phone || phone.length < 8) {
+      toast.error("Please enter a valid mobile number first");
+      return;
     }
+    
+    setLoading(true);
+    // TODO: Connect this to your OTP API if needed
+    setTimeout(() => {
+      setOtpSent(true);
+      setLoading(false);
+      toast.info("Verification code sent! (Use 000033)");
+    }, 1000);
   };
 
+  // 2. Verify OTP Handler
   const handleVerifyOtp = () => {
     if (otpValue === "000033") {
       setOtpVerified(true);
@@ -152,6 +167,58 @@ const RegistrationAgent = () => {
     } else {
       toast.error("Invalid OTP. Hint: 000033");
     }
+  };
+
+  // 3. Main Form Submit Handler (UPDATED URL)
+  const handleFinish = async (values) => {
+  try {
+    setSubmitting(true);
+
+    const payload = {
+      first_name: values.first_name,
+      last_name: values.last_name,
+      email: values.email,
+      password: values.password,
+      phone_number: phone.replace(countryData.dialCode, ""),
+      country_code: `+${countryData.dialCode}`,
+      country: countryData.name || "United Arab Emirates",
+      operating_city: values.operating_city,
+      specialization: values.specialization,
+
+      // 🔑 URLs only
+      profile_photo: values.profile_photo_url || "",
+      id_proof: values.id_proof_url || "",
+      rera_certificate: values.rera_certificate_url || ""
+    };
+
+    const response = await axios.post(
+      "https://xoto.ae/api/agent/agent-signup",
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    toast.success("Agent Registration Successful");
+    console.log(response.data);
+
+  } catch (error) {
+    toast.error(
+      error.response?.data?.message || "Registration failed"
+    );
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+  // Helper to normalize file upload event for Antd Form
+  const normFile = (e) => {
+    if (Array.isArray(e)) {
+      return e;
+    }
+    return e?.fileList;
   };
 
   return (
@@ -166,15 +233,20 @@ const RegistrationAgent = () => {
               Agent Registration
             </Title>
             <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 16 }}>
-              Register your agent profile (Admin approval required)
+              Join the Xoto Network
             </Text>
           </motion.div>
         </HeaderSection>
 
         <MainCard $isMobile={isMobile} bordered={false}>
-          <Form form={form} layout="vertical" initialValues={{ country_code: "+971" }}>
+          <Form 
+            form={form} 
+            layout="vertical" 
+            onFinish={handleFinish} 
+            initialValues={{ specialization: 'residential' }}
+          >
             
-            {/* --- SECTION 1: PERSONAL --- */}
+            {/* --- PERSONAL DETAILS --- */}
             <div style={{ marginBottom: 30 }}>
               <Space style={{ marginBottom: 20, color: '#f26522', fontWeight: 600 }}>
                 <UserOutlined /> Personal Details
@@ -182,12 +254,12 @@ const RegistrationAgent = () => {
               
               <Row gutter={16}>
                 <Col xs={24} md={12}>
-                  <Form.Item name="first_name" label="First Name" rules={[{ required: true }]}>
+                  <Form.Item name="first_name" label="First Name" rules={[{ required: true, message: 'Required' }]}>
                     <StyledInput placeholder="First Name" />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item name="last_name" label="Last Name" rules={[{ required: true }]}>
+                  <Form.Item name="last_name" label="Last Name" rules={[{ required: true, message: 'Required' }]}>
                     <StyledInput placeholder="Last Name" />
                   </Form.Item>
                 </Col>
@@ -202,26 +274,36 @@ const RegistrationAgent = () => {
               </Form.Item>
             </div>
 
-            {/* --- SECTION 2: VERIFICATION --- */}
+            {/* --- PHONE VERIFICATION --- */}
             <div style={{ marginBottom: 30 }}>
               <Form.Item label="Phone Number" required>
-                <div style={{ display: 'flex' }}>
-                  <Form.Item name="country_code" noStyle>
-                    <Select style={{ width: 100, height: 45 }}>
-                      {countryPhoneData.map(c => (
-                        <Option key={c.iso} value={c.value}>{c.phone}</Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                  <Form.Item name="mobile_number" noStyle>
-                    <StyledInput 
-                      style={{ flex: 1, marginLeft: 8 }} 
-                      placeholder="e.g. 501234567" 
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ flex: 1 }}>
+                    <PhoneInput
+                      country={'ae'} // Default to UAE since base url is .ae
+                      value={phone}
+                      onChange={(phone, data) => {
+                        setPhone(phone);
+                        setCountryData(data);
+                      }}
+                      enableSearch={true}
+                      inputStyle={{
+                        width: '100%',
+                        height: '45px',
+                        fontSize: '16px'
+                      }}
                       disabled={otpVerified}
-                      suffix={otpVerified && <CheckCircleFilled style={{ color: "#52c41a" }} />}
                     />
-                  </Form.Item>
-                  {!otpVerified && (
+                  </div>
+                  
+                  {otpVerified ? (
+                    <Button 
+                      icon={<CheckCircleFilled style={{ color: "#52c41a" }} />} 
+                      style={{ height: 45, border: '1px solid #52c41a', color: '#52c41a', background: '#f6ffed' }}
+                    >
+                      Verified
+                    </Button>
+                  ) : (
                     <InlineButton type="default" onClick={handleSendOtp} loading={loading}>
                       Send OTP
                     </InlineButton>
@@ -248,50 +330,51 @@ const RegistrationAgent = () => {
               </AnimatePresence>
             </div>
 
-            {/* --- SECTION 3: PROFESSIONAL --- */}
+            {/* --- PROFESSIONAL DETAILS --- */}
             <Divider />
             <Row gutter={16}>
               <Col xs={24} md={12}>
-                <Form.Item name="operating_city" label="Operating City">
-                  <StyledInput placeholder="City Name" />
+                <Form.Item name="operating_city" label="Operating City" rules={[{ required: true }]}>
+                  <StyledInput placeholder="e.g. Dubai, Abu Dhabi" />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item name="specialization" label="Specialization">
+                <Form.Item name="specialization" label="Specialization" rules={[{ required: true }]}>
                   <Select placeholder="Select specialization" style={{height: 45}}>
                     <Option value="residential">Residential</Option>
                     <Option value="commercial">Commercial</Option>
+                    <Option value="luxury">Luxury Real Estate</Option>
                   </Select>
                 </Form.Item>
               </Col>
             </Row>
 
-            {/* --- UPLOADS --- */}
+            {/* --- FILE UPLOADS --- */}
             <Row gutter={16} style={{ marginTop: 20 }}>
               <Col xs={24} md={8}>
-                <Form.Item name="profile_photo" label="Profile Photo">
-                  <Upload maxCount={1} beforeUpload={() => false}>
-                    <Button icon={<UploadOutlined />} block style={{height: 45}}>Photo</Button>
+                <Form.Item name="profile_photo" label="Profile Photo" valuePropName="fileList" getValueFromEvent={normFile}>
+                  <Upload maxCount={1} beforeUpload={() => false} listType="picture">
+                    <Button icon={<UploadOutlined />} block style={{height: 45}}>Upload Photo</Button>
                   </Upload>
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
-                <Form.Item name="id_proof" label="ID Proof">
-                  <Upload maxCount={1} beforeUpload={() => false}>
-                    <Button icon={<UploadOutlined />} block style={{height: 45}}>Upload ID</Button>
+                <Form.Item name="id_proof" label="ID Proof" valuePropName="fileList" getValueFromEvent={normFile}>
+                  <Upload maxCount={1} beforeUpload={() => false} listType="picture">
+                    <Button icon={<UploadOutlined />} block style={{height: 45}}>Upload Emirates ID</Button>
                   </Upload>
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
-                <Form.Item name="rera_certificate" label="RERA Certificate">
-                  <Upload maxCount={1} beforeUpload={() => false}>
-                    <Button icon={<UploadOutlined />} block style={{height: 45}}>RERA</Button>
+                <Form.Item name="rera_certificate" label="RERA Certificate" valuePropName="fileList" getValueFromEvent={normFile}>
+                  <Upload maxCount={1} beforeUpload={() => false} listType="picture">
+                    <Button icon={<UploadOutlined />} block style={{height: 45}}>Upload RERA</Button>
                   </Upload>
                 </Form.Item>
               </Col>
             </Row>
 
-            <SubmitButton type="primary" block disabled={!otpVerified}>
+            <SubmitButton type="primary" block htmlType="submit" loading={submitting} disabled={!otpVerified}>
               COMPLETE REGISTRATION
             </SubmitButton>
           </Form>

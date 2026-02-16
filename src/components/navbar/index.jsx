@@ -10,7 +10,7 @@ import { useContext } from "react";
 import { AuthContext  } from "../../context/ProfileContext";
 // REDUX IMPORTS
 import { useDispatch, useSelector } from "react-redux";
-// Adjust this path to match your project structure
+// Adjust this path if needed
 import { logoutUser } from "../../manageApi/store/authSlice"; 
 
 /* ------------------- LANGUAGE DATA ------------------- */
@@ -34,16 +34,13 @@ export const languages = [
 const navItems = [
   { key: "home", path: "/" },
   { key: "mortgages", path: "/mortgage/services" },
- { key: "properties", path: "/marketplace" },
- 
-
-   {
+  { key: "properties", path: "/marketplace" },
+  {
     key: "homeUpgrade",
     children: [
        { key: "interiors", path: "/services/interior" },
-      { key: "landscaping", path: "/landscaping" },
-     
-        { key: "store", path: "/ecommerce/b2c" },
+       { key: "landscaping", path: "/landscaping" },
+       { key: "store", path: "/ecommerce/b2c" },
     ],
   },
   {   
@@ -57,6 +54,7 @@ const navItems = [
   { key: "ecosystem", path: "/ecosystem" },
   { key: "about", path: "/about" },
 ];
+
 const roleSlugMap = {
   '0': 'superadmin', 
   '1': 'admin', 
@@ -67,34 +65,34 @@ const roleSlugMap = {
   '11': 'accountant', 
   '12': 'supervisor',
   '8': 'developer', 
+  '9': 'agent',
 };
+
 const Navbar = () => {
   const { t, i18n } = useTranslation("common");
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  const { fetchProfile, userProfile } = useContext(AuthContext);
+  
+  console.log(userProfile)
 
-  const { fetchProfile ,userProfile } = useContext(AuthContext);
+  // GET USER FROM REDUX
+  const { user, token } = useSelector((s) => s.auth);
 
-  console.log( "fetchProfilefetchProfilefetchProfilefetchProfile"  ,  userProfile)
- useEffect(() => {
+  useEffect(() => {
     if (!user) {
       fetchProfile();
     }
   }, []);
 
   const firstName = userProfile?.name?.first_name ?? "";
-const lastName  = userProfile?.name?.last_name ?? "";
-const fullName  = `${firstName} ${lastName}`.trim();
+  const lastName  = userProfile?.name?.last_name ?? "";
+  const fullName  = `${firstName} ${lastName}`.trim();
 
-  // GET USER FROM REDUX
-  const { user, token } = useSelector((s) => s.auth);
-
-  console.log( "useruser",user)
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  // NEW STATES FOR LOGIN DROPDOWN
   const [loginMenuOpen, setLoginMenuOpen] = useState(false);
   const [mobileLoginOpen, setMobileLoginOpen] = useState(false);
 
@@ -103,30 +101,35 @@ const fullName  = `${firstName} ${lastName}`.trim();
 
   const langRef = useRef(null);
   const userMenuRef = useRef(null);
-  const loginMenuRef = useRef(null); // Ref for login dropdown
+  const loginMenuRef = useRef(null);
+
   const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
-  console.log(roleSlug)
 
-
-
-  // Helper to determine dashboard link based on role
+  // --- ✅ FIXED: LOGIC MOVED INSIDE COMPONENT ---
  const getDashboardLink = () => {
-  if (!user?.role?.name) return "/dashboard";
+  if (!user) return "/login";
 
-  const role = user.role.name.toLowerCase();
+  const roleName = user.role?.name?.toLowerCase();
 
-  if (role === "developer") return "/dashboard/developer";
-  if (role === "customer") return "/dashboard/customer";
-  if (role === "admin" || role === "superadmin")
+  if (roleName === "agent") return "/dashboard/agent";
+  if (roleName === "agency") return "/dashboard/agency";
+  if (roleName === "developer") return "/dashboard/developer";
+  if (roleName === "customer") return "/dashboard/customer";
+  if (roleName === "superadmin" || roleName === "admin")
     return "/dashboard/superadmin";
-  if (role.includes("vendor")) return "/dashboard/vendor-b2b";
 
-  return "/dashboard";
+  return "/dashboard/developer"; // fallback
 };
-const dashboardNavigate=()=>{
-  navigate(`/dashboard/${roleSlug}`)
-}
 
+
+
+  const dashboardNavigate = () => {
+    const path = getDashboardLink();
+    navigate(path);
+    setUserMenuOpen(false); // Close menu after click
+    setMobileOpen(false);   // Close mobile menu if open
+  };
+  // ---------------------------------------------
 
   const handleLogout = () => {
     dispatch(logoutUser());
@@ -205,7 +208,7 @@ const dashboardNavigate=()=>{
           {/* RIGHT SIDE */}
           <div className="flex items-center gap-3">
 
-            {/* LANGUAGE SELECTOR (Visible on Mobile & Desktop) */}
+            {/* LANGUAGE SELECTOR */}
             <div ref={langRef} className="relative">
               <button
                 onClick={() => setLangOpen(!langOpen)}
@@ -214,7 +217,6 @@ const dashboardNavigate=()=>{
                 <div className="w-4 h-3">
                   <selectedLang.Flag />
                 </div>
-                {/* Hide text on very small screens if needed, otherwise show */}
                 <span className="text-sm font-medium">{selectedLang.name}</span>
                 <ChevronDown size={12} />
               </button>
@@ -240,14 +242,14 @@ const dashboardNavigate=()=>{
               )}
             </div>
 
-            {/* CONTACT BUTTON (Hidden on Mobile) */}
+            {/* CONTACT BUTTON */}
             <Link to="/contact" className="hidden lg:block">
               <button className="px-4 py-2 bg-[#5C039B] text-white rounded-lg hover:bg-[#4a027c] transition-colors font-medium">
                 {t("nav.contact")}
               </button>
             </Link>
 
-            {/* AUTH SECTION (Hidden on Mobile) */}
+            {/* AUTH SECTION */}
             <div className="hidden lg:block">
               {user ? (
                 <div ref={userMenuRef} className="relative">
@@ -259,8 +261,7 @@ const dashboardNavigate=()=>{
                       {user.name ? user.name.charAt(0).toUpperCase() : "U"}
                     </div>
                     <div className="text-left hidden xl:block">
-                      <p className="text-sm font-bold text-gray-800 leading-none">  {fullName}
-</p>
+                      <p className="text-sm font-bold text-gray-800 leading-none"> {fullName}</p>
                       <p className="text-xs text-gray-500 uppercase">{user.role?.name || "User"}</p>
                     </div>
                     <ChevronDown size={14} className="text-gray-500" />
@@ -273,8 +274,16 @@ const dashboardNavigate=()=>{
                           <p className="text-xs text-gray-500">{user.email}</p>
                       </div>
 
-                      <div onClick={dashboardNavigate} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
-                          <FaTachometerAlt size={16} className="text-[#5C039B]" /> Dashboard
+                      {/* ✅ CLICKABLE DASHBOARD LINK */}
+                      <div 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          dashboardNavigate();
+                        }} 
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer border-b border-gray-50 last:border-none"
+                      >
+                        <FaTachometerAlt size={16} className="text-[#5C039B]" /> 
+                        <span>Dashboard</span>
                       </div>
 
                       <div className="border-t border-gray-100 my-1"></div>
@@ -300,7 +309,7 @@ const dashboardNavigate=()=>{
                   </button>
                   
                   {loginMenuOpen && (
-                     <div className="absolute right-0 mt-2 w-40 bg-white shadow-xl rounded-xl border border-gray-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="absolute right-0 mt-2 w-40 bg-white shadow-xl rounded-xl border border-gray-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-200">
                         <Link 
                           to="/user/login" 
                           onClick={() => setLoginMenuOpen(false)}
@@ -315,7 +324,7 @@ const dashboardNavigate=()=>{
                         >
                           Partners
                         </Link>
-                     </div>
+                      </div>
                   )}
                 </div>
               )}
@@ -386,11 +395,18 @@ const dashboardNavigate=()=>{
                       </div>
                     </div>
 
-                    <Link to={getDashboardLink()} onClick={() => setMobileOpen(false)} className="block">
+                    {/* Mobile Dashboard Link calling getDashboardLink() */}
+                    <div 
+                        onClick={() => {
+                            setMobileOpen(false);
+                            dashboardNavigate();
+                        }}
+                        className="block cursor-pointer"
+                    >
                       <button className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
                         <FaTachometerAlt /> Dashboard
                       </button>
-                    </Link>
+                    </div>
 
                     <button 
                       onClick={handleLogout}
@@ -412,22 +428,22 @@ const dashboardNavigate=()=>{
                     
                     {/* Expandable Mobile Menu for Login */}
                     {mobileLoginOpen && (
-                       <div className="mt-2 space-y-2 pl-4 border-l-2 border-purple-100 ml-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="mt-2 space-y-2 pl-4 border-l-2 border-purple-100 ml-4 animate-in fade-in slide-in-from-top-1 duration-200">
                           <Link 
                              to="/user/login" 
                              onClick={() => setMobileOpen(false)}
                              className="block py-2 text-gray-600 hover:text-[#5C039B] font-medium"
-                          >
+                           >
                              Customer
-                          </Link>
-                          <Link 
+                           </Link>
+                           <Link 
                              to="/login" 
                              onClick={() => setMobileOpen(false)}
                              className="block py-2 text-gray-600 hover:text-[#5C039B] font-medium"
-                          >
+                           >
                              Partners
-                          </Link>
-                       </div>
+                           </Link>
+                        </div>
                     )}
                  </div>
               )}

@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import axios from "axios";
+
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Home, LayoutDashboard, Compass, 
@@ -88,7 +90,13 @@ const { title, subtitle } = getProgressText(progress);
 const [pendingGeneration, setPendingGeneration] = useState(false);
 
 
-  
+  const [libraryDesigns, setLibraryDesigns] = useState([]);
+const [loadingLibrary, setLoadingLibrary] = useState(false);
+const [activeSidebarTab, setActiveSidebarTab] = useState('ai-landscaping'); // 'my-library' or 'ai-landscaping'
+// Modal state
+const [showLibraryModal, setShowLibraryModal] = useState(false);
+
+
   // Modals
   const [showGeneratedModal, setShowGeneratedModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -150,19 +158,99 @@ const [pendingGeneration, setPendingGeneration] = useState(false);
     }
   }, [user]);
 
+const fetchLibraryDesigns = async () => {
+  if (!user) return;
+
+  try {
+    setLoadingLibrary(true);
+    const res = await apiService.get(`/ai/get-customer-liabrary?designType=landscaping`);
+    const designs = res?.data || [];
+    console.log(designs)
+
+    // Map to UI format
+    const formatted = designs.flatMap((d, index) => 
+      d.images.map((img, i) => ({
+        id: `${d._id}-${i}`,
+        image: img,
+        title: `Library Design ${index + 1}-${i + 1}`,
+        timestamp: new Date(d.createdAt).toLocaleDateString(),
+      }))
+    );
+
+    setLibraryDesigns(formatted.reverse());
+  } catch (err) {
+    console.error("Failed to load library", err);
+  } finally {
+    setLoadingLibrary(false);
+  }
+};
+
+// Fetch library when modal opens
+useEffect(() => {
+ 
+    fetchLibraryDesigns();
+ 
+}, []);
+
+
+
 
   // --- Handlers ---
-  const processUploadedFile = (file) => {
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setUploadedFile(file);
-        setSelectedImage(e.target.result);
-        setShowUploadModal(false);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  // --- Handlers ---
+const processUploadedFile = async (file) => {
+  console.log("processUploadedFile called with file:", file);
+
+  if (!file) {
+    console.warn("No file provided!");
+    return;
+  }
+
+  if (!file.type.startsWith("image/")) {
+    console.warn("Selected file is not an image:", file.type);
+    return;
+  }
+
+  try {
+    console.log("Preparing FormData for upload...");
+    const formData = new FormData();
+    formData.append("file", file);
+
+    console.log("Uploading file to S3...");
+    const uploadRes = await apiService.post("upload", formData);
+
+    console.log("S3 upload response:", uploadRes);
+
+    const uploadedUrl = uploadRes?.file?.url;
+    
+    console.log("Uploaded URL:", uploadedUrl);
+
+    console.log("Sending image URL to AI library...");
+    const libraryRes = await apiService.post("ai/post-customer-liabrary", {
+      designType: "landscaping",
+      imageUrl: uploadedUrl,
+    });
+    console.log("AI library response:", libraryRes);
+
+    console.log("Updating UI state...");
+    setUploadedFile(file);
+    setSelectedImage(uploadedUrl);
+    setShowUploadModal(false);
+    fetchLibraryDesigns();
+
+    notification.success({
+      message: "File uploaded successfully",
+    });
+
+  } catch (error) {
+    console.error("Upload process failed:", error);
+    notification.error({
+      message: "Upload Failed",
+      description: error?.message || "Could not upload image to the server.",
+    });
+  }
+};
+
+
 
   const handleGenerateClick = async () => {
     if (!selectedImage) {
@@ -236,6 +324,7 @@ const [pendingGeneration, setPendingGeneration] = useState(false);
         const aiUrl = resData.imageUrl;
         const aiDesc = resData.message || "Garden generated successfully";
         
+
         const newDesign = {
           id: Date.now(), // Temporary ID for UI until refresh
           image: aiUrl,
@@ -249,7 +338,16 @@ const [pendingGeneration, setPendingGeneration] = useState(false);
 
         // Add new design to the top of the list
         setDesigns(prev => [newDesign, ...prev]);
-        setCurrentResult({ url: aiUrl, desc: aiDesc });
+setCurrentResult({
+  url: aiUrl,
+  desc: aiDesc,
+  styles: [...selectedStyles],
+  elements: [...selectedElements],
+  instruction: specificRequirement
+});
+
+  fetchLibraryDesigns();
+
         setGenerationProgress(100);
         
         notification.success({ message: 'Design Generated!', duration: 2 });
@@ -288,21 +386,51 @@ const [pendingGeneration, setPendingGeneration] = useState(false);
 
 
 
- const downloadImage = async (url, name) => {
-  
-  window.open(url, "_blank", "noopener,noreferrer");
+const downloadImage = async (imageUrl) => {
+  try {
+    const key = imageUrl.split(".amazonaws.com/")[1];
 
- xoto
-  const res = await fetch(url);
-  const blob = await res.blob();
+    if (!key) {
+      notification.error({
+        message: "Invalid Image URL"
+      });
+      return;
+    }
 
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `${name}.png`;
-  a.click();
+    const response = await axios.get(
+      `https://xoto.ae/api/download-pdf?key=${encodeURIComponent(key)}`,
+      {
+        responseType: "blob" // 🔥 VERY IMPORTANT
+      }
+    );
 
-  URL.revokeObjectURL(a.href);
+    const blob = new Blob([response.data], {
+      type: "application/pdf"
+    });
+
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "design.pdf";
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+  } catch (error) {
+    console.error("Download error:", error);
+    notification.error({
+      message: "Download Failed",
+      description: "PDF could not be generated."
+    });
+  }
 };
+
+
+
+
 
 
   // --- Mobile Tab Item ---
@@ -387,6 +515,9 @@ const [pendingGeneration, setPendingGeneration] = useState(false);
               AI Landscaping
             </span>
           </div>
+
+    
+
         </div>
       </div>
 
@@ -543,6 +674,13 @@ const [pendingGeneration, setPendingGeneration] = useState(false);
                   <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Your Masterpieces</h1>
                   <p className="text-gray-500 font-medium text-lg">AI-generated landscapes created by you.</p>
                 </div>
+                <Button 
+    type="default" 
+    onClick={() => setShowLibraryModal(true)} 
+    className="h-10 px-4 rounded-xl font-bold text-purple-700 border border-purple-200 hover:bg-purple-50"
+  >
+    View Library
+  </Button>
               </div>
 
               {loadingSaved ? (
@@ -652,6 +790,36 @@ const [pendingGeneration, setPendingGeneration] = useState(false);
               <Paragraph className="text-gray-600 leading-relaxed text-sm lg:text-base">
                 {currentResult.desc || "No description provided."}
               </Paragraph>
+
+              {/* User Preferences */}
+<div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
+  <h4 className="font-bold text-sm text-purple-700 mb-2">
+    Your Preferences
+  </h4>
+
+  {currentResult.styles?.length > 0 && (
+    <p className="text-xs text-gray-700 mb-1">
+      <strong>Style:</strong>{" "}
+      {gardenStyles.find(s => s.value === currentResult.styles[0])?.label}
+    </p>
+  )}
+
+  {currentResult.elements?.length > 0 && (
+    <p className="text-xs text-gray-700 mb-1">
+      <strong>Elements:</strong>{" "}
+      {currentResult.elements
+        .map(e => gardenElements.find(el => el.value === e)?.label)
+        .join(", ")}
+    </p>
+  )}
+
+  {currentResult.instruction && (
+    <p className="text-xs text-gray-700">
+      <strong>Instruction:</strong> {currentResult.instruction}
+    </p>
+  )}
+</div>
+
             </div>
             <div className="space-y-3 pt-4 border-t mt-4">
               <Button type="primary" block size="large" className="h-12 rounded-2xl font-bold" style={{ background: BRAND_PURPLE }} onClick={() => downloadImage(currentResult.url, 'Xoto-Vision')}>Download Render</Button>
@@ -661,20 +829,69 @@ const [pendingGeneration, setPendingGeneration] = useState(false);
       </Modal>
 
       {/* 4. Upload Modal */}
-      <Modal open={showUploadModal} footer={null} onCancel={() => setShowUploadModal(false)} centered width={600} title="Select Source Canvas" bodyStyle={{ padding: '1rem' }}>
-        <div className="p-2">
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
-            {dummySpaceImages.map((img) => (
-              <div key={img.id} onClick={() => { setSelectedImage(img.url); setShowUploadModal(false); }} className="aspect-square rounded-xl lg:rounded-2xl overflow-hidden cursor-pointer hover:ring-4 ring-purple-100 transition-all shadow-sm">
-                <img src={img.url} className="w-full h-full object-cover" />
-              </div>
-            ))}
-          </div>
-          <Divider>OR UPLOAD YOUR OWN</Divider>
-          <input type="file" id="file-up" className="hidden" accept="image/*" onChange={(e) => processUploadedFile(e.target.files[0])} />
-          <Button block icon={<Upload size={16} />} className="h-12 rounded-xl font-semibold border-dashed text-sm" onClick={() => document.getElementById('file-up').click()}>Browse Local Files</Button>
+      <Modal
+  open={showUploadModal}
+  footer={null}
+  onCancel={() => setShowUploadModal(false)}
+  centered
+  width={600}
+  title="Select Source Canvas"
+  bodyStyle={{ padding: '1rem' }}
+>
+  <div className="p-2">
+    {/* Library Designs */}
+    {libraryDesigns.length > 0 && (
+      <>
+        <h4 className="text-sm font-semibold text-gray-500 mb-2">Your Library Designs</h4>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
+          {libraryDesigns.map(d => (
+            <div
+              key={d.id}
+              onClick={() => { setSelectedImage(d.image); setShowUploadModal(false); }}
+              className="aspect-square rounded-xl lg:rounded-2xl overflow-hidden cursor-pointer hover:ring-4 ring-purple-100 transition-all shadow-sm"
+            >
+              <img src={d.image} className="w-full h-full object-cover" />
+            </div>
+          ))}
         </div>
-      </Modal>
+      </>
+    )}
+
+    {/* Dummy Space Images */}
+    <h4 className="text-sm font-semibold text-gray-500 mb-2">Suggested Designs</h4>
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
+      {dummySpaceImages.map(img => (
+        <div
+          key={img.id}
+          onClick={() => { setSelectedImage(img.url); setShowUploadModal(false); }}
+          className="aspect-square rounded-xl lg:rounded-2xl overflow-hidden cursor-pointer hover:ring-4 ring-purple-100 transition-all shadow-sm"
+        >
+          <img src={img.url} className="w-full h-full object-cover" />
+        </div>
+      ))}
+    </div>
+
+    <Divider>OR UPLOAD YOUR OWN</Divider>
+
+    <input
+      type="file"
+      id="file-up"
+      className="hidden"
+      accept="image/*"
+      onChange={(e) => processUploadedFile(e.target.files[0])}
+    />
+
+    <Button
+      block
+      icon={<Upload size={16} />}
+      className="h-12 rounded-xl font-semibold border-dashed text-sm"
+      onClick={() => document.getElementById('file-up').click()}
+    >
+      Browse Local Files
+    </Button>
+  </div>
+</Modal>
+
 
       {/* 5. Style & Elements Modals */}
       <Modal open={showStyleModal} footer={null} onCancel={() => setShowStyleModal(false)} width={["95vw", "95vw", "95vw", 800]} centered title="Choose Landscape Style" bodyStyle={{ padding: '0.5rem' }}>
@@ -704,6 +921,77 @@ const [pendingGeneration, setPendingGeneration] = useState(false);
         </div>
       </Modal>
 
+     <Modal
+  open={showLibraryModal}
+  footer={null}
+  onCancel={() => setShowLibraryModal(false)}
+  width={800}
+  centered
+  title="My Library"
+  bodyStyle={{ padding: '1rem' }}
+>
+  {loadingLibrary ? (
+    <div className="flex justify-center items-center h-[50vh]">
+      <Spin size="large" tip="Loading your library..." />
+    </div>
+  ) : libraryDesigns.length === 0 ? (
+    <Empty description="No designs in your library yet." />
+  ) : (
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      {libraryDesigns.map(d => (
+        <Card
+          key={d.id}
+          hoverable
+          className="rounded-2xl overflow-hidden shadow-sm"
+          bodyStyle={{ padding: 0 }}
+        >
+          <img
+            src={d.image}
+            alt={d.title}
+            className="w-full h-40 object-cover"
+          />
+          <div className="p-3 flex justify-between items-center">
+            <div>
+              <h4 className="font-bold text-sm text-gray-800">{d.title}</h4>
+              <span className="text-xs text-gray-400">{d.timestamp}</span>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedImage(d.image);
+                setShowLibraryModal(false);
+              }}
+              className="p-2 bg-gray-50 rounded-full"
+            >
+              <ArrowRight size={16} className="text-purple-600" />
+            </button>
+          </div>
+        </Card>
+      ))}
+    </div>
+  )}
+
+  <Divider>OR Upload Your Own</Divider>
+
+  <input
+    type="file"
+    id="library-file-up"
+    className="hidden"
+    accept="image/*"
+    onChange={(e) => processUploadedFile(e.target.files[0])}
+  />
+
+  <Button
+    block
+    icon={<Upload size={16} />}
+    className="h-12 rounded-xl font-semibold border-dashed text-sm"
+    onClick={() => document.getElementById('library-file-up').click()}
+  >
+    Browse Local Files
+  </Button>
+</Modal>
+
+
+
       {/* --- GENERATION LOADING OVERLAY --- */}
       {isGenerating && (
         <div className="fixed inset-0 z-[100] bg-white/90 lg:bg-white/80 backdrop-blur-xl flex flex-col items-center justify-center animate-in fade-in duration-500 p-4">
@@ -719,6 +1007,38 @@ const [pendingGeneration, setPendingGeneration] = useState(false);
               Reimagining your outdoor space with premium flora...
             </p>
           </div>
+
+{/* User Selection Preview */}
+<div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 mb-6 max-w-md w-full border border-purple-100 shadow-sm">
+  <h4 className="font-bold text-gray-800 text-sm mb-3">
+    Your Selections
+  </h4>
+
+  {selectedStyles.length > 0 && (
+    <p className="text-xs text-gray-600 mb-1">
+      <strong>Style:</strong>{" "}
+      {gardenStyles.find(s => s.value === selectedStyles[0])?.label}
+    </p>
+  )}
+
+  {selectedElements.length > 0 && (
+    <p className="text-xs text-gray-600 mb-1">
+      <strong>Elements:</strong>{" "}
+      {selectedElements
+        .map(e => gardenElements.find(el => el.value === e)?.label)
+        .join(", ")}
+    </p>
+  )}
+
+  {specificRequirement && (
+    <p className="text-xs text-gray-600">
+      <strong>Instruction:</strong> {specificRequirement}
+    </p>
+  )}
+</div>
+
+
+
        <div className="w-full max-w-xs lg:w-80">
   <Progress
     percent={progress}

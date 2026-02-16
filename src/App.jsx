@@ -81,6 +81,13 @@ import DeveloperRegistration from "./components/ecommerce/B2C/developerregistrat
 import RegistrationAgency from "./components/ecommerce/B2C/registrationagency";
 import Checker from "./Checker";
 import AgentRegistration from "./components/ecommerce/B2C/AgentRegistration";
+import AgentLayout from "./components/ecommerce/B2C/AgentLayout";
+import AgentDashboard from "./components/ecommerce/B2C/AgentDashboard";
+import AgentList from "./components/CMS/pages/Properties/AgentList";
+import AgencyDashboard from "./components/ecommerce/B2C/AgencyDashboard";
+import AgencyLayout from "./components/ecommerce/B2C/AgencyLayout";
+import Upcoming from "./components/footer/Upcoming";
+import Finicial from "./components/footer/Finicial";
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -266,6 +273,13 @@ function App() {
 
               {/* ✅ Agent Registration Route */}
               <Route path="/agent/registration" element={<AgentRegistration />} />
+<Route path="/dashboard/agent" element={<AgentLayout />}>
+  <Route index element={<AgentDashboard />} />
+</Route>   
+<Route path="/dashboard/agency" element={<AgencyLayout />}>
+  <Route index element={<AgencyDashboard />} />
+</Route>   
+<Route path="agency-list" element={<RegistrationAgency />} />
 
 
               <Route path="/ecommerce/seller" element={<SellerPage />} />
@@ -297,11 +311,12 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/customer/dashboard" element={<Customerdashboard />} />
               <Route path="/check" element={<Checker />} />
-
+              <Route path="/upcoming-soon" element={<Upcoming />} />
+              <Route path="/finance-soon" element={<Finicial />} />
               <Route
                 path="/dashboard/:roleSlug/*"
                 element={
-                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12"]}>
+                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10"]}>
                     <CmsApp />
                   </PrivateRoute>
                 }

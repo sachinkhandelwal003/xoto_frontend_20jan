@@ -66,22 +66,66 @@ export const AuthProvider = ({ children }) => {
 }, [token, dispatch]);
 
 
-  // Enhanced login function that accepts dynamic endpoint
-// Enhanced login function that accepts dynamic endpoint AND full payload
+
 const login = async (endpoint, credentials) => {
   const fullEndpoint = `${API_BASE}${endpoint}`;
 
-  // Use credentials directly — don't force email/password structure
-  return await dispatch(
+  if (endpoint.includes("agent")) {
+    try {
+   
+        const res = await fetch(fullEndpoint, {
+             method: "POST", 
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify(credentials),
+        });
+
+        const data = await res.json();
+
+        
+        if (data.success === true || data?.data?.success === true) {
+            
+            
+            const token = data.token || data.data?.token || data.data?.data?.token;
+            const user = data.user || data.data?.user || data.data?.data?.user;
+
+            if (token) {
+    localStorage.setItem("token", token);
+    if (user) localStorage.setItem("user", JSON.stringify(user));
+
+    console.log("✅ Login Success! Redirecting to Agent Dashboard...");
+
+    
+    setTimeout(() => {
+        window.location.href = "/dashboard/agent"; 
+    }, 100);
+
+    return data;
+}
+        }
+        
+        throw new Error(data.message || "Login Failed");
+
+    } catch (err) {
+        console.error(err);
+        throw err;
+    }
+}
+  
+  const response = await dispatch(
     loginUser({
-      payload: credentials,        // ← Now supports { mobile }, { email, password }, etc.
+      payload: credentials,
       endpoint: fullEndpoint,
     })
   ).unwrap();
+
+ 
+  const token = response?.token || response?.data?.token;
+  if (token) localStorage.setItem("token", token);
+
+  return response;
 };
 
-
-  // Logout with optional backend call
+  
   const logout = async (logoutEndpoint = '/auth/logout') => {
     hasFetchedPermissions.current = false;
     const fullEndpoint = `${API_BASE}${logoutEndpoint}`;
@@ -89,7 +133,7 @@ const login = async (endpoint, credentials) => {
     try {
       await dispatch(logoutUser(fullEndpoint));
     } catch (err) {
-      // Even if backend fails, clear local state
+     
       dispatch(logoutUser());
     }
   };
@@ -100,7 +144,7 @@ const login = async (endpoint, credentials) => {
     loading,
     error,
     isAuthenticated,
-    login,    // Now supports dynamic endpoints
+    login,    
     logout,
   };
 

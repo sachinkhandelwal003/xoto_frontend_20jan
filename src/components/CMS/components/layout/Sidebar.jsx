@@ -9,17 +9,45 @@ import logoNew from '../../../../assets/img/logoNew.png';
 import favicon from '../../../../assets/img/logonewww.png'; 
 
 /* --- CUSTOM LINKS CONFIGURATION --- */
+// /dashboard/superadmin/developer/property
 const CUSTOM_ROLE_LINKS = {
   "0": [
+  {
+    title: "Properties",
+    icon: "fas fa-building",
+    path: "/dashboard/superadmin/properties",
+    submenus: [
       {
-      title: "Setting", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
-      submenus: [
-        { title: "Email Setting", path: "/dashboard/{roleSlug}/setting/email" },
-           
+        title: "Create Developer",
+        path: "/dashboard/superadmin/developer/create"
+      },
+      {
+        title: "Property Management",
+        path: "/dashboard/superadmin/developer/property"
+      },
+      {
+        title: "Agents",
+        path: "/dashboard/superadmin/agent-list"
+      },
+      {
+        title: "Agencies",
+        path: "/dashboard/superadmin/agency-list"
+      }
+    ]
+  },
+  {
+    title: "Setting",
+    icon: "fas fa-cog",
+    path: "/dashboard/superadmin/setting",
+    submenus: [
+      {
+        title: "Email Setting",
+        path: "/dashboard/superadmin/setting/email"
+      }
+    ]
+  }
+],
 
-      ],
-    }
-  ],
   "1": [
 
   ],
@@ -73,28 +101,22 @@ const CUSTOM_ROLE_LINKS = {
       ],
     },
   ],
-
-    // ✅ DEVELOPER LINKS (ID '8') - UPDATED
   "8": [
-    // 1. Dashboard yahan se hata diya (kyunki wo default tree se aa raha hai)
-    
-    // 2. Sirf Property Management rakha hai
     {
       title: "Property Management", 
       icon: "fas fa-building", 
       path: "/dashboard/developer/property-management", 
       submenus: [
         { title: "All Properties", path: "/dashboard/developer/property-management/list" },
-        // { title: "Add Property", path: "/dashboard/developer/property-management/add" },
-        // { title: "Unit Management", path: "/dashboard/developer/property-management/units" },
       ],
     },
-    // 3. Lead Management bhi hata diya aapke kehne par
   ],
+"9": [],
+"10": []
 
-  "agent": [],
-  "agency": []
+
 };
+
 
 const roleSlugMap = {
   '0': 'superadmin', 
@@ -106,13 +128,26 @@ const roleSlugMap = {
   '11': 'accountant', 
   '12': 'supervisor',
   '8': 'developer', 
+  '9': 'agent',
+  '10': 'agency',
+
 };
 
 const ROLE_MODULE_ORDER = {
-  '0': ['Dashboard', 'Settings'],
-  // ✅ Updated Order (Removed Lead Management)
+  '0': ['Dashboard', "All Estimation", "Deals", 'Xoto Partners', 'Projects', 'Packages', 'Estimate master', 'Consultation Bookings', 'All Users', 'Products', 'Seller B2C', 'Request', 'Payout', 'Module','properties', 'Permission', 'Role', 'Inventory', 'Settings'],
+  '1': ['Dashboard', 'Products', 'Xoto Partners', 'Projects', 'Payout', 'Request', 'Settings'],
+  '5': ['Dashboard', 'Products', 'My Products', 'Orders', 'Payout', 'Settings'],
+  '6': ['Dashboard', 'Products', 'Projects', 'Inventory', 'Payout'],
+  '7': ['Dashboard', 'My Projects', 'All Projects', 'Add Projects', 'Payout'],
   '8': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
+  '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
+  '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
+   '9': ['Dashboard'],
+   '10': ['Dashboard']
+
+
 };
+
 
 const Sidebar = () => {
   const { 
@@ -148,13 +183,20 @@ const Sidebar = () => {
       }
   }
 
-  // FORCE OVERRIDE FROM URL (Fail-safe)
   if (location.pathname.includes('/dashboard/developer')) {
       roleCode = '8';
       displayRoleName = 'Developer';
   } else if (location.pathname.includes('/dashboard/superadmin')) {
       roleCode = '0';
+  } 
+  else if (location.pathname.includes('/dashboard/agent')) {
+      roleCode = '9';
+      displayRoleName = 'Agent';
   }
+  else if (location.pathname.includes('/dashboard/agency')) {
+  roleCode = '10';  
+  displayRoleName = 'Agency';
+}
 
   const roleSlug = roleSlugMap[roleCode] ?? 'dashboard';
   const basePath = `/dashboard/${roleSlug}`;
