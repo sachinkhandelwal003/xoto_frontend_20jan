@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import {
   Button, Modal, Progress, Card, Tag,
-  notification, Typography, Divider, Spin
+  notification, Typography, Divider, Spin,Empty 
 } from 'antd';
 import { useSelector } from 'react-redux';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
@@ -118,8 +118,10 @@ const InteriorPlanner = () => {
   const progress = Math.floor(generationProgress);
 const { title, subtitle } = getProgressText(progress);
 const [pendingGeneration, setPendingGeneration] = useState(false);
+const [showLibraryModal, setShowLibraryModal] = useState(false);
 
-
+  const [libraryDesigns, setLibraryDesigns] = useState([]);
+const [loadingLibrary, setLoadingLibrary] = useState(false);
 
   // Modals
   const [showGeneratedModal, setShowGeneratedModal] = useState(false);
@@ -183,6 +185,42 @@ const [pendingGeneration, setPendingGeneration] = useState(false);
   }, [user]);
 
 
+const fetchLibraryDesigns = async () => {
+  if (!user) return;
+
+  try {
+    setLoadingLibrary(true);
+    const res = await apiService.get(`/ai/get-customer-liabrary?designType=interior`);
+    const designs = res?.data || [];
+    console.log(designs)
+
+    // Map to UI format
+    const formatted = designs.flatMap((d, index) => 
+      d.images.map((img, i) => ({
+        id: `${d._id}-${i}`,
+        image: img,
+        title: `Library Design ${index + 1}-${i + 1}`,
+        timestamp: new Date(d.createdAt).toLocaleDateString(),
+      }))
+    );
+
+    setLibraryDesigns(formatted.reverse());
+  } catch (err) {
+    console.error("Failed to load library", err);
+  } finally {
+    setLoadingLibrary(false);
+  }
+};
+
+// Fetch library when modal opens
+useEffect(() => {
+ 
+    fetchLibraryDesigns();
+ 
+}, []);
+
+
+
   // --- Handlers ---
   const resetDesign = () => {
     setSelectedImage(null);
@@ -193,17 +231,59 @@ const [pendingGeneration, setPendingGeneration] = useState(false);
     notification.info({ message: 'Form cleared' });
   };
 
-  const processUploadedFile = (file) => {
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setUploadedFile(file);
-        setSelectedImage(e.target.result);
-        setShowUploadModal(false);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+ const processUploadedFile = async (file) => {
+   console.log("processUploadedFile called with file:", file);
+ 
+   if (!file) {
+     console.warn("No file provided!");
+     return;
+   }
+ 
+   if (!file.type.startsWith("image/")) {
+     console.warn("Selected file is not an image:", file.type);
+     return;
+   }
+ 
+   try {
+     console.log("Preparing FormData for upload...");
+     const formData = new FormData();
+     formData.append("file", file);
+ 
+     console.log("Uploading file to S3...");
+     const uploadRes = await apiService.post("upload", formData);
+ 
+     console.log("S3 upload response:", uploadRes);
+ 
+     const uploadedUrl = uploadRes?.file?.url;
+     
+     console.log("Uploaded URL:", uploadedUrl);
+ 
+     console.log("Sending image URL to AI library...");
+     const libraryRes = await apiService.post("ai/post-customer-liabrary", {
+       designType: "interior",
+       imageUrl: uploadedUrl,
+     });
+     console.log("AI library response:", libraryRes);
+ 
+     console.log("Updating UI state...");
+     setUploadedFile(file);
+     setSelectedImage(uploadedUrl);
+     setShowUploadModal(false);
+     fetchLibraryDesigns();
+ 
+     notification.success({
+       message: "File uploaded successfully",
+     });
+ 
+   } catch (error) {
+     console.error("Upload process failed:", error);
+     notification.error({
+       message: "Upload Failed",
+       description: error?.message || "Could not upload image to the server.",
+     });
+   }
+ };
+ 
 
   const handleGenerateClick = async () => {
     if (!selectedImage) {
@@ -607,12 +687,31 @@ const downloadImage = async (url, name) => {
         {/* RIGHT: RESULTS GALLERY (Desktop Only) */}
         <div className="hidden lg:block flex-1 bg-[#F8F9FC] p-12 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
-            <div className="mb-10 flex justify-between items-end">
-              <div>
-                <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Your Masterpieces</h1>
-                <p className="text-gray-500 font-medium text-lg">AI-generated interior created by you.</p>
-              </div>
-            </div>
+            <div className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+  
+  {/* Left Content */}
+  <div>
+    <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-2">
+      Your Masterpieces
+    </h1>
+    <p className="text-gray-500 font-medium text-base md:text-lg">
+      AI-generated interiors created by you.
+    </p>
+  </div>
+
+  {/* Right Button */}
+  <div className="flex md:justify-end">
+    <Button 
+      type="default" 
+      onClick={() => setShowLibraryModal(true)} 
+      className="h-10 px-5 rounded-xl font-bold text-purple-700 border border-purple-200 hover:bg-purple-50 transition"
+    >
+      View Library
+    </Button>
+  </div>
+
+</div>
+
 
             {/* FETCHING SAVED DESIGNS LOGIC */}
             {loadingSaved ? (
@@ -718,22 +817,69 @@ const downloadImage = async (url, name) => {
         </div>
       </Modal>
 
-      <Modal open={showUploadModal} footer={null} onCancel={() => setShowUploadModal(false)} centered width={600} title="Select Source Canvas" bodyStyle={{ padding: '1rem' }}>
+        <Modal
+        open={showUploadModal}
+        footer={null}
+        onCancel={() => setShowUploadModal(false)}
+        centered
+        width={600}
+        title="Select Source Canvas"
+        bodyStyle={{ padding: '1rem' }}
+      >
         <div className="p-2">
+          {/* Library Designs */}
+          {libraryDesigns.length > 0 && (
+            <>
+              <h4 className="text-sm font-semibold text-gray-500 mb-2">Your Library Designs</h4>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
+                {libraryDesigns.map(d => (
+                  <div
+                    key={d.id}
+                    onClick={() => { setSelectedImage(d.image); setShowUploadModal(false); }}
+                    className="aspect-square rounded-xl lg:rounded-2xl overflow-hidden cursor-pointer hover:ring-4 ring-purple-100 transition-all shadow-sm"
+                  >
+                    <img src={d.image} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+      
+          {/* Dummy Space Images */}
+          <h4 className="text-sm font-semibold text-gray-500 mb-2">Suggested Designs</h4>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
-            {dummySpaceImages.map((img) => (
-              <div key={img.id} onClick={() => { setSelectedImage(img.url); setShowUploadModal(false); }} className="aspect-square rounded-xl lg:rounded-2xl overflow-hidden cursor-pointer hover:ring-4 ring-purple-100 transition-all shadow-sm">
+            {dummySpaceImages.map(img => (
+              <div
+                key={img.id}
+                onClick={() => { setSelectedImage(img.url); setShowUploadModal(false); }}
+                className="aspect-square rounded-xl lg:rounded-2xl overflow-hidden cursor-pointer hover:ring-4 ring-purple-100 transition-all shadow-sm"
+              >
                 <img src={img.url} className="w-full h-full object-cover" />
               </div>
             ))}
           </div>
+      
           <Divider>OR UPLOAD YOUR OWN</Divider>
-          <input type="file" id="file-up" className="hidden" accept="image/*" onChange={(e) => processUploadedFile(e.target.files[0])} />
-          <Button block icon={<Upload size={16} />} className="h-12 rounded-xl font-semibold border-dashed text-sm" onClick={() => document.getElementById('file-up').click()}>
+      
+          <input
+            type="file"
+            id="file-up"
+            className="hidden"
+            accept="image/*"
+            onChange={(e) => processUploadedFile(e.target.files[0])}
+          />
+      
+          <Button
+            block
+            icon={<Upload size={16} />}
+            className="h-12 rounded-xl font-semibold border-dashed text-sm"
+            onClick={() => document.getElementById('file-up').click()}
+          >
             Browse Local Files
           </Button>
         </div>
       </Modal>
+      
 
       <Modal open={showStyleModal} footer={null} onCancel={() => setShowStyleModal(false)} width={800} centered title="Choose Interior Style" bodyStyle={{ padding: '0.5rem' }} style={{ maxWidth: '95vw' }}>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 p-2">
@@ -774,6 +920,77 @@ const downloadImage = async (url, name) => {
             Apply Selections
           </Button>
         </div>
+      </Modal>
+
+
+
+         <Modal
+        open={showLibraryModal}
+        footer={null}
+        onCancel={() => setShowLibraryModal(false)}
+        width={800}
+        centered
+        title="My Library"
+        bodyStyle={{ padding: '1rem' }}
+      >
+        {loadingLibrary ? (
+          <div className="flex justify-center items-center h-[50vh]">
+            <Spin size="large" tip="Loading your library..." />
+          </div>
+        ) : libraryDesigns.length === 0 ? (
+          <Empty description="No designs in your library yet." />
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            {libraryDesigns.map(d => (
+              <Card
+                key={d.id}
+                hoverable
+                className="rounded-2xl overflow-hidden shadow-sm"
+                bodyStyle={{ padding: 0 }}
+              >
+                <img
+                  src={d.image}
+                  alt={d.title}
+                  className="w-full h-40 object-cover"
+                />
+                <div className="p-3 flex justify-between items-center">
+                  <div>
+                    <h4 className="font-bold text-sm text-gray-800">{d.title}</h4>
+                    <span className="text-xs text-gray-400">{d.timestamp}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedImage(d.image);
+                      setShowLibraryModal(false);
+                    }}
+                    className="p-2 bg-gray-50 rounded-full"
+                  >
+                    <ArrowRight size={16} className="text-purple-600" />
+                  </button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      
+        <Divider>OR Upload Your Own</Divider>
+      
+        <input
+          type="file"
+          id="library-file-up"
+          className="hidden"
+          accept="image/*"
+          onChange={(e) => processUploadedFile(e.target.files[0])}
+        />
+      
+        <Button
+          block
+          icon={<Upload size={16} />}
+          className="h-12 rounded-xl font-semibold border-dashed text-sm"
+          onClick={() => document.getElementById('library-file-up').click()}
+        >
+          Browse Local Files
+        </Button>
       </Modal>
     <Modal
       open={showRoomTypeModal}

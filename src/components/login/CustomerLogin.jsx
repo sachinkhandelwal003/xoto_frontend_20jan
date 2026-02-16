@@ -14,13 +14,14 @@ import {
   Col,
   Grid,
   ConfigProvider,
-  Select
+  Select,message,notification
 } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../manageApi/context/AuthContext.jsx';
 import { toast } from 'react-toastify';
 import styled from 'styled-components';
 import { Country } from 'country-state-city'; // Import Library
+import { apiService } from '../../manageApi/utils/custom.apiservice.js';
 
 // Assets
 import loginimage from '../../assets/img/one.png';
@@ -94,6 +95,73 @@ const CustomerLogin = () => {
   const navigate = useNavigate();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+const [otpSent, setOtpSent] = useState(false);
+const [otpVerified, setOtpVerified] = useState(false);
+const [otpLoading, setOtpLoading] = useState(false);
+const [enteredOtp, setEnteredOtp] = useState('');
+const mobileNumber = Form.useWatch('mobile', form);
+
+
+
+
+const handleSendOtp = async () => {
+    const requiredDigits = PHONE_LENGTH_RULES[countryIso] || 10;
+    if (!mobileNumber || mobileNumber.length !== requiredDigits) {
+      message.error(`Please enter a valid ${requiredDigits}-digit number first.`);
+      return;
+    }
+
+    setOtpLoading(true);
+    setTimeout(() => {
+      message.success("OTP sent (Bypass Mode enabled)!");
+      setOtpSent(true);
+      setOtpVerified(false);
+      setOtpLoading(false);
+    }, 800);
+  };
+
+ const handleVerifyOtp = async () => {
+  if (!enteredOtp) {
+    message.error("Please enter the OTP");
+    return;
+  }
+
+  setOtpLoading(true);
+
+  try {
+    // ✅ Get country code properly
+    const selectedCountryData = Country.getCountryByCode(countryIso);
+    const phoneCode = selectedCountryData
+      ? `+${selectedCountryData.phonecode}`
+      : "+971";
+
+    const payload = {
+      country_code: phoneCode,
+      phone_number: mobileNumber,
+      otp: enteredOtp
+    };
+
+    console.log("Verify Payload:", payload); // 👈 check in console
+
+    await apiService.post("/otp/verify-otp", payload);
+
+    message.success("Mobile Verified Successfully!");
+    setOtpVerified(true);
+    setOtpSent(false);
+
+  } catch (error) {
+    console.error("Verify Error:", error); // 👈 check console
+
+    notification.error({
+      message: "Verification Failed",
+      description: error?.response?.data?.message || "Invalid OTP"
+    });
+  } finally {
+    setOtpLoading(false);
+  }
+};
+
+
 
   // Memoized Country Data
   const countryOptions = useMemo(() => {
@@ -283,10 +351,62 @@ const CustomerLogin = () => {
                       style={{ height: 50, borderRadius: 12 }}
                     />
                   </Form.Item>
+ {!otpVerified && !otpSent && (
+                        <Button
+                          type="primary"
+                          size="large"
+                          onClick={handleSendOtp}
+                          loading={otpLoading}
+                          disabled={!mobileNumber}
+                          style={{
+                            backgroundColor: !mobileNumber ? 'white' : '#5C039B',
+                            borderColor: !mobileNumber ? '#d9d9d9' : '#5C039B',
+                            color: !mobileNumber ? 'rgba(0,0,0,0.25)' : 'white',
+                            minWidth: '90px'
+                          }}
+                        >
+                          Send OTP
+                        </Button>
+                      )}
+                    {otpSent && !otpVerified && (
+  <>
+    <Form.Item
+      label="Enter OTP"
+      required
+    >
+      <Input
+        placeholder="Enter 6-digit OTP"
+        value={enteredOtp}
+        onChange={(e) => setEnteredOtp(e.target.value)}
+        maxLength={6}
+        style={{ height: 50, borderRadius: 12 }}
+      />
+    </Form.Item>
+
+    <Button
+      type="primary"
+      size="large"
+      onClick={handleVerifyOtp}
+      loading={otpLoading}
+      block
+      style={{
+        height: 50,
+        borderRadius: 12,
+        fontWeight: 'bold',
+        marginBottom: 10
+      }}
+    >
+      Verify OTP
+    </Button>
+  </>
+)}
+
 
                   <Button
                     type="primary"
                     htmlType="submit"
+                      disabled={!otpVerified}
+
                     loading={loading}
                     block
                     style={{
