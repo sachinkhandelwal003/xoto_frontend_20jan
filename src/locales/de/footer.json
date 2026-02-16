@@ -16,8 +16,8 @@
     { "label": "Vermietung", "path": "/marketplace" },
     { "label": "Kaufen", "path": "/marketplace" },
     { "label": "Verkaufen", "path": "/marketplace" },
-    { "label": "Hypotheken", "path": "/mortgage/services" },
-    { "label": "Wartung", "path": "" }
+    { "label": "Hypotheken", "path": "/mortgage/services" }
+    
   ],
   "resources": [
     { "label": "Strategische Allianz", "path": "/login" },

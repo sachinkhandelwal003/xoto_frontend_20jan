@@ -60,7 +60,7 @@ const BuiltForEveryone = () => {
   }, [cardsToShow]);
 
   return (
-    <section className="relative  overflow-hidden py-16 px-4 sm:px-6 lg:px-8 bg-[var(--color-body)]">
+    <section className="relative  overflow-hidden py-8 px-4 sm:px-6 lg:px-8 bg-[var(--color-body)]">
       {/* Wave */}
       <div className="absolute bottom-[-20px] sm:bottom-[-50px] md:bottom-[-80px] lg:bottom-[-130px] xl:bottom-[-160px] left-0 w-full z-0  ">
         <img
