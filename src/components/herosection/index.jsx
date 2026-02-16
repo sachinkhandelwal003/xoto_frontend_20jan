@@ -61,7 +61,7 @@ const HeroSection = () => {
     
     {/* First Button */}
     <Link
-      to="/mortgage/services"
+      to="/mortgages"
       className="whitespace-nowrap w-[45%] sm:w-auto text-center border-2 border-white px-6 py-3 rounded-md hover:bg-white hover:text-black transition text-sm sm:text-base"
     >
       {t("hero.buttons.loan")}
