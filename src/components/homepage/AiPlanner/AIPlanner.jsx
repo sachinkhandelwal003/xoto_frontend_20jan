@@ -2,19 +2,19 @@ import React, { useState, useMemo, useEffect } from 'react';
 import axios from "axios";
 
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  Home, LayoutDashboard, Compass, 
-  Image as ImageIcon, Sparkles, Upload, 
+import {
+  Home, LayoutDashboard, Compass,
+  Image as ImageIcon, Sparkles, Upload,
   ChevronDown, X, ArrowRight, CheckCircle2,
-  Download, Coins, Crown, Loader2, Sun, Sprout, Info, ArrowLeft, Check 
+  Download, Coins, Crown, Loader2, Sun, Sprout, Info, ArrowLeft, Check
 } from 'lucide-react';
-import { 
-  Button, Modal, Progress, Card, Tag, Empty, 
+import {
+  Button, Modal, Progress, Card, Tag, Empty,
   notification, Typography, Divider, Spin
 } from 'antd';
 import { useSelector } from 'react-redux';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
-import LeadGenerationModal from '../Signuupage'; 
+import LeadGenerationModal from '../Signuupage';
 import logoNew from "../../../assets/img/logonew2.png";
 
 const { Paragraph, Title, Text } = Typography;
@@ -40,7 +40,7 @@ const getProgressText = (progress) => {
 
 
 // --- Constants ---
-const BRAND_PURPLE = "#5C039B"; 
+const BRAND_PURPLE = "#5C039B";
 
 // --- Mock Data Options ---
 const gardenStyles = [
@@ -77,24 +77,24 @@ const AIPlanner = () => {
   const [selectedStyles, setSelectedStyles] = useState([]);
   const [selectedElements, setSelectedElements] = useState([]);
   const [specificRequirement, setSpecificRequirement] = useState('');
-  
+
   // Designs State (Holds both fetched history and new generations)
   const [designs, setDesigns] = useState([]);
-  
+
   // Loading States
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [loadingSaved, setLoadingSaved] = useState(false);
   const progress = Math.floor(generationProgress);
-const { title, subtitle } = getProgressText(progress);
-const [pendingGeneration, setPendingGeneration] = useState(false);
+  const { title, subtitle } = getProgressText(progress);
+  const [pendingGeneration, setPendingGeneration] = useState(false);
 
 
   const [libraryDesigns, setLibraryDesigns] = useState([]);
-const [loadingLibrary, setLoadingLibrary] = useState(false);
-const [activeSidebarTab, setActiveSidebarTab] = useState('ai-landscaping'); // 'my-library' or 'ai-landscaping'
-// Modal state
-const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const [loadingLibrary, setLoadingLibrary] = useState(false);
+  const [activeSidebarTab, setActiveSidebarTab] = useState('ai-landscaping'); // 'my-library' or 'ai-landscaping'
+  // Modal state
+  const [showLibraryModal, setShowLibraryModal] = useState(false);
 
 
   // Modals
@@ -102,9 +102,9 @@ const [showLibraryModal, setShowLibraryModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showStyleModal, setShowStyleModal] = useState(false);
   const [showElementModal, setShowElementModal] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false); 
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false); 
-  
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
   // UI & Results
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [upgradeMessage, setUpgradeMessage] = useState('');
@@ -158,97 +158,64 @@ const [showLibraryModal, setShowLibraryModal] = useState(false);
     }
   }, [user]);
 
-const fetchLibraryDesigns = async () => {
-  if (!user) return;
+  const fetchLibraryDesigns = async () => {
+    if (!user) return;
 
-  try {
-    setLoadingLibrary(true);
-    const res = await apiService.get(`/ai/get-customer-liabrary?designType=landscaping`);
-    const designs = res?.data || [];
-    console.log(designs)
+    try {
+      setLoadingLibrary(true);
+      const res = await apiService.get(`/ai/get-customer-liabrary?designType=landscaping`);
+      const designs = res?.data || [];
+      console.log(designs)
 
-    // Map to UI format
-    const formatted = designs.flatMap((d, index) => 
-      d.images.map((img, i) => ({
-        id: `${d._id}-${i}`,
-        image: img,
-        title: `Library Design ${index + 1}-${i + 1}`,
-        timestamp: new Date(d.createdAt).toLocaleDateString(),
-      }))
-    );
+      // Map to UI format
+      const formatted = designs.flatMap((d, index) =>
+        d.images.map((img, i) => ({
+          id: `${d._id}-${i}`,
+          image: img,
+          title: `Library Design ${index + 1}-${i + 1}`,
+          timestamp: new Date(d.createdAt).toLocaleDateString(),
+        }))
+      );
 
-    setLibraryDesigns(formatted.reverse());
-  } catch (err) {
-    console.error("Failed to load library", err);
-  } finally {
-    setLoadingLibrary(false);
-  }
-};
+      setLibraryDesigns(formatted.reverse());
+    } catch (err) {
+      console.error("Failed to load library", err);
+    } finally {
+      setLoadingLibrary(false);
+    }
+  };
 
-// Fetch library when modal opens
-useEffect(() => {
- 
-    fetchLibraryDesigns();
- 
-}, []);
+  // Fetch library when modal opens
+  useEffect(() => {
 
-
-
-
-  // --- Handlers ---
-  // --- Handlers ---
-const processUploadedFile = async (file) => {
-  console.log("processUploadedFile called with file:", file);
-
-  if (!file) {
-    console.warn("No file provided!");
-    return;
-  }
-
-  if (!file.type.startsWith("image/")) {
-    console.warn("Selected file is not an image:", file.type);
-    return;
-  }
-
-  try {
-    console.log("Preparing FormData for upload...");
-    const formData = new FormData();
-    formData.append("file", file);
-
-    console.log("Uploading file to S3...");
-    const uploadRes = await apiService.post("upload", formData);
-
-    console.log("S3 upload response:", uploadRes);
-
-    const uploadedUrl = uploadRes?.file?.url;
-    
-    console.log("Uploaded URL:", uploadedUrl);
-
-    console.log("Sending image URL to AI library...");
-    const libraryRes = await apiService.post("ai/post-customer-liabrary", {
-      designType: "landscaping",
-      imageUrl: uploadedUrl,
-    });
-    console.log("AI library response:", libraryRes);
-
-    console.log("Updating UI state...");
-    setUploadedFile(file);
-    setSelectedImage(uploadedUrl);
-    setShowUploadModal(false);
     fetchLibraryDesigns();
 
-    notification.success({
-      message: "File uploaded successfully",
-    });
+  }, []);
 
-  } catch (error) {
-    console.error("Upload process failed:", error);
-    notification.error({
-      message: "Upload Failed",
-      description: error?.message || "Could not upload image to the server.",
-    });
-  }
-};
+
+
+
+  const processUploadedFile = async (file) =>
+     { console.log("processUploadedFile called with file:", file); if (!file)
+       { console.warn("No file provided!"); return; } if (!file.type.startsWith("image/"))
+         { console.warn("Selected file is not an image:", file.type); return; } 
+  try { console.log("Preparing FormData for upload...");
+     const formData = new FormData(); formData.append("file", file);
+      console.log("Uploading file to S3...");
+       const uploadRes = await apiService.post("upload", formData);
+        console.log("S3 upload response:", uploadRes);
+         const uploadedUrl = uploadRes?.file?.url; 
+         console.log("Uploaded URL:", uploadedUrl);
+          console.log("Sending image URL to AI library...");
+           const libraryRes = await apiService.post("ai/post-customer-liabrary",
+             { designType: "landscaping", imageUrl: uploadedUrl, });
+              console.log("AI library response:", libraryRes);
+               console.log("Updating UI state..."); 
+               setUploadedFile(file);
+                setSelectedImage(uploadedUrl);
+                 setShowUploadModal(false);
+                  fetchLibraryDesigns();
+                   notification.success({ message: "File uploaded successfully", }); } catch (error) { console.error("Upload process failed:", error); notification.error({ message: "Upload Failed", description: error?.message || "Could not upload image to the server.", }); } };
 
 
 
@@ -259,22 +226,22 @@ const processUploadedFile = async (file) => {
     }
 
     if (!isCustomerLoggedIn) {
-    setPendingGeneration(true); 
-    setShowAuthModal(true);
-    return;
-  }
+      setPendingGeneration(true);
+      setShowAuthModal(true);
+      return;
+    }
 
     generateAIDesigns(user);
   };
 
   const handleAuthSuccess = (userData) => {
-  setShowAuthModal(false);
+    setShowAuthModal(false);
 
-  if (pendingGeneration) {
-    setPendingGeneration(false);
-    generateAIDesigns(userData);
-  }
-};
+    if (pendingGeneration) {
+      setPendingGeneration(false);
+      generateAIDesigns(userData);
+    }
+  };
 
 
   const generateAIDesigns = async (currentUser) => {
@@ -298,7 +265,7 @@ const processUploadedFile = async (file) => {
     formData.append('styleName', selectedStyles.length > 0 ? gardenStyles.find(s => s.value === selectedStyles[0])?.label : 'Modern Garden');
     formData.append('elements', selectedElements.map(e => gardenElements.find(el => el.value === e)?.label).join(', ') || 'Natural Landscaping');
     formData.append('description', specificRequirement || 'A professional landscaping design');
- 
+
     const interval = setInterval(() => {
       setGenerationProgress(prev => (prev < 95 ? prev + (95 - prev) * 0.1 : 95));
     }, 500);
@@ -306,7 +273,7 @@ const processUploadedFile = async (file) => {
     try {
       const response = await apiService.post('ai/generate-garden', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 120000 
+        timeout: 120000
       });
 
       const resData = response;
@@ -316,14 +283,14 @@ const processUploadedFile = async (file) => {
         setIsGenerating(false);
         setUpgradeMessage(resData.message || "Limit reached. Upgrade to continue.");
         setShowUpgradeModal(true);
-        return; 
+        return;
       }
 
       // Success
       if (resData.imageUrl && resData.imageUrl !== "") {
         const aiUrl = resData.imageUrl;
         const aiDesc = resData.message || "Garden generated successfully";
-        
+
 
         const newDesign = {
           id: Date.now(), // Temporary ID for UI until refresh
@@ -338,20 +305,20 @@ const processUploadedFile = async (file) => {
 
         // Add new design to the top of the list
         setDesigns(prev => [newDesign, ...prev]);
-setCurrentResult({
-  url: aiUrl,
-  desc: aiDesc,
-  styles: [...selectedStyles],
-  elements: [...selectedElements],
-  instruction: specificRequirement
-});
+        setCurrentResult({
+          url: aiUrl,
+          desc: aiDesc,
+          styles: [...selectedStyles],
+          elements: [...selectedElements],
+          instruction: specificRequirement
+        });
 
-  fetchLibraryDesigns();
+        fetchLibraryDesigns();
 
         setGenerationProgress(100);
-        
+
         notification.success({ message: 'Design Generated!', duration: 2 });
-        
+
         setTimeout(() => {
           setIsGenerating(false);
           setShowGeneratedModal(true);
@@ -360,22 +327,22 @@ setCurrentResult({
     } catch (error) {
       console.error('❌ Generation failed:', error);
       const errRes = error.response?.data;
-      
+
       if (errRes?.error?.message === "Customer not found") {
         setIsGenerating(false);
         notification.error({
           message: 'Account Required',
           description: errRes.error.message,
         });
-        setShowAuthModal(true); 
+        setShowAuthModal(true);
         return;
       }
 
       if (errRes && (errRes.aiImageGeneration === false || errRes.status === false)) {
-          setIsGenerating(false);
-          setUpgradeMessage(errRes.message || "Please upgrade to generate more images.");
-          setShowUpgradeModal(true);
-          return;
+        setIsGenerating(false);
+        setUpgradeMessage(errRes.message || "Please upgrade to generate more images.");
+        setShowUpgradeModal(true);
+        return;
       }
 
       setIsGenerating(false);
@@ -386,47 +353,47 @@ setCurrentResult({
 
 
 
-const downloadImage = async (imageUrl) => {
-  try {
-    const key = imageUrl.split(".amazonaws.com/")[1];
+  const downloadImage = async (imageUrl) => {
+    try {
+      const key = imageUrl.split(".amazonaws.com/")[1];
 
-    if (!key) {
-      notification.error({
-        message: "Invalid Image URL"
-      });
-      return;
-    }
-
-    const response = await axios.get(
-      `https://xoto.ae/api/download-pdf?key=${encodeURIComponent(key)}`,
-      {
-        responseType: "blob" // 🔥 VERY IMPORTANT
+      if (!key) {
+        notification.error({
+          message: "Invalid Image URL"
+        });
+        return;
       }
-    );
 
-    const blob = new Blob([response.data], {
-      type: "application/pdf"
-    });
+      const response = await axios.get(
+        `https://xoto.ae/api/download-pdf?key=${encodeURIComponent(key)}`,
+        {
+          responseType: "blob" // 🔥 VERY IMPORTANT
+        }
+      );
 
-    const url = window.URL.createObjectURL(blob);
+      const blob = new Blob([response.data], {
+        type: "application/pdf"
+      });
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "design.pdf";
-    document.body.appendChild(link);
-    link.click();
+      const url = window.URL.createObjectURL(blob);
 
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "design.pdf";
+      document.body.appendChild(link);
+      link.click();
 
-  } catch (error) {
-    console.error("Download error:", error);
-    notification.error({
-      message: "Download Failed",
-      description: "PDF could not be generated."
-    });
-  }
-};
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error("Download error:", error);
+      notification.error({
+        message: "Download Failed",
+        description: "PDF could not be generated."
+      });
+    }
+  };
 
 
 
@@ -435,7 +402,7 @@ const downloadImage = async (imageUrl) => {
 
   // --- Mobile Tab Item ---
   const MobileTabItem = ({ icon: Icon, label, id, onClick }) => (
-    <button 
+    <button
       onClick={onClick}
       className={`flex flex-col items-center justify-center w-full py-2 ${activeMobileTab === id ? 'text-purple-600' : 'text-gray-400'}`}
     >
@@ -446,9 +413,9 @@ const downloadImage = async (imageUrl) => {
 
   return (
     <div className="flex h-[100dvh] bg-[#F8F9FC] font-sans overflow-hidden">
-      
+
       {/* --- DESKTOP SIDEBAR (Hidden on Mobile) --- */}
-      <div 
+      <div
         className="hidden lg:block fixed top-0 left-0 h-full bg-white border-r border-gray-300 z-50 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] shadow-sm hover:shadow-2xl overflow-hidden"
         style={{ width: isSidebarHovered ? '280px' : '88px' }}
         onMouseEnter={() => setIsSidebarHovered(true)}
@@ -458,9 +425,9 @@ const downloadImage = async (imageUrl) => {
         <div className="h-24 flex items-center px-6 mb-4">
           <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 hover:scale-110">
             <div className="flex gap-1">
-              <div className="w-1 h-4 bg-white rounded-full"/>
-              <div className="w-1 h-6 bg-white rounded-full"/>
-              <div className="w-1 h-4 bg-white rounded-full"/>
+              <div className="w-1 h-4 bg-white rounded-full" />
+              <div className="w-1 h-6 bg-white rounded-full" />
+              <div className="w-1 h-4 bg-white rounded-full" />
             </div>
           </div>
 
@@ -478,7 +445,7 @@ const downloadImage = async (imageUrl) => {
 
         {/* Menu */}
         <div className="flex-1 flex flex-col gap-1">
-          
+
           {/* Home */}
           <div
             onClick={() => navigate('/')}
@@ -516,7 +483,7 @@ const downloadImage = async (imageUrl) => {
             </span>
           </div>
 
-    
+
 
         </div>
       </div>
@@ -524,37 +491,37 @@ const downloadImage = async (imageUrl) => {
 
       {/* --- MAIN CONTENT AREA --- */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative lg:ml-[88px] transition-all duration-300 w-full">
-        
+
         {/* --- LEFT: CONFIGURATION PANEL --- */}
         <div className="w-full lg:w-[460px] bg-white h-full  overflow-y-auto p-4 lg:p-6 border-r border-gray-400 shrink-0 z-10 custom-scrollbar pb-24 lg:pb-6">
-          
+
           {/* Header Mobile Only */}
           <div className="lg:hidden flex items-center justify-between mb-6">
-             <div className="flex items-center gap-2">
-               <Link to="/"><ArrowLeft className="text-gray-600" /></Link>
-               <span className="font-bold text-lg">AI Planner</span>
-             </div>
-             {isCustomerLoggedIn && <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">Pro</div>}
+            <div className="flex items-center gap-2">
+              <Link to="/"><ArrowLeft className="text-gray-600" /></Link>
+              <span className="font-bold text-lg">AI Planner</span>
+            </div>
+            {isCustomerLoggedIn && <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">Pro</div>}
           </div>
 
           {/* Desktop Header */}
           <div className="hidden lg:flex rounded-2xl p-4 mb-8 justify-between items-center shadow-sm" style={{ backgroundColor: BRAND_PURPLE }}>
-             <div className="flex items-center gap-3">
-               <span className="font-bold text-lg text-white">Landscaping</span>
-             </div>
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-lg text-white">Landscaping</span>
+            </div>
           </div>
 
           {/* Upload Area */}
           <div className="bg-[#F3F4F6] rounded-[24px] lg:rounded-[32px] h-[280px] lg:h-[320px] mb-6 lg:mb-8 relative overflow-hidden group border border-gray-100 transition-colors hover:border-purple-100">
             {selectedImage ? (
               <>
-                 <img src={selectedImage} className="w-full h-full object-cover" alt="Selected" />
-                 <button 
-                   onClick={() => setSelectedImage(null)}
-                   className="absolute top-4 right-4 bg-white/90 p-2 rounded-full hover:bg-white text-red-500 transition-all shadow-md"
-                 >
-                   <X size={18} />
-                 </button>
+                <img src={selectedImage} className="w-full h-full object-cover" alt="Selected" />
+                <button
+                  onClick={() => setSelectedImage(null)}
+                  className="absolute top-4 right-4 bg-white/90 p-2 rounded-full hover:bg-white text-red-500 transition-all shadow-md"
+                >
+                  <X size={18} />
+                </button>
               </>
             ) : (
               <div className="flex flex-col items-center justify-center h-full p-6">
@@ -565,7 +532,7 @@ const downloadImage = async (imageUrl) => {
                 <p className="text-gray-400 text-xs lg:text-sm text-center max-w-[280px] mb-6 leading-relaxed">
                   Upload a photo of your garden to see the AI magic.
                 </p>
-                <button 
+                <button
                   onClick={() => setShowUploadModal(true)}
                   className="bg-[var(--color-primary)] text-white px-6 py-3 lg:px-8 lg:py-4 rounded-full font-bold flex items-center gap-2 hover:bg-gray-800 transition-all shadow-xl text-sm lg:text-base"
                 >
@@ -578,35 +545,35 @@ const downloadImage = async (imageUrl) => {
 
           {/* Configuration Grid */}
           <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-6 lg:mb-8">
-             <button onClick={() => setShowStyleModal(true)} className="bg-[#F3F4F6] hover:bg-gray-100 transition-colors rounded-[20px] lg:rounded-[24px] p-4 lg:p-6 flex flex-col items-center justify-center gap-3 lg:gap-4 aspect-square relative group">
-               <div className="bg-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
-                 <Sparkles className="text-gray-500 w-5 h-5 lg:w-6 lg:h-6" />
-               </div>
-               <span className="font-bold text-gray-700 text-sm lg:text-base">Style</span>
-               <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                 {selectedStyles.length > 0 ? 'Selected' : 'Choose'}
-               </span>
-               {selectedStyles.length > 0 && <div className="absolute top-2 right-2 text-green-500 bg-white rounded-full p-1 shadow-sm"><CheckCircle2 size={16} /></div>}
-             </button>
+            <button onClick={() => setShowStyleModal(true)} className="bg-[#F3F4F6] hover:bg-gray-100 transition-colors rounded-[20px] lg:rounded-[24px] p-4 lg:p-6 flex flex-col items-center justify-center gap-3 lg:gap-4 aspect-square relative group">
+              <div className="bg-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
+                <Sparkles className="text-gray-500 w-5 h-5 lg:w-6 lg:h-6" />
+              </div>
+              <span className="font-bold text-gray-700 text-sm lg:text-base">Style</span>
+              <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                {selectedStyles.length > 0 ? 'Selected' : 'Choose'}
+              </span>
+              {selectedStyles.length > 0 && <div className="absolute top-2 right-2 text-green-500 bg-white rounded-full p-1 shadow-sm"><CheckCircle2 size={16} /></div>}
+            </button>
 
-             <button onClick={() => setShowElementModal(true)} className="bg-[#F3F4F6] hover:bg-gray-100 transition-colors rounded-[20px] lg:rounded-[24px] p-4 lg:p-6 flex flex-col items-center justify-center gap-3 lg:gap-4 aspect-square relative group">
-               <div className="bg-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
-                 <LayoutDashboard className="text-gray-500 w-5 h-5 lg:w-6 lg:h-6" />
-               </div>
-               <span className="font-bold text-gray-700 text-sm lg:text-base">Elements</span>
-               <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                 {selectedElements.length > 0 ? 'Selected' : 'Choose'}
-               </span>
-               {selectedElements.length > 0 && <div className="absolute top-2 right-2 text-green-500 bg-white rounded-full p-1 shadow-sm"><CheckCircle2 size={16} /></div>}
-             </button>
+            <button onClick={() => setShowElementModal(true)} className="bg-[#F3F4F6] hover:bg-gray-100 transition-colors rounded-[20px] lg:rounded-[24px] p-4 lg:p-6 flex flex-col items-center justify-center gap-3 lg:gap-4 aspect-square relative group">
+              <div className="bg-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
+                <LayoutDashboard className="text-gray-500 w-5 h-5 lg:w-6 lg:h-6" />
+              </div>
+              <span className="font-bold text-gray-700 text-sm lg:text-base">Elements</span>
+              <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                {selectedElements.length > 0 ? 'Selected' : 'Choose'}
+              </span>
+              {selectedElements.length > 0 && <div className="absolute top-2 right-2 text-green-500 bg-white rounded-full p-1 shadow-sm"><CheckCircle2 size={16} /></div>}
+            </button>
           </div>
 
           {/* Specific Requirement Input */}
           <div className="bg-[#F3F4F6] rounded-2xl p-4 lg:p-5 mb-6 lg:mb-8 border border-transparent hover:border-gray-200">
             <div className="flex justify-between items-center mb-2">
-               <span className="font-bold text-gray-800 text-sm lg:text-base">Custom Instructions</span>
+              <span className="font-bold text-gray-800 text-sm lg:text-base">Custom Instructions</span>
             </div>
-            <textarea 
+            <textarea
               className="w-full bg-transparent border-none outline-none text-sm text-gray-600 placeholder-gray-400 resize-none"
               placeholder="e.g. A small pond in the corner..."
               rows={2}
@@ -616,52 +583,52 @@ const downloadImage = async (imageUrl) => {
           </div>
 
           {/* Generate Button */}
-          <button 
+          <button
             onClick={handleGenerateClick}
             disabled={isGenerating}
             className="w-full text-white font-bold text-base lg:text-lg h-14 lg:h-16 rounded-2xl flex items-center justify-center gap-3 hover:opacity-95 transition-all shadow-xl shadow-purple-200 active:scale-[0.98]"
             style={{ backgroundColor: BRAND_PURPLE }}
           >
-             {isGenerating ? (
-                 <>
-                   <Loader2 className="animate-spin w-5 h-5" />
-                   <span>Designing...</span>
-                 </>
-             ) : (
-                 <>
-                   <span>Generate Vision</span>
-                   <div className="bg-white/20 px-2 py-1 rounded-full flex items-center gap-1 text-xs font-normal backdrop-blur-sm border border-white/10">
-                     <Sparkles size={12} className="text-white" />
-                   </div>
-                 </>
-             )}
+            {isGenerating ? (
+              <>
+                <Loader2 className="animate-spin w-5 h-5" />
+                <span>Designing...</span>
+              </>
+            ) : (
+              <>
+                <span>Generate Vision</span>
+                <div className="bg-white/20 px-2 py-1 rounded-full flex items-center gap-1 text-xs font-normal backdrop-blur-sm border border-white/10">
+                  <Sparkles size={12} className="text-white" />
+                </div>
+              </>
+            )}
           </button>
 
           {/* Mobile Results Preview */}
           <div className="lg:hidden mt-10">
-             {designs.length > 0 && (
-               <>
-                 <div className="flex items-center justify-between mb-4">
-                   <h3 className="font-bold text-lg text-gray-900">Your Designs</h3>
-                   <span className="text-xs text-gray-500">{designs.length} Items</span>
-                 </div>
-                 <div className="space-y-4">
-                   {designs.map(d => (
-                       <div key={d.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                           <img src={d.image} className="w-full h-48 object-cover" alt="Result" />
-                           <div className="p-4 flex justify-between items-center">
-                               <div>
-                                   <h4 className="font-bold text-sm text-gray-800">{d.title}</h4>
-                                   <span className="text-xs text-gray-400">{d.timestamp}</span>
-                               </div>
-                               <button onClick={() => { setCurrentResult({url: d.image, desc: d.aiAnalysis}); setShowGeneratedModal(true); }} className="p-2 bg-gray-50 rounded-full">
-                                   <ArrowRight size={16} className="text-purple-600" />
-                               </button>
-                           </div>
-                       </div>
-                   ))}
-                 </div>
-               </>
+            {designs.length > 0 && (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-lg text-gray-900">Your Designs</h3>
+                  <span className="text-xs text-gray-500">{designs.length} Items</span>
+                </div>
+                <div className="space-y-4">
+                  {designs.map(d => (
+                    <div key={d.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                      <img src={d.image} className="w-full h-48 object-cover" alt="Result" />
+                      <div className="p-4 flex justify-between items-center">
+                        <div>
+                          <h4 className="font-bold text-sm text-gray-800">{d.title}</h4>
+                          <span className="text-xs text-gray-400">{d.timestamp}</span>
+                        </div>
+                        <button onClick={() => { setCurrentResult({ url: d.image, desc: d.aiAnalysis }); setShowGeneratedModal(true); }} className="p-2 bg-gray-50 rounded-full">
+                          <ArrowRight size={16} className="text-purple-600" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -669,58 +636,58 @@ const downloadImage = async (imageUrl) => {
         {/* --- RIGHT: RESULTS GALLERY (Desktop Only) --- */}
         <div className="hidden lg:block flex-1 bg-[#F8F9FC] p-12 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
-              <div className="mb-10 flex justify-between items-end">
-                <div>
-                  <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Your Masterpieces</h1>
-                  <p className="text-gray-500 font-medium text-lg">AI-generated landscapes created by you.</p>
-                </div>
-                <Button 
-    type="default" 
-    onClick={() => setShowLibraryModal(true)} 
-    className="h-10 px-4 rounded-xl font-bold text-purple-700 border border-purple-200 hover:bg-purple-50"
-  >
-    View Library
-  </Button>
+            <div className="mb-10 flex justify-between items-end">
+              <div>
+                <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Your Masterpieces</h1>
+                <p className="text-gray-500 font-medium text-lg">AI-generated landscapes created by you.</p>
               </div>
+              <Button
+                type="default"
+                onClick={() => setShowLibraryModal(true)}
+                className="h-10 px-4 rounded-xl font-bold text-purple-700 border border-purple-200 hover:bg-purple-50"
+              >
+                View Library
+              </Button>
+            </div>
 
-              {loadingSaved ? (
-                  <div className="flex flex-col items-center justify-center h-[50vh]">
-                     <Spin size="large" tip="Loading your designs..." />
-                  </div>
-              ) : designs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-gray-200 rounded-[32px] bg-white/50">
-                  <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-                    <ImageIcon size={40} className="text-gray-300" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-400">No designs yet</h3>
-                  <p className="text-gray-400 mt-2">Use the panel on the left to start.</p>
+            {loadingSaved ? (
+              <div className="flex flex-col items-center justify-center h-[50vh]">
+                <Spin size="large" tip="Loading your designs..." />
+              </div>
+            ) : designs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-gray-200 rounded-[32px] bg-white/50">
+                <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                  <ImageIcon size={40} className="text-gray-300" />
                 </div>
-              ) : (
-                 <div className="grid grid-cols-2 gap-8">
-                   {designs.map(d => (
-                     <Card key={d.id} hoverable className="rounded-[32px] overflow-hidden border-none shadow-sm hover:shadow-2xl transition-all duration-300 group" bodyStyle={{ padding: 0 }}>
-                       <div className="relative aspect-[4/3] overflow-hidden">
-                         <img src={d.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Design" />
-                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-6 backdrop-blur-[3px]">
-                            <button onClick={() => downloadImage(d.image, 'design')} className="flex flex-col items-center gap-3 text-white hover:scale-110 transition-transform group/btn">
-                              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover/btn:bg-white/30 border border-white/30">
-                                 <Download size={24} />
-                              </div>
-                              <span className="text-xs font-bold tracking-widest uppercase">Download</span>
-                            </button>
-                         </div>
-                         <div className="absolute top-5 left-5">
-                            <Tag color="#5c039b" className="text-purple-700 font-bold border-none px-3 py-1.5 rounded-full shadow-lg">AI GENERATED</Tag>
-                         </div>
-                       </div>
-                       <div className="p-6">
-                           <h3 className="font-bold text-xl text-gray-900 mb-1">{d.title}</h3>
-                           <p className="text-gray-400 text-sm">{d.timestamp}</p>
-                       </div>
-                     </Card>
-                   ))}
-                 </div>
-              )}
+                <h3 className="text-xl font-bold text-gray-400">No designs yet</h3>
+                <p className="text-gray-400 mt-2">Use the panel on the left to start.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-8">
+                {designs.map(d => (
+                  <Card key={d.id} hoverable className="rounded-[32px] overflow-hidden border-none shadow-sm hover:shadow-2xl transition-all duration-300 group" bodyStyle={{ padding: 0 }}>
+                    <div className="relative aspect-[4/3] overflow-hidden">
+                      <img src={d.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Design" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-6 backdrop-blur-[3px]">
+                        <button onClick={() => downloadImage(d.image, 'design')} className="flex flex-col items-center gap-3 text-white hover:scale-110 transition-transform group/btn">
+                          <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover/btn:bg-white/30 border border-white/30">
+                            <Download size={24} />
+                          </div>
+                          <span className="text-xs font-bold tracking-widest uppercase">Download</span>
+                        </button>
+                      </div>
+                      <div className="absolute top-5 left-5">
+                        <Tag color="#5c039b" className="text-purple-700 font-bold border-none px-3 py-1.5 rounded-full shadow-lg">AI GENERATED</Tag>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <h3 className="font-bold text-xl text-gray-900 mb-1">{d.title}</h3>
+                      <p className="text-gray-400 text-sm">{d.timestamp}</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -728,18 +695,18 @@ const downloadImage = async (imageUrl) => {
 
       {/* --- MOBILE BOTTOM NAVIGATION --- */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex justify-around py-2 pb-safe-area">
-         <MobileTabItem icon={Home} label="Home" id="home" onClick={() => navigate('/')} />
-         <MobileTabItem icon={Sparkles} label="Create" id="create" onClick={() => setActiveMobileTab('create')} />
-         <MobileTabItem icon={Compass} label="Explore" id="explore" onClick={() => {}} />
+        <MobileTabItem icon={Home} label="Home" id="home" onClick={() => navigate('/')} />
+        <MobileTabItem icon={Sparkles} label="Create" id="create" onClick={() => setActiveMobileTab('create')} />
+        <MobileTabItem icon={Compass} label="Explore" id="explore" onClick={() => { }} />
       </div>
 
       {/* --- MODALS --- */}
-      
+
       {/* 1. Auth Modal */}
-      <LeadGenerationModal 
-        visible={showAuthModal} 
-        onCancel={() => setShowAuthModal(false)} 
-        onAuthSuccess={handleAuthSuccess} 
+      <LeadGenerationModal
+        visible={showAuthModal}
+        onCancel={() => setShowAuthModal(false)}
+        onAuthSuccess={handleAuthSuccess}
       />
 
       {/* 2. Upgrade / Premium Modal */}
@@ -752,19 +719,19 @@ const downloadImage = async (imageUrl) => {
         bodyStyle={{ padding: 0, borderRadius: '24px', overflow: 'hidden' }}
       >
         <div className="p-8 text-center bg-gradient-to-b from-white to-purple-50">
-            <div className="w-20 h-20 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md border border-yellow-200">
-                <Crown size={40} className="text-yellow-600" fill="currentColor" fillOpacity={0.2} />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">Unlock Limitless Creativity</h3>
-            <p className="text-gray-500 mb-8 leading-relaxed px-4">
-                {upgradeMessage || "You've reached your limit. Upgrade to Pro to continue designing."}
-            </p>
-            <div className="space-y-3">
-                <Link to="">
-                    <Button type="primary" size="large" block className="h-12 text-base font-bold rounded-xl shadow-lg shadow-purple-200" style={{ background: 'linear-gradient(135deg, #5C039B 0%, #8E2DE2 100%)', border: 'none' }} onClick={() => setShowUpgradeModal(false)}>View Upgrade Plans</Button>
-                </Link>
-                <Button type="text" block className="text-gray-400" onClick={() => setShowUpgradeModal(false)}>Maybe Later</Button>
-            </div>
+          <div className="w-20 h-20 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md border border-yellow-200">
+            <Crown size={40} className="text-yellow-600" fill="currentColor" fillOpacity={0.2} />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-3">Unlock Limitless Creativity</h3>
+          <p className="text-gray-500 mb-8 leading-relaxed px-4">
+            {upgradeMessage || "You've reached your limit. Upgrade to Pro to continue designing."}
+          </p>
+          <div className="space-y-3">
+            <Link to="">
+              <Button type="primary" size="large" block className="h-12 text-base font-bold rounded-xl shadow-lg shadow-purple-200" style={{ background: 'linear-gradient(135deg, #5C039B 0%, #8E2DE2 100%)', border: 'none' }} onClick={() => setShowUpgradeModal(false)}>View Upgrade Plans</Button>
+            </Link>
+            <Button type="text" block className="text-gray-400" onClick={() => setShowUpgradeModal(false)}>Maybe Later</Button>
+          </div>
         </div>
       </Modal>
 
@@ -792,33 +759,33 @@ const downloadImage = async (imageUrl) => {
               </Paragraph>
 
               {/* User Preferences */}
-<div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
-  <h4 className="font-bold text-sm text-purple-700 mb-2">
-    Your Preferences
-  </h4>
+              <div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
+                <h4 className="font-bold text-sm text-purple-700 mb-2">
+                  Your Preferences
+                </h4>
 
-  {currentResult.styles?.length > 0 && (
-    <p className="text-xs text-gray-700 mb-1">
-      <strong>Style:</strong>{" "}
-      {gardenStyles.find(s => s.value === currentResult.styles[0])?.label}
-    </p>
-  )}
+                {currentResult.styles?.length > 0 && (
+                  <p className="text-xs text-gray-700 mb-1">
+                    <strong>Style:</strong>{" "}
+                    {gardenStyles.find(s => s.value === currentResult.styles[0])?.label}
+                  </p>
+                )}
 
-  {currentResult.elements?.length > 0 && (
-    <p className="text-xs text-gray-700 mb-1">
-      <strong>Elements:</strong>{" "}
-      {currentResult.elements
-        .map(e => gardenElements.find(el => el.value === e)?.label)
-        .join(", ")}
-    </p>
-  )}
+                {currentResult.elements?.length > 0 && (
+                  <p className="text-xs text-gray-700 mb-1">
+                    <strong>Elements:</strong>{" "}
+                    {currentResult.elements
+                      .map(e => gardenElements.find(el => el.value === e)?.label)
+                      .join(", ")}
+                  </p>
+                )}
 
-  {currentResult.instruction && (
-    <p className="text-xs text-gray-700">
-      <strong>Instruction:</strong> {currentResult.instruction}
-    </p>
-  )}
-</div>
+                {currentResult.instruction && (
+                  <p className="text-xs text-gray-700">
+                    <strong>Instruction:</strong> {currentResult.instruction}
+                  </p>
+                )}
+              </div>
 
             </div>
             <div className="space-y-3 pt-4 border-t mt-4">
@@ -830,67 +797,67 @@ const downloadImage = async (imageUrl) => {
 
       {/* 4. Upload Modal */}
       <Modal
-  open={showUploadModal}
-  footer={null}
-  onCancel={() => setShowUploadModal(false)}
-  centered
-  width={600}
-  title="Select Source Canvas"
-  bodyStyle={{ padding: '1rem' }}
->
-  <div className="p-2">
-    {/* Library Designs */}
-    {libraryDesigns.length > 0 && (
-      <>
-        <h4 className="text-sm font-semibold text-gray-500 mb-2">Your Library Designs</h4>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
-          {libraryDesigns.map(d => (
-            <div
-              key={d.id}
-              onClick={() => { setSelectedImage(d.image); setShowUploadModal(false); }}
-              className="aspect-square rounded-xl lg:rounded-2xl overflow-hidden cursor-pointer hover:ring-4 ring-purple-100 transition-all shadow-sm"
-            >
-              <img src={d.image} className="w-full h-full object-cover" />
-            </div>
-          ))}
+        open={showUploadModal}
+        footer={null}
+        onCancel={() => setShowUploadModal(false)}
+        centered
+        width={600}
+        title="Select Source Canvas"
+        bodyStyle={{ padding: '1rem' }}
+      >
+        <div className="p-2">
+          {/* Library Designs */}
+          {libraryDesigns.length > 0 && (
+            <>
+              <h4 className="text-sm font-semibold text-gray-500 mb-2">Your Library Designs</h4>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
+                {libraryDesigns.map(d => (
+                  <div
+                    key={d.id}
+                    onClick={() => { setSelectedImage(d.image); setShowUploadModal(false); }}
+                    className="aspect-square rounded-xl lg:rounded-2xl overflow-hidden cursor-pointer hover:ring-4 ring-purple-100 transition-all shadow-sm"
+                  >
+                    <img src={d.image} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Dummy Space Images */}
+          <h4 className="text-sm font-semibold text-gray-500 mb-2">Suggested Designs</h4>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
+            {dummySpaceImages.map(img => (
+              <div
+                key={img.id}
+                onClick={() => { setSelectedImage(img.url); setShowUploadModal(false); }}
+                className="aspect-square rounded-xl lg:rounded-2xl overflow-hidden cursor-pointer hover:ring-4 ring-purple-100 transition-all shadow-sm"
+              >
+                <img src={img.url} className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
+
+          <Divider>OR UPLOAD YOUR OWN</Divider>
+
+          <input
+            type="file"
+            id="file-up"
+            className="hidden"
+            accept="image/*"
+            onChange={(e) => processUploadedFile(e.target.files[0])}
+          />
+
+          <Button
+            block
+            icon={<Upload size={16} />}
+            className="h-12 rounded-xl font-semibold border-dashed text-sm"
+            onClick={() => document.getElementById('file-up').click()}
+          >
+            Browse Local Files
+          </Button>
         </div>
-      </>
-    )}
-
-    {/* Dummy Space Images */}
-    <h4 className="text-sm font-semibold text-gray-500 mb-2">Suggested Designs</h4>
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
-      {dummySpaceImages.map(img => (
-        <div
-          key={img.id}
-          onClick={() => { setSelectedImage(img.url); setShowUploadModal(false); }}
-          className="aspect-square rounded-xl lg:rounded-2xl overflow-hidden cursor-pointer hover:ring-4 ring-purple-100 transition-all shadow-sm"
-        >
-          <img src={img.url} className="w-full h-full object-cover" />
-        </div>
-      ))}
-    </div>
-
-    <Divider>OR UPLOAD YOUR OWN</Divider>
-
-    <input
-      type="file"
-      id="file-up"
-      className="hidden"
-      accept="image/*"
-      onChange={(e) => processUploadedFile(e.target.files[0])}
-    />
-
-    <Button
-      block
-      icon={<Upload size={16} />}
-      className="h-12 rounded-xl font-semibold border-dashed text-sm"
-      onClick={() => document.getElementById('file-up').click()}
-    >
-      Browse Local Files
-    </Button>
-  </div>
-</Modal>
+      </Modal>
 
 
       {/* 5. Style & Elements Modals */}
@@ -921,74 +888,74 @@ const downloadImage = async (imageUrl) => {
         </div>
       </Modal>
 
-     <Modal
-  open={showLibraryModal}
-  footer={null}
-  onCancel={() => setShowLibraryModal(false)}
-  width={800}
-  centered
-  title="My Library"
-  bodyStyle={{ padding: '1rem' }}
->
-  {loadingLibrary ? (
-    <div className="flex justify-center items-center h-[50vh]">
-      <Spin size="large" tip="Loading your library..." />
-    </div>
-  ) : libraryDesigns.length === 0 ? (
-    <Empty description="No designs in your library yet." />
-  ) : (
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-      {libraryDesigns.map(d => (
-        <Card
-          key={d.id}
-          hoverable
-          className="rounded-2xl overflow-hidden shadow-sm"
-          bodyStyle={{ padding: 0 }}
-        >
-          <img
-            src={d.image}
-            alt={d.title}
-            className="w-full h-40 object-cover"
-          />
-          <div className="p-3 flex justify-between items-center">
-            <div>
-              <h4 className="font-bold text-sm text-gray-800">{d.title}</h4>
-              <span className="text-xs text-gray-400">{d.timestamp}</span>
-            </div>
-            <button
-              onClick={() => {
-                setSelectedImage(d.image);
-                setShowLibraryModal(false);
-              }}
-              className="p-2 bg-gray-50 rounded-full"
-            >
-              <ArrowRight size={16} className="text-purple-600" />
-            </button>
+      <Modal
+        open={showLibraryModal}
+        footer={null}
+        onCancel={() => setShowLibraryModal(false)}
+        width={800}
+        centered
+        title="My Library"
+        bodyStyle={{ padding: '1rem' }}
+      >
+        {loadingLibrary ? (
+          <div className="flex justify-center items-center h-[50vh]">
+            <Spin size="large" tip="Loading your library..." />
           </div>
-        </Card>
-      ))}
-    </div>
-  )}
+        ) : libraryDesigns.length === 0 ? (
+          <Empty description="No designs in your library yet." />
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            {libraryDesigns.map(d => (
+              <Card
+                key={d.id}
+                hoverable
+                className="rounded-2xl overflow-hidden shadow-sm"
+                bodyStyle={{ padding: 0 }}
+              >
+                <img
+                  src={d.image}
+                  alt={d.title}
+                  className="w-full h-40 object-cover"
+                />
+                <div className="p-3 flex justify-between items-center">
+                  <div>
+                    <h4 className="font-bold text-sm text-gray-800">{d.title}</h4>
+                    <span className="text-xs text-gray-400">{d.timestamp}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedImage(d.image);
+                      setShowLibraryModal(false);
+                    }}
+                    className="p-2 bg-gray-50 rounded-full"
+                  >
+                    <ArrowRight size={16} className="text-purple-600" />
+                  </button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
 
-  <Divider>OR Upload Your Own</Divider>
+        <Divider>OR Upload Your Own</Divider>
 
-  <input
-    type="file"
-    id="library-file-up"
-    className="hidden"
-    accept="image/*"
-    onChange={(e) => processUploadedFile(e.target.files[0])}
-  />
+        <input
+          type="file"
+          id="library-file-up"
+          className="hidden"
+          accept="image/*"
+          onChange={(e) => processUploadedFile(e.target.files[0])}
+        />
 
-  <Button
-    block
-    icon={<Upload size={16} />}
-    className="h-12 rounded-xl font-semibold border-dashed text-sm"
-    onClick={() => document.getElementById('library-file-up').click()}
-  >
-    Browse Local Files
-  </Button>
-</Modal>
+        <Button
+          block
+          icon={<Upload size={16} />}
+          className="h-12 rounded-xl font-semibold border-dashed text-sm"
+          onClick={() => document.getElementById('library-file-up').click()}
+        >
+          Browse Local Files
+        </Button>
+      </Modal>
 
 
 
@@ -1008,55 +975,55 @@ const downloadImage = async (imageUrl) => {
             </p>
           </div>
 
-{/* User Selection Preview */}
-<div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 mb-6 max-w-md w-full border border-purple-100 shadow-sm">
-  <h4 className="font-bold text-gray-800 text-sm mb-3">
-    Your Selections
-  </h4>
+          {/* User Selection Preview */}
+          <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 mb-6 max-w-md w-full border border-purple-100 shadow-sm">
+            <h4 className="font-bold text-gray-800 text-sm mb-3">
+              Your Selections
+            </h4>
 
-  {selectedStyles.length > 0 && (
-    <p className="text-xs text-gray-600 mb-1">
-      <strong>Style:</strong>{" "}
-      {gardenStyles.find(s => s.value === selectedStyles[0])?.label}
-    </p>
-  )}
+            {selectedStyles.length > 0 && (
+              <p className="text-xs text-gray-600 mb-1">
+                <strong>Style:</strong>{" "}
+                {gardenStyles.find(s => s.value === selectedStyles[0])?.label}
+              </p>
+            )}
 
-  {selectedElements.length > 0 && (
-    <p className="text-xs text-gray-600 mb-1">
-      <strong>Elements:</strong>{" "}
-      {selectedElements
-        .map(e => gardenElements.find(el => el.value === e)?.label)
-        .join(", ")}
-    </p>
-  )}
+            {selectedElements.length > 0 && (
+              <p className="text-xs text-gray-600 mb-1">
+                <strong>Elements:</strong>{" "}
+                {selectedElements
+                  .map(e => gardenElements.find(el => el.value === e)?.label)
+                  .join(", ")}
+              </p>
+            )}
 
-  {specificRequirement && (
-    <p className="text-xs text-gray-600">
-      <strong>Instruction:</strong> {specificRequirement}
-    </p>
-  )}
-</div>
+            {specificRequirement && (
+              <p className="text-xs text-gray-600">
+                <strong>Instruction:</strong> {specificRequirement}
+              </p>
+            )}
+          </div>
 
 
 
-       <div className="w-full max-w-xs lg:w-80">
-  <Progress
-    percent={progress}
-    strokeColor={{ "0%": "#8E2DE2", "100%": BRAND_PURPLE }}
-    status="active"
-    strokeWidth={10}
-    showInfo={false}
-  />
+          <div className="w-full max-w-xs lg:w-80">
+            <Progress
+              percent={progress}
+              strokeColor={{ "0%": "#8E2DE2", "100%": BRAND_PURPLE }}
+              status="active"
+              strokeWidth={10}
+              showInfo={false}
+            />
 
-  <div className="flex justify-between mt-3 text-[10px] lg:text-xs font-bold uppercase tracking-widest text-gray-400">
-    <span>{title}</span>
-    <span>{progress}%</span>
-  </div>
+            <div className="flex justify-between mt-3 text-[10px] lg:text-xs font-bold uppercase tracking-widest text-gray-400">
+              <span>{title}</span>
+              <span>{progress}%</span>
+            </div>
 
-  <div className="mt-1 text-[10px] lg:text-xs text-gray-400 text-left">
-    {subtitle}
-  </div>
-</div>
+            <div className="mt-1 text-[10px] lg:text-xs text-gray-400 text-left">
+              {subtitle}
+            </div>
+          </div>
 
         </div>
       )}

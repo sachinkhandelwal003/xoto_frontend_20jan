@@ -78,20 +78,20 @@ const ProductFilterPage = () => {
 
   return (
     <Layout style={{ background: '#f8fafc', minHeight: '100vh' }}>
-      <Content style={{ padding: '0 12px sm:0 16px md:0 24px' }}>
+      <Content style={{ padding: ' 12px sm:0 16px md:0 24px' }}>
 
         {/* HERO SECTION — UNCHANGED */}
         {/* (exactly same as your code) */}
            <div
-          className="relative rounded-xl sm:rounded-2xl overflow-hidden mt-6 shadow-2xl"
+          className="relative rounded-xl sm:rounded-2xl overflow-hidden mt-6 shadow-2xl "
           style={{
             background: 'linear-gradient(135deg, #420183 0%, #764ba2 100%)',
-            height: isMobile ? 260 : 360
+            height: isMobile ? 260 : 300
           }}
         >
           <div className="absolute inset-0 bg-black/20" />
 
-          <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+          <div className="absolute top-4 right-4 z-20 sm:top-6 sm:right-6">
             <Tag color="gold" className="font-bold">
               New Collection
             </Tag>
@@ -105,7 +105,7 @@ const ProductFilterPage = () => {
                 transition={{ duration: 0.6 }}
               >
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
-                  Discover Your <span className="text-yellow-300">Perfect</span> Space
+                  Discover Your Perfect Space
                 </h1>
 
                 <p className="text-white/90 text-base md:text-xl mb-6 max-w-xl mx-auto md:mx-0">
@@ -129,7 +129,7 @@ const ProductFilterPage = () => {
               <img
                 src="https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=500"
                 alt="Furniture"
-                className="w-72 h-72 object-cover rounded-2xl shadow-2xl"
+                className="w-55 h-55 object-cover rounded-2xl shadow-2xl"
               />
               <div className="absolute -bottom-4 -right-4 bg-white p-4 rounded-xl shadow-xl">
                 <div className="text-center">

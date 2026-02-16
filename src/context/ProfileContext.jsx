@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await apiService.get("profile/get-profile-data");
       // Assuming your API returns data as shown
-      setUserProfile(res.data.data); 
+      setUserProfile(res.data); 
     } catch (err) {
       console.log(err.response?.data?.message || err.message);
     } finally {
