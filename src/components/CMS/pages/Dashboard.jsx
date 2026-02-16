@@ -100,6 +100,9 @@ const Dashboard = () => {
           <Title level={2} style={{ margin: 0 }}> Dashboard  View</Title>
           <Text type="secondary">Real-time overview of leads, properties, and users.</Text>
         </div>
+        <div className="flex gap-3 bg-primary text-white cursor-pointer p-2 rounded-lg shadow-sm"> 
+        <button className='cursor-pointer' onClick={() => window.location.href = '/'}>Go To Home</button>
+        </div>
         {/* <Space>
           <Button icon={<PlusOutlined />} type="primary" style={{ background: PURPLE_THEME.primary }}>New Property</Button>
           <Button icon={<SettingOutlined />} />
