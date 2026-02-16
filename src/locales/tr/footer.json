@@ -16,8 +16,8 @@
     { "label": "Kiralama", "path": "/marketplace" },
     { "label": "Satın Al", "path": "/marketplace" },
     { "label": "Sat", "path": "/marketplace" },
-    { "label": "Konut Kredileri", "path": "/mortgage/services" },
-    { "label": "Bakım", "path": "" }
+    { "label": "Konut Kredileri", "path": "/mortgage/services" }
+  
   ],
   "resources": [
     { "label": "Stratejik Ortaklık", "path": "/login" },
@@ -27,7 +27,7 @@
     { "label": "Finansal Kurumlar", "path": "/" }
   ],
   "knowledge": [
-    { "label": "Bilgi Merkezi", "path": "/about" },
+    { "label": "Bilgi Merkezi", "path": "/explore" },
     { "label": "Sürdürülebilirliğimiz Odak", "path": "/about" },
     
     { "label": "Geri Bildirim Gönder", "path": "/about" },

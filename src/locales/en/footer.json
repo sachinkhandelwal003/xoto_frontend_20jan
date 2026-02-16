@@ -18,8 +18,8 @@
     { "label": "Rentals", "path": "/marketplace" },
     { "label": "Buy", "path": "/marketplace" },
     { "label": "Sell", "path": "/marketplace" },
-    { "label": "Mortgages", "path": "/mortgage/services" },
-    { "label": "Maintenance", "path": "" }
+    { "label": "Mortgages", "path": "/mortgage/services" }
+   
   ],
 
   "resources": [
@@ -31,7 +31,7 @@
   ],
 
   "knowledge": [
-    { "label": "Knowledge Centre", "path": "/explore" },
+    { "label": "Knowledge Hub", "path": "/explore" },
     { "label": "Our Sustainability Focus", "path": "/about" },
   
     { "label": "Submit Your Feedback", "path": "/about" },

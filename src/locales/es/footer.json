@@ -16,8 +16,8 @@
     { "label": "Alquiler", "path": "/marketplace" },
     { "label": "Comprar", "path": "/marketplace" },
     { "label": "Vender", "path": "/marketplace" },
-    { "label": "Hipotecas", "path": "/mortgage/services" },
-    { "label": "Mantenimiento", "path": "" }
+    { "label": "Hipotecas", "path": "/mortgage/services" }
+   
   ],
   "resources": [
     { "label": "Alianza estratégica", "path": "/login" },
@@ -27,7 +27,7 @@
     { "label": "Instituciones financieras", "path": "/" }
   ],
   "knowledge": [
-    { "label": "Centro de conocimiento", "path": "/about" },
+    { "label": "Centro de Conocimiento", "path": "/explore" },
     { "label": "Nuestra sostenibilidad Enfoque", "path": "/about" },
     
     { "label": "Enviar comentarios", "path": "/about" },
