@@ -340,7 +340,7 @@ const processUploadedFile = async (file) => {
   }
 };
 
-
+// cc
 
   const generateAIDesigns = async (currentUser) => {
     setIsGenerating(true);
