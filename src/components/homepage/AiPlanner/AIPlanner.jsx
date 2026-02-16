@@ -207,9 +207,21 @@ const AIPlanner = () => {
          const uploadedUrl = uploadRes?.file?.url; 
          console.log("Uploaded URL:", uploadedUrl);
           console.log("Sending image URL to AI library...");
-           const libraryRes = await apiService.post("ai/post-customer-liabrary",
-             { designType: "landscaping", imageUrl: uploadedUrl, });
-              console.log("AI library response:", libraryRes);
+
+
+         if (isCustomerLoggedIn) {
+  await apiService.post("ai/post-customer-liabrary", {
+    designType: "landscaping",
+    imageUrl: uploadedUrl,
+  });
+} else {
+  // Save in localStorage
+  const existing = JSON.parse(localStorage.getItem("guestLibrary")) || [];
+  existing.push(uploadedUrl);
+  localStorage.setItem("guestLibrary", JSON.stringify(existing));
+}
+
+
                console.log("Updating UI state..."); 
                setUploadedFile(file);
                 setSelectedImage(uploadedUrl);
@@ -234,14 +246,40 @@ const AIPlanner = () => {
     generateAIDesigns(user);
   };
 
-  const handleAuthSuccess = (userData) => {
-    setShowAuthModal(false);
+  const handleAuthSuccess = async (userData) => {
+  setShowAuthModal(false);
 
-    if (pendingGeneration) {
-      setPendingGeneration(false);
-      generateAIDesigns(userData);
+  // 🔥 Check localStorage guest images
+  const guestImages = JSON.parse(localStorage.getItem("guestLibrary")) || [];
+
+  if (guestImages.length > 0) {
+    try {
+      for (let img of guestImages) {
+        await apiService.post("ai/post-customer-liabrary", {
+          designType: "landscaping",
+          imageUrl: img,
+        });
+      }
+
+      // Clear after upload
+      localStorage.removeItem("guestLibrary");
+
+      notification.success({
+        message: "Your previous uploads added to library!",
+      });
+
+      fetchLibraryDesigns();
+    } catch (err) {
+      console.error("Auto library migration failed", err);
     }
-  };
+  }
+
+  if (pendingGeneration) {
+    setPendingGeneration(false);
+    generateAIDesigns(userData);
+  }
+};
+
 
 
   const generateAIDesigns = async (currentUser) => {

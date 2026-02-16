@@ -231,58 +231,65 @@ useEffect(() => {
     notification.info({ message: 'Form cleared' });
   };
 
- const processUploadedFile = async (file) => {
-   console.log("processUploadedFile called with file:", file);
- 
-   if (!file) {
-     console.warn("No file provided!");
-     return;
-   }
- 
-   if (!file.type.startsWith("image/")) {
-     console.warn("Selected file is not an image:", file.type);
-     return;
-   }
- 
-   try {
-     console.log("Preparing FormData for upload...");
-     const formData = new FormData();
-     formData.append("file", file);
- 
-     console.log("Uploading file to S3...");
-     const uploadRes = await apiService.post("upload", formData);
- 
-     console.log("S3 upload response:", uploadRes);
- 
-     const uploadedUrl = uploadRes?.file?.url;
-     
-     console.log("Uploaded URL:", uploadedUrl);
- 
-     console.log("Sending image URL to AI library...");
-     const libraryRes = await apiService.post("ai/post-customer-liabrary", {
-       designType: "interior",
-       imageUrl: uploadedUrl,
-     });
-     console.log("AI library response:", libraryRes);
- 
-     console.log("Updating UI state...");
-     setUploadedFile(file);
-     setSelectedImage(uploadedUrl);
-     setShowUploadModal(false);
-     fetchLibraryDesigns();
- 
-     notification.success({
-       message: "File uploaded successfully",
-     });
- 
-   } catch (error) {
-     console.error("Upload process failed:", error);
-     notification.error({
-       message: "Upload Failed",
-       description: error?.message || "Could not upload image to the server.",
-     });
-   }
- };
+const processUploadedFile = async (file) => {
+  if (!file || !file.type.startsWith("image/")) {
+    notification.error({ message: "Please upload a valid image file." });
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    // 1️⃣ Upload to S3
+    const uploadRes = await apiService.post("upload", formData);
+
+    const uploadedUrl = uploadRes?.file?.url;
+
+    if (!uploadedUrl) {
+      throw new Error("Image upload failed");
+    }
+
+    // 2️⃣ If logged in → save to backend
+    if (isCustomerLoggedIn) {
+      await apiService.post("ai/post-customer-liabrary", {
+        designType: "interior",
+        imageUrl: uploadedUrl,
+      });
+
+      fetchLibraryDesigns();
+    } 
+    // 3️⃣ If guest → save in localStorage
+    else {
+      const existing =
+        JSON.parse(localStorage.getItem("guestLibrary_interior")) || [];
+
+      existing.push(uploadedUrl);
+
+      localStorage.setItem(
+        "guestLibrary_interior",
+        JSON.stringify(existing)
+      );
+    }
+
+    // 4️⃣ Update UI
+    setUploadedFile(file);
+    setSelectedImage(uploadedUrl);
+    setShowUploadModal(false);
+
+    notification.success({
+      message: "File uploaded successfully",
+    });
+
+  } catch (error) {
+    console.error("Upload process failed:", error);
+    notification.error({
+      message: "Upload Failed",
+      description: error?.message || "Could not upload image.",
+    });
+  }
+};
+
  
 
   const handleGenerateClick = async () => {
@@ -300,15 +307,39 @@ useEffect(() => {
     generateAIDesigns(user);
   };
 
- const handleAuthSuccess = (userData) => {
+ const handleAuthSuccess = async (userData) => {
   setShowAuthModal(false);
 
-  // 🚀 Auto start generation after login/signup
+  // 🔥 Move guest interior images to backend
+  const guestImages =
+    JSON.parse(localStorage.getItem("guestLibrary_interior")) || [];
+
+  if (guestImages.length > 0) {
+    try {
+      for (let img of guestImages) {
+        await apiService.post("ai/post-customer-liabrary", {
+          designType: "interior",
+          imageUrl: img,
+        });
+      }
+
+      localStorage.removeItem("guestLibrary_interior");
+      fetchLibraryDesigns();
+
+      notification.success({
+        message: "Your previous uploads added to library!",
+      });
+    } catch (err) {
+      console.error("Guest migration failed:", err);
+    }
+  }
+
   if (pendingGeneration) {
     setPendingGeneration(false);
     generateAIDesigns(userData);
   }
 };
+
 
 
   const generateAIDesigns = async (currentUser) => {
