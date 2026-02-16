@@ -128,16 +128,29 @@ const CustomerDashboard = () => {
           </Title>
           <Text type="secondary">Here is your purchase summary.</Text>
         </div>
-        <div className="flex gap-3 mt-4 md:mt-0">
-           <Button 
-            type="primary" 
-            icon={<SyncOutlined />} 
-            onClick={handleProfile}
-            style={{ background: PURPLE_THEME.primary, borderColor: PURPLE_THEME.primary }}
-           >
-             My Profile
-           </Button>
-        </div>
+       <div className="flex gap-3 mt-4 md:mt-0 items-center">
+
+  <Button 
+    type="primary" 
+    icon={<SyncOutlined />} 
+    onClick={handleProfile}
+    style={{ 
+      background: PURPLE_THEME.primary, 
+      borderColor: PURPLE_THEME.primary 
+    }}
+  >
+    My Profile
+  </Button>
+
+  <button
+    className="bg-[#722ed1] text-white cursor-pointer py-1 px-4 rounded-lg shadow-sm"
+    onClick={() => window.location.href = '/'}
+  >
+    Go To Home
+  </button>
+
+</div>
+
       </div>
 
       {/* STATS CARDS */}

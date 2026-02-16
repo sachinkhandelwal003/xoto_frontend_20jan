@@ -112,10 +112,16 @@ const Freelancerdashboard = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
 
       {/* HEADER */}
+       <div className="flex justify-between items-center mb-8"> 
       <div className="mb-8">
         <Title level={2} style={{ margin: 0 }}>Freelancer Dashboard</Title>
         <Text type="secondary">Performance overview & project tracking</Text>
+        
       </div>
+       <div className="flex gap-3 bg-primary text-white cursor-pointer p-2 rounded-lg shadow-sm"> 
+        <button className='cursor-pointer' onClick={() => window.location.href = '/'}>Go To Home</button>
+        </div>
+        </div>
 
       {/* STATS */}
       <Row gutter={[16, 16]} className="mb-8">
