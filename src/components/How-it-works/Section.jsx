@@ -1,12 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import video from "../../assets/video/howitworks.mp4";
+// import video from "../../assets/video/howitworks.mp4";
 
 const Section = () => {
   return (
     <div className="relative w-full h-screen max-h-[800px] overflow-hidden">
       {/* Background Video */}
-      <video
+      {/* <video
         className="absolute top-0 left-0 w-full h-full object-cover z-0"
         autoPlay
         muted
@@ -15,7 +15,7 @@ const Section = () => {
       >
         <source src={video} type="video/mp4" />
         Your browser does not support the video tag.
-      </video>
+      </video> */}
 
       {/* Overlay Content */}
       <motion.div
