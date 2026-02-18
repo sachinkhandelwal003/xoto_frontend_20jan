@@ -111,7 +111,14 @@ const CUSTOM_ROLE_LINKS = {
       ],
     },
   ],
-"9": [],
+"9": [ {
+      title: "AgentLead Management", 
+      icon: "fas fa-building", 
+      path: "/dashboard/agent/lead", 
+      // submenus: [
+      //   { title: "All Leads", path: "/dashboard/agent/lead/list" },
+      // ],
+    },],
 "10": []
 
 
@@ -142,7 +149,7 @@ const ROLE_MODULE_ORDER = {
   '8': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
   '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
-   '9': ['Dashboard'],
+   '9': ['Dashboard','AgentLead Management'],
    '10': ['Dashboard']
 
 
