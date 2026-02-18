@@ -42,7 +42,7 @@ const ProductDetails = () => {
   const [selectedVariant, setSelectedVariant] = useState(0);
   const [adding, setAdding] = useState(false);
 
-  /* ---------- CONSTANTS ---------- */
+  /* ---------- CONSTANTS  sdsdfs ---------- */
   const BASE_URL =  "https://xoto.ae";
   const CUSTOMER_ID = "65f1aa88e8b4f12a9c654321";
 
