@@ -22,14 +22,14 @@ const HeroSection = () => {
 
 
 {/* Background Image */}
-<img
+{/* <img
   src="https://xotostaging.s3.me-central-1.amazonaws.com/properties/1771224973797-10666326f10f483547efa74ccc69e36be3bc9130.jpg"
   alt="Hero Background"
   className="absolute inset-0 w-full h-full object-cover z-0"
-/>
+/> */}
 
       {/* Background Video */}
-      {/* <video
+       <video
         autoPlay
         loop
         muted
@@ -37,7 +37,7 @@ const HeroSection = () => {
         className="absolute inset-0 w-full h-full object-cover z-0"
       >
         <source src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1768043300370-mortgage2.mp4"} type="video/mp4" />
-      </video> */}
+      </video>
 
       {/* Content */}
       <div className="relative z-[2] w-full max-w-7xl mx-auto px-4 lg:px-12 flex flex-col items-center lg:items-start text-center lg:text-left gap-10">
@@ -62,12 +62,22 @@ const HeroSection = () => {
     {/* First Button */}
     <Link
       to="/mortgages"
-      className="whitespace-nowrap w-[45%] sm:w-auto text-center border-2 border-white px-6 py-3 rounded-md hover:bg-white hover:text-black transition text-sm sm:text-base"
+      // className="whitespace-nowrap w-[45%] sm:w-auto text-center border-2 border-white px-6 py-3 rounded-md hover:bg-white hover:text-black transition text-sm sm:text-base"
+          className="whitespace-nowrap w-[45%] sm:w-auto text-center bg-[var(--color-primary)] px-6 py-3 rounded-md shadow-lg text-sm sm:text-base"
+
     >
       {t("hero.buttons.loan")}
     </Link>
 
     {/* Second Button */}
+       <Link
+      to="/marketplace"
+      // className="whitespace-nowrap w-auto text-center border-2 border-white px-6 py-3 rounded-md hover:bg-white hover:text-black transition text-sm sm:text-base mx-auto sm:mx-0"
+          className="whitespace-nowrap w-[45%] sm:w-auto text-center bg-[var(--color-primary)] px-6 py-3 rounded-md shadow-lg text-sm sm:text-base"
+  
+    >
+      {t("hero.buttons.explore")}
+    </Link>
     <Link
       to="/aiPlanner"
       className="whitespace-nowrap w-[45%] sm:w-auto text-center bg-[var(--color-primary)] px-6 py-3 rounded-md shadow-lg text-sm sm:text-base"
@@ -76,12 +86,12 @@ const HeroSection = () => {
     </Link>
 
     {/* Third Button (Centered) */}
-    <Link
+    {/* <Link
       to="/marketplace"
       className="whitespace-nowrap w-auto text-center border-2 border-white px-6 py-3 rounded-md hover:bg-white hover:text-black transition text-sm sm:text-base mx-auto sm:mx-0"
     >
       {t("hero.buttons.explore")}
-    </Link>
+    </Link> */}
 
   </div>
 </div>
