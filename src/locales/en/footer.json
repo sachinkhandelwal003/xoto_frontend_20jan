@@ -13,12 +13,16 @@
   },
 
   "offerings": [
-    { "label": "Landscaping", "path": "/landscaping" },
-    { "label": "Interiors", "path": "/services/interior" },
-    { "label": "Rentals", "path": "/marketplace" },
-    { "label": "Buy", "path": "/marketplace" },
+     { "label": "Mortgages", "path": "/mortgage/services" },
+        { "label": "Buy", "path": "/marketplace" },
+ 
     { "label": "Sell", "path": "/marketplace" },
-    { "label": "Mortgages", "path": "/mortgage/services" }
+    { "label": "Rentals", "path": "/marketplace" },
+    { "label": "Interiors", "path": "/services/interior" },
+    { "label": "Landscaping", "path": "/landscaping" }
+   
+    
+ 
    
   ],
 

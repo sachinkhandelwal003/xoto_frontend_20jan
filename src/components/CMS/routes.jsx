@@ -82,6 +82,7 @@ import AgencyList from "./pages/Properties/AgencyList";
 import DeveloperDashboard from "../ecommerce/B2C/DeveloperDashboard";
 import AgentDashboard from "../ecommerce/B2C/AgentDashboard";
 import AgentLayout from "../ecommerce/B2C/AgentLayout";
+import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";   
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
 const roleSlugMap = {
@@ -253,7 +254,9 @@ const CmsRoutes = () => {
       <Route path="/update" element={<UpdateProfilePage />} />
       <Route path = "/dashboard/developer" element={<DeveloperDashboard/>} />
      <Route path="/dashboard/agent" element={<AgentLayout />}>
+       <Route path="/dashboard/agent/lead" element={<AgentLeadDashboard />} />
   <Route index element={<AgentDashboard />} />
+
 </Route>
 
 
