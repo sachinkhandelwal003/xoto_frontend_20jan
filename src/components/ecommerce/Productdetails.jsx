@@ -43,7 +43,7 @@ const ProductDetails = () => {
   const [adding, setAdding] = useState(false);
 
   /* ---------- CONSTANTS ---------- */
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://xoto.ae";
+  const BASE_URL ="https://xoto.ae";
   const CUSTOMER_ID = "65f1aa88e8b4f12a9c654321";
 
   /* ---------- FETCH PRODUCT ---------- */
