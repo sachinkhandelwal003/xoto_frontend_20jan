@@ -1,5 +1,5 @@
 import React from 'react';
-import SocialSection from '../social/Index';
+// import SocialSection from '../social/Index';
 
 // Dummy images
 const magazineCover = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80';
@@ -317,7 +317,7 @@ const Magazine = () => {
       <MainContent />
       <EventsAndPrograms />
       <div className="max-w-7xl mx-auto mb-12">
-        <SocialSection/>
+        {/* <SocialSection/> */}
       </div>
       <NewsletterSubscription />
     </div>
