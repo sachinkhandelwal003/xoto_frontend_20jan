@@ -83,6 +83,25 @@ import DeveloperDashboard from "../ecommerce/B2C/DeveloperDashboard";
 import AgentDashboard from "../ecommerce/B2C/AgentDashboard";
 import AgentLayout from "../ecommerce/B2C/AgentLayout";
 import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";   
+import AgentSubscription from "../ecommerce/B2C/AgentSubscription";
+import AgentProjects from "../ecommerce/B2C/AgentProjects";
+import AgentPresentations from "../ecommerce/B2C/AgentPresentations";
+import AgentSiteVisits from "../ecommerce/B2C/AgentSiteVisits";
+import AgentDeals from "../ecommerce/B2C/AgentDeals";
+import AgentCommission from "../ecommerce/B2C/AgentCommission";
+import AgentLeadDetails from "../ecommerce/B2C/AgentLeadDetails";
+import AgentCreateDeal from "../ecommerce/B2C/AgentCreateDeal";
+import AgentDealDetails from "../ecommerce/B2C/AgentDealDetails";
+import AgentSiteVisitDetails from "../ecommerce/B2C/AgentSiteVisitDetails";
+import AgentCommissionDetails from "../ecommerce/B2C/AgentCommissionDetails";
+import AgentCreateVisit from "../ecommerce/B2C/AgentCreateVisit";
+import DeveloperProjects from "../ecommerce/B2C/DeveloperProjects";
+import DeveloperInventory from "../ecommerce/B2C/DeveloperInventory";
+import DeveloperLeads from "../ecommerce/B2C/DeveloperLeads";
+import DeveloperRevenue from "../ecommerce/B2C/DeveloperRevenue";
+import DeveloperProjectDetails from "../ecommerce/B2C/DeveloperProjectDetails";
+import DeveloperAddProject from "../ecommerce/B2C/DeveloperAddProject";
+
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
 const roleSlugMap = {
@@ -255,12 +274,28 @@ const CmsRoutes = () => {
 <Route path="notifications/view" element={<Notifications />} />
       <Route path="freelancer/myprofile" element={<MyprofileFreelancer />} />
       <Route path="/update" element={<UpdateProfilePage />} />
-
 {/* Agents */}
       <Route path="/lead" element={<AgentLeadDashboard />} />
+<Route path="/subscription" element={<AgentSubscription />} />
+<Route path="/projects" element={<AgentProjects />} />
+<Route path="/presentations" element={<AgentPresentations/>}/>
+<Route path="/site-visits" element={<AgentSiteVisits/>}/>
+<Route path="/deals" element={<AgentDeals/>}/>
+<Route path="/commission/:id" element={<AgentCommissionDetails/>}/>
+<Route path="/commission" element={<AgentCommission/>}/>
+<Route path="/lead/:id/create-deal" element={<AgentCreateDeal/>}/>
+<Route path="/lead/:id" element={<AgentLeadDetails/>}/>
+<Route path="/deals/:id" element={<AgentDealDetails/>}/>
+<Route path="/site-visits/:id" element={<AgentSiteVisitDetails/>}/>
+<Route path="/lead/:id/create-visit" element={<AgentCreateVisit/>}/>
 
-
-
+{/* Developer */}
+<Route path="projects" element={<DeveloperProjects/>}/>
+<Route path="projects/add" element={<DeveloperAddProject/>}/>
+<Route path="projects/:id" element={<DeveloperProjectDetails/>}/>
+<Route path="inventory" element={<DeveloperInventory/>}/>
+<Route path="leads" element={<DeveloperLeads/>}/>
+<Route path="revenue" element={<DeveloperRevenue/>}/>
       {/* Catch-all fallback */}
     </Routes>
   );

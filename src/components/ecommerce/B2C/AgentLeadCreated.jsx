@@ -10,9 +10,13 @@ import {
   ChevronRight, 
   ChevronDown 
 } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
 
 const AgentLeadDashboard = () => {
-  // Mock data for the table
+
+  const navigate = useNavigate();
+
+  // Mock data
   const leads = [
     {
       id: 1,
@@ -25,21 +29,33 @@ const AgentLeadDashboard = () => {
     }
   ];
 
+  const getStatusColor = (status)=>{
+    if(status === "Active") return "text-green-500";
+    if(status === "Closed") return "text-gray-400";
+    return "text-yellow-500";
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-8 font-sans">
-      {/* Header Section */}
+
+      {/* HEADER */}
       <div className="flex justify-between items-start mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Agent & Lead Management</h1>
           <p className="text-gray-500 text-sm">Manage your website details and updates.</p>
         </div>
-        <button className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+
+        {/* ADD LEAD BUTTON */}
+        <button
+          onClick={()=>navigate("/dashboard/agent/lead/add")}
+          className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+        >
           <Plus size={18} />
           Add New Lead
         </button>
       </div>
 
-      {/* Stats Cards */}
+      {/* STATS */}
       <div className="flex gap-4 mb-8">
         <div className="bg-white p-6 rounded-xl border-t-4 border-[#7c3aed] shadow-sm w-48">
           <p className="text-gray-500 text-sm mb-2">Total Agents</p>
@@ -62,9 +78,10 @@ const AgentLeadDashboard = () => {
         </div>
       </div>
 
-      {/* Main Content Table */}
+      {/* TABLE */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Search Bar */}
+
+        {/* SEARCH */}
         <div className="p-4 border-b border-gray-100">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -76,9 +93,10 @@ const AgentLeadDashboard = () => {
           </div>
         </div>
 
-        {/* Table */}
+        {/* TABLE BODY */}
         <div className="overflow-x-auto">
           <table className="w-full text-left">
+
             <thead className="bg-gray-50 text-gray-600 text-sm uppercase">
               <tr>
                 <th className="px-6 py-4 font-semibold">Lead Details</th>
@@ -88,9 +106,17 @@ const AgentLeadDashboard = () => {
                 <th className="px-6 py-4 font-semibold text-center">Action</th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-gray-100">
-              {leads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
+
+              {leads.map((lead)=>(
+                <tr
+                  key={lead.id}
+                  className="hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={()=>navigate(`/dashboard/agent/lead/${lead.id}`)}
+                >
+
+                  {/* LEAD INFO */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <img src={lead.image} alt="" className="w-10 h-10 rounded-lg bg-gray-200" />
@@ -100,39 +126,64 @@ const AgentLeadDashboard = () => {
                       </div>
                     </div>
                   </td>
+
+                  {/* AGENT */}
                   <td className="px-6 py-4 text-center">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-xs">
-                        👤
-                      </div>
-                    </div>
+                    <div className="text-sm font-medium">{lead.agent}</div>
                   </td>
+
+                  {/* TYPE */}
                   <td className="px-6 py-4 text-center text-gray-600 font-medium">
                     {lead.propertyType}
                   </td>
+
+                  {/* STATUS */}
                   <td className="px-6 py-4">
-                    <div className="flex justify-center items-center gap-2 text-green-500 text-sm font-medium">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <div className={`flex justify-center items-center gap-2 text-sm font-medium ${getStatusColor(lead.status)}`}>
+                      <div className="w-2 h-2 rounded-full bg-current"></div>
                       {lead.status}
                     </div>
                   </td>
+
+                  {/* ACTION */}
                   <td className="px-6 py-4">
                     <div className="flex justify-center gap-3">
-                      <button className="p-1 text-[#7c3aed] hover:bg-purple-50 rounded">
+
+                      <button
+                        onClick={(e)=>{
+                          e.stopPropagation();
+                          navigate(`/dashboard/agent/lead/${lead.id}`);
+                        }}
+                        className="p-1 text-blue-500 hover:bg-blue-50 rounded"
+                      >
+                        View
+                      </button>
+
+                      <button
+                        onClick={(e)=>e.stopPropagation()}
+                        className="p-1 text-[#7c3aed] hover:bg-purple-50 rounded"
+                      >
                         <Edit2 size={16} />
                       </button>
-                      <button className="p-1 text-red-400 hover:bg-red-50 rounded">
+
+                      <button
+                        onClick={(e)=>e.stopPropagation()}
+                        className="p-1 text-red-400 hover:bg-red-50 rounded"
+                      >
                         <Trash2 size={16} />
                       </button>
+
                     </div>
                   </td>
+
                 </tr>
               ))}
+
             </tbody>
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* PAGINATION */}
         <div className="p-4 flex items-center justify-end gap-4 border-t border-gray-100">
           <div className="flex items-center gap-2">
             <button className="p-1 text-gray-400 hover:text-gray-600">
@@ -145,11 +196,13 @@ const AgentLeadDashboard = () => {
               <ChevronRight size={20} />
             </button>
           </div>
+
           <div className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-600 cursor-pointer">
             10 / page
             <ChevronDown size={14} />
           </div>
         </div>
+
       </div>
     </div>
   );

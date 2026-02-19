@@ -78,7 +78,7 @@ import DeveloperRegistration from "./components/ecommerce/B2C/developerregistrat
 // import DeveloperSidebar from "./components/ecommerce/B2C/developersidebar";
 import RegistrationAgency from "./components/ecommerce/B2C/registrationagency";
 import Checker from "./Checker";
-import AgentRegistration from "./components/ecommerce/B2C/AgentRegistration";
+// import AgentRegistration from "./components/ecommerce/B2C/AgentRegistration";
 import AgentLayout from "./components/ecommerce/B2C/AgentLayout";
 import AgentDashboard from "./components/ecommerce/B2C/AgentDashboard";
 import AgentList from "./components/CMS/pages/Properties/AgentList";
