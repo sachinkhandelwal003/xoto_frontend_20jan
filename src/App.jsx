@@ -73,8 +73,6 @@ import UploadDocuments from "./components/homepage/UploadDocuments";
 import ProductRequirementsEdit from "./components/homepage/ProductRequirementsEdit";
 import MyApplications from "./components/homepage/MyApplications";
 import { CmsProvider } from "./components/CMS/contexts/CmsContext";
-import DeveloperDashboard from "./components/ecommerce/B2C/developerdashboard";
-import DeveloperLayout from "./components/ecommerce/B2C/DeveloperLayout";
 import DeveloperPropertyManagement from "./components/ecommerce/B2C/developerpropertymanagement";
 import DeveloperRegistration from "./components/ecommerce/B2C/developerregistration";
 // import DeveloperSidebar from "./components/ecommerce/B2C/developersidebar";
@@ -246,25 +244,9 @@ function App() {
               <Route path="/ecommerce" element={<MainEcommercePage />} />
               <Route path="/ecommerce/b2c" element={<HomeB2C />} />
 
-              {/* ✅ Developer Routes */}
- {/* App.js ke andar DeveloperLayout waale section ko aise update karein */}
-<Route path="/dashboard/developer" element={<DeveloperLayout />}>
-  {/* Default dashboard page */}
-  <Route index element={<DeveloperDashboard />} />
+            
   
-  {/* ✅ Naya Property Management Route */}
-  <Route 
-    path="property-management" 
-    element={<DeveloperPropertyManagement />} 
-  />
-  
-  {/* Agar aapne sub-pages banaye hain toh wo bhi yahan ayenge */}
-  <Route path="property-management/list" element={<DeveloperPropertyManagement />} />
-</Route>
-              <Route
-                path="/developer/property-management"
-                element={<DeveloperPropertyManagement />}
-              />
+
               <Route path="/developer/registration" element={<DeveloperRegistration />} />
               {/* <Route path="/developer/sidebar" element={<DeveloperSidebar />} /> */}
 
@@ -272,14 +254,8 @@ function App() {
               <Route path="/agency/registration" element={<RegistrationAgency />} />
 
               {/* ✅ Agent Registration Route */}
-              <Route path="/agent/registration" element={<AgentRegistration />} />
-<Route path="/dashboard/agent" element={<AgentLayout />}>
-  <Route index element={<AgentDashboard />} />
-</Route>   
-<Route path="/dashboard/agency" element={<AgencyLayout />}>
-  <Route index element={<AgencyDashboard />} />
-</Route>   
-<Route path="agency-list" element={<RegistrationAgency />} />
+    
+
 
 
               <Route path="/ecommerce/seller" element={<SellerPage />} />
@@ -316,7 +292,7 @@ function App() {
               <Route
                 path="/dashboard/:roleSlug/*"
                 element={
-                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10"]}>
+                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17"]}>
                     <CmsApp />
                   </PrivateRoute>
                 }

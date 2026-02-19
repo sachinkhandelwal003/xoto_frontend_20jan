@@ -237,11 +237,10 @@ const Login = () => {
         "7": "/dashboard/freelancer",
         
         // ✅ FIX: Ab ID 8 seedha Developer Dashboard par jayegi
-        "8": "/dashboard/developer", 
-        
-        // Agar Business Association bhi use kar rahe ho toh usko nayi ID dedo (eg: 10)
-        "10": "/dashboard/business-association", 
-        "9": "/dashboard/association-admin",
+        // ✅ Updated Role Codes
+  "15": "/dashboard/agency",        // Agency
+  "16": "/dashboard/agent",         // Agent
+  "17": "/dashboard/developer",     // Developer
       };
 
       const path = rolePathMap[roleCode] || "/dashboard";

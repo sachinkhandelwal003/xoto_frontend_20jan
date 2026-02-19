@@ -13,8 +13,8 @@ import {
 export const AuthContext = createContext();
 
 // const API_BASE = 'https://kotiboxglobaltech.online/api';
-// const API_BASE = 'http://localhost:5000/api';
-const API_BASE = 'https://xoto.ae/api';
+const API_BASE = 'http://localhost:5000/api';
+// const API_BASE = 'https://xoto.ae/api';
 
 
 export const AuthProvider = ({ children }) => {
@@ -66,87 +66,22 @@ export const AuthProvider = ({ children }) => {
 }, [token, dispatch]);
 
 
-
+  // Enhanced login function that accepts dynamic endpoint
+// Enhanced login function that accepts dynamic endpoint AND full payload
 const login = async (endpoint, credentials) => {
   const fullEndpoint = `${API_BASE}${endpoint}`;
 
-if (
-  endpoint.includes("agent") ||
-  endpoint.includes("agency") ||
-  endpoint.includes("developer")
-) {
-  try {
-
-    const res = await fetch(fullEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(credentials),
-    });
-
-    const data = await res.json();
-
-    if (data.success === true || data?.data?.success === true || data.token || data?.data?.token) {
-
-      const token =
-        data.token ||
-        data.data?.token ||
-        data.data?.data?.token;
-
-      const user =
-        data.user ||
-        data.agency ||
-        data.agent ||
-        data.developer ||
-        data.data?.user ||
-        data.data?.agency ||
-        data.data?.agent ||
-        data.data?.developer;
-
-      if (token) {
-        localStorage.setItem("token", token);
-        if (user) localStorage.setItem("user", JSON.stringify(user));
-
-        console.log("✅ Login Success! Redirecting...");
-
-        // 🔥 redirect based on role
-        let redirectPath = "/dashboard";
-
-        if (endpoint.includes("agent")) redirectPath = "/dashboard/agent";
-        if (endpoint.includes("agency")) redirectPath = "/dashboard/agency";
-        if (endpoint.includes("developer")) redirectPath = "/dashboard/developer";
-
-        setTimeout(() => {
-          window.location.href = redirectPath;
-        }, 100);
-
-        return data;
-      }
-    }
-
-    throw new Error(data.message || "Login Failed");
-
-  } catch (err) {
-    console.error(err);
-    throw err;
-  }
-}
-
-  
-  const response = await dispatch(
+  // Use credentials directly — don't force email/password structure
+  return await dispatch(
     loginUser({
-      payload: credentials,
+      payload: credentials,        // ← Now supports { mobile }, { email, password }, etc.
       endpoint: fullEndpoint,
     })
   ).unwrap();
-
- 
-  const token = response?.token || response?.data?.token;
-  if (token) localStorage.setItem("token", token);
-
-  return response;
 };
 
-  
+
+  // Logout with optional backend call
   const logout = async (logoutEndpoint = '/auth/logout') => {
     hasFetchedPermissions.current = false;
     const fullEndpoint = `${API_BASE}${logoutEndpoint}`;
@@ -154,7 +89,7 @@ if (
     try {
       await dispatch(logoutUser(fullEndpoint));
     } catch (err) {
-     
+      // Even if backend fails, clear local state
       dispatch(logoutUser());
     }
   };
@@ -165,7 +100,7 @@ if (
     loading,
     error,
     isAuthenticated,
-    login,    
+    login,    // Now supports dynamic endpoints
     logout,
   };
 

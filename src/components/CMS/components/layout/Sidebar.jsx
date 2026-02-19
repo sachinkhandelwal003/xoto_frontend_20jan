@@ -111,10 +111,10 @@ const CUSTOM_ROLE_LINKS = {
       ],
     },
   ],
-"9": [ {
+"16": [ {
       title: "AgentLead Management", 
       icon: "fas fa-building", 
-      path: "/dashboard/agent/lead", 
+      path: "/dashboard/{roleSlug}/lead", 
       // submenus: [
       //   { title: "All Leads", path: "/dashboard/agent/lead/list" },
       // ],
@@ -134,9 +134,10 @@ const roleSlugMap = {
   '7': 'freelancer',
   '11': 'accountant', 
   '12': 'supervisor',
-  '8': 'developer', 
-  '9': 'agent',
-  '10': 'agency',
+    '15': "agency",        // Agency
+  '16': "agent",         // Agent
+  '17': "developer",
+
 
 };
 
@@ -146,11 +147,10 @@ const ROLE_MODULE_ORDER = {
   '5': ['Dashboard', 'Products', 'My Products', 'Orders', 'Payout', 'Settings'],
   '6': ['Dashboard', 'Products', 'Projects', 'Inventory', 'Payout'],
   '7': ['Dashboard', 'My Projects', 'All Projects', 'Add Projects', 'Payout'],
-  '8': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
+'17': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
   '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
-   '9': ['Dashboard','AgentLead Management'],
-   '10': ['Dashboard']
+'16': ['Dashboard','AgentLead Management'],
 
 
 };
@@ -190,20 +190,7 @@ const Sidebar = () => {
       }
   }
 
-  if (location.pathname.includes('/dashboard/developer')) {
-      roleCode = '8';
-      displayRoleName = 'Developer';
-  } else if (location.pathname.includes('/dashboard/superadmin')) {
-      roleCode = '0';
-  } 
-  else if (location.pathname.includes('/dashboard/agent')) {
-      roleCode = '9';
-      displayRoleName = 'Agent';
-  }
-  else if (location.pathname.includes('/dashboard/agency')) {
-  roleCode = '10';  
-  displayRoleName = 'Agency';
-}
+
 
   const roleSlug = roleSlugMap[roleCode] ?? 'dashboard';
   const basePath = `/dashboard/${roleSlug}`;

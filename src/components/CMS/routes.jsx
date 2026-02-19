@@ -94,6 +94,9 @@ const roleSlugMap = {
   7: "freelancer",
   11: "accountant",
     12: "supervisor",
+     15: "agency",        // Agency
+  16: "agent",         // Agent
+  17: "developer",
 
 };
 
@@ -106,6 +109,8 @@ const dashboardMap = {
   7: <Freelancerdashboard />,
   11: <AccountantDashboard />,
     12: <SupervisorDashboard />,
+    16:<AgentDashboard/>,
+    17:<DeveloperDashboard/>
 
 };
 
@@ -248,16 +253,11 @@ const CmsRoutes = () => {
             <Route path="seller/product/:id" element={<ProductRequestB2C />} />
 <Route path="freelancer/view" element={<FreelancerProfile />} />
 <Route path="notifications/view" element={<Notifications />} />
-<Route path="agent-list" element={<AgentList />} />
-<Route path="agency-list" element={<AgencyList />} />
       <Route path="freelancer/myprofile" element={<MyprofileFreelancer />} />
       <Route path="/update" element={<UpdateProfilePage />} />
-      <Route path = "/dashboard/developer" element={<DeveloperDashboard/>} />
-     <Route path="/dashboard/agent" element={<AgentLayout />}>
-       <Route path="/dashboard/agent/lead" element={<AgentLeadDashboard />} />
-  <Route index element={<AgentDashboard />} />
 
-</Route>
+{/* Agents */}
+      <Route path="/lead" element={<AgentLeadDashboard />} />
 
 
 

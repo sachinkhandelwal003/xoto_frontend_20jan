@@ -190,9 +190,10 @@ const RegistrationAgent = () => {
       id_proof: values.id_proof_url || "",
       rera_certificate: values.rera_certificate_url || ""
     };
+      // "https://xoto.ae/api/agent/agent-signup",
 
     const response = await axios.post(
-      "https://xoto.ae/api/agent/agent-signup",
+            "http://localhost:5000/api/agent/agent-signup",
       payload,
       {
         headers: {
