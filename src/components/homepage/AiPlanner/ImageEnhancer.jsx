@@ -56,7 +56,7 @@ const ImageEnhancer = () => {
     };
 
     const handleEnhance = async () => {
-        if (!selectedImage) return notification.warning({ message: 'Bhai, pehle photo upload karo!' });
+        if (!selectedImage) return notification.warning({ message: 'Upload image' });
         
         // Agar user logged in nahi hai toh pehle modal dikhao (Optional logic based on your requirement)
         if (!isCustomerLoggedIn) {
