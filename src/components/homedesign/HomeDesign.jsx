@@ -89,7 +89,7 @@ const hotspots = [
   {
     key: "image",
     icon: image,
-    link: "/aiPlanner/image",
+    link: "/aiPlanner/enhance",
     position:
       "bottom-[30%] left-[-2%] sm:bottom-[30%] sm:left-[8%] lg:bottom-[28%] lg:left-[-2%]",
   },
