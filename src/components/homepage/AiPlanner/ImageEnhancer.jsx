@@ -1,15 +1,18 @@
 // src/components/homepage/AiPlanner/ImageEnhancer.jsx
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from "axios";
-
+import LeadGenerationModal from '../Signuupage'; // Import added
 import { 
     Upload, Sun, Contrast, Maximize2, Download, 
     RefreshCcw, CheckCircle2, ImageIcon, Sparkles, X, ArrowLeft 
 } from 'lucide-react';
-import { Button, Slider, notification } from 'antd';
+import { Button, Slider, notification, Modal } from 'antd';
 import { useSelector } from 'react-redux';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
+
+// Import your XYZ component
+import XYZ from '../../homepage/ImageCustomer'; 
 
 const BRAND_PURPLE = "#5C039B";
 const BRAND_PURPLE_DARK = "#4A027F";
@@ -25,17 +28,24 @@ const ImageEnhancer = () => {
     const [enhancedImage, setEnhancedImage] = useState(null);
     const [isEnhancing, setIsEnhancing] = useState(false);
     const [activeOption, setActiveOption] = useState('contrast');
-   const [enhancementValues, setEnhancementValues] = useState({ 
-    brightness: 100,
-    contrast: 100,
-    saturation: 100, // ✅ ADD
-    resolution: 100 
-});
-
+    const [isModalVisible, setIsModalVisible] = useState(false); 
+    const [showAuthModal, setShowAuthModal] = useState(false); // Auth Modal State
+    
+    const [enhancementValues, setEnhancementValues] = useState({ 
+        brightness: 100,
+        contrast: 100,
+        saturation: 100,
+        resolution: 100 
+    });
 
     const isCustomerLoggedIn = useMemo(() => user && (user.role?.name === 'Customer' || user.role?.name === 'SuperAdmin'), [user]);
 
-    // Handle File Selection
+    // Handle Auth Success
+    const handleAuthSuccess = (userData) => {
+        setShowAuthModal(false);
+        notification.success({ message: `Welcome ${userData?.name || 'User'}!` });
+    };
+
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -45,21 +55,22 @@ const ImageEnhancer = () => {
         }
     };
 
-    // Main Enhancement Logic
     const handleEnhance = async () => {
         if (!selectedImage) return notification.warning({ message: 'Bhai, pehle photo upload karo!' });
         
+        // Agar user logged in nahi hai toh pehle modal dikhao (Optional logic based on your requirement)
+        if (!isCustomerLoggedIn) {
+            setShowAuthModal(true);
+            return;
+        }
+
         setIsEnhancing(true);
         const formData = new FormData();
         
         formData.append('image', uploadedFile);
         formData.append('brightness', enhancementValues.brightness / 100);
         formData.append('contrast', enhancementValues.contrast / 100);
-        formData.append(
-'saturation',
-enhancementValues.saturation / 100
-);
-
+        formData.append('saturation', enhancementValues.saturation / 100);
         formData.append('scaling', activeOption === 'resolution' ? 2 : 1);
 
         try {
@@ -71,6 +82,9 @@ enhancementValues.saturation / 100
                     message: 'Xoto AI Magic!', 
                     description: 'Listing photo enhanced successfully.' 
                 });
+                
+                // Open XYZ Modal after success
+                setIsModalVisible(true);
             }
         } catch (error) {
             console.error("Enhancement failed:", error);
@@ -80,110 +94,81 @@ enhancementValues.saturation / 100
         }
     };
 
-    // Download Function
-const handleDownload = async () => {
-
-    if (!enhancedImage) {
-        notification.warning({
-            message: "No enhanced image"
-        });
-        return;
-    }
-
-    try {
-
-        // S3 key extract
-        const key = enhancedImage.split(".amazonaws.com/")[1];
-
-        if (!key) {
-
-            notification.error({
-                message: "Invalid Image URL"
-            });
-
+    const handleDownload = async () => {
+        if (!enhancedImage) {
+            notification.warning({ message: "No enhanced image" });
             return;
         }
 
-        const response = await axios.get(
-
-            `https://xoto.ae/api/download-pdf?key=${encodeURIComponent(key)}`,
-
-            {
-                responseType: "blob"
+        try {
+            const key = enhancedImage.split(".amazonaws.com/")[1];
+            if (!key) {
+                notification.error({ message: "Invalid Image URL" });
+                return;
             }
 
-        );
+            const response = await axios.get(
+                `https://xoto.ae/api/download-pdf?key=${encodeURIComponent(key)}`,
+                { responseType: "blob" }
+            );
 
-        const blob = new Blob(
-            [response.data],
-            {
-                type: "application/pdf"
-            }
-        );
-
-        const url =
-        window.URL.createObjectURL(blob);
-
-        const link =
-        document.createElement("a");
-
-        link.href = url;
-
-        link.download =
-        `XOTO_Enhanced_${Date.now()}.pdf`;
-
-        document.body.appendChild(link);
-
-        link.click();
-
-        document.body.removeChild(link);
-
-        window.URL.revokeObjectURL(url);
-
-    }
-    catch (error) {
-
-        console.error("Download error",error);
-
-        notification.error({
-
-            message:"Download Failed",
-            description:"PDF generate nahi hua"
-
-        });
-
-    }
-
-};
-
+            const blob = new Blob([response.data], { type: "application/pdf" });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `XOTO_Enhanced_${Date.now()}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Download error", error);
+            notification.error({
+                message: "Download Failed",
+                description: "PDF generate nahi hua"
+            });
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#F8F9FB] py-12 px-4 font-sans relative">
-            {/* Top-left Back Button */}
+            
+            {/* 1. LEAD GENERATION / AUTH MODAL */}
+            <LeadGenerationModal
+                visible={showAuthModal}
+                onCancel={() => setShowAuthModal(false)}
+                onAuthSuccess={handleAuthSuccess}
+            />
+
+            {/* 2. XYZ MODAL (Shown after enhancement) */}
+            <Modal
+                title="Xoto AI Details"
+                open={isModalVisible}
+                onCancel={() => setIsModalVisible(false)}
+                footer={null}
+                width={800}
+                centered
+            >
+                <XYZ onClose={() => setIsModalVisible(false)} />
+            </Modal>
+
+            {/* Back Button */}
             <button
-                onClick={() => navigate(-1)}  // or navigate('/') if you want to go to home
+                onClick={() => navigate(-1)}
                 className="fixed top-6 left-6 z-50 flex items-center gap-2 px-5 py-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-lg hover:bg-purple-50 hover:border-[#5C039B] transition-all group"
             >
-                <ArrowLeft 
-                    size={20} 
-                    className="text-gray-700 group-hover:text-[#5C039B] transition-colors" 
-                />
-                <span className="font-medium text-gray-700 group-hover:text-[#5C039B] transition-colors">
-                    Go Back
-                </span>
+                <ArrowLeft size={20} className="text-gray-700 group-hover:text-[#5C039B] transition-colors" />
+                <span className="font-medium text-gray-700 group-hover:text-[#5C039B] transition-colors">Go Back</span>
             </button>
 
-            {/* Header Section */}
+            {/* Header */}
             <div className="max-w-4xl mx-auto text-center mb-12">
                 <div className="inline-flex items-center gap-2 bg-purple-50 text-[#5C039B] px-4 py-1 rounded-full text-sm font-semibold mb-4">
-                    <Sparkles size={14} /> Xoto AI Enhancer
+                    <span className="flex items-center gap-1"><Sparkles size={14} /> Xoto AI Enhancer</span>
                 </div>
                 <h1 className="text-4xl md:text-5xl font-extrabold text-[#1A1E26] mb-4">
                     Listing Photo Enhancer <span style={{ color: BRAND_PURPLE }}>for Real Estate</span>
                 </h1>
-                <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-                    Fix lighting, clarity, and sharpness. Export portal-ready images.
-                </p>
             </div>
 
             {/* Main Editor Card */}
@@ -193,9 +178,7 @@ const handleDownload = async () => {
                     {/* Step 1: Upload */}
                     <div className="p-8 lg:p-12">
                         <h2 className="text-xl font-bold mb-8 flex items-center gap-2">1. Upload Photo</h2>
-                        <div 
-                            className="aspect-square border-2 border-dashed border-gray-200 rounded-[24px] flex flex-col items-center justify-center cursor-pointer hover:bg-purple-50/30 transition-all overflow-hidden relative"
-                        >
+                        <div className="aspect-square border-2 border-dashed border-gray-200 rounded-[24px] flex flex-col items-center justify-center cursor-pointer hover:bg-purple-50/30 transition-all overflow-hidden relative">
                             {selectedImage ? (
                                 <>
                                     <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
@@ -216,11 +199,7 @@ const handleDownload = async () => {
                                         <Upload />
                                     </div>
                                     <p className="text-gray-500 text-sm font-medium">Drop photo here</p>
-                                    <Button 
-                                        className="mt-4 border-[#5C039B] text-[#5C039B] font-bold h-10 rounded-lg px-8 hover:bg-[#5C039B] hover:text-white"
-                                    >
-                                        Browse
-                                    </Button>
+                                    <Button className="mt-4 border-[#5C039B] text-[#5C039B] font-bold h-10 rounded-lg px-8 hover:bg-[#5C039B] hover:text-white">Browse</Button>
                                 </div>
                             )}
                             <input type="file" id="file-input" hidden onChange={handleFileUpload} accept="image/*" />
@@ -232,7 +211,7 @@ const handleDownload = async () => {
                         <div className="flex justify-between items-center mb-8">
                             <h2 className="text-xl font-bold">2. Enhancement Options</h2>
                             <button 
-                                onClick={() => setEnhancementValues({brightness:100, contrast:100,saturation:100, resolution:100})} 
+                                onClick={() => setEnhancementValues({brightness:100, contrast:100, saturation:100, resolution:100})} 
                                 className="text-xs font-bold flex items-center gap-1 text-gray-400 hover:text-[#5C039B]"
                             >
                                 <RefreshCcw size={12} /> Reset
@@ -240,7 +219,6 @@ const handleDownload = async () => {
                         </div>
 
                         <div className="space-y-4">
-                            {/* Brightness */}
                             <div 
                                 onClick={() => setActiveOption('brightness')} 
                                 className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${activeOption === 'brightness' ? 'border-[#5C039B] bg-white shadow-sm' : 'border-gray-100 bg-gray-50'}`}
@@ -251,88 +229,30 @@ const handleDownload = async () => {
                                 </div>
                                 {activeOption === 'brightness' && (
                                     <Slider 
-                                        value={enhancementValues.brightness} 
-                                        max={200} 
+                                        value={enhancementValues.brightness} max={200} 
                                         onChange={(v) => setEnhancementValues({...enhancementValues, brightness: v})}
-                                        trackStyle={{ backgroundColor: BRAND_PURPLE }}
-                                        railStyle={{ backgroundColor: BRAND_PURPLE_LIGHT }}
+                                        trackStyle={{ backgroundColor: BRAND_PURPLE }} railStyle={{ backgroundColor: BRAND_PURPLE_LIGHT }}
                                     />
                                 )}
                             </div>
-{/* Saturation */}
 
-<div 
-onClick={() => setActiveOption('saturation')}
+                            <div 
+                                onClick={() => setActiveOption('saturation')}
+                                className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${activeOption === 'saturation' ? 'border-[#5C039B] bg-white shadow-sm' : 'border-gray-100 bg-gray-50'}`}
+                            >
+                                <div className="flex items-center gap-3 mb-2">
+                                    <Sparkles size={16} className={activeOption === 'saturation' ? 'text-[#5C039B]' : 'text-gray-400'} />
+                                    <span className="font-bold text-sm">Saturation</span>
+                                </div>
+                                {activeOption === 'saturation' && (
+                                    <Slider
+                                        value={enhancementValues.saturation} max={200}
+                                        onChange={(v)=> setEnhancementValues({...enhancementValues, saturation:v})}
+                                        trackStyle={{ backgroundColor: BRAND_PURPLE }} railStyle={{ backgroundColor: BRAND_PURPLE_LIGHT }}
+                                    />
+                                )}
+                            </div>
 
-className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
-activeOption === 'saturation'
-? 'border-[#5C039B] bg-white shadow-sm'
-: 'border-gray-100 bg-gray-50'
-}`}
->
-
-<div className="flex items-center gap-3 mb-2">
-
-<Sparkles
-size={16}
-className={
-activeOption === 'saturation'
-? 'text-[#5C039B]'
-: 'text-gray-400'
-}
-/>
-
-<span className="font-bold text-sm">
-
-Saturation
-
-</span>
-
-</div>
-
-
-{/* ✅ ADD THIS SLIDER */}
-
-{activeOption === 'saturation' && (
-
-<Slider
-
-value={enhancementValues.saturation}
-
-max={200}
-
-onChange={(v)=>
-
-setEnhancementValues({
-
-...enhancementValues,
-
-saturation:v
-
-})
-
-}
-
-trackStyle={{
-
-backgroundColor:"#5C039B"
-
-}}
-
-railStyle={{
-
-backgroundColor:"#F3E8FF"
-
-}}
-
-/>
-
-)}
-
-</div>
-
-
-                            {/* Contrast */}
                             <div 
                                 onClick={() => setActiveOption('contrast')} 
                                 className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${activeOption === 'contrast' ? 'border-[#5C039B] bg-white shadow-sm' : 'border-gray-100 bg-gray-50'}`}
@@ -343,11 +263,9 @@ backgroundColor:"#F3E8FF"
                                 </div>
                                 {activeOption === 'contrast' && (
                                     <Slider 
-                                        value={enhancementValues.contrast} 
-                                        max={200} 
+                                        value={enhancementValues.contrast} max={200} 
                                         onChange={(v) => setEnhancementValues({...enhancementValues, contrast: v})}
-                                        trackStyle={{ backgroundColor: BRAND_PURPLE }}
-                                        railStyle={{ backgroundColor: BRAND_PURPLE_LIGHT }}
+                                        trackStyle={{ backgroundColor: BRAND_PURPLE }} railStyle={{ backgroundColor: BRAND_PURPLE_LIGHT }}
                                     />
                                 )}
                             </div>
@@ -356,9 +274,10 @@ backgroundColor:"#F3E8FF"
                         <Button 
                             loading={isEnhancing}
                             onClick={handleEnhance}
-                            className="w-full mt-8 h-12 rounded-xl   text- border-none font-bold text-sm flex items-center justify-center gap-2 shadow-md"
+                            style={{ backgroundColor: BRAND_PURPLE, color: 'white' }}
+                            className="w-full mt-8 h-12 rounded-xl border-none font-bold text-sm flex items-center justify-center gap-2 shadow-md hover:opacity-90"
                         >
-                             Enhance with Xoto AI
+                            Enhance with Xoto AI
                         </Button>
                     </div>
 
@@ -387,7 +306,6 @@ backgroundColor:"#F3E8FF"
                             )}
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
