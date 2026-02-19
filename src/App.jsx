@@ -109,6 +109,7 @@ const Bedroom = lazy(() => import("./components/Interiorsection/bedroom/Index"))
 const Registration = lazy(() => import("./components/freelancers/Registeration"));
 const Magazine = lazy(() => import("./components/magazines/Index"));
 
+
 function PrivateRoute({ children, allowedRoles }) {
   // ... (Code remains the same)
   const { user, token, loading } = useSelector((state) => state.auth);
@@ -256,7 +257,7 @@ function App() {
               <Route path="/agency/registration" element={<RegistrationAgency />} />
 
               {/* ✅ Agent Registration Route */}
-    
+                <Route path="/agent/registration" element={<AgentRegistration />} />
 
 
 
@@ -291,6 +292,7 @@ function App() {
               <Route path="/check" element={<Checker />} />
               <Route path="/upcoming-soon" element={<Upcoming />} />
               <Route path="/finance-soon" element={<Finicial />} />
+              
               <Route
                 path="/dashboard/:roleSlug/*"
                 element={

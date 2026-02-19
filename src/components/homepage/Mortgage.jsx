@@ -212,7 +212,7 @@ const Step1 = ({ formData, handleChange, errors }) => (
           </div>
           <ErrorMsg msg={errors.propertyFound} />
         </div>
-        <SuffixInput label={formData.propertyFound === 'yes' ? "What is the property price?" : "What's your budget?"} placeholder="0" suffix="AED" value={formData.propertyPrice} onChange={(val) => handleChange('propertyPrice', val)} error={errors.propertyPrice} />
+        <SuffixInput label={formData.propertyFound === 'yes' ? "What is the property value?" : "What's your budget?"} placeholder="0" suffix="AED" value={formData.propertyPrice} onChange={(val) => handleChange('propertyPrice', val)} error={errors.propertyPrice} />
         <LocationAutocomplete value={formData.location} onChange={(val) => handleChange('location', val)} error={errors.location} />
         <div>
           <h3 className="text-xl font-bold text-gray-900 mb-4">Do you already have a mortgage?</h3>
@@ -412,6 +412,9 @@ const MortgageWizard = () => {
         if (formData.intent === 'buy') {
             if (!formData.propertyFound) newErrors.propertyFound = "Please choose an option";
             if (!formData.propertyPrice) newErrors.propertyPrice = "Price/Budget is required";
+            else if (Number(formData.propertyPrice) < 300) {
+  newErrors.propertyPrice = "Minimum amount is 300 AED";
+}
             if (!formData.location) newErrors.location = "Location is required";
             if (!formData.hasMortgage) newErrors.hasMortgage = "Please choose an option";
         } else if (formData.intent === 'refinance') {
@@ -425,7 +428,7 @@ const MortgageWizard = () => {
         if (!formData.employment) newErrors.employment = "Please select employment type";
         if (!formData.income) newErrors.income = "Monthly income is required";
         if (!formData.age) newErrors.age = "Age is required";
-        else if (formData.age < 21 || formData.age > 65) newErrors.age = "Age must be between 21 and 65";
+        else if (formData.age < 21 || formData.age > 71) newErrors.age = "Age must be between 21 and 65";
     }
     if (currentStep === 3) {
         if (!formData.fullName) newErrors.fullName = "Full name is required";
