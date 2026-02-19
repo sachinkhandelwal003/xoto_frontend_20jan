@@ -11,7 +11,7 @@ import {
   ChevronDown 
 } from 'lucide-react';
 
-const AgentLeadDashboard = () => {
+const  AgentLeadDashboard = () => {
   // Mock data for the table
   const leads = [
     {
