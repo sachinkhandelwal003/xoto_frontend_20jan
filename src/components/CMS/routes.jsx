@@ -82,9 +82,13 @@ import AgencyList from "./pages/Properties/AgencyList";
 import DeveloperDashboard from "../ecommerce/B2C/DeveloperDashboard";
 import AgentDashboard from "../ecommerce/B2C/AgentDashboard";
 import AgentLayout from "../ecommerce/B2C/AgentLayout";
-import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";   
+import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";  
+import AgentRegistration from "../ecommerce/B2C/AgentRegistration"
+import DeveloperList from "./pages/DeveloperList";
+ 
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
+import AdminDashboard from "./pages/AdminDashboard";
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -102,7 +106,7 @@ const roleSlugMap = {
 
 const dashboardMap = {
   0: <Dashboard />,
-  1: <Dashboard />,
+  1: <AdminDashboard />,
   2:<Customerdashboard/>,
   5: <VendorDashboard />,
   6: <VendorDashboard />,
@@ -111,6 +115,7 @@ const dashboardMap = {
     12: <SupervisorDashboard />,
     16:<AgentDashboard/>,
     17:<DeveloperDashboard/>
+
 
 };
 
@@ -258,6 +263,12 @@ const CmsRoutes = () => {
 
 {/* Agents */}
       <Route path="/lead" element={<AgentLeadDashboard />} />
+      {/* admin */}
+      <Route path="/agent-list" element={<AgentList />} />
+      <Route path="/agent-registration" element={<AgentRegistration />} />
+      <Route path="/developer-list" element={<DeveloperList />} />
+      
+      
 
 
 
