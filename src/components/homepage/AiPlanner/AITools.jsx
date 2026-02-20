@@ -31,6 +31,17 @@ const toolsData = [
     isNew: false,
     locked: false 
   },
+   {
+    id: 'image',
+    title: 'Image Enhancer',
+    description: 'Upscale resolution and fix lighting with one click.',
+    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80',
+    route: '/aiPlanner/enhance',
+    category: 'Present',
+    icon: <Wand2 size={24} />,
+    isNew: false,
+    locked: false 
+  },
   {
     id: 'exterior',
     title: 'Exterior Remodel',
@@ -63,18 +74,8 @@ const toolsData = [
     icon: <BoxSelect size={24} />,
     isNew: false,
     locked: true 
-  },
-  {
-    id: 'image',
-    title: 'Image Enhancer',
-    description: 'Upscale resolution and fix lighting with one click.',
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80',
-    route: '/aiPlanner/enhance',
-    category: 'Present',
-    icon: <Wand2 size={24} />,
-    isNew: false,
-    locked: true 
   }
+ 
 ];
 
 const categories = ['All', 'Design', 'Staging', 'Present'];

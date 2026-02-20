@@ -12,6 +12,8 @@ import {
   Divider,
   Select,
   Upload,
+  Tag,
+  Space as AntSpace
 } from "antd";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +31,7 @@ import {
   SolutionOutlined,
   CheckCircleFilled,
   SafetyCertificateOutlined,
+  CheckOutlined
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -138,11 +141,53 @@ const RegistrationAgent = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Phone input state
   const [phone, setPhone] = useState("");
   const [countryData, setCountryData] = useState({});
 
-  // 1. Send OTP Handler
+  // ✅ INSTANT UPLOAD STATES
+  const [urls, setUrls] = useState({ profile: "", idProof: "", rera: "" });
+  const [uploading, setUploading] = useState({ profile: false, idProof: false, rera: false });
+
+  // LIVE APIs
+  const UPLOAD_API = "https://xoto.ae/api/upload";
+  const SIGNUP_API = "https://xoto.ae/api/agent/agent-signup";
+
+  // ✅ INSTANT UPLOAD FUNCTION (Fixed API Response Parsing)
+  const handleInstantUpload = async (file, type) => {
+    setUploading((prev) => ({ ...prev, [type]: true }));
+    
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      console.log(`📤 Uploading ${type} instantly...`);
+      const response = await axios.post(UPLOAD_API, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      
+      console.log(`✅ Upload API Response for ${type}:`, response.data);
+
+      // 🎯 FIXED URL EXTRACTION: Added `response.data?.file?.url` based on your JSON
+      const uploadedUrl = response.data?.file?.url || response.data?.url || ""; 
+      
+      if(uploadedUrl) {
+        setUrls((prev) => ({ ...prev, [type]: uploadedUrl }));
+        toast.success(`${type} uploaded successfully!`);
+      } else {
+        toast.error("Upload failed: API didn't return a URL.");
+      }
+    } catch (error) {
+      console.error(`❌ Instant upload error for ${type}:`, error);
+      toast.error(`Failed to upload ${type}.`);
+    } finally {
+      setUploading((prev) => ({ ...prev, [type]: false }));
+    }
+
+    // Return false to stop AntD's default form upload behavior
+    return false; 
+  };
+
+  // 2. Send OTP Handler
   const handleSendOtp = async () => {
     if (!phone || phone.length < 8) {
       toast.error("Please enter a valid mobile number first");
@@ -150,7 +195,6 @@ const RegistrationAgent = () => {
     }
     
     setLoading(true);
-    // TODO: Connect this to your OTP API if needed
     setTimeout(() => {
       setOtpSent(true);
       setLoading(false);
@@ -158,7 +202,7 @@ const RegistrationAgent = () => {
     }, 1000);
   };
 
-  // 2. Verify OTP Handler
+  // 3. Verify OTP Handler
   const handleVerifyOtp = () => {
     if (otpValue === "000033") {
       setOtpVerified(true);
@@ -169,57 +213,49 @@ const RegistrationAgent = () => {
     }
   };
 
-  // 3. Main Form Submit Handler (UPDATED URL)
+  // 4. Main Form Submit Handler
   const handleFinish = async (values) => {
-  try {
-    setSubmitting(true);
+    try {
+      setSubmitting(true);
 
-    const payload = {
-      first_name: values.first_name,
-      last_name: values.last_name,
-      email: values.email,
-      password: values.password,
-      phone_number: phone.replace(countryData.dialCode, ""),
-      country_code: `+${countryData.dialCode}`,
-      country: countryData.name || "United Arab Emirates",
-      operating_city: values.operating_city,
-      specialization: values.specialization,
+      const payload = {
+        first_name: values.first_name,
+        last_name: values.last_name,
+        email: values.email,
+        password: values.password,
+        phone_number: phone.replace(countryData.dialCode, ""),
+        country_code: `+${countryData.dialCode}`,
+        country: countryData.name || "United Arab Emirates",
+        operating_city: values.operating_city,
+        specialization: values.specialization,
+        profile_photo: urls.profile,   
+        id_proof: urls.idProof,        
+        rera_certificate: urls.rera    
+      };
 
-      // 🔑 URLs only
-      profile_photo: values.profile_photo_url || "",
-      id_proof: values.id_proof_url || "",
-      rera_certificate: values.rera_certificate_url || ""
-    };
-      // "https://xoto.ae/api/agent/agent-signup",
+      console.log("🚀 Final JSON Payload being sent to Live Signup API:", payload);
 
-    const response = await axios.post(
-            "http://localhost:5000/api/agent/agent-signup",
-      payload,
-      {
-        headers: {
-          "Content-Type": "application/json"
+      const response = await axios.post(
+        SIGNUP_API,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
-      }
-    );
+      );
 
-    toast.success("Agent Registration Successful");
-    console.log(response.data);
+      toast.success("Agent Registration Successful");
+      console.log("🎉 Signup Response:", response.data);
 
-  } catch (error) {
-    toast.error(
-      error.response?.data?.message || "Registration failed"
-    );
-  } finally {
-    setSubmitting(false);
-  }
-};
-
-  // Helper to normalize file upload event for Antd Form
-  const normFile = (e) => {
-    if (Array.isArray(e)) {
-      return e;
+    } catch (error) {
+      console.error("Signup Error:", error);
+      toast.error(
+        error.message || error.response?.data?.message || "Registration failed"
+      );
+    } finally {
+      setSubmitting(false);
     }
-    return e?.fileList;
   };
 
   return (
@@ -244,14 +280,17 @@ const RegistrationAgent = () => {
             form={form} 
             layout="vertical" 
             onFinish={handleFinish} 
+            onFinishFailed={(errorInfo) => {
+              console.error("❌ Form Validation Failed! Required fields are missing:", errorInfo);
+            }}
             initialValues={{ specialization: 'residential' }}
           >
             
             {/* --- PERSONAL DETAILS --- */}
             <div style={{ marginBottom: 30 }}>
-              <Space style={{ marginBottom: 20, color: '#f26522', fontWeight: 600 }}>
+              <AntSpace style={{ marginBottom: 20, color: '#f26522', fontWeight: 600 }}>
                 <UserOutlined /> Personal Details
-              </Space>
+              </AntSpace>
               
               <Row gutter={16}>
                 <Col xs={24} md={12}>
@@ -281,7 +320,7 @@ const RegistrationAgent = () => {
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <div style={{ flex: 1 }}>
                     <PhoneInput
-                      country={'ae'} // Default to UAE since base url is .ae
+                      country={'ae'} 
                       value={phone}
                       onChange={(phone, data) => {
                         setPhone(phone);
@@ -350,27 +389,60 @@ const RegistrationAgent = () => {
               </Col>
             </Row>
 
-            {/* --- FILE UPLOADS --- */}
+            {/* --- INSTANT FILE UPLOADS --- */}
             <Row gutter={16} style={{ marginTop: 20 }}>
               <Col xs={24} md={8}>
-                <Form.Item name="profile_photo" label="Profile Photo" valuePropName="fileList" getValueFromEvent={normFile}>
-                  <Upload maxCount={1} beforeUpload={() => false} listType="picture">
-                    <Button icon={<UploadOutlined />} block style={{height: 45}}>Upload Photo</Button>
+                <Form.Item label="Profile Photo">
+                  <Upload 
+                    showUploadList={false} 
+                    beforeUpload={(file) => handleInstantUpload(file, 'profile')}
+                  >
+                    <Button 
+                      icon={urls.profile ? <CheckOutlined /> : <UploadOutlined />} 
+                      block 
+                      style={{ height: 45, borderColor: urls.profile ? '#52c41a' : '#d9d9d9', color: urls.profile ? '#52c41a' : 'inherit' }}
+                      loading={uploading.profile}
+                    >
+                      {urls.profile ? "Uploaded" : "Upload Photo"}
+                    </Button>
                   </Upload>
+                  {urls.profile && <div style={{marginTop: 5, fontSize: 12, color: '#52c41a'}}>Image saved!</div>}
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
-                <Form.Item name="id_proof" label="ID Proof" valuePropName="fileList" getValueFromEvent={normFile}>
-                  <Upload maxCount={1} beforeUpload={() => false} listType="picture">
-                    <Button icon={<UploadOutlined />} block style={{height: 45}}>Upload Emirates ID</Button>
+                <Form.Item label="ID Proof">
+                  <Upload 
+                    showUploadList={false} 
+                    beforeUpload={(file) => handleInstantUpload(file, 'idProof')}
+                  >
+                    <Button 
+                      icon={urls.idProof ? <CheckOutlined /> : <UploadOutlined />} 
+                      block 
+                      style={{ height: 45, borderColor: urls.idProof ? '#52c41a' : '#d9d9d9', color: urls.idProof ? '#52c41a' : 'inherit' }}
+                      loading={uploading.idProof}
+                    >
+                      {urls.idProof ? "Uploaded" : "Upload Emirates ID"}
+                    </Button>
                   </Upload>
+                  {urls.idProof && <div style={{marginTop: 5, fontSize: 12, color: '#52c41a'}}>ID saved!</div>}
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
-                <Form.Item name="rera_certificate" label="RERA Certificate" valuePropName="fileList" getValueFromEvent={normFile}>
-                  <Upload maxCount={1} beforeUpload={() => false} listType="picture">
-                    <Button icon={<UploadOutlined />} block style={{height: 45}}>Upload RERA</Button>
+                <Form.Item label="RERA Certificate">
+                  <Upload 
+                    showUploadList={false} 
+                    beforeUpload={(file) => handleInstantUpload(file, 'rera')}
+                  >
+                    <Button 
+                      icon={urls.rera ? <CheckOutlined /> : <UploadOutlined />} 
+                      block 
+                      style={{ height: 45, borderColor: urls.rera ? '#52c41a' : '#d9d9d9', color: urls.rera ? '#52c41a' : 'inherit' }}
+                      loading={uploading.rera}
+                    >
+                      {urls.rera ? "Uploaded" : "Upload RERA"}
+                    </Button>
                   </Upload>
+                  {urls.rera && <div style={{marginTop: 5, fontSize: 12, color: '#52c41a'}}>Certificate saved!</div>}
                 </Form.Item>
               </Col>
             </Row>
@@ -384,11 +456,5 @@ const RegistrationAgent = () => {
     </ConfigProvider>
   );
 };
-
-const Space = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
 
 export default RegistrationAgent;

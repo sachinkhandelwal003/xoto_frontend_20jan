@@ -49,7 +49,17 @@ const CUSTOM_ROLE_LINKS = {
 ],
 
   "1": [
-
+      {
+      title: "Developers", 
+      icon: "fas fa-building", 
+      path: "/dashboard/{roleSlug}/developer-list",  
+    },
+    {
+        title: "Agents",
+        icon: "fas fa-building", 
+        path: "/dashboard/{roleSlug}/agent-list"
+      },
+    
   ],
   "2": [
      {
@@ -193,7 +203,7 @@ const roleSlugMap = {
 
 const ROLE_MODULE_ORDER = {
   '0': ['Dashboard', "All Estimation", "Deals", 'Xoto Partners', 'Projects', 'Packages', 'Estimate master', 'Consultation Bookings', 'All Users', 'Products', 'Seller B2C', 'Request', 'Payout', 'Module','properties', 'Permission', 'Role', 'Inventory', 'Settings'],
-  '1': ['Dashboard', 'Products', 'Xoto Partners', 'Projects', 'Payout', 'Request', 'Settings'],
+  '1': ['Dashboard', 'Grid Admin'],
   '5': ['Dashboard', 'Products', 'My Products', 'Orders', 'Payout', 'Settings'],
   '6': ['Dashboard', 'Products', 'Projects', 'Inventory', 'Payout'],
   '7': ['Dashboard', 'My Projects', 'All Projects', 'Add Projects', 'Payout'],
