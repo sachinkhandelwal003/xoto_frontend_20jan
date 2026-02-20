@@ -104,6 +104,7 @@ import DeveloperAddProject from "../ecommerce/B2C/DeveloperAddProject";
 
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
+import AdminDashboard from "./pages/AdminDashboard";
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -121,7 +122,7 @@ const roleSlugMap = {
 
 const dashboardMap = {
   0: <Dashboard />,
-  1: <Dashboard />,
+  1: <AdminDashboard />,
   2:<Customerdashboard/>,
   5: <VendorDashboard />,
   6: <VendorDashboard />,
@@ -130,6 +131,7 @@ const dashboardMap = {
     12: <SupervisorDashboard />,
     16:<AgentDashboard/>,
     17:<DeveloperDashboard/>
+
 
 };
 

@@ -57,6 +57,7 @@ import EstimateCalculator from "./components/modal/EstimateCalculator";
 import Calculator from "./components/homepage/AiPlanner/Calculator";
 import OtherLogin from "./components/login/OtherLogin";
 import InteriorPlanner from "./components/homepage/AiPlanner/InteriorPlanner";
+import ImageEnhancer from "./components/homepage/AiPlanner/ImageEnhancer";
 import InteriorCalculator from "./components/homepage/AiPlanner/InteriorCalculator";
 import MainCalculatorPage from "./components/homepage/AiPlanner/MainCalculatorPage";
 import CustomerLogin from "./components/login/CustomerLogin";
@@ -108,6 +109,7 @@ const Bedroom = lazy(() => import("./components/Interiorsection/bedroom/Index"))
 const Registration = lazy(() => import("./components/freelancers/Registeration"));
 const Magazine = lazy(() => import("./components/magazines/Index"));
 
+
 function PrivateRoute({ children, allowedRoles }) {
   // ... (Code remains the same)
   const { user, token, loading } = useSelector((state) => state.auth);
@@ -138,7 +140,7 @@ function LayoutWrapper({ children }) {
     "/designs/Tool", "/dashboard", "/customer/dashboard", "/admin/login",
     "/user/login", "/other/login", "/aiPlanner", "/aiPlanner/interior",
     "/aiPlanner/landscape", "/estimate/calculator", "/estimate/calculator/interior",
-    "/accountant/login", "/ecommerce/seller", "/ecommerce/cart",
+    "/accountant/login", "/ecommerce/seller", "/ecommerce/cart","/aiPlanner/enhance",
   ];
   const isDashboard = location.pathname.startsWith("/dashboard");
   const hideNavbar = hideNavbarPaths.includes(location.pathname) || isDashboard;
@@ -163,7 +165,7 @@ function LayoutWrapper({ children }) {
     "/profile", "/admin/login", "/user/login", "/other/login", "/aiPlanner",
     "/aiPlanner/interior", "/aiPlanner/landscape", "/estimate/calculator",
     "/estimate/calculator/interior", "/accountant/login", "/ecommerce/seller",
-    "/freelancer/registration",
+    "/freelancer/registration","/aiPlanner/enhance",
   ];
 
   const hideFooter = hideFooterPaths.includes(location.pathname) || isDashboard || location.pathname.startsWith("/profile/");
@@ -203,6 +205,7 @@ function App() {
               <Route path="/product-requirements-edit" element={<ProductRequirementsEdit />} />
               <Route path="/my-applications" element={<MyApplications />} />
               <Route path="/aiPlanner/interior" element={<InteriorPlanner />} />
+              <Route path="/aiPlanner/enhance" element={<ImageEnhancer />} />
               <Route path="/aiPlanner/landscape" element={<AIPlanner />} />
               <Route path="/register" element={<RegisterNowPage />} />
               <Route path="/aiPlanner/exterior" element={<ComingSoon />} />
@@ -254,7 +257,7 @@ function App() {
               <Route path="/agency/registration" element={<RegistrationAgency />} />
 
               {/* ✅ Agent Registration Route */}
-    
+                <Route path="/agent/registration" element={<AgentRegistration />} />
 
 
 
@@ -289,6 +292,7 @@ function App() {
               <Route path="/check" element={<Checker />} />
               <Route path="/upcoming-soon" element={<Upcoming />} />
               <Route path="/finance-soon" element={<Finicial />} />
+              
               <Route
                 path="/dashboard/:roleSlug/*"
                 element={
