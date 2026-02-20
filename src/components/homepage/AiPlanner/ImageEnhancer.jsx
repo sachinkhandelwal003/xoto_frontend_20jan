@@ -2,16 +2,16 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from "axios";
-import LeadGenerationModal from '../Signuupage'; // Import added
+import LeadGenerationModal from '../Signuupage'; 
 import { 
     Upload, Sun, Contrast, Maximize2, Download, 
-    RefreshCcw, CheckCircle2, ImageIcon, Sparkles, X, ArrowLeft 
+    RefreshCcw, CheckCircle2, ImageIcon, Sparkles, X, ArrowLeft,
+    CloudSun, LayoutPanelLeft 
 } from 'lucide-react';
 import { Button, Slider, notification, Modal } from 'antd';
 import { useSelector } from 'react-redux';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
 
-// Import your XYZ component
 import XYZ from '../../homepage/ImageCustomer'; 
 
 const BRAND_PURPLE = "#5C039B";
@@ -29,7 +29,7 @@ const ImageEnhancer = () => {
     const [isEnhancing, setIsEnhancing] = useState(false);
     const [activeOption, setActiveOption] = useState('contrast');
     const [isModalVisible, setIsModalVisible] = useState(false); 
-    const [showAuthModal, setShowAuthModal] = useState(false); // Auth Modal State
+    const [showAuthModal, setShowAuthModal] = useState(false); 
     
     const [enhancementValues, setEnhancementValues] = useState({ 
         brightness: 100,
@@ -40,7 +40,6 @@ const ImageEnhancer = () => {
 
     const isCustomerLoggedIn = useMemo(() => user && (user.role?.name === 'Customer' || user.role?.name === 'SuperAdmin'), [user]);
 
-    // Handle Auth Success
     const handleAuthSuccess = (userData) => {
         setShowAuthModal(false);
         notification.success({ message: `Welcome ${userData?.name || 'User'}!` });
@@ -58,7 +57,6 @@ const ImageEnhancer = () => {
     const handleEnhance = async () => {
         if (!selectedImage) return notification.warning({ message: 'Upload image' });
         
-        // Agar user logged in nahi hai toh pehle modal dikhao (Optional logic based on your requirement)
         if (!isCustomerLoggedIn) {
             setShowAuthModal(true);
             return;
@@ -82,8 +80,6 @@ const ImageEnhancer = () => {
                     message: 'Xoto AI Enhancement Successful', 
                     description: 'Listing photo enhanced successfully.' 
                 });
-                
-                // Open XYZ Modal after success
                 setIsModalVisible(true);
             }
         } catch (error) {
@@ -133,16 +129,42 @@ const ImageEnhancer = () => {
     return (
         <div className="min-h-screen bg-[#F8F9FB] py-12 px-4 font-sans relative">
             
-            {/* 1. LEAD GENERATION / AUTH MODAL */}
+            {/* --- SIDE NAVIGATION (LEFT MIDDLE) --- */}
+            <div className="fixed left-0 top-1/2 -translate-y-1/2 z-[100] flex flex-col gap-4">
+                {/* Sky Replacement Button */}
+                <Link 
+                    to="/aiPlanner/sky" 
+                    className="flex items-center bg-white border border-l-0 border-gray-200 p-3 rounded-r-2xl shadow-xl hover:border-[#5C039B] active:border-[#5C039B] transition-all duration-300 group overflow-hidden w-[54px] md:w-[60px] hover:w-[220px] active:w-[220px]"
+                >
+                    <div className="min-w-[30px] md:min-w-[36px] flex justify-center shrink-0">
+                        <CloudSun size={26} className="text-[#5C039B]" />
+                    </div>
+                    <span className="ml-3 font-bold text-gray-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 text-sm md:text-base">
+                        Sky Replacement
+                    </span>
+                </Link>
+
+                {/* Virtual Staging Button */}
+                <Link 
+                    to="" 
+                    className="flex items-center bg-white border border-l-0 border-gray-200 p-3 rounded-r-2xl shadow-xl hover:border-[#5C039B] active:border-[#5C039B] transition-all duration-300 group overflow-hidden w-[54px] md:w-[60px] hover:w-[220px] active:w-[220px]"
+                >
+                    <div className="min-w-[30px] md:min-w-[36px] flex justify-center shrink-0">
+                        <LayoutPanelLeft size={26} className="text-[#5C039B]" />
+                    </div>
+                    <span className="ml-3 font-bold text-gray-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 text-sm md:text-base">
+                        Virtual Staging
+                    </span>
+                </Link>
+            </div>
+            {/* ------------------------------------- */}
+
             <LeadGenerationModal
                 visible={showAuthModal}
                 onCancel={() => setShowAuthModal(false)}
                 onAuthSuccess={handleAuthSuccess}
             />
 
-          
-
-            {/* Back Button */}
             <button
                 onClick={() => navigate(-1)}
                 className="fixed top-6 left-6 z-50 flex items-center gap-2 px-5 py-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-lg hover:bg-purple-50 hover:border-[#5C039B] transition-all group"
@@ -151,7 +173,6 @@ const ImageEnhancer = () => {
                 <span className="font-medium text-gray-700 group-hover:text-[#5C039B] transition-colors">Go Back</span>
             </button>
 
-            {/* Header */}
             <div className="max-w-4xl mx-auto text-center mb-12">
                 <div className="inline-flex items-center gap-2 bg-purple-50 text-[#5C039B] px-4 py-1 rounded-full text-sm font-semibold mb-4">
                     <span className="flex items-center gap-1"><Sparkles size={14} /> Xoto AI Enhancer</span>
@@ -161,11 +182,9 @@ const ImageEnhancer = () => {
                 </h1>
             </div>
 
-            {/* Main Editor Card */}
             <div className="max-w-6xl mx-auto bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden">
                 <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100">
                     
-                    {/* Step 1: Upload */}
                     <div className="p-8 lg:p-12">
                         <h2 className="text-xl font-bold mb-8 flex items-center gap-2">1. Upload Photo</h2>
                         <div className="aspect-square border-2 border-dashed border-gray-200 rounded-[24px] flex flex-col items-center justify-center cursor-pointer hover:bg-purple-50/30 transition-all overflow-hidden relative">
@@ -196,7 +215,6 @@ const ImageEnhancer = () => {
                         </div>
                     </div>
 
-                    {/* Step 2: Options */}
                     <div className="p-8 lg:p-12 bg-white">
                         <div className="flex justify-between items-center mb-8">
                             <h2 className="text-xl font-bold">2. Enhancement Options</h2>
@@ -271,7 +289,6 @@ const ImageEnhancer = () => {
                         </Button>
                     </div>
 
-                    {/* Step 3: Result */}
                     <div className="p-8 lg:p-12">
                         <h2 className="text-xl font-bold mb-8">3. Export Result</h2>
                         <div className="aspect-square bg-gray-50 border border-gray-100 rounded-[24px] flex flex-col items-center justify-center relative overflow-hidden group">
