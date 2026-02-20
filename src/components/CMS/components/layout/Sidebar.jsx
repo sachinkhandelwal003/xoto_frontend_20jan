@@ -237,7 +237,7 @@ const CUSTOM_ROLE_LINKS = {
   {
     title: "Projects",
     icon: "fas fa-building",
-    path: "/dashboard/{roleSlug}/projects",
+    path: "/dashboard/{roleSlug}/developer-projects"
   },
   {
   title:"Inventory / Units",
@@ -253,6 +253,11 @@ const CUSTOM_ROLE_LINKS = {
   title:"Sales Revenue",
   icon:"fas fa-chart-line",
   path:"/dashboard/{roleSlug}/revenue",
+},
+{
+  title:"Bookings",
+  icon:"fas fa-file-signature",
+  path:"/dashboard/{roleSlug}/bookings",
 },
 ]
 

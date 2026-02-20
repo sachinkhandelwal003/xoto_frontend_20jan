@@ -82,11 +82,33 @@ import AgencyList from "./pages/Properties/AgencyList";
 import DeveloperDashboard from "../ecommerce/B2C/DeveloperDashboard";
 import AgentDashboard from "../ecommerce/B2C/AgentDashboard";
 import AgentLayout from "../ecommerce/B2C/AgentLayout";
-import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";  
-import AgentRegistration from "../ecommerce/B2C/AgentRegistration"
-import DeveloperList from "./pages/DeveloperList";
-import DealCommissionManager from "./pages/DealCommissionManager";
- 
+import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";   
+import AgentSubscription from "../ecommerce/B2C/AgentSubscription";
+import AgentProjects from "../ecommerce/B2C/AgentProjects";
+import AgentPresentations from "../ecommerce/B2C/AgentPresentations";
+import AgentSiteVisits from "../ecommerce/B2C/AgentSiteVisits";
+import AgentDeals from "../ecommerce/B2C/AgentDeals";
+import AgentCommission from "../ecommerce/B2C/AgentCommission";
+import AgentLeadDetails from "../ecommerce/B2C/AgentLeadDetails";
+import AgentCreateDeal from "../ecommerce/B2C/AgentCreateDeal";
+import AgentDealDetails from "../ecommerce/B2C/AgentDealDetails";
+import AgentSiteVisitDetails from "../ecommerce/B2C/AgentSiteVisitDetails";
+import AgentCommissionDetails from "../ecommerce/B2C/AgentCommissionDetails";
+import AgentCreateVisit from "../ecommerce/B2C/AgentCreateVisit";
+import DeveloperProjects from "../ecommerce/B2C/DeveloperProjects";
+import DeveloperInventory from "../ecommerce/B2C/DeveloperInventory";
+import DeveloperLeads from "../ecommerce/B2C/DeveloperLeads";
+import DeveloperRevenue from "../ecommerce/B2C/DeveloperRevenue";
+import DeveloperProjectDetails from "../ecommerce/B2C/DeveloperProjectDetails";
+import DeveloperAddProject from "../ecommerce/B2C/DeveloperAddProject";
+import DeveloperAddUnit from "../ecommerce/B2C/DeveloperAddUnit";
+import DeveloperUnitDetails from "../ecommerce/B2C/DeveloperUnitDetails";
+import DeveloperEditUnit from "../ecommerce/B2C/DeveloperEditUnit";
+import DeveloperLeadDetails from "../ecommerce/B2C/DeveloperLeadDetails";
+import DeveloperCreateBooking from "../ecommerce/B2C/DeveloperCreateBooking";
+import DeveloperBookings from "../ecommerce/B2C/DeveloperBookings";
+import DeveloperBookingDetails from "../ecommerce/B2C/DeveloperBookingDetails";
+
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
 import AdminDashboard from "./pages/AdminDashboard";
@@ -281,12 +303,21 @@ const CmsRoutes = () => {
 
 
 {/* Developer */}
-<Route path="projects" element={<DeveloperProjects/>}/>
-<Route path="projects/add" element={<DeveloperAddProject/>}/>
-<Route path="projects/:id" element={<DeveloperProjectDetails/>}/>
+<Route path="developer-projects" element={<DeveloperProjects/>}/>
+<Route path="developer-projects/add" element={<DeveloperAddProject/>}/>
+<Route path="developer-projects/:id" element={<DeveloperProjectDetails/>}/>
 <Route path="inventory" element={<DeveloperInventory/>}/>
+<Route path="/inventory/add" element={<DeveloperAddUnit/>}/>
+<Route path="/inventory/:id" element={<DeveloperUnitDetails/>}/>
+<Route path="/inventory/:id/edit" element={<DeveloperEditUnit/>}/>
 <Route path="leads" element={<DeveloperLeads/>}/>
+<Route path="/leads/:id" element={<DeveloperLeadDetails/>}/>
+<Route path="/leads/:id/booking" element={<DeveloperCreateBooking/>}/>
+<Route path="/bookings" element={<DeveloperBookings/>}/>
+<Route path="/bookings/:id" element={<DeveloperBookingDetails/>}/>
 <Route path="revenue" element={<DeveloperRevenue/>}/>
+
+
       {/* Catch-all fallback */}
     </Routes>
   );
