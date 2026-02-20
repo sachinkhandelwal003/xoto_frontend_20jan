@@ -79,7 +79,7 @@ const ImageEnhancer = () => {
             if (response.status) {
                 setEnhancedImage(response.imageUrl);
                 notification.success({ 
-                    message: 'Xoto AI Magic!', 
+                    message: 'Xoto AI Enhancement Successful', 
                     description: 'Listing photo enhanced successfully.' 
                 });
                 
@@ -140,17 +140,7 @@ const ImageEnhancer = () => {
                 onAuthSuccess={handleAuthSuccess}
             />
 
-            {/* 2. XYZ MODAL (Shown after enhancement) */}
-            <Modal
-                title="Xoto AI Details"
-                open={isModalVisible}
-                onCancel={() => setIsModalVisible(false)}
-                footer={null}
-                width={800}
-                centered
-            >
-                <XYZ onClose={() => setIsModalVisible(false)} />
-            </Modal>
+          
 
             {/* Back Button */}
             <button

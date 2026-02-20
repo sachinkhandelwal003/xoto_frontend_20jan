@@ -265,7 +265,6 @@ const CmsRoutes = () => {
 <Route path="notifications/view" element={<Notifications />} />
       <Route path="freelancer/myprofile" element={<MyprofileFreelancer />} />
       <Route path="/update" element={<UpdateProfilePage />} />
-
 {/* Agents */}
       <Route path="/lead" element={<AgentLeadDashboard />} />
       {/* admin */}
@@ -281,6 +280,13 @@ const CmsRoutes = () => {
 
 
 
+{/* Developer */}
+<Route path="projects" element={<DeveloperProjects/>}/>
+<Route path="projects/add" element={<DeveloperAddProject/>}/>
+<Route path="projects/:id" element={<DeveloperProjectDetails/>}/>
+<Route path="inventory" element={<DeveloperInventory/>}/>
+<Route path="leads" element={<DeveloperLeads/>}/>
+<Route path="revenue" element={<DeveloperRevenue/>}/>
       {/* Catch-all fallback */}
     </Routes>
   );
