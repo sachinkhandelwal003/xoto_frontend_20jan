@@ -83,7 +83,7 @@ export default function DeveloperProjects(){
         borderColor:"#5c039b",
         color:"#fff"
       }}
-      onClick={()=>navigate(`/projects/${record.key}`)}
+     onClick={() => navigate(`/dashboard/developer/developer-projects/${record.key}`)}
     >
       View
     </Button>
@@ -111,7 +111,7 @@ export default function DeveloperProjects(){
          <Button
   icon={<PlusOutlined/>}
   style={{background:"#5c039b",borderColor:"#5c039b",color:"#fff"}}
-  onClick={()=>navigate("/projects/add")}
+  onClick={()=>navigate("/dashboard/developer/developer-projects/add")}
 >
   Add Project
 </Button>
