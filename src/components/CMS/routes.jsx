@@ -85,10 +85,15 @@ import AgentLayout from "../ecommerce/B2C/AgentLayout";
 import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";  
 import AgentRegistration from "../ecommerce/B2C/AgentRegistration"
 import DeveloperList from "./pages/DeveloperList";
+import DealCommissionManager from "./pages/DealCommissionManager";
  
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminPropertyGrid from "./pages/AdminPropertyGrid";
+import LeadManagement from "./pages/LeadManagement";
+import SubscriptionPlans from "./pages/SubscriptionPlans";
+import VerificationQueue from "./pages/VerificationQueue";
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -267,7 +272,11 @@ const CmsRoutes = () => {
       <Route path="/agent-list" element={<AgentList />} />
       <Route path="/agent-registration" element={<AgentRegistration />} />
       <Route path="/developer-list" element={<DeveloperList />} />
-      
+      <Route path="/property-list" element={<AdminPropertyGrid />} />
+      <Route path="/DealCommissionManager" element={<DealCommissionManager />} />
+      <Route path="/lead-management" element={<LeadManagement />} />
+      <Route path="/subscription-plans" element={<SubscriptionPlans />} />
+      <Route path="/verification-queue" element={<VerificationQueue />} />
       
 
 
