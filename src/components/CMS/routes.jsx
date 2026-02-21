@@ -291,7 +291,7 @@ const CmsRoutes = () => {
       <Route path="freelancer/myprofile" element={<MyprofileFreelancer />} />
       <Route path="/update" element={<UpdateProfilePage />} />
 {/* Agents */}
-<Route index element={<AgentDashboard />} />
+{/* <Route index element={<AgentDashboard />} /> */}
 
   {/* Leads */}
   <Route path="leads" element={<AgentLeadDashboard />} />
