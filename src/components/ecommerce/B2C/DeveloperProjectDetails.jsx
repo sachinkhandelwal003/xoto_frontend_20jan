@@ -1,156 +1,137 @@
-import { Card, Typography, Row, Col, Tag, Table, Button, message, Spin } from "antd";
+import { Card, Typography, Row, Col, Tag, Table, Button } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { useEffect, useState } from "react";
+
+
 
 const { Title, Text } = Typography;
 
 export default function DeveloperProjectDetails(){
 
-  const navigate = useNavigate();
   const { id } = useParams();
-  const { token } = useSelector(s=>s.auth);
+  const navigate = useNavigate();
 
-  const [project,setProject]=useState(null);
-  const [loading,setLoading]=useState(true);
+  const project={
+    name:"Sky Tower",
+    location:"Dubai Marina",
+    units:120,
+    sold:78,
+    status:"Active"
+  };
 
-  // ================= FETCH PROJECT =================
-  useEffect(()=>{
+  const units=[
+    {key:1,unit:"A-101",type:"2BHK",price:"1.2Cr",status:"Sold"},
+    {key:2,unit:"A-102",type:"2BHK",price:"1.1Cr",status:"Available"},
+    {key:3,unit:"A-103",type:"3BHK",price:"1.6Cr",status:"Booked"},
+  ];
 
-    if(!id || id==="add") return;
+  const getColor=(s)=>{
+    if(s==="Sold") return "blue";
+    if(s==="Booked") return "orange";
+    if(s==="Available") return "green";
+  };
 
-    const fetchProject=async()=>{
-
-      try{
-
-        setLoading(true);
-
-        const res=await fetch(
-          `https://xoto.ae/api/property/get-property/${id}`,
-          {
-            headers:{ Authorization:`Bearer ${token}` }
-          }
-        );
-
-        const json=await res.json();
-
-        if(!json?.data){
-          message.error("Project not found");
-          return;
-        }
-
-        setProject(json.data);
-
-      }catch(err){
-        console.error(err);
-        message.error("Failed to load project details");
-      }
-      finally{
-        setLoading(false);
-      }
-    };
-
-    fetchProject();
-
-  },[id,token]);
-
-  if(loading){
-    return(
-      <div className="p-10 text-center">
-        <Spin size="large"/>
-      </div>
-    );
-  }
-
-  if(!project){
-    return(
-      <div className="p-10 text-center">
-        <Title level={4}>Project Not Found</Title>
-      </div>
-    );
-  }
-
-  const totalUnits = project?.unitType?.length || 0;
-  const soldUnits = project?.unitType?.filter(u=>u.status==="sold")?.length || 0;
+  const columns=[
+    {title:"Unit",dataIndex:"unit"},
+    {title:"Type",dataIndex:"type"},
+    {title:"Price",dataIndex:"price"},
+    {
+      title:"Status",
+      dataIndex:"status",
+      render:(s)=><Tag color={getColor(s)}>{s}</Tag>
+    },
+    {
+      title:"Action",
+      render:(_,record)=>(
+        <Button
+          style={{background:"#5c039b",borderColor:"#5c039b",color:"#fff"}}
+          onClick={()=>navigate(`/dashboard/developer/inventory/${record.key}`)}
+        >
+          View
+        </Button>
+      )
+    }
+  ];
 
   return(
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6">
 
-      <Title level={3}>{project.propertyName}</Title>
-      <Text type="secondary">{project.area} {project.city}</Text>
+      <Title level={3}>{project.name}</Title>
+      <Text type="secondary">{project.location}</Text>
 
-      {/* SUMMARY */}
+      {/* PROJECT SUMMARY */}
       <Row gutter={16} className="mt-6 mb-6">
 
         <Col span={6}>
           <Card className="rounded-xl shadow-sm">
             <Text type="secondary">Total Units</Text><br/>
-            <Title level={4}>{totalUnits}</Title>
+            <Title level={4}>{project.units}</Title>
           </Card>
         </Col>
 
         <Col span={6}>
           <Card className="rounded-xl shadow-sm">
             <Text type="secondary">Sold</Text><br/>
-            <Title level={4}>{soldUnits}</Title>
+            <Title level={4}>{project.sold}</Title>
           </Card>
         </Col>
 
         <Col span={6}>
           <Card className="rounded-xl shadow-sm">
             <Text type="secondary">Available</Text><br/>
-            <Title level={4}>{totalUnits - soldUnits}</Title>
+            <Title level={4}>{project.units-project.sold}</Title>
           </Card>
         </Col>
 
         <Col span={6}>
           <Card className="rounded-xl shadow-sm">
             <Text type="secondary">Status</Text><br/>
-            <Tag color={project.isAvailable ? "green":"red"}>
-              {project.isAvailable ? "Active":"Inactive"}
-            </Tag>
+            <Tag color="green">{project.status}</Tag>
           </Card>
         </Col>
 
       </Row>
 
-      {/* LEADS / UNITS TABLE */}
+      {/* UNITS TABLE */}
       <Card className="shadow-sm rounded-xl mt-6">
 
-        <Title level={4}>Project Leads</Title>
+  <Title level={4}>Project Leads</Title>
 
-        <Table
-          rowKey="_id"
-          pagination={false}
-          columns={[
-            {title:"Client",dataIndex:"name"},
-            {title:"Phone",dataIndex:"phone"},
-            {title:"Interested Unit",dataIndex:"unit"},
-            {
-              title:"Status",
-              dataIndex:"status",
-              render:(s)=>(
-                <Tag color={s==="Hot"?"red":s==="Warm"?"orange":"blue"}>
-                  {s}
-                </Tag>
-              )
-            },
-            {
-              title:"Action",
-              render:(_,record)=>(
-                <Button
-                  style={{background:"#5c039b",borderColor:"#5c039b",color:"#fff"}}
-                  onClick={()=>navigate(`/dashboard/developer/leads/${record._id}`)}
-                >
-                  View
-                </Button>
-              )
-            }
-          ]}
-          dataSource={project?.leads || []}
-        />
+  <Table
+    rowKey="key"
+    pagination={false}
+    columns={[
+      {title:"Client",dataIndex:"client"},
+      {title:"Phone",dataIndex:"phone"},
+      {title:"Interested Unit",dataIndex:"unit"},
+      {
+        title:"Status",
+        dataIndex:"status",
+        render:(s)=>(
+          <Tag color={s==="Hot"?"red":s==="Warm"?"orange":"blue"}>
+            {s}
+          </Tag>
+        )
+      },
+      {
+        title:"Action",
+        render:(_,record)=>(
+         <Button
+  style={{background:"#5c039b",borderColor:"#5c039b",color:"#fff"}}
+  onClick={()=>navigate(`/dashboard/developer/leads/${record.key}`)}
+>
+  View
+</Button>
+        )
+      }
+    ]}
+    dataSource={[
+      {key:1,client:"Rahul Mehta",phone:"9876543210",unit:"A-101",status:"Hot"},
+      {key:2,client:"Neha Gupta",phone:"9988776655",unit:"A-103",status:"Warm"},
+      {key:3,client:"Ali Hassan",phone:"9123456780",unit:"A-102",status:"Cold"},
+    ]}
+  />
 
-      </Card>
+</Card>
 
     </div>
   );
