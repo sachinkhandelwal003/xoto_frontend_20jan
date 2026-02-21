@@ -195,17 +195,71 @@ const CUSTOM_ROLE_LINKS = {
       ],
     },
   ],
-"16": [ {
-      title: "AgentLead Management", 
-      icon: "fas fa-building", 
-      path: "/dashboard/{roleSlug}/lead", 
-      // submenus: [
-      //   { title: "All Leads", path: "/dashboard/agent/lead/list" },
-      // ],
-    },],
-
-"10": []
-
+"16": [
+  {
+    title: "AgentLead Management",
+    icon: "fas fa-building",
+    path: "/dashboard/{roleSlug}/lead",
+  },
+  {
+    title: "Subscription",
+    icon: "fas fa-credit-card",
+    path: "/dashboard/{roleSlug}/subscription",
+  },
+  {
+  title: "Projects",
+  icon: "fas fa-building",
+  path: "/dashboard/{roleSlug}/projects",
+},
+{
+  title: "Presentations",
+  icon: "fas fa-file-powerpoint",
+  path: "/dashboard/{roleSlug}/presentations",
+},
+{
+  title: "Site Visits",
+  icon: "fas fa-map-marker-alt",
+  path: "/dashboard/{roleSlug}/site-visits",
+},
+{
+  title: "Deals",
+  icon: "fas fa-handshake",
+  path: "/dashboard/{roleSlug}/deals",
+},
+{
+  title: "Commission",
+  icon: "fas fa-rupee-sign",
+  path: "/dashboard/{roleSlug}/commission",
+},
+],
+"10": [],
+"17": [
+  {
+    title: "Projects",
+    icon: "fas fa-building",
+    path: "/dashboard/{roleSlug}/developer-projects"
+  },
+  {
+  title:"Inventory / Units",
+  icon:"fas fa-layer-group",
+  path:"/dashboard/{roleSlug}/inventory",
+},
+{
+  title:"Leads Tracking",
+  icon:"fas fa-users",
+  path:"/dashboard/{roleSlug}/leads",
+},
+{
+  title:"Sales Revenue",
+  icon:"fas fa-chart-line",
+  path:"/dashboard/{roleSlug}/revenue",
+},
+{
+  title:"Bookings",
+  icon:"fas fa-file-signature",
+  path:"/dashboard/{roleSlug}/bookings",
+},
+]
 
 };
 
