@@ -108,6 +108,8 @@ import DeveloperLeadDetails from "../ecommerce/B2C/DeveloperLeadDetails";
 import DeveloperCreateBooking from "../ecommerce/B2C/DeveloperCreateBooking";
 import DeveloperBookings from "../ecommerce/B2C/DeveloperBookings";
 import DeveloperBookingDetails from "../ecommerce/B2C/DeveloperBookingDetails";
+import DeveloperList from "./pages/DeveloperList";
+import DealCommissionManager from "./pages/DealCommissionManager";
 
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
@@ -291,7 +293,7 @@ const CmsRoutes = () => {
       <Route path="/lead" element={<AgentLeadDashboard />} />
       {/* admin */}
       <Route path="/agent-list" element={<AgentList />} />
-      <Route path="/agent-registration" element={<AgentRegistration />} />
+      {/* <Route path="/agent-registration" element={<AgentRegistration />} /> */}
       <Route path="/developer-list" element={<DeveloperList />} />
       <Route path="/property-list" element={<AdminPropertyGrid />} />
       <Route path="/DealCommissionManager" element={<DealCommissionManager />} />
