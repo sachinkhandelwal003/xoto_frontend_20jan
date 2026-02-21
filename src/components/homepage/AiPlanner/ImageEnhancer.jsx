@@ -146,7 +146,7 @@ const ImageEnhancer = () => {
 
                 {/* Virtual Staging Button */}
                 <Link 
-                    to="" 
+                    to="/aiPlanner/virtual"  
                     className="flex items-center bg-white border border-l-0 border-gray-200 p-3 rounded-r-2xl shadow-xl hover:border-[#5C039B] active:border-[#5C039B] transition-all duration-300 group overflow-hidden w-[54px] md:w-[60px] hover:w-[220px] active:w-[220px]"
                 >
                     <div className="min-w-[30px] md:min-w-[36px] flex justify-center shrink-0">
