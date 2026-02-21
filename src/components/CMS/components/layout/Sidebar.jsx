@@ -48,18 +48,92 @@ const CUSTOM_ROLE_LINKS = {
   }
 ],
 
-  "1": [
-      {
-      title: "Developers", 
-      icon: "fas fa-building", 
-      path: "/dashboard/{roleSlug}/developer-list",  
-    },
+"1": [
+    /* --- CATEGORY 1: User Management (Logistics) --- */
     {
-        title: "Agents",
-        icon: "fas fa-building", 
-        path: "/dashboard/{roleSlug}/agent-list"
-      },
-    
+      title: "User Management",
+      icon: "fas fa-users-cog",
+      path: "/dashboard/{roleSlug}/users",
+      submenus: [
+        { 
+          title: "Developers", 
+          path: "/dashboard/{roleSlug}/developer-list",
+          icon: "fas fa-user-tie" 
+        },
+        { 
+          title: "Agents", 
+          path: "/dashboard/{roleSlug}/agent-list",
+          icon: "fas fa-user-friends" 
+        },
+        { 
+          title: "Verification Queue", 
+          path: "/dashboard/{roleSlug}/verification-queue", 
+          icon: "fas fa-user-check" 
+        }
+      ]
+    },
+
+    /* --- CATEGORY 2: Inventory & CRM (Operations) --- */
+    {
+      title: "Inventory & CRM",
+      icon: "fas fa-boxes",
+      path: "/dashboard/{roleSlug}/operations",
+      submenus: [
+        { 
+          title: "Global Properties", 
+          path: "/dashboard/{roleSlug}/property-list",
+          icon: "fas fa-building" 
+        },
+        { 
+          title: "Lead Management", 
+          path: "/dashboard/{roleSlug}/lead-management",
+          icon: "fas fa-filter" 
+        },
+        { 
+          title: "Deals & Commissions", 
+          path: "/dashboard/{roleSlug}/DealCommissionManager",
+          icon: "fas fa-file-invoice-dollar" 
+        }
+      ]
+    },
+
+    /* --- CATEGORY 3: Business & Revenue --- */
+    {
+      title: "Business Growth",
+      icon: "fas fa-chart-line",
+      path: "/dashboard/{roleSlug}/business",
+      submenus: [
+        { 
+          title: "Subscription Plans", 
+          path: "/dashboard/{roleSlug}/subscription-plans",
+          icon: "fas fa-tags" 
+        },
+        { 
+          title: "XOTO Blitz (Campaigns)", 
+          path: "/dashboard/{roleSlug}/marketing-hub",
+          icon: "fas fa-bullhorn" 
+        }
+      ]
+    },
+
+    /* --- CATEGORY 4: Support & AI Settings --- */
+    {
+      title: "System Control",
+      icon: "fas fa-sliders-h",
+      path: "/dashboard/{roleSlug}/settings",
+      submenus: [
+        { 
+          title: "Xobia AI Training", 
+          path: "/dashboard/{roleSlug}/ai-training",
+          icon: "fas fa-robot" 
+        },
+        { 
+          title: "Global Settings", 
+          path: "/dashboard/{roleSlug}/global-settings",
+          icon: "fas fa-cog" 
+        }
+      ]
+    }
   ],
   "2": [
      {

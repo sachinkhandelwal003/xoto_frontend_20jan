@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom"; // Navigation ke liye
+import { useSelector } from "react-redux";
 import {
-  Card, Table, Typography, Avatar, Row, Col, Statistic, Space,
-  message, Tooltip, Modal, Button, Popconfirm, Tag, Spin, Image, Divider, Switch, Input
+  Card, Table, Typography, Avatar, Row, Col, Space,
+  message, Modal, Button, Tag, Spin, Divider, Switch, Input
 } from "antd";
 import {
-  BankOutlined, DeleteOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined,
-  MailOutlined, PhoneOutlined, EnvironmentOutlined, HomeOutlined, SearchOutlined,
-  UsergroupAddOutlined, CheckOutlined, CloseOutlined, FileTextOutlined, ArrowRightOutlined
+  EyeOutlined, CheckOutlined, CloseOutlined, FileTextOutlined, SearchOutlined, HomeOutlined, EnvironmentOutlined
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -17,8 +15,8 @@ const THEME = { primary: "#1890ff", success: "#10b981" };
 
 const DeveloperList = () => {
   const BASE_URL = "https://xoto.ae/api/property";
-  const navigate = useNavigate(); // Navigation initialize kiya
-
+  const { user } = useSelector((s) => s.auth);
+  
   const [developers, setDevelopers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -30,6 +28,8 @@ const DeveloperList = () => {
 
   const [viewModal, setViewModal] = useState(false);
   const [selectedDev, setSelectedDev] = useState(null);
+  
+  // Properties state
   const [devProperties, setDevProperties] = useState([]);
   const [loadingProps, setLoadingProps] = useState(false);
 
@@ -59,16 +59,17 @@ const DeveloperList = () => {
     return () => clearTimeout(delayDebounce);
   }, [currentPage, pageSize, searchText]);
 
+  // ✅ Updated API call to use the new backend filter
   const fetchPropertiesByDeveloper = async (devId) => {
     setLoadingProps(true);
     try {
       const response = await axios.get(`${BASE_URL}/get-all-properties`, {
-        params: { limit: 500 }
+        params: { developerId: devId } // <-- Direct backend filtering
       });
-      const allProps = response.data?.data || response.data || [];
-      const filtered = allProps.filter(p => (p.developer?._id || p.developer) === devId);
-      setDevProperties(filtered);
+      const propsData = response.data?.data || response.data || [];
+      setDevProperties(propsData);
     } catch (err) {
+      console.error("Error fetching properties:", err);
       setDevProperties([]);
     } finally {
       setLoadingProps(false);
@@ -95,6 +96,7 @@ const DeveloperList = () => {
   const openViewModal = (record) => {
     setSelectedDev(record);
     setViewModal(true);
+    // Modal khulte hi uski ID se properties fetch hongi
     fetchPropertiesByDeveloper(record._id || record.id);
   };
 
@@ -142,12 +144,32 @@ const DeveloperList = () => {
     },
   ];
 
-  const propertyColumns = [
-    { title: 'Property Name', dataIndex: 'propertyName', key: 'name', render: t => <Text strong>{t}</Text> },
-    { title: 'Type', dataIndex: 'propertyType', render: t => <Tag color="blue">{t}</Tag> },
-    { title: 'Price (Min)', dataIndex: 'price_min', render: (p, r) => `${r.currency || 'AED'} ${p?.toLocaleString()}` },
-    { title: 'Status', render: (_, r) => r.isAvailable ? <Tag color="green">Available</Tag> : <Tag color="red">Sold</Tag> },
-  ];
+const propertyColumns = [
+  { 
+    title: 'Property Details', 
+    key: 'details', 
+    render: (_, r) => (
+      <Space>
+        {/* ✅ Property ki first photo ka chota icon */}
+        <Avatar src={r.photos && r.photos[0]} shape="square" size="large" style={{ backgroundColor: '#f0f0f0' }}>
+          <HomeOutlined style={{ color: '#bfbfbf' }} />
+        </Avatar>
+        <div>
+          <Text strong className="block">{r.propertyName}</Text>
+          <Text type="secondary" style={{ fontSize: '12px' }}><EnvironmentOutlined /> {r.area ? `${r.area}, ${r.city}` : r.city}</Text>
+        </div>
+      </Space>
+    ) 
+  },
+  { title: 'Type', dataIndex: 'propertyType', render: t => <Tag color="blue">{t}</Tag> },
+  { 
+    title: 'Starting Price', 
+    dataIndex: 'price_min', 
+    render: (p, r) => p > 0 ? <Text strong>{r.currency || 'AED'} {p.toLocaleString()}</Text> : <Text type="secondary">Price on Request</Text> 
+    // (Aapki API me kuch price 0 hain, toh 'Price on Request' dikhana zyada professional lagega)
+  },
+  { title: 'Status', render: (_, r) => r.isAvailable ? <Tag color="green">Available</Tag> : <Tag color="red">Sold</Tag> },
+];
 
   return (
     <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
@@ -181,12 +203,12 @@ const DeveloperList = () => {
       <Modal
         open={viewModal}
         onCancel={() => setViewModal(false)}
-        width={1000}
+        width={900}
         footer={null}
         destroyOnClose
       >
         {selectedDev ? (
-          <div className="p-4">
+          <div className="p-2">
             <div className="text-center mb-6">
               <Avatar size={80} shape="square" src={selectedDev.logo} style={{ backgroundColor: THEME.primary }}>
                  {selectedDev.name?.charAt(0).toUpperCase()}
@@ -198,7 +220,6 @@ const DeveloperList = () => {
               </Space>
             </div>
 
-            {/* Complete Data Show Section */}
             <Divider orientation="left">Contact & Location</Divider>
             <Row gutter={[16, 24]} className="mb-6">
               <Col span={12}><Text type="secondary">Email Address</Text> <br/> <Text strong>{selectedDev.email}</Text></Col>
@@ -209,7 +230,6 @@ const DeveloperList = () => {
               <Col span={24}><Text type="secondary">Description</Text> <br/> <Text>{selectedDev.description || 'No description provided.'}</Text></Col>
             </Row>
 
-            {/* Documents Section */}
             {selectedDev.documents && selectedDev.documents.length > 0 && (
               <>
                 <Divider orientation="left">Developer Documents</Divider>
@@ -228,27 +248,18 @@ const DeveloperList = () => {
               </>
             )}
 
-            <Divider orientation="left">Developer's Properties</Divider>
-            <Table 
-              columns={propertyColumns} 
-              dataSource={devProperties} 
-              loading={loadingProps} 
-              size="small" 
-              pagination={{ pageSize: 5 }} 
+            {/* ✅ Newly Added Properties Table Section */}
+            <Divider orientation="left">Developer Properties</Divider>
+            <Table
+              columns={propertyColumns}
+              dataSource={devProperties}
+              rowKey={(record) => record._id || record.id}
+              loading={loadingProps}
+              pagination={{ pageSize: 5 }}  // Choti pagination taki modal zyada lamba na ho
+              size="middle"
+              bordered
             />
 
-            {/* ✅ See Properties Navigation Button */}
-            <div className="text-center mt-8">
-               <Button 
-                type="primary" 
-                size="large" 
-                icon={<ArrowRightOutlined />}
-                onClick={() => navigate(`/admin/developer-properties/${selectedDev?._id || selectedDev?.id}`)}
-                style={{ backgroundColor: THEME.primary, height: '45px', borderRadius: '8px', padding: '0 40px' }}
-               >
-                 See Full Property List
-               </Button>
-            </div>
           </div>
         ) : <div className="text-center p-10"><Spin /></div>}
       </Modal>

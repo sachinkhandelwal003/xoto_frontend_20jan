@@ -649,4 +649,5 @@ const { user } = useSelector((state) => state.auth);
   );
 };
 
+
 export default DeveloperPropertyManagement;
