@@ -190,7 +190,7 @@ const SkyReplacement = () => {
                                     className="flex items-center justify-center gap-3 p-3 rounded-xl border-2 transition-all font-bold text-sm"
                                     style={skyStyle === 'dark' ? { borderColor: '#000000', backgroundColor: '#F3F4F6', color: '#000000' } : { borderColor: '#F3F4F6', color: '#6B7280' }}
                                 >
-                                    <Moon size={14} /> Dark Sky
+                                    <Moon size={14} /> Dusk Sky
                                 </button>
                             </div>
                         </div>
