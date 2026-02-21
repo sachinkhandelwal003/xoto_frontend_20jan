@@ -11,13 +11,6 @@ const API_BASE_URL = 'https://xoto.ae/api/';
 const api = axios.create({
   baseURL: API_BASE_URL,  
 
-
-
-
-
-
-
-  
 });
 
 // Request interceptor to add auth token
