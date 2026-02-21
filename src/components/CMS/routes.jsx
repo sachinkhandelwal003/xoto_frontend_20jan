@@ -85,6 +85,7 @@ import AgentLayout from "../ecommerce/B2C/AgentLayout";
 import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";   
 import AgentSubscription from "../ecommerce/B2C/AgentSubscription";
 import AgentProjects from "../ecommerce/B2C/AgentProjects";
+import AgentProjectDetails from "../ecommerce/B2C/AgentProjectDetails";
 import AgentPresentations from "../ecommerce/B2C/AgentPresentations";
 import AgentSiteVisits from "../ecommerce/B2C/AgentSiteVisits";
 import AgentDeals from "../ecommerce/B2C/AgentDeals";
@@ -290,7 +291,41 @@ const CmsRoutes = () => {
       <Route path="freelancer/myprofile" element={<MyprofileFreelancer />} />
       <Route path="/update" element={<UpdateProfilePage />} />
 {/* Agents */}
-      <Route path="/lead" element={<AgentLeadDashboard />} />
+<Route index element={<AgentDashboard />} />
+
+  {/* Leads */}
+  <Route path="leads" element={<AgentLeadDashboard />} />
+  <Route path="leads/:id" element={<AgentLeadDetails />} />
+
+  {/* Projects */}
+  <Route path="projects" element={<AgentProjects />} />
+  <Route
+  path="/dashboard/agent/projects/:id"
+  element={<AgentProjectDetails/>}
+/>
+
+  {/* Deals */}
+  <Route path="deals" element={<AgentDeals />} />
+  <Route path="deals/create" element={<AgentCreateDeal />} />
+  <Route path="deals/:id" element={<AgentDealDetails />} />
+
+  {/* Site Visits */}
+  <Route path="visits" element={<AgentSiteVisits />} />
+  <Route path="visits/create" element={<AgentCreateVisit />} />
+  <Route path="visits/:id" element={<AgentSiteVisitDetails />} />
+
+  {/* Commission */}
+  <Route path="commission" element={<AgentCommission />} />
+  <Route path="commission/:id" element={<AgentCommissionDetails />} />
+
+  {/* Subscription */}
+  <Route path="subscription" element={<AgentSubscription />} />
+
+  {/* Presentations */}
+  <Route path="presentations" element={<AgentPresentations />} />
+
+
+
       {/* admin */}
       <Route path="/agent-list" element={<AgentList />} />
       {/* <Route path="/agent-registration" element={<AgentRegistration />} /> */}
