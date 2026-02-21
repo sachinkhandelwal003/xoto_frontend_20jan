@@ -112,6 +112,10 @@ import DeveloperBookingDetails from "../ecommerce/B2C/DeveloperBookingDetails";
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminPropertyGrid from "./pages/AdminPropertyGrid";
+import LeadManagement from "./pages/LeadManagement";
+import SubscriptionPlans from "./pages/SubscriptionPlans";
+import VerificationQueue from "./pages/VerificationQueue";
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -285,18 +289,18 @@ const CmsRoutes = () => {
       <Route path="/update" element={<UpdateProfilePage />} />
 {/* Agents */}
       <Route path="/lead" element={<AgentLeadDashboard />} />
-<Route path="/subscription" element={<AgentSubscription />} />
-<Route path="/projects" element={<AgentProjects />} />
-<Route path="/presentations" element={<AgentPresentations/>}/>
-<Route path="/site-visits" element={<AgentSiteVisits/>}/>
-<Route path="/deals" element={<AgentDeals/>}/>
-<Route path="/commission/:id" element={<AgentCommissionDetails/>}/>
-<Route path="/commission" element={<AgentCommission/>}/>
-<Route path="/lead/:id/create-deal" element={<AgentCreateDeal/>}/>
-<Route path="/lead/:id" element={<AgentLeadDetails/>}/>
-<Route path="/deals/:id" element={<AgentDealDetails/>}/>
-<Route path="/site-visits/:id" element={<AgentSiteVisitDetails/>}/>
-<Route path="/lead/:id/create-visit" element={<AgentCreateVisit/>}/>
+      {/* admin */}
+      <Route path="/agent-list" element={<AgentList />} />
+      <Route path="/agent-registration" element={<AgentRegistration />} />
+      <Route path="/developer-list" element={<DeveloperList />} />
+      <Route path="/property-list" element={<AdminPropertyGrid />} />
+      <Route path="/DealCommissionManager" element={<DealCommissionManager />} />
+      <Route path="/lead-management" element={<LeadManagement />} />
+      <Route path="/subscription-plans" element={<SubscriptionPlans />} />
+      <Route path="/verification-queue" element={<VerificationQueue />} />
+      
+
+
 
 {/* Developer */}
 <Route path="developer-projects" element={<DeveloperProjects/>}/>
