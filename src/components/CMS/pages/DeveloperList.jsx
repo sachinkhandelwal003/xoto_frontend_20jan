@@ -255,7 +255,7 @@ const propertyColumns = [
               dataSource={devProperties}
               rowKey={(record) => record._id || record.id}
               loading={loadingProps}
-              pagination={{ pageSize: 5 }} // Choti pagination taki modal zyada lamba na ho
+              pagination={{ pageSize: 5 }}  // Choti pagination taki modal zyada lamba na ho
               size="middle"
               bordered
             />
