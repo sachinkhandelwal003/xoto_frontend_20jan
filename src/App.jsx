@@ -59,6 +59,7 @@ import OtherLogin from "./components/login/OtherLogin";
 import InteriorPlanner from "./components/homepage/AiPlanner/InteriorPlanner";
 import ImageEnhancer from "./components/homepage/AiPlanner/ImageEnhancer";
 import SkyReplacement from "./components/homepage/AiPlanner/SkyReplacement";
+import VirtualStaging from "./components/homepage/AiPlanner/Virtualstaggig";
 import InteriorCalculator from "./components/homepage/AiPlanner/InteriorCalculator";
 import MainCalculatorPage from "./components/homepage/AiPlanner/MainCalculatorPage";
 import CustomerLogin from "./components/login/CustomerLogin";
@@ -141,7 +142,7 @@ function LayoutWrapper({ children }) {
     "/designs/Tool", "/dashboard", "/customer/dashboard", "/admin/login",
     "/user/login", "/other/login", "/aiPlanner", "/aiPlanner/interior",
     "/aiPlanner/landscape", "/estimate/calculator", "/estimate/calculator/interior",
-    "/accountant/login", "/ecommerce/seller", "/ecommerce/cart","/aiPlanner/enhance","/aiPlanner/sky" ,
+    "/accountant/login", "/ecommerce/seller", "/ecommerce/cart","/aiPlanner/enhance","/aiPlanner/sky","/aiPlanner/virtual" ,
   ];
   const isDashboard = location.pathname.startsWith("/dashboard");
   const hideNavbar = hideNavbarPaths.includes(location.pathname) || isDashboard;
@@ -166,7 +167,7 @@ function LayoutWrapper({ children }) {
     "/profile", "/admin/login", "/user/login", "/other/login", "/aiPlanner",
     "/aiPlanner/interior", "/aiPlanner/landscape", "/estimate/calculator",
     "/estimate/calculator/interior", "/accountant/login", "/ecommerce/seller",
-    "/freelancer/registration","/aiPlanner/enhance","/aiPlanner/sky" ,
+    "/freelancer/registration","/aiPlanner/enhance","/aiPlanner/sky","/aiPlanner/virtual" ,
   ];
 
   const hideFooter = hideFooterPaths.includes(location.pathname) || isDashboard || location.pathname.startsWith("/profile/");
@@ -208,6 +209,7 @@ function App() {
               <Route path="/aiPlanner/interior" element={<InteriorPlanner />} />
               <Route path="/aiPlanner/enhance" element={<ImageEnhancer />} />
               <Route path="/aiPlanner/sky" element={<SkyReplacement />} />
+              <Route path="/aiPlanner/virtual" element={<VirtualStaging />} />
               <Route path="/aiPlanner/landscape" element={<AIPlanner />} />
               <Route path="/register" element={<RegisterNowPage />} />
               <Route path="/aiPlanner/exterior" element={<ComingSoon />} />
