@@ -44,6 +44,27 @@ const PropertyManagement = () => {
   const [brochureUrl, setBrochureUrl] = useState("");
 
   const [form] = Form.useForm();
+  const validateImageSize = (file) => {
+  const isImage = file.type.startsWith("image/");
+  if (!isImage) {
+    message.error("Only image files are allowed!");
+    return Upload.LIST_IGNORE;
+  }
+
+  const sizeInMB = file.size / 1024 / 1024;
+
+  if (sizeInMB < 1) {
+    message.error("Image must be at least 1MB");
+    return Upload.LIST_IGNORE;
+  }
+
+  if (sizeInMB > 20) {
+    message.error("Image must be less than 20MB");
+    return Upload.LIST_IGNORE;
+  }
+
+  return true;
+};
 
   // --- 1. FETCH DATA ---
   const fetchDevelopers = async () => {
@@ -417,15 +438,27 @@ const PropertyManagement = () => {
              {/* New: Main Logo Separate Upload */}
             <Col xs={24} md={6}>
               <Form.Item label="Main Logo">
-                <Upload listType="picture-card" fileList={logoList} action={UPLOAD_API} maxCount={1} onChange={({ fileList }) => setLogoList(fileList)}>
-                  {logoList.length >= 1 ? null : <div><PlusOutlined /><div>Logo</div></div>}
+<Upload
+  listType="picture-card"
+  fileList={logoList}
+  action={UPLOAD_API}
+  maxCount={1}
+  beforeUpload={validateImageSize}
+  onChange={({ fileList }) => setLogoList(fileList)}
+>                  {logoList.length >= 1 ? null : <div><PlusOutlined /><div>Logo</div></div>}
                 </Upload>
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
               <Form.Item label="Property Photos">
-                <Upload listType="picture-card" fileList={photoList} action={UPLOAD_API} multiple onChange={({ fileList }) => setPhotoList(fileList)}>
-                   <div><PlusOutlined /><div>Add Photos</div></div>
+<Upload
+  listType="picture-card"
+  fileList={photoList}
+  action={UPLOAD_API}
+  multiple
+  beforeUpload={validateImageSize}
+  onChange={({ fileList }) => setPhotoList(fileList)}
+>                   <div><PlusOutlined /><div>Add Photos</div></div>
                 </Upload>
               </Form.Item>
             </Col>
