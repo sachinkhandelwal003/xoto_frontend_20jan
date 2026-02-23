@@ -7,7 +7,7 @@
 
   const { Option } = Select;
   const FALLBACK_IMAGE = "/assets/img/fallback-property.jpg";
-
+ // Search box ki value store karne ke liye
   // 1. Strict Phone Length Rules
   const PHONE_LENGTH_RULES = {
     "971": 9,  // UAE
@@ -24,7 +24,7 @@
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
     const [loadingProperties, setLoadingProperties] = useState(true);
-
+const [searchTerm, setSearchTerm] = useState("");
     const LOAD_STEP = 3;
 
     // 2. Errors State
@@ -67,26 +67,30 @@
     }, []);
 
     useEffect(() => {
-      const fetchProperties = async () => {
-        setLoadingProperties(true);
-        try {
-          const response = await apiService.get(
-            "/property/get-all-properties?page=1&limit=30&isFeatured=false"
-          );
-          if (response?.success && Array.isArray(response.data)) {
-            setProperties(response.data);
-          } else {
-            toast.error("Unexpected response from server");
-          }
-        } catch (err) {
-          console.error("API Error:", err);
-          toast.error("Failed to load properties");
-        } finally {
-          setLoadingProperties(false);
-        }
-      };
-      fetchProperties();
-    }, []);
+  const fetchProperties = async () => {
+    setLoadingProperties(true);
+    try {
+      // URL ke peeche search query add kar di hai
+      const response = await apiService.get(
+        `/property/get-all-properties?page=1&limit=30&isFeatured=false&search=${searchTerm}`
+      );
+      if (response?.success && Array.isArray(response.data)) {
+        setProperties(response.data);
+      }
+    } catch (err) {
+      console.error("API Error:", err);
+    } finally {
+      setLoadingProperties(false);
+    }
+  };
+
+  // Jab tu likhna band karega, uske 500ms baad hi call jayegi
+  const timeoutId = setTimeout(() => {
+    fetchProperties();
+  }, 500);
+
+  return () => clearTimeout(timeoutId);
+}, [searchTerm]); // searchTerm badlega toh ye phir se chalega
 
     const handleLoadMore = () => {
       setVisibleCount((prev) => Math.min(properties.length, prev + LOAD_STEP));
@@ -253,58 +257,86 @@
         </section>
 
         {/* PROPERTIES */}
-        <section className="py-16 bg-[var(--color-body)] flex flex-col items-center">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl text-black font-semibold mb-10">
-            Our Properties
-          </h2>
+        {/* PROPERTIES */}
+<section className="py-16 bg-[var(--color-body)] flex flex-col items-center">
+  <h2 className="text-3xl sm:text-4xl md:text-5xl text-black font-semibold mb-10">
+    Our Properties
+  </h2>
 
-          {loadingProperties ? (
-            <div className="text-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading properties...</p>
-            </div>
-          ) : displayedProperties.length === 0 ? (
-            <p className="text-center text-gray-600 py-12">No properties found</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-[92%] sm:w-[90%] md:w-[80%]">
-              {displayedProperties.map((property) => (
-                <div
-                  key={property._id}
-                  className="bg-white rounded-[22px] shadow-xl border border-gray-200 hover:shadow-2xl transition overflow-hidden"
-                >
-                  <img
-                    src={property.photos?.[0] || property.mainLogo || FALLBACK_IMAGE}
-                    alt={property.propertyName}
-                    className="w-full h-[220px] object-cover"
-                    onError={(e) => (e.target.src = FALLBACK_IMAGE)}
-                  />
-                  <div className="p-5 bg-gradient-to-b from-white to-[#f5f1ff]">
-                    <h3 className="text-xl font-semibold">{property.propertyName || "Luxury Property"}</h3>
-                    <p className="text-[#7800C8] font-bold text-lg mt-1">
-                      {property.currency || "AED"} {Number(property.price)?.toLocaleString() || "Price on Request"}
-                    </p>
-                    <p className="text-gray-600 text-sm mt-2">{property.area || "Dubai Marina"}</p>
-                    <button
-                      onClick={() => setIsModalOpen(true)}
-                      className="w-full mt-6 py-3 bg-[var(--color-primary)] hover:bg-white hover:text-[#5C039B] border-2 border-transparent hover:border-[#5C039B] text-white font-medium rounded-md transition"
-                    >
-                      Schedule Visit
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+  {/* SEARCH BAR START */}
+  <div className="w-[90%] md:w-[50%] mb-10 flex items-center bg-white border-2 border-gray-200 rounded-full px-5 py-2 shadow-sm focus-within:border-[#5C039B] transition-all">
+    <svg className="w-6 h-6 mr-3" fill="none" stroke="#5C039B" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+    </svg>
+    <input
+      type="text"
+      placeholder="Search by name or location..."
+      className="w-full outline-none text-gray-700 bg-transparent"
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+    />
+  </div>
+  {/* SEARCH BAR END */}
 
-          {visibleCount < properties.length && !loadingProperties && (
+  {loadingProperties ? (
+    <div className="text-center py-20">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5C039B] mx-auto"></div>
+      <p className="mt-4 text-gray-600">Searching properties...</p>
+    </div>
+  ) : properties.length === 0 ? (
+    /* ✅ No Results Found English UI */
+    <div className="text-center py-20">
+      <p className="text-xl text-gray-500 font-medium italic">
+        No properties found matching "{searchTerm}"
+      </p>
+      <button 
+        onClick={() => setSearchTerm("")} 
+        className="mt-4 text-[#5C039B] underline font-bold hover:text-[#4b0281] transition-colors"
+      >
+        View All Properties
+      </button>
+    </div>
+  ) : (
+    /* ✅ Property Grid */
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-[92%] sm:w-[90%] md:w-[80%]">
+      {displayedProperties.map((property) => (
+        <div
+          key={property._id}
+          className="bg-white rounded-[22px] shadow-xl border border-gray-200 hover:shadow-2xl transition overflow-hidden"
+        >
+          <img
+            src={property.photos?.[0] || property.mainLogo || FALLBACK_IMAGE}
+            alt={property.propertyName}
+            className="w-full h-[220px] object-cover"
+            onError={(e) => (e.target.src = FALLBACK_IMAGE)}
+          />
+          <div className="p-5 bg-gradient-to-b from-white to-[#f5f1ff]">
+            <h3 className="text-xl font-semibold">{property.propertyName || "Luxury Property"}</h3>
+            <p className="text-[#7800C8] font-bold text-lg mt-1">
+              {property.currency || "AED"} {Number(property.price)?.toLocaleString() || "Price on Request"}
+            </p>
+            <p className="text-gray-600 text-sm mt-2">{property.area || "Dubai Marina"}</p>
             <button
-              onClick={handleLoadMore}
-              className="mt-12 px-10 py-3 rounded-md bg-[#5C039B] text-white font-medium hover:bg-[#4b0281] transition"
+              onClick={() => setIsModalOpen(true)}
+              className="w-full mt-6 py-3 bg-[var(--color-primary)] hover:bg-white hover:text-[#5C039B] border-2 border-transparent hover:border-[#5C039B] text-white font-medium rounded-md transition"
             >
-              Load More
+              Schedule Visit
             </button>
-          )}
-        </section>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+
+  {visibleCount < properties.length && !loadingProperties && (
+    <button
+      onClick={handleLoadMore}
+      className="mt-12 px-10 py-3 rounded-md bg-[#5C039B] text-white font-medium hover:bg-[#4b0281] transition"
+    >
+      Load More
+    </button>
+  )}
+</section>
 
         {/* MODAL */}
         {isModalOpen && (

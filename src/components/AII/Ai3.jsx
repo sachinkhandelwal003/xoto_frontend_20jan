@@ -21,7 +21,6 @@ const Ai3 = () => {
     <div className="relative w-full bg-white px-4 py-16 overflow-hidden">
       
       {/* ========================= WAVE BG (Fixed) ========================= */}
-      {/* Isme maine responsive classes wapis daal di hain */}
       <img
         src={waveBottom}
         alt="Wave"
@@ -38,7 +37,16 @@ const Ai3 = () => {
         {/* LEFT: CONTENT */}
         <div className="col-span-2 flex flex-col gap-10">
           <section>
-            <h2 className="text-3xl font-bold mb-6 text-black">{blog.title}</h2>
+            {/* MAIN TITLE */}
+            {/* <h2 className="text-3xl font-bold mb-2 text-black">{blog.title}</h2> */}
+            
+            {/* SUBHEADING ADDED HERE */}
+            {blog.subHeading && (
+              <p className="text-xl text-gray-500 font-medium mb-6">
+                {blog.subHeading}
+              </p>
+            )}
+
             {/* HTML CONTENT RENDER */}
             <div 
               className="text-gray-600 leading-relaxed prose max-w-none" 
@@ -72,7 +80,6 @@ const Ai3 = () => {
             </div>
           </div>
 
-          {/* Newsletter Box (Optional - agar chahiye to rakh lena) */}
           <div className="bg-white shadow-lg rounded-xl p-6">
             <h3 className="text-xl font-bold mb-4">Join our Newsletter</h3>
             <input type="email" placeholder="Email address" className="w-full border p-2 rounded mb-3" />

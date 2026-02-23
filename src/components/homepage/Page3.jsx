@@ -29,7 +29,7 @@ const Page3 = () => {
   const fetchBlogs = async (currentPage, search, isLoadMore = false) => {
     setLoading(true);
     try {
-      const response = await axios.get(`https://xoto.ae/api/blogs/get-all-blogs`, {
+      const response = await axios.get(`https://xoto.ae/api/blogs/get-all-blogs?isPublished=true`, {
         params: { page: currentPage, limit: LIMIT, search: search }
       });
 
