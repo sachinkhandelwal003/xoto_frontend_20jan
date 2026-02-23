@@ -30,6 +30,32 @@ const URL_UPLOAD = `${API_BASE}/upload`;
 
 const TAG_OPTIONS = ["AI", "Real Estate", "PropTech"];
 
+const validateImage = (file, minMB = 1, maxMB = 10) => {
+  const isValidType =
+    file.type === "image/jpeg" ||
+    file.type === "image/png" ||
+    file.type === "image/jpg";
+
+  if (!isValidType) {
+    message.error("Only JPG, JPEG, PNG images are allowed");
+    return Upload.LIST_IGNORE;
+  }
+
+  const sizeMB = file.size / 1024 / 1024;
+
+  if (sizeMB < minMB) {
+    message.error(`Image must be at least ${minMB}MB`);
+    return Upload.LIST_IGNORE;
+  }
+
+  if (sizeMB > maxMB) {
+    message.error(`Image must be less than ${maxMB}MB`);
+    return Upload.LIST_IGNORE;
+  }
+
+  return false; // stop auto upload
+};
+
 const getBase64 = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -527,7 +553,7 @@ const BlogManagement = () => {
                                 fileList={authorFileList}
                                 onPreview={handlePreview}
                                 onChange={({ fileList }) => setAuthorFileList(fileList)}
-                                beforeUpload={() => false}
+                                beforeUpload={(file) => validateImage(file, 1, 10)}
                                 maxCount={1}
                                 showUploadList={{ showPreviewIcon: true, showRemoveIcon: true }}
                             >
@@ -562,13 +588,15 @@ const BlogManagement = () => {
                         fileList={fileList}
                         onPreview={handlePreview}
                         onChange={({ fileList }) => setFileList(fileList)}
-                        beforeUpload={() => false}
+                        beforeUpload={(file) => validateImage(file, 1, 10)}
                         maxCount={1}
                         accept=".jpg,.jpeg,.png,.pdf"
                      >
                         {fileList.length < 1 && <UploadButton />}
                      </Upload>
-                     <Text type="secondary" style={{fontSize: '12px'}}>Used in cards & previews</Text>
+                     <Text type="secondary" style={{ fontSize: "12px" }}>
+  JPG/PNG only • Size: 1MB – 10MB • Used in cards & previews
+</Text>
                  </Form.Item>
              </Col>
              <Col xs={24} sm={12}>
@@ -579,13 +607,15 @@ const BlogManagement = () => {
                         fileList={coverFileList}
                         onPreview={handlePreview}
                         onChange={({ fileList }) => setCoverFileList(fileList)}
-                        beforeUpload={() => false}
+                        beforeUpload={(file) => validateImage(file, 0.2, 2)}
                         maxCount={1}
                         accept=".jpg,.jpeg,.png"
                      >
                         {coverFileList.length < 1 && <div className='flex flex-col items-center'><PictureOutlined /><span className='mt-1 text-xs'>Cover</span></div>}
                      </Upload>
-                     <Text type="secondary" style={{fontSize: '12px'}}>Used as top banner in details</Text>
+                     <Text type="secondary" style={{ fontSize: "12px" }}>
+  JPG/PNG • 1MB – 10MB • Banner image
+</Text>
                  </Form.Item>
              </Col>
           </Row>
