@@ -277,7 +277,7 @@ const CmsRoutes = () => {
        
       <Route path="seller/:id" element={<VendorB2CProfile />} />
 
-            <Route path="projects/:id" element={<ViewProject/>} />
+            {/* <Route path="projects/:id" element={<ViewProject/>} /> */}
             <Route path="quotation/received" element={<ReceivedQuotation />} />
             <Route path="estimate/submitted" element={<CustomerSubmittedQuotation />} />
             <Route path="quotation/response" element={<Myestimates />} />
@@ -299,10 +299,10 @@ const CmsRoutes = () => {
 
   {/* Projects */}
   <Route path="projects" element={<AgentProjects />} />
-  <Route
-  path="/dashboard/agent/projects/:id"
-  element={<AgentProjectDetails/>}
-/>
+  <Route 
+     path="projects/:id" 
+     element={(user?.role?.code == 16 || user?.role?.code == 1) ? <AgentProjectDetails /> : <ViewProject />} 
+  />
 
   {/* Deals */}
   <Route path="deals" element={<AgentDeals />} />
