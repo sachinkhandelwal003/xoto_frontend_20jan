@@ -12,7 +12,7 @@ export default function AgentLeadDetails(){
   // dummy data (later from backend)
   const lead = {
     name:"Rahul Mehta",
-    phone:"+91 9876543210",
+    phone:"+91 9876543210", 
     project:"Sky Tower",
     budget:"1.2Cr - 1.5Cr",
     stage:1   // 0 customer, 1 lead, 2 visit, 3 deal

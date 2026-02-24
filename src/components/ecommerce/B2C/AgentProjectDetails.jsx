@@ -158,10 +158,8 @@ export default function AgentProjectDetails(){
             )}
 
           </Col>
-
-        </Row>
-
-      </Card>
+            </Row>
+</Card>
 
     </div>
   );

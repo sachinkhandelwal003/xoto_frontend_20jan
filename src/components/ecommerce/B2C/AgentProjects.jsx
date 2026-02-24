@@ -220,7 +220,6 @@ export default function AgentProjects(){
 
       </Row>
 
-      {/* LOAD MORE */}
       <div style={{textAlign:"center",marginTop:40}}>
 
         {loading ? (
