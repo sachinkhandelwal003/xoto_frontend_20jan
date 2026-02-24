@@ -83,7 +83,7 @@ const Ai1 = () => {
           <div className="text-white text-xs sm:text-sm md:text-base font-normal tracking-wide flex items-center gap-2">
             <span>{new Date(blog.createdAt).toDateString()}</span>
             <span className="opacity-60">|</span>
-            <span className="opacity-90">Trending Analysis</span>
+            <span className="opacity-90"></span>
           </div>
 
           {/* TITLE + AUTHOR SECTION */}
