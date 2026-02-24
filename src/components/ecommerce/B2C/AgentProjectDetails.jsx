@@ -319,9 +319,17 @@ export default function AgentProjectDetails() {
                 </Col>
               ))}
             </Row>
-          </Image.PreviewGroup>
-        </div>
-      </Modal>
+
+            {property.description && (
+              <>
+                <Title level={5} style={{marginTop:20}}>Description</Title>
+                <Text>{property.description}</Text>
+              </>
+            )}
+
+          </Col>
+            </Row>
+</Card>
 
     </div>
   );
