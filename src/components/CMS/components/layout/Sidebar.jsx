@@ -260,11 +260,11 @@ const CUSTOM_ROLE_LINKS = {
   icon:"fas fa-file-signature",
   path:"/dashboard/{roleSlug}/bookings",
 },
-{
-    title: "Analytics",
-    icon: "fas fa-chart-pie",
-    path: "/dashboard/{roleSlug}/analytics"
-  },
+  // {
+  //     title: "Analytics",
+  //     icon: "fas fa-chart-pie",
+  //     path: "/dashboard/{roleSlug}/analytics"
+  //   },
   {
   title: "Commission Scheme",
   icon: "fas fa-percent",
