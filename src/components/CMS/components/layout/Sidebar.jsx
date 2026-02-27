@@ -260,18 +260,83 @@ const CUSTOM_ROLE_LINKS = {
   icon:"fas fa-file-signature",
   path:"/dashboard/{roleSlug}/bookings",
 },
-{
-    title: "Analytics",
-    icon: "fas fa-chart-pie",
-    path: "/dashboard/{roleSlug}/analytics"
-  },
+  // {
+  //     title: "Analytics",
+  //     icon: "fas fa-chart-pie",
+  //     path: "/dashboard/{roleSlug}/analytics"
+  //   },
   {
   title: "Commission Scheme",
   icon: "fas fa-percent",
   path: "/dashboard/{roleSlug}/commission-scheme"
 }
 ],
-"15" :[
+"15" :[ 
+  {
+    title: "Manage Agents",
+    icon: "fas fa-user-tie",
+    path: "/dashboard/{roleSlug}/manage-agents"
+  },
+  {
+  title: "Performance",
+  icon: "fas fa-chart-line",
+  path: "/dashboard/{roleSlug}/performance"
+},
+{
+  title: "Commission",
+  icon: "fas fa-money-bill-wave",
+  path: "/dashboard/{roleSlug}/commission"
+},
+{
+  title: "Lead Management",
+  icon: "fas fa-user-check",
+  path: "/dashboard/{roleSlug}/lead-management"
+},
+{
+  title: "Agent Targets",
+  icon: "fas fa-bullseye",
+  path: "/dashboard/{roleSlug}/targets"
+},
+{
+  title: "Leaderboard",
+  icon: "fas fa-trophy",
+  path: "/dashboard/{roleSlug}/leaderboard"
+},
+{
+  title: "Incentives",
+  icon: "fas fa-gift",
+  path: "/dashboard/{roleSlug}/incentives"
+},
+{
+  title: "Branches",
+  icon: "fas fa-building",
+  path: "/dashboard/{roleSlug}/branches"
+},
+{
+  title: "Internal Roles",
+  icon: "fas fa-user-shield",
+  path: "/dashboard/{roleSlug}/internal-roles"
+},
+{
+  title: "Advanced Analytics",
+  icon: "fas fa-chart-area",
+  path: "/dashboard/{roleSlug}/advanced-analytics"
+},
+{
+  title: "Profit Engine",
+  icon: "fas fa-calculator",
+  path: "/dashboard/{roleSlug}/profit-engine"
+},
+{
+  title: "Subscription",
+  icon: "fas fa-credit-card",
+  path: "/dashboard/{roleSlug}/subscription"
+},
+{
+  title: "Assign Projects",
+  icon: "fas fa-tasks",
+  path: "/dashboard/{roleSlug}/assign-projects"
+}
 
 ]
 
