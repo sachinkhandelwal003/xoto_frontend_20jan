@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Row, Col, Typography, Button, Tag, Spin, message,
-  Card, Divider, Collapse, Avatar, Space, Modal, Image
-} from "antd"; // ✅ Modal aur Image import kiya gaya hai
+  Card, Divider, Collapse, Avatar, Space, Modal, Image, Select, Checkbox, Input
+} from "antd"; // ✅ Input import kiya gaya hai
 import {
   EnvironmentOutlined, PictureOutlined, FilePdfOutlined,
   TagOutlined, WalletOutlined, BankOutlined,
@@ -21,9 +21,20 @@ export default function AgentProjectDetails() {
 
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   
-  // ✅ Modal state manage karne ke liye
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
+
+  // ✅ Custom description ka naya state
+  const [customDescription, setCustomDescription] = useState("");
+
+  const [pdfPreferences, setPdfPreferences] = useState({
+    language: 'English',
+    currency: 'AED',
+    measureUnit: 'ft²',
+    slides: ['description', 'developer', 'availability', 'units', 'prices', 'plans', 'location', 'cover', 'contact']
+  });
 
   useEffect(() => {
     fetchPropertyDetails();
@@ -35,6 +46,8 @@ export default function AgentProjectDetails() {
       const res = await axios.get(`https://xoto.ae/api/property/get-property-by-id?id=${id}`);
       if (res.data?.success) {
         setProperty(res.data.data);
+        // ✅ API aate hi property ka default description state me set kar diya
+        setCustomDescription(res.data.data.description || "Detailed description for this property is not available yet.");
       } else {
         message.error("Failed to load property details");
       }
@@ -46,10 +59,35 @@ export default function AgentProjectDetails() {
     }
   };
 
+  const handleGenerateOffer = async () => {
+    try {
+      setIsGenerating(true);
+      const key = "updatable";
+      message.loading({ content: "XOTO Blitz is generating your PPT...", key });
+
+      // Aapki actual backend API call yahan aayegi, jisme customDescription bhi jayega
+      const payload = {
+         propertyDetails: { ...property, description: customDescription }, // ✅ Modified description bheja jayega
+         preferences: pdfPreferences
+      };
+      
+      // Dummy timeout for now
+      setTimeout(() => {
+        message.success({ content: "PPT Downloaded Successfully!", key, duration: 2 });
+        setIsGenerating(false);
+        setIsOfferModalOpen(false); 
+      }, 2000);
+
+    } catch (error) {
+      message.error("Failed to generate PPT. Check Network.");
+      setIsGenerating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <Spin size="large" tip="Loading Project Details..." />
+        <Spin size="large" /> 
       </div>
     );
   }
@@ -65,7 +103,6 @@ export default function AgentProjectDetails() {
     return "https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1200";
   };
 
-  // Saari photos ka array banayenge gallery ke liye
   const allPhotos = property?.photos?.length > 0 ? property.photos : [getImage()];
 
   const getPaymentPlan = () => {
@@ -90,15 +127,9 @@ export default function AgentProjectDetails() {
       </Button>
 
       <Row gutter={[32, 32]}>
-        {/* ================= LEFT COLUMN ================= */}
         <Col xs={24} lg={16}>
-          
           <div style={{ position: "relative", height: 500, borderRadius: 16, overflow: "hidden", marginBottom: 24 }}>
-            <img 
-              src={getImage()} 
-              alt={property.propertyName} 
-              style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-            />
+            <img src={getImage()} alt={property.propertyName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             
             <div style={{ position: "absolute", top: 20, left: 20, display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Tag color="blue" style={{ padding: "4px 12px", borderRadius: 8, fontSize: 14, fontWeight: "bold", background: "#eef2ff", color: "#4338ca", border: "none" }}>
@@ -115,15 +146,9 @@ export default function AgentProjectDetails() {
             </div>
 
             <div style={{ position: "absolute", bottom: 20, left: 20, display: "flex", gap: 12 }}>
-              {/* ✅ Photos Button onClick Event */}
-              <Button 
-                icon={<PictureOutlined />} 
-                onClick={() => setIsPhotoModalOpen(true)} 
-                style={{ borderRadius: 8, fontWeight: 500, border: "none" }}
-              >
+              <Button icon={<PictureOutlined />} onClick={() => setIsPhotoModalOpen(true)} style={{ borderRadius: 8, fontWeight: 500, border: "none" }}>
                 {allPhotos.length} Photos
               </Button>
-
               {property.brochure && (
                 <Button icon={<FilePdfOutlined />} href={property.brochure} target="_blank" style={{ borderRadius: 8, fontWeight: 500, border: "none" }}>
                   Brochure
@@ -150,12 +175,7 @@ export default function AgentProjectDetails() {
           <Divider style={{ margin: "40px 0" }} />
 
           <Title level={3} style={{ marginBottom: 24 }}>Units & Availability</Title>
-          <Collapse 
-            defaultActiveKey={['1']} 
-            ghost 
-            expandIconPosition="end"
-            style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12 }}
-          >
+          <Collapse defaultActiveKey={['1']} ghost expandIconPosition="end" style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12 }}>
             <Panel 
               header={
                 <Row justify="space-between" align="middle" style={{ width: "100%", paddingRight: 16 }}>
@@ -185,17 +205,13 @@ export default function AgentProjectDetails() {
               </div>
             </Panel>
           </Collapse>
-
         </Col>
 
-        {/* ================= RIGHT COLUMN ================= */}
         <Col xs={24} lg={8}>
           <div style={{ position: "sticky", top: 24 }}>
-            
             <Text type="secondary" style={{ fontSize: 14 }}>
               <EnvironmentOutlined /> {property.city}, {property.country || "UAE"}
             </Text>
-            
             <Title level={2} style={{ marginTop: 8, marginBottom: 24 }}>
               {property.propertyName} by {developerName}
             </Title>
@@ -208,7 +224,6 @@ export default function AgentProjectDetails() {
                   <Text strong style={{ fontSize: 18 }}>{Number(property.price || 0).toLocaleString()} {property.currency || "AED"}</Text>
                 </div>
               </div>
-
               <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
                 <AppstoreOutlined style={{ fontSize: 20, color: "#6b7280", marginTop: 4 }} />
                 <div>
@@ -216,7 +231,6 @@ export default function AgentProjectDetails() {
                   <Text type="secondary" style={{ fontSize: 13 }}>Ask for inventory</Text>
                 </div>
               </div>
-
               <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
                 <WalletOutlined style={{ fontSize: 20, color: "#6b7280", marginTop: 4 }} />
                 <div>
@@ -224,7 +238,6 @@ export default function AgentProjectDetails() {
                   <Text strong style={{ fontSize: 16 }}>{getPaymentPlan()}</Text>
                 </div>
               </div>
-
               <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
                 <BankOutlined style={{ fontSize: 20, color: "#6b7280", marginTop: 4 }} />
                 <div>
@@ -241,6 +254,7 @@ export default function AgentProjectDetails() {
             <div style={{ display: "flex", width: "100%", marginBottom: 12 }}>
               <Button 
                 type="primary" 
+                onClick={() => setIsOfferModalOpen(true)}
                 style={{ flex: 1, height: 48, borderRadius: "0 0 0 8px", background: "#5b45ff", fontWeight: 600, fontSize: 16, border: "none" }}
               >
                 Generate Sales Offer
@@ -259,11 +273,10 @@ export default function AgentProjectDetails() {
               Transfer client
             </Button>
 
-            <Card style={{ borderRadius: 12, border: "1px solid #e5e7eb" }} bodyStyle={{ padding: "16px 20px" }}>
+            <Card style={{ borderRadius: 12, border: "1px solid #e5e7eb" }} styles={{ body: { padding: "16px 20px" } }}>
               <div style={{ textAlign: "center", marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f3f4f6" }}>
                 <Text strong>Sales Office</Text>
               </div>
-              
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <Space>
                   <Avatar size={48} src={property.developer?.logo} style={{ background: "#f3f4f6" }}>
@@ -274,12 +287,7 @@ export default function AgentProjectDetails() {
                     <Text type="secondary" style={{ fontSize: 12 }}>English • Arabic</Text>
                   </div>
                 </Space>
-                
-                <Button 
-                  shape="round" 
-                  icon={<MessageOutlined />} 
-                  style={{ background: "#d9f99d", color: "#3f6212", border: "none", fontWeight: 600 }}
-                >
+                <Button shape="round" icon={<MessageOutlined />} style={{ background: "#d9f99d", color: "#3f6212", border: "none", fontWeight: 600 }}>
                   Support
                 </Button>
               </div>
@@ -290,36 +298,90 @@ export default function AgentProjectDetails() {
       </Row>
 
       {/* ================= PHOTOS MODAL ================= */}
-      <Modal
-        title={<Title level={5} style={{ margin: 0 }}>Property Gallery</Title>}
-        open={isPhotoModalOpen}
-        onCancel={() => setIsPhotoModalOpen(false)}
-        footer={null}
-        width={900}
-        centered
-        destroyOnClose
-      >
+      <Modal title={<Title level={5} style={{ margin: 0 }}>Property Gallery</Title>} open={isPhotoModalOpen} onCancel={() => setIsPhotoModalOpen(false)} footer={null} width={900} centered>
         <div style={{ marginTop: 20 }}>
           <Image.PreviewGroup>
             <Row gutter={[16, 16]}>
               {allPhotos.map((photo, index) => (
                 <Col xs={12} sm={8} md={6} key={index}>
-                  <Image
-                    src={photo}
-                    alt={`Property Photo ${index + 1}`}
-                    style={{ 
-                      width: "100%", 
-                      height: 140, 
-                      objectFit: "cover", 
-                      borderRadius: 8,
-                      cursor: "pointer",
-                      border: "1px solid #f0f0f0"
-                    }}
-                  />
+                  <Image src={photo} alt={`Property Photo ${index + 1}`} style={{ width: "100%", height: 140, objectFit: "cover", borderRadius: 8, cursor: "pointer", border: "1px solid #f0f0f0" }} />
                 </Col>
               ))}
             </Row>
           </Image.PreviewGroup>
+        </div>
+      </Modal>
+
+      {/* ================= GENERATE OFFER MODAL ================= */}
+      <Modal
+        title={<div style={{ textAlign: 'center', width: '100%', fontSize: '20px', fontWeight: 'bold' }}>Generate Sales Offer</div>}
+        open={isOfferModalOpen}
+        onCancel={() => setIsOfferModalOpen(false)}
+        footer={null}
+        width={550}
+        centered
+        styles={{ body: { padding: '0 24px 24px' } }} 
+      >
+        <div style={{ maxHeight: '75vh', overflowY: 'auto', paddingRight: '10px' }}>
+          
+          {/* ✅ Naya Personalised Description Box */}
+          <div style={{ marginTop: 24 }}>
+            <Title level={5} style={{ marginBottom: 4 }}>Personalised description</Title>
+            <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+              Adapt the project description in the sales offer yourself or with the help of XOTO AI.
+            </Text>
+            <Input.TextArea 
+              rows={5} 
+              value={customDescription} 
+              onChange={(e) => setCustomDescription(e.target.value)} 
+              placeholder="Enter a custom description..."
+              style={{ borderRadius: 8 }}
+            />
+          </div>
+
+          <Divider />
+
+          <Title level={5} style={{ marginTop: 0 }}>PDF Preferences</Title>
+          <Text type="secondary">Configure your presentation before generation</Text>
+
+          <Row gutter={16} style={{ marginTop: 20 }}>
+            <Col span={12}>
+              <Text strong>Language</Text>
+              <Select defaultValue="English" style={{ width: '100%', marginTop: 8 }} size="large" onChange={(val) => setPdfPreferences({...pdfPreferences, language: val})}>
+                <Select.Option value="English">English</Select.Option>
+                <Select.Option value="Arabic">Arabic</Select.Option>
+              </Select>
+            </Col>
+            <Col span={12}>
+              <Text strong>Currency</Text>
+              <Select defaultValue="AED" style={{ width: '100%', marginTop: 8 }} size="large" onChange={(val) => setPdfPreferences({...pdfPreferences, currency: val})}>
+                <Select.Option value="AED">AED (United Arab Emirates Dirham)</Select.Option>
+                <Select.Option value="USD">USD (US Dollar)</Select.Option>
+              </Select>
+            </Col>
+          </Row>
+
+          <Divider />
+
+          <Title level={5}>Display Settings</Title>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            {['Project description', 'Developer', 'Unit availability', 'Typical units', 'Unit prices', 'Payment plans', 'Location'].map(item => (
+              <Checkbox key={item} defaultChecked>
+                {item}
+              </Checkbox>
+            ))}
+          </Space>
+
+          <Button 
+            type="primary" 
+            block 
+            size="large" 
+            loading={isGenerating}
+            onClick={handleGenerateOffer}
+            style={{ marginTop: 30, height: 50, borderRadius: 10, background: '#1f1f1f', fontWeight: 'bold' }}
+          >
+            Generate sales offer
+          </Button>
         </div>
       </Modal>
 
