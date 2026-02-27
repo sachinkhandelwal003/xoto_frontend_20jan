@@ -113,6 +113,7 @@ import DeveloperList from "./pages/DeveloperList";
 import DeveloperAnalytics from "../ecommerce/B2C/DeveloperAnalytics";
 import DeveloperCommissionScheme from "../ecommerce/B2C/DeveloperCommisionScheme"; 
 import DealCommissionManager from "./pages/DealCommissionManager";
+import BankProductManagement from "../homepage/BankProductManagement";
 
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
@@ -192,7 +193,8 @@ packages:<Packages/>,
 "developer/create":<CreateDeveloper/>,
 "developer/property":<Propertymanagement/>
 ,"create":<Blog/>,
-"products/brands":<AddBrand/>
+"products/brands":<AddBrand/>,
+"create-mortgages":<BankProductManagement />
 };
 
 
