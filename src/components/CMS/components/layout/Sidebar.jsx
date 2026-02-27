@@ -270,6 +270,9 @@ const CUSTOM_ROLE_LINKS = {
   icon: "fas fa-percent",
   path: "/dashboard/{roleSlug}/commission-scheme"
 }
+],
+"15" :[
+
 ]
 
 };
@@ -301,7 +304,7 @@ const ROLE_MODULE_ORDER = {
   '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
 '16': ['Dashboard','AgentLead Management'],
-
+'15': ['Dashboard','Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
 
 };
 
