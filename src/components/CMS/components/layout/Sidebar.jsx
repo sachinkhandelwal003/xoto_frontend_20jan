@@ -270,6 +270,74 @@ const CUSTOM_ROLE_LINKS = {
   icon: "fas fa-percent",
   path: "/dashboard/{roleSlug}/commission-scheme"
 }
+],
+"15" :[ 
+  {
+    title: "Manage Agents",
+    icon: "fas fa-user-tie",
+    path: "/dashboard/{roleSlug}/manage-agents"
+  },
+  {
+  title: "Performance",
+  icon: "fas fa-chart-line",
+  path: "/dashboard/{roleSlug}/performance"
+},
+{
+  title: "Commission",
+  icon: "fas fa-money-bill-wave",
+  path: "/dashboard/{roleSlug}/commission"
+},
+{
+  title: "Lead Management",
+  icon: "fas fa-user-check",
+  path: "/dashboard/{roleSlug}/lead-management"
+},
+{
+  title: "Agent Targets",
+  icon: "fas fa-bullseye",
+  path: "/dashboard/{roleSlug}/targets"
+},
+{
+  title: "Leaderboard",
+  icon: "fas fa-trophy",
+  path: "/dashboard/{roleSlug}/leaderboard"
+},
+{
+  title: "Incentives",
+  icon: "fas fa-gift",
+  path: "/dashboard/{roleSlug}/incentives"
+},
+{
+  title: "Branches",
+  icon: "fas fa-building",
+  path: "/dashboard/{roleSlug}/branches"
+},
+{
+  title: "Internal Roles",
+  icon: "fas fa-user-shield",
+  path: "/dashboard/{roleSlug}/internal-roles"
+},
+{
+  title: "Advanced Analytics",
+  icon: "fas fa-chart-area",
+  path: "/dashboard/{roleSlug}/advanced-analytics"
+},
+{
+  title: "Profit Engine",
+  icon: "fas fa-calculator",
+  path: "/dashboard/{roleSlug}/profit-engine"
+},
+{
+  title: "Subscription",
+  icon: "fas fa-credit-card",
+  path: "/dashboard/{roleSlug}/subscription"
+},
+{
+  title: "Assign Projects",
+  icon: "fas fa-tasks",
+  path: "/dashboard/{roleSlug}/assign-projects"
+}
+
 ]
 
 };
@@ -301,7 +369,7 @@ const ROLE_MODULE_ORDER = {
   '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
 '16': ['Dashboard','AgentLead Management'],
-
+'15': ['Dashboard','Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
 
 };
 
