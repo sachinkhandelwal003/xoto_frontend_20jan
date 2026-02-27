@@ -196,11 +196,12 @@ const CUSTOM_ROLE_LINKS = {
     },
   ],
 "16": [
-  // {
-  //   title: "AgentLead Management",
-  //   icon: "fas fa-building",
-  //   path: "/dashboard/{roleSlug}/lead",
-  // },
+ 
+  {
+    title: "Leads",
+    icon: "fas fa-user-friends",
+    path: "/dashboard/{roleSlug}/leads",
+  },
   {
     title: "Subscription",
     icon: "fas fa-credit-card",
@@ -259,6 +260,16 @@ const CUSTOM_ROLE_LINKS = {
   icon:"fas fa-file-signature",
   path:"/dashboard/{roleSlug}/bookings",
 },
+{
+    title: "Analytics",
+    icon: "fas fa-chart-pie",
+    path: "/dashboard/{roleSlug}/analytics"
+  },
+  {
+  title: "Commission Scheme",
+  icon: "fas fa-percent",
+  path: "/dashboard/{roleSlug}/commission-scheme"
+}
 ]
 
 };

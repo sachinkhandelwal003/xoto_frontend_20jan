@@ -110,6 +110,8 @@ import DeveloperCreateBooking from "../ecommerce/B2C/DeveloperCreateBooking";
 import DeveloperBookings from "../ecommerce/B2C/DeveloperBookings";
 import DeveloperBookingDetails from "../ecommerce/B2C/DeveloperBookingDetails";
 import DeveloperList from "./pages/DeveloperList";
+import DeveloperAnalytics from "../ecommerce/B2C/DeveloperAnalytics";
+import DeveloperCommissionScheme from "../ecommerce/B2C/DeveloperCommisionScheme"; 
 import DealCommissionManager from "./pages/DealCommissionManager";
 
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
@@ -295,7 +297,7 @@ const CmsRoutes = () => {
 
   {/* Leads */}
   <Route path="leads" element={<AgentLeadDashboard />} />
-  <Route path="leads/:id" element={<AgentLeadDetails />} />
+  <Route path="lead/:id" element={<AgentLeadDetails />} />
 
   {/* Projects */}
   <Route path="projects" element={<AgentProjects />} />
@@ -312,7 +314,7 @@ const CmsRoutes = () => {
   {/* Site Visits */}
   <Route path="visits" element={<AgentSiteVisits />} />
   <Route path="visits/create" element={<AgentCreateVisit />} />
-  <Route path="visits/:id" element={<AgentSiteVisitDetails />} />
+  <Route path="site-visits/:id" element={<AgentSiteVisitDetails />} />
 
   {/* Commission */}
   <Route path="commission" element={<AgentCommission />} />
@@ -353,7 +355,10 @@ const CmsRoutes = () => {
 <Route path="/bookings" element={<DeveloperBookings/>}/>
 <Route path="/bookings/:id" element={<DeveloperBookingDetails/>}/>
 <Route path="revenue" element={<DeveloperRevenue/>}/>
-
+<Route path="analytics" element={<DeveloperAnalytics/>}/>
+  <Route path="commission-scheme" element={<DeveloperCommissionScheme/>}/>
+  {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
+  {/* <Route path="team" element={<DeveloperTeam/>}/> */}
 
       {/* Catch-all fallback */}
     </Routes>

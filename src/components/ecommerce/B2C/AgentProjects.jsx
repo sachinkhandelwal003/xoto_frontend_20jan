@@ -219,8 +219,8 @@ export default function AgentProjects() {
         ))}
       </Row>
 
-      {/* LOAD MORE */}
-      <div style={{ textAlign: "center", marginTop: 40 }}>
+      <div style={{textAlign:"center",marginTop:40}}>
+
         {loading ? (
           <Spin size="large" />
         ) : hasMore ? (

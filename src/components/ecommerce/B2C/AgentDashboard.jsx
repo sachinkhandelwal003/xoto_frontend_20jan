@@ -227,6 +227,7 @@ const AgentDashboard = () => {
           </Card>
         </Col>
       </Row>
+      
     </div>
   );
 };

@@ -9,7 +9,7 @@ import whatsappIcon from "../../assets/icons/Homeicons/whatsapp-svgrepo-com (2) 
 import chatIcon from "../../assets/icons/Homeicons/chat-svgrepo-com 1.png";
 import facebookIcon from "../../assets/icons/Homeicons/facebook-f 1.png";
 import instagramIcon from "../../assets/icons/Homeicons/instagram 1.png";
-import twitterIcon from "../../assets/icons/Homeicons/twitter 1.png";
+import twitterIcon from "../../assets/icons/Homeicons/twitterlogo.png";
 import linkedinIcon from "../../assets/icons/Homeicons/linkedin 1.png";
 import logoNewImage from "../../assets/img/logoNew.png";
 

@@ -1,71 +1,178 @@
-import { Card, Typography, Row, Col, Tag, Steps, Button } from "antd";
-import { useParams } from "react-router-dom";
+import {
+  Card,
+  Typography,
+  Row,
+  Col,
+  Tag,
+  Steps,
+  Button,
+  Divider,
+  Space,
+  Statistic
+} from "antd";
+import {
+  ArrowLeftOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined
+} from "@ant-design/icons";
+import { useParams, useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
-const { Step } = Steps;
 
-export default function AgentDealDetails(){
-
+export default function AgentDealDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  // dummy data (later from backend)
+  // Dummy data (replace with API later)
   const deal = {
-    client:"Rahul Mehta",
-    project:"Sky Tower",
-    amount:"1.4Cr",
-    commission:"₹45,000",
-    stage:2
+    client: "Rahul Mehta",
+    project: "Sky Tower",
+    unit: "Unit 1204 - 2BHK",
+    amount: 14000000,
+    commission: 45000,
+    stage: 2,
+    bookingDate: "10 Feb 2026",
+    handoverDate: "30 Dec 2026"
   };
 
-  return(
-    <div className="p-6">
+  const isCommissionPaid = deal.stage === 4;
 
-      <Title level={3}>Deal Details</Title>
+  return (
+    <div className="p-8 bg-gray-50 min-h-screen">
 
-      <Row gutter={[16,16]}>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <Space>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate(-1)}
+          >
+            Back
+          </Button>
 
-        {/* INFO */}
-        <Col xs={24} lg={12}>
-          <Card className="shadow-sm rounded-xl">
+          <Title level={2} className="!mb-0">
+            Deal Details
+          </Title>
+        </Space>
 
-            <Title level={5}>{deal.client}</Title>
+        <Tag
+          color={isCommissionPaid ? "green" : "blue"}
+          icon={
+            isCommissionPaid
+              ? <CheckCircleOutlined />
+              : <ClockCircleOutlined />
+          }
+          className="px-4 py-1 rounded-full text-sm"
+        >
+          {isCommissionPaid ? "Commission Paid" : "Active Deal"}
+        </Tag>
+      </div>
 
-            <div className="mb-2">
-              <Text type="secondary">Project</Text><br/>
-              <Text>{deal.project}</Text>
-            </div>
+      <Row gutter={[24, 24]}>
 
-            <div className="mb-2">
-              <Text type="secondary">Deal Amount</Text><br/>
-              <Text strong>{deal.amount}</Text>
-            </div>
+        {/* LEFT SECTION */}
+        <Col xs={24} lg={14}>
+          <Card bordered={false} className="shadow-lg rounded-2xl">
 
-            <div className="mb-2">
-              <Text type="secondary">Commission</Text><br/>
-              <Text strong>{deal.commission}</Text>
-            </div>
+            <Title level={4}>Client & Property Info</Title>
+            <Divider />
 
-            <Tag color="blue">Active Deal</Tag>
+            <Row gutter={[16, 16]}>
+
+              <Col span={12}>
+                <Text type="secondary">Client</Text>
+                <div className="font-medium text-base">
+                  {deal.client}
+                </div>
+              </Col>
+
+              <Col span={12}>
+                <Text type="secondary">Project</Text>
+                <div className="font-medium text-base">
+                  {deal.project}
+                </div>
+              </Col>
+
+              <Col span={12}>
+                <Text type="secondary">Unit</Text>
+                <div className="font-medium text-base">
+                  {deal.unit}
+                </div>
+              </Col>
+
+              <Col span={12}>
+                <Text type="secondary">Booking Date</Text>
+                <div className="font-medium text-base">
+                  {deal.bookingDate}
+                </div>
+              </Col>
+
+              <Col span={12}>
+                <Text type="secondary">Expected Handover</Text>
+                <div className="font-medium text-base">
+                  {deal.handoverDate}
+                </div>
+              </Col>
+
+            </Row>
+
+            <Divider />
+
+            <Row gutter={[24, 24]}>
+
+              <Col span={12}>
+                <Statistic
+                  title="Deal Value"
+                  value={deal.amount}
+                  prefix="₹"
+                />
+              </Col>
+
+              <Col span={12}>
+                <Statistic
+                  title="Commission"
+                  value={deal.commission}
+                  prefix="₹"
+                  valueStyle={{ color: "#16a34a", fontWeight: 600 }}
+                />
+              </Col>
+
+            </Row>
 
           </Card>
         </Col>
 
-        {/* TIMELINE */}
-        <Col xs={24} lg={12}>
-          <Card className="shadow-sm rounded-xl">
+        {/* RIGHT SECTION - PROGRESS */}
+        <Col xs={24} lg={10}>
+          <Card bordered={false} className="shadow-lg rounded-2xl">
 
-            <Title level={5}>Deal Progress</Title>
+            <Title level={4}>Deal Progress</Title>
+            <Divider />
 
-            <Steps current={deal.stage} direction="vertical">
-              <Step title="Booked"/>
-              <Step title="Deposit Paid"/>
-              <Step title="Contract Signed"/>
-              <Step title="Commission Pending"/>
-              <Step title="Commission Paid"/>
+            <Steps
+              current={deal.stage}
+              direction="vertical"
+              size="small"
+            >
+              <Steps.Step title="Booked" />
+              <Steps.Step title="Deposit Paid" />
+              <Steps.Step title="Contract Signed" />
+              <Steps.Step title="Commission Pending" />
+              <Steps.Step title="Commission Paid" />
             </Steps>
 
-            <Button className="mt-6" type="primary" block>
-              Mark Commission Paid
+            <Divider />
+
+            <Button
+              type="primary"
+              size="large"
+              block
+              disabled={isCommissionPaid}
+              className="rounded-xl h-11"
+            >
+              {isCommissionPaid
+                ? "Commission Already Paid"
+                : "Mark Commission Paid"}
             </Button>
 
           </Card>
@@ -74,5 +181,5 @@ export default function AgentDealDetails(){
       </Row>
 
     </div>
-  )
+  );
 }
