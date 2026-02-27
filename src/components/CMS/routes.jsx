@@ -330,6 +330,7 @@ const CmsRoutes = () => {
 
       {/* admin */}
       <Route path="/agent-list" element={<AgentList />} />
+      <Route path="/agency-list" element={<AgencyList />} />    
       {/* <Route path="/agent-registration" element={<AgentRegistration />} /> */}
       <Route path="/developer-list" element={<DeveloperList />} />
       <Route path="/property-list" element={<AdminPropertyGrid />} />
