@@ -146,7 +146,8 @@ const dashboardMap = {
   11: <AccountantDashboard />,
     12: <SupervisorDashboard />,
     16:<AgentDashboard/>,
-    17:<DeveloperDashboard/>
+    17:<DeveloperDashboard/>,
+    15:<DeveloperDashboard/>
 
 
 };

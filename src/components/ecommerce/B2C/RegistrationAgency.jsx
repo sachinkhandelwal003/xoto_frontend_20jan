@@ -249,7 +249,7 @@ const RegistrationAgency = () => {
     };
 
     const response = await axios.post(
-      "https://xoto.ae/api/agency/agency-signup",
+      "http://localhost:5000/api/agency/agency-signup",
       payload
     );
 

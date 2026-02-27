@@ -60,7 +60,7 @@ const BuiltForEveryone = () => {
   }, [cardsToShow]);
 
   return (
-    <section className="relative  overflow-hidden py-8 px-4 sm:px-6 lg:px-8 bg-[var(--color-body)]">
+    <section className="relative  z-10 py-8 px-4 sm:px-6 lg:px-8 bg-[var(--color-body)]">
       {/* Wave */}
       <div className="absolute bottom-[-20px] sm:bottom-[-50px] md:bottom-[-80px] lg:bottom-[-130px] xl:bottom-[-160px] left-0 w-full z-0  ">
         <img
@@ -80,7 +80,7 @@ const BuiltForEveryone = () => {
 
         <div className="flex flex-col lg:flex-row items-center justify-between">
           {/* Video */}
-          <div className="w-full lg:w-1/2 flex justify-start items-start mb-10 lg:mb-25">
+          <div className="w-full  z-0 overflow-hidden lg:w-1/2 flex justify-start items-start mb-10 lg:mb-25">
             <div className="relative w-60 h-60 sm:w-100 sm:h-100 lg:w-110 lg:h-110 mx-auto">
               <video
                 src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1768044487658-round231.mp4"}
