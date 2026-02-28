@@ -82,6 +82,7 @@ import AgencyList from "./pages/Properties/AgencyList";
 import DeveloperDashboard from "../ecommerce/B2C/DeveloperDashboard";
 import AgentDashboard from "../ecommerce/B2C/AgentDashboard";
 import AgentLayout from "../ecommerce/B2C/AgentLayout";
+import Addleaddetails from "../ecommerce/B2C/products/Addleadmodal";
 import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";   
 import AgentSubscription from "../ecommerce/B2C/AgentSubscription";
 import AgentProjects from "../ecommerce/B2C/AgentProjects";
@@ -90,7 +91,7 @@ import AgentPresentations from "../ecommerce/B2C/AgentPresentations";
 import AgentSiteVisits from "../ecommerce/B2C/AgentSiteVisits";
 import AgentDeals from "../ecommerce/B2C/AgentDeals";
 import AgentCommission from "../ecommerce/B2C/AgentCommission";
-import AgentLeadDetails from "../ecommerce/B2C/AgentLeadDetails";
+// import AgentLeadDetails from "../ecommerce/B2C/AgentLeadDetails";
 import AgentCreateDeal from "../ecommerce/B2C/AgentCreateDeal";
 import AgentDealDetails from "../ecommerce/B2C/AgentDealDetails";
 import AgentSiteVisitDetails from "../ecommerce/B2C/AgentSiteVisitDetails";
@@ -298,8 +299,9 @@ const CmsRoutes = () => {
 
   {/* Leads */}
   <Route path="leads" element={<AgentLeadDashboard />} />
-  <Route path="lead/:id" element={<AgentLeadDetails />} />
-
+  <Route path="lead/:id" element={<Addleaddetails/>} />
+  {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
+        
   {/* Projects */}
   <Route path="projects" element={<AgentProjects />} />
   <Route 
