@@ -115,6 +115,21 @@ import DeveloperCommissionScheme from "../ecommerce/B2C/DeveloperCommisionScheme
 import DealCommissionManager from "./pages/DealCommissionManager";
 import BankProductManagement from "../homepage/BankProductManagement";
 
+import AgencyManageAgents from "../ecommerce/B2C/AgencyManageAgents";
+import AgencyPerformance from "../ecommerce/B2C/AgencyPerformance";
+import AgencyAgentDetails from "../ecommerce/B2C/AgencyAgentDetails";
+import AgencyCommission from "../ecommerce/B2C/AgencyCommission";
+import AgencyLeadManagement from "../ecommerce/B2C/AgencyLeadManagement";
+import AgencyTargets from "../ecommerce/B2C/AgencyTargets";
+import AgencyLeaderboard from "../ecommerce/B2C/AgencyLeaderboard"; 
+import AgencyIncentives from "../ecommerce/B2C/AgencyIncentives";
+import AgencyBranches from "../ecommerce/B2C/AgencyBranches";
+import AgencyRoles from "../ecommerce/B2C/AgencyRoles";
+import AgencyAdvancedAnalytics from "../ecommerce/B2C/AgencyAdvancedAnalytics";
+import AgencyProfitEngine from "../ecommerce/B2C/AgencyProfitEngine";
+import AgencySubscription from "../ecommerce/B2C/AgencySubscription";
+import AgencyAssignProjects from "../ecommerce/B2C/AgencyAssignProjects";
+
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
 import AdminDashboard from "./pages/AdminDashboard";
@@ -122,6 +137,7 @@ import AdminPropertyGrid from "./pages/AdminPropertyGrid";
 import LeadManagement from "./pages/LeadManagement";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import VerificationQueue from "./pages/VerificationQueue";
+import AgencyDashboard from "../ecommerce/B2C/AgencyDashboard";
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -147,7 +163,8 @@ const dashboardMap = {
   11: <AccountantDashboard />,
     12: <SupervisorDashboard />,
     16:<AgentDashboard/>,
-    17:<DeveloperDashboard/>
+    17:<DeveloperDashboard/>,
+    15:<AgencyDashboard/>
 
 
 };
@@ -332,6 +349,7 @@ const CmsRoutes = () => {
 
       {/* admin */}
       <Route path="/agent-list" element={<AgentList />} />
+      <Route path="/agency-list" element={<AgencyList />} />    
       {/* <Route path="/agent-registration" element={<AgentRegistration />} /> */}
       <Route path="/developer-list" element={<DeveloperList />} />
       <Route path="/property-list" element={<AdminPropertyGrid />} />
@@ -340,9 +358,21 @@ const CmsRoutes = () => {
       <Route path="/subscription-plans" element={<SubscriptionPlans />} />
       <Route path="/verification-queue" element={<VerificationQueue />} />
       
-
-
-
+{/* Agency */}
+<Route path="manage-agents" element={<AgencyManageAgents />} />
+<Route path="manage-agents/:id" element={<AgencyAgentDetails />} />
+<Route path="performance" element={<AgencyPerformance />} />
+<Route path="commission" element={<AgencyCommission />} />
+<Route path="lead-management" element={<AgencyLeadManagement />} />
+<Route path="targets" element={<AgencyTargets />} />
+<Route path="leaderboard" element={<AgencyLeaderboard />} />
+<Route path="incentives" element={<AgencyIncentives />} />
+<Route path="branches" element={<AgencyBranches />} />
+<Route path="internal-roles" element={<AgencyRoles />} />
+<Route path="advanced-analytics" element={<AgencyAdvancedAnalytics />} />
+<Route path="profit-engine" element={<AgencyProfitEngine />} />
+<Route path="subscription" element={<AgencySubscription />} />
+<Route path="assign-projects" element={<AgencyAssignProjects />} />
 {/* Developer */}
 <Route path="developer-projects" element={<DeveloperProjects/>}/>
 <Route path="developer-projects/add" element={<DeveloperAddProject/>}/>
