@@ -241,6 +241,11 @@ const CUSTOM_ROLE_LINKS = {
     path: "/dashboard/{roleSlug}/developer-projects"
   },
   {
+  title: "Global Projects",
+  icon: "fas fa-building",
+  path: "/dashboard/{roleSlug}/property-list"
+},
+  {
   title:"Inventory / Units",
   icon:"fas fa-layer-group",
   path:"/dashboard/{roleSlug}/inventory",

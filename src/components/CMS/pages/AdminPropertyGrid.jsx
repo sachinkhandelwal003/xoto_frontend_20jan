@@ -134,9 +134,9 @@ const AdminPropertyList = () => {
       render: (_, record) => (
         <Space>
           <Button type="primary" ghost icon={<EyeOutlined />} onClick={() => openModal(record)} size="small">View</Button>
-          <Popconfirm title="Delete?" onConfirm={() => handleDelete(record._id)}>
+          {/* <Popconfirm title="Delete?" onConfirm={() => handleDelete(record._id)}>
             <Button type="primary" danger icon={<DeleteOutlined />} size="small" />
-          </Popconfirm>
+          </Popconfirm> */}
         </Space>
       )
     }
