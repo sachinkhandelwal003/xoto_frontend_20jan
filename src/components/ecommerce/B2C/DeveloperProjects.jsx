@@ -42,11 +42,18 @@ export default function DeveloperProjects(){
       try{
         setLoading(true);
 
-        const res=await fetch(
-          `https://xoto.ae/api/property/get-all-properties?developerId=${developerId}`,
-          { headers:{ Authorization:`Bearer ${token}` } }
-        );
-
+        // const res=await fetch( 
+        //   `https://xoto.ae/api/property/get-all-properties?developerId=${developerId}`,
+        //   { headers:{ Authorization:`Bearer ${token}` } }
+        // );
+const res = await fetch(
+  `http://localhost:5000/api/property/get-all-properties?developerId=${developerId}`,
+  {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }
+);
         const json=await res.json();
 
         const mapped=(json?.data || []).map(p=>({
