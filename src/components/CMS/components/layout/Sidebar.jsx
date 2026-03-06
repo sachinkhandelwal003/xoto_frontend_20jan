@@ -205,7 +205,7 @@ const CUSTOM_ROLE_LINKS = {
   {
     title: "Leads",
     icon: "fas fa-user-friends",
-    path: "/dashboard/{roleSlug}/leads",
+    path: "/dashboard/{roleSlug}/agent-leads",
   },
   {
     title: "Subscription",
@@ -258,7 +258,7 @@ const CUSTOM_ROLE_LINKS = {
 {
   title:"Leads Tracking",
   icon:"fas fa-users",
-  path:"/dashboard/{roleSlug}/leads",
+  path:"/dashboard/{roleSlug}/developer-leads",
 },
 {
   title:"Sales Revenue",
