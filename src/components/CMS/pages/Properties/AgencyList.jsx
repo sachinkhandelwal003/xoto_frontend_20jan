@@ -35,8 +35,8 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const AgencyList = () => {
-  const BASE_URL = "https://xoto.ae/api/agency";
-  // const BASE_URL = "http://localhost:5000/api/agency";
+  // const BASE_URL = "https://xoto.ae/api/agency";
+  const BASE_URL = "http://localhost:5000/api/agency";
 
   const [agencies, setAgencies] = useState([]);
   const [loading, setLoading] = useState(false);

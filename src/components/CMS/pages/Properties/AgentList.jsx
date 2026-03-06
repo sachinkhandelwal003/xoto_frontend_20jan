@@ -7,7 +7,6 @@ import {
   Avatar,
   Row,
   Col,
-  Statistic,
   Space,
   message,
   Tooltip,
@@ -20,7 +19,8 @@ import {
   Spin,
   Image,
   Divider,
-  Switch 
+  Switch,
+  Descriptions // <--- Ye miss ho gaya tha!
 } from "antd";
 import {
   UserOutlined,
@@ -28,7 +28,7 @@ import {
   EyeOutlined,
   UsergroupAddOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined,
+  ClockCircleOutlined,
   MailOutlined,
   PhoneOutlined,
   EnvironmentOutlined,
@@ -36,29 +36,28 @@ import {
   StarOutlined,
   FileProtectOutlined,
   CrownOutlined,
-  CheckOutlined,
-  CloseOutlined 
+  IdcardOutlined
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
 const AgentList = () => {
-  const BASE_URL = "https://xoto.ae/api/agent";
+  // const BASE_URL = "https://xoto.ae/api/agent";
+  const BASE_URL = "http://localhost:5000/api/agent";
 
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [total, setTotal] = useState(0);
-
+  
   const [viewModal, setViewModal] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState(null);
 
+  // ✅ FETCH AGENTS
   const fetchAgents = async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${BASE_URL}/get-all-agents`);
       const list = res.data?.data || res.data || [];
       setAgents(list);
-      setTotal(list.length);
     } catch (err) {
       message.error("Failed to fetch agents");
     } finally {
@@ -70,19 +69,21 @@ const AgentList = () => {
     fetchAgents();
   }, []);
 
+  // ✅ DELETE AGENT
   const deleteAgent = async (record) => {
     const id = record?._id || record?.id;
     if (!id) return message.error("Invalid ID");
 
     try {
       await axios.delete(`${BASE_URL}/delete-agent/${id}`);
-      message.success("Agent deleted");
+      message.success("Agent permanently deleted");
       fetchAgents();
     } catch (err) {
       message.error("Delete failed");
     }
   };
 
+  // ✅ UPDATE ONBOARDING STATUS
   const updateOnboardingStatus = async (record, status) => {
     const id = record?._id || record?.id;
     if (!id) return;
@@ -92,13 +93,14 @@ const AgentList = () => {
         `${BASE_URL}/update-agent?id=${id}`,
         { onboarding_status: status }
       );
-      message.success("Status updated successfully");
+      message.success(`Status updated to ${status.toUpperCase()}`);
       fetchAgents();
     } catch (err) {
       message.error("Status update failed");
     }
   };
 
+  // ✅ UPDATE VERIFICATION STATUS
   const updateVerificationStatus = async (record, checked) => {
     const id = record?._id || record?.id;
     if (!id) return;
@@ -108,80 +110,123 @@ const AgentList = () => {
         `${BASE_URL}/update-agent?id=${id}`,
         { isVerified: checked } 
       );
-      message.success(`Agent ${checked ? 'verified' : 'unverified'} successfully`);
+      message.success(`Agent ${checked ? 'Verified' : 'Unverified'} successfully`);
       fetchAgents(); 
     } catch (err) {
       message.error("Verification update failed");
     }
   };
 
+  // ✅ OPEN VIEW MODAL
   const openViewModal = (record) => {
     setSelectedAgent(record);
     setViewModal(true);
   };
 
+  // Quick Stats Calculations
+  const totalAgents = agents.length;
+  const verifiedAgents = agents.filter(a => a.isVerified).length;
+  const pendingApprovals = agents.filter(a => a.onboarding_status === "registered" || !a.isVerified).length;
+
+  const stats = [
+    { title: "Total Agents", value: totalAgents, icon: <UsergroupAddOutlined />, color: "#2563eb", bg: "#dbeafe" },
+    { title: "Verified & Active", value: verifiedAgents, icon: <CheckCircleOutlined />, color: "#059669", bg: "#d1fae5" },
+    { title: "Pending Approvals", value: pendingApprovals, icon: <ClockCircleOutlined />, color: "#d97706", bg: "#fef3c7" },
+  ];
+
   const columns = [
     {
-      title: "Agent Name",
+      title: "Agent Profile",
       render: (_, record) => (
-        <Space>
-          <Avatar size={45} src={record.profile_photo || null} icon={!record.profile_photo && <UserOutlined />} style={{ backgroundColor: '#f9f0ff', color: '#722ed1' }} />
-          <Text strong>{record.first_name} {record.last_name}</Text>
+        <Space size="middle">
+          <Avatar 
+            size={42} 
+            src={record.profile_photo || null} 
+            icon={!record.profile_photo && <UserOutlined />} 
+            style={{ backgroundColor: "#f3e8ff", color: "#5c039b", fontWeight: "bold" }}
+          >
+            {!record.profile_photo && record.first_name?.charAt(0)?.toUpperCase()}
+          </Avatar>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <Text strong style={{ fontSize: "15px", color: "#1f2937", textTransform: "capitalize" }}>
+              {record.first_name} {record.last_name}
+            </Text>
+            <Text type="secondary" style={{ fontSize: "12px" }}>ID: {(record._id || record.id)?.slice(-6).toUpperCase()}</Text>
+          </div>
         </Space>
       ),
     },
     {
-      title: "Email",
-      dataIndex: "email",
-    },
-    {
-      title: "Verified",
-      dataIndex: "isVerified",
-      render: (isVerified, record) => (
-        <Switch
-          checked={isVerified}
-          checkedChildren={<CheckOutlined />}
-          unCheckedChildren={<CloseOutlined />}
-          onChange={(checked) => updateVerificationStatus(record, checked)}
-          style={{ backgroundColor: isVerified ? '#52c41a' : undefined }}
-        />
-      )
+      title: "Contact Info",
+      render: (_, record) => (
+        <Space direction="vertical" size={2}>
+          <Text style={{ fontSize: "13px" }}><MailOutlined style={{ color: "#6b7280", marginRight: "6px" }}/> {record.email}</Text>
+          <Text type="secondary" style={{ fontSize: "12px" }}>
+            <PhoneOutlined style={{ color: "#6b7280", marginRight: "6px" }}/> 
+            {record.country_code} {record.phone_number}
+          </Text>
+        </Space>
+      ),
     },
     {
       title: "Onboarding Status",
       dataIndex: "onboarding_status",
       render: (status, record) => (
         <Select
-          value={status}
-          style={{ width: 140 }}
+          value={status || "registered"}
+          style={{ width: 140, fontWeight: "500" }}
+          dropdownStyle={{ borderRadius: "8px" }}
+          bordered={false}
+          className="custom-status-select"
           onChange={(value) => updateOnboardingStatus(record, value)}
           options={[
-            { label: "Registered", value: "registered" },
-            { label: "Approved", value: "approved" },
-            { label: "Completed", value: "completed" },
+            { value: "registered", label: <Badge status="warning" text="Registered" /> },
+            { value: "approved", label: <Badge status="processing" text="Approved" /> },
+            { value: "completed", label: <Badge status="success" text="Completed" /> }
           ]}
         />
       ),
     },
     {
-      title: "Action",
+      title: "Verification",
+      dataIndex: "isVerified",
+      align: "center",
+      render: (isVerified, record) => (
+        <Space direction="vertical" size={2}>
+          <Switch
+            checked={isVerified}
+            onChange={(checked) => updateVerificationStatus(record, checked)}
+            style={{ background: isVerified ? "#059669" : "#ef4444" }}
+          />
+          <Text type="secondary" style={{ fontSize: "11px", color: isVerified ? "#059669" : "#ef4444", fontWeight: "500" }}>
+            {isVerified ? "Verified" : "Unverified"}
+          </Text>
+        </Space>
+      )
+    },
+    {
+      title: "Actions",
+      align: "right",
       render: (_, record) => (
         <Space size="middle">
-          <Tooltip title="View Full Details">
-            <EyeOutlined
-              style={{ color: "#722ed1", fontSize: "18px", cursor: "pointer" }}
+          <Tooltip title="View Profile">
+            <Button 
+              type="text" 
+              icon={<EyeOutlined style={{ fontSize: "18px", color: "#5c039b" }} />} 
               onClick={() => openViewModal(record)}
             />
           </Tooltip>
+
           <Tooltip title="Delete Agent">
             <Popconfirm
-              title="Are you sure you want to delete this agent?"
+              title="Delete this agent?"
+              description="This action cannot be undone."
               okText="Yes, Delete"
               cancelText="Cancel"
               okButtonProps={{ danger: true }}
               onConfirm={() => deleteAgent(record)}
             >
-              <DeleteOutlined style={{ color: "#f5222d", fontSize: "18px", cursor: "pointer" }} />
+              <Button type="text" danger icon={<DeleteOutlined style={{ fontSize: "18px" }} />} />
             </Popconfirm>
           </Tooltip>
         </Space>
@@ -190,147 +235,195 @@ const AgentList = () => {
   ];
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
+    <div style={{ padding: "24px", background: "#f8f9fa", minHeight: "100vh" }}>
+      
+      {/* HEADER */}
+      <div style={{ marginBottom: "32px", display: "flex", alignItems: "center", gap: "12px" }}>
+        <div style={{ padding: "10px", background: "#f3e8ff", borderRadius: "10px", color: "#5c039b" }}>
+          <UsergroupAddOutlined style={{ fontSize: "24px" }} />
+        </div>
         <div>
-          <Title level={3} style={{ margin: 0 }}>Agent Management</Title>
-          <Text type="secondary">Manage all registered platform agents and brokers</Text>
+          <Title level={2} style={{ margin: 0, color: "#1f2937" }}>
+            Agent Management
+          </Title>
+          <Text type="secondary" style={{ fontSize: "15px" }}>
+            Manage all registered platform agents and individual brokers.
+          </Text>
         </div>
       </div>
 
-      <Row className="mb-6">
-        <Col xs={24} sm={12} md={8}>
-          <Card bordered={false} className="shadow-sm rounded-xl">
-            <Statistic
-              title="Total Registered Agents"
-              value={total}
-              prefix={
-                <div className="p-2 rounded-lg mr-3 bg-blue-50 text-blue-500 flex items-center justify-center">
-                  <UsergroupAddOutlined />
+      {/* QUICK STATS */}
+      <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
+        {stats.map((stat, index) => (
+          <Col xs={24} sm={12} md={8} key={index}>
+            <Card 
+              bordered={false} 
+              style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+              bodyStyle={{ padding: "24px" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <div style={{ 
+                  width: "56px", height: "56px", borderRadius: "12px", 
+                  background: stat.bg, color: stat.color,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px"
+                }}>
+                  {stat.icon}
                 </div>
-              }
-              valueStyle={{ fontWeight: 'bold' }}
-            />
-          </Card>
-        </Col>
+                <div>
+                  <Text type="secondary" style={{ fontSize: "13px", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    {stat.title}
+                  </Text>
+                  <Title level={2} style={{ margin: "4px 0 0 0", color: "#1f2937" }}>
+                    {stat.value}
+                  </Title>
+                </div>
+              </div>
+            </Card>
+          </Col>
+        ))}
       </Row>
 
-      <Card bordered={false} className="shadow-sm rounded-xl">
+      {/* DATA TABLE */}
+      <Card 
+        bordered={false} 
+        style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+        bodyStyle={{ padding: 0 }}
+      >
+        <div style={{ padding: "24px", borderBottom: "1px solid #f0f0f0" }}>
+          <Title level={5} style={{ margin: 0, color: "#374151" }}>Registered Agents Directory</Title>
+        </div>
         <Table
           columns={columns}
           dataSource={agents}
           rowKey={(record) => record._id || record.id}
           loading={loading}
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 10, position: ["bottomCenter"] }}
+          style={{ padding: "0 24px 24px 24px" }}
         />
       </Card>
 
+      {/* READ-ONLY VIEW MODAL */}
       <Modal
+        title={
+          <Space>
+            <UserOutlined style={{ color: "#5c039b" }} />
+            <Text strong style={{ fontSize: "18px" }}>Agent Complete Profile</Text>
+          </Space>
+        }
         open={viewModal}
         onCancel={() => setViewModal(false)}
-        width={700} 
-        footer={null} 
-        closeIcon={<CloseCircleOutlined style={{ fontSize: '20px', color: '#999' }} />}
-        bodyStyle={{ padding: 0 }}
+        width={750}
+        centered
+        destroyOnClose
+        styles={{ padding: "24px" }}
+        footer={[
+          <Button key="close" type="primary" style={{ background: "#5c039b" }} onClick={() => setViewModal(false)}>
+            Close View
+          </Button>
+        ]}
       >
         {selectedAgent ? (
-          <div>
-            <div style={{ backgroundColor: '#f9f0ff', padding: '30px 20px', textAlign: 'center', borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}>
+          <div style={{ marginTop: "20px" }}>
+            
+            <div style={{ textAlign: "center", marginBottom: "32px" }}>
               <Avatar 
-                size={100} 
-                src={selectedAgent.profile_photo || null} 
-                icon={!selectedAgent.profile_photo && <UserOutlined />} 
-                style={{ border: '4px solid #fff', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}
-              />
-              <Title level={3} style={{ marginTop: '15px', marginBottom: '5px' }}>
+                size={86} 
+                src={selectedAgent.profile_photo || null}
+                style={{ backgroundColor: "#f3e8ff", color: "#5c039b", fontSize: "32px", fontWeight: "bold", border: "3px solid #f3e8ff" }}
+              >
+                {!selectedAgent.profile_photo && selectedAgent.first_name?.charAt(0)?.toUpperCase()}
+              </Avatar>
+              <Title level={4} style={{ marginTop: "12px", marginBottom: "4px", textTransform: "capitalize" }}>
                 {selectedAgent.first_name} {selectedAgent.last_name}
               </Title>
-              <Space size="middle">
-                {selectedAgent.isVerified ? <Tag color="success" icon={<CheckCircleOutlined />}>Verified</Tag> : <Tag color="error" icon={<CloseCircleOutlined />}>Not Verified</Tag>}
-                <Tag color="purple" style={{ textTransform: 'capitalize' }}>Status: {selectedAgent.onboarding_status}</Tag>
+              <Space>
+                <Tag color={selectedAgent.isVerified ? "green" : "red"}>
+                  {selectedAgent.isVerified ? "Verified Agent" : "Unverified"}
+                </Tag>
+                <Tag color="purple" style={{ textTransform: "capitalize" }}>
+                  Status: {selectedAgent.onboarding_status}
+                </Tag>
               </Space>
             </div>
 
-            <div style={{ padding: '24px 30px' }}>
-              
-              <Row gutter={[24, 24]}>
-                <Col xs={24} md={12}>
-                  <Card size="small" title="Contact Information" bordered={false} className="bg-gray-50 rounded-lg h-full">
-                    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                      <div className="flex items-center"><MailOutlined className="text-purple-600 mr-3" /> <Text>{selectedAgent.email}</Text></div>
-                      <div className="flex items-center"><PhoneOutlined className="text-purple-600 mr-3" /> <Text>{selectedAgent.country_code} {selectedAgent.phone_number}</Text></div>
-                      <div className="flex items-center"><EnvironmentOutlined className="text-purple-600 mr-3" /> <Text className="capitalize">{selectedAgent.operating_city}</Text></div>
-                      <div className="flex items-center"><GlobalOutlined className="text-purple-600 mr-3" /> <Text>{selectedAgent.country}</Text></div>
-                    </Space>
-                  </Card>
-                </Col>
+            <Descriptions bordered column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }} size="middle" labelStyle={{ fontWeight: "600", color: "#4b5563", width: "140px" }}>
+              <Descriptions.Item label="Email Address">{selectedAgent.email}</Descriptions.Item>
+              <Descriptions.Item label="Phone Number">{selectedAgent.country_code} {selectedAgent.phone_number}</Descriptions.Item>
+              <Descriptions.Item label="Operating City"><span style={{ textTransform: "capitalize" }}>{selectedAgent.operating_city || 'N/A'}</span></Descriptions.Item>
+              <Descriptions.Item label="Country">{selectedAgent.country || 'N/A'}</Descriptions.Item>
+              <Descriptions.Item label="Specialization">
+                <Text strong style={{ textTransform: "capitalize", color: "#5c039b" }}><StarOutlined style={{ marginRight: '6px' }}/>{selectedAgent.specialization || 'N/A'}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="Subscription">
+                <Tag icon={<CrownOutlined />} color="gold">{selectedAgent.subscriptionPlan || 'Free'}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Role & ID" span={2}>
+                <Text code>{selectedAgent.role}</Text> / <Text type="secondary" style={{ fontSize: "12px" }}>{selectedAgent._id || selectedAgent.id}</Text>
+              </Descriptions.Item>
+            </Descriptions>
 
-                <Col xs={24} md={12}>
-                  <Card size="small" title="Professional Details" bordered={false} className="bg-gray-50 rounded-lg h-full">
-                    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                      <div className="flex items-center"><StarOutlined className="text-purple-600 mr-3" /> <Text type="secondary">Specialization:</Text> <Text strong className="capitalize ml-1">{selectedAgent.specialization || 'N/A'}</Text></div>
-                      <div className="flex items-center"><CrownOutlined className="text-purple-600 mr-3" /> <Text type="secondary">Plan:</Text> <Text strong className="capitalize ml-1">{selectedAgent.subscriptionPlan || 'Free'}</Text></div>
-                      <div>
-                        <Text type="secondary" className="block mb-1">Role ID:</Text>
-                        <Text code copyable className="text-xs">{selectedAgent.role}</Text>
-                      </div>
-                    </Space>
-                  </Card>
-                </Col>
-              </Row>
-
-              <Divider />
-
-              <Title level={5} style={{ marginBottom: 16 }}><FileProtectOutlined className="mr-2"/> Uploaded Documents</Title>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <div style={{ border: '1px dashed #d9d9d9', borderRadius: '8px', padding: '16px', textAlign: 'center' }}>
-                    <Text type="secondary" className="block mb-2">Emirates ID Proof</Text>
+            <Divider orientation="left" style={{ marginTop: "32px" }}>Uploaded Documents</Divider>
+            
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12}>
+                <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '16px', background: '#f9fafb', height: "100%" }}>
+                  <Space style={{ marginBottom: '12px' }}>
+                    <IdcardOutlined style={{ color: "#5c039b", fontSize: "18px" }} />
+                    <Text strong>Emirates ID Proof</Text>
+                  </Space>
+                  <div style={{ textAlign: "center" }}>
                     {selectedAgent.id_proof ? (
                       <Image 
-                        width={120} 
-                        height={80} 
-                        style={{ objectFit: 'cover', borderRadius: '4px' }}
+                        width="100%" 
+                        height={120} 
+                        style={{ objectFit: 'cover', borderRadius: '6px', border: '1px solid #d1d5db' }}
                         src={selectedAgent.id_proof} 
                         alt="ID Proof"
-                        preview={{ mask: 'Click to View' }}
                       />
                     ) : (
-                      <div className="py-4"><Text type="secondary" italic>No ID Uploaded</Text></div>
+                      <div style={{ padding: "30px 0", background: "#f3f4f6", borderRadius: "6px", color: "#9ca3af" }}>No ID Uploaded</div>
                     )}
                   </div>
-                </Col>
-                <Col span={12}>
-                  <div style={{ border: '1px dashed #d9d9d9', borderRadius: '8px', padding: '16px', textAlign: 'center' }}>
-                    <Text type="secondary" className="block mb-2">RERA Certificate</Text>
+                </div>
+              </Col>
+              
+              <Col xs={24} md={12}>
+                <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '16px', background: '#f9fafb', height: "100%" }}>
+                  <Space style={{ marginBottom: '12px' }}>
+                    <FileProtectOutlined style={{ color: "#5c039b", fontSize: "18px" }} />
+                    <Text strong>RERA Certificate</Text>
+                  </Space>
+                  <div style={{ textAlign: "center" }}>
                     {selectedAgent.rera_certificate ? (
                       <Image 
-                        width={120} 
-                        height={80}
-                        style={{ objectFit: 'cover', borderRadius: '4px' }} 
+                        width="100%" 
+                        height={120}
+                        style={{ objectFit: 'cover', borderRadius: '6px', border: '1px solid #d1d5db' }} 
                         src={selectedAgent.rera_certificate} 
                         alt="RERA Cert"
-                        preview={{ mask: 'Click to View' }}
                       />
                     ) : (
-                      <div className="py-4"><Text type="secondary" italic>No Cert Uploaded</Text></div>
+                      <div style={{ padding: "30px 0", background: "#f3f4f6", borderRadius: "6px", color: "#9ca3af" }}>No Certificate Uploaded</div>
                     )}
                   </div>
-                </Col>
-              </Row>
+                </div>
+              </Col>
+            </Row>
 
-              <div className="text-right mt-6">
-                <Button type="primary" style={{ backgroundColor: '#722ed1' }} onClick={() => setViewModal(false)}>
-                  Close Profile
-                </Button>
-              </div>
-
-            </div>
           </div>
         ) : (
-          <div className="text-center py-10"><Spin size="large" tip="Loading Profile..." /></div>
+          <div style={{ textAlign: "center", padding: "40px" }}><Spin size="large" /></div>
         )}
       </Modal>
+
+      {/* Optional Custom CSS for Select border removal */}
+      <style>{`
+        .custom-status-select .ant-select-selector {
+          background-color: #f3f4f6 !important;
+          border-radius: 8px !important;
+          padding: 0 12px !important;
+        }
+      `}</style>
     </div>
   );
 };
