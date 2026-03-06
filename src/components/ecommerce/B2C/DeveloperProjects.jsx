@@ -68,10 +68,16 @@ export default function DeveloperProjects() {
     if (!developerId) return;
     try {
       setTableLoading(true);
+      // const res = await fetch(
+      //   `https://xoto.ae/api/property/get-all-properties?developerId=${developerId}`,
+      //   { headers: { Authorization: `Bearer ${token}` } }
+      // );
       const res = await fetch(
-        `https://xoto.ae/api/property/get-all-properties?developerId=${developerId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  `http://localhost:5000/api/property/get-all-properties?developerId=${developerId}`,
+  {
+    headers: { Authorization: `Bearer ${token}` }
+  }
+);
       const json = await res.json();
       const list = json?.data?.data || json?.data || [];
 
@@ -145,15 +151,22 @@ export default function DeveloperProjects() {
         brochure: brochureUrl
       };
 
-      const response = await fetch("https://xoto.ae/api/property/create-properties", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-
+      // const response = await fetch("https://xoto.ae/api/property/create-properties", {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     Authorization: `Bearer ${token}`
+      //   },
+      //   body: JSON.stringify(payload)
+      // });
+const response = await fetch("http://localhost:5000/api/property/create-properties", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`
+  },
+  body: JSON.stringify(payload)
+});
       const data = await response.json();
 
       if (response.ok || data.success) {
@@ -262,8 +275,8 @@ export default function DeveloperProjects() {
         onCancel={closeModal}
         footer={null}
         width={1000}
-        style={{ top: 20 }}
-        centered
+        style={{ top: 20, marginRight:60 }}
+        
       >
         <Form
           form={form}

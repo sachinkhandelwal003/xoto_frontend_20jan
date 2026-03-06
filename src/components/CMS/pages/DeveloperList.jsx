@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import { useSelector } from "react-redux";
 import {
   Card,
@@ -38,8 +38,7 @@ import {
 const { Title, Text } = Typography;
 
 const DeveloperList = () => {
-  // const BASE_URL = "https://xoto.ae/api/property";
-  const BASE_URL = "http://localhost:5000/api/property";
+  
 
   const { user } = useSelector((s) => s.auth);
   
@@ -63,10 +62,11 @@ const DeveloperList = () => {
   const fetchDevelopers = async (page = 1, limit = 10, search = '') => {
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/get-all-developers`, {
-        params: { page, limit, search: search || undefined }
-      });
-      const resData = response.data;
+      const resData = await apiService.get("/property/get-all-developers", {
+  page,
+  limit,
+  search: search || undefined
+});
       const rawList = resData?.data || resData || [];
       setDevelopers(Array.isArray(rawList) ? rawList : []);
       const count = resData?.pagination?.total || resData?.total || (Array.isArray(rawList) ? rawList.length : 0);
@@ -90,10 +90,11 @@ const DeveloperList = () => {
   const fetchPropertiesByDeveloper = async (devId) => {
     setLoadingProps(true);
     try {
-      const response = await axios.get(`${BASE_URL}/get-all-properties`, {
-        params: { developerId: devId } 
+      const resData = await apiService.get("/property/get-all-properties", {
+      developerId: devId
       });
-      const propsData = response.data?.data || response.data || [];
+
+    const propsData = resData?.data || resData || [];
       setDevProperties(propsData);
     } catch (err) {
       console.error("Error fetching properties:", err);
@@ -109,9 +110,7 @@ const DeveloperList = () => {
     try {
       const payload = { ...record, isVerifiedByAdmin: checked };
       delete payload._id; 
-      await axios.post(`${BASE_URL}/edit-developer`, payload, {
-        params: { id: record._id || record.id }
-      });
+      await apiService.post(`/property/edit-developer?id=${record._id || record.id}`, payload);
       message.success(`Developer ${checked ? "Verified" : "Unverified"} successfully!`);
       fetchDevelopers(currentPage, pageSize, searchText);
     } catch (err) {

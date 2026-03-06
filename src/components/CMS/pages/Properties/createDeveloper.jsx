@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; 
+import { apiService } from '../../../../manageApi/utils/custom.apiservice';
 import {
   Button, Modal, Form, Input, Popconfirm, Card, Table,
   Typography, Avatar, Row, Col, Statistic, Space, Divider, message, notification, Tooltip, Grid, Switch, Upload, Select
@@ -58,11 +58,16 @@ const CreateDeveloper = () => {
   const fetchDevelopers = async (page = 1, limit = 10, search = '') => {
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/get-all-developers`, {
-        params: { page, limit, search: search || undefined }
-      });
+      const response = await apiService.get(
+  "/property/get-all-developers",
+  {
+    page,
+    limit,
+    search: search || undefined
+  }
+);
       
-      const resData = response.data;
+      const resData = response;
       const rawList = resData?.data || resData || [];
       setDevelopers(rawList);
 
@@ -87,10 +92,11 @@ const CreateDeveloper = () => {
   const fetchDeveloperById = async (id) => {
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/get-developer-by-id`, {
-        params: { id }
-      });
-      const dev = response.data?.data || response.data;
+      const response = await apiService.get(
+  "/property/get-developer-by-id",
+  { id }
+);
+      const dev = response?.data || response;
       if (dev) {
         form.setFieldsValue({
           name: dev.name,
@@ -142,22 +148,30 @@ const CreateDeveloper = () => {
 
       let response;
       if (editingId) {
-        response = await axios.post(`${BASE_URL}/edit-developer`, payload, {
-          params: { id: editingId }
-        });
+        response = await apiService.post(
+  `/property/edit-developer?id=${editingId}`,
+  payload
+);
       } else {
-        response = await axios.post(`${BASE_URL}/create-developer`, payload);
+        response = await apiService.post(
+  "/property/create-developer",
+  payload
+);
       }
       
-      if (response.status === 200 || response.status === 201) {
-        notification.success({
-          message: editingId ? 'Developer Updated' : 'Developer Created',
-          description: `Developer ${values.name} has been successfully ${editingId ? 'updated' : 'registered'}.`,
-          placement: 'topRight'
-        });
-        closeModal();
-        fetchDevelopers(currentPage, pageSize);
-      }
+      if (response) {
+
+  notification.success({
+    message: editingId ? 'Developer Updated' : 'Developer Created',
+    description: `Developer ${values.name} has been successfully ${editingId ? 'updated' : 'registered'}.`,
+    placement: 'topRight'
+  });
+
+  closeModal();
+
+  fetchDevelopers(currentPage, pageSize, searchText);
+
+}
     } catch (err) {
       const errorMsg = err.response?.data?.message || err.message || "Failed to save developer details.";
       message.error(errorMsg);
@@ -176,9 +190,10 @@ const CreateDeveloper = () => {
       };
       delete payload._id; 
 
-      await axios.post(`${BASE_URL}/edit-developer`, payload, {
-        params: { id: record._id || record.id }
-      });
+      await apiService.post(
+  `/property/edit-developer?id=${record._id || record.id}`,
+  payload
+);
       
       message.success(`Developer ${checked ? 'Verified' : 'Unverified'} successfully`);
       fetchDevelopers(currentPage, pageSize, searchText);
@@ -191,20 +206,32 @@ const CreateDeveloper = () => {
 
   // --- 5. DELETE ---
   const deleteDeveloper = async (id) => {
-    try {
-      setLoading(true);
-      const response = await axios.post(`${BASE_URL}/delete-developer-by-id?id=${id}`); 
+  try {
 
-      if (response.status === 200 || response.status === 204) {
-          message.success("Developer deleted successfully.");
-          fetchDevelopers(currentPage, pageSize, searchText);
-      }
-    } catch (err) {
-      message.error(err.response?.data?.message || "Deletion failed.");
-    } finally {
-      setLoading(false);
+    setLoading(true);
+
+    const response = await apiService.post(
+      `/property/delete-developer-by-id?id=${id}`
+    );
+
+    if (response) {
+
+      message.success("Developer deleted successfully.");
+
+      fetchDevelopers(currentPage, pageSize, searchText);
+
     }
-  };
+
+  } catch (err) {
+
+    message.error(err.response?.data?.message || "Deletion failed.");
+
+  } finally {
+
+    setLoading(false);
+
+  }
+};
 
   // --- 6. IMAGE UPLOAD HANDLER ---
   const handleImageUpload = async (options) => {
@@ -215,9 +242,7 @@ const CreateDeveloper = () => {
         const formData = new FormData();
         formData.append('file', file); 
 
-        const response = await axios.post(UPLOAD_URL, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const response = await apiService.upload("/upload", formData);
 
         const uploadedUrl = response.data?.file?.url || response.data?.url; 
 

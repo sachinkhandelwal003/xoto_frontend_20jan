@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { apiService } from "../../../../manageApi/utils/custom.apiservice";
 import {
   Card,
   Table,
@@ -55,9 +55,11 @@ const AgentList = () => {
   const fetchAgents = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/get-all-agents`);
-      const list = res.data?.data || res.data || [];
-      setAgents(list);
+      const res = await apiService.get("/agent/get-all-agents");
+
+const list = res?.data || res || [];
+
+setAgents(list);
     } catch (err) {
       message.error("Failed to fetch agents");
     } finally {
@@ -75,7 +77,7 @@ const AgentList = () => {
     if (!id) return message.error("Invalid ID");
 
     try {
-      await axios.delete(`${BASE_URL}/delete-agent/${id}`);
+await apiService.delete(`/agent/delete-agent/${id}`);
       message.success("Agent permanently deleted");
       fetchAgents();
     } catch (err) {
@@ -89,10 +91,10 @@ const AgentList = () => {
     if (!id) return;
 
     try {
-      await axios.post(
-        `${BASE_URL}/update-agent?id=${id}`,
-        { onboarding_status: status }
-      );
+      await apiService.post(
+  `/agent/update-agent?id=${id}`,
+  { onboarding_status: status }
+);
       message.success(`Status updated to ${status.toUpperCase()}`);
       fetchAgents();
     } catch (err) {
@@ -106,10 +108,10 @@ const AgentList = () => {
     if (!id) return;
 
     try {
-      await axios.post(
-        `${BASE_URL}/update-agent?id=${id}`,
-        { isVerified: checked } 
-      );
+      await apiService.post(
+  `/agent/update-agent?id=${id}`,
+  { isVerified: checked }
+);
       message.success(`Agent ${checked ? 'Verified' : 'Unverified'} successfully`);
       fetchAgents(); 
     } catch (err) {

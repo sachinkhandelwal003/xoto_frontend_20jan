@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { apiService } from "../../../../manageApi/utils/custom.apiservice";
 import {
   Card,
   Table,
@@ -35,8 +35,6 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const AgencyList = () => {
-  // const BASE_URL = "https://xoto.ae/api/agency";
-  const BASE_URL = "http://localhost:5000/api/agency";
 
   const [agencies, setAgencies] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -48,8 +46,11 @@ const AgencyList = () => {
   const fetchAgencies = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/get-all-agencies`);
-      const list = res.data?.data || res.data || [];
+      const res = await apiService.get("/agency/get-all-agencies");
+
+const list = res?.data || res || [];
+
+setAgencies(list);
       setAgencies(list);
     } catch (err) {
       message.error("Failed to fetch agencies.");
@@ -68,7 +69,7 @@ const AgencyList = () => {
     if (!id) return message.error("Invalid Agency ID");
 
     try {
-      await axios.delete(`${BASE_URL}/delete-agency/${id}`);
+await apiService.delete(`/agency/delete-agency/${id}`);
       message.success("Agency permanently removed from platform.");
       fetchAgencies();
     } catch (err) {
@@ -82,9 +83,9 @@ const AgencyList = () => {
     if (!id) return;
 
     try {
-      await axios.put(`${BASE_URL}/update/${id}`, {
-        onboarding_status: status,
-      });
+      await apiService.put(`/agency/update/${id}`, {
+  onboarding_status: status
+});
 
       message.success(`Agency status updated to ${status.toUpperCase()}`);
       fetchAgencies();
@@ -98,9 +99,9 @@ const AgencyList = () => {
     if (!id) return;
 
     try {
-      await axios.put(`${BASE_URL}/update/${id}`, {
-        is_active: checked,
-      });
+      await apiService.put(`/agency/update/${id}`, {
+  is_active: checked
+});
 
       message.success(`Agency ${checked ? "Activated" : "Suspended"} successfully.`);
       fetchAgencies(); // Table data refresh karne ke liye

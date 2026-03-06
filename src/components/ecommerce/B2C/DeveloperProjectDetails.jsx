@@ -39,7 +39,8 @@ export default function DeveloperProjectDetails() {
         setLoading(true);
 
       // ✅ YAHAN ROUTE UPDATE KIYA HAI: Query Parameter (?id=) ka use karke
-const propertyRes = await fetch(`https://xoto.ae/api/property/get-property-by-id?id=${id}`, {
+// const propertyRes = await fetch(`https://xoto.ae/api/property/get-property-by-id?id=${id}`, {
+const propertyRes = await fetch(`https://localhost:5000/api/property/get-property-by-id?id=${id}`, {
   headers: { Authorization: `Bearer ${token}` }
 });
         const propertyData = await propertyRes.json();
@@ -48,7 +49,8 @@ const propertyRes = await fetch(`https://xoto.ae/api/property/get-property-by-id
         setProject(propertyData?.data || propertyData);
 
         // Leads API (Yeh pehle se sahi tha)
-        const leadsRes = await fetch(`https://xoto.ae/api/lead/get-all-leads?propertyId=${id}`, {
+        // const leadsRes = await fetch(`https://xoto.ae/api/lead/get-all-leads?propertyId=${id}`, {
+        const leadsRes = await fetch(`https://localhost:5000/api/lead/get-all-leads?propertyId=${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const leadsData = await leadsRes.json();
