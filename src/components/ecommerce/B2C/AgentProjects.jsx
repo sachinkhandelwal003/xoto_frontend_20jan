@@ -35,7 +35,8 @@ export default function AgentProjects() {
       setLoading(true);
       // Backend mein developer populate hona chahiye ideally
       const res = await fetch(
-        `https://xoto.ae/api/property/get-all-properties?page=${pageNo}&limit=8`
+        // `https://xoto.ae/api/property/get-all-properties?page=${pageNo}&limit=8`
+        `http://localhost:5000/api/property/get-all-properties?page=${pageNo}&limit=8`
       );
       const json = await res.json();
       const list = json?.data?.data || json?.data || [];

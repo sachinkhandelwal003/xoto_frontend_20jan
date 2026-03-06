@@ -11,7 +11,7 @@ export const ProductProvider = ({ children }) => {
     setLoading(true);
     try {
       // Limit badha di hai taaki "See More" click hone par saare products turant mil jayein
-      const res = await axios.get('https://xoto.ae/api/products/get-all-products?page=1&limit=100');
+      const res = await axios.get('https://localhost:5000/api/products/get-all-products?page=1&limit=100');
       if (res.data.success) {
         setProducts(res.data.data.products);
       }

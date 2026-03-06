@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { apiService } from "../../manageApi/utils/custom.apiservice"; // ✅ API SERVICE
 import { useBlogContext } from "../../context/BlogContext";
 
 // Images
@@ -17,12 +17,10 @@ const Ai1 = () => {
 
     setLoading(true);
 
-    axios
-      .get(
-        `https://xoto.ae/api/blogs/get-blog-by-id?id=${selectedBlogId}`
-      )
+    apiService
+      .get("blogs/get-blog-by-id", { id: selectedBlogId }) // ✅ UPDATED
       .then((res) => {
-        setBlog(res.data.data || res.data.blog || res.data);
+        setBlog(res.data || res.blog || res);
         setLoading(false);
       })
       .catch((err) => {

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+// import axios from 'axios';
 import { 
     Upload, CloudSun, ArrowLeft, 
     Image as ImageIcon, Sun, Moon, X, Loader2, Download 
@@ -92,34 +92,27 @@ const SkyReplacement = () => {
     // ==========================================
     // DOWNLOAD LOGIC (Same as Enhancer)
     // ==========================================
-    const handleDownload = async () => {
-        if (!resultImage) return;
 
-        try {
-            const key = resultImage.split(".amazonaws.com/")[1];
-            if (!key) return notification.error({ message: "Invalid Image URL" });
+const handleDownload = async () => {
+    if (!resultImage) return;
 
-            // Base URL check kar lena apne prod environment ke hisab se
-            const response = await axios.get(
-                `https://xoto.ae/api/download-pdf?key=${encodeURIComponent(key)}`,
-                { responseType: "blob" }
-            );
+    try {
+        const key = resultImage.split(".amazonaws.com/")[1];
 
-            const blob = new Blob([response.data], { type: "application/pdf" });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `XOTO_Sky_${skyStyle}_${Date.now()}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error("Download error", error);
-            notification.error({ message: "Download Failed" });
+        if (!key) {
+            return notification.error({ message: "Invalid Image URL" });
         }
-    };
 
+        await apiService.download(
+            `/download-pdf?key=${encodeURIComponent(key)}`,
+            `XOTO_Sky_${skyStyle}_${Date.now()}.pdf`
+        );
+
+    } catch (error) {
+        console.error("Download error", error);
+        notification.error({ message: "Download Failed" });
+    }
+};
     return (
         <div className="min-h-screen bg-[#F8F9FB] flex flex-col font-sans relative pb-10">
             
