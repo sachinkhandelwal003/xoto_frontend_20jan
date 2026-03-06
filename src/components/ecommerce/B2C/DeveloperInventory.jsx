@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   Typography,
@@ -12,223 +12,473 @@ import {
   Upload,
   message,
   Space,
+  Popconfirm
 } from "antd";
+
 import {
   PlusOutlined,
   SearchOutlined,
-  UploadOutlined,
+  UploadOutlined
 } from "@ant-design/icons";
+
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 
+const API = "http://localhost:5000/api/property";
+
 export default function DeveloperInventory() {
+
   const navigate = useNavigate();
 
-  const projects = [
-    { label: "Sky Tower", value: "sky" },
-    { label: "Downtown View", value: "down" },
-    { label: "Marina Heights", value: "marina" },
-  ];
+  const developerId = localStorage.getItem("developerId");
 
-  const [units, setUnits] = useState([
-    { key: 1, unit: "A-101", project: "Sky Tower", type: "2BHK", price: "1.2Cr", status: "Sold" },
-    { key: 2, unit: "A-102", project: "Sky Tower", type: "2BHK", price: "1.1Cr", status: "Available" },
-    { key: 3, unit: "B-201", project: "Downtown View", type: "3BHK", price: "1.6Cr", status: "Booked" },
-    { key: 4, unit: "C-301", project: "Marina Heights", type: "Studio", price: "70L", status: "Available" },
-  ]);
+  const [units, setUnits] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [projectId, setProjectId] = useState(null);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const getColor = (status) => {
-    switch (status) {
-      case "Sold":
-        return "blue";
-      case "Booked":
-        return "orange";
-      case "Available":
-        return "green";
-      default:
-        return "default";
+  // FETCH PROJECTS
+  const fetchProjects = async () => {
+
+    try {
+
+      const res = await fetch(`${API}/get-all-properties`);
+      const data = await res.json();
+
+      const options = data.data.map((p) => ({
+        label: p.projectName,
+        value: p._id
+      }));
+
+      setProjects(options);
+
+    } catch {
+
+      message.error("Failed to load projects");
+
     }
+
   };
 
+  // FETCH INVENTORY
+  const fetchInventory = async (projectId) => {
+
+    if (!projectId) return;
+
+    setLoading(true);
+
+    try {
+
+      const res = await fetch(
+        `${API}/get-inventory-by-property?projectId=${projectId}`
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+
+        const formatted = data.data.map((item) => ({
+          key: item._id,
+          unitId: item.unitId,
+          area: item.area,
+          price: item.price,
+          view: item.view,
+          status: item.status
+        }));
+
+        setUnits(formatted);
+
+      }
+
+    } catch {
+
+      message.error("Failed to load inventory");
+
+    }
+
+    setLoading(false);
+
+  };
+
+  useEffect(() => {
+
+    fetchProjects();
+
+    const savedProject = localStorage.getItem("selectedProject");
+
+    if (savedProject) {
+
+      setProjectId(savedProject);
+
+      fetchInventory(savedProject);
+
+    }
+
+  }, []);
+
+  const getColor = (status) => {
+
+    switch (status) {
+
+      case "Sold":
+        return "blue";
+
+      case "Booked":
+        return "orange";
+
+      case "Blocked":
+        return "red";
+
+      case "Available":
+        return "green";
+
+      default:
+        return "default";
+
+    }
+
+  };
+
+  // DELETE UNIT
+  const deleteUnit = async (id) => {
+
+    try {
+
+      const res = await fetch(`${API}/delete-inventory/${id}`, {
+        method: "DELETE"
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+
+        message.success("Unit deleted successfully");
+
+        fetchInventory(projectId);
+
+      }
+
+    } catch {
+
+      message.error("Delete failed");
+
+    }
+
+  };
+
+  // CSV IMPORT
+  const handleFileUpload = async (file) => {
+
+    if (!developerId || !projectId) {
+
+      message.error("Select project first");
+
+      return false;
+
+    }
+
+    const text = await file.text();
+
+    const rows = text.split(/\r?\n/).slice(1);
+
+    const units = rows.map((row) => {
+
+      const cols = row.split(",");
+
+      return {
+        unitId: cols[0]?.trim(),
+        area: Number(cols[1]),
+        price: Number(cols[2]),
+        view: cols[3]?.trim() || "",
+        status: cols[4]?.trim() || "Available"
+      };
+
+    }).filter(u => u.unitId && u.area && u.price);
+
+    try {
+
+      const res = await fetch(`${API}/bulk-import-inventory`, {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          developerId,
+          projectId,
+          units
+        })
+
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+
+        message.success("CSV Imported Successfully");
+
+        fetchInventory(projectId);
+
+      } else {
+
+        message.error(data.message);
+
+      }
+
+    } catch {
+
+      message.error("Upload Failed");
+
+    }
+
+    return false;
+
+  };
+
+  // SEARCH
+  const filteredUnits = units.filter((item) =>
+    item.unitId?.toLowerCase().includes(search.toLowerCase())
+  );
+
   const columns = [
-    { 
-      title: "Unit No.", 
-      dataIndex: "unit",
-      key: "unit",
-      fontWeight: "bold",
+
+    {
+      title: "Unit ID",
+      dataIndex: "unitId"
     },
-    { 
-      title: "Project Name", 
-      dataIndex: "project",
-      key: "project",
+
+    {
+      title: "Area",
+      dataIndex: "area"
     },
-    { 
-      title: "Unit Type", 
-      dataIndex: "type",
-      key: "type",
+
+    {
+      title: "Price",
+      dataIndex: "price"
     },
-    { 
-      title: "Price", 
-      dataIndex: "price",
-      key: "price",
+
+    {
+      title: "View",
+      dataIndex: "view"
     },
+
     {
       title: "Status",
       dataIndex: "status",
-      key: "status",
       render: (status) => (
-        <Tag color={getColor(status)} style={{ padding: "4px 12px", borderRadius: "4px", fontSize: "13px" }}>
+        <Tag color={getColor(status)}>
           {status}
         </Tag>
-      ),
+      )
     },
+
     {
       title: "Action",
-      key: "action",
       align: "center",
       render: (_, record) => (
-        <Button
-          type="primary"
-          style={{ background: "#5c039b", borderColor: "#5c039b", borderRadius: "6px" }}
-          onClick={() => navigate(`/dashboard/developer/inventory/${record.key}`)}
-        >
-          View Details
-        </Button>
-      ),
-    },
+
+        <Space>
+
+          <Button
+            type="primary"
+            onClick={() =>
+              navigate(`/dashboard/developer/inventory/${record.key}`)
+            }
+          >
+            View
+          </Button>
+
+          <Button
+            onClick={() =>
+              navigate(`/dashboard/developer/inventory/edit/${record.key}`)
+            }
+          >
+            Edit
+          </Button>
+
+          <Popconfirm
+            title="Are you sure to delete this unit?"
+            onConfirm={() => deleteUnit(record.key)}
+          >
+            <Button danger>
+              Delete
+            </Button>
+          </Popconfirm>
+
+        </Space>
+
+      )
+    }
+
   ];
 
-  // CSV Import Logic
-  const handleFileUpload = (file) => {
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      const text = e.target.result;
-      const rows = text.split("\n").slice(1); // skip header
-
-      const importedData = rows
-        .map((row, index) => {
-          const cols = row.split(",");
-          if (cols.length < 5) return null; // safety check
-
-          return {
-            key: units.length + index + 1,
-            unit: cols[0]?.trim(),
-            project: cols[1]?.trim(),
-            type: cols[2]?.trim(),
-            price: cols[3]?.trim(),
-            status: cols[4]?.trim(),
-          };
-        })
-        .filter((item) => item && item.unit); // remove empty/invalid rows
-
-      if (importedData.length > 0) {
-        setUnits((prev) => [...prev, ...importedData]);
-        message.success(`${importedData.length} units imported successfully!`);
-      } else {
-        message.error("Failed to import. Please check CSV format.");
-      }
-    };
-
-    reader.readAsText(file);
-    return false; // prevent auto upload
-  };
+  // STATS
+  const totalUnits = units.length;
+  const availableUnits = units.filter(u => u.status === "Available").length;
+  const bookedUnits = units.filter(u => u.status === "Booked").length;
+  const soldUnits = units.filter(u => u.status === "Sold").length;
 
   return (
+
     <div style={{ padding: "24px", background: "#f8f9fa", minHeight: "100vh" }}>
-      
-      {/* HEADER SECTION */}
-      <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+
+      {/* HEADER */}
+
+      <div
+        style={{
+          marginBottom: "24px",
+          display: "flex",
+          justifyContent: "space-between"
+        }}
+      >
+
         <div>
-          <Title level={2} style={{ margin: 0, color: "#1f2937" }}>
+
+          <Title level={2}>
             Inventory Management
           </Title>
-          <Text type="secondary" style={{ fontSize: "15px" }}>
-            Manage all your project units, pricing, and availability status.
+
+          <Text type="secondary">
+            Manage all your project units
           </Text>
+
         </div>
 
-        <Space size="middle">
+        <Space>
+
           <Upload
             beforeUpload={handleFileUpload}
             accept=".csv"
             showUploadList={false}
           >
-            <Button size="large" icon={<UploadOutlined />}>
+
+            <Button icon={<UploadOutlined />}>
               Import CSV
             </Button>
+
           </Upload>
 
           <Button
-            size="large"
             type="primary"
             icon={<PlusOutlined />}
-            style={{ background: "#5c039b", borderColor: "#5c039b", boxShadow: "0 4px 10px rgba(92, 3, 155, 0.2)" }}
-            onClick={() => navigate("/dashboard/developer/inventory/add")}
+            onClick={() =>
+              navigate("/dashboard/developer/inventory/add")
+            }
           >
             Add New Unit
           </Button>
+
         </Space>
+
       </div>
 
-      {/* FILTER SECTION */}
-      <Card 
-        bordered={false} 
-        style={{ borderRadius: "12px", marginBottom: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-        bodyStyle={{ padding: "24px" }}
-      >
-        <Row gutter={[24, 24]}>
-          <Col xs={24} md={8} lg={6}>
-            <div style={{ marginBottom: "8px" }}>
-              <Text strong style={{ color: "#4b5563" }}>Select Project</Text>
-            </div>
+      {/* STATS */}
+
+      <Row gutter={16} style={{ marginBottom: 24 }}>
+
+        <Col span={6}>
+          <Card>
+            <Text>Total Units</Text>
+            <Title level={3}>{totalUnits}</Title>
+          </Card>
+        </Col>
+
+        <Col span={6}>
+          <Card>
+            <Text>Available</Text>
+            <Title level={3}>{availableUnits}</Title>
+          </Card>
+        </Col>
+
+        <Col span={6}>
+          <Card>
+            <Text>Booked</Text>
+            <Title level={3}>{bookedUnits}</Title>
+          </Card>
+        </Col>
+
+        <Col span={6}>
+          <Card>
+            <Text>Sold</Text>
+            <Title level={3}>{soldUnits}</Title>
+          </Card>
+        </Col>
+
+      </Row>
+
+      {/* FILTER */}
+
+      <Card style={{ marginBottom: 24 }}>
+
+        <Row gutter={16}>
+
+          <Col span={8}>
+
+            <Text strong>Select Project</Text>
+
             <Select
               size="large"
-              placeholder="Filter by Project"
               options={projects}
-              style={{ width: "100%" }}
-              allowClear
+              placeholder="Select Project"
+              style={{ width: "100%", marginTop: 6 }}
+              onChange={(value) => {
+
+                setProjectId(value);
+
+                localStorage.setItem("selectedProject", value);
+
+                fetchInventory(value);
+
+              }}
             />
+
           </Col>
 
-          <Col xs={24} md={10} lg={8}>
-            <div style={{ marginBottom: "8px" }}>
-              <Text strong style={{ color: "#4b5563" }}>Search Unit</Text>
-            </div>
+          <Col span={10}>
+
+            <Text strong>Search Unit</Text>
+
             <Input
               size="large"
-              placeholder="Search by Unit No. or Type..."
-              prefix={<SearchOutlined style={{ color: "#9ca3af" }} />}
+              prefix={<SearchOutlined />}
+              placeholder="Search by Unit ID"
               allowClear
+              style={{ marginTop: 6 }}
+              onChange={(e) => setSearch(e.target.value)}
             />
+
           </Col>
+
         </Row>
+
       </Card>
 
-      {/* TABLE SECTION */}
-      <Card 
-        bordered={false} 
-        style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-        bodyStyle={{ padding: "0" }} // Removing padding so table goes edge-to-edge inside card
-      >
-        <div style={{ padding: "24px", borderBottom: "1px solid #f0f0f0" }}>
-          <Title level={5} style={{ margin: 0 }}>Total Units ({units.length})</Title>
-        </div>
-        
+      {/* TABLE */}
+
+      <Card>
+
+        <Title level={5}>
+          Total Units ({filteredUnits.length})
+        </Title>
+
         <Table
           columns={columns}
-          dataSource={units}
-          pagination={{ 
-            pageSize: 10, 
-            position: ["bottomCenter"],
-            showSizeChanger: true,
+          dataSource={filteredUnits}
+          loading={loading}
+          pagination={{
+            pageSize: 10,
+            position: ["bottomCenter"]
           }}
-          rowKey="key"
-          style={{ padding: "0 24px 24px 24px" }} // Added padding to table container
         />
+
       </Card>
-      
+
     </div>
+
   );
+
 }
