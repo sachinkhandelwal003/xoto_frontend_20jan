@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+
+import { apiService } from "../../../../../manageApi/utils/custom.apiservice";
 import {
   Button,
   Modal,
@@ -70,40 +71,40 @@ const [currentProduct, setCurrentProduct] = useState(null);
   const normFile = (e) => (Array.isArray(e) ? e : e?.fileList);
 
   const fetchBrands = async () => {
-    try {
-      const response = await axios.get(
-        `${BASE_URL}/api/products/get-all-brand`,
-        { params: { limit: 100 } },
-      );
-      setBrands(response.data?.data || response.data?.brands || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  try {
+    const response = await apiService.get("/products/get-all-brand", { limit: 100 });
+
+    setBrands(response?.data || response?.brands || []);
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const fetchCategories = async () => {
-    try {
-      const response = await axios.get(
-        `${BASE_URL}/api/products/get-all-category`,
-        { params: { limit: 100 } },
-      );
-      setCategories(response.data?.data || response.data?.categories || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  try {
+    const response = await apiService.get("/products/get-all-category", { limit: 100 });
+
+    setCategories(response?.data || response?.categories || []);
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const fetchProducts = async (page = 1, limit = 10, search = "") => {
     setLoading(true);
     try {
-      const response = await axios.get(
-        `${BASE_URL}/api/products/get-all-products`,
-        {
-          params: { page, limit, search: search || undefined },
-        },
-      );
-      setProducts(response.data?.data?.products || []);
-      setTotal(response.data?.data?.pagination?.total || 0);
+      const response = await apiService.get(
+  "/products/get-all-products",
+  {
+    page,
+    limit,
+    search: search || undefined
+  }
+);
+      setProducts(response?.data?.products || []);
+setTotal(response?.data?.pagination?.total || 0);
     } catch (err) {
       message.error("Failed to load products.");
     } finally {
@@ -127,12 +128,13 @@ const [currentProduct, setCurrentProduct] = useState(null);
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const response = await axios.post(`${BASE_URL}/api/upload`, formData);
-      const imageUrl =
-        response.data?.url ||
-        response.data?.secure_url ||
-        response.data?.data?.url ||
-        response.data;
+      const response = await apiService.upload("/upload", formData);
+
+const imageUrl =
+  response?.url ||
+  response?.secure_url ||
+  response?.data?.url ||
+  response;
       onSuccess(imageUrl);
       message.success("Uploaded");
     } catch (err) {
@@ -234,8 +236,13 @@ const [currentProduct, setCurrentProduct] = useState(null);
         ? `${BASE_URL}/api/products/edit-product-by-id?id=${editingId}`
         : `${BASE_URL}/api/products/create-products`;
 
-      const response = await axios.post(url, payload);
-      if (response.data.success) {
+      const response = await apiService.post(
+  editingId
+    ? `/products/edit-product-by-id?id=${editingId}`
+    : "/products/create-products",
+  payload
+);
+      if (response.success) {
         notification.success({
           message: "Success",
           description: "Product saved in AED.",
@@ -369,7 +376,7 @@ const [currentProduct, setCurrentProduct] = useState(null);
             });
             setModalVisible(true);
           }} />
-          <Popconfirm title="Delete Product?" onConfirm={async () => { await axios.post(`${BASE_URL}/api/products/delete-product-by-id?id=${record._id}`); fetchProducts(); }}>
+          <Popconfirm title="Delete Product?" onConfirm={async () => { await apiService.post(`/products/delete-product-by-id?id=${record._id}`); fetchProducts(); }}>
             <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
@@ -957,14 +964,14 @@ const [currentProduct, setCurrentProduct] = useState(null);
     layout="vertical"
     onFinish={async (values) => {
       try {
-        await axios.post(
-          `${BASE_URL}/api/products/add-margin-products`,
-          {
-            productId: selectedProduct._id,
-            marginType: values.marginType,
-            marginValue: values.marginValue
-          }
-        );
+        await apiService.post(
+  "/products/add-margin-products",
+  {
+    productId: selectedProduct._id,
+    marginType: values.marginType,
+    marginValue: values.marginValue
+  }
+);
 
         notification.success({
           message: "Margin added successfully"

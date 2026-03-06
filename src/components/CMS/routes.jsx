@@ -82,7 +82,7 @@ import AgencyList from "./pages/Properties/AgencyList";
 import DeveloperDashboard from "../ecommerce/B2C/DeveloperDashboard";
 import AgentDashboard from "../ecommerce/B2C/AgentDashboard";
 import AgentLayout from "../ecommerce/B2C/AgentLayout";
-import Addleaddetails from "../ecommerce/B2C/products/Addleadmodal";
+import Addleaddetails from "../ecommerce/B2C/AgentLeadDetails"
 import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";   
 import AgentSubscription from "../ecommerce/B2C/AgentSubscription";
 import AgentProjects from "../ecommerce/B2C/AgentProjects";
@@ -139,6 +139,9 @@ import LeadManagement from "./pages/LeadManagement";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import VerificationQueue from "./pages/VerificationQueue";
 import AgencyDashboard from "../ecommerce/B2C/AgencyDashboard";
+import XobiaTrainingAdmin from "./pages/XobiaTrainingAdmin";
+import GlobalSettings from "./pages/GlobalSettings";
+import XotoBlitzCampaigns from "./pages/XotoBlitzCampaigns";
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -316,8 +319,8 @@ const CmsRoutes = () => {
 {/* <Route index element={<AgentDashboard />} /> */}
 
   {/* Leads */}
-  <Route path="leads" element={<AgentLeadDashboard />} />
-  <Route path="lead/:id" element={<Addleaddetails/>} />
+  <Route path="agent-leads" element={<AgentLeadDashboard />} />
+  <Route path="agent-lead/:id" element={<Addleaddetails/>} />
   {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
         
   {/* Projects */}
@@ -359,6 +362,9 @@ const CmsRoutes = () => {
       <Route path="/lead-management" element={<LeadManagement />} />
       <Route path="/subscription-plans" element={<SubscriptionPlans />} />
       <Route path="/verification-queue" element={<VerificationQueue />} />
+      <Route path="/ai-training" element={<XobiaTrainingAdmin />} />
+      <Route path="/global-settings" element={<GlobalSettings />} />
+      <Route path="/marketing-hub" element={<XotoBlitzCampaigns />} />
       
 {/* Agency */}
 <Route path="manage-agents" element={<AgencyManageAgents />} />
@@ -383,8 +389,8 @@ const CmsRoutes = () => {
 <Route path="/inventory/add" element={<DeveloperAddUnit/>}/>
 <Route path="/inventory/:id" element={<DeveloperUnitDetails/>}/>
 <Route path="/inventory/:id/edit" element={<DeveloperEditUnit/>}/>
-<Route path="leads" element={<DeveloperLeads/>}/>
-<Route path="/leads/:id" element={<DeveloperLeadDetails/>}/>
+<Route path="developer-leads" element={<DeveloperLeads />} />
+<Route path="developer-leads/:id" element={<DeveloperLeadDetails />} />
 <Route path="/leads/:id/booking" element={<DeveloperCreateBooking/>}/>
 <Route path="/bookings" element={<DeveloperBookings/>}/>
 <Route path="/bookings/:id" element={<DeveloperBookingDetails/>}/>

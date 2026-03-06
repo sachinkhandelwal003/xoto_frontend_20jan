@@ -22,9 +22,10 @@ const { useBreakpoint } = Grid;
 const THEME = { primary: "#7c3aed", success: "#10b981" };
 
 const PropertyManagement = () => {
-  const BASE_URL = "https://xoto.ae/api/property";
+  // const BASE_URL = "https://xoto.ae/api/property";
+  const BASE_URL = 'http://localhost:5000/api/property';
   const UPLOAD_API = "https://xoto.ae/api/upload";
- 
+
   const screens = useBreakpoint();
 
   const [properties, setProperties] = useState([]);
@@ -32,7 +33,7 @@ const PropertyManagement = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null);
- 
+
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -45,26 +46,26 @@ const PropertyManagement = () => {
 
   const [form] = Form.useForm();
   const validateImageSize = (file) => {
-  const isImage = file.type.startsWith("image/");
-  if (!isImage) {
-    message.error("Only image files are allowed!");
-    return Upload.LIST_IGNORE;
-  }
+    const isImage = file.type.startsWith("image/");
+    if (!isImage) {
+      message.error("Only image files are allowed!");
+      return Upload.LIST_IGNORE;
+    }
 
-  const sizeInMB = file.size / 1024 / 1024;
+    const sizeInMB = file.size / 1024 / 1024;
 
-  if (sizeInMB < 1) {
-    message.error("Image must be at least 1MB");
-    return Upload.LIST_IGNORE;
-  }
+    if (sizeInMB < 1) {
+      message.error("Image must be at least 1MB");
+      return Upload.LIST_IGNORE;
+    }
 
-  if (sizeInMB > 20) {
-    message.error("Image must be less than 20MB");
-    return Upload.LIST_IGNORE;
-  }
+    if (sizeInMB > 20) {
+      message.error("Image must be less than 20MB");
+      return Upload.LIST_IGNORE;
+    }
 
-  return true;
-};
+    return true;
+  };
 
   // --- 1. FETCH DATA ---
   const fetchDevelopers = async () => {
@@ -128,16 +129,16 @@ const PropertyManagement = () => {
         price: Number(values.price || 0),
         price_min: Number(values.price_min || 0),
         price_max: Number(values.price_max || 0),
-       
+
         bedrooms: Number(values.bedrooms || 0),
         bathrooms: Number(values.bathrooms || 0),
-       
+
         length: Number(values.length || 0),
         breadth: Number(values.breadth || 0),
-       
+
         builtUpArea_min: Number(values.builtUpArea_min || 0),
         builtUpArea_max: Number(values.builtUpArea_max || 0),
-       
+
         downPayment: Number(values.downPayment || 0),
         paymentPlan_initialPercentage: Number(values.paymentPlan_initialPercentage || 0),
         paymentPlan_laterPercentage: Number(values.paymentPlan_laterPercentage || 0),
@@ -146,7 +147,7 @@ const PropertyManagement = () => {
         photos: finalPhotos,
         mainLogo: finalLogo,
         brochure: brochureUrl,
-       
+
         // Date handling
         handover: values.handover ? dayjs(values.handover).format("YYYY-MM-DD") : "",
 
@@ -195,7 +196,7 @@ const PropertyManagement = () => {
   // Helper to pre-fill form
   const handleEditClick = (record) => {
     setEditingId(record._id);
-   
+
     // Transform data for Form
     const formData = {
       ...record,
@@ -204,12 +205,12 @@ const PropertyManagement = () => {
     };
 
     form.setFieldsValue(formData);
-   
+
     // Set Images
-    if(record.photos) setPhotoList(record.photos.map((url, i) => ({ uid: i, url, status: 'done', name: `Img ${i+1}` })));
-    if(record.mainLogo) setLogoList([{ uid: '-1', url: record.mainLogo, status: 'done', name: 'Main Logo' }]);
-    if(record.brochure) setBrochureUrl(record.brochure);
-   
+    if (record.photos) setPhotoList(record.photos.map((url, i) => ({ uid: i, url, status: 'done', name: `Img ${i + 1}` })));
+    if (record.mainLogo) setLogoList([{ uid: '-1', url: record.mainLogo, status: 'done', name: 'Main Logo' }]);
+    if (record.brochure) setBrochureUrl(record.brochure);
+
     setModalVisible(true);
   };
 
@@ -227,7 +228,7 @@ const PropertyManagement = () => {
       dataIndex: 'price_min',
       key: 'price_min',
       width: 150,
-      render: (p, r) => <Text strong style={{color: THEME.primary}}>{r.currency} {p?.toLocaleString()}</Text>
+      render: (p, r) => <Text strong style={{ color: THEME.primary }}>{r.currency} {p?.toLocaleString()}</Text>
     },
     {
       title: 'Location',
@@ -242,7 +243,7 @@ const PropertyManagement = () => {
       width: 120,
       render: (_, record) => (
         record.notReadyYet ? <Tag color="processing">Construction</Tag> :
-        record.isAvailable ? <Tag color="success">Available</Tag> : <Tag color="error">Sold</Tag>
+          record.isAvailable ? <Tag color="success">Available</Tag> : <Tag color="error">Sold</Tag>
       )
     },
     {
@@ -255,7 +256,7 @@ const PropertyManagement = () => {
           {/* Changed EditOutlined to EyeOutlined (View) */}
           <Button
             type="text"
-            icon={<EyeOutlined style={{color: THEME.primary, fontSize: '18px'}} />}
+            icon={<EyeOutlined style={{ color: THEME.primary, fontSize: '18px' }} />}
             onClick={() => handleEditClick(record)}
             title="View Property"
           />
@@ -269,7 +270,7 @@ const PropertyManagement = () => {
 
   return (
     <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
-     
+
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <Title level={3} style={{ margin: 0 }}>Property Management</Title>
@@ -311,19 +312,19 @@ const PropertyManagement = () => {
       {/* TABLE */}
       <Card bordered={false} bodyStyle={{ padding: 0 }} className="shadow-sm">
         <Table
-            columns={columns}
-            dataSource={properties}
-            loading={loading}
-            rowKey="_id"
-            scroll={{ x: 1000 }}
-            pagination={{
-                current: currentPage,
-                total: total,
-                pageSize: pageSize,
-                onChange: (p, s) => { setCurrentPage(p); },
-                position: ['bottomCenter'],
-                size: "small"
-            }}
+          columns={columns}
+          dataSource={properties}
+          loading={loading}
+          rowKey="_id"
+          scroll={{ x: 1000 }}
+          pagination={{
+            current: currentPage,
+            total: total,
+            pageSize: pageSize,
+            onChange: (p, s) => { setCurrentPage(p); },
+            position: ['bottomCenter'],
+            size: "small"
+          }}
         />
       </Card>
 
@@ -349,7 +350,7 @@ const PropertyManagement = () => {
             amenities: [], location_highlights: [], unitType: []
           }}
         >
-         
+
           {/* --- SECTION 1: BASIC INFO --- */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>Basic Information</Divider>
           <Row gutter={16}>
@@ -357,7 +358,7 @@ const PropertyManagement = () => {
             <Col xs={24} md={8}>
               <Form.Item name="developer" label="Developer" rules={[{ required: true }]}>
                 <Select placeholder="Select Developer" showSearch optionFilterProp="children">
-                    {developers.map(d => <Option key={d._id} value={d._id}>{d.name}</Option>)}
+                  {developers.map(d => <Option key={d._id} value={d._id}>{d.name}</Option>)}
                 </Select>
               </Form.Item>
             </Col>
@@ -368,13 +369,13 @@ const PropertyManagement = () => {
           </Row>
 
           <Row gutter={16}>
-             {/* New: propertySubType matches JSON */}
+            {/* New: propertySubType matches JSON */}
             <Col xs={24} md={6}><Form.Item name="propertySubType" label="Sub Type"><Select><Option value="ready">Ready</Option><Option value="off_plan">Off Plan</Option><Option value="resale">Resale</Option></Select></Form.Item></Col>
             {/* New: unitType array */}
             <Col xs={24} md={12}>
-                <Form.Item name="unitType" label="Unit Types Available">
-                    <Select mode="tags" placeholder="Type and press enter (e.g. Studio, 1 bed)" />
-                </Form.Item>
+              <Form.Item name="unitType" label="Unit Types Available">
+                <Select mode="tags" placeholder="Type and press enter (e.g. Studio, 1 bed)" />
+              </Form.Item>
             </Col>
             <Col xs={24} md={6}><Form.Item name="handover" label="Handover Date"><DatePicker className="w-full" /></Form.Item></Col>
           </Row>
@@ -407,10 +408,10 @@ const PropertyManagement = () => {
             <Col xs={12} md={6}><Form.Item name="builtUpAreaUnit" label="Unit"><Select><Option value="sqft">Sq. Ft</Option><Option value="sqm">Sq. M</Option></Select></Form.Item></Col>
           </Row>
           <Row gutter={16}>
-             <Col xs={12} md={6}><Form.Item name="length" label="Length"><InputNumber className="w-full" /></Form.Item></Col>
-             <Col xs={12} md={6}><Form.Item name="lengthUnit" label="Unit"><Select><Option value="ft">ft</Option><Option value="m">m</Option></Select></Form.Item></Col>
-             <Col xs={12} md={6}><Form.Item name="breadth" label="Breadth"><InputNumber className="w-full" /></Form.Item></Col>
-             <Col xs={12} md={6}><Form.Item name="breadthUnit" label="Unit"><Select><Option value="ft">ft</Option><Option value="m">m</Option></Select></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="length" label="Length"><InputNumber className="w-full" /></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="lengthUnit" label="Unit"><Select><Option value="ft">ft</Option><Option value="m">m</Option></Select></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="breadth" label="Breadth"><InputNumber className="w-full" /></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="breadthUnit" label="Unit"><Select><Option value="ft">ft</Option><Option value="m">m</Option></Select></Form.Item></Col>
           </Row>
 
           {/* --- SECTION 4: LOCATION --- */}
@@ -435,30 +436,42 @@ const PropertyManagement = () => {
           {/* --- SECTION 5: MEDIA --- */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>Media & Assets</Divider>
           <Row gutter={16}>
-             {/* New: Main Logo Separate Upload */}
+            {/* New: Main Logo Separate Upload */}
             <Col xs={24} md={6}>
               <Form.Item label="Main Logo">
-<Upload
-  listType="picture-card"
-  fileList={logoList}
-  action={UPLOAD_API}
-  maxCount={1}
-  beforeUpload={validateImageSize}
-  onChange={({ fileList }) => setLogoList(fileList)}
->                  {logoList.length >= 1 ? null : <div><PlusOutlined /><div>Logo</div></div>}
+                <Upload
+                  listType="picture-card"
+                  fileList={logoList}
+                  action={UPLOAD_API}
+                  maxCount={1}
+                  beforeUpload={validateImageSize}
+                  onChange={({ fileList }) => setLogoList(fileList)}
+                >                  {logoList.length >= 1 ? null : <div style={{ textAlign: "center" }}>
+                  <PlusOutlined />
+                  <div>Add Photos</div>
+                  <p style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
+                    (Image size Must be : 1MB – 10MB)
+                  </p>
+                </div>}
                 </Upload>
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
               <Form.Item label="Property Photos">
-<Upload
-  listType="picture-card"
-  fileList={photoList}
-  action={UPLOAD_API}
-  multiple
-  beforeUpload={validateImageSize}
-  onChange={({ fileList }) => setPhotoList(fileList)}
->                   <div><PlusOutlined /><div>Add Photos</div></div>
+                <Upload
+                  listType="picture-card"
+                  fileList={photoList}
+                  action={UPLOAD_API}
+                  multiple
+                  beforeUpload={validateImageSize}
+                  onChange={({ fileList }) => setPhotoList(fileList)}
+                >                   <div style={{ textAlign: "center" }}>
+                    <PlusOutlined />
+                    <div>Add Photos</div>
+                    <p style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
+                      (Image size Must be : 1MB – 10MB)
+                    </p>
+                  </div>
                 </Upload>
               </Form.Item>
             </Col>
@@ -480,10 +493,10 @@ const PropertyManagement = () => {
           {/* --- SECTION 6: EXTRAS --- */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>Additional Details</Divider>
           <Form.Item name="amenities" label="Amenities">
-             <Select mode="tags" placeholder="Add amenities (e.g. Pool, Gym, Parking)" />
+            <Select mode="tags" placeholder="Add amenities (e.g. Pool, Gym, Parking)" />
           </Form.Item>
           <Form.Item name="about_developer" label="About Developer (Specific to project)"><TextArea rows={2} /></Form.Item>
-         
+
           <Row gutter={16}>
             <Col xs={8}><Form.Item name="isAvailable" label="Available" valuePropName="checked"><Switch /></Form.Item></Col>
             <Col xs={8}><Form.Item name="notReadyYet" label="Construction (Not Ready)" valuePropName="checked"><Switch /></Form.Item></Col>
@@ -493,7 +506,7 @@ const PropertyManagement = () => {
           <div className="flex justify-end gap-3 mt-6 pb-4">
             <Button onClick={closeModal} size="large">Cancel</Button>
             <Button type="primary" htmlType="submit" loading={loading} size="large" style={{ backgroundColor: THEME.primary }}>
-               {editingId ? "Update Property" : "Save Property"}
+              {editingId ? "Update Property" : "Save Property"}
             </Button>
           </div>
         </Form>

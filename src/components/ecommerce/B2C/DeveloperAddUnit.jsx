@@ -1,96 +1,150 @@
-import { Card, Typography, Row, Col, Input, Button, Select } from "antd";
+import { Form, Input, Button, Card, Select, message, Space } from "antd";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const { Title, Text } = Typography;
+const API = "http://localhost:5000/api/property";
 
-export default function DeveloperAddUnit(){
+export default function DeveloperAddUnit() {
 
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  return(
-    <div className="p-6">
+  const onFinish = async (values) => {
 
-      <Title level={3}>Add Unit</Title>
-      <Text type="secondary">Create a new unit for a project</Text>
+    const developerId = localStorage.getItem("developerId");
+    const projectId = localStorage.getItem("selectedProject");
 
-      <Card className="shadow-sm rounded-xl mt-6">
+    if (!developerId || !projectId) {
+      message.error("Please select project first from inventory page");
+      return;
+    }
 
-        <Row gutter={[16,16]}>
+    setLoading(true);
 
-          <Col xs={24} md={12}>
-            <Text>Project</Text>
-            <Select
-              placeholder="Select project"
-              style={{width:"100%"}}
-              options={[
-                {label:"Sky Tower",value:"sky"},
-                {label:"Downtown View",value:"down"},
-                {label:"Marina Heights",value:"marina"},
-              ]}
-            />
-          </Col>
+    try {
 
-          <Col xs={24} md={12}>
-            <Text>Unit Number</Text>
-            <Input placeholder="Eg: A-101"/>
-          </Col>
+      const res = await fetch(`${API}/create-inventory`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          developerId,
+          projectId,
+          unitId: values.unitId,
+          area: values.area,
+          price: values.price,
+          view: values.view,
+          status: values.status
+        })
+      });
 
-          <Col xs={24} md={12}>
-            <Text>Unit Type</Text>
-            <Select
-              placeholder="Select type"
-              style={{width:"100%"}}
-              options={[
-                {label:"Studio",value:"studio"},
-                {label:"1BHK",value:"1"},
-                {label:"2BHK",value:"2"},
-                {label:"3BHK",value:"3"},
-              ]}
-            />
-          </Col>
+      const data = await res.json();
 
-          <Col xs={24} md={12}>
-            <Text>Price</Text>
-            <Input placeholder="Enter price"/>
-          </Col>
+      if (data.success) {
 
-          <Col xs={24} md={12}>
-            <Text>Status</Text>
-            <Select
-              placeholder="Select status"
-              style={{width:"100%"}}
-              options={[
-                {label:"Available",value:"available"},
-                {label:"Booked",value:"booked"},
-                {label:"Sold",value:"sold"},
-              ]}
-            />
-          </Col>
+        message.success("Unit Added Successfully");
 
-          <Col span={24} className="mt-4">
+        // redirect back to inventory
+        setTimeout(() => {
+          navigate("/dashboard/developer/inventory");
+        }, 700);
 
-            <Button
-              style={{
-                background:"#5c039b",
-                borderColor:"#5c039b",
-                color:"#fff",
-                marginRight:10
-              }}
-              onClick={()=>navigate("/dashboard/developer/inventory")}
-            >
-              Save Unit
-            </Button>
+      } else {
+        message.error(data.message);
+      }
 
-            <Button onClick={()=>navigate(-1)}>
-              Cancel
-            </Button>
+    } catch (error) {
 
-          </Col>
+      message.error("Failed to add unit");
 
-        </Row>
+    }
 
-      </Card>
+    setLoading(false);
 
-    </div>
+  };
+
+  return (
+
+    <Card
+      title="Add New Unit"
+      extra={
+        <Button onClick={() => navigate("/dashboard/developer/inventory")}>
+          Back
+        </Button>
+      }
+    >
+
+      <Form layout="vertical" onFinish={onFinish}>
+
+        <Form.Item
+          label="Unit ID"
+          name="unitId"
+          rules={[{ required: true, message: "Unit ID is required" }]}
+        >
+          <Input placeholder="A101" />
+        </Form.Item>
+
+        <Form.Item
+          label="Area (sqft)"
+          name="area"
+          rules={[{ required: true, message: "Area is required" }]}
+        >
+          <Input type="number" placeholder="1200" />
+        </Form.Item>
+
+        <Form.Item
+          label="Price"
+          name="price"
+          rules={[{ required: true, message: "Price is required" }]}
+        >
+          <Input type="number" placeholder="8000000" />
+        </Form.Item>
+
+        <Form.Item
+          label="View"
+          name="view"
+        >
+          <Input placeholder="Sea View / Garden View / Road View" />
+        </Form.Item>
+
+        <Form.Item
+          label="Status"
+          name="status"
+          initialValue="Available"
+        >
+          <Select
+            options={[
+              { label: "Available", value: "Available" },
+              { label: "Booked", value: "Booked" },
+              { label: "Blocked", value: "Blocked" },
+              { label: "Sold", value: "Sold" }
+            ]}
+          />
+        </Form.Item>
+
+        <Space>
+
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={loading}
+          >
+            Add Unit
+          </Button>
+
+          <Button
+            onClick={() => navigate("/dashboard/developer/inventory")}
+          >
+            Cancel
+          </Button>
+
+        </Space>
+
+      </Form>
+
+    </Card>
+
   );
+
 }
