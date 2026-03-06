@@ -56,6 +56,11 @@ const CUSTOM_ROLE_LINKS = {
       path: "/dashboard/{roleSlug}/users",
       submenus: [
         { 
+          title: "Agencies", 
+          path: "/dashboard/{roleSlug}/agency-list",
+          icon: "fas fa-network-wired" // Network icon represents agency umbrella
+        },
+        { 
           title: "Developers", 
           path: "/dashboard/{roleSlug}/developer-list",
           icon: "fas fa-user-tie" 
@@ -65,11 +70,11 @@ const CUSTOM_ROLE_LINKS = {
           path: "/dashboard/{roleSlug}/agent-list",
           icon: "fas fa-user-friends" 
         },
-        { 
-          title: "Verification Queue", 
-          path: "/dashboard/{roleSlug}/verification-queue", 
-          icon: "fas fa-user-check" 
-        }
+        // { 
+        //   title: "Verification Queue", 
+        //   path: "/dashboard/{roleSlug}/verification-queue", 
+        //   icon: "fas fa-user-check" 
+        // }
       ]
     },
 
@@ -240,6 +245,11 @@ const CUSTOM_ROLE_LINKS = {
     icon: "fas fa-building",
     path: "/dashboard/{roleSlug}/developer-projects"
   },
+  {
+  title: "Global Projects",
+  icon: "fas fa-building",
+  path: "/dashboard/{roleSlug}/property-list"
+},
   {
   title:"Inventory / Units",
   icon:"fas fa-layer-group",

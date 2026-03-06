@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+// import axios from 'axios';
+import { apiService } from '../../../manageApi/utils/custom.apiservice';
 import {
   Card, Table, Typography, Avatar, Row, Col, Statistic, Space,
   message, Tooltip, Modal, Button, Popconfirm, Tag, Spin, Image, Divider
@@ -21,7 +22,7 @@ const { Title, Text, Paragraph } = Typography;
 const THEME = { primary: "#7c3aed", success: "#10b981" };
 
 const AdminPropertyList = () => {
-  const BASE_URL = "https://xoto.ae/api/property";
+
 
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -36,15 +37,11 @@ const AdminPropertyList = () => {
   const fetchAllProperties = useCallback(async (page, limit, search) => {
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/get-all-properties`, {
-        params: { 
-          page, 
-          limit, 
-          search: search || undefined 
-        }
-      });
-      
-      const resData = response.data;
+     const resData = await apiService.get("/property/get-all-properties", {
+  page,
+  limit,
+  search: search || undefined
+});
       const list = resData?.data || resData || [];
       setProperties(Array.isArray(list) ? list : []);
       setTotal(resData?.pagination?.total || resData?.total || list.length);
@@ -64,7 +61,7 @@ const AdminPropertyList = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.post(`${BASE_URL}/delete-property?id=${id}`);
+      await apiService.post(`/property/delete-property?id=${id}`);
       message.success("Property deleted");
       fetchAllProperties(currentPage, pageSize, searchText);
     } catch (err) {
@@ -134,9 +131,9 @@ const AdminPropertyList = () => {
       render: (_, record) => (
         <Space>
           <Button type="primary" ghost icon={<EyeOutlined />} onClick={() => openModal(record)} size="small">View</Button>
-          <Popconfirm title="Delete?" onConfirm={() => handleDelete(record._id)}>
+          {/* <Popconfirm title="Delete?" onConfirm={() => handleDelete(record._id)}>
             <Button type="primary" danger icon={<DeleteOutlined />} size="small" />
-          </Popconfirm>
+          </Popconfirm> */}
         </Space>
       )
     }

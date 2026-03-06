@@ -139,6 +139,9 @@ import LeadManagement from "./pages/LeadManagement";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import VerificationQueue from "./pages/VerificationQueue";
 import AgencyDashboard from "../ecommerce/B2C/AgencyDashboard";
+import XobiaTrainingAdmin from "./pages/XobiaTrainingAdmin";
+import GlobalSettings from "./pages/GlobalSettings";
+import XotoBlitzCampaigns from "./pages/XotoBlitzCampaigns";
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -359,6 +362,9 @@ const CmsRoutes = () => {
       <Route path="/lead-management" element={<LeadManagement />} />
       <Route path="/subscription-plans" element={<SubscriptionPlans />} />
       <Route path="/verification-queue" element={<VerificationQueue />} />
+      <Route path="/ai-training" element={<XobiaTrainingAdmin />} />
+      <Route path="/global-settings" element={<GlobalSettings />} />
+      <Route path="/marketing-hub" element={<XotoBlitzCampaigns />} />
       
 {/* Agency */}
 <Route path="manage-agents" element={<AgencyManageAgents />} />
