@@ -18,6 +18,7 @@ import {
   Upload,
   Switch
 } from "antd";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import {
   PlusOutlined,
   SearchOutlined,
@@ -72,13 +73,13 @@ export default function DeveloperProjects() {
       //   `https://xoto.ae/api/property/get-all-properties?developerId=${developerId}`,
       //   { headers: { Authorization: `Bearer ${token}` } }
       // );
-      const res = await fetch(
-  `http://localhost:5000/api/property/get-all-properties?developerId=${developerId}`,
+      const json = await apiService.get(
+  "/property/get-all-properties",
   {
-    headers: { Authorization: `Bearer ${token}` }
+    developer: developerId
   }
 );
-      const json = await res.json();
+      
       const list = json?.data?.data || json?.data || [];
 
       const mapped = list.map(p => ({
@@ -145,7 +146,7 @@ export default function DeveloperProjects() {
 
       const payload = {
         ...values,
-        developerId: developerId,
+        developer: developerId,
         photos: photos,
         mainLogo: mainLogo,
         brochure: brochureUrl
@@ -159,23 +160,18 @@ export default function DeveloperProjects() {
       //   },
       //   body: JSON.stringify(payload)
       // });
-const response = await fetch("http://localhost:5000/api/property/create-properties", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`
-  },
-  body: JSON.stringify(payload)
-});
-      const data = await response.json();
+const data = await apiService.post(
+  "/property/create-properties",
+  payload
+);
 
-      if (response.ok || data.success) {
-        message.success("Property saved successfully!");
-        closeModal();
-        fetchProjects(); // Table update karne ke liye wapas fetch
-      } else {
-        message.error(data.message || "Failed to save property");
-      }
+     if (data) {
+  message.success("Property saved successfully!");
+  closeModal();
+  fetchProjects();
+} else {
+  message.error("Failed to save property");
+}
     } catch (error) {
       console.error(error);
       message.error("Something went wrong");
@@ -287,6 +283,9 @@ const response = await fetch("http://localhost:5000/api/property/create-properti
             transactionType: 'sell', propertySubType: 'off_plan', propertyType: 'Apartment',
             isAvailable: true, country: 'United Arab Emirates', state: 'Dubai', city: 'Dubai', postalCode: '00000',
             notReadyYet: true, isFeatured: false,
+            commissionType: "percentage",
+commissionValue: 3,
+commissionStage: "booking",
             amenities: [], location_highlights: [], unitType: []
           }}
         >
@@ -330,6 +329,48 @@ const response = await fetch("http://localhost:5000/api/property/create-properti
             <Col xs={12} md={12}><Form.Item name="paymentPlan_initialPercentage" label="Payment Plan (Initial %)"><InputNumber className="w-full" style={{ width: '100%' }} suffix="%" /></Form.Item></Col>
             <Col xs={12} md={12}><Form.Item name="paymentPlan_laterPercentage" label="Payment Plan (Later %)"><InputNumber className="w-full" style={{ width: '100%' }} suffix="%" /></Form.Item></Col>
           </Row>
+
+          {/* --- SECTION: COMMISSION SCHEME --- */}
+<Divider orientation="left" style={{ borderColor: THEME.primary }}>
+  Commission Scheme
+</Divider>
+
+<Row gutter={16}>
+  <Col xs={12} md={6}>
+    <Form.Item name="commissionType" label="Commission Type">
+      <Select placeholder="Select type">
+        <Option value="percentage">Percentage (%)</Option>
+        <Option value="fixed">Fixed Amount</Option>
+      </Select>
+    </Form.Item>
+  </Col>
+
+  <Col xs={12} md={6}>
+    <Form.Item name="commissionValue" label="Commission Value">
+      <InputNumber
+        className="w-full"
+        style={{ width: "100%" }}
+        placeholder="Enter commission"
+      />
+    </Form.Item>
+  </Col>
+
+  <Col xs={12} md={6}>
+    <Form.Item name="commissionStage" label="Commission Stage">
+      <Select placeholder="When paid">
+        <Option value="booking">On Booking</Option>
+        <Option value="contract">On Contract</Option>
+        <Option value="handover">On Handover</Option>
+      </Select>
+    </Form.Item>
+  </Col>
+
+  <Col xs={12} md={6}>
+    <Form.Item name="commissionNotes" label="Commission Notes">
+      <Input placeholder="Optional note" />
+    </Form.Item>
+  </Col>
+</Row>
 
           {/* --- SECTION 3: CONFIGURATION --- */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>Area & Configuration</Divider>
