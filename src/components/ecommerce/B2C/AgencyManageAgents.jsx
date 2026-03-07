@@ -13,45 +13,40 @@ import {
   Col,
   Avatar,
   Switch,
+  Upload,
+  Select,
 } from "antd";
+
 import {
   PlusOutlined,
   DeleteOutlined,
   UserOutlined,
   SearchOutlined,
-  TeamOutlined,
-  TrophyOutlined,
-  FireOutlined
+  UploadOutlined,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
 const AgencyManageAgents = () => {
-  const [agents, setAgents] = useState([
-    { key: 1, name: "Rahul Sharma", email: "rahul@test.com", status: true, leads: 12, deals: 3 },
-    { key: 2, name: "Priya Mehta", email: "priya@test.com", status: true, leads: 8, deals: 2 },
-  ]);
-
+  const [agents, setAgents] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
 
   const handleAddAgent = (values) => {
     const newAgent = {
-      key: agents.length + 1,
-      name: values.name,
+      key: Date.now(),
+      name: `${values.firstName} ${values.lastName}`,
       email: values.email,
+      role: values.role,
       status: true,
       leads: 0,
       deals: 0,
     };
+
     setAgents([...agents, newAgent]);
     setIsModalOpen(false);
     form.resetFields();
-  };
-
-  const handleDelete = (key) => {
-    setAgents(agents.filter((agent) => agent.key !== key));
   };
 
   const toggleStatus = (key) => {
@@ -62,227 +57,261 @@ const AgencyManageAgents = () => {
     );
   };
 
-  const filteredAgents = agents.filter((agent) =>
-    agent.name.toLowerCase().includes(searchText.toLowerCase())
-  );
-
   const columns = [
     {
       title: "Agent Details",
-      key: "agent",
       render: (_, record) => (
-        <Space size="middle">
-          <Avatar
-            size={48}
-            style={{ backgroundColor: "#e0e7ff", color: "#4f46e5", fontWeight: "bold" }}
-            icon={!record.name && <UserOutlined />}
-          >
-            {record.name?.charAt(0).toUpperCase()}
-          </Avatar>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <Text strong style={{ fontSize: "15px", color: "#1f2937" }}>{record.name}</Text>
-            <Text type="secondary" style={{ fontSize: "13px" }}>{record.email}</Text>
+        <Space>
+          <Avatar icon={<UserOutlined />} />
+          <div>
+            <Text strong>{record.name}</Text>
+            <br />
+            <Text type="secondary">{record.email}</Text>
           </div>
         </Space>
       ),
     },
     {
-      title: "Assigned Leads",
-      dataIndex: "leads",
-      align: "center",
-      render: (val) => (
-        <Tag color="blue" style={{ padding: "4px 12px", borderRadius: "12px", fontSize: "13px" }}>
-          {val} Leads
-        </Tag>
-      ),
+      title: "Role",
+      dataIndex: "role",
+      render: (role) => <Tag color="purple">{role}</Tag>,
     },
     {
-      title: "Closed Deals",
-      dataIndex: "deals",
-      align: "center",
-      render: (val) => (
-        <Tag color="green" style={{ padding: "4px 12px", borderRadius: "12px", fontSize: "13px" }}>
-          {val} Deals
-        </Tag>
-      ),
-    },
-    {
-      title: "Account Status",
-      align: "center",
+      title: "Status",
       render: (_, record) => (
-        <Space direction="vertical" size={2}>
-          <Switch
-            checked={record.status}
-            onChange={() => toggleStatus(record.key)}
-            style={{ background: record.status ? "#059669" : "#d1d5db" }}
-          />
-          <Text type="secondary" style={{ fontSize: "11px" }}>
-            {record.status ? "Active" : "Inactive"}
-          </Text>
-        </Space>
+        <Switch
+          checked={record.status}
+          onChange={() => toggleStatus(record.key)}
+        />
       ),
     },
     {
       title: "Action",
-      align: "right",
       render: (_, record) => (
-        <Button
-          type="text"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => handleDelete(record.key)}
-          style={{ fontWeight: "500", borderRadius: "6px" }}
-        >
-          Remove
-        </Button>
+        <Button danger icon={<DeleteOutlined />} />
       ),
     },
   ];
 
-  // Calculated Stats
-  const totalLeads = agents.reduce((sum, a) => sum + a.leads, 0);
-  const totalDeals = agents.reduce((sum, a) => sum + a.deals, 0);
-
-  const stats = [
-    { title: "Total Agents", value: agents.length, icon: <TeamOutlined />, color: "#5c039b", bg: "#f3e8ff" },
-    { title: "Total Leads", value: totalLeads, icon: <FireOutlined />, color: "#2563eb", bg: "#dbeafe" },
-    { title: "Total Deals", value: totalDeals, icon: <TrophyOutlined />, color: "#059669", bg: "#d1fae5" },
-  ];
-
   return (
-    <div style={{ padding: "24px", background: "#f8f9fa", minHeight: "100vh" }}>
-      
-      {/* HEADER SECTION */}
-      <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+    <div style={{ padding: 24, background: "#f8f9fa", minHeight: "100vh" }}>
+      {/* HEADER */}
+      <div
+        style={{
+          marginBottom: 30,
+          display: "flex",
+          justifyContent: "space-between",
+        }}
+      >
         <div>
-          <Title level={2} style={{ margin: 0, color: "#1f2937" }}>
-            Manage Agents
-          </Title>
-          <Text type="secondary" style={{ fontSize: "15px" }}>
+          <Title level={2}>Manage Agents</Title>
+          <Text type="secondary">
             Add, remove, and track performance of your agency staff.
           </Text>
         </div>
+
         <Button
-          size="large"
           type="primary"
           icon={<PlusOutlined />}
-          style={{ background: "#5c039b", borderColor: "#5c039b", boxShadow: "0 4px 10px rgba(92, 3, 155, 0.2)", borderRadius: "8px" }}
+          style={{ background: "#5c039b" }}
           onClick={() => setIsModalOpen(true)}
         >
           Add New Agent
         </Button>
       </div>
 
-      {/* TOP STATS */}
-      <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
-        {stats.map((stat, index) => (
-          <Col xs={24} md={8} key={index}>
-            <Card 
-              bordered={false} 
-              style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-              bodyStyle={{ padding: "24px" }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <div style={{ 
-                  width: "56px", height: "56px", borderRadius: "12px", 
-                  background: stat.bg, color: stat.color,
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px"
-                }}>
-                  {stat.icon}
-                </div>
-                <div>
-                  <Text type="secondary" style={{ fontSize: "13px", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                    {stat.title}
-                  </Text>
-                  <Title level={2} style={{ margin: "4px 0 0 0", color: "#1f2937" }}>
-                    {stat.value}
-                  </Title>
-                </div>
-              </div>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
-      {/* MAIN TABLE CARD */}
-      <Card 
-        bordered={false} 
-        style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-        bodyStyle={{ padding: 0 }}
-      >
-        <div style={{ padding: "24px", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
-          <Title level={5} style={{ margin: 0, color: "#374151" }}>Agent Directory</Title>
-          <Input
-            size="large"
-            prefix={<SearchOutlined style={{ color: "#9ca3af" }} />}
-            placeholder="Search by agent name..."
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: "100%", maxWidth: "300px", borderRadius: "8px" }}
-            allowClear
-          />
-        </div>
-
-        <Table
-          columns={columns}
-          dataSource={filteredAgents}
-          pagination={{ pageSize: 5, position: ["bottomCenter"] }}
-          style={{ padding: "0 24px 24px 24px" }}
-        />
+      {/* TABLE */}
+      <Card>
+        <Table columns={columns} dataSource={agents} />
       </Card>
 
-      {/* ADD AGENT MODAL */}
+      {/* MODAL */}
       <Modal
-        title={
-          <div style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937", marginBottom: "8px" }}>
-            Add New Agent
-          </div>
-        }
+        title="Add New Agent"
         open={isModalOpen}
-        onCancel={() => {
-          setIsModalOpen(false);
-          form.resetFields();
-        }}
         footer={null}
-        centered
-        destroyOnClose
-        styles={{ padding: "24px" }}
+        onCancel={() => setIsModalOpen(false)}
       >
-        <Form 
-          form={form} 
-          layout="vertical" 
-          onFinish={handleAddAgent}
-          size="large"
-        >
+        <Form layout="vertical" form={form} onFinish={handleAddAgent}>
+          
+          {/* ROLE DROPDOWN */}
+
           <Form.Item
-            name="name"
-            label={<span style={{ fontWeight: "500" }}>Agent Full Name</span>}
-            rules={[{ required: true, message: "Please enter agent name" }]}
+            name="role"
+            label="Add As"
+            rules={[{ required: true, message: "Select role" }]}
           >
-            <Input placeholder="e.g. Rahul Sharma" prefix={<UserOutlined style={{ color: "#aaa" }} />} />
+            <Select placeholder="Select role">
+              <Select.Option value="Manager">Manager</Select.Option>
+              <Select.Option value="Agent">Agent</Select.Option>
+            </Select>
           </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="firstName"
+                label="First Name"
+                rules={[
+                  { required: true, message: "Enter first name" },
+                  { min: 2, message: "Minimum 2 characters" },
+                ]}
+              >
+                <Input placeholder="First Name" />
+              </Form.Item>
+            </Col>
+
+            <Col span={12}>
+              <Form.Item
+                name="lastName"
+                label="Last Name"
+                rules={[{ required: true, message: "Enter last name" }]}
+              >
+                <Input placeholder="Last Name" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item
             name="email"
-            label={<span style={{ fontWeight: "500" }}>Email Address</span>}
+            label="Email"
             rules={[
-              { required: true, message: "Please enter email" },
-              { type: "email", message: "Enter a valid email address" },
+              { required: true, message: "Enter email" },
+              { type: "email", message: "Enter valid email" },
             ]}
           >
-            <Input placeholder="e.g. rahul@agency.com" />
+            <Input placeholder="Email Address" />
           </Form.Item>
 
-          <Button 
-            type="primary" 
-            htmlType="submit" 
-            block 
-            style={{ height: "48px", background: "#5c039b", borderColor: "#5c039b", fontSize: "16px", marginTop: "12px" }}
+          <Form.Item
+            name="password"
+            label="Password"
+            rules={[
+              { required: true, message: "Enter password" },
+              { min: 6, message: "Minimum 6 characters" },
+            ]}
           >
-            Create Agent Account
+            <Input.Password placeholder="Password" />
+          </Form.Item>
+
+          {/* PHONE NUMBER */}
+
+          <Form.Item label="Phone Number" required>
+            <Input.Group compact>
+              <Form.Item
+                name="countryCode"
+                noStyle
+                rules={[{ required: true }]}
+              >
+                <Select style={{ width: "30%" }} defaultValue="+971">
+                  <Select.Option value="+971">+971 UAE</Select.Option>
+                  <Select.Option value="+91">+91 India</Select.Option>
+                  <Select.Option value="+1">+1 USA</Select.Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                name="phone"
+                noStyle
+                rules={[
+                  { required: true, message: "Enter phone number" },
+                  {
+                    pattern: /^[0-9]{7,12}$/,
+                    message: "Enter valid phone number",
+                  },
+                ]}
+              >
+                <Input style={{ width: "70%" }} placeholder="Phone Number" />
+              </Form.Item>
+            </Input.Group>
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="city"
+                label="Operating City"
+                rules={[{ required: true, message: "Enter city" }]}
+              >
+                <Input placeholder="Dubai, Abu Dhabi" />
+              </Form.Item>
+            </Col>
+
+            <Col span={12}>
+              <Form.Item
+                name="specialization"
+                label="Specialization"
+                rules={[{ required: true, message: "Select specialization" }]}
+              >
+                <Select placeholder="Select specialization">
+                  <Select.Option value="Residential">
+                    Residential
+                  </Select.Option>
+                  <Select.Option value="Commercial">
+                    Commercial
+                  </Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* FILE UPLOADS */}
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item
+                name="profilePhoto"
+                label="Profile Photo"
+                rules={[{ required: true, message: "Upload photo" }]}
+              >
+                <Upload beforeUpload={() => false}>
+                  <Button icon={<UploadOutlined />}>Upload Photo</Button>
+                </Upload>
+              </Form.Item>
+            </Col>
+
+            <Col span={8}>
+              <Form.Item
+                name="idProof"
+                label="ID Proof"
+                rules={[{ required: true, message: "Upload ID proof" }]}
+              >
+                <Upload beforeUpload={() => false}>
+                  <Button icon={<UploadOutlined />}>
+                    Upload Emirates ID
+                  </Button>
+                </Upload>
+              </Form.Item>
+            </Col>
+
+            <Col span={8}>
+              <Form.Item
+                name="rera"
+                label="RERA Certificate"
+                rules={[{ required: true, message: "Upload RERA certificate" }]}
+              >
+                <Upload beforeUpload={() => false}>
+                  <Button icon={<UploadOutlined />}>Upload RERA</Button>
+                </Upload>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Button
+            type="primary"
+            htmlType="submit"
+            block
+            style={{
+              background: "#5c039b",
+              borderColor: "#5c039b",
+              marginTop: 10,
+              height: 45,
+            }}
+          >
+            Complete Registration
           </Button>
         </Form>
       </Modal>
-
     </div>
   );
 };

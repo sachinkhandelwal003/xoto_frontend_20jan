@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; 
+// 1. AXIOS HATA KAR APISERVICE IMPORT KIYA
+import { apiService } from "../../../../manageApi/utils/custom.apiservice"; 
+
 import {
   Button, Modal, Form, Input, Popconfirm, Card, Table,
   Typography, Avatar, Row, Col, Statistic, Space, Divider, 
@@ -23,11 +25,7 @@ const THEME = {
   error: "#ef4444",
 };
 
-// --- API CONFIGURATION ---
-const API_BASE = "https://xoto.ae/api"; 
-const URL_BLOGS = `${API_BASE}/blogs`; 
-const URL_UPLOAD = `${API_BASE}/upload`; 
-
+// --- CONSTANTS ---
 const TAG_OPTIONS = ["AI", "Real Estate", "PropTech"];
 
 const validateImage = (file, minMB = 1, maxMB = 10) => {
@@ -53,7 +51,7 @@ const validateImage = (file, minMB = 1, maxMB = 10) => {
     return Upload.LIST_IGNORE;
   }
 
-  return false; // stop auto upload
+  return false; 
 };
 
 const getBase64 = (file) =>
@@ -80,33 +78,33 @@ const BlogManagement = () => {
   const [editingId, setEditingId] = useState(null); 
   const [form] = Form.useForm();
 
-  // --- UPLOAD STATES (Modified for multiple images) ---
-  const [fileList, setFileList] = useState([]); // Featured Image
-  const [coverFileList, setCoverFileList] = useState([]); // NEW: Cover Image
-  const [authorFileList, setAuthorFileList] = useState([]); // NEW: Author Image
+  // --- UPLOAD STATES ---
+  const [fileList, setFileList] = useState([]); 
+  const [coverFileList, setCoverFileList] = useState([]); 
+  const [authorFileList, setAuthorFileList] = useState([]); 
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
   const [previewTitle, setPreviewTitle] = useState('');
 
-  // --- 1. FETCH BLOGS ---
+  // --- 1. FETCH BLOGS (UPDATED TO APISERVICE) ---
   const fetchBlogs = async (page = 1, limit = 10, search = '') => {
     setLoading(true);
     try {
-      const response = await axios.get(`${URL_BLOGS}/get-all-blogs`, {
-        params: { page, limit, search: search || undefined }
-      });
-      const resData = response.data;
+      let url = `/blogs/get-all-blogs?page=${page}&limit=${limit}`;
+      if (search) url += `&search=${search}`;
+
+      const response = await apiService.get(url);
       
       let finalData = [];
-      if (resData.success && Array.isArray(resData.data)) {
-        finalData = resData.data;
-      } else if (Array.isArray(resData)) {
-        finalData = resData;
+      if (response.success && Array.isArray(response.data)) {
+        finalData = response.data;
+      } else if (Array.isArray(response)) {
+        finalData = response;
       }
 
       setBlogs(finalData);
-      setTotal(resData.total || finalData.length);
+      setTotal(response.total || finalData.length);
 
     } catch (err) {
       console.error(err);
@@ -123,20 +121,19 @@ const BlogManagement = () => {
     return () => clearTimeout(delayDebounce);
   }, [currentPage, pageSize, searchText]);
 
-  // --- 2. FETCH SINGLE BLOG (EDIT) ---
+  // --- 2. FETCH SINGLE BLOG FOR EDIT (UPDATED TO APISERVICE) ---
   const fetchBlogById = async (id) => {
     setLoading(true);
     try {
-      const response = await axios.get(`${URL_BLOGS}/get-blog-by-id`, { params: { id } });
-      const resData = response.data;
+      const response = await apiService.get(`/blogs/get-blog-by-id?id=${id}`);
       
-      if (resData.success && resData.data) {
-        const blog = resData.data;
+      if (response.success && response.data) {
+        const blog = response.data;
         
         // Populate Form
         form.setFieldsValue({
           title: blog.title,
-          subHeading: blog.subHeading, // NEW
+          subHeading: blog.subHeading, 
           slug: blog.slug,
           tags: blog.tags || [], 
           status: blog.isPublished ? 'Published' : 'Draft',
@@ -144,7 +141,6 @@ const BlogManagement = () => {
           authorName: blog.authorName,
         });
 
-        // Helper to set file list state
         const setInitialFile = (url, setter) => {
             if (url) {
                 setter([{
@@ -159,13 +155,13 @@ const BlogManagement = () => {
         };
 
         setInitialFile(blog.featuredImage, setFileList);
-        setInitialFile(blog.coverImage, setCoverFileList); // NEW
-        setInitialFile(blog.authorImage, setAuthorFileList); // NEW
+        setInitialFile(blog.coverImage, setCoverFileList); 
+        setInitialFile(blog.authorImage, setAuthorFileList); 
 
         setEditingId(id);
         setModalVisible(true);
       } else {
-        message.error(resData.message || "Failed to fetch details.");
+        message.error(response.message || "Failed to fetch details.");
       }
     } catch (err) {
       message.error("Failed to fetch blog details.");
@@ -174,20 +170,22 @@ const BlogManagement = () => {
     }
   };
 
-  // --- HELPER: Upload Single File ---
+  // --- HELPER: Upload Single File (UPDATED TO APISERVICE) ---
   const uploadFile = async (file) => {
       const formData = new FormData();
       formData.append('file', file);
 
       try {
-          const response = await axios.post(URL_UPLOAD, formData, {
+          // Note: Tumhare apiService me agar form-data ke headers automatically
+          // set nahi hote, toh wahan config pass karni pad sakti hai.
+          const response = await apiService.post('/upload', formData, {
               headers: { 'Content-Type': 'multipart/form-data' }
           });
-          const data = response.data;
-          if (data.success) {
-              return data.url || data.file?.url; 
+          
+          if (response.success) {
+              return response.url || response.file?.url; 
           } else {
-              throw new Error(data.message || "Upload failed");
+              throw new Error(response.message || "Upload failed");
           }
       } catch (error) {
           console.error("Upload Error:", error);
@@ -195,67 +193,53 @@ const BlogManagement = () => {
       }
   };
 
-  // --- HELPER: Process Image State to URL ---
-  // Checks if it's a new file (needs upload) or existing URL
   const processImageState = async (currentFileList) => {
       if (!currentFileList || currentFileList.length === 0) return "";
-      
-      // Case A: Existing URL
       if (currentFileList[0].url) {
           return currentFileList[0].url;
       }
-      
-      // Case B: New File Upload
       if (currentFileList[0].originFileObj) {
           return await uploadFile(currentFileList[0].originFileObj);
       }
-
       return "";
   };
 
 
-  // --- 3. SAVE HANDLER ---
+  // --- 3. SAVE HANDLER (UPDATED TO APISERVICE) ---
   const handleSave = async (values) => {
     setSaving(true);
     try {
-      // Step 1: Process all 3 images in parallel
       const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([
           processImageState(fileList),
           processImageState(coverFileList),
           processImageState(authorFileList)
       ]);
 
-      // Step 2: Prepare JSON Payload
       const payload = {
         title: values.title,
-        subHeading: values.subHeading, // NEW
+        subHeading: values.subHeading, 
         slug: values.slug || values.title.toLowerCase().replace(/ /g, '-'),
         content: values.content,
-        
         authorName: values.authorName,
-        authorImage: authorImgUrl, // NEW
-        
+        authorImage: authorImgUrl, 
         isPublished: values.status === 'Published',
         tags: values.tags || [],
-        
         featuredImage: featuredUrl,
-        coverImage: coverUrl, // NEW
+        coverImage: coverUrl, 
       };
 
       if (values.status === 'Published') {
          payload.publishedAt = new Date().toISOString();
       }
 
-      // Step 3: Send Data
       let response;
       if (editingId) {
-        response = await axios.post(`${URL_BLOGS}/edit-blog-by-id?id=${editingId}`, payload);
+        response = await apiService.post(`/blogs/edit-blog-by-id?id=${editingId}`, payload);
       } else {
-        response = await axios.post(`${URL_BLOGS}/create-blog`, payload);
+        response = await apiService.post(`/blogs/create-blog`, payload);
       }
       
-      const resData = response.data;
-      if (resData.success) {
+      if (response.success) {
         notification.success({
           message: editingId ? 'Blog Updated' : 'Blog Created',
           description: `Post "${values.title}" saved successfully.`,
@@ -264,7 +248,7 @@ const BlogManagement = () => {
         closeModal();
         fetchBlogs(currentPage, pageSize);
       } else {
-        message.error(resData.message || "Operation failed.");
+        message.error(response.message || "Operation failed.");
       }
     } catch (err) {
       console.error(err);
@@ -274,12 +258,12 @@ const BlogManagement = () => {
     }
   };
 
-  // --- 4. DELETE ---
+  // --- 4. DELETE (UPDATED TO APISERVICE) ---
   const deleteBlog = async (id) => {
     try {
       setLoading(true);
-      const response = await axios.post(`${URL_BLOGS}/delete-blog-by-id?id=${id}`); 
-      if (response.data?.success) {
+      const response = await apiService.post(`/blogs/delete-blog-by-id?id=${id}`); 
+      if (response.success) {
           message.success("Deleted successfully.");
           fetchBlogs(currentPage, pageSize, searchText);
       } else {
@@ -411,7 +395,6 @@ const BlogManagement = () => {
     },
   ];
 
-  // Upload Button Component to avoid repetition
   const UploadButton = () => (
     <div>
       <PlusOutlined />
@@ -526,7 +509,7 @@ const BlogManagement = () => {
             </Col>
           </Row>
 
-          {/* Row 2: SubHeading (NEW) */}
+          {/* Row 2: SubHeading */}
           <Form.Item name="subHeading" label="Sub Heading (Short Description)">
              <Input prefix={<InfoCircleOutlined />} placeholder="A brief summary of the blog post" size="large" />
           </Form.Item>
@@ -545,7 +528,6 @@ const BlogManagement = () => {
                             <Input prefix={<UserOutlined />} placeholder="e.g. Admin" size="large" />
                         </Form.Item>
                     </Col>
-                    {/* NEW: Author Image Upload */}
                     <Col flex="60px">
                         <Form.Item label="Avatar">
                             <Upload
@@ -595,12 +577,11 @@ const BlogManagement = () => {
                         {fileList.length < 1 && <UploadButton />}
                      </Upload>
                      <Text type="secondary" style={{ fontSize: "12px" }}>
-  JPG/PNG only • Size: 1MB – 10MB • Used in cards & previews
-</Text>
+                        JPG/PNG only • Size: 1MB – 10MB • Used in cards & previews
+                     </Text>
                  </Form.Item>
              </Col>
              <Col xs={24} sm={12}>
-                 {/* NEW: Cover Image Field */}
                  <Form.Item label="Cover Image (Banner)">
                      <Upload
                         listType="picture-card"
@@ -614,8 +595,8 @@ const BlogManagement = () => {
                         {coverFileList.length < 1 && <div className='flex flex-col items-center'><PictureOutlined /><span className='mt-1 text-xs'>Cover</span></div>}
                      </Upload>
                      <Text type="secondary" style={{ fontSize: "12px" }}>
-  JPG/PNG • 1MB – 10MB • Banner image
-</Text>
+                        JPG/PNG • 1MB – 10MB • Banner image
+                     </Text>
                  </Form.Item>
              </Col>
           </Row>

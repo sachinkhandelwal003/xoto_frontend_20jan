@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { apiService } from "../../manageApi/utils/custom.apiservice"; // ✅ API SERVICE
 import { useBlogContext } from "../../context/BlogContext";
 import SectionImage from "../../assets/img/Image.png";
 
@@ -9,13 +9,15 @@ const Ai2 = () => {
 
   useEffect(() => {
     if (!selectedBlogId) return;
-    axios.get(`https://xoto.ae/api/blogs/get-blog-by-id?id=${selectedBlogId}`)
-      .then(res => {
-         const data = res.data.data || res.data;
-         // Agar extra image hai to wo use karo, nahi to main image
-         setBlogImage(data.images?.[1] || data.featuredImage || SectionImage);
+
+    apiService
+      .get("blogs/get-blog-by-id", { id: selectedBlogId }) // ✅ UPDATED
+      .then((res) => {
+        const data = res.data || res;
+        // Agar extra image hai to wo use karo, nahi to main image
+        setBlogImage(data.images?.[1] || data.featuredImage || SectionImage);
       })
-      .catch(err => console.error(err));
+      .catch((err) => console.error(err));
   }, [selectedBlogId]);
 
   return (
@@ -29,8 +31,8 @@ const Ai2 = () => {
           alt="Detail" 
           className="
             w-full 
-            h-full              /* Height full container jitni rahegi */
-            object-cover        /* Image crop hogi par stretch nahi hogi */
+            h-full
+            object-cover
             rounded-[20px] 
             shadow-lg
           " 
