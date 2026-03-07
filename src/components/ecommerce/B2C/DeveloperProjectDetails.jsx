@@ -17,7 +17,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { EnvironmentOutlined, DownloadOutlined } from "@ant-design/icons";
-
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 const { Title, Text, Paragraph } = Typography;
 
 export default function DeveloperProjectDetails() {
@@ -31,41 +31,37 @@ export default function DeveloperProjectDetails() {
 
   // ================= API CALLS =================
  // ================= API CALLS =================
-  useEffect(() => {
-    if (!id) return;
+useEffect(() => {
+  if (!id) return;
 
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
 
-      // ✅ YAHAN ROUTE UPDATE KIYA HAI: Query Parameter (?id=) ka use karke
-// const propertyRes = await fetch(`https://xoto.ae/api/property/get-property-by-id?id=${id}`, {
-const propertyRes = await fetch(`https://localhost:5000/api/property/get-property-by-id?id=${id}`, {
-  headers: { Authorization: `Bearer ${token}` }
-});
-        const propertyData = await propertyRes.json();
-        
-        // Data set kar rahe hain
-        setProject(propertyData?.data || propertyData);
+      const propertyData = await apiService.get(
+        "/property/get-property-by-id",
+        { id }
+      );
 
-        // Leads API (Yeh pehle se sahi tha)
-        // const leadsRes = await fetch(`https://xoto.ae/api/lead/get-all-leads?propertyId=${id}`, {
-        const leadsRes = await fetch(`https://localhost:5000/api/lead/get-all-leads?propertyId=${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const leadsData = await leadsRes.json();
-        setLeads(leadsData?.data?.data || leadsData?.data || []);
+      setProject(propertyData?.data || propertyData);
 
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        message.error("Failed to load details.");
-      } finally {
-        setLoading(false);
-      }
-    };
+      const leadsData = await apiService.get(
+        "/lead/get-all-leads",
+        { propertyId: id }
+      );
 
-    fetchData();
-  }, [id, token]);
+      setLeads(leadsData?.data?.data || leadsData?.data || []);
+
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      message.error("Failed to load details.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [id]);
 
 
   // ================= UI HELPERS =================

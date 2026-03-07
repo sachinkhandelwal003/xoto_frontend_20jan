@@ -42,8 +42,7 @@ import {
 const { Title, Text } = Typography;
 
 const AgentList = () => {
-  // const BASE_URL = "https://xoto.ae/api/agent";
-  const BASE_URL = "http://localhost:5000/api/agent";
+
 
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { apiService } from "../../manageApi/utils/custom.apiservice"; // ✅ API SERVICE
 import { useBlogContext } from "../../context/BlogContext";
 import { FaFacebookF, FaTwitter, FaLinkedinIn } from "react-icons/fa";
 import waveBottom from "../../assets/img/waveAi.png"; // Make sure path sahi ho
@@ -10,9 +10,11 @@ const Ai3 = () => {
 
   useEffect(() => {
     if (!selectedBlogId) return;
-    axios.get(`https://xoto.ae/api/blogs/get-blog-by-id?id=${selectedBlogId}`)
-      .then(res => setBlog(res.data.data || res.data.blog || res.data))
-      .catch(err => console.error(err));
+
+    apiService
+      .get("blogs/get-blog-by-id", { id: selectedBlogId }) // ✅ UPDATED
+      .then((res) => setBlog(res.data || res.blog || res))
+      .catch((err) => console.error(err));
   }, [selectedBlogId]);
 
   if (!blog) return <div className="text-center py-10">Loading Content...</div>;
@@ -37,17 +39,15 @@ const Ai3 = () => {
         {/* LEFT: CONTENT */}
         <div className="col-span-2 flex flex-col gap-10">
           <section>
-            {/* MAIN TITLE */}
-            {/* <h2 className="text-3xl font-bold mb-2 text-black">{blog.title}</h2> */}
             
-            {/* SUBHEADING ADDED HERE */}
+            {/* SUBHEADING */}
             {blog.subHeading && (
               <p className="text-xl text-gray-500 font-medium mb-6">
                 {blog.subHeading}
               </p>
             )}
 
-            {/* HTML CONTENT RENDER */}
+            {/* HTML CONTENT */}
             <div 
               className="text-gray-600 leading-relaxed prose max-w-none" 
               dangerouslySetInnerHTML={{ __html: blog.content || blog.description }} 
@@ -58,7 +58,9 @@ const Ai3 = () => {
           <section>
              <h3 className="text-2xl font-bold mb-4">Tags</h3>
              <ul className="list-disc pl-5 text-gray-500">
-                {blog.tags?.length > 0 ? blog.tags.map((t, i) => <li key={i}>{t}</li>) : <li>General</li>}
+                {blog.tags?.length > 0
+                  ? blog.tags.map((t, i) => <li key={i}>{t}</li>)
+                  : <li>General</li>}
              </ul>
           </section>
         </div>
@@ -82,8 +84,14 @@ const Ai3 = () => {
 
           <div className="bg-white shadow-lg rounded-xl p-6">
             <h3 className="text-xl font-bold mb-4">Join our Newsletter</h3>
-            <input type="email" placeholder="Email address" className="w-full border p-2 rounded mb-3" />
-            <button className="w-full bg-[#5C039B] text-white py-2 rounded font-bold">Subscribe</button>
+            <input
+              type="email"
+              placeholder="Email address"
+              className="w-full border p-2 rounded mb-3"
+            />
+            <button className="w-full bg-[#5C039B] text-white py-2 rounded font-bold">
+              Subscribe
+            </button>
           </div>
         </aside>
       </div>

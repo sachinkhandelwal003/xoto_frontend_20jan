@@ -391,47 +391,30 @@ const AIPlanner = () => {
 
 
 
-  const downloadImage = async (imageUrl) => {
-    try {
-      const key = imageUrl.split(".amazonaws.com/")[1];
+const downloadImage = async (imageUrl) => {
+  try {
+    const key = imageUrl.split(".amazonaws.com/")[1];
 
-      if (!key) {
-        notification.error({
-          message: "Invalid Image URL"
-        });
-        return;
-      }
-
-      const response = await axios.get(
-        `https://xoto.ae/api/download-pdf?key=${encodeURIComponent(key)}`,
-        {
-          responseType: "blob" // 🔥 VERY IMPORTANT
-        }
-      );
-
-      const blob = new Blob([response.data], {
-        type: "application/pdf"
-      });
-
-      const url = window.URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "design.pdf";
-      document.body.appendChild(link);
-      link.click();
-
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-    } catch (error) {
-      console.error("Download error:", error);
+    if (!key) {
       notification.error({
-        message: "Download Failed",
-        description: "PDF could not be generated."
+        message: "Invalid Image URL"
       });
+      return;
     }
-  };
+
+    await apiService.download(
+      `/download-pdf?key=${encodeURIComponent(key)}`,
+      `XOTO_Landscape_${Date.now()}.pdf`
+    );
+
+  } catch (error) {
+    console.error("Download error:", error);
+    notification.error({
+      message: "Download Failed",
+      description: "PDF could not be generated."
+    });
+  }
+};
 
 
 

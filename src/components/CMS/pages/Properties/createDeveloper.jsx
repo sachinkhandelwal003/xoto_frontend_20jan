@@ -31,8 +31,7 @@ const COUNTRY_CODES = [
 ];
 
 const CreateDeveloper = () => {
-  const BASE_URL = "https://xoto.ae/api/property"; 
-  const UPLOAD_URL = "https://xoto.ae/api/upload"; 
+
   
   const screens = useBreakpoint();
 

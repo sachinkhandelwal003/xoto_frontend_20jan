@@ -90,42 +90,68 @@ const ImageEnhancer = () => {
         }
     };
 
-    const handleDownload = async () => {
-        if (!enhancedImage) {
-            notification.warning({ message: "No enhanced image" });
+//     const handleDownload = async () => {
+//         if (!enhancedImage) {
+//             notification.warning({ message: "No enhanced image" });
+//             return;
+//         }
+
+//         try {
+//             const key = enhancedImage.split(".amazonaws.com/")[1];
+//             if (!key) {
+//                 notification.error({ message: "Invalid Image URL" });
+//                 return;
+//             }
+                
+//        await apiService.download(
+//   `/download-pdf?key=${encodeURIComponent(key)}`,
+//   `XOTO_Enhanced_${Date.now()}.pdf`
+// );
+
+//             const blob = new Blob([response.data], { type: "application/pdf" });
+//             const url = window.URL.createObjectURL(blob);
+//             const link = document.createElement("a");
+//             link.href = url;
+//             link.download = `XOTO_Enhanced_${Date.now()}.pdf`;
+//             document.body.appendChild(link);
+//             link.click();
+//             document.body.removeChild(link);
+//             window.URL.revokeObjectURL(url);
+//         } catch (error) {
+//             console.error("Download error", error);
+//             notification.error({
+//                 message: "Download Failed",
+//                 description: "PDF generate nahi hua"
+//             });
+//         }
+//     };
+const handleDownload = async () => {
+    if (!enhancedImage) {
+        notification.warning({ message: "No enhanced image" });
+        return;
+    }
+
+    try {
+        const key = enhancedImage.split(".amazonaws.com/")[1];
+
+        if (!key) {
+            notification.error({ message: "Invalid Image URL" });
             return;
         }
 
-        try {
-            const key = enhancedImage.split(".amazonaws.com/")[1];
-            if (!key) {
-                notification.error({ message: "Invalid Image URL" });
-                return;
-            }
+        await apiService.download(
+            `/download-pdf?key=${encodeURIComponent(key)}`,
+            `XOTO_Enhanced_${Date.now()}.pdf`
+        );
 
-            const response = await axios.get(
-                `https://xoto.ae/api/download-pdf?key=${encodeURIComponent(key)}`,
-                { responseType: "blob" }
-            );
-
-            const blob = new Blob([response.data], { type: "application/pdf" });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `XOTO_Enhanced_${Date.now()}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error("Download error", error);
-            notification.error({
-                message: "Download Failed",
-                description: "PDF generate nahi hua"
-            });
-        }
-    };
-
+    } catch (error) {
+        console.error("Download error", error);
+        notification.error({
+            message: "Download Failed",
+            description: "PDF generate nahi hua"
+        });
+    }
+};
     return (
         <div className="min-h-screen bg-[#F8F9FB] py-12 px-4 font-sans relative">
             
