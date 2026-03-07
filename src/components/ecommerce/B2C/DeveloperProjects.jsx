@@ -18,6 +18,7 @@ import {
   Upload,
   Switch
 } from "antd";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import {
   PlusOutlined,
   SearchOutlined,
@@ -72,13 +73,13 @@ export default function DeveloperProjects() {
       //   `https://xoto.ae/api/property/get-all-properties?developerId=${developerId}`,
       //   { headers: { Authorization: `Bearer ${token}` } }
       // );
-      const res = await fetch(
-  `http://localhost:5000/api/property/get-all-properties?developerId=${developerId}`,
+      const json = await apiService.get(
+  "/property/get-all-properties",
   {
-    headers: { Authorization: `Bearer ${token}` }
+    developer: developerId
   }
 );
-      const json = await res.json();
+      
       const list = json?.data?.data || json?.data || [];
 
       const mapped = list.map(p => ({
@@ -145,7 +146,7 @@ export default function DeveloperProjects() {
 
       const payload = {
         ...values,
-        developerId: developerId,
+        developer: developerId,
         photos: photos,
         mainLogo: mainLogo,
         brochure: brochureUrl
@@ -159,23 +160,18 @@ export default function DeveloperProjects() {
       //   },
       //   body: JSON.stringify(payload)
       // });
-const response = await fetch("http://localhost:5000/api/property/create-properties", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`
-  },
-  body: JSON.stringify(payload)
-});
-      const data = await response.json();
+const data = await apiService.post(
+  "/property/create-properties",
+  payload
+);
 
-      if (response.ok || data.success) {
-        message.success("Property saved successfully!");
-        closeModal();
-        fetchProjects(); // Table update karne ke liye wapas fetch
-      } else {
-        message.error(data.message || "Failed to save property");
-      }
+     if (data) {
+  message.success("Property saved successfully!");
+  closeModal();
+  fetchProjects();
+} else {
+  message.error("Failed to save property");
+}
     } catch (error) {
       console.error(error);
       message.error("Something went wrong");
