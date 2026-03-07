@@ -12,7 +12,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useSelector } from "react-redux";
-
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
@@ -26,48 +26,40 @@ export default function DeveloperAddProject() {
   const developerId = user?._id || user?.id;
 
   // ================= FORM SUBMIT HANDLER =================
-  const onFinish = async (values) => {
-    if (!developerId) {
-      message.error("Developer ID not found. Please log in again.");
-      return;
+ const onFinish = async (values) => {
+  if (!developerId) {
+    message.error("Developer ID not found. Please log in again.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const payload = {
+      ...values,
+      developerId: developerId
+    };
+
+    const data = await apiService.post(
+      "/property/create-property",
+      payload
+    );
+
+    if (data?.success || data?.status) {
+      message.success("Project added successfully!");
+      form.resetFields();
+      navigate("/dashboard/developer/projects");
+    } else {
+      message.error(data?.message || "Failed to add project");
     }
 
-    try {
-      setLoading(true);
-
-      // Backend API ko bhejne ke liye data taiyaar kiya (isme developerId bhi add kar diya)
-      const payload = {
-        ...values,
-        developerId: developerId
-      };
-
-      // Yahan apni 'Add Property' wali API ka endpoint daaliye
-      const response = await fetch("https://xoto.ae/api/property/create-property", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
-
-      if (response.ok || data.success) {
-        message.success("Project added successfully!");
-        form.resetFields();
-        // Route path check kar lijiyega apne App.js/CmsRoutes ke hisaab se
-        navigate("/dashboard/developer/projects"); 
-      } else {
-        message.error(data.message || "Failed to add project");
-      }
-    } catch (error) {
-      console.error("Error creating project:", error);
-      message.error("Something went wrong while saving the project.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (error) {
+    console.error("Error creating project:", error);
+    message.error("Something went wrong while saving the project.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
