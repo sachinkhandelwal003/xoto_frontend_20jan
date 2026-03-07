@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { apiService } from '../../../../manageApi/utils/custom.apiservice';
 import {
   Button, Modal, Form, Input, InputNumber, Select, Row, Col, Divider,
   Typography, Table, Card, Space, Tag, Popconfirm, message, notification, Switch, Upload, Statistic, Grid, DatePicker
@@ -70,8 +70,8 @@ const PropertyManagement = () => {
   // --- 1. FETCH DATA ---
   const fetchDevelopers = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/get-all-developers`);
-      const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      const res = await apiService.get("/property/get-all-developers");
+      const list = Array.isArray(res) ? res : (res?.data || []);
       setDevelopers(list);
     } catch (err) { console.error("Error fetching developers"); }
   };
@@ -79,15 +79,16 @@ const PropertyManagement = () => {
   const fetchProperties = useCallback(async (page, limit, search) => {
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/get-all-properties`, {
-        params: {
-          page,
-          limit,
-          isFeatured: false,
-          search: search || undefined
-        }
-      });
-      const resData = response.data;
+      const response = await apiService.get(
+  "/property/get-all-properties",
+  {
+    page,
+    limit,
+    isFeatured: false,
+    search: search || undefined
+  }
+);
+      const resData = response;
       const list = Array.isArray(resData?.data) ? resData.data : (Array.isArray(resData) ? resData : []);
       setProperties(list);
       setTotal(resData?.total || resData?.pagination?.total || list.length);
@@ -159,9 +160,15 @@ const PropertyManagement = () => {
       };
 
       if (editingId) {
-        await axios.post(`${BASE_URL}/edit-property`, payload, { params: { id: editingId } });
+        await apiService.post(
+  `/property/edit-property?id=${editingId}`,
+  payload
+);
       } else {
-        await axios.post(`${BASE_URL}/create-properties`, payload);
+        await apiService.post(
+  "/property/create-properties",
+  payload
+);
       }
 
       notification.success({ message: `Property Saved Successfully!` });
@@ -177,7 +184,9 @@ const PropertyManagement = () => {
   const handleDelete = async (id) => {
     setLoading(true);
     try {
-      await axios.post(`${BASE_URL}/delete-property`, null, { params: { id } });
+      await apiService.post(
+  `/property/delete-property?id=${id}`
+);
       message.success("Property deleted successfully");
       fetchProperties(currentPage, pageSize, searchText);
     } catch (err) { message.error("Failed to delete"); }

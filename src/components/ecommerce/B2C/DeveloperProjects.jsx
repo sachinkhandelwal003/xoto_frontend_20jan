@@ -287,6 +287,9 @@ const response = await fetch("http://localhost:5000/api/property/create-properti
             transactionType: 'sell', propertySubType: 'off_plan', propertyType: 'Apartment',
             isAvailable: true, country: 'United Arab Emirates', state: 'Dubai', city: 'Dubai', postalCode: '00000',
             notReadyYet: true, isFeatured: false,
+            commissionType: "percentage",
+commissionValue: 3,
+commissionStage: "booking",
             amenities: [], location_highlights: [], unitType: []
           }}
         >
@@ -330,6 +333,48 @@ const response = await fetch("http://localhost:5000/api/property/create-properti
             <Col xs={12} md={12}><Form.Item name="paymentPlan_initialPercentage" label="Payment Plan (Initial %)"><InputNumber className="w-full" style={{ width: '100%' }} suffix="%" /></Form.Item></Col>
             <Col xs={12} md={12}><Form.Item name="paymentPlan_laterPercentage" label="Payment Plan (Later %)"><InputNumber className="w-full" style={{ width: '100%' }} suffix="%" /></Form.Item></Col>
           </Row>
+
+          {/* --- SECTION: COMMISSION SCHEME --- */}
+<Divider orientation="left" style={{ borderColor: THEME.primary }}>
+  Commission Scheme
+</Divider>
+
+<Row gutter={16}>
+  <Col xs={12} md={6}>
+    <Form.Item name="commissionType" label="Commission Type">
+      <Select placeholder="Select type">
+        <Option value="percentage">Percentage (%)</Option>
+        <Option value="fixed">Fixed Amount</Option>
+      </Select>
+    </Form.Item>
+  </Col>
+
+  <Col xs={12} md={6}>
+    <Form.Item name="commissionValue" label="Commission Value">
+      <InputNumber
+        className="w-full"
+        style={{ width: "100%" }}
+        placeholder="Enter commission"
+      />
+    </Form.Item>
+  </Col>
+
+  <Col xs={12} md={6}>
+    <Form.Item name="commissionStage" label="Commission Stage">
+      <Select placeholder="When paid">
+        <Option value="booking">On Booking</Option>
+        <Option value="contract">On Contract</Option>
+        <Option value="handover">On Handover</Option>
+      </Select>
+    </Form.Item>
+  </Col>
+
+  <Col xs={12} md={6}>
+    <Form.Item name="commissionNotes" label="Commission Notes">
+      <Input placeholder="Optional note" />
+    </Form.Item>
+  </Col>
+</Row>
 
           {/* --- SECTION 3: CONFIGURATION --- */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>Area & Configuration</Divider>
