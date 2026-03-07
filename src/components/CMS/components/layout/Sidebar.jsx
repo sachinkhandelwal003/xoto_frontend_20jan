@@ -292,51 +292,62 @@ const CUSTOM_ROLE_LINKS = {
   icon: "fas fa-user-check",
   path: "/dashboard/{roleSlug}/lead-management"
 },
+// {
+//   title: "Agent Targets",
+//   icon: "fas fa-bullseye",
+//   path: "/dashboard/{roleSlug}/targets"
+// },
+// {
+//   title: "Leaderboard",
+//   icon: "fas fa-trophy",
+//   path: "/dashboard/{roleSlug}/leaderboard"
+// },
+// {
+//   title: "Incentives",
+//   icon: "fas fa-gift",
+//   path: "/dashboard/{roleSlug}/incentives"
+// },
+// {
+//   title: "Branches",
+//   icon: "fas fa-building",
+//   path: "/dashboard/{roleSlug}/branches"
+// },
+// {
+//   title: "Internal Roles",
+//   icon: "fas fa-user-shield",
+//   path: "/dashboard/{roleSlug}/internal-roles"
+// },
+// {
+//   title: "Advanced Analytics",
+//   icon: "fas fa-chart-area",
+//   path: "/dashboard/{roleSlug}/advanced-analytics"
+// },
+// {
+//   title: "Profit Engine",
+//   icon: "fas fa-calculator",
+//   path: "/dashboard/{roleSlug}/profit-engine"
+// },
 {
-  title: "Agent Targets",
-  icon: "fas fa-bullseye",
-  path: "/dashboard/{roleSlug}/targets"
-},
-{
-  title: "Leaderboard",
-  icon: "fas fa-trophy",
-  path: "/dashboard/{roleSlug}/leaderboard"
-},
-{
-  title: "Incentives",
-  icon: "fas fa-gift",
-  path: "/dashboard/{roleSlug}/incentives"
-},
-{
-  title: "Branches",
+  title: "Projects",
   icon: "fas fa-building",
-  path: "/dashboard/{roleSlug}/branches"
+  path: "/dashboard/{roleSlug}/projects"
 },
 {
-  title: "Internal Roles",
-  icon: "fas fa-user-shield",
-  path: "/dashboard/{roleSlug}/internal-roles"
-},
-{
-  title: "Advanced Analytics",
-  icon: "fas fa-chart-area",
-  path: "/dashboard/{roleSlug}/advanced-analytics"
-},
-{
-  title: "Profit Engine",
-  icon: "fas fa-calculator",
-  path: "/dashboard/{roleSlug}/profit-engine"
+  title: "Deals",
+  icon: "fas fa-handshake",
+  path: "/dashboard/{roleSlug}/deals"
 },
 {
   title: "Subscription",
   icon: "fas fa-credit-card",
   path: "/dashboard/{roleSlug}/subscription"
 },
-{
-  title: "Assign Projects",
-  icon: "fas fa-tasks",
-  path: "/dashboard/{roleSlug}/assign-projects"
-}
+
+// {
+//   title: "Assign Projects",
+//   icon: "fas fa-tasks",
+//   path: "/dashboard/{roleSlug}/assign-projects"
+// }
 
 ]
 

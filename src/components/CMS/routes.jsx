@@ -121,15 +121,17 @@ import AgencyPerformance from "../ecommerce/B2C/AgencyPerformance";
 import AgencyAgentDetails from "../ecommerce/B2C/AgencyAgentDetails";
 import AgencyCommission from "../ecommerce/B2C/AgencyCommission";
 import AgencyLeadManagement from "../ecommerce/B2C/AgencyLeadManagement";
-import AgencyTargets from "../ecommerce/B2C/AgencyTargets";
-import AgencyLeaderboard from "../ecommerce/B2C/AgencyLeaderboard"; 
-import AgencyIncentives from "../ecommerce/B2C/AgencyIncentives";
-import AgencyBranches from "../ecommerce/B2C/AgencyBranches";
-import AgencyRoles from "../ecommerce/B2C/AgencyRoles";
-import AgencyAdvancedAnalytics from "../ecommerce/B2C/AgencyAdvancedAnalytics";
-import AgencyProfitEngine from "../ecommerce/B2C/AgencyProfitEngine";
+// import AgencyTargets from "../ecommerce/B2C/AgencyTargets";
+// import AgencyLeaderboard from "../ecommerce/B2C/AgencyLeaderboard"; 
+// import AgencyIncentives from "../ecommerce/B2C/AgencyIncentives";
+// import AgencyBranches from "../ecommerce/B2C/AgencyBranches";
+// import AgencyRoles from "../ecommerce/B2C/AgencyRoles";
+// import AgencyAdvancedAnalytics from "../ecommerce/B2C/AgencyAdvancedAnalytics";
+// import AgencyProfitEngine from "../ecommerce/B2C/AgencyProfitEngine";
 import AgencySubscription from "../ecommerce/B2C/AgencySubscription";
-import AgencyAssignProjects from "../ecommerce/B2C/AgencyAssignProjects";
+import AgencyProjects from "../ecommerce/B2C/AgencyProjects";
+import AgencyDeals from "../ecommerce/B2C/AgencyDeals";
+// import AgencyAssignProjects from "../ecommerce/B2C/AgencyAssignProjects";
 
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
@@ -366,15 +368,17 @@ const CmsRoutes = () => {
 <Route path="performance" element={<AgencyPerformance />} />
 <Route path="commission" element={<AgencyCommission />} />
 <Route path="lead-management" element={<AgencyLeadManagement />} />
-<Route path="targets" element={<AgencyTargets />} />
-<Route path="leaderboard" element={<AgencyLeaderboard />} />
-<Route path="incentives" element={<AgencyIncentives />} />
-<Route path="branches" element={<AgencyBranches />} />
-<Route path="internal-roles" element={<AgencyRoles />} />
-<Route path="advanced-analytics" element={<AgencyAdvancedAnalytics />} />
-<Route path="profit-engine" element={<AgencyProfitEngine />} />
+{/* <Route path="targets" element={<AgencyTargets />} /> */}
+{/* <Route path="leaderboard" element={<AgencyLeaderboard />} /> */}
+{/* <Route path="incentives" element={<AgencyIncentives />} /> */}
+{/* <Route path="branches" element={<AgencyBranches />} /> */}
+{/* <Route path="internal-roles" element={<AgencyRoles />} /> */}
+{/* <Route path="advanced-analytics" element={<AgencyAdvancedAnalytics />} /> */}
+{/* <Route path="profit-engine" element={<AgencyProfitEngine />} /> */}
 <Route path="subscription" element={<AgencySubscription />} />
-<Route path="assign-projects" element={<AgencyAssignProjects />} />
+<Route path="/agency/projects" element={<AgencyProjects />} />
+<Route path="/agency/deals" element={<AgencyDeals />} />
+{/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
 {/* Developer */}
 <Route path="developer-projects" element={<DeveloperProjects/>}/>
 <Route path="developer-projects/add" element={<DeveloperAddProject/>}/>
