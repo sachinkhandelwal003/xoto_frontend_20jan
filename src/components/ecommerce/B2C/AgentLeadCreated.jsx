@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import {
   Card,
   Typography,
-  Row,
-  Col,
   Input,
   Button,
   Tag,
   Tooltip,
   message,
-  Tabs
+  Tabs,
+  Modal,
+  Form,
+  Select,
+  InputNumber,
+  Row,
+  Col,
+  AutoComplete
 } from "antd";
 
 import {
@@ -17,53 +23,42 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  CheckCircleOutlined // <-- NAYA PROFESSIONAL ICON (Deal ke liye)
+  CheckCircleOutlined
 } from "@ant-design/icons";
 
-import { useNavigate } from "react-router-dom";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
-// IMPORT MODAL HERE
-import AddLeadModal from "../../../components/ecommerce/B2C/products/Addleadmodal"; 
-
 const { Title, Text } = Typography;
+const { Option } = Select;
+const { TextArea } = Input;
 
 export default function AgentLeadDashboard() {
-  const navigate = useNavigate();
-  
-  // STATS
+  const { user } = useSelector((state) => state.auth);
+
+  // ================= STATES =================
   const [leads, setLeads] = useState([]);
-  const [deals, setDeals] = useState([]); 
   const [loading, setLoading] = useState(false);
-  
-  // MODAL KI STATE
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedLead, setSelectedLead] = useState(null); 
-
-  // TAB KI STATE
   const [activeTab, setActiveTab] = useState("leads");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // ================= FETCH =================
+  // Modal & Form States
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [formLoading, setFormLoading] = useState(false);
+  const [locationOptions, setLocationOptions] = useState([]);
+  const [form] = Form.useForm();
+
+  // ================= 1. FETCH LEADS =================
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const response = await apiService.get(
-        "/agent/lead/get-all-leads?page=1&limit=10"
-      );
-
-      const allLeads =
-        response?.data?.data ||
-        response?.data ||
-        [];
-
-      const filteredLeads = Array.isArray(allLeads)
-        ? allLeads.filter(l => !l.isDeleted && l.status !== 'deal') 
-        : [];
-
-      setLeads(filteredLeads);
-
+      const response = await apiService.get("/agent/lead/get-all-leads?page=1&limit=50");
+      const list = Array.isArray(response?.data) ? response.data : response?.data?.data || [];
+      setLeads(list);
     } catch (err) {
       console.log(err);
+      // Agar backend se 500 error aaya toh yahan fail hoga
+      message.error("Failed to fetch leads. Check backend server.");
     } finally {
       setLoading(false);
     }
@@ -73,225 +68,248 @@ export default function AgentLeadDashboard() {
     fetchLeads();
   }, []);
 
-  // ================= DELETE =================
+  // ================= 2. DELETE & UPDATE STATUS =================
   const deleteLead = async (id) => {
     if (!window.confirm("Are you sure you want to delete this lead?")) return;
     try {
       await apiService.delete(`/agent/lead/delete-lead/${id}`);
-      message.success("Lead deleted successfully.");
+      message.success("Lead deleted successfully");
       fetchLeads();
     } catch (err) {
-      console.log(err);
-      message.error("Failed to delete lead.");
+      message.error("Delete failed");
     }
   };
 
-  // ================= ADD / EDIT CLICK =================
+  const updateLeadStatus = async (id, status) => {
+    try {
+      await apiService.patch(`/agent/lead/update-status/${id}`, { status });
+      message.success(`Lead status updated to ${status}`);
+      fetchLeads();
+    } catch (error) {
+      message.error("Status update failed");
+    }
+  };
+
+  // ================= 3. ADD & EDIT BUTTON HANDLERS =================
   const handleAddClick = () => {
-    setSelectedLead(null); 
-    setIsModalOpen(true);  
+    setSelectedLead(null);
+    form.resetFields(); // Form clear karo naye lead ke liye
+    setIsModalOpen(true);
   };
 
   const handleEditClick = (lead) => {
-    setSelectedLead(lead); 
-    setIsModalOpen(true);  
+    setSelectedLead(lead);
+    // Jo lead edit karni hai, uska data form me pre-fill karo
+    form.setFieldsValue({
+      first_name: lead?.name?.first_name,
+      last_name: lead?.name?.last_name,
+      email: lead?.email,
+      phone_number: lead?.phone_number,
+      property_interest: lead?.property_interest,
+      requirement_description: lead?.requirement_description,
+      budget: lead?.budget,
+      preferred_location: lead?.preferred_location,
+      bedrooms: lead?.bedrooms,
+      property_type: lead?.property_type,
+      source: lead?.source || "manual",
+      status: lead?.status || "lead",
+    });
+    setIsModalOpen(true);
   };
 
-  // ================= MOVE TO DEAL CLICK =================
-  const handleMoveToDeal = async (lead) => {
-    if (!window.confirm("Convert this lead to a deal?")) return;
-
+  // ================= 4. MODAL FORM SUBMIT (CREATE / UPDATE) =================
+  const handleLocationSearch = async (value) => {
+    if (!value || value.length < 3) return setLocationOptions([]);
     try {
-      // Yahan par apni backend API call aayegi jab ready ho jaye:
-      // await apiService.post(`/agent/lead/move-to-deal/${lead._id}`);
-      
-      message.success("Lead successfully converted to Deal.");
-      
-      // === INSTANT UI UPDATE LOGIC ===
-      setDeals(prevDeals => [...prevDeals, { ...lead, status: 'deal' }]); 
-      setLeads(prevLeads => prevLeads.filter(l => l._id !== lead._id)); 
-
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${value}&limit=5`);
+      const data = await response.json();
+      setLocationOptions(data.map((item) => ({ value: item.display_name, label: item.display_name })));
     } catch (error) {
-      console.log(error);
-      message.error("Failed to convert lead to deal.");
+      console.error("Location search failed", error);
     }
   };
 
-  // ================= STATUS =================
+  const onFormFinish = async (values) => {
+    setFormLoading(true);
+    try {
+      const payload = {
+        name: { first_name: values.first_name, last_name: values.last_name },
+        email: values.email,
+        phone_number: values.phone_number,
+        property_interest: values.property_interest,
+        requirement_description: values.requirement_description,
+        budget: values.budget,
+        preferred_location: values.preferred_location,
+        bedrooms: values.bedrooms,
+        property_type: values.property_type,
+        source: values.source || "manual",
+        status: values.status || "lead",
+        agent: user?._id, // Logged in agent ID
+      };
+
+      if (selectedLead && selectedLead._id) {
+        // UPDATE EXISTING LEAD
+        await apiService.patch(`/agent/lead/update-lead/${selectedLead._id}`, payload);
+        message.success("Lead updated successfully!");
+      } else {
+        // CREATE NEW LEAD
+        await apiService.post("/agent/lead/create-lead", payload);
+        message.success("New lead created successfully!");
+      }
+
+      setIsModalOpen(false);
+      form.resetFields();
+      fetchLeads(); // Save hone ke baad table update karo
+    } catch (error) {
+      console.error(error);
+      message.error(error?.response?.data?.message || "Something went wrong!");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // ================= 5. UI HELPERS & FILTERS =================
   const getStatus = (status) => {
-    if (status === "active") return <Tag color="green">Active</Tag>;
-    if (status === "closed") return <Tag color="default">Closed</Tag>;
-    if (status === "deal") return <Tag color="purple">-</Tag>; 
-    return <Tag color="gold">New</Tag>;
+    switch (status) {
+      case "lead": return <Tag color="gold">Lead</Tag>;
+      case "visit": return <Tag color="blue">Visit</Tag>;
+      case "deal": return <Tag color="purple">Deal</Tag>;
+      case "booking": return <Tag color="green">Booking</Tag>;
+      case "closed": return <Tag color="success">Closed</Tag>;
+      default: return <Tag>Lead</Tag>;
+    }
   };
 
-  // ================= TABLES COMPONENTS =================
-  // Leads wali table
+  const filteredLeads = leads.filter((lead) => {
+    const name = `${lead?.name?.first_name || ""} ${lead?.name?.last_name || ""}`.toLowerCase();
+    return name.includes(searchQuery.toLowerCase()) || (lead?.email || "").toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  const activeLeads = filteredLeads.filter((l) => l.status !== "deal");
+  const deals = filteredLeads.filter((l) => l.status === "deal");
+
+  // ================= 6. RENDER COMPONENTS =================
   const LeadsTable = () => (
-    <table className="w-full table-fixed border-collapse">
-      <thead>
-        <tr className="text-gray-500 text-xs uppercase tracking-wider border-b">
-          <th className="py-4 px-4 text-left font-medium">Client Name</th>
-          <th className="px-4 text-center font-medium">Email</th>
-          <th className="px-4 text-center font-medium">Contact</th>
-          <th className="px-4 text-center font-medium">Status</th>
-          <th className="px-4 text-center font-medium">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {loading ? (
-          <tr><td colSpan="5" className="py-10 text-center text-gray-500">Loading records...</td></tr>
-        ) : leads.length === 0 ? (
-          <tr><td colSpan="5" className="py-10 text-center text-gray-400">No active leads found.</td></tr>
-        ) : (
-          leads.map((lead) => (
-            <tr key={lead._id} className="hover:bg-gray-50 text-sm border-b transition-colors">
-              <td className="py-4 px-4 ">
-                <div className="font-medium text-gray-800 truncate">{lead?.name?.first_name} {lead?.name?.last_name}</div>
-              </td>
-              <td className="px-4 text-center">
-                <a href={`mailto:${lead?.email}`} className="text-blue-600 hover:text-blue-800 transition-colors">{lead?.email}</a>
-              </td>
-              <td className="px-4 text-center text-gray-600">{lead?.phone_number}</td>
-              <td className="px-4 text-center">{getStatus(lead?.status)}</td>
-              <td className="px-4 text-center">
-                <div className="flex justify-center items-center gap-2">
-                  
-                  <Tooltip title="Edit Lead">
-                    <Button 
-                      type="text" 
-                      icon={<EditOutlined />} 
-                      className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md" 
-                      onClick={() => handleEditClick(lead)} 
-                    />
-                  </Tooltip>
-                  <Tooltip title="Delete Lead">
-                    <Button 
-                      danger 
-                      type="text" 
-                      icon={<DeleteOutlined />} 
-                      className="hover:bg-red-50 rounded-md"
-                      onClick={() => deleteLead(lead._id)} 
-                    />
-                  </Tooltip>
-                  <Tooltip title="Convert to Deal">
-                    <Button 
-                      type="text" 
-                      icon={<CheckCircleOutlined className="text-lg" />} 
-                      className="text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md" 
-                      onClick={() => handleMoveToDeal(lead)} 
-                    />
-                  </Tooltip>
-                </div>
-              </td>
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
+    <div className="overflow-x-auto">
+      <table className="min-w-full border-collapse bg-white">
+        <thead className="bg-gray-50 border-b">
+          <tr className="text-xs uppercase text-gray-500">
+            <th className="p-4 text-left">Client Name</th>
+            <th className="p-4 text-left">Contact Info</th>
+            <th className="p-4 text-center">Budget</th>
+            <th className="p-4 text-center">Location</th>
+            <th className="p-4 text-center">Status</th>
+            <th className="p-4 text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {loading ? (
+            <tr><td colSpan="6" className="p-10 text-center">Loading Leads...</td></tr>
+          ) : activeLeads.length === 0 ? (
+            <tr><td colSpan="6" className="p-10 text-center text-gray-400">No active leads found</td></tr>
+          ) : (
+            activeLeads.map((lead) => (
+              <tr key={lead._id} className="border-b hover:bg-gray-50 text-sm">
+                <td className="p-4 font-medium">{lead?.name?.first_name} {lead?.name?.last_name}</td>
+                <td className="p-4">
+                  <div>{lead?.phone_number}</div>
+                  <div className="text-xs text-gray-500">{lead?.email}</div>
+                </td>
+                <td className="p-4 text-center">{lead?.budget ? lead.budget.toLocaleString() : "-"}</td>
+                <td className="p-4 text-center">{lead?.preferred_location || "-"}</td>
+                <td className="p-4 text-center">{getStatus(lead?.status)}</td>
+                <td className="p-4 text-center">
+                  <div className="flex justify-center gap-1">
+                    {/* EDIT BUTTON YAHAN HAI */}
+                    <Tooltip title="Edit">
+                      <Button type="text" icon={<EditOutlined />} onClick={() => handleEditClick(lead)} />
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                      <Button danger type="text" icon={<DeleteOutlined />} onClick={() => deleteLead(lead._id)} />
+                    </Tooltip>
+                    <Tooltip title="Move to Deal">
+                      <Button type="text" className="text-green-600" icon={<CheckCircleOutlined />} onClick={() => updateLeadStatus(lead._id, "deal")} />
+                    </Tooltip>
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
   );
-
-  // Deals wali table
-  const DealsTable = () => (
-    <table className="w-full table-fixed border-collapse">
-      <thead>
-        <tr className="text-gray-500 text-xs uppercase tracking-wider border-b">
-          <th className="py-4 px-4 text-left font-medium">Client Name</th>
-          <th className="px-4 text-center font-medium">Email</th>
-          <th className="px-4 text-center font-medium">Contact</th>
-          <th className="px-4 text-center font-medium">Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {deals.length === 0 ? (
-          <tr><td colSpan="4" className="py-10 text-center text-gray-400">No deals converted yet.</td></tr>
-        ) : (
-          deals.map((deal) => (
-            <tr key={deal._id} className="hover:bg-gray-50 text-sm border-b transition-colors bg-white">
-              <td className="py-4 px-4 ">
-                <div className="font-medium text-gray-800 truncate">{deal?.name?.first_name} {deal?.name?.last_name}</div>
-              </td>
-              <td className="px-4 text-center">
-                <a href={`mailto:${deal?.email}`} className="text-blue-600 hover:text-blue-800 transition-colors">{deal?.email}</a>
-              </td>
-              <td className="px-4 text-center text-gray-600">{deal?.phone_number}</td>
-              <td className="px-4 text-center">{getStatus(deal?.status)}</td>
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
-  );
-
-  // Tabs ki configuration (EMOJIS REMOVED)
-  const tabItems = [
-    {
-      key: 'leads',
-      label: <span className="text-base font-medium px-2">Active Leads ({leads.length})</span>,
-      children: <LeadsTable />,
-    },
-    {
-      key: 'deals',
-      label: <span className="text-base font-medium px-2">Deals ({deals.length})</span>,
-      children: <DealsTable />,
-    }
-  ];
 
   return (
     <div className="p-6 bg-[#f6f7fb] min-h-screen relative">
-      {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
+      {/* Header */}
+      <div className="flex justify-between mb-6">
         <div>
-          <Title level={3} className="!mb-1 text-gray-800">
-Deal Management           </Title>
-          <Text className="text-gray-500">Manage your leads and deals effectively</Text>
+          <Title level={3}>Lead Management</Title>
+          <Text type="secondary">View, Add, and Edit your leads in one place</Text>
         </div>
-
         {activeTab === "leads" && (
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            size="large"
-            className="!bg-[#7c3aed] !border-none shadow-md hover:shadow-lg transition-all"
-            onClick={handleAddClick} 
-          >
+          <Button type="primary" size="large" icon={<PlusOutlined />} onClick={handleAddClick} className="bg-[#7c3aed]">
             Add New Lead
           </Button>
         )}
       </div>
 
-      {/* SEARCH BAR */}
-      <Card className="rounded-xl shadow-sm border-none mb-6">
-        <Input
-          size="large"
-          prefix={<SearchOutlined className="text-gray-400" />}
-          placeholder="Search by client name or email address..."
-          className="w-full md:w-1/2 rounded-lg"
-        />
+      {/* Search & Tabs */}
+      <Card className="mb-6 rounded-xl border-none shadow-sm">
+        <Input size="large" prefix={<SearchOutlined className="text-gray-400" />} placeholder="Search by name or email..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+      </Card>
+      <Card className="rounded-xl border-none shadow-sm">
+        <Tabs activeKey={activeTab} onChange={(key) => setActiveTab(key)} items={[{ key: "leads", label: `Active Leads (${activeLeads.length})`, children: <LeadsTable /> }]} size="large" />
       </Card>
 
-      {/* TABS CONTAINER */}
-      <Card className="rounded-xl shadow-sm border-none p-2">
-        <Tabs 
-          activeKey={activeTab} 
-          onChange={(key) => setActiveTab(key)} 
-          items={tabItems}
-          size="large"
-          tabBarStyle={{ marginBottom: '20px', padding: '0 8px' }}
-        />
-      </Card>
-
-      {/* MODAL */}
-      {isModalOpen && (
-        <AddLeadModal 
-          leadData={selectedLead} 
-          onClose={() => {
-            setIsModalOpen(false); 
-            setSelectedLead(null); 
-            fetchLeads();          
-          }} 
-        />
-      )}
+      {/* ================= MODAL FOR ADD / EDIT ================= */}
+      <Modal
+        title={selectedLead ? "Edit Lead" : "Add New Lead"}
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+        width={700}
+        centered
+      >
+        <Form form={form} layout="vertical" onFinish={onFormFinish} initialValues={{ source: "manual", status: "lead" }} className="mt-4">
+          <Row gutter={16}>
+            <Col span={12}><Form.Item name="first_name" label="First Name" rules={[{ required: true, message: "Required" }]}><Input placeholder="John" /></Form.Item></Col>
+            <Col span={12}><Form.Item name="last_name" label="Last Name" rules={[{ required: true, message: "Required" }]}><Input placeholder="Doe" /></Form.Item></Col>
+            <Col span={12}><Form.Item name="phone_number" label="Phone Number" rules={[{ required: true, message: "Required" }]}><Input placeholder="+971 50..." /></Form.Item></Col>
+            <Col span={12}><Form.Item name="email" label="Email"><Input type="email" placeholder="john@example.com" /></Form.Item></Col>
+            
+            <Col span={12}>
+              <Form.Item name="property_type" label="Property Type">
+                <Select><Option value="Apartment">Apartment</Option><Option value="Villa">Villa</Option></Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}><Form.Item name="budget" label="Budget (AED)"><InputNumber className="w-full" /></Form.Item></Col>
+            <Col span={24}>
+              <Form.Item name="preferred_location" label="Preferred Location">
+                <AutoComplete options={locationOptions} onSearch={handleLocationSearch} placeholder="Type to search..." allowClear />
+              </Form.Item>
+            </Col>
+            
+            <Col span={12}>
+              <Form.Item name="source" label="Source">
+                <Select><Option value="manual">Manual</Option><Option value="presentation">Presentation</Option></Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="status" label="Status">
+                <Select><Option value="lead">Lead</Option><Option value="visit">Visit</Option><Option value="deal">Deal</Option></Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button type="primary" htmlType="submit" loading={formLoading} className="bg-[#7c3aed]">
+              {selectedLead ? "Update Lead" : "Save Lead"}
+            </Button>
+          </div>
+        </Form>
+      </Modal>
     </div>
   );
 }
