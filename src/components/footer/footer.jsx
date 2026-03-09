@@ -237,20 +237,20 @@ export default function Footer() {
   </h4>
 
   {resources.map((i, k) => (
-    <div key={k} className="flex items-center gap-2 mb-2">
-      <Link
-        to={i.path}
-        className="text-white/70"
-      >
-        {i.label}
-      </Link>
+  <div key={k} className="relative inline-block mb-3">
+  <Link
+    to={i.path}
+    className="text-white/70 block"
+  >
+    {i.label}
+  </Link>
 
-      {i.comingSoon && (
-        <span className="text-xs bg-red-100 text-black  px-1 py-0.5 rounded">
-          {t("comingsoon")} 
-        </span>
-      )}
-    </div>
+  {i.comingSoon && (
+    <span className="absolute -top-2 -right-12 text-[8px] font-bold bg-[#F5D7C8] text-black px-3 py-[2px] rounded-full shadow-sm uppercase">
+      {t("comingsoon")}
+    </span>
+  )}
+</div>
   ))}
 </div>
 

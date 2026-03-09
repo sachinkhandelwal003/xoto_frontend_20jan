@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../../../manageApi/utils/custom.apiservice';
-
 import {
   Button, Modal, Form, Input, InputNumber, Select, Row, Col, Divider,
   Typography, Table, Card, Space, Tag, Popconfirm, message, notification,
@@ -78,13 +77,8 @@ const PropertyManagement = () => {
   const fetchDevelopers = async () => {
 
     try {
-
       const res = await apiService.get("/property/get-all-developers");
-
-      const list = Array.isArray(res?.data)
-        ? res.data
-        : res?.data || [];
-
+      const list = Array.isArray(res) ? res : (res?.data || []);
       setDevelopers(list);
 
     } catch (err) {
@@ -102,18 +96,17 @@ const PropertyManagement = () => {
     setLoading(true);
 
     try {
-
-      const response = await apiService.get("/property/get-all-properties", {
-        page,
-        limit,
-        isFeatured: false,
-        search: search || undefined
-      });
-
-      const list = Array.isArray(response?.data)
-        ? response.data
-        : [];
-
+      const response = await apiService.get(
+  "/property/get-all-properties",
+  {
+    page,
+    limit,
+    isFeatured: false,
+    search: search || undefined
+  }
+);
+      const resData = response;
+      const list = Array.isArray(resData?.data) ? resData.data : (Array.isArray(resData) ? resData : []);
       setProperties(list);
 
       setTotal(response?.total || response?.pagination?.total || list.length);
@@ -197,13 +190,15 @@ const PropertyManagement = () => {
       };
 
       if (editingId) {
-
-        await apiService.post(`/property/edit-property?id=${editingId}`, payload);
-
+        await apiService.post(
+  `/property/edit-property?id=${editingId}`,
+  payload
+);
       } else {
-
-        await apiService.post("/property/create-properties", payload);
-
+        await apiService.post(
+  "/property/create-properties",
+  payload
+);
       }
 
       notification.success({ message: "Property Saved Successfully!" });
@@ -233,9 +228,9 @@ const PropertyManagement = () => {
     setLoading(true);
 
     try {
-
-      await apiService.post(`/property/delete-property?id=${id}`);
-
+      await apiService.post(
+  `/property/delete-property?id=${id}`
+);
       message.success("Property deleted successfully");
 
       fetchProperties(currentPage, pageSize, searchText);
