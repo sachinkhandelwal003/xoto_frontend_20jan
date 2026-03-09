@@ -9,7 +9,7 @@ import whatsappIcon from "../../assets/icons/Homeicons/whatsapp-svgrepo-com (2) 
 import chatIcon from "../../assets/icons/Homeicons/chat-svgrepo-com 1.png";
 import facebookIcon from "../../assets/icons/Homeicons/facebook-f 1.png";
 import instagramIcon from "../../assets/icons/Homeicons/instagram 1.png";
-import twitterIcon from "../../assets/icons/Homeicons/twitterlogo.png";
+import twitterIcon from "../../assets/icons/Homeicons/mainsss.png";
 import linkedinIcon from "../../assets/icons/Homeicons/linkedin 1.png";
 import logoNewImage from "../../assets/img/logoNew.png";
 
@@ -305,7 +305,7 @@ export default function Footer() {
               <img src={instagramIcon} className="w-[24px]" />
             </a>
             <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
-              <img src={twitterIcon} className="w-[24px]" />
+              <img src={twitterIcon} className="w-[24px] bg-[#5C039B]" />
             </a>
             <a href="https://www.linkedin.com/company/xotouae/?viewAsMember=true" target="_blank" rel="noopener noreferrer">
               <img src={linkedinIcon} className="w-[24px]" />
