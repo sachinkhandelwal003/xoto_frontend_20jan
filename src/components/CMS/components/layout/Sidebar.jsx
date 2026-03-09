@@ -165,6 +165,12 @@ const CUSTOM_ROLE_LINKS = {
 
 
       ],
+    },
+    {
+      title: "View Library", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/ViewLibrary",
+     
+
+      
     }
   ],
    "12": [

@@ -17,7 +17,7 @@ import {
 import { useSelector } from 'react-redux';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
 import LeadGenerationModal from '../Signuupage';
-import logoNew from "../../../assets/img/logonew2.png";
+// import logoNew from "../../../assets/img/logonew2.png";
 
 const { Paragraph } = Typography;
 
@@ -1078,7 +1078,7 @@ const downloadImage = async (url, name) => {
         <div className="fixed inset-0 z-[100] bg-white/90 lg:bg-white/80 backdrop-blur-xl flex flex-col items-center justify-center animate-in fade-in duration-500 p-4">
           <div className="relative mb-8 lg:mb-12 w-32 h-32 lg:w-48 lg:h-48 mx-auto flex items-center justify-center">
             <div className="absolute -inset-6 lg:-inset-8 bg-purple-500/20 blur-2xl rounded-full animate-pulse" />
-            <img src={logoNew} alt="Logo" className="relative max-w-full max-h-full object-contain animate-bounce" />
+            {/* <img src={logoNew} alt="Logo" className="relative max-w-full max-h-full object-contain animate-bounce" /> */}
           </div>
           <div className="text-center mb-6 lg:mb-8 px-4">
             <h2 className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight leading-tight">
