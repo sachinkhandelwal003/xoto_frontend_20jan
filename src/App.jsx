@@ -220,7 +220,7 @@ function App() {
               <Route path="/estimate/calculator/interior" element={<InteriorCalculator />} />
               <Route path="/services/interior" element={<Ynterior />} />
               <Route path="/schedule/estimate" element={<MainCalculatorPage />} />
-              <Route path="/marketplace" element={<Buy />} />
+              <Route path="/Properties" element={<Buy />} />
               <Route path="/ecosystem" element={<Ecosystem />} />
               <Route path="/about" element={<About />} />
               <Route path="/aiInterior" element={<Interior />} />

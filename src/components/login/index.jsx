@@ -158,8 +158,8 @@ const Login = () => {
     },
     {
       id: "business-association",
-      label: "Business Associates",
-      desc: "For Business Networks",
+      label: "Agents",
+      desc: "For Agents",
       icon: <TeamOutlined style={{ fontSize: "28px" }} />,
       color: "#10B981",
       gradient: "linear-gradient(135deg, #10B981, #059669)",

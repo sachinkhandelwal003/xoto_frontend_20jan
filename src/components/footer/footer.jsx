@@ -9,7 +9,7 @@ import whatsappIcon from "../../assets/icons/Homeicons/whatsapp-svgrepo-com (2) 
 import chatIcon from "../../assets/icons/Homeicons/chat-svgrepo-com 1.png";
 import facebookIcon from "../../assets/icons/Homeicons/facebook-f 1.png";
 import instagramIcon from "../../assets/icons/Homeicons/instagram 1.png";
-import twitterIcon from "../../assets/icons/Homeicons/twitterlogo.png";
+import twitterIcon from "../../assets/icons/Homeicons/mainsss.png";
 import linkedinIcon from "../../assets/icons/Homeicons/linkedin 1.png";
 import logoNewImage from "../../assets/img/logoNew.png";
 
@@ -230,27 +230,26 @@ export default function Footer() {
   ))}
 </div>
 
-       {/* Partner Ecosystem */}
 <div>
   <h4 className="font-bold text-[24px] mb-4">
     {t("titles.resources")}
   </h4>
 
   {resources.map((i, k) => (
-  <div key={k} className="relative inline-block mb-3">
-  <Link
-    to={i.path}
-    className="text-white/70 block"
-  >
-    {i.label}
-  </Link>
+    <div key={k} className="relative mb-3">
+      <Link
+        to={i.path}
+        className="text-white/70 block"
+      >
+        {i.label}
+      </Link>
 
-  {i.comingSoon && (
-    <span className="absolute -top-2 -right-12 text-[8px] font-bold bg-[#F5D7C8] text-black px-3 py-[2px] rounded-full shadow-sm uppercase">
-      {t("comingsoon")}
-    </span>
-  )}
-</div>
+      {i.comingSoon && (
+        <span className="absolute -top-2 right-18 text-[8px] font-bold bg-[#F5D7C8] text-black px-3 py-[2px] rounded-full shadow-sm uppercase">
+          {t("comingsoon")}<br/>
+        </span>
+      )}
+    </div>
   ))}
 </div>
 
@@ -305,7 +304,7 @@ export default function Footer() {
               <img src={instagramIcon} className="w-[24px]" />
             </a>
             <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
-              <img src={twitterIcon} className="w-[24px]" />
+              <img src={twitterIcon} className="w-[24px] bg-[#5C039B]" />
             </a>
             <a href="https://www.linkedin.com/company/xotouae/?viewAsMember=true" target="_blank" rel="noopener noreferrer">
               <img src={linkedinIcon} className="w-[24px]" />
