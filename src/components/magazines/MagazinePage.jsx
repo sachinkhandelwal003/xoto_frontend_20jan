@@ -158,10 +158,10 @@ const BuiltForEveryone = () => {
     </button>
     <button
       onClick={() => { nextSlide(); setActiveBtn("right"); }}
-      className={`p-3 rounded-sm border transition-all duration-300 ${
+      className={`p-3 rounded-sm border bg-[#5C039B]   transition-all duration-300 ${
         activeBtn === "right" 
           ? "bg-[var(--color-primary)] text-white" 
-          : "bg-white text-black hover:bg-gray-100"
+          : "hover:bg-gray-100 bg-white text-black"
       }`}
     >
       <ChevronRight className="w-5 h-5" />

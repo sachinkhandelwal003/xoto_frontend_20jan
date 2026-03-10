@@ -15,7 +15,7 @@ import {
 import { useSelector } from 'react-redux';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
 import LeadGenerationModal from '../Signuupage';
-import logoNew from "../../../assets/img/logonew2.png";
+// import logoNew from "../../../assets/img/logonew2.png";
 
 const { Paragraph, Title, Text } = Typography;
 
@@ -158,39 +158,81 @@ const AIPlanner = () => {
     }
   }, [user]);
 
-  const fetchLibraryDesigns = async () => {
+  // const fetchLibraryDesigns = async () => {
+  //   if (!user) return;
+
+  //   try {
+  //     setLoadingLibrary(true);
+  //     const res = await apiService.get(`/ai/get-customer-liabrary?designType=landscaping`);
+  //     const designs = res?.data || [];
+  //     console.log(designs)
+
+  //     // Map to UI format
+  //     const formatted = designs.flatMap((d, index) =>
+  //       d.images.map((img, i) => ({
+  //         id: `${d._id}-${i}`,
+  //         image: img,
+  //         title: `Library Design ${index + 1}-${i + 1}`,
+  //         timestamp: new Date(d.createdAt).toLocaleDateString(),
+  //       }))
+  //     );
+
+  //     setLibraryDesigns(formatted.reverse());
+  //   } catch (err) {
+  //     console.error("Failed to load library", err);
+  //   } finally {
+  //     setLoadingLibrary(false);
+  //   }
+  // };
+
+  // Fetch library when modal opens
+ const fetchLibraryDesigns = async () => {
     if (!user) return;
 
     try {
       setLoadingLibrary(true);
       const res = await apiService.get(`/ai/get-customer-liabrary?designType=landscaping`);
-      const designs = res?.data || [];
-      console.log(designs)
+      const apiDesigns = res?.data || [];
+      console.log("Library Data: ", apiDesigns);
 
-      // Map to UI format
-      const formatted = designs.flatMap((d, index) =>
-        d.images.map((img, i) => ({
-          id: `${d._id}-${i}`,
-          image: img,
-          title: `Library Design ${index + 1}-${i + 1}`,
-          timestamp: new Date(d.createdAt).toLocaleDateString(),
-        }))
-      );
+      // ✅ FIX: Sahi mapping jo 'imageUrl' aur 'images' dono ko handle karegi
+      const formatted = apiDesigns.flatMap((d, index) => {
+        // Agar array of images hai
+        if (d.images && Array.isArray(d.images)) {
+          return d.images.map((img, i) => ({
+            id: `${d._id}-${i}`,
+            image: img,
+            title: `Library Design ${index + 1}-${i + 1}`,
+            timestamp: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Just now',
+          }));
+        } 
+        // Agar single imageUrl hai (jo aap upload me bhej rahe ho)
+        else {
+          return [{
+            id: d._id || index,
+            image: d.imageUrl || d.image, // Use imageUrl
+            title: `Library Design ${index + 1}`,
+            timestamp: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Just now',
+          }];
+        }
+      });
 
-      setLibraryDesigns(formatted.reverse());
+      // Jin objects me image null hai unhe filter out kar do
+      const validDesigns = formatted.filter(item => item.image);
+
+      setLibraryDesigns(validDesigns.reverse());
     } catch (err) {
       console.error("Failed to load library", err);
     } finally {
       setLoadingLibrary(false);
     }
   };
-
-  // Fetch library when modal opens
+// ✅ FIX: Jab user load ho ya Library/Upload Modal khule, tab data fetch karo
   useEffect(() => {
-
-    fetchLibraryDesigns();
-
-  }, []);
+    if (user && (showLibraryModal || showUploadModal)) {
+      fetchLibraryDesigns();
+    }
+  }, [user, showLibraryModal, showUploadModal]);
 
 
 
@@ -985,7 +1027,7 @@ const downloadImage = async (imageUrl) => {
         <div className="fixed inset-0 z-[100] bg-white/90 lg:bg-white/80 backdrop-blur-xl flex flex-col items-center justify-center animate-in fade-in duration-500 p-4">
           <div className="relative mb-8 lg:mb-12 w-32 h-32 lg:w-48 lg:h-48 mx-auto flex items-center justify-center">
             <div className="absolute -inset-6 lg:-inset-8 bg-purple-500/20 blur-2xl rounded-full animate-pulse" />
-            <img src={logoNew} alt="Logo" className="relative max-w-full max-h-full object-contain animate-bounce" />
+            {/* <img src={logoNew} alt="Logo" className="relative max-w-full max-h-full object-contain animate-bounce" /> */}
           </div>
           <div className="text-center mb-6 lg:mb-8 px-4">
             <h2 className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight leading-tight">

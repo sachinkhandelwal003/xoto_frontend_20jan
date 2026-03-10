@@ -18,6 +18,7 @@ import FreelancerProfile from "./pages/dashboardPages/managefreelancer/freelance
 import MyprofileFreelancer from "./pages/dashboardPages/managefreelancer/freelancer/MyprofileFreelancer";
 import UpdateFreelncerProfile from "./pages/dashboardPages/managefreelancer/freelancer/UpdateFreelancerProfile";
 import Projects from "./pages/dashboardPages/managefreelancer/freelancer/Projects/Projects";
+import ViewwProject from "./pages/dashboardPages/ViewLibrary";
 import MyProjects from "./pages/dashboardPages/managefreelancer/freelancer/Projects/MyProjects";
 import Accountant from "./pages/dashboardPages/manageaccountant/Accountant";
 import AccountantDashboard from "./pages/AccountantDashboard";
@@ -290,7 +291,7 @@ const CmsRoutes = () => {
       <Route path="projects/manage" element={<ManageProjectsSupervisor />} />
       <Route path="projects/manage/:projectId" element={<ManageProjectFreelancer />} />
       <Route path="projects/ongoing" element={<CustomerProjects />} />
-
+        <Route path="ViewLibrary" element={<ViewwProject />} />
       <Route path="myprofile" element={<Profile />} />
             <Route path="products" element={<ProductReview />} />
       <Route path="attributes/add" element={<AddAttributes />} />

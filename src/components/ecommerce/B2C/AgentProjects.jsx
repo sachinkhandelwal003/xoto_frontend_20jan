@@ -28,7 +28,8 @@ import { useNavigate } from "react-router-dom";
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const BASE_URL = "http://localhost:5000/api";
+// const BASE_URL = "http://localhost:5000/api";
+const BASE_URL = "https://xoto.ae/api/api";
 
 export default function AgentProjects() {
   const navigate = useNavigate();

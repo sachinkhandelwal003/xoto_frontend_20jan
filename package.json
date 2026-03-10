@@ -103,7 +103,7 @@
     "react-tooltip": "^5.29.1",
     "react-use": "^17.6.0",
     "reactflow": "^11.11.4",
-    "recharts": "^3.4.1",
+    "recharts": "^3.8.0",
     "redux-persist": "^6.0.0",
     "rollup": "^4.53.3",
     "slick-carousel": "^1.8.1",
