@@ -157,7 +157,7 @@ const Login = () => {
       type: "direct",
     },
     {
-      id: "business-association",
+      id: "agent",
       label: "Agents",
       desc: "For Agents",
       icon: <TeamOutlined style={{ fontSize: "28px" }} />,
@@ -211,30 +211,22 @@ const Login = () => {
       
       // 1. Priority Check: Agar User ne UI se "Developer" select kiya tha
       if (selectedPartnerType === "developer") {
-
-  const developerId = user?._id || user?.id;
-
-  localStorage.setItem("developerId", developerId);
-
-  toast.success("Welcome Developer! Accessing your dashboard...");
-
-  setTimeout(() => {
-    navigate("/dashboard/developer", { replace: true });
-  }, 1500);
-
-  return;
-}
+        const developerId = user?._id || user?.id;
+        localStorage.setItem("developerId", developerId);
+        toast.success("Welcome Developer! Accessing your dashboard...");
+        setTimeout(() => {
+          navigate("/dashboard/developer", { replace: true });
+        }, 1500);
+        return;
+      }
 
       if (selectedPartnerType === "agent") {
          toast.success("Welcome Agent! Accessing your dashboard...");
          setTimeout(() => {
-           // Yahan apna sahi Agent Dashboard route daal dena
            navigate("/dashboard/agent", { replace: true });
          }, 1500);
          return;
       }
-
-      
 
       // 2. Role Code Based Redirect (Backend ID Logic)
       const rolePathMap = {
@@ -244,12 +236,9 @@ const Login = () => {
         "5": "/dashboard/vendor-b2c",
         "6": "/dashboard/vendor-b2b",
         "7": "/dashboard/freelancer",
-        
-        // ✅ FIX: Ab ID 8 seedha Developer Dashboard par jayegi
-        // ✅ Updated Role Codes
-  "15": "/dashboard/agency",        // Agency
-  "16": "/dashboard/agent",         // Agent
-  "17": "/dashboard/developer",     // Developer
+        "15": "/dashboard/agency",        // Agency
+        "16": "/dashboard/agent",         // Agent
+        "17": "/dashboard/developer",     // Developer
       };
 
       const path = rolePathMap[roleCode] || "/dashboard";
@@ -289,15 +278,12 @@ const Login = () => {
     
     if (view === "login") {
         if (isGridMode) {
-            // Grid Mode: Back goes to Grid Selection
             setView("xoto-select"); 
         } else {
-            // Normal Mode: Back goes to Main Selection
             setView("main"); 
             setSelectedPartnerType(null);
         }
     } else if (view === "xoto-select") {
-        // Grid Mode Top Level Back: Go Home or specific path
         navigate("/");
     }
   };
@@ -311,15 +297,11 @@ const Login = () => {
       let endpoint = "";
 
       if (selectedPartnerType === "freelancer") endpoint = "/freelancer/login";
-      else if (selectedPartnerType === "vendor-b2c")
-        endpoint = "/vendor/login";
-      else if (selectedPartnerType === "business-association")
-        endpoint = "/association/login";
-      else if (selectedPartnerType === "developer")
-        endpoint = "/property/login-developer"; 
+      else if (selectedPartnerType === "vendor-b2c") endpoint = "/vendor/login";
+      else if (selectedPartnerType === "developer") endpoint = "/property/login-developer"; 
       else if (selectedPartnerType === "agent") endpoint = "/agent/login-agent";
-else if (selectedPartnerType === "agency")
-  endpoint = "/agency/agency-login";
+      else if (selectedPartnerType === "agency") endpoint = "/agency/agency-login";
+      
       await login(endpoint, {
         email: values.email,
         password: values.password,
@@ -334,17 +316,11 @@ else if (selectedPartnerType === "agency")
   };
 
   const handleRegister = () => {
-    if (selectedPartnerType === "freelancer")
-      navigate("/freelancer/registration");
+    if (selectedPartnerType === "freelancer") navigate("/freelancer/registration");
     else if (selectedPartnerType === "vendor-b2c") navigate("/ecommerce/seller");
-    else if (selectedPartnerType === "business-association")
-      navigate("/ecommerce/seller");
-    else if (selectedPartnerType === "developer")
-      navigate("/developer/registration");
-    else if (selectedPartnerType === "agent")
-      navigate("/agent/registration"); 
-    else if (selectedPartnerType === "agency")
-      navigate("/agency/registration"); 
+    else if (selectedPartnerType === "developer") navigate("/developer/registration");
+    else if (selectedPartnerType === "agent") navigate("/agent/registration"); 
+    else if (selectedPartnerType === "agency") navigate("/agency/registration"); 
   };
 
   // --- RENDER CONTENT ---
@@ -644,12 +620,10 @@ else if (selectedPartnerType === "agency")
           colorPrimary:
             selectedPartnerType === "vendor-b2c"
               ? "#03A4F4"
-              : selectedPartnerType === "business-association"
-              ? "#10B981"
               : selectedPartnerType === "developer"
               ? "#F97316"
               : selectedPartnerType === "agent"
-              ? "#E11D48"
+              ? "#10B981"
               : selectedPartnerType === "agency"
               ? "#4F46E5"
               : "#5C039B",

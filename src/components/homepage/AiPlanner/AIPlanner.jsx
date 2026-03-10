@@ -158,39 +158,81 @@ const AIPlanner = () => {
     }
   }, [user]);
 
-  const fetchLibraryDesigns = async () => {
+  // const fetchLibraryDesigns = async () => {
+  //   if (!user) return;
+
+  //   try {
+  //     setLoadingLibrary(true);
+  //     const res = await apiService.get(`/ai/get-customer-liabrary?designType=landscaping`);
+  //     const designs = res?.data || [];
+  //     console.log(designs)
+
+  //     // Map to UI format
+  //     const formatted = designs.flatMap((d, index) =>
+  //       d.images.map((img, i) => ({
+  //         id: `${d._id}-${i}`,
+  //         image: img,
+  //         title: `Library Design ${index + 1}-${i + 1}`,
+  //         timestamp: new Date(d.createdAt).toLocaleDateString(),
+  //       }))
+  //     );
+
+  //     setLibraryDesigns(formatted.reverse());
+  //   } catch (err) {
+  //     console.error("Failed to load library", err);
+  //   } finally {
+  //     setLoadingLibrary(false);
+  //   }
+  // };
+
+  // Fetch library when modal opens
+ const fetchLibraryDesigns = async () => {
     if (!user) return;
 
     try {
       setLoadingLibrary(true);
       const res = await apiService.get(`/ai/get-customer-liabrary?designType=landscaping`);
-      const designs = res?.data || [];
-      console.log(designs)
+      const apiDesigns = res?.data || [];
+      console.log("Library Data: ", apiDesigns);
 
-      // Map to UI format
-      const formatted = designs.flatMap((d, index) =>
-        d.images.map((img, i) => ({
-          id: `${d._id}-${i}`,
-          image: img,
-          title: `Library Design ${index + 1}-${i + 1}`,
-          timestamp: new Date(d.createdAt).toLocaleDateString(),
-        }))
-      );
+      // ✅ FIX: Sahi mapping jo 'imageUrl' aur 'images' dono ko handle karegi
+      const formatted = apiDesigns.flatMap((d, index) => {
+        // Agar array of images hai
+        if (d.images && Array.isArray(d.images)) {
+          return d.images.map((img, i) => ({
+            id: `${d._id}-${i}`,
+            image: img,
+            title: `Library Design ${index + 1}-${i + 1}`,
+            timestamp: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Just now',
+          }));
+        } 
+        // Agar single imageUrl hai (jo aap upload me bhej rahe ho)
+        else {
+          return [{
+            id: d._id || index,
+            image: d.imageUrl || d.image, // Use imageUrl
+            title: `Library Design ${index + 1}`,
+            timestamp: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Just now',
+          }];
+        }
+      });
 
-      setLibraryDesigns(formatted.reverse());
+      // Jin objects me image null hai unhe filter out kar do
+      const validDesigns = formatted.filter(item => item.image);
+
+      setLibraryDesigns(validDesigns.reverse());
     } catch (err) {
       console.error("Failed to load library", err);
     } finally {
       setLoadingLibrary(false);
     }
   };
-
-  // Fetch library when modal opens
+// ✅ FIX: Jab user load ho ya Library/Upload Modal khule, tab data fetch karo
   useEffect(() => {
-
-    fetchLibraryDesigns();
-
-  }, []);
+    if (user && (showLibraryModal || showUploadModal)) {
+      fetchLibraryDesigns();
+    }
+  }, [user, showLibraryModal, showUploadModal]);
 
 
 
