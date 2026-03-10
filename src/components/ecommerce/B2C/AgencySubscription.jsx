@@ -41,6 +41,7 @@ const AgencySubscription = () => {
         ) : (
           <Tag color="red">Pending</Tag>
         ),
+
     },
   ];
 

@@ -158,8 +158,8 @@ const Login = () => {
     },
     {
       id: "business-association",
-      label: "Business Associates",
-      desc: "For Business Networks",
+      label: "Agents",
+      desc: "For Agents",
       icon: <TeamOutlined style={{ fontSize: "28px" }} />,
       color: "#10B981",
       gradient: "linear-gradient(135deg, #10B981, #059669)",
@@ -211,12 +211,19 @@ const Login = () => {
       
       // 1. Priority Check: Agar User ne UI se "Developer" select kiya tha
       if (selectedPartnerType === "developer") {
-        toast.success("Welcome Developer! Accessing your dashboard...");
-        setTimeout(() => {
-          navigate("/dashboard/developer", { replace: true });
-        }, 1500);
-        return;
-      }
+
+  const developerId = user?._id || user?.id;
+
+  localStorage.setItem("developerId", developerId);
+
+  toast.success("Welcome Developer! Accessing your dashboard...");
+
+  setTimeout(() => {
+    navigate("/dashboard/developer", { replace: true });
+  }, 1500);
+
+  return;
+}
 
       if (selectedPartnerType === "agent") {
          toast.success("Welcome Agent! Accessing your dashboard...");

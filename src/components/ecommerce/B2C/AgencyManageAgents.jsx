@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Table,
@@ -13,278 +13,479 @@ import {
   Col,
   Avatar,
   Switch,
+  Upload,
+  Select,
 } from "antd";
+
 import {
   PlusOutlined,
   DeleteOutlined,
   UserOutlined,
+  UploadOutlined,
   SearchOutlined,
-  TeamOutlined,
-  TrophyOutlined,
-  FireOutlined
 } from "@ant-design/icons";
 
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
+import { toast } from "react-toastify";
+
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 const AgencyManageAgents = () => {
-  const [agents, setAgents] = useState([
-    { key: 1, name: "Rahul Sharma", email: "rahul@test.com", status: true, leads: 12, deals: 3 },
-    { key: 2, name: "Priya Mehta", email: "priya@test.com", status: true, leads: 8, deals: 2 },
-  ]);
 
-  const [searchText, setSearchText] = useState("");
+  const [agents, setAgents] = useState([]);
+  const [filteredAgents, setFilteredAgents] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
   const [form] = Form.useForm();
 
-  const handleAddAgent = (values) => {
-    const newAgent = {
-      key: agents.length + 1,
-      name: values.name,
-      email: values.email,
-      status: true,
-      leads: 0,
-      deals: 0,
-    };
-    setAgents([...agents, newAgent]);
-    setIsModalOpen(false);
-    form.resetFields();
+  const [urls, setUrls] = useState({
+    profile: "",
+    idProof: "",
+    rera: "",
+  });
+
+  const [uploading, setUploading] = useState({
+    profile: false,
+    idProof: false,
+    rera: false,
+  });
+
+  /* ================= FETCH AGENTS ================= */
+
+  const fetchAgents = async () => {
+    try {
+
+      const res = await apiService.get("agent/get-all-agents");
+
+      const agentsData = res?.data || [];
+
+      const formatted = agentsData.map((agent) => ({
+        key: agent._id,
+        name: `${agent.first_name} ${agent.last_name}`,
+        email: agent.email,
+        role: agent.role || "Agent",
+        status: agent.status ?? true,
+      }));
+
+      setAgents(formatted);
+      setFilteredAgents(formatted);
+
+    } catch (error) {
+      toast.error("Failed to load agents");
+    }
   };
 
-  const handleDelete = (key) => {
-    setAgents(agents.filter((agent) => agent.key !== key));
+  useEffect(() => {
+    fetchAgents();
+  }, []);
+
+  /* ================= SEARCH ================= */
+
+  const handleSearch = (value) => {
+
+    setSearchText(value);
+
+    const filtered = agents.filter((agent) =>
+      agent.name.toLowerCase().includes(value.toLowerCase())
+    );
+
+    setFilteredAgents(filtered);
   };
+
+  /* ================= FILE UPLOAD ================= */
+
+  const handleInstantUpload = async (file, type) => {
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setUploading((prev) => ({ ...prev, [type]: true }));
+
+    try {
+
+      const res = await apiService.upload("upload", formData);
+
+      const uploadedUrl = res?.file?.url || res?.url;
+
+      if (uploadedUrl) {
+
+        setUrls((prev) => ({
+          ...prev,
+          [type]: uploadedUrl,
+        }));
+
+        toast.success(`${type} uploaded`);
+
+      }
+
+    } catch (error) {
+
+      toast.error("Upload failed");
+
+    }
+
+    setUploading((prev) => ({
+      ...prev,
+      [type]: false,
+    }));
+
+    return false;
+  };
+
+  /* ================= ADD AGENT ================= */
+
+  const handleAddAgent = async (values) => {
+
+  try {
+
+    const payload = {
+
+      ...values,
+
+      profile_photo: urls.profile,
+      id_proof: urls.idProof,
+      rera_certificate: urls.rera
+
+    };
+
+    await apiService.post(
+      "agent/agent-signup",
+      payload
+    );
+
+    toast.success("Agent added successfully");
+
+    fetchAgents();
+
+    form.resetFields();
+    setUrls({
+      profile: "",
+      idProof: "",
+      rera: ""
+    });
+
+    setIsModalOpen(false);
+
+  } catch (error) {
+
+    toast.error(
+      error?.response?.data?.message ||
+      "Failed to create agent"
+    );
+
+  }
+
+};
+
+  /* ================= DELETE AGENT ================= */
+
+  const handleDelete = async (id) => {
+
+    try {
+
+     await apiService.delete(`agent/delete-agent/${id}`);
+
+      toast.success("Agent deleted");
+
+      fetchAgents();
+
+    } catch (error) {
+
+      toast.error("Delete failed");
+
+    }
+
+  };
+
+  /* ================= STATUS ================= */
 
   const toggleStatus = (key) => {
-    setAgents(
-      agents.map((agent) =>
-        agent.key === key ? { ...agent, status: !agent.status } : agent
+
+    setFilteredAgents(
+      filteredAgents.map((agent) =>
+        agent.key === key
+          ? { ...agent, status: !agent.status }
+          : agent
       )
     );
+
   };
 
-  const filteredAgents = agents.filter((agent) =>
-    agent.name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  /* ================= TABLE ================= */
 
   const columns = [
+
     {
       title: "Agent Details",
-      key: "agent",
       render: (_, record) => (
-        <Space size="middle">
-          <Avatar
-            size={48}
-            style={{ backgroundColor: "#e0e7ff", color: "#4f46e5", fontWeight: "bold" }}
-            icon={!record.name && <UserOutlined />}
-          >
-            {record.name?.charAt(0).toUpperCase()}
-          </Avatar>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <Text strong style={{ fontSize: "15px", color: "#1f2937" }}>{record.name}</Text>
-            <Text type="secondary" style={{ fontSize: "13px" }}>{record.email}</Text>
+        <Space>
+          <Avatar icon={<UserOutlined />} />
+          <div>
+            <Text strong>{record.name}</Text>
+            <br />
+            <Text type="secondary">{record.email}</Text>
           </div>
         </Space>
       ),
     },
+
     {
-      title: "Assigned Leads",
-      dataIndex: "leads",
-      align: "center",
-      render: (val) => (
-        <Tag color="blue" style={{ padding: "4px 12px", borderRadius: "12px", fontSize: "13px" }}>
-          {val} Leads
-        </Tag>
+      title: "Role",
+      dataIndex: "role",
+      render: (role) => (
+        <Tag color="purple">{role}</Tag>
       ),
     },
+
     {
-      title: "Closed Deals",
-      dataIndex: "deals",
-      align: "center",
-      render: (val) => (
-        <Tag color="green" style={{ padding: "4px 12px", borderRadius: "12px", fontSize: "13px" }}>
-          {val} Deals
-        </Tag>
-      ),
-    },
-    {
-      title: "Account Status",
-      align: "center",
+      title: "Status",
       render: (_, record) => (
-        <Space direction="vertical" size={2}>
-          <Switch
-            checked={record.status}
-            onChange={() => toggleStatus(record.key)}
-            style={{ background: record.status ? "#059669" : "#d1d5db" }}
-          />
-          <Text type="secondary" style={{ fontSize: "11px" }}>
-            {record.status ? "Active" : "Inactive"}
-          </Text>
-        </Space>
+        <Switch
+          checked={record.status}
+          onChange={() => toggleStatus(record.key)}
+        />
       ),
     },
+
     {
       title: "Action",
-      align: "right",
       render: (_, record) => (
         <Button
-          type="text"
           danger
           icon={<DeleteOutlined />}
           onClick={() => handleDelete(record.key)}
-          style={{ fontWeight: "500", borderRadius: "6px" }}
-        >
-          Remove
-        </Button>
+        />
       ),
     },
-  ];
 
-  // Calculated Stats
-  const totalLeads = agents.reduce((sum, a) => sum + a.leads, 0);
-  const totalDeals = agents.reduce((sum, a) => sum + a.deals, 0);
-
-  const stats = [
-    { title: "Total Agents", value: agents.length, icon: <TeamOutlined />, color: "#5c039b", bg: "#f3e8ff" },
-    { title: "Total Leads", value: totalLeads, icon: <FireOutlined />, color: "#2563eb", bg: "#dbeafe" },
-    { title: "Total Deals", value: totalDeals, icon: <TrophyOutlined />, color: "#059669", bg: "#d1fae5" },
   ];
 
   return (
-    <div style={{ padding: "24px", background: "#f8f9fa", minHeight: "100vh" }}>
-      
-      {/* HEADER SECTION */}
-      <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+    <div style={{ padding: 24, background: "#f8f9fa", minHeight: "100vh" }}>
+
+      {/* HEADER */}
+
+      <div
+        style={{
+          marginBottom: 30,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}
+      >
+
         <div>
-          <Title level={2} style={{ margin: 0, color: "#1f2937" }}>
-            Manage Agents
-          </Title>
-          <Text type="secondary" style={{ fontSize: "15px" }}>
-            Add, remove, and track performance of your agency staff.
+          <Title level={2}>Manage Agents</Title>
+          <Text type="secondary">
+            Add and manage your agency agents.
           </Text>
         </div>
-        <Button
-          size="large"
-          type="primary"
-          icon={<PlusOutlined />}
-          style={{ background: "#5c039b", borderColor: "#5c039b", boxShadow: "0 4px 10px rgba(92, 3, 155, 0.2)", borderRadius: "8px" }}
-          onClick={() => setIsModalOpen(true)}
-        >
-          Add New Agent
-        </Button>
+
+        <Space>
+
+          <Input
+            placeholder="Search agent..."
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            style={{ background: "#5c039b" }}
+            onClick={() => setIsModalOpen(true)}
+          >
+            Add New Agent
+          </Button>
+
+        </Space>
+
       </div>
 
-      {/* TOP STATS */}
-      <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
-        {stats.map((stat, index) => (
-          <Col xs={24} md={8} key={index}>
-            <Card 
-              bordered={false} 
-              style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-              bodyStyle={{ padding: "24px" }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <div style={{ 
-                  width: "56px", height: "56px", borderRadius: "12px", 
-                  background: stat.bg, color: stat.color,
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px"
-                }}>
-                  {stat.icon}
-                </div>
-                <div>
-                  <Text type="secondary" style={{ fontSize: "13px", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                    {stat.title}
-                  </Text>
-                  <Title level={2} style={{ margin: "4px 0 0 0", color: "#1f2937" }}>
-                    {stat.value}
-                  </Title>
-                </div>
-              </div>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      {/* TABLE */}
 
-      {/* MAIN TABLE CARD */}
-      <Card 
-        bordered={false} 
-        style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-        bodyStyle={{ padding: 0 }}
-      >
-        <div style={{ padding: "24px", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
-          <Title level={5} style={{ margin: 0, color: "#374151" }}>Agent Directory</Title>
-          <Input
-            size="large"
-            prefix={<SearchOutlined style={{ color: "#9ca3af" }} />}
-            placeholder="Search by agent name..."
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: "100%", maxWidth: "300px", borderRadius: "8px" }}
-            allowClear
-          />
-        </div>
-
+      <Card>
         <Table
           columns={columns}
           dataSource={filteredAgents}
-          pagination={{ pageSize: 5, position: ["bottomCenter"] }}
-          style={{ padding: "0 24px 24px 24px" }}
+          pagination={{ pageSize: 6 }}
         />
       </Card>
 
-      {/* ADD AGENT MODAL */}
-      <Modal
-        title={
-          <div style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937", marginBottom: "8px" }}>
-            Add New Agent
-          </div>
-        }
-        open={isModalOpen}
-        onCancel={() => {
-          setIsModalOpen(false);
-          form.resetFields();
-        }}
-        footer={null}
-        centered
-        destroyOnClose
-        styles={{ padding: "24px" }}
-      >
-        <Form 
-          form={form} 
-          layout="vertical" 
-          onFinish={handleAddAgent}
-          size="large"
-        >
-          <Form.Item
-            name="name"
-            label={<span style={{ fontWeight: "500" }}>Agent Full Name</span>}
-            rules={[{ required: true, message: "Please enter agent name" }]}
-          >
-            <Input placeholder="e.g. Rahul Sharma" prefix={<UserOutlined style={{ color: "#aaa" }} />} />
-          </Form.Item>
+      {/* MODAL */}
 
-          <Form.Item
-            name="email"
-            label={<span style={{ fontWeight: "500" }}>Email Address</span>}
-            rules={[
-              { required: true, message: "Please enter email" },
-              { type: "email", message: "Enter a valid email address" },
-            ]}
-          >
-            <Input placeholder="e.g. rahul@agency.com" />
-          </Form.Item>
+    <Modal
+  title="Add New Agent"
+  open={isModalOpen}
+  footer={null}
+  centered
+  width={720}
+  onCancel={() => setIsModalOpen(false)}
+>
+<Form layout="vertical" form={form} onFinish={handleAddAgent}>
 
-          <Button 
-            type="primary" 
-            htmlType="submit" 
-            block 
-            style={{ height: "48px", background: "#5c039b", borderColor: "#5c039b", fontSize: "16px", marginTop: "12px" }}
-          >
-            Create Agent Account
-          </Button>
-        </Form>
-      </Modal>
+<Form.Item
+  name="role"
+  label="Add As"
+  rules={[{ required: true }]}
+>
+  <Select placeholder="Select role">
+    <Option value="Manager">Manager</Option>
+    <Option value="Agent">Agent</Option>
+  </Select>
+</Form.Item>
+
+<Row gutter={16}>
+
+  <Col xs={24} md={12}>
+    <Form.Item name="first_name" label="First Name" rules={[{ required: true }]}>
+      <Input />
+    </Form.Item>
+  </Col>
+
+  <Col xs={24} md={12}>
+    <Form.Item name="last_name" label="Last Name" rules={[{ required: true }]}>
+      <Input />
+    </Form.Item>
+  </Col>
+
+</Row>
+
+<Form.Item name="email" label="Email" rules={[{ required: true }, { type: "email" }]}>
+  <Input />
+</Form.Item>
+
+<Form.Item name="password" label="Password" rules={[{ required: true }]}>
+  <Input.Password />
+</Form.Item>
+
+{/* PHONE */}
+
+<Row gutter={16}>
+
+  <Col xs={24} md={8}>
+    <Form.Item
+      name="country_code"
+      label="Country Code"
+      rules={[{ required: true }]}
+    >
+      <Select>
+        <Option value="+971">+971 UAE</Option>
+        <Option value="+91">+91 India</Option>
+      </Select>
+    </Form.Item>
+  </Col>
+
+  <Col xs={24} md={16}>
+    <Form.Item
+      name="phone_number"
+      label="Phone Number"
+      rules={[{ required: true }]}
+    >
+      <Input />
+    </Form.Item>
+  </Col>
+
+</Row>
+
+<Row gutter={16}>
+
+  <Col xs={24} md={12}>
+    <Form.Item
+      name="country"
+      label="Country"
+      rules={[{ required: true }]}
+    >
+      <Input placeholder="UAE / India" />
+    </Form.Item>
+  </Col>
+
+  <Col xs={24} md={12}>
+    <Form.Item
+      name="operating_city"
+      label="Operating City"
+      rules={[{ required: true }]}
+    >
+      <Input />
+    </Form.Item>
+  </Col>
+
+</Row>
+
+<Row gutter={16}>
+
+  <Col xs={24} md={12}>
+    <Form.Item
+      name="specialization"
+      label="Specialization"
+      rules={[{ required: true }]}
+    >
+      <Select>
+        <Option value="Residential">Residential</Option>
+        <Option value="Commercial">Commercial</Option>
+      </Select>
+    </Form.Item>
+  </Col>
+
+</Row>
+
+{/* FILE UPLOAD */}
+
+<Row gutter={16}>
+
+  <Col xs={24} md={8}>
+    <Upload
+      showUploadList={false}
+      beforeUpload={(file) => handleInstantUpload(file, "profile")}
+    >
+      <Button block icon={<UploadOutlined />} loading={uploading.profile}>
+        Upload Photo
+      </Button>
+    </Upload>
+  </Col>
+
+  <Col xs={24} md={8}>
+    <Upload
+      showUploadList={false}
+      beforeUpload={(file) => handleInstantUpload(file, "idProof")}
+    >
+      <Button block icon={<UploadOutlined />} loading={uploading.idProof}>
+        Upload ID
+      </Button>
+    </Upload>
+  </Col>
+
+  <Col xs={24} md={8}>
+    <Upload
+      showUploadList={false}
+      beforeUpload={(file) => handleInstantUpload(file, "rera")}
+    >
+      <Button block icon={<UploadOutlined />} loading={uploading.rera}>
+        Upload RERA
+      </Button>
+    </Upload>
+  </Col>
+
+</Row>
+
+<Button
+  type="primary"
+  htmlType="submit"
+  block
+  size="large"
+  style={{ background: "#5c039b", marginTop: 20 }}
+>
+  Complete Registration
+</Button>
+
+</Form>
+</Modal>
 
     </div>
   );
 };
 
 export default AgencyManageAgents;
+

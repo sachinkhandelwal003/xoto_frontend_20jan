@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+// import axios from 'axios';
 // In imports, add ChevronDown
 import { 
     Upload, 
@@ -110,26 +110,25 @@ selectedRoom.toLowerCase().replace(" ","_")
     // ==========================================
     // DOWNLOAD LOGIC (S3 to PDF/Image)
     // ==========================================
-    const handleDownload = async () => {
-        if (!resultImage) return;
-        try {
-            const key = resultImage.split(".amazonaws.com/")[1];
-            const response = await axios.get(
-                `https://xoto.ae/api/download-pdf?key=${encodeURIComponent(key)}`,
-                { responseType: "blob" }
-            );
-            const blob = new Blob([response.data], { type: "application/pdf" });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `XOTO_Staged_${selectedRoom}_${Date.now()}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch (error) {
-            notification.error({ message: "Download Failed" });
+ const handleDownload = async () => {
+    if (!resultImage) return;
+
+    try {
+        const key = resultImage.split(".amazonaws.com/")[1];
+
+        if (!key) {
+            return notification.error({ message: "Invalid Image URL" });
         }
-    };
+
+        await apiService.download(
+            `/download-pdf?key=${encodeURIComponent(key)}`,
+            `XOTO_Staged_${selectedRoom.replace(" ","_")}_${Date.now()}.pdf`
+        );
+
+    } catch (error) {
+        notification.error({ message: "Download Failed" });
+    }
+};
 
     return (
         <div className="min-h-screen bg-[#F8F9FB] flex flex-col font-sans relative pb-10">

@@ -14,7 +14,7 @@ const AgencyPerformance = () => {
   const agents = [
     { key: 1, name: "Rahul Sharma", leads: 20, deals: 5, revenue: 120000 },
     { key: 2, name: "Priya Desai", leads: 15, deals: 4, revenue: 95000 },
-    { key: 3, name: "Amit Kumar", leads: 10, deals: 2, revenue: 60000 },
+    { key: 3, name: "Amit Kumar", leads: 10, deals: 2, revenue: 60000 },  
   ];
 
   const totalLeads = agents.reduce((sum, a) => sum + a.leads, 0);

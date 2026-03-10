@@ -18,6 +18,7 @@ import FreelancerProfile from "./pages/dashboardPages/managefreelancer/freelance
 import MyprofileFreelancer from "./pages/dashboardPages/managefreelancer/freelancer/MyprofileFreelancer";
 import UpdateFreelncerProfile from "./pages/dashboardPages/managefreelancer/freelancer/UpdateFreelancerProfile";
 import Projects from "./pages/dashboardPages/managefreelancer/freelancer/Projects/Projects";
+import ViewwProject from "./pages/dashboardPages/ViewLibrary";
 import MyProjects from "./pages/dashboardPages/managefreelancer/freelancer/Projects/MyProjects";
 import Accountant from "./pages/dashboardPages/manageaccountant/Accountant";
 import AccountantDashboard from "./pages/AccountantDashboard";
@@ -82,6 +83,7 @@ import AgencyList from "./pages/Properties/AgencyList";
 import DeveloperDashboard from "../ecommerce/B2C/DeveloperDashboard";
 import AgentDashboard from "../ecommerce/B2C/AgentDashboard";
 import AgentLayout from "../ecommerce/B2C/AgentLayout";
+import Addleaddetails from "../ecommerce/B2C/AgentLeadDetails"
 import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";   
 import AgentSubscription from "../ecommerce/B2C/AgentSubscription";
 import AgentProjects from "../ecommerce/B2C/AgentProjects";
@@ -90,7 +92,7 @@ import AgentPresentations from "../ecommerce/B2C/AgentPresentations";
 import AgentSiteVisits from "../ecommerce/B2C/AgentSiteVisits";
 import AgentDeals from "../ecommerce/B2C/AgentDeals";
 import AgentCommission from "../ecommerce/B2C/AgentCommission";
-import AgentLeadDetails from "../ecommerce/B2C/AgentLeadDetails";
+// import AgentLeadDetails from "../ecommerce/B2C/AgentLeadDetails";
 import AgentCreateDeal from "../ecommerce/B2C/AgentCreateDeal";
 import AgentDealDetails from "../ecommerce/B2C/AgentDealDetails";
 import AgentSiteVisitDetails from "../ecommerce/B2C/AgentSiteVisitDetails";
@@ -120,15 +122,17 @@ import AgencyPerformance from "../ecommerce/B2C/AgencyPerformance";
 import AgencyAgentDetails from "../ecommerce/B2C/AgencyAgentDetails";
 import AgencyCommission from "../ecommerce/B2C/AgencyCommission";
 import AgencyLeadManagement from "../ecommerce/B2C/AgencyLeadManagement";
-import AgencyTargets from "../ecommerce/B2C/AgencyTargets";
-import AgencyLeaderboard from "../ecommerce/B2C/AgencyLeaderboard"; 
-import AgencyIncentives from "../ecommerce/B2C/AgencyIncentives";
-import AgencyBranches from "../ecommerce/B2C/AgencyBranches";
-import AgencyRoles from "../ecommerce/B2C/AgencyRoles";
-import AgencyAdvancedAnalytics from "../ecommerce/B2C/AgencyAdvancedAnalytics";
-import AgencyProfitEngine from "../ecommerce/B2C/AgencyProfitEngine";
+// import AgencyTargets from "../ecommerce/B2C/AgencyTargets";
+// import AgencyLeaderboard from "../ecommerce/B2C/AgencyLeaderboard"; 
+// import AgencyIncentives from "../ecommerce/B2C/AgencyIncentives";
+// import AgencyBranches from "../ecommerce/B2C/AgencyBranches";
+// import AgencyRoles from "../ecommerce/B2C/AgencyRoles";
+// import AgencyAdvancedAnalytics from "../ecommerce/B2C/AgencyAdvancedAnalytics";
+// import AgencyProfitEngine from "../ecommerce/B2C/AgencyProfitEngine";
 import AgencySubscription from "../ecommerce/B2C/AgencySubscription";
-import AgencyAssignProjects from "../ecommerce/B2C/AgencyAssignProjects";
+import AgencyProjects from "../ecommerce/B2C/AgencyProjects";
+import AgencyDeals from "../ecommerce/B2C/AgencyDeals";
+// import AgencyAssignProjects from "../ecommerce/B2C/AgencyAssignProjects";
 
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
@@ -138,6 +142,9 @@ import LeadManagement from "./pages/LeadManagement";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import VerificationQueue from "./pages/VerificationQueue";
 import AgencyDashboard from "../ecommerce/B2C/AgencyDashboard";
+import XobiaTrainingAdmin from "./pages/XobiaTrainingAdmin";
+import GlobalSettings from "./pages/GlobalSettings";
+import XotoBlitzCampaigns from "./pages/XotoBlitzCampaigns";
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -284,7 +291,7 @@ const CmsRoutes = () => {
       <Route path="projects/manage" element={<ManageProjectsSupervisor />} />
       <Route path="projects/manage/:projectId" element={<ManageProjectFreelancer />} />
       <Route path="projects/ongoing" element={<CustomerProjects />} />
-
+        <Route path="ViewLibrary" element={<ViewwProject />} />
       <Route path="myprofile" element={<Profile />} />
             <Route path="products" element={<ProductReview />} />
       <Route path="attributes/add" element={<AddAttributes />} />
@@ -315,9 +322,10 @@ const CmsRoutes = () => {
 {/* <Route index element={<AgentDashboard />} /> */}
 
   {/* Leads */}
-  <Route path="leads" element={<AgentLeadDashboard />} />
-  <Route path="lead/:id" element={<AgentLeadDetails />} />
-
+  <Route path="agent-leads" element={<AgentLeadDashboard />} />
+  <Route path="agent-lead/:id" element={<Addleaddetails/>} />
+  {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
+        
   {/* Projects */}
   <Route path="projects" element={<AgentProjects />} />
   <Route 
@@ -357,6 +365,9 @@ const CmsRoutes = () => {
       <Route path="/lead-management" element={<LeadManagement />} />
       <Route path="/subscription-plans" element={<SubscriptionPlans />} />
       <Route path="/verification-queue" element={<VerificationQueue />} />
+      <Route path="/ai-training" element={<XobiaTrainingAdmin />} />
+      <Route path="/global-settings" element={<GlobalSettings />} />
+      <Route path="/marketing-hub" element={<XotoBlitzCampaigns />} />
       
 {/* Agency */}
 <Route path="manage-agents" element={<AgencyManageAgents />} />
@@ -364,15 +375,17 @@ const CmsRoutes = () => {
 <Route path="performance" element={<AgencyPerformance />} />
 <Route path="commission" element={<AgencyCommission />} />
 <Route path="lead-management" element={<AgencyLeadManagement />} />
-<Route path="targets" element={<AgencyTargets />} />
-<Route path="leaderboard" element={<AgencyLeaderboard />} />
-<Route path="incentives" element={<AgencyIncentives />} />
-<Route path="branches" element={<AgencyBranches />} />
-<Route path="internal-roles" element={<AgencyRoles />} />
-<Route path="advanced-analytics" element={<AgencyAdvancedAnalytics />} />
-<Route path="profit-engine" element={<AgencyProfitEngine />} />
+{/* <Route path="targets" element={<AgencyTargets />} /> */}
+{/* <Route path="leaderboard" element={<AgencyLeaderboard />} /> */}
+{/* <Route path="incentives" element={<AgencyIncentives />} /> */}
+{/* <Route path="branches" element={<AgencyBranches />} /> */}
+{/* <Route path="internal-roles" element={<AgencyRoles />} /> */}
+{/* <Route path="advanced-analytics" element={<AgencyAdvancedAnalytics />} /> */}
+{/* <Route path="profit-engine" element={<AgencyProfitEngine />} /> */}
 <Route path="subscription" element={<AgencySubscription />} />
-<Route path="assign-projects" element={<AgencyAssignProjects />} />
+<Route path="/agency/projects" element={<AgencyProjects />} />
+<Route path="/agency/deals" element={<AgencyDeals />} />
+{/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
 {/* Developer */}
 <Route path="developer-projects" element={<DeveloperProjects/>}/>
 <Route path="developer-projects/add" element={<DeveloperAddProject/>}/>
@@ -381,8 +394,8 @@ const CmsRoutes = () => {
 <Route path="/inventory/add" element={<DeveloperAddUnit/>}/>
 <Route path="/inventory/:id" element={<DeveloperUnitDetails/>}/>
 <Route path="/inventory/:id/edit" element={<DeveloperEditUnit/>}/>
-<Route path="leads" element={<DeveloperLeads/>}/>
-<Route path="/leads/:id" element={<DeveloperLeadDetails/>}/>
+<Route path="developer-leads" element={<DeveloperLeads />} />
+<Route path="developer-leads/:id" element={<DeveloperLeadDetails />} />
 <Route path="/leads/:id/booking" element={<DeveloperCreateBooking/>}/>
 <Route path="/bookings" element={<DeveloperBookings/>}/>
 <Route path="/bookings/:id" element={<DeveloperBookingDetails/>}/>

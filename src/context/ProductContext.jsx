@@ -1,5 +1,5 @@
-import React, { createContext,    useState, useContext, useEffect } from 'react';
-import axios from 'axios';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { apiService } from '../manageApi/utils/custom.apiservice'; // path apne project ke hisaab se adjust kar lena
 
 const ProductContext = createContext();
 
@@ -9,12 +9,21 @@ export const ProductProvider = ({ children }) => {
 
   const fetchAllProducts = async () => {
     setLoading(true);
+
     try {
-      // Limit badha di hai taaki "See More" click hone par saare products turant mil jayein
-      const res = await axios.get('https://xoto.ae/api/products/get-all-products?page=1&limit=100');
-      if (res.data.success) {
-        setProducts(res.data.data.products);
+
+      const res = await apiService.get(
+        "/products/get-all-products",
+        {
+          page: 1,
+          limit: 100
+        }
+      );
+
+      if (res?.success) {
+        setProducts(res?.data?.products || []);
       }
+
     } catch (error) {
       console.error("API Fetch Error:", error);
     } finally {

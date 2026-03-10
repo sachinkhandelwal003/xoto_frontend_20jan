@@ -29,9 +29,9 @@
   "resources": [
     { "label": "Strategic Alliances", "path": "/login" },
     { "label": "Business Associates", "path": "/login" },
-    { "label": "Execution Partners", "path": "/login" },
-    { "label": "Developers", "path": "/upcoming-soon" },
-    { "label": "Financial Institutions", "path": "/finance-soon" }
+    { "label": "Execution Partners", "path": "/login "  },
+   {"label": "Developers","comingSoon": true}, 
+   {"label": "Financial Institutions","comingSoon": true}
   ],
 
   "knowledge": [
@@ -63,6 +63,6 @@
   ],
 
   "bottom": {
-    "copyright": "©2021 XOTO. All rights reserved"
+    "copyright": "©2026 XOTO. All rights reserved"
   }
 }
