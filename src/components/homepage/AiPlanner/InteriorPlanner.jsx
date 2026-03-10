@@ -116,12 +116,12 @@ const InteriorPlanner = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const progress = Math.floor(generationProgress);
-const { title, subtitle } = getProgressText(progress);
-const [pendingGeneration, setPendingGeneration] = useState(false);
-const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const { title, subtitle } = getProgressText(progress);
+  const [pendingGeneration, setPendingGeneration] = useState(false);
+  const [showLibraryModal, setShowLibraryModal] = useState(false);
 
   const [libraryDesigns, setLibraryDesigns] = useState([]);
-const [loadingLibrary, setLoadingLibrary] = useState(false);
+  const [loadingLibrary, setLoadingLibrary] = useState(false);
 
   // Modals
   const [showGeneratedModal, setShowGeneratedModal] = useState(false);
@@ -136,7 +136,7 @@ const [loadingLibrary, setLoadingLibrary] = useState(false);
 
   // UI & Results
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const [currentResult, setCurrentResult] = useState({ url: '', desc: '' });
+  const [currentResult, setCurrentResult] = useState({ url: '', desc: '', roomType: null, styles: [], elements: [], instruction: '' });
 
   // Mobile Tabs
   const [activeMobileTab, setActiveMobileTab] = useState('create');
@@ -185,40 +185,54 @@ const [loadingLibrary, setLoadingLibrary] = useState(false);
   }, [user]);
 
 
-const fetchLibraryDesigns = async () => {
-  if (!user) return;
-
-  try {
-    setLoadingLibrary(true);
-    const res = await apiService.get(`/ai/get-customer-liabrary?designType=interior`);
-    const designs = res?.data || [];
-    console.log(designs)
-
-    // Map to UI format
-    const formatted = designs.flatMap((d, index) => 
-      d.images.map((img, i) => ({
-        id: `${d._id}-${i}`,
-        image: img,
-        title: `Library Design ${index + 1}-${i + 1}`,
-        timestamp: new Date(d.createdAt).toLocaleDateString(),
-      }))
-    );
-
-    setLibraryDesigns(formatted.reverse());
-  } catch (err) {
-    console.error("Failed to load library", err);
-  } finally {
-    setLoadingLibrary(false);
-  }
-};
-
-// Fetch library when modal opens
-useEffect(() => {
- 
-    fetchLibraryDesigns();
- 
-}, []);
-
+  const fetchLibraryDesigns = async () => {
+    if (!user) return;
+  
+    try {
+      setLoadingLibrary(true);
+      const res = await apiService.get(`/ai/get-customer-liabrary?designType=interior`);
+      const apiDesigns = res?.data || [];
+      console.log("Library Data: ", apiDesigns);
+  
+      // ✅ FIX: Sahi mapping jo 'imageUrl' aur 'images' dono ko handle karegi
+      const formatted = apiDesigns.flatMap((d, index) => {
+        // Agar array of images hai
+        if (d.images && Array.isArray(d.images)) {
+          return d.images.map((img, i) => ({
+            id: `${d._id}-${i}`,
+            image: img,
+            title: `Library Design ${index + 1}-${i + 1}`,
+            timestamp: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Just now',
+          }));
+        } 
+        // Agar single imageUrl hai (jo aap upload me bhej rahe ho)
+        else {
+          return [{
+            id: d._id || index,
+            image: d.imageUrl || d.image, // Use imageUrl
+            title: `Library Design ${index + 1}`,
+            timestamp: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Just now',
+          }];
+        }
+      });
+  
+      // Jin objects me image null hai unhe filter out kar do
+      const validDesigns = formatted.filter(item => item.image);
+  
+      setLibraryDesigns(validDesigns.reverse());
+    } catch (err) {
+      console.error("Failed to load library", err);
+    } finally {
+      setLoadingLibrary(false);
+    }
+  };
+  
+  // ✅ FIX: Jab user load ho ya Library/Upload Modal khule, tabhi data fetch karo
+  useEffect(() => {
+    if (user && (showLibraryModal || showUploadModal)) {
+      fetchLibraryDesigns();
+    }
+  }, [user, showLibraryModal, showUploadModal]);
 
 
   // --- Handlers ---
@@ -290,7 +304,7 @@ const processUploadedFile = async (file) => {
   }
 };
 
- 
+  
 
   const handleGenerateClick = async () => {
     if (!selectedImage) {
@@ -436,6 +450,10 @@ const processUploadedFile = async (file) => {
         setCurrentResult({
           url: resData.imageUrl,
           desc: resData.message,
+          roomType: selectedRoomType,
+          styles: [...selectedStyles],
+          elements: [...selectedElements],
+          instruction: specificRequirement
         });
 
         setGenerationProgress(100);
@@ -838,6 +856,43 @@ const downloadImage = async (url, name) => {
               <Paragraph className="text-gray-600 leading-relaxed text-sm lg:text-base">
                 {currentResult.desc || "No description provided."}
               </Paragraph>
+              
+              {/* User Preferences Block */}
+              <div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
+                <h4 className="font-bold text-sm text-purple-700 mb-2">
+                  Your Preferences
+                </h4>
+
+                {currentResult.roomType && (
+                  <p className="text-xs text-gray-700 mb-1">
+                    <strong>Room Type:</strong>{" "}
+                    {roomTypes.find(r => r.value === currentResult.roomType)?.label}
+                  </p>
+                )}
+
+                {currentResult.styles?.length > 0 && (
+                  <p className="text-xs text-gray-700 mb-1">
+                    <strong>Style:</strong>{" "}
+                    {interStyles.find(s => s.value === currentResult.styles[0])?.label}
+                  </p>
+                )}
+
+                {currentResult.elements?.length > 0 && (
+                  <p className="text-xs text-gray-700 mb-1">
+                    <strong>Elements:</strong>{" "}
+                    {currentResult.elements
+                      .map(e => interElements.find(el => el.value === e)?.label)
+                      .join(", ")}
+                  </p>
+                )}
+
+                {currentResult.instruction && (
+                  <p className="text-xs text-gray-700">
+                    <strong>Instruction:</strong> {currentResult.instruction}
+                  </p>
+                )}
+              </div>
+
             </div>
             <div className="space-y-3 pt-4 border-t mt-4">
               <Button type="primary" block size="large" className="h-12 rounded-2xl font-bold" style={{ background: BRAND_PURPLE }} onClick={() => downloadImage(currentResult.url, 'Xoto-Vision')}>
@@ -1088,6 +1143,43 @@ const downloadImage = async (url, name) => {
               Reimagining your interior space with intelligent design...
             </p>
           </div>
+
+          {/* User Selection Preview Block during Loading */}
+          <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 mb-6 max-w-md w-full border border-purple-100 shadow-sm text-left">
+            <h4 className="font-bold text-gray-800 text-sm mb-3">
+              Your Selections
+            </h4>
+
+            {selectedRoomType && (
+              <p className="text-xs text-gray-600 mb-1">
+                <strong>Room Type:</strong>{" "}
+                {roomTypes.find(r => r.value === selectedRoomType)?.label}
+              </p>
+            )}
+
+            {selectedStyles.length > 0 && (
+              <p className="text-xs text-gray-600 mb-1">
+                <strong>Style:</strong>{" "}
+                {interStyles.find(s => s.value === selectedStyles[0])?.label}
+              </p>
+            )}
+
+            {selectedElements.length > 0 && (
+              <p className="text-xs text-gray-600 mb-1">
+                <strong>Elements:</strong>{" "}
+                {selectedElements
+                  .map(e => interElements.find(el => el.value === e)?.label)
+                  .join(", ")}
+              </p>
+            )}
+
+            {specificRequirement && (
+              <p className="text-xs text-gray-600">
+                <strong>Instruction:</strong> {specificRequirement}
+              </p>
+            )}
+          </div>
+
          <div className="w-full max-w-xs lg:w-80">
   <Progress
     percent={progress}
