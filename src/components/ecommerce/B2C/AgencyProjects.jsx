@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Typography,
@@ -11,6 +11,7 @@ import {
   Space,
   Tooltip,
 } from "antd";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import {
   SearchOutlined,
   UserAddOutlined,
@@ -21,71 +22,92 @@ const { Title } = Typography;
 
 export default function AgencyProjects() {
   const [searchText, setSearchText] = useState("");
+useEffect(() => {
+  fetchProjects();
+}, []);
 
-  const projectsData = [
-    {
-      key: "1",
-      name: "Palm Heights",
-      developer: "Emaar",
-      location: "Dubai Marina",
-      price: "$450,000",
-      status: "Active",
-    },
-    {
-      key: "2",
-      name: "Skyline Towers",
-      developer: "Damac",
-      location: "Downtown Dubai",
-      price: "$520,000",
-      status: "Active",
-    },
-  ];
+const fetchProjects = async () => {
+  try {
+    const response = await apiService.get("/property/approved");
 
-  const columns = [
-    {
-      title: "Project Name",
-      dataIndex: "name",
-    },
-    {
-      title: "Developer",
-      dataIndex: "developer",
-    },
-    {
-      title: "Location",
-      dataIndex: "location",
-    },
-    {
-      title: "Starting Price",
-      dataIndex: "price",
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      render: (status) => (
-        <Tag color={status === "Active" ? "green" : "red"}>{status}</Tag>
-      ),
-    },
-    {
-      title: "Actions",
-      render: () => (
-        <Space>
-          <Tooltip title="View Project">
-            <Button icon={<EyeOutlined />} />
-          </Tooltip>
+    if (response?.data) {
+      setProjectsData(response.data);
+    }
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+  }
+};
+  // const projectsData = [
+  //   {
+  //     key: "1",
+  //     name: "Palm Heights",
+  //     developer: "Emaar",
+  //     location: "Dubai Marina",
+  //     price: "$450,000",
+  //     status: "Active",
+  //   },
+  //   {
+  //     key: "2",
+  //     name: "Skyline Towers",
+  //     developer: "Damac",
+  //     location: "Downtown Dubai",
+  //     price: "$520,000",
+  //     status: "Active",
+  //   },
+  // ];
 
-          <Tooltip title="Assign Agent">
-            <Button type="primary" icon={<UserAddOutlined />}>
-              Assign
-            </Button>
-          </Tooltip>
-        </Space>
-      ),
-    },
-  ];
+
+  const [projectsData, setProjectsData] = useState([]);
+ const columns = [
+  {
+    title: "Project Name",
+    dataIndex: "propertyName",
+  },
+  {
+    title: "Developer",
+    dataIndex: "developer",
+  },
+  {
+    title: "Location",
+    dataIndex: "city",
+  },
+  {
+    title: "Starting Price",
+    dataIndex: "price",
+    render: (price) => `AED ${price}`,
+  },
+  {
+    title: "Status",
+    dataIndex: "approvalStatus",
+    render: (status) => (
+      <Tag color={status === "approved" ? "green" : "orange"}>
+        {status}
+      </Tag>
+    ),
+  },
+  {
+    title: "Actions",
+    render: () => (
+      <Space>
+        <Tooltip title="View Project">
+          <Button icon={<EyeOutlined />} />
+        </Tooltip>
+
+        <Tooltip title="Assign Agent">
+          <Button type="primary" icon={<UserAddOutlined />}>
+            Assign
+          </Button>
+        </Tooltip>
+      </Space>
+    ),
+  },
+];
 
   const filteredProjects = projectsData.filter((project) =>
-    project.name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  project.propertyName
+    ?.toLowerCase()
+    .includes(searchText.toLowerCase())
+);
 
   return (
     <Card style={{ margin: 20 }}>

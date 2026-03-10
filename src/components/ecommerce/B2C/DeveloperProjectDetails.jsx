@@ -16,7 +16,7 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { EnvironmentOutlined, DownloadOutlined } from "@ant-design/icons";
+import { EnvironmentOutlined, DownloadOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 const { Title, Text, Paragraph } = Typography;
 
@@ -45,16 +45,16 @@ useEffect(() => {
 
       setProject(propertyData?.data || propertyData);
 
-      const leadsData = await apiService.get(
-        "/lead/get-all-leads",
-        { propertyId: id }
-      );
+      // const leadsData = await apiService.get(
+      //   "/lead/get-all-leads",
+      //   { propertyId: id }
+      // );
 
       setLeads(leadsData?.data?.data || leadsData?.data || []);
 
     } catch (error) {
       console.error("Error fetching data:", error);
-      message.error("Failed to load details.");
+      // message.error("Failed to load details.");
     } finally {
       setLoading(false);
     }
@@ -84,7 +84,14 @@ useEffect(() => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      
+      <Row style={{ marginBottom: 16 }}>
+  <Button
+    icon={<ArrowLeftOutlined />}
+    onClick={() => navigate(-1)}
+  >
+    Back
+  </Button>
+</Row>
       {/* 1. HEADER SECTION (Logo, Name, Tags, Location) */}
       <Card className="shadow-sm rounded-xl mb-6" bodyStyle={{ padding: '24px' }}>
         <Row align="middle" gutter={24}>
