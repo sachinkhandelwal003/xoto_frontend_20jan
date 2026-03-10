@@ -49,6 +49,7 @@ export default function DeveloperProjects() {
   const [filtered, setFiltered] = useState([]);
   const [tableLoading, setTableLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [developerName, setDeveloperName] = useState("");
 
   // Modal & Form States
   const [modalVisible, setModalVisible] = useState(false);
@@ -115,6 +116,27 @@ export default function DeveloperProjects() {
       )
     );
   }, [search, projects]);
+
+  useEffect(() => {
+  const fetchDeveloper = async () => {
+    try {
+      if (!developerId) return;
+
+      const res = await apiService.get("/property/get-developer-by-id", {
+        id: developerId
+      });
+
+      const dev = res?.data?.data || res?.data;
+
+      setDeveloperName(dev?.name || "");
+
+    } catch (error) {
+      console.error("Failed to load developer", error);
+    }
+  };
+
+  fetchDeveloper();
+}, [developerId]);
 
   // ================= MODAL HANDLERS =================
   const openModal = () => {
@@ -293,13 +315,11 @@ commissionStage: "booking",
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>Basic Information</Divider>
           <Row gutter={16}>
             <Col xs={24} md={8}><Form.Item name="propertyName" label="Property Name" rules={[{ required: true }]}><Input /></Form.Item></Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="developer" label="Developer" rules={[{ required: true }]}>
-                <Select placeholder="Select Developer" showSearch optionFilterProp="children">
-                  {developers.map(d => <Option key={d._id} value={d._id}>{d.name}</Option>)}
-                </Select>
-              </Form.Item>
-            </Col>
+       <Col xs={24} md={8}>
+  <Form.Item label="Developer">
+  <Input value={user?.email} disabled />
+</Form.Item>
+</Col>
             <Col xs={12} md={4}><Form.Item name="transactionType" label="Transaction"><Select><Option value="sell">Sell</Option><Option value="rent">Rent</Option></Select></Form.Item></Col>
             <Col xs={12} md={4}><Form.Item name="propertyType" label="Prop Type"><Input placeholder="e.g Apartment" /></Form.Item></Col>
           </Row>
