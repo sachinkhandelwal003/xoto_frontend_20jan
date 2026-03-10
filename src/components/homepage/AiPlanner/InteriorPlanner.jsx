@@ -492,20 +492,30 @@ const processUploadedFile = async (file) => {
     }
   };
 
-const downloadImage = async (url, name) => {
-  // 1️⃣ Open preview in new tab
-  window.open(url, "_blank", "noopener,noreferrer");
+const downloadImage = async (imageUrl, name) => {
+  try {
+    const key = imageUrl.split(".amazonaws.com/")[1];
 
-  // 2️⃣ Force download
-  const res = await fetch(url);
-  const blob = await res.blob();
+    if (!key) {
+      notification.error({
+        message: "Invalid Image URL"
+      });
+      return;
+    }
 
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `${name}.png`;
-  a.click();
+    // Backend ki PDF API call karo, seedha file download ho jayegi
+    await apiService.download(
+      `/download-pdf?key=${encodeURIComponent(key)}`,
+      `${name}_${Date.now()}.pdf`
+    );
 
-  URL.revokeObjectURL(a.href);
+  } catch (error) {
+    console.error("Download error:", error);
+    notification.error({
+      message: "Download Failed",
+      description: "PDF could not be generated."
+    });
+  }
 };
 
 
