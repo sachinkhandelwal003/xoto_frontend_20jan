@@ -4,6 +4,9 @@ import {
   Area,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -11,6 +14,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+
 import {
   RiseOutlined,
   FileTextOutlined,
@@ -21,7 +25,19 @@ import {
   ArrowUpOutlined,
   ArrowDownOutlined,
 } from "@ant-design/icons";
-import { Card, Row, Col, Select, Button, Typography, Tag, Avatar, List } from "antd";
+
+import {
+  Card,
+  Row,
+  Col,
+  Select,
+  Button,
+  Typography,
+  Tag,
+  Avatar,
+  List,
+} from "antd";
+
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
@@ -50,226 +66,310 @@ const DeveloperDashboard = () => {
     { month: "Jun", units: 5 },
   ];
 
+  const inventoryStatus = [
+    { name: "Available", value: 120 },
+    { name: "Booked", value: 32 },
+    { name: "Sold", value: 18 },
+  ];
+
+  const dealFunnel = [
+    { stage: "Leads", count: 34 },
+    { stage: "Site Visits", count: 18 },
+    { stage: "Bookings", count: 9 },
+    { stage: "Deals Closed", count: 5 },
+  ];
+
+  const COLORS = ["#3b82f6", "#f59e0b", "#10b981"];
+
   const stats = [
     {
-      label: "Leads Generated",
-      value: "34",
+      label: "Total Projects",
+      value: "6",
+      change: 10,
+      icon: <RiseOutlined />,
+      color: "#3b82f6",
+      bg: "#eff6ff",
+    },
+    {
+      label: "Available Units",
+      value: "120",
+      change: 5,
+      icon: <HomeOutlined />,
+      color: "#10b981",
+      bg: "#ecfdf5",
+    },
+    {
+      label: "Units Sold",
+      value: "18",
       change: 12,
       icon: <TeamOutlined />,
       color: "#F97316",
       bg: "#fff7ed",
     },
     {
-      label: "Presentations",
-      value: "12",
-      change: 8,
-      icon: <FileTextOutlined />,
-      color: "#ea580c",
-      bg: "#ffedd5",
-    },
-    {
-      label: "Units Sold",
-      value: "8",
-      change: 4,
-      icon: <HomeOutlined />,
-      color: "#10b981",
-      bg: "#ecfdf5",
-    },
-    {
-      label: "Conversion Rate",
-      value: "23%",
-      change: -2,
+      label: "Commission Pending",
+      value: "$42K",
+      change: -3,
       icon: <PercentageOutlined />,
-      color: "#3b82f6",
-      bg: "#eff6ff",
+      color: "#ef4444",
+      bg: "#fef2f2",
     },
   ];
 
-  const recentLeads = [
-    { name: "Ahmed Khan", title: "Interested in 2BHK (Business Bay)", time: "10 mins ago" },
-    { name: "Sarah Ali", title: "Requested brochure (Downtown)", time: "30 mins ago" },
-    { name: "Ravi Sharma", title: "Site visit inquiry", time: "1 hr ago" },
-    { name: "Neha Gupta", title: "Asked for payment plan details", time: "2 hrs ago" },
+  const recentDeals = [
+    { client: "Ahmed Khan", project: "Marina Tower", unit: "A-302", status: "Booked" },
+    { client: "Sarah Ali", project: "Downtown Heights", unit: "B-110", status: "Token Paid" },
+    { client: "Ravi Sharma", project: "Palm Residency", unit: "C-210", status: "Contract Signed" },
+  ];
+
+  const upcomingVisits = [
+    { client: "Ahmed Khan", project: "Marina Tower", time: "Tomorrow 11:00 AM" },
+    { client: "Sarah Ali", project: "Downtown Heights", time: "Tomorrow 2:30 PM" },
+  ];
+
+  const topProjects = [
+    { project: "Marina Tower", units: 12 },
+    { project: "Downtown Heights", units: 8 },
+    { project: "Palm Residency", units: 5 },
   ];
 
   const quickActions = [
     {
-      label: "Property Management",
+      label: "Projects",
       icon: <RiseOutlined />,
       color: "#3b82f6",
-      bg: "#eff6ff",
-      onClick: () => navigate("/dashboard/developer/property-management"),
+      onClick: () => navigate("/dashboard/developer/projects"),
+    },
+    {
+      label: "Inventory",
+      icon: <HomeOutlined />,
+      color: "#10b981",
+      onClick: () => navigate("/dashboard/developer/inventory"),
+    },
+    {
+      label: "Site Visits",
+      icon: <TeamOutlined />,
+      color: "#f97316",
+      onClick: () => navigate("/dashboard/developer/site-visits"),
+    },
+    {
+      label: "Bookings",
+      icon: <FileTextOutlined />,
+      color: "#6366f1",
+      onClick: () => navigate("/dashboard/developer/bookings"),
     },
   ];
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {/* ✅ HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+
+      {/* HEADER */}
+
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <Title level={2} style={{ margin: 0, color: "#1f2937" }}>
-            Developer Dashboard
-          </Title>
-          <Text type="secondary">Track leads, presentations and performance in real-time.</Text>
+          <Title level={2}>Developer Dashboard</Title>
+          <Text type="secondary">Monitor projects, inventory, visits and deals.</Text>
         </div>
 
-        <div className="flex gap-3 mt-4 md:mt-0">
-          <Select defaultValue="7d" style={{ width: 160 }} onChange={setTimeRange} size="large">
+        <div className="flex gap-3">
+          <Select defaultValue="7d" style={{ width: 160 }} onChange={setTimeRange}>
             <Option value="7d">Last 7 Days</Option>
             <Option value="30d">Last 30 Days</Option>
             <Option value="90d">Last 90 Days</Option>
           </Select>
 
-          <Button
-            type="primary"
-            size="large"
-            icon={<BellOutlined />}
-            style={{ background: "#F97316", borderColor: "#F97316" }}
-          >
+          <Button type="primary" icon={<BellOutlined />}>
             Alerts
           </Button>
         </div>
       </div>
 
-      {/* ✅ STATS */}
+      {/* STATS */}
+
       <Row gutter={[16, 16]} className="mb-8">
         {stats.map((stat, i) => (
           <Col xs={24} sm={12} lg={6} key={i}>
-            <Card bordered={false} className="shadow-sm rounded-xl h-full">
-              <div className="flex justify-between items-start">
+            <Card bordered={false}>
+              <div className="flex justify-between">
                 <div>
-                  <Text type="secondary" className="block mb-1">
-                    {stat.label}
-                  </Text>
-                  <Title level={3} style={{ margin: 0 }}>
-                    {stat.value}
-                  </Title>
+                  <Text type="secondary">{stat.label}</Text>
+                  <Title level={3}>{stat.value}</Title>
                 </div>
 
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center text-xl"
-                  style={{ backgroundColor: stat.bg, color: stat.color }}
-                >
+                <div style={{
+                  background: stat.bg,
+                  color: stat.color,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
                   {stat.icon}
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center gap-2">
-                <Tag
-                  color={stat.change > 0 ? "success" : "error"}
-                  icon={stat.change > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-                >
-                  {Math.abs(stat.change)}%
-                </Tag>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  vs last period
-                </Text>
-              </div>
+              <Tag
+                color={stat.change > 0 ? "green" : "red"}
+                icon={stat.change > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+              >
+                {Math.abs(stat.change)}%
+              </Tag>
             </Card>
           </Col>
         ))}
       </Row>
 
-      {/* ✅ CHARTS */}
+      {/* CHARTS */}
+
       <Row gutter={[16, 16]} className="mb-8">
+
         <Col xs={24} lg={16}>
-          <Card bordered={false} className="shadow-sm rounded-xl h-full" title="Leads Trend">
-            <ResponsiveContainer width="100%" height={320}>
+          <Card title="Lead Interest Trend">
+            <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={leadsTrend}>
-                <defs>
-                  <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F97316" stopOpacity={0.18} />
-                    <stop offset="95%" stopColor="#F97316" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#9ca3af" }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: "#9ca3af" }} />
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
                 <Tooltip />
-                <Legend verticalAlign="top" height={36} iconType="circle" />
-
-                <Area
-                  type="monotone"
-                  dataKey="leads"
-                  stroke="#F97316"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorLeads)"
-                  name="Leads"
-                />
+                <Legend />
+                <Area type="monotone" dataKey="leads" stroke="#F97316" fill="#F97316" fillOpacity={0.2}/>
               </AreaChart>
             </ResponsiveContainer>
           </Card>
         </Col>
 
         <Col xs={24} lg={8}>
-          <Card bordered={false} className="shadow-sm rounded-xl h-full" title="Units Sold">
-            <ResponsiveContainer width="100%" height={320}>
+          <Card title="Units Sold">
+            <ResponsiveContainer width="100%" height={300}>
               <BarChart data={unitsSoldMonthly}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#9ca3af", fontSize: 12 }} />
-                <Tooltip cursor={{ fill: "transparent" }} />
-                <Bar dataKey="units" fill="#10b981" radius={[6, 6, 0, 0]} barSize={22} />
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <Tooltip />
+                <Bar dataKey="units" fill="#10b981" />
               </BarChart>
             </ResponsiveContainer>
           </Card>
         </Col>
+
       </Row>
 
-      {/* ✅ BOTTOM */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} md={12} lg={8}>
-          <Card bordered={false} className="shadow-sm rounded-xl h-full" title="Quick Actions">
+      {/* PIPELINE + INVENTORY */}
+
+      <Row gutter={[16,16]} className="mb-8">
+
+        <Col xs={24} lg={12}>
+          <Card title="Sales Pipeline">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={dealFunnel}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                <XAxis dataKey="stage"/>
+                <YAxis/>
+                <Tooltip/>
+                <Bar dataKey="count" fill="#6366f1"/>
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <Card title="Inventory Status">
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={inventoryStatus} dataKey="value" outerRadius={100} label>
+                  {inventoryStatus.map((entry,index)=>(
+                    <Cell key={index} fill={COLORS[index]} />
+                  ))}
+                </Pie>
+                <Tooltip/>
+              </PieChart>
+            </ResponsiveContainer>
+          </Card>
+        </Col>
+
+      </Row>
+
+      {/* QUICK ACTIONS + VISITS */}
+
+      <Row gutter={[16,16]} className="mb-8">
+
+        <Col xs={24} md={12}>
+          <Card title="Quick Actions">
             <div className="grid grid-cols-2 gap-4">
-              {quickActions.map((action, i) => (
+              {quickActions.map((action,i)=>(
                 <div
                   key={i}
                   onClick={action.onClick}
-                  className="flex flex-col items-center justify-center p-4 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors border border-dashed border-gray-200"
+                  className="cursor-pointer border rounded-lg p-4 text-center hover:bg-gray-50"
                 >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-xl mb-2"
-                    style={{ backgroundColor: action.bg, color: action.color }}
-                  >
+                  <div style={{fontSize:22,color:action.color}}>
                     {action.icon}
                   </div>
-                  <Text strong style={{ fontSize: 13 }}>
-                    {action.label}
-                  </Text>
+                  <Text strong>{action.label}</Text>
                 </div>
               ))}
             </div>
           </Card>
         </Col>
 
-        <Col xs={24} lg={16}>
-          <Card bordered={false} className="shadow-sm rounded-xl h-full" title="Recent Leads">
+        <Col xs={24} md={12}>
+          <Card title="Upcoming Site Visits">
             <List
-              itemLayout="horizontal"
-              dataSource={recentLeads}
-              renderItem={(item) => (
-                <List.Item className="border-b-0 py-3">
+              dataSource={upcomingVisits}
+              renderItem={(item)=>(
+                <List.Item>
                   <List.Item.Meta
-                    avatar={
-                      <Avatar style={{ backgroundColor: "#fff7ed", color: "#F97316" }}>
-                        {item.name.charAt(0)}
-                      </Avatar>
-                    }
-                    title={<Text strong>{item.title}</Text>}
-                    description={
-                      <div className="flex justify-between items-center text-xs">
-                        <Text type="secondary">{item.name}</Text>
-                        <Text type="secondary">{item.time}</Text>
-                      </div>
-                    }
+                    avatar={<Avatar>{item.client.charAt(0)}</Avatar>}
+                    title={item.project}
+                    description={`${item.client} • ${item.time}`}
                   />
                 </List.Item>
               )}
             />
           </Card>
         </Col>
+
       </Row>
+
+      {/* DEALS + PROJECT PERFORMANCE */}
+
+      <Row gutter={[16,16]}>
+
+        <Col xs={24} md={12}>
+          <Card title="Recent Deals">
+            <List
+              dataSource={recentDeals}
+              renderItem={(item)=>(
+                <List.Item>
+                  <div className="flex justify-between w-full">
+                    <Text>{item.client} • {item.unit}</Text>
+                    <Tag color="blue">{item.status}</Tag>
+                  </div>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24} md={12}>
+          <Card title="Top Performing Projects">
+            <List
+              dataSource={topProjects}
+              renderItem={(item)=>(
+                <List.Item>
+                  <div className="flex justify-between w-full">
+                    <Text>{item.project}</Text>
+                    <Tag color="green">{item.units} sold</Tag>
+                  </div>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+
+      </Row>
+
     </div>
   );
 };

@@ -23,7 +23,7 @@ export default function DeveloperLeads() {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:5000/api/property/developer-leads", {
+      const res = await fetch("https://xoto.ae/api/property/developer-leads", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,

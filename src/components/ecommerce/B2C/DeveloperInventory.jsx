@@ -25,7 +25,8 @@ import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 
-const API = "http://localhost:5000/api/property";
+// const API = "http://localhost:5000/api/property";
+const API = "https://xoto.ae/api/property";
 
 export default function DeveloperInventory() {
 
