@@ -71,7 +71,7 @@ const HeroSection = () => {
 
     {/* Second Button */}
        <Link
-      to="/PropertiesEnter your credentials to access "
+      to="/Property "
       // className="whitespace-nowrap w-auto text-center border-1  px-6 py-3 rounded-md hover:bg-[#5C039B] hover:text-white transition text-sm sm:text-base mx-auto sm:mx-0"
           // className="whitespace-nowrap w-[45%] sm:w-auto text-center bg-[var(--color-primary)] px-6 py-3 rounded-md shadow-lg text-sm sm:text-base"
   className="whitespace-nowrap w-auto text-center border-1 px-6 py-3 rounded-md hover:bg-[#5C039B] hover:text-white hover:border-[#5C039B] transition text-sm sm:text-base mx-auto sm:mx-0"
