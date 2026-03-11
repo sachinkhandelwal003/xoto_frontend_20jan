@@ -71,10 +71,8 @@ export default function DeveloperProjects() {
     if (!developerId) return;
     try {
       setTableLoading(true);
-      // const res = await fetch(
-      //   `https://xoto.ae/api/property/get-all-properties?developerId=${developerId}`,
-      //   { headers: { Authorization: `Bearer ${token}` } }
-      // );
+      
+  
       const json = await apiService.get(
   "/property/get-all-properties",
   {
@@ -107,7 +105,7 @@ const list = json?.data || [];
     fetchProjects();
   }, [developerId, token]);
 
-  // ================= SEARCH =================
+ 
   useEffect(() => {
     const q = search.toLowerCase();
     setFiltered(
