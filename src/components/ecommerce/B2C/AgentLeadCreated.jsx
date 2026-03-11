@@ -74,10 +74,19 @@ export default function AgentLeadDashboard() {
     }
   };
 
+  // ================= 1. FETCH PROJECTS =================
   const fetchProjects = async () => {
     try {
-      const res = await apiService.get("/property/get-all-properties");
-      const list = Array.isArray(res?.data) ? res.data : res?.data?.data || [];
+      // 🔥 Yahan '?limit=1000' add kiya hai taaki backend saare projects bhej de
+      const res = await apiService.get("/property/get-all-properties?limit=1000");
+      
+      let list = [];
+      if (Array.isArray(res?.data)) {
+        list = res.data;
+      } else if (res?.data?.data) {
+        list = res.data.data;
+      }
+
       setProjects(list);
     } catch (error) {
       console.log(error);
@@ -203,16 +212,14 @@ export default function AgentLeadDashboard() {
     setVisitLoading(true);
     try {
       const payload = {
-        lead: visitLead._id,
-        agent: user?._id || user?.id,
-        property: values.property,
-        developer: values.developer, 
-        visitDate: values.visitDate.format("YYYY-MM-DD"),
-        visitTime: values.visitTime.format("HH:mm"),
-        clientName: `${visitLead.name.first_name} ${visitLead.name.last_name}`,
-        clientPhone: visitLead.phone_number
-      };
-
+  lead: visitLead._id,
+  agent: user?._id || user?.id,
+  property: values.property,
+  visitDate: values.visitDate.format("YYYY-MM-DD"),
+  visitTime: values.visitTime.format("HH:mm"),
+  clientName: `${visitLead.name.first_name} ${visitLead.name.last_name}`,
+  clientPhone: visitLead.phone_number
+};
       // 1. Site Visit ki nayi request banayi
       await apiService.post("/agent/lead/create-site-visit", payload); 
       
@@ -388,9 +395,8 @@ export default function AgentLeadDashboard() {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="status" label="Pipeline Stage" rules={[{ required: true, message: "Select status" }]}>
+              <Form.Item name="status" label="Status" rules={[{ required: true, message: "Select status" }]}>
                 <Select placeholder="Select pipeline stage">
-                  <Option value="customer">Customer</Option>
                   <Option value="lead">Lead</Option>
                   <Option value="visit">Site Visit</Option>
                   <Option value="deal">Deal</Option>
@@ -466,11 +472,11 @@ export default function AgentLeadDashboard() {
               </Form.Item>
             </Col>
             {/* Note: Developer id selection can be added here if needed, or fetched implicitly via project */}
-            <Col span={24}>
+            {/* <Col span={24}>
               <Form.Item name="developer" label="Developer ID (Optional / Auto-fetched)" tooltip="If your backend requires this explicitly">
                 <Input placeholder="Developer ID or Name" />
               </Form.Item>
-            </Col>
+            </Col> */}
             <Col span={12}>
               <Form.Item name="visitDate" label="Expected Date" rules={[{ required: true, message: "Select date" }]}>
                 <DatePicker className="w-full" disabledDate={(current) => current && current < dayjs().startOf('day')} />
