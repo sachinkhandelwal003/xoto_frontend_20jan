@@ -1,21 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
-// import axios from 'axios';
-import { apiService } from '../../../manageApi/utils/custom.apiservice';
+import React, { useState, useEffect, useCallback } from "react";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import {
-  Card, Table, Typography, Avatar, Row, Col, Statistic, Space,
-  message, Tooltip, Modal, Button, Popconfirm, Tag, Spin, Image, Divider
-} from 'antd';
+  Card,
+  Table,
+  Typography,
+  Row,
+  Col,
+  Statistic,
+  Space,
+  message,
+  Modal,
+  Button,
+  Tag,
+  Image,
+  Divider,
+  Input
+} from "antd";
+
 import {
-  DeleteOutlined,
   EyeOutlined,
   SearchOutlined,
-  PropertySafetyOutlined,
   EnvironmentOutlined,
   BankOutlined,
   HomeOutlined
-} from '@ant-design/icons';
-import Input from 'antd/es/input';
-import dayjs from 'dayjs';
+} from "@ant-design/icons";
+
+import dayjs from "dayjs";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -23,50 +33,88 @@ const THEME = { primary: "#7c3aed", success: "#10b981" };
 
 const AdminPropertyList = () => {
 
-
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
+
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [searchText, setSearchText] = useState('');
+  const [pageSize] = useState(10);
+
+  const [searchText, setSearchText] = useState("");
 
   const [viewModal, setViewModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
 
+  // NEW STATES
+  const [rejectModal, setRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
+
+  // ================= FETCH PROPERTIES =================
+
   const fetchAllProperties = useCallback(async (page, limit, search) => {
+
     setLoading(true);
+
     try {
-     const resData = await apiService.get("/property/get-all-properties", {
-  page,
-  limit,
-  search: search || undefined
-});
+
+      const resData = await apiService.get("/property/get-all-properties", {
+        page,
+        limit,
+        search: search || undefined,
+        admin: true
+      });
+
       const list = resData?.data || resData || [];
+
       setProperties(Array.isArray(list) ? list : []);
-      setTotal(resData?.pagination?.total || resData?.total || list.length);
+      setTotal(resData?.pagination?.total || list.length);
+
     } catch (err) {
+
       message.error("Failed to load properties list.");
+
     } finally {
+
       setLoading(false);
+
     }
+
   }, []);
 
   useEffect(() => {
+
     const timer = setTimeout(() => {
-        fetchAllProperties(currentPage, pageSize, searchText);
+      fetchAllProperties(currentPage, pageSize, searchText);
     }, 500);
+
     return () => clearTimeout(timer);
+
   }, [searchText, currentPage, pageSize, fetchAllProperties]);
 
-  const handleDelete = async (id) => {
+  // ================= UPDATE STATUS =================
+
+  const updateStatus = async (id, status, reason = "") => {
+
     try {
-      await apiService.post(`/property/delete-property?id=${id}`);
-      message.success("Property deleted");
+
+      await apiService.put(`/property/update-status/${id}`, {
+        status,
+        reason
+      });
+
+      message.success(`Property ${status}`);
+
       fetchAllProperties(currentPage, pageSize, searchText);
-    } catch (err) {
-      message.error("Delete failed");
+
+    } catch (error) {
+
+      console.log(error);
+
+      message.error("Status update failed");
+
     }
+
   };
 
   const openModal = (record) => {
@@ -74,179 +122,267 @@ const AdminPropertyList = () => {
     setViewModal(true);
   };
 
+  // ================= TABLE COLUMNS =================
+
   const columns = [
+
     {
-      title: 'Property Image',
-      key: 'image',
-      width: 120,
+      title: "Image",
+      width: 100,
       render: (_, r) => (
-        /* ✅ Logic Change: Pehle photos[0] check karega, fir mainLogo */
         <Image
           width={80}
           height={60}
-          className="rounded-md object-cover"
-          src={r.photos && r.photos.length > 0 ? r.photos[0] : r.mainLogo}
-          fallback="https://via.placeholder.com/80x60?text=No+Image"
-          preview={false} // Table mein preview off rakha hai, View Modal mein on hai
+          src={r.photos?.[0] || r.mainLogo}
+          fallback="https://via.placeholder.com/80"
+          preview={false}
+          style={{ objectFit: "cover", borderRadius: 4 }}
         />
       )
     },
+
     {
-      title: 'Property Name',
-      key: 'name',
+      title: "Property",
       render: (_, r) => (
         <div>
-          <Text strong className="block">{r.propertyName}</Text>
-          <Text type="secondary" style={{ fontSize: '11px' }}>
-            <BankOutlined /> {r.developer?.name || 'No Developer'}
+          <Text strong>{r.propertyName}</Text>
+          <br />
+          <Text type="secondary">
+            <BankOutlined /> {r.developer?.name || "No Developer"}
           </Text>
         </div>
       )
     },
+
     {
-      title: 'Price Range',
+      title: "Price",
       render: (_, r) => (
         <Text strong style={{ color: THEME.primary }}>
           {r.currency} {r.price_min?.toLocaleString()} - {r.price_max?.toLocaleString()}
         </Text>
       )
     },
+
     {
-      title: 'Location',
-      render: (_, r) => <Text type="secondary"><EnvironmentOutlined /> {r.area}, {r.city}</Text>
-    },
-    {
-      title: 'Status',
-      align: 'center',
+      title: "Location",
       render: (_, r) => (
-        <Space direction="vertical" size={0}>
-          {r.notReadyYet ? <Tag color="orange">Off Plan</Tag> : <Tag color="blue">Ready</Tag>}
-          {r.isAvailable ? <Tag color="green">Available</Tag> : <Tag color="red">Sold</Tag>}
-        </Space>
+        <Text type="secondary">
+          <EnvironmentOutlined /> {r.area}, {r.city}
+        </Text>
       )
     },
+
     {
-      title: 'Action',
-      align: 'center',
+      title: "Approval Status",
+      render: (_, r) => {
+
+        if (r.approvalStatus === "approved")
+          return <Tag color="green">Approved</Tag>;
+
+        if (r.approvalStatus === "rejected")
+          return <Tag color="red">Rejected</Tag>;
+
+        return <Tag color="orange">Pending</Tag>;
+      }
+    },
+
+    {
+      title: "Action",
+      width: 180,
       render: (_, record) => (
-        <Space>
-          <Button type="primary" ghost icon={<EyeOutlined />} onClick={() => openModal(record)} size="small">View</Button>
-          {/* <Popconfirm title="Delete?" onConfirm={() => handleDelete(record._id)}>
-            <Button type="primary" danger icon={<DeleteOutlined />} size="small" />
-          </Popconfirm> */}
+
+        <Space direction="vertical" size="small" style={{ width: "100%" }}>
+
+          {record.approvalStatus === "pending" && (
+
+            <Space>
+
+              <Button
+                type="primary"
+                size="small"
+                style={{ background: "#10b981", borderColor: "#10b981" }}
+                onClick={() => updateStatus(record._id, "approved")}
+              >
+                Approve
+              </Button>
+
+              <Button
+                danger
+                size="small"
+                onClick={() => {
+                  setSelectedId(record._id);
+                  setRejectModal(true);
+                }}
+              >
+                Reject
+              </Button>
+
+            </Space>
+
+          )}
+
+          <Button
+            icon={<EyeOutlined />}
+            size="small"
+            block
+            onClick={() => openModal(record)}
+          >
+            View
+          </Button>
+
         </Space>
+
       )
     }
+
   ];
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <Row gutter={[16, 16]} className="mb-6" align="middle">
-        <Col span={12}>
-           <Title level={3} style={{ margin: 0 }}>All Properties</Title>
-           <Text type="secondary">Complete listing with property previews</Text>
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+
+      <Row gutter={[16, 16]} className="mb-6">
+
+        <Col xs={24} sm={16}>
+          <Title level={3}>Property Approval Requests</Title>
+          <Text type="secondary">
+            Review and approve developer submitted properties
+          </Text>
         </Col>
-        <Col span={12} className="text-right">
-           <Statistic title="Total Listing" value={total} prefix={<HomeOutlined />} />
+
+        <Col xs={24} sm={8} className="sm:text-right">
+          <Statistic title="Total Requests" value={total} prefix={<HomeOutlined />} />
         </Col>
+
       </Row>
 
-      <Card bordered={false} className="shadow-sm mb-6">
-        <Input 
-          prefix={<SearchOutlined />} 
-          placeholder="Search by name or area..." 
+      <Card className="mb-6">
+
+        <Input
+          prefix={<SearchOutlined />}
+          placeholder="Search property..."
           size="large"
           allowClear
-          onChange={(e) => { setSearchText(e.target.value); setCurrentPage(1); }}
+          onChange={(e) => {
+            setSearchText(e.target.value);
+            setCurrentPage(1);
+          }}
         />
+
       </Card>
 
-      <Card bordered={false} bodyStyle={{ padding: 0 }} className="shadow-md rounded-xl overflow-hidden">
+      <Card>
+
         <Table
           columns={columns}
           dataSource={properties}
           loading={loading}
           rowKey="_id"
+          scroll={{ x: 900 }}
           pagination={{
             current: currentPage,
             total: total,
             pageSize: pageSize,
             onChange: (p) => setCurrentPage(p),
+            responsive: true
           }}
         />
+
       </Card>
 
       {/* VIEW MODAL */}
+
       <Modal
-        title="Property Detailed View"
+        title="Property Details"
         open={viewModal}
         onCancel={() => setViewModal(false)}
-        width={1000}
         footer={null}
-        centered
+        width={900}
       >
-        {selectedProperty && (
-          <div style={{ maxHeight: '75vh', overflowY: 'auto', padding: '10px' }}>
-             <div className="mb-6">
-                <Image.PreviewGroup>
-                   <Row gutter={[12, 12]}>
-                      {selectedProperty.photos?.map((img, i) => (
-                        <Col span={i === 0 ? 24 : 6} key={i}>
-                           <Image 
-                            src={img} 
-                            style={{ 
-                                height: i === 0 ? 350 : 120, 
-                                width: '100%', 
-                                objectFit: 'cover', 
-                                borderRadius: 12,
-                                border: '1px solid #f0f0f0' 
-                            }} 
-                           />
-                        </Col>
-                      ))}
-                   </Row>
-                </Image.PreviewGroup>
-             </div>
 
-             <Row gutter={24}>
-                <Col span={16}>
-                   <Title level={3}>{selectedProperty.propertyName}</Title>
-                   <Space wrap className="mb-4">
-                      <Tag color="purple" style={{padding: '2px 10px'}}>{selectedProperty.propertyType}</Tag>
-                      <Tag color="blue">{selectedProperty.propertySubType}</Tag>
-                      <Text type="secondary" style={{fontSize: '16px'}}>
-                        <EnvironmentOutlined /> {selectedProperty.area}, {selectedProperty.city}
-                      </Text>
-                   </Space>
-                   <Divider style={{margin: '12px 0'}} />
-                   <Title level={5}>Description</Title>
-                   <Paragraph style={{color: '#4b5563', lineHeight: '1.8'}}>
-                        {selectedProperty.description || "No description provided."}
-                   </Paragraph>
-                </Col>
-                <Col span={8}>
-                   <Card size="small" title="Commercial Details" className="shadow-sm">
-                      <Statistic 
-                        title="Starting Price" 
-                        value={selectedProperty.price_min} 
-                        prefix={selectedProperty.currency} 
-                        valueStyle={{color: THEME.primary, fontWeight: 'bold'}}
-                      />
-                      <Divider style={{ margin: '12px 0' }} />
-                      <Text type="secondary">Status: </Text>
-                      {selectedProperty.isAvailable ? <Tag color="green">Available</Tag> : <Tag color="red">Sold</Tag>}
-                      <div style={{marginTop: '10px'}}>
-                        <Text type="secondary">Handover: </Text>
-                        <Text strong>{selectedProperty.handover ? dayjs(selectedProperty.handover).format('MMM YYYY') : 'Ready Move'}</Text>
-                      </div>
-                   </Card>
-                </Col>
-             </Row>
-          </div>
+        {selectedProperty && (
+
+          <>
+            <Image.PreviewGroup>
+
+              <Row gutter={[12, 12]}>
+
+                {selectedProperty.photos?.map((img, i) => (
+                  <Col xs={12} sm={8} md={6} key={i}>
+                    <Image src={img} style={{ borderRadius: 8 }} />
+                  </Col>
+                ))}
+
+              </Row>
+
+            </Image.PreviewGroup>
+
+            <Divider />
+
+            <Title level={4}>{selectedProperty.propertyName}</Title>
+
+            <Paragraph>
+              {selectedProperty.description || "No description provided"}
+            </Paragraph>
+
+            <Text strong>
+              Price: {selectedProperty.currency} {selectedProperty.price_min}
+            </Text>
+
+            <br />
+
+            <Text>
+              Location: {selectedProperty.area}, {selectedProperty.city}
+            </Text>
+
+            <br />
+
+            <Text>
+              Handover: {selectedProperty.handover
+                ? dayjs(selectedProperty.handover).format("MMM YYYY")
+                : "Ready"}
+            </Text>
+
+          </>
+
         )}
+
       </Modal>
+
+      {/* REJECT MODAL */}
+
+      {/* VIEW MODAL */}
+
+<Modal
+  title="Property Details"
+  open={viewModal}
+  onCancel={() => setViewModal(false)}
+>
+....
+</Modal>
+
+
+{/* REJECT MODAL */}
+<Modal
+  title="Reject Property"
+  open={rejectModal}
+  onCancel={() => setRejectModal(false)}
+  onOk={() => {
+    updateStatus(selectedId, "rejected", rejectReason);
+    setRejectModal(false);
+    setRejectReason("");
+  }}
+>
+  <Input.TextArea
+    rows={4}
+    placeholder="Enter rejection reason"
+    value={rejectReason}
+    onChange={(e) => setRejectReason(e.target.value)}
+  />
+</Modal>
+
     </div>
   );
+
 };
 
 export default AdminPropertyList;

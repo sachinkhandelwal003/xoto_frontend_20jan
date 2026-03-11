@@ -16,7 +16,8 @@ import {
   DatePicker,
   InputNumber,
   Upload,
-  Switch
+  Switch,
+  Space
 } from "antd";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import {
@@ -81,16 +82,16 @@ export default function DeveloperProjects() {
   }
 );
       
-      const list = json?.data?.data || json?.data || [];
-
-      const mapped = list.map(p => ({
-        key: p._id,
-        name: p.propertyName,
-        location: `${p.area || ""} ${p.city || ""}`,
-        units: p.builtUpArea_min ? `${p.builtUpArea_min}-${p.builtUpArea_max}` : "-",
-        sold: p.unitType?.length || 0,
-        status: p.isAvailable ? "Available" : "Unavailable"
-      }));
+const list = json?.data || [];
+    const mapped = list.map(p => ({
+  key: p._id,
+  name: p.propertyName,
+  location: `${p.area || ""} ${p.city || ""}`,
+  units: p.builtUpArea_min ? `${p.builtUpArea_min}-${p.builtUpArea_max}` : "-",
+  sold: p.unitType?.length || 0,
+  status: p.approvalStatus || "pending",
+  rejectionReason: p.rejectionReason || ""
+}));
 
       setProjects(mapped);
       setFiltered(mapped);
@@ -188,7 +189,7 @@ const data = await apiService.post(
 );
 
      if (data) {
-  message.success("Property saved successfully!");
+  message.success("Property submitted. Waiting for admin approval.");
   closeModal();
   fetchProjects();
 } else {
@@ -202,7 +203,13 @@ const data = await apiService.post(
     }
   };
 
-  const getColor = (status) => status === "Available" ? "green" : "red";
+ const getColor = (status) => {
+
+  if (status === "approved") return "green";
+  if (status === "pending") return "orange";
+  if (status === "rejected") return "red";
+
+};
 
   // ================= TABLE COLUMNS =================
  // ================= TABLE COLUMNS =================
@@ -219,24 +226,53 @@ const data = await apiService.post(
     },
     { title: "Area Range", dataIndex: "units", render: (u) => <Text>{u}</Text> },
     { title: "Unit Types", dataIndex: "sold", render: (s) => <Tag color="purple">{s} Units</Tag> },
-    {
-      title: "Status",
-      dataIndex: "status",
-      render: (status) => <Tag color={getColor(status)} style={{ padding: "2px 10px" }}>{status}</Tag>
-    },
-    {
-      title: "Action",
-      render: (_, record) => (
+   {
+  title: "Status",
+  dataIndex: "status",
+  render: (status, record) => (
+    <div>
+      <Tag color={getColor(status)}>
+        {status?.toUpperCase()}
+      </Tag>
+
+      {status === "rejected" && record.rejectionReason && (
+        <div style={{ marginTop: 6 }}>
+          <Text type="danger">
+            Reason: {record.rejectionReason}
+          </Text>
+        </div>
+      )}
+    </div>
+  )
+},
+   {
+  title: "Action",
+  render: (_, record) => (
+    <Space>
+
+      <Button
+        type="primary"
+        style={{ background: "#6d28d9", borderColor: "#6d28d9", borderRadius: 8 }}
+        onClick={() => navigate(`/dashboard/developer/developer-projects/${record.key}`)}
+      >
+        View
+      </Button>
+
+      {record.status === "rejected" && (
         <Button
-          type="primary"
-          style={{ background: "#6d28d9", borderColor: "#6d28d9", borderRadius: 8, fontWeight: 500 }}
-          // YAHAN CHANGE KIYA HAI 👇 (projects ki jagah developer-projects kar diya)
-          onClick={() => navigate(`/dashboard/developer/developer-projects/${record.key}`)}
+          danger
+          onClick={() => {
+            setEditingId(record.key);
+            setModalVisible(true);
+          }}
         >
-          View Details
+          Edit & Resubmit
         </Button>
-      )
-    }
+      )}
+
+    </Space>
+  )
+}
   ];
 
   return (
