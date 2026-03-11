@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Card, Typography, Row, Col, Spin, Empty, Select } from "antd";
+import { Card, Typography, Row, Col, Spin, Empty, Select, notification } from "antd"; // ✅ notification added
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
+import { Download } from "lucide-react"; // ✅ Download icon added
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -98,6 +99,31 @@ const ViewLibrary = () => {
     }
   };
 
+  // ✅ 100% WORKING PDF DOWNLOAD LOGIC
+  const downloadImage = async (imageUrl, categoryName) => {
+    try {
+      const key = imageUrl.split(".amazonaws.com/")[1];
+
+      if (!key) {
+        notification.error({ message: "Invalid Image URL" });
+        return;
+      }
+
+      // PDF API Hit karega seedha
+      await apiService.download(
+        `/download-pdf?key=${encodeURIComponent(key)}`,
+        `XOTO_${categoryName}_${Date.now()}.pdf`
+      );
+
+    } catch (error) {
+      console.error("Download error:", error);
+      notification.error({
+        message: "Download Failed",
+        description: "PDF could not be generated."
+      });
+    }
+  };
+
   // Dropdown change hone par naya data fetch karne ka function
   const handleCategoryChange = (value) => {
     setSelectedCategory(value);
@@ -161,7 +187,7 @@ const ViewLibrary = () => {
                   boxShadow: "0 4px 12px rgba(0,0,0,0.08)"
                 }}
                 cover={
-                  <div style={{ overflow: "hidden", height: "320px" }}>
+                  <div className="img-container">
                     <img
                       src={item.image}
                       alt={selectedCategory}
@@ -174,6 +200,21 @@ const ViewLibrary = () => {
                       }}
                       className="card-img"
                     />
+                    {/* ✅ DOWNLOAD HOVER OVERLAY ADDED */}
+                    <div className="overlay">
+                      <button 
+                        className="download-btn"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Card click event ko rokne ke liye
+                          downloadImage(item.image, selectedCategory.replace(/\s+/g, ''));
+                        }}
+                      >
+                        <Download size={24} />
+                      </button>
+                      <span style={{ color: "white", fontSize: "12px", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase" }}>
+                        Download
+                      </span>
+                    </div>
                   </div>
                 }
               />
@@ -182,8 +223,53 @@ const ViewLibrary = () => {
         </Row>
       )}
 
+      {/* ✅ CSS STYLES FOR OVERLAY AND HOVER EFFECT */}
       <style>
         {`
+        .img-container {
+          position: relative;
+          overflow: hidden;
+          height: 320px;
+        }
+
+        .overlay {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0, 0, 0, 0.4);
+          opacity: 0;
+          transition: 0.3s ease-in-out;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          gap: 12px;
+          backdrop-filter: blur(2px);
+        }
+
+        .img-container:hover .overlay {
+          opacity: 1;
+        }
+
+        .download-btn {
+          background: rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: white;
+          border-radius: 50%;
+          width: 56px;
+          height: 56px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: 0.3s;
+        }
+
+        .download-btn:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: scale(1.1);
+        }
+
         .card-img:hover {
           transform: scale(1.08);
         }
