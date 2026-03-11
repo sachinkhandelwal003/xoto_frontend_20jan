@@ -74,11 +74,12 @@ const BuiltForEveryone = () => {
         <div className="flex flex-col lg:flex-row items-center justify-between ">
           <div className="w-full lg:w-1/2 flex justify-start items-start mb-10 lg:mb-25">
             <div className="relative w-60 h-60 sm:w-100 sm:h-100 lg:w-110 lg:h-110 mx-auto">
-              <video src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1768044487658-round231.mp4"} autoPlay loop muted playsInline className="w-full object-contain" />
+              <video src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1773149793064-round321.mp4"} autoPlay loop muted playsInline className="w-full object-contain" />
             </div>
           </div>
 
           <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start">
+          
             <div className="relative w-full max-w-sm lg:max-w-2xl overflow-hidden">
               <div
                 className="flex transition-transform duration-500 ease-in-out gap-4"

@@ -207,28 +207,18 @@ const CUSTOM_ROLE_LINKS = {
     },
   ],
 "16": [
- 
+    {
+  title: "Marketplace",
+  icon: "fas fa-building",
+  path: "/dashboard/{roleSlug}/projects",
+},
+
   {
     title: "Leads",
     icon: "fas fa-user-friends",
     path: "/dashboard/{roleSlug}/agent-leads",
   },
   {
-    title: "Subscription",
-    icon: "fas fa-credit-card",
-    path: "/dashboard/{roleSlug}/subscription",
-  },
-  {
-  title: "Projects",
-  icon: "fas fa-building",
-  path: "/dashboard/{roleSlug}/projects",
-},
-{
-  title: "Presentations",
-  icon: "fas fa-file-powerpoint",
-  path: "/dashboard/{roleSlug}/presentations",
-},
-{
   title: "Site Visits",
   icon: "fas fa-map-marker-alt",
   path: "/dashboard/{roleSlug}/visits",
@@ -243,6 +233,20 @@ const CUSTOM_ROLE_LINKS = {
   icon: "fas fa-rupee-sign",
   path: "/dashboard/{roleSlug}/commission",
 },
+  {
+    title: "Xobia AI",
+    icon: "fas fa-credit-card",
+    path: "/dashboard/{roleSlug}/subscription",
+  },
+
+// {
+//   title: "Presentations",
+//   icon: "fas fa-file-powerpoint",
+//   path: "/dashboard/{roleSlug}/presentations",
+// },
+
+
+
 ],
 "10": [],
 "17": [
