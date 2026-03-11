@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, Typography, Table, Tag, Button, Input, message } from "antd";
 import { SearchOutlined, EyeOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 const { Title, Text } = Typography;
 
@@ -13,8 +14,6 @@ export default function DeveloperLeads() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
-  const token = localStorage.getItem("token");
-
   useEffect(() => {
     fetchLeads();
   }, []);
@@ -23,33 +22,43 @@ export default function DeveloperLeads() {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const res = await fetch("https://xoto.ae/api/property/developer-leads", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
 
-      const data = await res.json();
+      // ✅ Token nikalna zaroori hai secure API call ke liye
+      const token = localStorage.getItem("token");
+
+      // ✅ API call ke sath Authorization header pass kiya
+      const res = await apiService.get("/property/developer-leads", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to fetch leads");
+      console.log("Raw Response from API:", res.data);
+
+      let list = [];
+      if (Array.isArray(res.data)) {
+        list = res.data;
+      } else if (res.data && Array.isArray(res.data.data)) {
+        list = res.data.data;
       }
 
-      const list = data?.data || [];
+      const formattedLeads = list.map((lead) => {
+        return {
+          id: lead?._id,
+          clientName: `${lead?.name?.first_name || ""} ${lead?.name?.last_name || ""}`.trim() || "Unknown Client",
+          // 'propertyName' aur 'title' dono check kar liye taaki error na aaye
+          project: lead?.project?.propertyName || lead?.project?.title || "N/A",
+          budget: lead?.budget || "N/A",
+          agentName: `${lead?.agent?.first_name || ""} ${lead?.agent?.last_name || ""}`.trim() || "Unassigned",
+          status: lead?.status || "New",
+        };
+      });
 
-      // 🛠 Safe Data Formatting (Taki koi null value app crash na kare)
-      const formattedLeads = list.map((lead) => ({
-        id: lead?._id,
-        clientName: `${lead?.name?.first_name || ""} ${lead?.name?.last_name || ""}`.trim() || "Unknown Client",
-        project: lead?.project?.title || "N/A",
-        budget: lead?.budget || "N/A",
-        agentName: `${lead?.agent?.first_name || ""} ${lead?.agent?.last_name || ""}`.trim() || "Unassigned",
-        status: lead?.status || "New",
-      }));
+      console.log("Formatted Leads Array:", formattedLeads);
 
       setLeads(formattedLeads);
       setFilteredLeads(formattedLeads);
+
     } catch (err) {
       console.error("Fetch Leads Error:", err);
       message.error("Failed to load leads from server.");

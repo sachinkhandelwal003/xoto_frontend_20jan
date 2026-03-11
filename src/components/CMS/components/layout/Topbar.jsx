@@ -295,12 +295,17 @@ const Topbar = () => {
           >
             <div className="flex items-center gap-2 cursor-pointer">
               {/* ✅ Change Here: Using Name's First Letter */}
-              <Avatar
-                title={getDisplayName()}
-                style={{ backgroundColor: colors.primary || "#722ed1" }}
-              >
-                {getDisplayName()?.charAt(0)?.toUpperCase()}
-              </Avatar>
+        <Avatar
+      title={getDisplayName()}
+      src={userProfile?.profilePic} // 👈 Ye rahi photo
+      style={{ 
+        backgroundColor: colors.primary || "#722ed1",
+        verticalAlign: 'middle' 
+      }}
+    >
+      {/* Fallback agar photo na ho */}
+      {!userProfile?.profilePic && getDisplayName()?.charAt(0)?.toUpperCase()}
+    </Avatar>
 
               <div className="hidden md:flex flex-col leading-tight">
                 <Text strong className="text-sm">

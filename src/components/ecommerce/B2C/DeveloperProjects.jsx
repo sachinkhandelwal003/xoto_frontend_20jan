@@ -72,7 +72,6 @@ export default function DeveloperProjects() {
     try {
       setTableLoading(true);
       
-  
       const json = await apiService.get(
   "/property/get-all-properties",
   {

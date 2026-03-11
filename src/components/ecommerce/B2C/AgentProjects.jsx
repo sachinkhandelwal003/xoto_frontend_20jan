@@ -15,6 +15,7 @@ import {
   Switch,
   InputNumber
 } from "antd";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import { 
   InfoCircleOutlined, 
   SearchOutlined, 
@@ -29,7 +30,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 // const BASE_URL = "http://localhost:5000/api";
-const BASE_URL = "https://xoto.ae/api/api";
+// const BASE_URL = "https://xoto.ae/api/api";
 
 export default function AgentProjects() {
   const navigate = useNavigate();
@@ -78,9 +79,11 @@ export default function AgentProjects() {
   const fetchProjects = async (pageNo = 1, append = false) => {
     try {
       setLoading(true);
-      const res = await fetch(`${BASE_URL}/property/get-all-properties?page=${pageNo}&limit=20`);
-      const json = await res.json();
-      const list = json?.data?.data || json?.data || [];
+      const res = await apiService.get(`/property/get-all-properties?page=${pageNo}&limit=20`);
+
+const list = Array.isArray(res?.data)
+  ? res.data
+  : res?.data?.data || [];
 
       if (!list.length) setHasMore(false);
 
@@ -94,14 +97,24 @@ export default function AgentProjects() {
   };
 
   const fetchDevelopers = async () => {
-    try {
-      const res = await fetch(`${BASE_URL}/property/get-all-developers`);
-      const json = await res.json();
-      setDevelopers(json?.data?.data || json?.data || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+
+  try {
+
+    const res = await apiService.get("/property/get-all-developers");
+
+    const list = Array.isArray(res?.data)
+      ? res.data
+      : res?.data?.data || [];
+
+    setDevelopers(list);
+
+  } catch (err) {
+
+    console.log(err);
+
+  }
+
+};
 
   useEffect(() => {
     fetchProjects(1, false);
