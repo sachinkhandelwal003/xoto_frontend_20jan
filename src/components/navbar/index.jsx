@@ -34,7 +34,7 @@ export const languages = [
 const navItems = [
   { key: "home", path: "/" },
   { key: "mortgages", path: "/mortgage/services" },
-  { key: "properties", path: "/Properties" },
+  { key: "properties", path: "/Property" },
   {
     key: "homeUpgrade",
     children: [
