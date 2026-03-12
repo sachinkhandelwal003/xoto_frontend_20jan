@@ -54,33 +54,35 @@ const AdminPropertyList = () => {
 
   const fetchAllProperties = useCallback(async (page, limit, search) => {
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
+  try {
 
-      const resData = await apiService.get("/property/get-all-properties", {
-        page,
-        limit,
-        search: search || undefined,
-        admin: true
-      });
+    const res = await apiService.get("/property/get-all-properties", {
+  params: {
+    page,
+    limit,
+    search: search || ""
+  }
+});
 
-      const list = resData?.data || resData || [];
+const list = res?.data ?? [];
 
-      setProperties(Array.isArray(list) ? list : []);
-      setTotal(resData?.pagination?.total || list.length);
+setProperties(Array.isArray(list) ? list : []);
+setTotal(res?.pagination?.totalItems ?? 0);
 
-    } catch (err) {
+  } catch (err) {
 
-      message.error("Failed to load properties list.");
+    console.log(err);
+    message.error("Failed to load properties list.");
 
-    } finally {
+  } finally {
 
-      setLoading(false);
+    setLoading(false);
 
-    }
+  }
 
-  }, []);
+}, []);
 
   useEffect(() => {
 
@@ -347,19 +349,6 @@ const AdminPropertyList = () => {
         )}
 
       </Modal>
-
-      {/* REJECT MODAL */}
-
-      {/* VIEW MODAL */}
-
-<Modal
-  title="Property Details"
-  open={viewModal}
-  onCancel={() => setViewModal(false)}
->
-....
-</Modal>
-
 
 {/* REJECT MODAL */}
 <Modal
