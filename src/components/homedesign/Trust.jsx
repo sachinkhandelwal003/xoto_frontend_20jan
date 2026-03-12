@@ -137,7 +137,7 @@ export default function TrustPresenceSection() {
 
         {/* Card 2 */}
         <a
-          href="/marketplace"
+          href="/Property"
           className="
             block cursor-pointer bg-white/90 backdrop-blur-sm rounded-3xl p-6 sm:p-8 lg:p-10
             shadow-xl shadow-purple-400 hover:shadow-2xl hover:shadow-purple-500
@@ -157,7 +157,7 @@ export default function TrustPresenceSection() {
 
         {/* Card 3 */}
         <a
-          href="/marketplace"
+          href="/Property"
           className="
             block cursor-pointer bg-white/90 backdrop-blur-sm rounded-3xl p-6 sm:p-8 lg:p-10
             shadow-xl shadow-purple-400 hover:shadow-2xl hover:shadow-purple-500
