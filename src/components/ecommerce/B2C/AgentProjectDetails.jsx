@@ -263,7 +263,7 @@ export default function AgentProjectDetails() {
   const fetchPropertyDetails = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/property/get-property-by-id?id=${id}`);
+      const res = await axios.get(`https://xoto.ae/api/property/get-property-by-id?id=${id}`);
       if (res.data?.success) {
         setProperty(res.data.data);
         setCustomDescription(res.data.data.description || "Detailed description for this property is not available yet.");
