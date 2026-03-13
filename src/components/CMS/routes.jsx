@@ -395,7 +395,7 @@ const CmsRoutes = () => {
 <Route path="/inventory/:id" element={<DeveloperUnitDetails/>}/>
 <Route path="/inventory/:id/edit" element={<DeveloperEditUnit/>}/>
 <Route path="developer-leads" element={<DeveloperLeads />} />
-<Route path="developer-leads/:id" element={<DeveloperLeadDetails />} />
+<Route path="leads/:id" element={<DeveloperLeadDetails />} />
 <Route path="/leads/:id/booking" element={<DeveloperCreateBooking/>}/>
 <Route path="/bookings" element={<DeveloperBookings/>}/>
 <Route path="/bookings/:id" element={<DeveloperBookingDetails/>}/>

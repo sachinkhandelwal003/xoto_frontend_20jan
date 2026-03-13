@@ -22,16 +22,13 @@ import {
 } from "@ant-design/icons";
 
 import { useNavigate } from "react-router-dom";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 const { Title, Text } = Typography;
-
-// const API = "http://localhost:5000/api/property";
-const API = "https://xoto.ae/api/property";
 
 export default function DeveloperInventory() {
 
   const navigate = useNavigate();
-
   const developerId = localStorage.getItem("developerId");
 
   const [units, setUnits] = useState([]);
@@ -40,30 +37,35 @@ export default function DeveloperInventory() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // FETCH PROJECTS
+  /* ---------------- FETCH PROJECTS ---------------- */
+
   const fetchProjects = async () => {
 
     try {
 
-      const res = await fetch(`${API}/get-all-properties`);
-      const data = await res.json();
+      const res = await apiService.get(
+        `/property/developers/${developerId}/properties`
+      );
 
-      const options = data.data.map((p) => ({
-        label: p.projectName,
-        value: p._id
-      }));
+      if (res.success) {
 
-      setProjects(options);
+        const options = res.data.map((p) => ({
+          label: p.propertyName,
+          value: p._id
+        }));
+
+        setProjects(options);
+
+      }
 
     } catch {
-
       message.error("Failed to load projects");
-
     }
 
   };
 
-  // FETCH INVENTORY
+  /* ---------------- FETCH INVENTORY ---------------- */
+
   const fetchInventory = async (projectId) => {
 
     if (!projectId) return;
@@ -72,21 +74,21 @@ export default function DeveloperInventory() {
 
     try {
 
-      const res = await fetch(
-        `${API}/get-inventory-by-property?projectId=${projectId}`
+      const res = await apiService.get(
+        `/property/inventory/property/${projectId}`
       );
 
-      const data = await res.json();
+      if (res.success) {
 
-      if (data.success) {
-
-        const formatted = data.data.map((item) => ({
+        const formatted = res.data.map((item) => ({
           key: item._id,
           unitId: item.unitId,
           area: item.area,
           price: item.price,
           view: item.view,
-          status: item.status
+          status: item.status,
+          agentId: item.agentId,
+          leadId: item.leadId
         }));
 
         setUnits(formatted);
@@ -103,6 +105,8 @@ export default function DeveloperInventory() {
 
   };
 
+  /* ---------------- INITIAL LOAD ---------------- */
+
   useEffect(() => {
 
     fetchProjects();
@@ -112,12 +116,13 @@ export default function DeveloperInventory() {
     if (savedProject) {
 
       setProjectId(savedProject);
-
       fetchInventory(savedProject);
 
     }
 
   }, []);
+
+  /* ---------------- STATUS COLORS ---------------- */
 
   const getColor = (status) => {
 
@@ -129,8 +134,8 @@ export default function DeveloperInventory() {
       case "Booked":
         return "orange";
 
-      case "Blocked":
-        return "red";
+      case "Reserved":
+        return "purple";
 
       case "Available":
         return "green";
@@ -142,21 +147,19 @@ export default function DeveloperInventory() {
 
   };
 
-  // DELETE UNIT
+  /* ---------------- DELETE UNIT ---------------- */
+
   const deleteUnit = async (id) => {
 
     try {
 
-      const res = await fetch(`${API}/delete-inventory/${id}`, {
-        method: "DELETE"
-      });
+      const res = await apiService.delete(
+        `/property/inventory/${id}`
+      );
 
-      const data = await res.json();
+      if (res.success) {
 
-      if (data.success) {
-
-        message.success("Unit deleted successfully");
-
+        message.success("Unit deleted");
         fetchInventory(projectId);
 
       }
@@ -169,19 +172,93 @@ export default function DeveloperInventory() {
 
   };
 
-  // CSV IMPORT
+  /* ---------------- RESERVE UNIT ---------------- */
+
+  const reserveUnit = async (id) => {
+
+    try {
+
+      const res = await apiService.post(
+        `/property/inventory/${id}/reserve`
+      );
+
+      if (res.success) {
+
+        message.success("Unit Reserved");
+        fetchInventory(projectId);
+
+      }
+
+    } catch {
+
+      message.error("Reserve failed");
+
+    }
+
+  };
+
+  /* ---------------- BOOK UNIT ---------------- */
+
+  const bookUnit = async (id) => {
+
+    try {
+
+      const res = await apiService.post(
+        `/property/inventory/${id}/book`
+      );
+
+      if (res.success) {
+
+        message.success("Unit Booked");
+        fetchInventory(projectId);
+
+      }
+
+    } catch {
+
+      message.error("Booking failed");
+
+    }
+
+  };
+
+  /* ---------------- RELEASE UNIT ---------------- */
+
+  const releaseUnit = async (id) => {
+
+    try {
+
+      const res = await apiService.post(
+        `/property/inventory/${id}/release`
+      );
+
+      if (res.success) {
+
+        message.success("Unit Released");
+        fetchInventory(projectId);
+
+      }
+
+    } catch {
+
+      message.error("Release failed");
+
+    }
+
+  };
+
+  /* ---------------- CSV IMPORT ---------------- */
+
   const handleFileUpload = async (file) => {
 
     if (!developerId || !projectId) {
 
       message.error("Select project first");
-
       return false;
 
     }
 
     const text = await file.text();
-
     const rows = text.split(/\r?\n/).slice(1);
 
     const units = rows.map((row) => {
@@ -200,33 +277,19 @@ export default function DeveloperInventory() {
 
     try {
 
-      const res = await fetch(`${API}/bulk-import-inventory`, {
-
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({
+      const res = await apiService.post(
+        "/property/bulk-import-inventory",
+        {
           developerId,
           projectId,
           units
-        })
+        }
+      );
 
-      });
+      if (res.success) {
 
-      const data = await res.json();
-
-      if (data.success) {
-
-        message.success("CSV Imported Successfully");
-
+        message.success("CSV Imported");
         fetchInventory(projectId);
-
-      } else {
-
-        message.error(data.message);
 
       }
 
@@ -240,10 +303,13 @@ export default function DeveloperInventory() {
 
   };
 
-  // SEARCH
+  /* ---------------- SEARCH ---------------- */
+
   const filteredUnits = units.filter((item) =>
     item.unitId?.toLowerCase().includes(search.toLowerCase())
   );
+
+  /* ---------------- TABLE COLUMNS ---------------- */
 
   const columns = [
 
@@ -268,6 +334,22 @@ export default function DeveloperInventory() {
     },
 
     {
+      title: "Agent",
+      render: (_, record) =>
+        record.agentId
+          ? `${record.agentId.first_name} ${record.agentId.last_name}`
+          : "-"
+    },
+
+    {
+      title: "Client",
+      render: (_, record) =>
+        record.leadId
+          ? record.leadId.clientName
+          : "-"
+    },
+
+    {
       title: "Status",
       dataIndex: "status",
       render: (status) => (
@@ -280,9 +362,64 @@ export default function DeveloperInventory() {
     {
       title: "Action",
       align: "center",
-      render: (_, record) => (
+      render: (_, record) => {
 
-        <Space>
+        if (record.status === "Available") {
+
+          return (
+            <Space>
+
+              <Button onClick={() => reserveUnit(record.key)}>
+                Reserve
+              </Button>
+
+              <Button
+                onClick={() =>
+                  navigate(`/dashboard/developer/inventory/edit/${record.key}`)
+                }
+              >
+                Edit
+              </Button>
+
+              <Popconfirm
+                title="Delete this unit?"
+                onConfirm={() => deleteUnit(record.key)}
+              >
+                <Button danger>
+                  Delete
+                </Button>
+              </Popconfirm>
+
+            </Space>
+          );
+
+        }
+
+        if (record.status === "Reserved") {
+
+          return (
+            <Space>
+
+              <Button
+                type="primary"
+                onClick={() => bookUnit(record.key)}
+              >
+                Book
+              </Button>
+
+              <Button
+                danger
+                onClick={() => releaseUnit(record.key)}
+              >
+                Release
+              </Button>
+
+            </Space>
+          );
+
+        }
+
+        return (
 
           <Button
             type="primary"
@@ -293,31 +430,15 @@ export default function DeveloperInventory() {
             View
           </Button>
 
-          <Button
-            onClick={() =>
-              navigate(`/dashboard/developer/inventory/edit/${record.key}`)
-            }
-          >
-            Edit
-          </Button>
+        );
 
-          <Popconfirm
-            title="Are you sure to delete this unit?"
-            onConfirm={() => deleteUnit(record.key)}
-          >
-            <Button danger>
-              Delete
-            </Button>
-          </Popconfirm>
-
-        </Space>
-
-      )
+      }
     }
 
   ];
 
-  // STATS
+  /* ---------------- STATS ---------------- */
+
   const totalUnits = units.length;
   const availableUnits = units.filter(u => u.status === "Available").length;
   const bookedUnits = units.filter(u => u.status === "Booked").length;
@@ -325,13 +446,11 @@ export default function DeveloperInventory() {
 
   return (
 
-    <div style={{ padding: "24px", background: "#f8f9fa", minHeight: "100vh" }}>
-
-      {/* HEADER */}
+    <div style={{ padding: 24, background: "#f8f9fa", minHeight: "100vh" }}>
 
       <div
         style={{
-          marginBottom: "24px",
+          marginBottom: 24,
           display: "flex",
           justifyContent: "space-between"
         }}
@@ -356,11 +475,9 @@ export default function DeveloperInventory() {
             accept=".csv"
             showUploadList={false}
           >
-
             <Button icon={<UploadOutlined />}>
               Import CSV
             </Button>
-
           </Upload>
 
           <Button
@@ -376,8 +493,6 @@ export default function DeveloperInventory() {
         </Space>
 
       </div>
-
-      {/* STATS */}
 
       <Row gutter={16} style={{ marginBottom: 24 }}>
 
@@ -411,8 +526,6 @@ export default function DeveloperInventory() {
 
       </Row>
 
-      {/* FILTER */}
-
       <Card style={{ marginBottom: 24 }}>
 
         <Row gutter={16}>
@@ -423,15 +536,14 @@ export default function DeveloperInventory() {
 
             <Select
               size="large"
+              value={projectId}
               options={projects}
               placeholder="Select Project"
               style={{ width: "100%", marginTop: 6 }}
               onChange={(value) => {
 
                 setProjectId(value);
-
                 localStorage.setItem("selectedProject", value);
-
                 fetchInventory(value);
 
               }}
@@ -458,8 +570,6 @@ export default function DeveloperInventory() {
 
       </Card>
 
-      {/* TABLE */}
-
       <Card>
 
         <Title level={5}>
@@ -483,3 +593,4 @@ export default function DeveloperInventory() {
   );
 
 }
+
