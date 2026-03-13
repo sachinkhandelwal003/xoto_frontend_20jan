@@ -7,6 +7,10 @@ import AdminProfile from "./AdminProfile";
 import CustomerProfile from "./CustomerProfile";
 import { ConsoleSqlOutlined } from "@ant-design/icons";
 import AccountantProfile from "./AccountantProfile";
+import AgentProfile from "./AgentProfile";
+import DeveloperProfile from "./DeveloperProfile";
+import GridAdminProfile from "./GridAdmin";
+
 
 const Profile = () => {
   const { user } = useSelector((state) => state.auth);
@@ -35,6 +39,14 @@ const Profile = () => {
       return <CustomerProfile />;
           case 11:
       return <AccountantProfile />;
+
+      case 16: 
+      return <AgentProfile /> ;
+      case 17: 
+      return <DeveloperProfile /> ;
+
+      case 18:
+        return <GridAdminProfile />
 
     default:
       return <VendorMYProfile />;

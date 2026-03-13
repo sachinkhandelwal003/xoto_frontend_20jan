@@ -15,11 +15,7 @@ import {
   Select,
   Avatar,
   Divider,
-  DatePicker,
-  TimePicker,
-  Form,
-  message,
-  Badge
+  message
 } from "antd";
 
 import {
@@ -32,9 +28,7 @@ import {
   PropertySafetyOutlined,
   CompassOutlined,
   CheckCircleOutlined,
-  ClockCircleOutlined,
-  CalendarOutlined,
-  BellOutlined
+  ClockCircleOutlined
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -44,13 +38,13 @@ const LeadManagement = () => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
   
-  // Modals State
+  // Monitoring Filters State
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  // Modal State
   const [viewModal, setViewModal] = useState(false);
-  const [scheduleModal, setScheduleModal] = useState(false);
-  const [requestsListModal, setRequestsListModal] = useState(false); // Naya modal pending requests ke liye
-  
   const [selectedLead, setSelectedLead] = useState(null);
-  const [form] = Form.useForm();
 
   // ================= FETCH LEADS =================
   const fetchLeads = async () => {
@@ -90,51 +84,28 @@ const LeadManagement = () => {
     );
   };
 
-  // ================= TABLE DATA =================
-  const tableData = leads.map((l) => ({
-    ...l,
-    key: l._id,
-    leadName: `${l?.name?.first_name || ""} ${l?.name?.last_name || ""}`,
-    email: l?.email,
-    phone: l?.phone_number,
-    agentName: `${l?.agent?.first_name || ""} ${l?.agent?.last_name || ""}`,
-    createdAtFormatted: new Date(l.createdAt).toLocaleDateString(),
-    
-    // YAHAN LOGIC CHANGE KIYA HAI:
-    // Agar status "visit" hai aur visit_date abhi tak set nahi hui hai, toh isko pending request maano.
-    visit_requested: l?.status === "visit" && !l?.visit_date 
-  }));
-  // Pending requests filter
-  const pendingVisitRequests = tableData.filter((l) => l.visit_requested);
+  // ================= TABLE DATA & FILTERING =================
+  const tableData = leads
+    .map((l) => ({
+      ...l,
+      key: l._id,
+      leadName: `${l?.name?.first_name || ""} ${l?.name?.last_name || ""}`,
+      email: l?.email,
+      phone: l?.phone_number,
+      agentName: `${l?.agent?.first_name || ""} ${l?.agent?.last_name || ""}`,
+      createdAtFormatted: new Date(l.createdAt).toLocaleDateString(),
+    }))
+    .filter((l) => {
+      // Search Box Logic
+      const matchSearch = 
+        l.leadName.toLowerCase().includes(searchText.toLowerCase()) || 
+        (l.email && l.email.toLowerCase().includes(searchText.toLowerCase()));
+      
+      // Status Dropdown Logic
+      const matchStatus = statusFilter === "all" || l.status === statusFilter;
 
-  // ================= HANDLE SCHEDULE SUBMIT =================
-  const onScheduleSubmit = async (values) => {
-    try {
-      setLoading(true);
-      
-      const payload = {
-        visit_date: values.visit_date.format("YYYY-MM-DD"),
-        visit_time: values.visit_time.format("HH:mm"),
-        status: "visit",
-        visit_requested: false // Schedule hone ke baad request false karni hogi taaki list se hat jaye
-      };
-
-      await apiService.put(`/agent/lead/update-lead/${selectedLead._id}`, payload);
-      
-      message.success("Site visit scheduled successfully!");
-      setScheduleModal(false);
-      form.resetFields();
-      
-      // Agar main requests list modal open hai, toh fetch hone ke baad wo auto-update ho jayega
-      fetchLeads(); 
-      
-    } catch (error) {
-      console.log(error);
-      message.error("Failed to schedule site visit.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return matchSearch && matchStatus;
+    });
 
   // ================= MAIN TABLE COLUMNS =================
   const columns = [
@@ -142,11 +113,11 @@ const LeadManagement = () => {
       title: "Lead Details",
       render: (_, r) => (
         <Space>
-          <Avatar icon={<UserOutlined />} />
+          <Avatar icon={<UserOutlined />} className="bg-blue-500" />
           <div>
             <Text strong>{r.leadName}</Text>
             <br />
-            <Text type="secondary">{r.email}</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>{r.email}</Text>
           </div>
         </Space>
       ),
@@ -160,7 +131,7 @@ const LeadManagement = () => {
       title: "Property Type",
       render: (record) => (
         <Text strong>
-          <CompassOutlined /> {record.property_type || "-"}
+          <CompassOutlined className="mr-1 text-purple-500" /> {record.property_type || "-"}
         </Text>
       ),
     },
@@ -177,46 +148,15 @@ const LeadManagement = () => {
       title: "Action",
       render: (_, record) => (
         <Button
+          type="primary"
+          ghost
           icon={<EyeOutlined />}
           onClick={() => {
             setSelectedLead(record);
             setViewModal(true);
           }}
         >
-          View
-        </Button>
-      ),
-    },
-  ];
-
-  // ================= REQUESTS LIST MODAL COLUMNS =================
-  const requestColumns = [
-    {
-      title: "Lead Name",
-      dataIndex: "leadName",
-      render: (text) => <Text strong>{text}</Text>,
-    },
-    {
-      title: "Phone",
-      dataIndex: "phone",
-    },
-    {
-      title: "Property",
-      dataIndex: "property_type",
-    },
-    {
-      title: "Action",
-      render: (_, record) => (
-        <Button
-          type="primary"
-          size="small"
-          icon={<CalendarOutlined />}
-          onClick={() => {
-            setSelectedLead(record);
-            setScheduleModal(true);
-          }}
-        >
-          Schedule
+          View Lead
         </Button>
       ),
     },
@@ -225,82 +165,77 @@ const LeadManagement = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <Title level={2} style={{ margin: 0 }}>Lead Management</Title>
-          <Text type="secondary">
-            Track user inquiries, schedule visits, and monitor agent performance.
-          </Text>
-        </div>
-        
-        {/* TOP BUTTON WITH BADGE FOR PENDING REQUESTS */}
-        <div>
-          <Badge count={pendingVisitRequests.length} offset={[-5, 5]}>
-            <Button 
-              type="primary" 
-              icon={<BellOutlined />} 
-              size="large"
-              onClick={() => setRequestsListModal(true)}
-            >
-              Visit Requests
-            </Button>
-          </Badge>
-        </div>
+      <div className="mb-6">
+        <Title level={2} style={{ margin: 0 }}>Lead Monitoring</Title>
+        <Text type="secondary">
+          Monitor all leads generated by agents, track their statuses, and view complete details.
+        </Text>
       </div>
 
       {/* PIPELINE STATS */}
       <Row gutter={[16, 16]} className="mb-8">
         <Col xs={24} sm={6}>
-          <Card bordered={false}>
+          <Card bordered={false} className="shadow-sm rounded-xl">
             <Statistic
               title="Total Leads"
               value={leads.length}
-              prefix={<MessageOutlined />}
+              prefix={<MessageOutlined className="text-blue-500" />}
             />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
-          <Card bordered={false}>
+          <Card bordered={false} className="shadow-sm rounded-xl">
             <Statistic
               title="Site Visits"
               value={leads.filter((l) => l.status === "visit").length}
-              prefix={<CompassOutlined />}
+              prefix={<CompassOutlined className="text-purple-500" />}
             />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
-          <Card bordered={false}>
+          <Card bordered={false} className="shadow-sm rounded-xl">
             <Statistic
-              title="Deals"
+              title="Active Deals"
               value={leads.filter((l) => l.status === "deal").length}
-              prefix={<ClockCircleOutlined />}
+              prefix={<ClockCircleOutlined className="text-orange-500" />}
             />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
-          <Card bordered={false}>
+          <Card bordered={false} className="shadow-sm rounded-xl">
             <Statistic
-              title="Closed"
+              title="Successfully Closed"
               value={leads.filter((l) => l.status === "closed").length}
-              prefix={<CheckCircleOutlined />}
+              prefix={<CheckCircleOutlined className="text-green-500" />}
             />
           </Card>
         </Col>
       </Row>
 
-      {/* LEAD TABLE */}
-      <Card bordered={false} className="shadow-md">
-        <div className="mb-4 flex gap-2">
+      {/* LEAD TABLE WITH FILTERS */}
+      <Card bordered={false} className="shadow-md rounded-xl">
+        <div className="mb-4 flex gap-4 flex-wrap">
           <Input
-            prefix={<SearchOutlined />}
-            placeholder="Search Lead..."
-            style={{ width: 250 }}
+            prefix={<SearchOutlined className="text-gray-400" />}
+            placeholder="Search by Lead Name or Email..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 300 }}
+            size="large"
           />
-          <Select defaultValue="all" style={{ width: 150 }}>
-            <Option value="all">All Status</Option>
-            <Option value="lead">Lead</Option>
-            <Option value="visit">Visit</Option>
-            <Option value="deal">Deal</Option>
+          <Select 
+            value={statusFilter} 
+            onChange={(val) => setStatusFilter(val)} 
+            style={{ width: 180 }}
+            size="large"
+          >
+            <Option value="all">All Statuses</Option>
+            <Option value="lead">New Leads</Option>
+            <Option value="visit">Site Visits</Option>
+            <Option value="deal">In Deal</Option>
+            <Option value="booking">Booked</Option>
+            <Option value="closed">Closed</Option>
+            <Option value="lost">Lost</Option>
           </Select>
         </div>
 
@@ -308,84 +243,29 @@ const LeadManagement = () => {
           columns={columns}
           dataSource={tableData}
           loading={loading}
-          pagination={{ pageSize: 5 }}
+          pagination={{ pageSize: 10 }}
         />
       </Card>
 
-      {/* MODAL 1: VIEW PENDING VISIT REQUESTS LIST */}
+      {/* MODAL: VIEW FULL LEAD DETAILS */}
       <Modal
         title={
           <Space>
-            <BellOutlined style={{ color: '#faad14' }} />
-            Pending Visit Requests
+            <UserOutlined />
+            Complete Lead Details
           </Space>
         }
-        open={requestsListModal}
-        onCancel={() => setRequestsListModal(false)}
-        footer={[
-          <Button key="close" onClick={() => setRequestsListModal(false)}>
-            Close
-          </Button>
-        ]}
-        width={700}
-      >
-        <Table
-          columns={requestColumns}
-          dataSource={pendingVisitRequests}
-          pagination={{ pageSize: 5 }}
-          size="small"
-        />
-      </Modal>
-
-      {/* MODAL 2: SCHEDULE VISIT MODAL */}
-      <Modal
-        title={`Schedule Visit for ${selectedLead?.leadName || "Lead"}`}
-        open={scheduleModal}
-        onCancel={() => setScheduleModal(false)}
-        footer={null}
-      >
-        <Form form={form} layout="vertical" onFinish={onScheduleSubmit}>
-          <Form.Item
-            name="visit_date"
-            label="Visit Date"
-            rules={[{ required: true, message: "Please select a date!" }]}
-          >
-            <DatePicker style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item
-            name="visit_time"
-            label="Visit Time"
-            rules={[{ required: true, message: "Please select a time!" }]}
-          >
-            <TimePicker format="HH:mm" style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item className="text-right mb-0">
-            <Space>
-              <Button onClick={() => setScheduleModal(false)}>Cancel</Button>
-              <Button type="primary" htmlType="submit" loading={loading}>
-                Confirm Schedule
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* MODAL 3: VIEW FULL LEAD DETAILS */}
-      <Modal
-        title="Lead Details"
         open={viewModal}
         onCancel={() => setViewModal(false)}
         footer={[
-          <Button key="close" onClick={() => setViewModal(false)}>
+          <Button key="close" type="primary" onClick={() => setViewModal(false)}>
             Close
           </Button>,
         ]}
-        width={650}
+        width={700}
       >
         {selectedLead && (
-          <div>
+          <div className="mt-4">
             <Row gutter={[16, 16]}>
               <Col span={12}>
                 <Text type="secondary">Lead Name</Text>
@@ -404,85 +284,75 @@ const LeadManagement = () => {
             <Row gutter={[16, 16]}>
               <Col span={12}>
                 <Text type="secondary">
-                  <MailOutlined /> Email
+                  <MailOutlined className="mr-2" /> Email
                 </Text>
                 <br />
-                <Text>{selectedLead.email}</Text>
+                <Text strong>{selectedLead.email || "N/A"}</Text>
               </Col>
               <Col span={12}>
                 <Text type="secondary">
-                  <PhoneOutlined /> Phone
+                  <PhoneOutlined className="mr-2" /> Phone
                 </Text>
                 <br />
-                <Text>{selectedLead.phone}</Text>
+                <Text strong>{selectedLead.phone || "N/A"}</Text>
               </Col>
             </Row>
 
             <Divider />
 
             <Title level={5}>
-              <PropertySafetyOutlined /> Property & Visit Details
+              <PropertySafetyOutlined className="mr-2" /> Property & Preferences
             </Title>
 
-            <Row gutter={[8, 8]}>
-              <Col span={12}>
-                <Text type="secondary">Property Type:</Text>
-              </Col>
-              <Col span={12}>
-                <Text strong>{selectedLead.property_type}</Text>
-              </Col>
+            <div className="bg-gray-50 p-4 rounded-lg mt-3">
+              <Row gutter={[16, 16]}>
+                <Col span={12}>
+                  <Text type="secondary">Property Type:</Text>
+                  <br />
+                  <Text strong>{selectedLead.property_type || "N/A"}</Text>
+                </Col>
+                <Col span={12}>
+                  <Text type="secondary">Bedrooms:</Text>
+                  <br />
+                  <Text strong>{selectedLead.bedrooms ? `${selectedLead.bedrooms} BHK` : "N/A"}</Text>
+                </Col>
 
-              <Col span={12}>
-                <Text type="secondary">Bedrooms:</Text>
-              </Col>
-              <Col span={12}>
-                <Text strong>{selectedLead.bedrooms} BHK</Text>
-              </Col>
+                <Col span={12}>
+                  <Text type="secondary">Budget:</Text>
+                  <br />
+                  <Text strong>{selectedLead.budget ? `AED ${selectedLead.budget}` : "N/A"}</Text>
+                </Col>
+                <Col span={12}>
+                  <Text type="secondary">Preferred Location:</Text>
+                  <br />
+                  <Text strong>{selectedLead.preferred_location || "N/A"}</Text>
+                </Col>
 
-              <Col span={12}>
-                <Text type="secondary">Budget:</Text>
-              </Col>
-              <Col span={12}>
-                <Text strong>AED {selectedLead.budget}</Text>
-              </Col>
+                {selectedLead.visit_date && (
+                  <>
+                    <Col span={12}>
+                      <Text type="secondary">Scheduled Visit:</Text>
+                      <br />
+                      <Text strong style={{ color: "#52c41a" }}>
+                        {selectedLead.visit_date} {selectedLead.visit_time && `at ${selectedLead.visit_time}`}
+                      </Text>
+                    </Col>
+                  </>
+                )}
 
-              <Col span={12}>
-                <Text type="secondary">Preferred Location:</Text>
-              </Col>
-              <Col span={12}>
-                <Text strong>{selectedLead.preferred_location}</Text>
-              </Col>
+                <Col span={12}>
+                  <Text type="secondary">Source:</Text>
+                  <br />
+                  <Tag color="purple" className="mt-1">{selectedLead.source || "Direct"}</Tag>
+                </Col>
 
-              {/* Dynamic field for scheduled visits */}
-              {selectedLead.visit_date && (
-                <>
-                  <Col span={12}>
-                    <Text type="secondary">Scheduled Visit Date:</Text>
-                  </Col>
-                  <Col span={12}>
-                    <Text strong style={{ color: "green" }}>
-                      {selectedLead.visit_date} {selectedLead.visit_time && `at ${selectedLead.visit_time}`}
-                    </Text>
-                  </Col>
-                </>
-              )}
-
-              <Col span={12}>
-                <Text type="secondary">Source:</Text>
-              </Col>
-              <Col span={12}>
-                <Tag color="blue">{selectedLead.source}</Tag>
-              </Col>
-
-              <Col span={12}>
-                <Text type="secondary">Created At:</Text>
-              </Col>
-              <Col span={12}>
-                <Text>
-                  {new Date(selectedLead.createdAt).toLocaleString()}
-                </Text>
-              </Col>
-            </Row>
+                <Col span={12}>
+                  <Text type="secondary">Added On:</Text>
+                  <br />
+                  <Text strong>{new Date(selectedLead.createdAt).toLocaleString()}</Text>
+                </Col>
+              </Row>
+            </div>
           </div>
         )}
       </Modal>

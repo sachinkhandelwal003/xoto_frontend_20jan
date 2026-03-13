@@ -1,145 +1,323 @@
-import React from "react";
-import { 
-  Card, 
-  Typography, 
-  Table, 
-  Tag, 
-  Button, 
-  Input, 
-  Row, 
-  Col 
+import React, { useState, useEffect } from "react";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
+import {
+  Table,
+  Tag,
+  Space,
+  Card,
+  Typography,
+  Row,
+  Col,
+  Button,
+  Modal,
+  Avatar,
+  Divider,
+  DatePicker,
+  TimePicker,
+  Form,
+  message
 } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+
+import {
+  UserOutlined,
+  PhoneOutlined,
+  MailOutlined,
+  EyeOutlined,
+  PropertySafetyOutlined,
+  CompassOutlined,
+  CalendarOutlined,
+  BellOutlined
+} from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
-export default function DeveloperBookings() {
-  const navigate = useNavigate();
+const DeveloperBookings = () => {
+  const [leads, setLeads] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  // Modals State
+  const [viewModal, setViewModal] = useState(false);
+  const [scheduleModal, setScheduleModal] = useState(false);
+  
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [form] = Form.useForm();
 
-  const bookings = [
-    { key: 1, client: "Rahul Mehta", unit: "A-101", project: "Sky Tower", amount: "1.2Cr", status: "Confirmed" },
-    { key: 2, client: "Ali Hassan", unit: "B-201", project: "Downtown View", amount: "1.6Cr", status: "Pending" },
-    { key: 3, client: "Neha Gupta", unit: "C-301", project: "Marina Heights", amount: "70L", status: "Completed" },
-  ];
-
-  const getColor = (status) => {
-    switch (status) {
-      case "Confirmed": return "green";
-      case "Pending": return "orange";
-      case "Completed": return "blue";
-      default: return "default";
+  // ================= FETCH LEADS =================
+  const fetchLeads = async () => {
+    try {
+      setLoading(true);
+      const res = await apiService.get("/agent/lead/get-all-leads");
+      const list = Array.isArray(res?.data)
+        ? res.data
+        : res?.data?.data || [];
+      setLeads(list);
+    } catch (error) {
+      console.log(error);
+      message.error("Failed to fetch leads.");
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  // ================= FILTER PENDING REQUESTS =================
+  // Sirf wo leads jinka status "visit" hai aur visit_date abhi tak assign nahi hui hai
+  const pendingVisitRequests = leads
+    .filter((l) => l?.status === "visit" && !l?.visit_date)
+    .map((l) => ({
+      ...l,
+      key: l._id,
+      leadName: `${l?.name?.first_name || ""} ${l?.name?.last_name || ""}`,
+      email: l?.email,
+      phone: l?.phone_number,
+      agentName: `${l?.agent?.first_name || ""} ${l?.agent?.last_name || ""}`,
+    }));
+
+  // ================= HANDLE SCHEDULE SUBMIT =================
+  const onScheduleSubmit = async (values) => {
+    try {
+      setLoading(true);
+      
+      const payload = {
+        visit_date: values.visit_date.format("YYYY-MM-DD"),
+        visit_time: values.visit_time.format("HH:mm"),
+        status: "visit",
+      };
+
+      await apiService.put(`/agent/lead/update-lead/${selectedLead._id}`, payload);
+      
+      message.success("Site visit scheduled successfully!");
+      setScheduleModal(false);
+      form.resetFields();
+      
+      // List ko refresh karne ke liye taaki schedule hui request hat jaye
+      fetchLeads(); 
+      
+    } catch (error) {
+      console.log(error);
+      message.error("Failed to schedule site visit.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ================= TABLE COLUMNS =================
   const columns = [
-    { 
-      title: "Client Name", 
-      dataIndex: "client",
-      key: "client",
-      fontWeight: "bold",
-    },
-    { 
-      title: "Project", 
-      dataIndex: "project",
-      key: "project",
-    },
-    { 
-      title: "Unit No.", 
-      dataIndex: "unit",
-      key: "unit",
-    },
-    { 
-      title: "Amount", 
-      dataIndex: "amount",
-      key: "amount",
-      fontWeight: "500",
-    },
     {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => (
-        <Tag color={getColor(status)} style={{ padding: "4px 12px", borderRadius: "4px", fontSize: "13px" }}>
-          {status}
-        </Tag>
+      title: "Client Details",
+      render: (_, r) => (
+        <Space>
+          <Avatar icon={<UserOutlined />} className="bg-blue-500" />
+          <div>
+            <Text strong>{r.leadName}</Text>
+            <br />
+            <Text type="secondary" style={{ fontSize: 12 }}>{r.email}</Text>
+          </div>
+        </Space>
       ),
     },
     {
+      title: "Phone",
+      dataIndex: "phone",
+      render: (text) => <Text><PhoneOutlined className="mr-1 text-gray-400"/> {text}</Text>
+    },
+    {
+      title: "Property Type",
+      render: (record) => (
+        <Text strong>
+          <CompassOutlined className="text-purple-500 mr-1"/> {record.property_type || "-"}
+        </Text>
+      ),
+    },
+    {
+      title: "Agent",
+      dataIndex: "agentName",
+      render: (text) => <Tag color="geekblue">{text}</Tag>
+    },
+    {
       title: "Action",
-      key: "action",
-      align: "center",
       render: (_, record) => (
-        <Button
-          type="primary"
-          style={{ background: "#5c039b", borderColor: "#5c039b", borderRadius: "6px" }}
-          onClick={() => navigate(`/dashboard/developer/bookings/${record.key}`)}
-        >
-          View Details
-        </Button>
+        <Space>
+          <Button
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => {
+              setSelectedLead(record);
+              setViewModal(true);
+            }}
+          >
+            View
+          </Button>
+          <Button
+            type="primary"
+            size="small"
+            icon={<CalendarOutlined />}
+            style={{ background: "#faad14", borderColor: "#faad14" }}
+            onClick={() => {
+              setSelectedLead(record);
+              setScheduleModal(true);
+            }}
+          >
+            Schedule
+          </Button>
+        </Space>
       ),
     },
   ];
 
   return (
-    <div style={{ padding: "24px", background: "#f8f9fa", minHeight: "100vh" }}>
-      
-      {/* HEADER SECTION */}
-      <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <Title level={2} style={{ margin: 0, color: "#1f2937" }}>
-            Bookings Management
+          <Title level={2} style={{ margin: 0 }}>
+            <BellOutlined className="mr-2 text-yellow-500" /> 
+            Pending Visit Requests
           </Title>
-          <Text type="secondary" style={{ fontSize: "15px" }}>
-            View and manage all property bookings and their payment statuses.
+          <Text type="secondary">
+            Manage and schedule upcoming site visits requested by agents.
           </Text>
         </div>
+        <Tag color="orange" className="text-lg py-1 px-3 rounded-full">
+          Total Pending: {pendingVisitRequests.length}
+        </Tag>
       </div>
 
-      {/* FILTER / SEARCH SECTION */}
-      <Card 
-        bordered={false} 
-        style={{ borderRadius: "12px", marginBottom: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-        bodyStyle={{ padding: "24px" }}
-      >
-        <Row gutter={[24, 24]}>
-          <Col xs={24} md={12} lg={8}>
-            <div style={{ marginBottom: "8px" }}>
-              <Text strong style={{ color: "#4b5563" }}>Search Bookings</Text>
-            </div>
-            <Input
-              size="large"
-              placeholder="Search by Client name, Unit or Project..."
-              prefix={<SearchOutlined style={{ color: "#9ca3af" }} />}
-              allowClear
-            />
-          </Col>
-        </Row>
-      </Card>
-
-      {/* TABLE SECTION */}
-      <Card 
-        bordered={false} 
-        style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-        bodyStyle={{ padding: "0" }} // Removed padding to make table edge-to-edge seamlessly
-      >
-        <div style={{ padding: "24px", borderBottom: "1px solid #f0f0f0" }}>
-          <Title level={5} style={{ margin: 0 }}>Total Bookings ({bookings.length})</Title>
-        </div>
-
+      {/* REQUESTS TABLE */}
+      <Card bordered={false} className="shadow-md rounded-xl">
         <Table
           columns={columns}
-          dataSource={bookings}
-          pagination={{ 
-            pageSize: 10, 
-            position: ["bottomCenter"],
-            showSizeChanger: true,
-          }}
-          rowKey="key"
-          style={{ padding: "0 24px 24px 24px" }}
+          dataSource={pendingVisitRequests}
+          loading={loading}
+          pagination={{ pageSize: 10 }}
         />
       </Card>
 
+      {/* MODAL 1: SCHEDULE VISIT MODAL */}
+      <Modal
+        title={`Schedule Visit for ${selectedLead?.leadName || "Client"}`}
+        open={scheduleModal}
+        onCancel={() => setScheduleModal(false)}
+        footer={null}
+      >
+        <Form form={form} layout="vertical" onFinish={onScheduleSubmit} className="mt-4">
+          <Form.Item
+            name="visit_date"
+            label="Visit Date"
+            rules={[{ required: true, message: "Please select a date!" }]}
+          >
+            <DatePicker style={{ width: "100%" }} size="large" />
+          </Form.Item>
+
+          <Form.Item
+            name="visit_time"
+            label="Visit Time"
+            rules={[{ required: true, message: "Please select a time!" }]}
+          >
+            <TimePicker format="hh:mm A" use12Hours style={{ width: "100%" }} size="large" />
+          </Form.Item>
+
+          <Form.Item className="text-right mb-0 mt-6">
+            <Space>
+              <Button onClick={() => setScheduleModal(false)}>Cancel</Button>
+              <Button type="primary" htmlType="submit" loading={loading} style={{ background: "#faad14", borderColor: "#faad14" }}>
+                Confirm Schedule
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* MODAL 2: VIEW FULL REQUEST DETAILS */}
+      <Modal
+        title="Visit Request Details"
+        open={viewModal}
+        onCancel={() => setViewModal(false)}
+        footer={[
+          <Button key="close" onClick={() => setViewModal(false)}>
+            Close
+          </Button>,
+        ]}
+        width={650}
+      >
+        {selectedLead && (
+          <div className="mt-4">
+            <Row gutter={[16, 16]}>
+              <Col span={12}>
+                <Text type="secondary">Client Name</Text>
+                <br />
+                <Text strong style={{ fontSize: 18 }}>
+                  {selectedLead.leadName}
+                </Text>
+              </Col>
+              <Col span={12} className="text-right">
+                <Tag color="orange">PENDING SCHEDULE</Tag>
+              </Col>
+            </Row>
+
+            <Divider />
+
+            <Row gutter={[16, 16]}>
+              <Col span={12}>
+                <Text type="secondary">
+                  <MailOutlined className="mr-1" /> Email
+                </Text>
+                <br />
+                <Text>{selectedLead.email || "N/A"}</Text>
+              </Col>
+              <Col span={12}>
+                <Text type="secondary">
+                  <PhoneOutlined className="mr-1" /> Phone
+                </Text>
+                <br />
+                <Text>{selectedLead.phone || "N/A"}</Text>
+              </Col>
+            </Row>
+
+            <Divider />
+
+            <Title level={5}>
+              <PropertySafetyOutlined className="mr-2" /> Property Preferences
+            </Title>
+
+            <Row gutter={[8, 16]} className="mt-3 bg-gray-50 p-4 rounded-lg">
+              <Col span={12}>
+                <Text type="secondary">Property Type:</Text>
+              </Col>
+              <Col span={12}>
+                <Text strong>{selectedLead.property_type || "N/A"}</Text>
+              </Col>
+
+              <Col span={12}>
+                <Text type="secondary">Bedrooms:</Text>
+              </Col>
+              <Col span={12}>
+                <Text strong>{selectedLead.bedrooms ? `${selectedLead.bedrooms} BHK` : "N/A"}</Text>
+              </Col>
+
+              <Col span={12}>
+                <Text type="secondary">Budget:</Text>
+              </Col>
+              <Col span={12}>
+                <Text strong>{selectedLead.budget ? `AED ${selectedLead.budget}` : "N/A"}</Text>
+              </Col>
+
+              <Col span={12}>
+                <Text type="secondary">Preferred Location:</Text>
+              </Col>
+              <Col span={12}>
+                <Text strong>{selectedLead.preferred_location || "N/A"}</Text>
+              </Col>
+            </Row>
+          </div>
+        )}
+      </Modal>
+
     </div>
   );
-}
+};
+
+export default DeveloperBookings;

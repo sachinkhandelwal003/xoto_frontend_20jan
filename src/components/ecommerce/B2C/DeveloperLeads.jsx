@@ -3,20 +3,20 @@ import { Card, Typography, Table, Tag, Button, Input, message } from "antd";
 import { SearchOutlined, EyeOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
+import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
 
 export default function DeveloperLeads() {
   const navigate = useNavigate();
-
+  
   const [leads, setLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+   const { user, token } = useSelector((state) => state.auth);
+    const developerId = user?._id || user?.id;
 
-  useEffect(() => {
-    fetchLeads();
-  }, []);
 
   // ================= FETCH LEADS API =================
   const fetchLeads = async () => {
@@ -27,7 +27,7 @@ export default function DeveloperLeads() {
       const token = localStorage.getItem("token");
 
       // ✅ API call ke sath Authorization header pass kiya
-      const res = await apiService.get("/property/developer-leads", 
+      const res = await apiService.get(`/property/developer-leads?developer=${developerId}`, 
        
       );
       
@@ -64,6 +64,10 @@ export default function DeveloperLeads() {
       setLoading(false);
     }
   };
+
+    useEffect(() => {
+    fetchLeads();
+  }, []);
 
   // ================= SEARCH =================
   const handleSearch = (value) => {

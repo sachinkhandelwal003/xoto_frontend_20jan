@@ -171,6 +171,29 @@ const list = Array.isArray(res?.data)
     fetchProjects(next, true);
   };
 
+  // 1. Date Format Helper
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    // Agar date invalid hai (jaise pehle se "Q4 2029" likha ho), toh wahi return kar do
+    if (isNaN(date.getTime())) return dateString; 
+    
+    // "28 Feb 2029" format mein return karega
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+  };
+
+  // 2. Commission Format Helper
+  const getCommissionText = (p) => {
+    if (!p.commissionType) return null; // Agar commission nahi hai toh kuch show nahi karna
+    const val = p.commissionValue || 0;
+    if (p.commissionType === "percentage") return `${val}%`;
+    return `${p.currency || "AED"} ${val.toLocaleString()}`;
+  };
+
   // ================= POPOVER CONTENTS =================
 
   // 1. Developer Popover Content (Already done, keeping it)
@@ -415,12 +438,26 @@ const list = Array.isArray(res?.data)
               <div style={{ position: "relative", height: 210, margin: "-20px -16px 16px -16px" }}>
                 <img src={p?.photos?.[0] || p?.mainLogo || "https://images.unsplash.com/photo-1560518883-ce09059eeffa"} alt={p.propertyName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 
-                <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 8 }}>
-                  <span style={{ background: "#fff", color: "#333", padding: "4px 8px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+                <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 8, flexWrap: "wrap", right: 12 }}>
+                  <span style={{ background: "#fff", color: "#333", padding: "4px 8px", borderRadius: 6, fontSize: 12, fontWeight: 600, boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
                     {p.propertySubType === "off_plan" ? "Presale" : "Ready"}
                   </span>
-                  {p.handover && <span style={{ background: "#fff", color: "#333", padding: "4px 8px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{p.handover}</span>}
+                  
+                  {/* Handover Date Format */}
+                  {p.handover && (
+                    <span style={{ background: "#fff", color: "#333", padding: "4px 8px", borderRadius: 6, fontSize: 12, fontWeight: 600, boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+                      Handover: {formatDate(p.handover)}
+                    </span>
+                  )}
+
+                  {/* Commission Tag (Green Highlight) */}
+                  {/* {getCommissionText(p) && (
+                    <span style={{ background: "#dcfce7", color: "#166534", padding: "4px 8px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "1px solid #bbf7d0", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+                      Commission: {getCommissionText(p)}
+                    </span>
+                  )} */}
                 </div>
+                
 
                 <div style={{ position: "absolute", bottom: -16, left: 16, width: 44, height: 44, backgroundColor: "#000", borderRadius: 6, border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                   {p.developer?.logo ? <img src={p.developer.logo} alt="dev" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>{p.developer?.name ? p.developer.name.charAt(0) : "D"}</span>}
