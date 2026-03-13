@@ -28,7 +28,7 @@
 
   "resources": [
     { "label": "Strategic Alliances", "path": "/login" },
-    { "label": "Business Associates", "path": "/login" },
+    { "label": "Agent", "path": "/login" },
     { "label": "Execution Partners", "path": "/login "  },
    {"label": "Developers","comingSoon": true}, 
    {"label": "Financial Institutions","comingSoon": true}
