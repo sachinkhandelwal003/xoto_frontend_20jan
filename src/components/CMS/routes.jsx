@@ -401,7 +401,8 @@ const CmsRoutes = () => {
 <Route path="/bookings/:id" element={<DeveloperBookingDetails/>}/>
 <Route path="revenue" element={<DeveloperRevenue/>}/>
 <Route path="analytics" element={<DeveloperAnalytics/>}/>
-  <Route path="commission-scheme" element={<DeveloperCommissionScheme/>}/>
+<Route path="commission-scheme" element={<DeveloperCommissionScheme />} />
+<Route path="commission-scheme/:id" element={<DeveloperCommissionScheme />} />
   {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
   {/* <Route path="team" element={<DeveloperTeam/>}/> */}
 
