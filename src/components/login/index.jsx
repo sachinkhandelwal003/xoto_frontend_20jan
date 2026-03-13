@@ -211,9 +211,68 @@ const Login = () => {
     partnerTypes.find((t) => t.id === selectedPartnerType);
 
  // ✅ Login success effect (CORRECTED)
+  // useEffect(() => {
+  //   if (isAuthenticated && token && !hasRedirected.current) {
+  //     hasRedirected.current = true;
+
+  //     // Safe access for role code
+  //     const roleCode = user?.role?.code?.toString() || (typeof user?.role === 'string' ? user.role : "");
+      
+  //     // 1. Priority Check: Agar User ne UI se "Developer" select kiya tha
+  //     if (selectedPartnerType === "developer") {
+  //       const developerId = user?._id || user?.id;
+  //       localStorage.setItem("developerId", developerId);
+  //       toast.success("Welcome Developer! Accessing your dashboard...");
+  //       setTimeout(() => {
+  //         navigate("/dashboard/developer", { replace: true });
+  //       }, 1500);
+  //       return;
+  //     }
+
+  //     if (selectedPartnerType === "agent") {
+  //        toast.success("Welcome Agent! Accessing your dashboard...");
+  //        setTimeout(() => {
+  //          navigate("/dashboard/agent", { replace: true });
+  //        }, 1500);
+  //        return;
+  //     }
+
+  //     // 2. Role Code Based Redirect (Backend ID Logic)
+  //     const rolePathMap = {
+  //       "0": "/dashboard/superadmin",
+  //       "1": "/dashboard/admin",
+  //       "2": "/dashboard/customer",
+  //       "5": "/dashboard/vendor-b2c",
+  //       "6": "/dashboard/vendor-b2b",
+  //       "7": "/dashboard/freelancer",
+  //       "15": "/dashboard/agency",        // Agency
+  //       "16": "/dashboard/agent",         // Agent
+  //       "17": "/dashboard/developer",     // Developer
+  //     };
+
+  //     const path = rolePathMap[roleCode] || "/dashboard";
+      
+  //     // Agar path mil gaya toh wahan bhejo, nahi toh default dashboard
+  //     if (rolePathMap[roleCode]) {
+  //       toast.success(`Welcome back! Redirecting...`);
+  //       setTimeout(() => {
+  //         navigate(path, { replace: true });
+  //       }, 1500);
+  //     } else {
+  //       // Fallback agar koi unknown role ID aa gayi
+  //       navigate("/dashboard", { replace: true });
+  //     }
+  //   }
+  // }, [isAuthenticated, user, token, navigate, selectedPartnerType]);
+// ✅ Login success effect (UPDATED)
   useEffect(() => {
     if (isAuthenticated && token && !hasRedirected.current) {
       hasRedirected.current = true;
+
+      // 🔥 NAYA ADD KIYA: User ka poora data PDF ke liye localStorage mein save kar lo 🔥
+      if (user) {
+        localStorage.setItem("user_data", JSON.stringify(user));
+      }
 
       // Safe access for role code
       const roleCode = user?.role?.code?.toString() || (typeof user?.role === 'string' ? user.role : "");
@@ -264,7 +323,6 @@ const Login = () => {
       }
     }
   }, [isAuthenticated, user, token, navigate, selectedPartnerType]);
-
   // --- Handlers ---
   
   const handleMainSelect = (category) => {
