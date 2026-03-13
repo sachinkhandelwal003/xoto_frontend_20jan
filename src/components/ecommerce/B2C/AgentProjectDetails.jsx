@@ -15,57 +15,224 @@ import axios from "axios";
 // 🔥 PDF GENERATOR IMPORTS
 import { pdf, Document, Page, Text as PdfText, View, Image as PdfImage, StyleSheet } from '@react-pdf/renderer';
 
+// 🛠️ FIX: BUFFER IS NOT DEFINED ERROR
+import { Buffer } from 'buffer';
+if (typeof window !== 'undefined') {
+  window.Buffer = window.Buffer || Buffer;
+}
+
 const { Title, Text, Paragraph } = Typography;
 const { Panel } = Collapse;
 
-// 🔥 1. PREMIUM STYLESHEET (Exact Reelly PDF Jaisa Cover Page)
+// 🔥 1. CRASH-FREE PREMIUM STYLESHEET (FIXED FOR REACT-PDF) 🔥
 const pdfStyles = StyleSheet.create({
-  page: { backgroundColor: '#ffffff', padding: 0 },
-  
-  // --- Cover Page (Page 1) ---
-  coverPage: { backgroundColor: '#7a7a7a', height: '100%', padding: 40, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' },
-  agentImageCover: { width: 140, height: 140, borderRadius: 16, marginBottom: 40, objectFit: 'cover' },
-  coverSubtitle: { fontSize: 14, color: '#e5e7eb', marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1 },
-  coverTitle: { fontSize: 42, color: '#ffffff', fontWeight: 'bold', marginBottom: 50, textAlign: 'center' },
-  coverDetailsBox: { alignItems: 'center', marginTop: 20 },
-  coverDate: { fontSize: 12, color: '#d1d5db', marginBottom: 20 },
-  coverDevTag: { fontSize: 14, color: '#ffffff', fontWeight: 'bold', marginBottom: 30 },
-  coverAgentName: { fontSize: 22, color: '#ffffff', fontWeight: 'bold', marginBottom: 15 },
-  coverContact: { fontSize: 14, color: '#e5e7eb', marginBottom: 8 }
+  page: { 
+    padding: 0, 
+    backgroundColor: '#ffffff', 
+    fontFamily: 'Helvetica'
+  },
+  coverContainer: {
+    height: '100%',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 40
+  },
+  logoWrapper: {
+    marginTop: 40,
+    width: '100%',
+    alignItems: 'center',
+    height: 60,
+  },
+  mainLogo: {
+    width: 140,
+    objectFit: 'contain',
+  },
+  heroSection: {
+    width: '90%',
+    height: 420,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#f0f0f0', 
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover'
+  },
+  coverFooter: {
+    width: '85%',
+    alignItems: 'center',
+  },
+  coverSubtitle: {
+    fontSize: 10,
+    color: '#888',
+    letterSpacing: 2,
+    marginBottom: 8,
+    textTransform: 'uppercase'
+  },
+  coverTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 25,
+    textAlign: 'center'
+  },
+  agentStrip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    // ✅ React-PDF Safe Border Properties
+    borderTopWidth: 1,
+    borderTopColor: '#eeeeee',
+    borderTopStyle: 'solid',
+    paddingTop: 15,
+  },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, color: '#111827', textTransform: 'uppercase' },
+  textContent: { fontSize: 11, lineHeight: 1.6, color: '#4b5563', marginBottom: 20 },
+  table: { marginTop: 20, borderTopWidth: 1, borderTopColor: '#EEE', borderTopStyle: 'solid' },
+  tableRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#EEE', borderBottomStyle: 'solid', padding: '10 5' },
+  tableHeader: { fontSize: 10, fontWeight: 'bold', color: '#999', flex: 1 },
+  tableCell: { fontSize: 11, color: '#333', flex: 1 }
 });
 
-// 🔥 2. EXACT PDF TEMPLATE (Cover Page Only for now)
-const PropertyBrochure = ({ property, preferences }) => {
-  const today = new Date().toLocaleDateString('en-GB'); 
+// 🔥 2. PROPERTY BROCHURE - ALL SLIDES ADDED (LUXURY LAYOUT) 🔥
+const PropertyBrochure = ({ property, preferences, agent }) => {
+  const xotoLogo = "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1773403122746-image_109-removebg-preview.png"; 
+  const mainImage = property?.photos?.[0] || "";
+  const gallery = property?.photos?.slice(1, 4) || [];
   const devName = property?.developer?.name || "Premium Developer";
 
   return (
     <Document>
-      {/* ================= PAGE 1: COVER SLIDE ================= */}
+      {/* 1. COVER PAGE */}
       {preferences.slides.includes('Cover slide') && (
-        <Page size="A4" style={pdfStyles.coverPage}>
-          <PdfImage 
-            style={pdfStyles.agentImageCover} 
-            src={"https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=400"} // Dummy Agent Photo (Baad mein teri photo aayegi)
-          />
-          <PdfText style={pdfStyles.coverSubtitle}>Look what we found for you</PdfText>
-          <PdfText style={pdfStyles.coverTitle}>{property?.propertyName || "Exclusive Property"}</PdfText>
+        <Page size="A4" style={pdfStyles.page}>
+          <View style={pdfStyles.coverContainer}>
+            <View style={pdfStyles.logoWrapper}>
+              <PdfImage src={xotoLogo} style={pdfStyles.mainLogo} />
+            </View>
+
+            <View style={pdfStyles.heroSection}>
+              {mainImage ? <PdfImage src={mainImage} style={pdfStyles.heroImage} /> : null}
+            </View>
+
+            <View style={pdfStyles.coverFooter}>
+              <PdfText style={pdfStyles.coverSubtitle}>Look what we found for you</PdfText>
+              <PdfText style={pdfStyles.coverTitle}>{property?.propertyName || "Exclusive Property"}</PdfText>
+              
+              <View style={pdfStyles.agentStrip}>
+                <View>
+                  <PdfText style={{ fontSize: 12, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 2 }}>
+                    {agent?.name}
+                  </PdfText>
+                  <PdfText style={{ fontSize: 9, color: '#666' }}>
+                    {agent?.email}
+                  </PdfText>
+                </View>
+                <PdfText style={{ fontSize: 11, fontWeight: 'bold' }}>
+                  {agent?.phone}
+                </PdfText>
+              </View>
+            </View>
+          </View>
+        </Page>
+      )}
+
+      {/* 2. PROJECT DESCRIPTION & GALLERY */}
+      {preferences.slides.includes('Project description') && (
+        <Page size="A4" style={{ padding: 40 }}>
+          <PdfText style={pdfStyles.sectionTitle}>ABOUT THE PROJECT</PdfText>
+          <PdfText style={pdfStyles.textContent}>
+            {property?.description || "Detailed description available upon request."}
+          </PdfText>
           
-          <View style={pdfStyles.coverDetailsBox}>
-            <PdfText style={pdfStyles.coverDate}>Date of creation {today}</PdfText>
-            <PdfText style={pdfStyles.coverDevTag}>#{devName.replace(/\s/g, '')}</PdfText>
-            
-            <PdfText style={pdfStyles.coverAgentName}>Vishal</PdfText>
-            <PdfText style={pdfStyles.coverContact}>xoto.ae</PdfText>
-            <PdfText style={pdfStyles.coverContact}>+971 50 123 4567</PdfText>
-            <PdfText style={pdfStyles.coverContact}>vishal@xoto.ae</PdfText>
+          {gallery.length > 0 && (
+            <View style={{ flexDirection: 'row', gap: 10, height: 150 }}>
+              {gallery.map((img, index) => (
+                <PdfImage key={index} src={img} style={{ flex: 1, borderRadius: 5, objectFit: 'cover' }} />
+              ))}
+            </View>
+          )}
+        </Page>
+      )}
+
+      {/* 3. DEVELOPER PAGE */}
+      {preferences.slides.includes('Developer') && (
+        <Page size="A4" style={{ padding: 40 }}>
+          <PdfText style={pdfStyles.sectionTitle}>Developer: {devName}</PdfText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+            {property?.developer?.logo && (
+              <PdfImage src={property.developer.logo} style={{ width: 80, marginRight: 20 }} />
+            )}
+            <PdfText style={{ fontSize: 16, fontWeight: 'bold' }}>{devName}</PdfText>
+          </View>
+          <PdfText style={pdfStyles.textContent}>
+            {property?.developer?.description || `${devName} is one of the leading developers in the region, known for luxury and quality.`}
+          </PdfText>
+        </Page>
+      )}
+
+      {/* 4. UNIT PRICES */}
+      {preferences.slides.includes('Unit prices') && (
+        <Page size="A4" style={{ padding: 40 }}>
+          <PdfText style={pdfStyles.sectionTitle}>Typical Units & Pricing</PdfText>
+          <View style={pdfStyles.table}>
+            <View style={pdfStyles.tableRow}>
+              <PdfText style={pdfStyles.tableHeader}>UNIT TYPE</PdfText>
+              <PdfText style={pdfStyles.tableHeader}>AREA ({preferences.measureUnit})</PdfText>
+              <PdfText style={pdfStyles.tableHeader}>STARTING PRICE</PdfText>
+            </View>
+            <View style={pdfStyles.tableRow}>
+              <PdfText style={pdfStyles.tableCell}>{property?.bedrooms || "1"} BHK</PdfText>
+              <PdfText style={pdfStyles.tableCell}>{property?.builtUpArea_min || 0}</PdfText>
+              <PdfText style={[pdfStyles.tableCell, {fontWeight: 'bold'}]}>
+                {preferences.currency} {Number(property?.price || 0).toLocaleString()}
+              </PdfText>
+            </View>
+          </View>
+        </Page>
+      )}
+
+      {/* 5. PAYMENT PLAN */}
+      {preferences.slides.includes('Payment plans') && (
+        <Page size="A4" style={{ padding: 40 }}>
+          <PdfText style={pdfStyles.sectionTitle}>Payment Plan</PdfText>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 20, backgroundColor: '#F9F9F9', borderRadius: 10 }}>
+            <View>
+              <PdfText style={{ fontSize: 10, color: '#999', marginBottom: 5 }}>DURING CONSTRUCTION</PdfText>
+              <PdfText style={{ fontSize: 18, fontWeight: 'bold' }}>{property?.paymentPlan_initialPercentage || '20'}%</PdfText>
+            </View>
+            <View>
+              <PdfText style={{ fontSize: 10, color: '#999', marginBottom: 5 }}>ON HANDOVER</PdfText>
+              <PdfText style={{ fontSize: 18, fontWeight: 'bold' }}>{property?.paymentPlan_laterPercentage || '80'}%</PdfText>
+            </View>
+          </View>
+          <PdfText style={{ fontSize: 12, marginTop: 20, color: '#666' }}>Handover: {property?.handover || 'TBD'}</PdfText>
+        </Page>
+      )}
+
+      {/* 6. LOCATION & AMENITIES */}
+      {preferences.slides.includes('Location') && (
+        <Page size="A4" style={{ padding: 40 }}>
+          <PdfText style={pdfStyles.sectionTitle}>Location & Amenities</PdfText>
+          <PdfText style={{ fontSize: 14, marginBottom: 5, fontWeight: 'bold' }}>City: {property?.city}</PdfText>
+          <PdfText style={pdfStyles.textContent}>{property?.address}</PdfText>
+          
+          <PdfText style={{ fontSize: 14, fontWeight: 'bold', marginTop: 20, marginBottom: 10 }}>Amenities</PdfText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            {property?.amenities?.map((item, index) => (
+              <PdfText key={index} style={{ fontSize: 10, backgroundColor: '#f0f0f0', padding: '5 10', margin: 4, borderRadius: 4 }}>
+                {item}
+              </PdfText>
+            ))}
           </View>
         </Page>
       )}
     </Document>
   );
 };
-
 
 export default function AgentProjectDetails() {
   const { id } = useParams(); 
@@ -78,7 +245,6 @@ export default function AgentProjectDetails() {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
 
-  // Description & AI States
   const [customDescription, setCustomDescription] = useState("");
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [isImprovingAI, setIsImprovingAI] = useState(false);
@@ -127,34 +293,62 @@ export default function AgentProjectDetails() {
     }
   };
 
+  // 🔥 3. ROBUST PDF GENERATOR (API + LOCALSTORAGE FALLBACK) 🔥
   const handleGenerateOffer = async () => {
     setIsGenerating(true);
     const key = "updatable";
-    message.loading({ content: "XOTO Blitz is generating your PDF...", key });
+    message.loading({ content: "Fetching Agent Profile & Generating PDF...", key });
 
     try {
+      const rawData = localStorage.getItem("user_data") || localStorage.getItem("user") || localStorage.getItem("full_agent_profile");
+      const storedUser = rawData ? JSON.parse(rawData) : null;
+      const agentId = storedUser?.id || storedUser?._id;
+
+      // LocalStorage data ko primary fallback banaya
+      let agentInfo = {
+        name: storedUser?.first_name ? `${storedUser.first_name} ${storedUser.last_name || ''}`.trim() : "Ayush Rajpalani",
+        email: storedUser?.email || "rajpalaniayush72@gmail.com",
+        phone: storedUser?.phone_number ? `${storedUser.country_code || '+971'} ${storedUser.phone_number}` : "+971 54 545 4541",
+        photo: storedUser?.profile_photo || "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1773392643245-15.jpg"
+      };
+
+      // API Call agar error de toh LocalStorage wala data use hoga (No Crash)
+      if (agentId) {
+        try {
+          const res = await axios.get(`http://localhost:5000/api/agent/${agentId}`); 
+          if (res.data && res.data.data) {
+            const dbAgent = res.data.data;
+            agentInfo = {
+              name: `${dbAgent.first_name || ''} ${dbAgent.last_name || ''}`.trim() || agentInfo.name,
+              email: dbAgent.email || agentInfo.email,
+              phone: `${dbAgent.country_code || ''} ${dbAgent.phone_number || ''}`.trim() || agentInfo.phone,
+              photo: dbAgent.profile_photo || agentInfo.photo
+            };
+          }
+        } catch (err) {
+          console.warn("API 404, using solid local storage fallback");
+        }
+      }
+
+      // Generate PDF
       const updatedProperty = { ...property, description: customDescription };
-
       const blob = await pdf(
-        <PropertyBrochure property={updatedProperty} preferences={pdfPreferences} />
+        <PropertyBrochure property={updatedProperty} agent={agentInfo} preferences={pdfPreferences} />
       ).toBlob();
-
+      
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${updatedProperty.propertyName || 'Property'}_Sales_Offer.pdf`;
-      
-      document.body.appendChild(link);
+      link.download = `${updatedProperty.propertyName || 'Sales_Offer'}.pdf`;
       link.click();
       
-      document.body.removeChild(link);
       URL.revokeObjectURL(url);
-
-      message.success({ content: "PDF Downloaded Successfully!", key, duration: 2 });
-      setIsOfferModalOpen(false); 
+      message.success({ content: "PDF Downloaded Successfully!", key });
+      setIsOfferModalOpen(false);
 
     } catch (error) {
-      message.error({ content: "Failed to generate PDF.", key, duration: 3 });
+      console.error("PDF Crash Error: ", error);
+      message.error({ content: "Failed to generate PDF.", key });
     } finally {
       setIsGenerating(false);
     }
@@ -410,7 +604,7 @@ export default function AgentProjectDetails() {
         </div>
       </Modal>
 
-      {/* ================= GENERATE OFFER MODAL (BOLD HEADINGS KE SATH) ================= */}
+      {/* ================= GENERATE OFFER MODAL ================= */}
       <Modal
         title={<div style={{ textAlign: 'center', width: '100%', fontSize: '18px', fontWeight: 'bold' }}>Generate Sales Offer</div>}
         open={isOfferModalOpen}
@@ -422,22 +616,12 @@ export default function AgentProjectDetails() {
       >
         <div style={{ maxHeight: '75vh', overflowY: 'auto', paddingRight: '5px' }}>
           
-          {/* 🔥 BOLD HEADING 1 */}
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>
-            PDF Preferences
-          </div>
-          <div style={{ fontSize: '14px', color: '#6b7280' }}>
-            Configure your presentation before generation
-          </div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>PDF Preferences</div>
+          <div style={{ fontSize: '14px', color: '#6b7280' }}>Configure your presentation before generation</div>
           
           <div style={{ marginTop: 20 }}>
             <Text strong style={{ display: 'block', marginBottom: 6 }}>Language</Text>
-            <Select 
-              value={pdfPreferences.language} 
-              style={{ width: '100%' }} 
-              size="large" 
-              onChange={(val) => setPdfPreferences({...pdfPreferences, language: val})}
-            >
+            <Select value={pdfPreferences.language} style={{ width: '100%' }} size="large" onChange={(val) => setPdfPreferences({...pdfPreferences, language: val})}>
               {languages.map(lang => (
                 <Select.Option key={lang.code} value={lang.code}>
                   <strong style={{marginRight: 8}}>{lang.code}</strong> {lang.name}
@@ -474,10 +658,7 @@ export default function AgentProjectDetails() {
 
           <Divider />
 
-          {/* 🔥 BOLD HEADING 2 */}
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '16px' }}>
-            Display Settings
-          </div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '16px' }}>Display Settings</div>
           <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
             {['Project description', 'Developer', 'Unit availability', 'Typical units', 'Unit prices', 'Payment plans', 'Location', 'Master plan', 'Cover slide'].map(item => (
               <Checkbox key={item} defaultChecked onChange={(e) => {
@@ -493,13 +674,8 @@ export default function AgentProjectDetails() {
 
           <Divider />
 
-          {/* 🔥 BOLD HEADING 3 */}
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>
-            Personalised description
-          </div>
-          <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
-            Adapt the project description in the sales offer yourself or with the help of XOTO AI.
-          </div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>Personalised description</div>
+          <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>Adapt the project description in the sales offer yourself or with the help of XOTO AI.</div>
           
           <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 16 }}>
             <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', fontWeight: 'bold' }}>Description</Text>
