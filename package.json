@@ -31,6 +31,7 @@
     "@mui/material": "^7.2.0",
     "@mui/x-date-pickers": "^8.8.0",
     "@radix-ui/react-slot": "^1.2.3",
+    "@react-pdf/renderer": "^4.3.2",
     "@react-three/drei": "^9.0.0",
     "@react-three/fiber": "^8.0.0",
     "@reduxjs/toolkit": "^2.8.2",

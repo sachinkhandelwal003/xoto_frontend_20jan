@@ -3,17 +3,78 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   Row, Col, Typography, Button, Tag, Spin, message,
   Card, Divider, Collapse, Avatar, Space, Modal, Image, Select, Checkbox, Input
-} from "antd"; // ✅ Input import kiya gaya hai
+} from "antd";
 import {
   EnvironmentOutlined, PictureOutlined, FilePdfOutlined,
   TagOutlined, WalletOutlined, BankOutlined,
   ShareAltOutlined, ExportOutlined, MessageOutlined,
-  AppstoreOutlined, ArrowLeftOutlined
+  AppstoreOutlined, ArrowLeftOutlined, EditOutlined, RobotOutlined 
 } from "@ant-design/icons";
 import axios from "axios";
 
+// 🔥 PDF GENERATOR IMPORTS
+import { pdf, Document, Page, Text as PdfText, View, Image as PdfImage, StyleSheet } from '@react-pdf/renderer';
+
 const { Title, Text, Paragraph } = Typography;
 const { Panel } = Collapse;
+
+// 🔥 PDF STYLESHEET
+const pdfStyles = StyleSheet.create({
+  page: { backgroundColor: '#ffffff', padding: 40 },
+  header: { fontSize: 24, color: '#5C039B', fontWeight: 'bold', marginBottom: 10, textTransform: 'uppercase' },
+  subHeader: { fontSize: 12, color: '#666', marginBottom: 20 },
+  heroImage: { width: '100%', height: 250, borderRadius: 8, marginBottom: 20, objectFit: 'cover' },
+  sectionTitle: { fontSize: 16, color: '#111', fontWeight: 'bold', marginTop: 20, marginBottom: 10, borderBottom: '1px solid #eee', paddingBottom: 5 },
+  text: { fontSize: 11, color: '#444', lineHeight: 1.6 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 },
+  gridItem: { width: '33%', marginBottom: 15 },
+  label: { fontSize: 10, color: '#888' },
+  value: { fontSize: 14, color: '#333', fontWeight: 'bold', marginTop: 3 },
+  footer: { position: 'absolute', bottom: 30, left: 40, right: 40, flexDirection: 'row', justifyContent: 'space-between', borderTop: '1px solid #eee', paddingTop: 10 },
+  footerText: { fontSize: 9, color: '#aaa' }
+});
+
+// 🔥 PDF TEMPLATE COMPONENT
+const PropertyBrochure = ({ property, preferences }) => (
+  <Document>
+    <Page size="A4" style={pdfStyles.page}>
+      <PdfText style={pdfStyles.header}>{property?.propertyName}</PdfText>
+      <PdfText style={pdfStyles.subHeader}>
+        By {property?.developer?.name || "Premium Developer"} • {property?.city || "Dubai"}
+      </PdfText>
+
+      {property?.photos && property.photos.length > 0 && (
+        <PdfImage style={pdfStyles.heroImage} src={property.photos[0]} />
+      )}
+
+      <View style={pdfStyles.grid}>
+        <View style={pdfStyles.gridItem}>
+          <PdfText style={pdfStyles.label}>Starting Price</PdfText>
+          <PdfText style={{...pdfStyles.value, color: '#5C039B'}}>
+            {preferences.currency} {Number(property?.price || 0).toLocaleString()}
+          </PdfText>
+        </View>
+        <View style={pdfStyles.gridItem}>
+          <PdfText style={pdfStyles.label}>Bedrooms</PdfText>
+          <PdfText style={pdfStyles.value}>{property?.bedrooms || "1"} Bed</PdfText>
+        </View>
+        <View style={pdfStyles.gridItem}>
+          <PdfText style={pdfStyles.label}>Handover</PdfText>
+          <PdfText style={pdfStyles.value}>{property?.handover || "TBA"}</PdfText>
+        </View>
+      </View>
+
+      <PdfText style={pdfStyles.sectionTitle}>Project Overview ({preferences.language})</PdfText>
+      <PdfText style={pdfStyles.text}>{property?.description}</PdfText>
+
+      <View style={pdfStyles.footer}>
+        <PdfText style={pdfStyles.footerText}>Generated for Exclusive Client</PdfText>
+        <PdfText style={pdfStyles.footerText}>XOTO.AE</PdfText>
+      </View>
+    </Page>
+  </Document>
+);
+
 
 export default function AgentProjectDetails() {
   const { id } = useParams(); 
@@ -26,14 +87,16 @@ export default function AgentProjectDetails() {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
 
-  // ✅ Custom description ka naya state
+  // Description & AI States
   const [customDescription, setCustomDescription] = useState("");
+  const [isEditingDesc, setIsEditingDesc] = useState(false);
+  const [isImprovingAI, setIsImprovingAI] = useState(false);
 
   const [pdfPreferences, setPdfPreferences] = useState({
-    language: 'English',
+    language: 'EN',
     currency: 'AED',
-    measureUnit: 'ft²',
-    slides: ['description', 'developer', 'availability', 'units', 'prices', 'plans', 'location', 'cover', 'contact']
+    measureUnit: 'ft2',
+    slides: ['Project description', 'Developer', 'Unit availability', 'Typical units', 'Unit prices', 'Payment plans', 'Location', 'Master plan', 'Cover slide']
   });
 
   useEffect(() => {
@@ -43,11 +106,9 @@ export default function AgentProjectDetails() {
   const fetchPropertyDetails = async () => {
     try {
       setLoading(true);
-      // const res = await axios.get(`https://xoto.ae/api/property/get-property-by-id?id=${id}`);
       const res = await axios.get(`http://localhost:5000/api/property/get-property-by-id?id=${id}`);
       if (res.data?.success) {
         setProperty(res.data.data);
-        // ✅ API aate hi property ka default description state me set kar diya
         setCustomDescription(res.data.data.description || "Detailed description for this property is not available yet.");
       } else {
         message.error("Failed to load property details");
@@ -60,27 +121,50 @@ export default function AgentProjectDetails() {
     }
   };
 
-  const handleGenerateOffer = async () => {
+  const handleImproveWithAI = async () => {
+    setIsImprovingAI(true);
+    message.loading({ content: "XOTO AI is enhancing the description...", key: "ai_load" });
     try {
-      setIsGenerating(true);
-      const key = "updatable";
-      message.loading({ content: "XOTO Blitz is generating your PPT...", key });
-
-      // Aapki actual backend API call yahan aayegi, jisme customDescription bhi jayega
-      const payload = {
-         propertyDetails: { ...property, description: customDescription }, // ✅ Modified description bheja jayega
-         preferences: pdfPreferences
-      };
-      
-      // Dummy timeout for now
       setTimeout(() => {
-        message.success({ content: "PPT Downloaded Successfully!", key, duration: 2 });
-        setIsGenerating(false);
-        setIsOfferModalOpen(false); 
+        setCustomDescription(`✨ ${customDescription} (Enhanced by Xoto AI for maximum conversion and luxury appeal.)`);
+        message.success({ content: "Description improved!", key: "ai_load", duration: 2 });
+        setIsImprovingAI(false);
       }, 2000);
+    } catch (error) {
+      message.error({ content: "AI Error. Try again.", key: "ai_load" });
+      setIsImprovingAI(false);
+    }
+  };
+
+  const handleGenerateOffer = async () => {
+    setIsGenerating(true);
+    const key = "updatable";
+    message.loading({ content: "XOTO Blitz is generating your PDF...", key });
+
+    try {
+      const updatedProperty = { ...property, description: customDescription };
+
+      const blob = await pdf(
+        <PropertyBrochure property={updatedProperty} preferences={pdfPreferences} />
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${updatedProperty.propertyName || 'Property'}_Sales_Offer.pdf`;
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      message.success({ content: "PDF Downloaded Successfully!", key, duration: 2 });
+      setIsOfferModalOpen(false); 
 
     } catch (error) {
-      message.error("Failed to generate PPT. Check Network.");
+      message.error({ content: "Failed to generate PDF.", key, duration: 3 });
+    } finally {
       setIsGenerating(false);
     }
   };
@@ -97,7 +181,6 @@ export default function AgentProjectDetails() {
     return <div style={{ padding: 40, textAlign: "center" }}><Title level={4}>Project not found!</Title></div>;
   }
 
-  // Helpers
   const getImage = () => {
     if (property?.photos?.length) return property.photos[0];
     if (property?.mainLogo) return property.mainLogo;
@@ -115,6 +198,28 @@ export default function AgentProjectDetails() {
 
   const developerName = property?.developer?.name || "Unknown Developer";
 
+  const languages = [
+    { code: 'EN', name: 'English' }, { code: 'HI', name: 'Hindi' }, { code: 'AR', name: 'Arabic' },
+    { code: 'RU', name: 'Russian' }, { code: 'ZH', name: 'Chinese' }, { code: 'FA', name: 'Persian' },
+    { code: 'TR', name: 'Turkish' }, { code: 'ES', name: 'Spanish' }, { code: 'PA', name: 'Punjabi' },
+    { code: 'FR', name: 'French' }, { code: 'DE', name: 'German' }, { code: 'TL', name: 'Tagalog' },
+    { code: 'UR', name: 'Urdu' }
+  ];
+
+  const currencies = [
+    { code: 'AED', name: 'United Arab Emirates Dirham' },
+    { code: 'USD', name: 'US Dollar' },
+    { code: 'EUR', name: 'Euro (Spain, France, Germany)' },
+    { code: 'GBP', name: 'British Pound' },
+    { code: 'INR', name: 'Indian Rupee' },
+    { code: 'RUB', name: 'Russian Ruble' },
+    { code: 'CNY', name: 'Chinese Yuan' },
+    { code: 'TRY', name: 'Turkish Lira' },
+    { code: 'PHP', name: 'Philippine Peso' },
+    { code: 'PKR', name: 'Pakistani Rupee' },
+    { code: 'SAR', name: 'Saudi Riyal' }
+  ];
+
   return (
     <div style={{ padding: "24px 40px", background: "#fff", minHeight: "100vh" }}>
       
@@ -127,6 +232,7 @@ export default function AgentProjectDetails() {
         Back to Projects
       </Button>
 
+      {/* 🔥 MAIN UI */}
       <Row gutter={[32, 32]}>
         <Col xs={24} lg={16}>
           <div style={{ position: "relative", height: 500, borderRadius: 16, overflow: "hidden", marginBottom: 24 }}>
@@ -313,79 +419,124 @@ export default function AgentProjectDetails() {
         </div>
       </Modal>
 
-      {/* ================= GENERATE OFFER MODAL ================= */}
+      {/* ================= GENERATE OFFER MODAL (BOLD HEADINGS KE SATH) ================= */}
       <Modal
-        title={<div style={{ textAlign: 'center', width: '100%', fontSize: '20px', fontWeight: 'bold' }}>Generate Sales Offer</div>}
+        title={<div style={{ textAlign: 'center', width: '100%', fontSize: '18px', fontWeight: 'bold' }}>Generate Sales Offer</div>}
         open={isOfferModalOpen}
         onCancel={() => setIsOfferModalOpen(false)}
         footer={null}
-        width={550}
+        width={750}
         centered
-        styles={{ body: { padding: '0 24px 24px' } }} 
+        styles={{ body: { padding: '10px 24px 24px' } }} 
       >
-        <div style={{ maxHeight: '75vh', overflowY: 'auto', paddingRight: '10px' }}>
+        <div style={{ maxHeight: '75vh', overflowY: 'auto', paddingRight: '5px' }}>
           
-          {/* ✅ Naya Personalised Description Box */}
-          <div style={{ marginTop: 24 }}>
-            <Title level={5} style={{ marginBottom: 4 }}>Personalised description</Title>
-            <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
-              Adapt the project description in the sales offer yourself or with the help of XOTO AI.
-            </Text>
-            <Input.TextArea 
-              rows={5} 
-              value={customDescription} 
-              onChange={(e) => setCustomDescription(e.target.value)} 
-              placeholder="Enter a custom description..."
-              style={{ borderRadius: 8 }}
-            />
+          {/* 🔥 BOLD HEADING 1 */}
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>
+            PDF Preferences
+          </div>
+          <div style={{ fontSize: '14px', color: '#6b7280' }}>
+            Configure your presentation before generation
+          </div>
+          
+          <div style={{ marginTop: 20 }}>
+            <Text strong style={{ display: 'block', marginBottom: 6 }}>Language</Text>
+            <Select 
+              value={pdfPreferences.language} 
+              style={{ width: '100%' }} 
+              size="large" 
+              onChange={(val) => setPdfPreferences({...pdfPreferences, language: val})}
+            >
+              {languages.map(lang => (
+                <Select.Option key={lang.code} value={lang.code}>
+                  <strong style={{marginRight: 8}}>{lang.code}</strong> {lang.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <Text strong style={{ display: 'block', marginBottom: 6 }}>Currency</Text>
+            <Select 
+              value={pdfPreferences.currency} 
+              style={{ width: '100%' }} 
+              size="large" 
+              showSearch
+              optionFilterProp="children"
+              onChange={(val) => setPdfPreferences({...pdfPreferences, currency: val})}
+            >
+              {currencies.map(curr => (
+                <Select.Option key={curr.code} value={curr.code}>
+                  <strong style={{marginRight: 8}}>{curr.code}</strong> {curr.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <Text strong style={{ display: 'block', marginBottom: 6 }}>Measure units</Text>
+            <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: 8, padding: 4 }}>
+               <div onClick={() => setPdfPreferences({...pdfPreferences, measureUnit: 'ft2'})} style={{ flex: 1, textAlign: 'center', padding: '6px 0', cursor: 'pointer', borderRadius: 6, background: pdfPreferences.measureUnit === 'ft2' ? '#fff' : 'transparent', fontWeight: pdfPreferences.measureUnit === 'ft2' ? 'bold' : 'normal', color: pdfPreferences.measureUnit === 'ft2' ? '#5C039B' : '#6b7280', boxShadow: pdfPreferences.measureUnit === 'ft2' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>ft²</div>
+               <div onClick={() => setPdfPreferences({...pdfPreferences, measureUnit: 'm2'})} style={{ flex: 1, textAlign: 'center', padding: '6px 0', cursor: 'pointer', borderRadius: 6, background: pdfPreferences.measureUnit === 'm2' ? '#fff' : 'transparent', fontWeight: pdfPreferences.measureUnit === 'm2' ? 'bold' : 'normal', color: pdfPreferences.measureUnit === 'm2' ? '#5C039B' : '#6b7280', boxShadow: pdfPreferences.measureUnit === 'm2' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>m²</div>
+            </div>
           </div>
 
           <Divider />
 
-          <Title level={5} style={{ marginTop: 0 }}>PDF Preferences</Title>
-          <Text type="secondary">Configure your presentation before generation</Text>
-
-          <Row gutter={16} style={{ marginTop: 20 }}>
-            <Col span={12}>
-              <Text strong>Language</Text>
-              <Select defaultValue="English" style={{ width: '100%', marginTop: 8 }} size="large" onChange={(val) => setPdfPreferences({...pdfPreferences, language: val})}>
-                <Select.Option value="English">English</Select.Option>
-                <Select.Option value="Arabic">Arabic</Select.Option>
-              </Select>
-            </Col>
-            <Col span={12}>
-              <Text strong>Currency</Text>
-              <Select defaultValue="AED" style={{ width: '100%', marginTop: 8 }} size="large" onChange={(val) => setPdfPreferences({...pdfPreferences, currency: val})}>
-                <Select.Option value="AED">AED (United Arab Emirates Dirham)</Select.Option>
-                <Select.Option value="USD">USD (US Dollar)</Select.Option>
-              </Select>
-            </Col>
-          </Row>
-
-          <Divider />
-
-          <Title level={5}>Display Settings</Title>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            {['Project description', 'Developer', 'Unit availability', 'Typical units', 'Unit prices', 'Payment plans', 'Location'].map(item => (
-              <Checkbox key={item} defaultChecked>
+          {/* 🔥 BOLD HEADING 2 */}
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '16px' }}>
+            Display Settings
+          </div>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {['Project description', 'Developer', 'Unit availability', 'Typical units', 'Unit prices', 'Payment plans', 'Location', 'Master plan', 'Cover slide'].map(item => (
+              <Checkbox key={item} defaultChecked onChange={(e) => {
+                   let newSlides = [...pdfPreferences.slides];
+                   if(e.target.checked) newSlides.push(item);
+                   else newSlides = newSlides.filter(s => s !== item);
+                   setPdfPreferences({...pdfPreferences, slides: newSlides});
+                }}>
                 {item}
               </Checkbox>
             ))}
-          </Space>
+          </div>
 
-          <Button 
-            type="primary" 
-            block 
-            size="large" 
-            loading={isGenerating}
-            onClick={handleGenerateOffer}
-            style={{ marginTop: 30, height: 50, borderRadius: 10, background: '#1f1f1f', fontWeight: 'bold' }}
-          >
-            Generate sales offer
+          <Divider />
+
+          {/* 🔥 BOLD HEADING 3 */}
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>
+            Personalised description
+          </div>
+          <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
+            Adapt the project description in the sales offer yourself or with the help of XOTO AI.
+          </div>
+          
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 16 }}>
+            <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', fontWeight: 'bold' }}>Description</Text>
+            
+            {isEditingDesc ? (
+              <Input.TextArea rows={4} value={customDescription} onChange={(e) => setCustomDescription(e.target.value)} style={{ borderRadius: 8, marginBottom: 12, marginTop: 8 }} />
+            ) : (
+              <div style={{ maxHeight: 100, overflowY: 'auto', fontSize: 13, color: '#4b5563', marginBottom: 12, marginTop: 8 }}>
+                {customDescription}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <Button style={{ flex: 1 }} icon={<EditOutlined />} onClick={() => setIsEditingDesc(!isEditingDesc)}>
+                {isEditingDesc ? 'Save' : 'Edit'}
+              </Button>
+              <Button type="primary" style={{ flex: 1, background: 'linear-gradient(90deg, #5C039B 0%, #a855f7 100%)', border: 'none' }} icon={<RobotOutlined />} loading={isImprovingAI} onClick={handleImproveWithAI}>
+                Improve with AI
+              </Button>
+            </div>
+          </div>
+
+          <Button type="primary" block size="large" loading={isGenerating} onClick={handleGenerateOffer} style={{ marginTop: 24, height: 50, borderRadius: 10, background: '#1f1f1f', fontWeight: 'bold' }}>
+            {isGenerating ? 'Generating...' : 'Generate sales offer'}
           </Button>
+
         </div>
       </Modal>
-
     </div>
   );
 }
