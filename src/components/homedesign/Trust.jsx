@@ -116,25 +116,7 @@ export default function TrustPresenceSection() {
       {/* Three Cards */}
       <div className="grid grid-cols-1 mt-20 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4 pt-20 relative z-10">
         {/* Card 1 */}
-        <a
-          href="/landscaping"
-          className="
-            block cursor-pointer bg-white/90 backdrop-blur-sm rounded-3xl p-6 sm:p-8 lg:p-10
-            shadow-xl shadow-purple-400 hover:shadow-2xl hover:shadow-purple-500
-            transition-all duration-300 hover:-translate-y-3 border border-white/50
-          "
-        >
-          <div className="w-30 h-30  flex align-center justify-center mx-auto mb-4 ">
-            <img src={building} alt="" className="" />
-          </div>
-          <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 text-center">
-            {t("cards.card1.title")}
-          </h3>
-          <p className="text-sm sm:text-base text-gray-600 text-center">
-            {t("cards.card1.desc")}
-          </p>
-        </a>
-
+     
         {/* Card 2 */}
         <a
           href="/Property"
@@ -174,6 +156,25 @@ export default function TrustPresenceSection() {
             {t("cards.card3.desc")}
           </p>
         </a>
+           <a
+          href="/landscaping"
+          className="
+            block cursor-pointer bg-white/90 backdrop-blur-sm rounded-3xl p-6 sm:p-8 lg:p-10
+            shadow-xl shadow-purple-400 hover:shadow-2xl hover:shadow-purple-500
+            transition-all duration-300 hover:-translate-y-3 border border-white/50
+          "
+        >
+          <div className="w-30 h-30  flex align-center justify-center mx-auto mb-4 ">
+            <img src={building} alt="" className="" />
+          </div>
+          <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 text-center">
+            {t("cards.card1.title")}
+          </h3>
+          <p className="text-sm sm:text-base text-gray-600 text-center">
+            {t("cards.card1.desc")}
+          </p>
+        </a>
+
       </div>
     </section>
   );
