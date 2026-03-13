@@ -27,7 +27,9 @@ export default function DeveloperLeads() {
       const token = localStorage.getItem("token");
 
       // ✅ API call ke sath Authorization header pass kiya
-      const res = await apiService.get("/property/developer-leads");
+      const res = await apiService.get("/property/developer-leads", 
+       
+      );
       
       console.log("Raw Response from API:", res.data);
 
