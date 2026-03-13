@@ -8,7 +8,7 @@ import {
   EnvironmentOutlined, PictureOutlined, FilePdfOutlined,
   TagOutlined, WalletOutlined, BankOutlined,
   ShareAltOutlined, ExportOutlined, MessageOutlined,
-  AppstoreOutlined, ArrowLeftOutlined, EditOutlined, RobotOutlined 
+  AppstoreOutlined, ArrowLeftOutlined, EditOutlined, RobotOutlined, MoneyCollectOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 
@@ -380,7 +380,21 @@ export default function AgentProjectDetails() {
     }
     return "Contact for Plan";
   };
-
+  const getCommissionText = () => {
+    if (!property?.commissionType) return "Not specified";
+    
+    const value = property.commissionValue || 0;
+    const type = property.commissionType; // "percentage" ya "fixed"
+    const stage = property.commissionStage ? ` (on ${property.commissionStage})` : "";
+    
+    if (type === "percentage") {
+      return `${value}%${stage}`;
+    } else if (type === "fixed") {
+      return `${property.currency || "AED"} ${value.toLocaleString()}${stage}`;
+    }
+    
+    return `${value}${stage}`;
+  };
   const developerName = property?.developer?.name || "Unknown Developer";
 
   const languages = [
@@ -536,6 +550,20 @@ export default function AgentProjectDetails() {
                   <Text type="secondary" style={{ fontSize: 13, display: "block" }}>Developer:</Text>
                   <Text strong style={{ fontSize: 16 }}>{developerName}</Text>
                 </div>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                <MoneyCollectOutlined style={{ fontSize: 20, color: "#6b7280", marginTop: 4 }} />
+                <div>
+                  <Text type="secondary" style={{ fontSize: 13, display: "block" }}>Agent Commission:</Text>
+                  <Text strong style={{ fontSize: 16, color: "#16a34a" }}>
+                    {getCommissionText()}
+                  </Text>
+                  {property.commissionNotes && (
+                    <Text type="secondary" style={{ fontSize: 12, display: "block", marginTop: 2 }}>
+                      * {property.commissionNotes}
+                    </Text>
+                  )}
+                </div>
+              </div>
               </div>
             </div>
 
