@@ -71,24 +71,23 @@ export default function DeveloperProjects() {
     if (!developerId) return;
     try {
       setTableLoading(true);
-      
-      const json = await apiService.get(
-  "/property/get-all-properties",
-  {
-    developer: developerId
-  }
-);
-      
-const list = json?.data || [];
-    const mapped = list.map(p => ({
-  key: p._id,
-  name: p.propertyName,
-  location: `${p.area || ""} ${p.city || ""}`,
-  units: p.builtUpArea_min ? `${p.builtUpArea_min}-${p.builtUpArea_max}` : "-",
-  sold: p.unitType?.length || 0,
-  status: p.approvalStatus || "pending",
-  rejectionReason: p.rejectionReason || ""
-}));
+      const json = await apiService.get("/property/get-all-properties", {
+        developer: developerId,
+        limit: 1000 // Backend ko batane ke liye ki saare records bhej do
+      });
+
+      const list = json?.data?.data || json?.data || [];
+      console.log("Total properties fetched:", list.length); // Console mein check karein ki backend se kitne aa rahe hain
+
+      const mapped = list.map(p => ({
+        key: p._id,
+        name: p.propertyName,
+        location: `${p.area || ""} ${p.city || ""}`,
+        units: p.builtUpArea_min ? `${p.builtUpArea_min}-${p.builtUpArea_max}` : "-",
+        sold: p.unitType?.length || 0,
+        status: p.approvalStatus || "pending",
+        rejectionReason: p.rejectionReason || ""
+      }));
 
       setProjects(mapped);
       setFiltered(mapped);
@@ -104,7 +103,7 @@ const list = json?.data || [];
     fetchProjects();
   }, [developerId, token]);
 
- 
+
   useEffect(() => {
     const q = search.toLowerCase();
     setFiltered(
@@ -116,25 +115,25 @@ const list = json?.data || [];
   }, [search, projects]);
 
   useEffect(() => {
-  const fetchDeveloper = async () => {
-    try {
-      if (!developerId) return;
+    const fetchDeveloper = async () => {
+      try {
+        if (!developerId) return;
 
-      const res = await apiService.get("/property/get-developer-by-id", {
-        id: developerId
-      });
+        const res = await apiService.get("/property/get-developer-by-id", {
+          id: developerId
+        });
 
-      const dev = res?.data?.data || res?.data;
+        const dev = res?.data?.data || res?.data;
 
-      setDeveloperName(dev?.name || "");
+        setDeveloperName(dev?.name || "");
 
-    } catch (error) {
-      console.error("Failed to load developer", error);
-    }
-  };
+      } catch (error) {
+        console.error("Failed to load developer", error);
+      }
+    };
 
-  fetchDeveloper();
-}, [developerId]);
+    fetchDeveloper();
+  }, [developerId]);
 
   // ================= MODAL HANDLERS =================
   const openModal = () => {
@@ -159,7 +158,7 @@ const list = json?.data || [];
   const handleSave = async (values) => {
     try {
       setFormLoading(true);
-      
+
       // Photos & Logo URLs nikalna upload list se (Backend ke hisaab se adjust karein)
       const photos = photoList.map(p => p.response?.url || p.url).filter(Boolean);
       const mainLogo = logoList[0]?.response?.url || logoList[0]?.url || "";
@@ -180,18 +179,18 @@ const list = json?.data || [];
       //   },
       //   body: JSON.stringify(payload)
       // });
-const data = await apiService.post(
-  "/property/create-properties",
-  payload
-);
+      const data = await apiService.post(
+        "/property/create-properties",
+        payload
+      );
 
-     if (data) {
-  message.success("Property submitted. Waiting for admin approval.");
-  closeModal();
-  fetchProjects();
-} else {
-  message.error("Failed to save property");
-}
+      if (data) {
+        message.success("Property submitted. Waiting for admin approval.");
+        closeModal();
+        fetchProjects();
+      } else {
+        message.error("Failed to save property");
+      }
     } catch (error) {
       console.error(error);
       message.error("Something went wrong");
@@ -200,16 +199,15 @@ const data = await apiService.post(
     }
   };
 
- const getColor = (status) => {
+  const getColor = (status) => {
 
-  if (status === "approved") return "green";
-  if (status === "pending") return "orange";
-  if (status === "rejected") return "red";
+    if (status === "approved") return "green";
+    if (status === "pending") return "orange";
+    if (status === "rejected") return "red";
 
-};
+  };
 
   // ================= TABLE COLUMNS =================
- // ================= TABLE COLUMNS =================
   const columns = [
     {
       title: "Property",
@@ -223,53 +221,53 @@ const data = await apiService.post(
     },
     { title: "Area Range", dataIndex: "units", render: (u) => <Text>{u}</Text> },
     { title: "Unit Types", dataIndex: "sold", render: (s) => <Tag color="purple">{s} Units</Tag> },
-   {
-  title: "Status",
-  dataIndex: "status",
-  render: (status, record) => (
-    <div>
-      <Tag color={getColor(status)}>
-        {status?.toUpperCase()}
-      </Tag>
+    {
+      title: "Status",
+      dataIndex: "status",
+      render: (status, record) => (
+        <div>
+          <Tag color={getColor(status)}>
+            {status?.toUpperCase()}
+          </Tag>
 
-      {status === "rejected" && record.rejectionReason && (
-        <div style={{ marginTop: 6 }}>
-          <Text type="danger">
-            Reason: {record.rejectionReason}
-          </Text>
+          {status === "rejected" && record.rejectionReason && (
+            <div style={{ marginTop: 6 }}>
+              <Text type="danger">
+                Reason: {record.rejectionReason}
+              </Text>
+            </div>
+          )}
         </div>
-      )}
-    </div>
-  )
-},
-   {
-  title: "Action",
-  render: (_, record) => (
-    <Space>
+      )
+    },
+    {
+      title: "Action",
+      render: (_, record) => (
+        <Space>
 
-      <Button
-        type="primary"
-        style={{ background: "#6d28d9", borderColor: "#6d28d9", borderRadius: 8 }}
-        onClick={() => navigate(`/dashboard/developer/developer-projects/${record.key}`)}
-      >
-        View
-      </Button>
+          <Button
+            type="primary"
+            style={{ background: "#6d28d9", borderColor: "#6d28d9", borderRadius: 8 }}
+            onClick={() => navigate(`/dashboard/developer/developer-projects/${record.key}`)}
+          >
+            View
+          </Button>
 
-      {record.status === "rejected" && (
-        <Button
-          danger
-          onClick={() => {
-            setEditingId(record.key);
-            setModalVisible(true);
-          }}
-        >
-          Edit & Resubmit
-        </Button>
-      )}
+          {record.status === "rejected" && (
+            <Button
+              danger
+              onClick={() => {
+                setEditingId(record.key);
+                setModalVisible(true);
+              }}
+            >
+              Edit & Resubmit
+            </Button>
+          )}
 
-    </Space>
-  )
-}
+        </Space>
+      )
+    }
   ];
 
   return (
@@ -326,8 +324,8 @@ const data = await apiService.post(
         onCancel={closeModal}
         footer={null}
         width={1000}
-        style={{ top: 20, marginRight:60 }}
-        
+        style={{ top: 20, marginRight: 60 }}
+
       >
         <Form
           form={form}
@@ -339,8 +337,8 @@ const data = await apiService.post(
             isAvailable: true, country: 'United Arab Emirates', state: 'Dubai', city: 'Dubai', postalCode: '00000',
             notReadyYet: true, isFeatured: false,
             commissionType: "percentage",
-commissionValue: 3,
-commissionStage: "booking",
+            commissionValue: 3,
+            commissionStage: "booking",
             amenities: [], location_highlights: [], unitType: []
           }}
         >
@@ -348,11 +346,11 @@ commissionStage: "booking",
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>Basic Information</Divider>
           <Row gutter={16}>
             <Col xs={24} md={8}><Form.Item name="propertyName" label="Property Name" rules={[{ required: true }]}><Input /></Form.Item></Col>
-       <Col xs={24} md={8}>
-  <Form.Item label="Developer">
-  <Input value={user?.email} disabled />
-</Form.Item>
-</Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Developer">
+                <Input value={user?.email} disabled />
+              </Form.Item>
+            </Col>
             <Col xs={12} md={4}><Form.Item name="transactionType" label="Transaction"><Select><Option value="sell">Sell</Option><Option value="rent">Rent</Option></Select></Form.Item></Col>
             <Col xs={12} md={4}><Form.Item name="propertyType" label="Prop Type"><Input placeholder="e.g Apartment" /></Form.Item></Col>
           </Row>
@@ -384,46 +382,46 @@ commissionStage: "booking",
           </Row>
 
           {/* --- SECTION: COMMISSION SCHEME --- */}
-<Divider orientation="left" style={{ borderColor: THEME.primary }}>
-  Commission Scheme
-</Divider>
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>
+            Commission Scheme
+          </Divider>
 
-<Row gutter={16}>
-  <Col xs={12} md={6}>
-    <Form.Item name="commissionType" label="Commission Type">
-      <Select placeholder="Select type">
-        <Option value="percentage">Percentage (%)</Option>
-        <Option value="fixed">Fixed Amount</Option>
-      </Select>
-    </Form.Item>
-  </Col>
+          <Row gutter={16}>
+            <Col xs={12} md={6}>
+              <Form.Item name="commissionType" label="Commission Type">
+                <Select placeholder="Select type">
+                  <Option value="percentage">Percentage (%)</Option>
+                  <Option value="fixed">Fixed Amount</Option>
+                </Select>
+              </Form.Item>
+            </Col>
 
-  <Col xs={12} md={6}>
-    <Form.Item name="commissionValue" label="Commission Value">
-      <InputNumber
-        className="w-full"
-        style={{ width: "100%" }}
-        placeholder="Enter commission"
-      />
-    </Form.Item>
-  </Col>
+            <Col xs={12} md={6}>
+              <Form.Item name="commissionValue" label="Commission Value">
+                <InputNumber
+                  className="w-full"
+                  style={{ width: "100%" }}
+                  placeholder="Enter commission"
+                />
+              </Form.Item>
+            </Col>
 
-  <Col xs={12} md={6}>
-    <Form.Item name="commissionStage" label="Commission Stage">
-      <Select placeholder="When paid">
-        <Option value="booking">On Booking</Option>
-        <Option value="contract">On Contract</Option>
-        <Option value="handover">On Handover</Option>
-      </Select>
-    </Form.Item>
-  </Col>
+            <Col xs={12} md={6}>
+              <Form.Item name="commissionStage" label="Commission Stage">
+                <Select placeholder="When paid">
+                  <Option value="booking">On Booking</Option>
+                  <Option value="contract">On Contract</Option>
+                  <Option value="handover">On Handover</Option>
+                </Select>
+              </Form.Item>
+            </Col>
 
-  <Col xs={12} md={6}>
-    <Form.Item name="commissionNotes" label="Commission Notes">
-      <Input placeholder="Optional note" />
-    </Form.Item>
-  </Col>
-</Row>
+            <Col xs={12} md={6}>
+              <Form.Item name="commissionNotes" label="Commission Notes">
+                <Input placeholder="Optional note" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           {/* --- SECTION 3: CONFIGURATION --- */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>Area & Configuration</Divider>
@@ -435,10 +433,10 @@ commissionStage: "booking",
             <Col xs={12} md={6}><Form.Item name="builtUpAreaUnit" label="Unit"><Select><Option value="sqft">Sq. Ft</Option><Option value="sqm">Sq. M</Option></Select></Form.Item></Col>
           </Row>
           <Row gutter={16}>
-             <Col xs={12} md={6}><Form.Item name="length" label="Length"><InputNumber className="w-full" style={{ width: '100%' }} /></Form.Item></Col>
-             <Col xs={12} md={6}><Form.Item name="lengthUnit" label="Unit"><Select><Option value="ft">ft</Option><Option value="m">m</Option></Select></Form.Item></Col>
-             <Col xs={12} md={6}><Form.Item name="breadth" label="Breadth"><InputNumber className="w-full" style={{ width: '100%' }} /></Form.Item></Col>
-             <Col xs={12} md={6}><Form.Item name="breadthUnit" label="Unit"><Select><Option value="ft">ft</Option><Option value="m">m</Option></Select></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="length" label="Length"><InputNumber className="w-full" style={{ width: '100%' }} /></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="lengthUnit" label="Unit"><Select><Option value="ft">ft</Option><Option value="m">m</Option></Select></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="breadth" label="Breadth"><InputNumber className="w-full" style={{ width: '100%' }} /></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="breadthUnit" label="Unit"><Select><Option value="ft">ft</Option><Option value="m">m</Option></Select></Form.Item></Col>
           </Row>
 
           {/* --- SECTION 4: LOCATION --- */}
@@ -472,7 +470,7 @@ commissionStage: "booking",
                   beforeUpload={validateImageSize}
                   onChange={({ fileList }) => setLogoList(fileList)}
                 >
-                   {logoList.length >= 1 ? null : <div><PlusOutlined /><div style={{ marginTop: 8 }}>Logo</div></div>}
+                  {logoList.length >= 1 ? null : <div><PlusOutlined /><div style={{ marginTop: 8 }}>Logo</div></div>}
                 </Upload>
               </Form.Item>
             </Col>
@@ -486,7 +484,7 @@ commissionStage: "booking",
                   beforeUpload={validateImageSize}
                   onChange={({ fileList }) => setPhotoList(fileList)}
                 >
-                   <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
+                  <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
                 </Upload>
               </Form.Item>
             </Col>
@@ -508,10 +506,10 @@ commissionStage: "booking",
           {/* --- SECTION 6: EXTRAS --- */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>Additional Details</Divider>
           <Form.Item name="amenities" label="Amenities">
-             <Select mode="tags" placeholder="Add amenities (e.g. Pool, Gym, Parking)" />
+            <Select mode="tags" placeholder="Add amenities (e.g. Pool, Gym, Parking)" />
           </Form.Item>
           <Form.Item name="about_developer" label="About Developer (Specific to project)"><TextArea rows={2} /></Form.Item>
-         
+
           <Row gutter={16}>
             <Col xs={8}><Form.Item name="isAvailable" label="Available" valuePropName="checked"><Switch /></Form.Item></Col>
             <Col xs={8}><Form.Item name="notReadyYet" label="Construction (Not Ready)" valuePropName="checked"><Switch /></Form.Item></Col>
@@ -521,7 +519,7 @@ commissionStage: "booking",
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px', paddingBottom: '16px' }}>
             <Button onClick={closeModal} size="large">Cancel</Button>
             <Button type="primary" htmlType="submit" loading={formLoading} size="large" style={{ backgroundColor: THEME.primary }}>
-               {editingId ? "Update Property" : "Save Property"}
+              {editingId ? "Update Property" : "Save Property"}
             </Button>
           </div>
         </Form>
