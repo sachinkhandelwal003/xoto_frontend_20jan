@@ -18,62 +18,53 @@ import { pdf, Document, Page, Text as PdfText, View, Image as PdfImage, StyleShe
 const { Title, Text, Paragraph } = Typography;
 const { Panel } = Collapse;
 
-// 🔥 PDF STYLESHEET
+// 🔥 1. PREMIUM STYLESHEET (Exact Reelly PDF Jaisa Cover Page)
 const pdfStyles = StyleSheet.create({
-  page: { backgroundColor: '#ffffff', padding: 40 },
-  header: { fontSize: 24, color: '#5C039B', fontWeight: 'bold', marginBottom: 10, textTransform: 'uppercase' },
-  subHeader: { fontSize: 12, color: '#666', marginBottom: 20 },
-  heroImage: { width: '100%', height: 250, borderRadius: 8, marginBottom: 20, objectFit: 'cover' },
-  sectionTitle: { fontSize: 16, color: '#111', fontWeight: 'bold', marginTop: 20, marginBottom: 10, borderBottom: '1px solid #eee', paddingBottom: 5 },
-  text: { fontSize: 11, color: '#444', lineHeight: 1.6 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 },
-  gridItem: { width: '33%', marginBottom: 15 },
-  label: { fontSize: 10, color: '#888' },
-  value: { fontSize: 14, color: '#333', fontWeight: 'bold', marginTop: 3 },
-  footer: { position: 'absolute', bottom: 30, left: 40, right: 40, flexDirection: 'row', justifyContent: 'space-between', borderTop: '1px solid #eee', paddingTop: 10 },
-  footerText: { fontSize: 9, color: '#aaa' }
+  page: { backgroundColor: '#ffffff', padding: 0 },
+  
+  // --- Cover Page (Page 1) ---
+  coverPage: { backgroundColor: '#7a7a7a', height: '100%', padding: 40, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' },
+  agentImageCover: { width: 140, height: 140, borderRadius: 16, marginBottom: 40, objectFit: 'cover' },
+  coverSubtitle: { fontSize: 14, color: '#e5e7eb', marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1 },
+  coverTitle: { fontSize: 42, color: '#ffffff', fontWeight: 'bold', marginBottom: 50, textAlign: 'center' },
+  coverDetailsBox: { alignItems: 'center', marginTop: 20 },
+  coverDate: { fontSize: 12, color: '#d1d5db', marginBottom: 20 },
+  coverDevTag: { fontSize: 14, color: '#ffffff', fontWeight: 'bold', marginBottom: 30 },
+  coverAgentName: { fontSize: 22, color: '#ffffff', fontWeight: 'bold', marginBottom: 15 },
+  coverContact: { fontSize: 14, color: '#e5e7eb', marginBottom: 8 }
 });
 
-// 🔥 PDF TEMPLATE COMPONENT
-const PropertyBrochure = ({ property, preferences }) => (
-  <Document>
-    <Page size="A4" style={pdfStyles.page}>
-      <PdfText style={pdfStyles.header}>{property?.propertyName}</PdfText>
-      <PdfText style={pdfStyles.subHeader}>
-        By {property?.developer?.name || "Premium Developer"} • {property?.city || "Dubai"}
-      </PdfText>
+// 🔥 2. EXACT PDF TEMPLATE (Cover Page Only for now)
+const PropertyBrochure = ({ property, preferences }) => {
+  const today = new Date().toLocaleDateString('en-GB'); 
+  const devName = property?.developer?.name || "Premium Developer";
 
-      {property?.photos && property.photos.length > 0 && (
-        <PdfImage style={pdfStyles.heroImage} src={property.photos[0]} />
+  return (
+    <Document>
+      {/* ================= PAGE 1: COVER SLIDE ================= */}
+      {preferences.slides.includes('Cover slide') && (
+        <Page size="A4" style={pdfStyles.coverPage}>
+          <PdfImage 
+            style={pdfStyles.agentImageCover} 
+            src={"https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=400"} // Dummy Agent Photo (Baad mein teri photo aayegi)
+          />
+          <PdfText style={pdfStyles.coverSubtitle}>Look what we found for you</PdfText>
+          <PdfText style={pdfStyles.coverTitle}>{property?.propertyName || "Exclusive Property"}</PdfText>
+          
+          <View style={pdfStyles.coverDetailsBox}>
+            <PdfText style={pdfStyles.coverDate}>Date of creation {today}</PdfText>
+            <PdfText style={pdfStyles.coverDevTag}>#{devName.replace(/\s/g, '')}</PdfText>
+            
+            <PdfText style={pdfStyles.coverAgentName}>Vishal</PdfText>
+            <PdfText style={pdfStyles.coverContact}>xoto.ae</PdfText>
+            <PdfText style={pdfStyles.coverContact}>+971 50 123 4567</PdfText>
+            <PdfText style={pdfStyles.coverContact}>vishal@xoto.ae</PdfText>
+          </View>
+        </Page>
       )}
-
-      <View style={pdfStyles.grid}>
-        <View style={pdfStyles.gridItem}>
-          <PdfText style={pdfStyles.label}>Starting Price</PdfText>
-          <PdfText style={{...pdfStyles.value, color: '#5C039B'}}>
-            {preferences.currency} {Number(property?.price || 0).toLocaleString()}
-          </PdfText>
-        </View>
-        <View style={pdfStyles.gridItem}>
-          <PdfText style={pdfStyles.label}>Bedrooms</PdfText>
-          <PdfText style={pdfStyles.value}>{property?.bedrooms || "1"} Bed</PdfText>
-        </View>
-        <View style={pdfStyles.gridItem}>
-          <PdfText style={pdfStyles.label}>Handover</PdfText>
-          <PdfText style={pdfStyles.value}>{property?.handover || "TBA"}</PdfText>
-        </View>
-      </View>
-
-      <PdfText style={pdfStyles.sectionTitle}>Project Overview ({preferences.language})</PdfText>
-      <PdfText style={pdfStyles.text}>{property?.description}</PdfText>
-
-      <View style={pdfStyles.footer}>
-        <PdfText style={pdfStyles.footerText}>Generated for Exclusive Client</PdfText>
-        <PdfText style={pdfStyles.footerText}>XOTO.AE</PdfText>
-      </View>
-    </Page>
-  </Document>
-);
+    </Document>
+  );
+};
 
 
 export default function AgentProjectDetails() {
