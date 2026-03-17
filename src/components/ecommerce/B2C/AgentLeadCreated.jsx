@@ -22,15 +22,17 @@ import {
 
 import {
   SearchOutlined,
-  PlusOutlined,
+  // PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   CheckCircleOutlined,
-  CalendarOutlined,
+  EyeOutlined,
+  // CalendarOutlined,
   TrophyOutlined
 } from "@ant-design/icons";
-
+import CustomTable from "../../CMS/pages/custom/CustomTable";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
+import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
@@ -38,7 +40,7 @@ const { Option } = Select;
 
 export default function AgentLeadDashboard() {
   const { user } = useSelector((state) => state.auth);
-
+const navigate = useNavigate();
   // ================= STATES =================
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -54,10 +56,10 @@ export default function AgentLeadDashboard() {
   const [form] = Form.useForm();
 
   // Modal & Form States for Site Visit Request
-  const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
-  const [visitLead, setVisitLead] = useState(null);
-  const [visitLoading, setVisitLoading] = useState(false);
-  const [visitForm] = Form.useForm();
+  // const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
+  // const [visitLead, setVisitLead] = useState(null);
+  // const [visitLoading, setVisitLoading] = useState(false);
+  // const [visitForm] = Form.useForm();
 
   // ================= 1. FETCH LEADS & PROJECTS =================
   const fetchLeads = async () => {
@@ -268,79 +270,123 @@ export default function AgentLeadDashboard() {
   });
 
   const activeLeads = filteredLeads.filter((l) => ["customer", "lead"].includes(l.status?.toLowerCase() || "customer"));
-  const visits = filteredLeads.filter((l) => l.status?.toLowerCase() === "visit");
-  const dealsAndBookings = filteredLeads.filter((l) => ["deal", "booking"].includes(l.status?.toLowerCase()));
-  const closedLeads = filteredLeads.filter((l) => l.status?.toLowerCase() === "closed");
-  const lostLeads = filteredLeads.filter((l) => l.status?.toLowerCase() === "lost");
+  // const visits = filteredLeads.filter((l) => l.status?.toLowerCase() === "visit");
+  // const dealsAndBookings = filteredLeads.filter((l) => ["deal", "booking"].includes(l.status?.toLowerCase()));
+  // const closedLeads = filteredLeads.filter((l) => l.status?.toLowerCase() === "closed");
+  // const lostLeads = filteredLeads.filter((l) => l.status?.toLowerCase() === "lost");
 
   // ================= 6. RENDER COMPONENTS =================
-  const LeadsTable = ({ data }) => (
-    <div className="overflow-x-auto">
-      <table className="min-w-full border-collapse bg-white">
-        <thead className="bg-gray-50 border-b">
-          <tr className="text-xs uppercase text-gray-500">
-            <th className="p-4 text-left">Client Name</th>
-            <th className="p-4 text-left">Contact Info</th>
-            <th className="p-4 text-center">Budget / Target Project</th>
-            <th className="p-4 text-center">Status</th>
-            <th className="p-4 text-center">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
-            <tr><td colSpan="5" className="p-10 text-center">Loading Data...</td></tr>
-          ) : data.length === 0 ? (
-            <tr><td colSpan="5" className="p-10 text-center text-gray-400">No records found</td></tr>
-          ) : (
-            data.map((lead) => (
-              <tr key={lead._id} className="border-b hover:bg-gray-50 text-sm">
-                <td className="p-4 font-medium">{lead?.name?.first_name} {lead?.name?.last_name}</td>
-                <td className="p-4">
-                  <div>{lead?.phone_number}</div>
-                  <div className="text-xs text-gray-500">{lead?.email}</div>
-                </td>
-                <td className="p-4 text-center">
-                  <div>{lead?.budget ? `${lead.budget.toLocaleString()} AED` : "-"}</div>
-                  <div className="text-xs text-blue-600 font-medium">{lead?.project?.propertyName || lead?.property_interest || "-"}</div>
-                </td>
-                <td className="p-4 text-center">{getStatus(lead?.status)}</td>
-                <td className="p-4 text-center">
-                  <div className="flex justify-center gap-2">
-                    <Tooltip title="Edit">
-                      <Button type="text" icon={<EditOutlined />} onClick={() => handleEditClick(lead)} />
-                    </Tooltip>
-                    
-                    {/* VISIT REQUEST BUTTON */}
-                    {["customer", "lead"].includes(lead?.status?.toLowerCase()) && (
-                      <Tooltip title="Request Site Visit">
-                        <Button type="text" className="text-blue-600" icon={<CalendarOutlined />} onClick={() => handleScheduleVisitClick(lead)} />
-                      </Tooltip>
-                    )}
-                    
-                    {lead?.status?.toLowerCase() === "visit" && (
-                      <Tooltip title="Move to Deal">
-                        <Button type="text" className="text-purple-600" icon={<CheckCircleOutlined />} onClick={() => updateLeadStatus(lead._id, "deal")} />
-                      </Tooltip>
-                    )}
+ const columns = [
+  {
+    title: "Client Name",
+    key: "name",
+    render: (_, item) =>
+      `${item?.name?.first_name || ""} ${item?.name?.last_name || ""}`,
+  },
+  {
+    title: "Contact Info",
+    key: "contact",
+    render: (_, item) => (
+      <div>
+        <div>{item?.phone_number}</div>
+        <div className="text-xs text-gray-500">{item?.email}</div>
+      </div>
+    ),
+  },
+  {
+    title: "Budget / Project",
+    key: "budget",
+    render: (_, item) => (
+      <div>
+        <div>{item?.budget ? `${item.budget} AED` : "-"}</div>
+        <div className="text-xs text-blue-600">
+          {item?.project?.propertyName || "-"}
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: "Status",
+    key: "status",
+    render: (value) => getStatus(value),
+  },
+  {
+    title: "Action",
+    key: "action",
+    render: (_, item) => (
+      <div className="flex gap-2">
+        <Tooltip title="Edit">
+          <Button
+            type="text"
+            icon={<EditOutlined />}
+            onClick={() => handleEditClick(item)}
+          />
+        </Tooltip>
 
-                    {["deal", "booking"].includes(lead?.status?.toLowerCase()) && (
-                      <Tooltip title="Mark as Closed">
-                        <Button type="text" className="text-green-600" icon={<TrophyOutlined />} onClick={() => updateLeadStatus(lead._id, "closed")} />
-                      </Tooltip>
-                    )}
+        <Tooltip title="View">
+          <Button
+  type="text"
+  icon={<EyeOutlined />}
+ onClick={() => handleViewLead(item)}
+/>
+        </Tooltip>
 
-                    <Tooltip title="Delete">
-                      <Button danger type="text" icon={<DeleteOutlined />} onClick={() => deleteLead(lead._id)} />
-                    </Tooltip>
-                  </div>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
+        {item?.status === "lead" && (
+          <Tooltip title="Move to Deal">
+            <Button
+              type="text"
+              icon={<CheckCircleOutlined />}
+              onClick={() => updateLeadStatus(item._id, "deal")}
+            />
+          </Tooltip>
+        )}
+
+        {["deal", "booking"].includes(item?.status) && (
+          <Tooltip title="Close">
+            <Button
+              type="text"
+              icon={<TrophyOutlined />}
+              onClick={() => updateLeadStatus(item._id, "closed")}
+            />
+          </Tooltip>
+        )}
+
+        <Tooltip title="Delete">
+          <Button
+            danger
+            type="text"
+            icon={<DeleteOutlined />}
+            onClick={() => deleteLead(item._id)}
+          />
+        </Tooltip>
+      </div>
+    ),
+  },
+];
+
+const handleViewLead = async (item) => {
+  try {
+    const res = await apiService.get(
+      `/agent/lead/get-lead/${item._id}?includeInterests=true`
+    );
+
+    navigate("../lead-details", {
+      state: res   // 🔥 full response bhejo
+    });
+
+  } catch (err) {
+    console.error(err);
+    message.error("Failed to load details");
+  }
+};
+
+const customers = filteredLeads.filter(
+  (l) => l.status?.toLowerCase() === "customer"
+);
+
+const onlyLeads = filteredLeads.filter(
+  (l) => l.status?.toLowerCase() === "lead"
+);
 
   return (
     <div className="p-6 bg-[#f6f7fb] min-h-screen relative">
@@ -349,9 +395,7 @@ export default function AgentLeadDashboard() {
           <Title level={3}>XOTO CRM - Lead Pipeline</Title>
           <Text type="secondary">Manage your clients from Customer to Closed Deal</Text>
         </div>
-        <Button type="primary" size="large" icon={<PlusOutlined />} onClick={handleAddClick} className="bg-[#7c3aed]">
-          Add New Profile
-        </Button>
+        
       </div>
 
       <Card className="mb-6 rounded-xl border-none shadow-sm">
@@ -359,17 +403,35 @@ export default function AgentLeadDashboard() {
       </Card>
 
       <Card className="rounded-xl border-none shadow-sm">
-        <Tabs
-          activeKey={activeTab}
-          onChange={(key) => setActiveTab(key)}
-          items={[
-            { key: "leads", label: `Customers & Leads (${activeLeads.length})`, children: <LeadsTable data={activeLeads} /> },
-            { key: "visits", label: `Site Visits (${visits.length})`, children: <LeadsTable data={visits} /> },
-            { key: "deals", label: `Deals & Bookings (${dealsAndBookings.length})`, children: <LeadsTable data={dealsAndBookings} /> },
-            { key: "closed", label: `Closed (${closedLeads.length})`, children: <LeadsTable data={closedLeads} /> },
-            { key: "lost", label: `Lost (${lostLeads.length})`, children: <LeadsTable data={lostLeads} /> }
-          ]}
+       <Tabs
+  activeKey={activeTab}
+  onChange={(key) => setActiveTab(key)}
+  items={[
+    {
+      key: "customers",
+      label: `Customers (${customers.length})`,
+      children: (
+        <CustomTable
+          columns={columns}
+          data={customers}
+          loading={loading}
+          
         />
+      ),
+    },
+    {
+      key: "leads",
+      label: `Leads (${onlyLeads.length})`,
+      children: (
+        <CustomTable
+          columns={columns}
+          data={onlyLeads}
+          loading={loading}
+        />
+      ),
+    },
+  ]}
+/>
       </Card>
 
       {/* ================= ADD/EDIT LEAD MODAL ================= */}
@@ -461,7 +523,7 @@ export default function AgentLeadDashboard() {
       </Modal>
 
       {/* ================= SITE VISIT REQUEST MODAL ================= */}
-      <Modal title={`Request Site Visit for ${visitLead?.name?.first_name || "Client"}`} open={isVisitModalOpen} onCancel={() => setIsVisitModalOpen(false)} footer={null} centered>
+      {/* <Modal title={`Request Site Visit for ${visitLead?.name?.first_name || "Client"}`} open={isVisitModalOpen} onCancel={() => setIsVisitModalOpen(false)} footer={null} centered>
         <Form form={visitForm} layout="vertical" onFinish={onVisitSubmit} className="mt-4">
           <Row gutter={16}>
             <Col span={24}>
@@ -472,14 +534,14 @@ export default function AgentLeadDashboard() {
                   ))}
                 </Select>
               </Form.Item>
-            </Col>
+            </Col> */}
             {/* Note: Developer id selection can be added here if needed, or fetched implicitly via project */}
             {/* <Col span={24}>
               <Form.Item name="developer" label="Developer ID (Optional / Auto-fetched)" tooltip="If your backend requires this explicitly">
                 <Input placeholder="Developer ID or Name" />
               </Form.Item>
             </Col> */}
-            <Col span={12}>
+            {/* <Col span={12}>
               <Form.Item name="visitDate" label="Expected Date" rules={[{ required: true, message: "Select date" }]}>
                 <DatePicker className="w-full" disabledDate={(current) => current && current < dayjs().startOf('day')} />
               </Form.Item>
@@ -488,16 +550,16 @@ export default function AgentLeadDashboard() {
               <Form.Item name="visitTime" label="Expected Time" rules={[{ required: true, message: "Select time" }]}>
                 <TimePicker format="HH:mm" className="w-full" />
               </Form.Item>
-            </Col>
-          </Row>
-          <div className="flex justify-end gap-3 mt-4">
+            </Col> */}
+          {/* </Row> */}
+          {/* <div className="flex justify-end gap-3 mt-4">
             <Button onClick={() => setIsVisitModalOpen(false)}>Cancel</Button>
             <Button type="primary" htmlType="submit" loading={visitLoading} className="bg-[#7c3aed]">
               Submit Request
             </Button>
-          </div>
-        </Form>
-      </Modal>
+          </div> */}
+        {/* </Form> */}
+      {/* </Modal> */}
 
     </div>
   );
