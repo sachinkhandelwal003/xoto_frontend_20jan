@@ -57,26 +57,30 @@ export default function AgentSiteVisits() {
 
     // ✅ Developer ne chat shuru ki — visitsRef use karo (stale state problem nahi hogi)
     const onChatInitiated = ({ leadId, developerId, developerName }) => {
-      // visitsRef.current se latest list lo
-      const visit = visitsRef.current.find(
-        (v) =>
-          v?.lead?._id?.toString() === leadId?.toString() ||
-          v?.lead?.toString()      === leadId?.toString()
-      );
+  console.log("Chat initiated:", { leadId, developerId, developerName }); // ← check karo
 
-      const leadObj = visit?.lead || { _id: leadId };
+  const visit = visitsRef.current.find(
+    (v) =>
+      v?.lead?._id?.toString() === leadId?.toString() ||
+      v?.lead?.toString()      === leadId?.toString()
+  );
 
-      // Notification dikhao
-      notification.info({
-        message:     "New Chat Request",
-        description: `${developerName} ne chat shuru ki!`,
-        placement:   "topRight",
-        duration:    6,
-      });
+  const leadObj = visit?.lead || { _id: leadId };
 
-      // Chat drawer kholo
-      setChatData({ lead: leadObj, developerId, developerName });
-    };
+  notification.info({
+    message:     "New Chat Request",
+    description: `${developerName} ne chat shuru ki!`,
+    placement:   "topRight",
+    duration:    6,
+  });
+
+  // ✅ developerId jo server se aaya wahi use karo
+  setChatData({
+    lead:          leadObj,
+    developerId:   developerId,  // ← server se aaya exact ID
+    developerName: developerName,
+  });
+};
 
     sock.on("chat_initiated", onChatInitiated);
 
@@ -89,20 +93,23 @@ export default function AgentSiteVisits() {
   // ── Agent manually chat khole ───────────────────────────────
  // PEHLE wala code dhundho aur POORA replace karo:
 const handleManualChat = (record) => {
+  console.log("Full record:", record); // ← dekho kya aata hai
+  
+  // ✅ Sahi path — record.developer._id
   const developerId   = record?.developer?._id;
   const developerName = record?.developer?.name || "Developer";
 
-  // ✅ user ka ID dhundho — multiple possible fields
-  const userId = user?._id || user?.id || user?.userId;
-  
-  console.log("User object:", user);        // dekho kya hai
-  console.log("User ID found:", userId);    // ye print hoga
+  console.log("Developer ID:", developerId);
+
+  if (!developerId) {
+    message.warning("Developer ID nahi mila");
+    return;
+  }
 
   setChatData({
     lead:          record?.lead,
     developerId,
     developerName,
-    agentId: userId,                        // ← explicitly pass karo
   });
 };
 
@@ -232,14 +239,15 @@ const handleManualChat = (record) => {
       </Card>
 
       {/* ✅ CHAT DRAWER */}
-     {chatData && user && chatData.developerId && (
+    {chatData && user && chatData.developerId && (
   <ChatDrawer
     lead={chatData.lead}
     currentUser={{
       ...user,
-      // ✅ ID explicitly set karo
-      _id:  user?._id || user?.id || user?.userId,
-      type: "agent"
+      _id:  user?._id || user?.id,
+      type: "agent",
+      first_name: user?.first_name || "Agent",
+      last_name:  user?.last_name  || "",
     }}
     otherUserId={chatData.developerId}
     otherName={chatData.developerName}

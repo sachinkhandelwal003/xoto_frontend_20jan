@@ -146,27 +146,20 @@ const BuiltForEveryone = () => {
 
   {/* Arrows Section */}
   <div className="flex gap-3 mt-8">
-    <button
-      onClick={() => { prevSlide(); setActiveBtn("left"); }}
-      className={`p-3 rounded-sm border transition-all duration-300 ${
-        activeBtn === "left" 
-          ? "bg-[var(--color-primary)] text-white" 
-          : "bg-white text-black hover:bg-gray-100"
-      }`}
-    >
-      <ChevronLeft className="w-5 h-5" />
-    </button>
-    <button
-      onClick={() => { nextSlide(); setActiveBtn("right"); }}
-      className={`p-3 rounded-sm border bg-[#5C039B]   transition-all duration-300 ${
-        activeBtn === "right" 
-          ? "bg-[var(--color-primary)] text-white" 
-          : "hover:bg-gray-100 bg-white text-black"
-      }`}
-    >
-      <ChevronRight className="w-5 h-5" />
-    </button>
-  </div>
+  <button
+    onClick={prevSlide}
+    className="p-3 rounded-sm border bg-white text-black hover:bg-[var(--color-primary)] hover:text-white transition-all duration-300"
+  >
+    <ChevronLeft className="w-5 h-5" />
+  </button>
+
+  <button
+    onClick={nextSlide}
+    className="p-3 rounded-sm border bg-white text-black hover:bg-[var(--color-primary)] hover:text-white transition-all duration-300"
+  >
+    <ChevronRight className="w-5 h-5" />
+  </button>
+</div>
 </div>
         </div>
       </div>

@@ -144,7 +144,7 @@ const ChatDrawer = ({ lead, currentUser, otherUserId, otherName, onClose }) => {
           )}
           {!loading && msgs.length === 0 && (
             <p style={{ textAlign: "center", color: "#aaa", marginTop: 40 }}>
-              Pehla message bhejo!
+              Send Your Message!
             </p>
           )}
           {msgs.map((m, i) => (
@@ -175,7 +175,7 @@ const ChatDrawer = ({ lead, currentUser, otherUserId, otherName, onClose }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder="Message likho..."  
+            placeholder="Write Your message..."  
           />
           <button onClick={send} style={S.sendBtn}><SendOutlined /></button> 
         </div>

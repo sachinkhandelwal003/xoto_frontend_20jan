@@ -309,11 +309,12 @@ if (!isPhoneValid) {
                     {/* Common Name Fields */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="relative">
-                        <input name="first_name" value={actionType === "Buy" ? buyForm.first_name : sellForm.first_name} onChange={actionType === "Buy" ? handleBuyChange : handleSellChange} placeholder={t("form.firstName")} required className="premium-input pl-12" />
+                        <input name="first_name" value={actionType === "Buy" ? buyForm.first_name : sellForm.first_name} onChange={actionType === "Buy" ? handleBuyChange : handleSellChange} placeholder={`${t("form.firstName")} *`}  required className="premium-input pl-12" /> 
                         <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"><User size={20} /></div>
                     </div>
                     <div className="relative">
-                        <input name="last_name" value={actionType === "Buy" ? buyForm.last_name : sellForm.last_name} onChange={actionType === "Buy" ? handleBuyChange : handleSellChange} placeholder={t("form.lastName")} required className="premium-input pl-12" />
+                        <input name="last_name" value={actionType === "Buy" ? buyForm.last_name : sellForm.last_name} onChange={actionType === "Buy" ? handleBuyChange : handleSellChange} placeholder={`${t("form.lastName")} *`}
+ required className="premium-input pl-12" />
                         <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"><User size={20} /></div>
                     </div>
                     </div>
@@ -346,7 +347,8 @@ if (!isPhoneValid) {
                             </Select>
                         </div>
                         <div className="relative flex-1">
-                            <input name="mobile" type="text" inputMode="numeric" value={actionType === "Buy" ? buyForm.mobile : sellForm.mobile} onChange={actionType === "Buy" ? handleBuyChange : handleSellChange} placeholder={t("form.phone")} required className="premium-input pl-12 h-[50px]" />
+                            <input name="mobile" type="text" inputMode="numeric" value={actionType === "Buy" ? buyForm.mobile : sellForm.mobile} onChange={actionType === "Buy" ? handleBuyChange : handleSellChange} placeholder={`${t("form.phone")} *`}
+ required className="premium-input pl-12 h-[50px]" />
                             <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"><Phone size={20} /></div>
                         </div>
                     </div>
@@ -354,7 +356,8 @@ if (!isPhoneValid) {
                     {actionType === "Buy" ? (
                     <>
                         <div className="relative">
-                        <input name="desired_bedrooms" value={buyForm.desired_bedrooms} onChange={handleBuyChange} placeholder={t("form.bedrooms")} required className="premium-input pl-12" />
+                        <input name="desired_bedrooms" value={buyForm.desired_bedrooms} onChange={handleBuyChange} placeholder={`${t("form.bedrooms")} *`}
+ required className="premium-input pl-12" />
                         <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"><BedDouble size={20} /></div>
                         </div>
 
