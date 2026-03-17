@@ -157,7 +157,8 @@ const CUSTOM_ROLE_LINKS = {
                 
 
       ],
-    }, {
+    },
+     {
       title: "Bills", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects",
       submenus: [
         { title: "My Bills", path: "/dashboard/{roleSlug}/projects/milestone/bills" },
@@ -213,11 +214,20 @@ const CUSTOM_ROLE_LINKS = {
   path: "/dashboard/{roleSlug}/projects",
 },
 
-  {
-    title: "Leads",
-    icon: "fas fa-user-friends",
-    path: "/dashboard/{roleSlug}/agent-leads",
-  },
+  // {
+  //   title: "Leads",
+  //   icon: "fas fa-user-friends",
+  //   path: "/dashboard/{roleSlug}/agent-leads",
+  // },
+      {
+      title: "Leads", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/agent-leads",
+      submenus: [
+        { title: "Create Leads", path: "/dashboard/{roleSlug}/agent-leads/add" },
+                        { title: "Leads", path: "/dashboard/{roleSlug}/agent-leads" },
+
+
+      ],
+    },
   {
   title: "Site Visits",
   icon: "fas fa-map-marker-alt",
