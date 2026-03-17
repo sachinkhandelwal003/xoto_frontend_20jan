@@ -145,6 +145,7 @@ import AgencyDashboard from "../ecommerce/B2C/AgencyDashboard";
 import XobiaTrainingAdmin from "./pages/XobiaTrainingAdmin";
 import GlobalSettings from "./pages/GlobalSettings";
 import XotoBlitzCampaigns from "./pages/XotoBlitzCampaigns";
+import AgentLeadSuggestionCreate from "../ecommerce/B2C/AgentLeadSuggestionCreate";
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -323,6 +324,8 @@ const CmsRoutes = () => {
 
   {/* Leads */}
   <Route path="agent-leads" element={<AgentLeadDashboard />} />
+    <Route path="agent-leads/add" element={<AgentLeadSuggestionCreate />} />
+
   <Route path="agent-lead/:id" element={<Addleaddetails/>} />
   {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
         
