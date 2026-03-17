@@ -53,7 +53,7 @@ const GridAdminProfile = () => {
           </Badge>
 
           <h2 className="mt-4 mb-0 text-xl font-semibold">
-            Admin Profile
+           Grid Admin Profile
           </h2>
 
           <Tag color="blue" className="mt-2">

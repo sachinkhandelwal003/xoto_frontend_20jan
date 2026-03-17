@@ -101,15 +101,17 @@ export default function AgentLeadDashboard() {
 
   // ================= 2. DELETE & UPDATE STATUS =================
   const deleteLead = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this lead?")) return;
-    try {
-      await apiService.delete(`/agent/lead/delete-lead/${id}`);
-      message.success("Lead deleted successfully");
-      fetchLeads();
-    } catch (err) {
-      message.error("Delete failed");
-    }
-  };
+  try {
+    await apiService.delete(`/agent/lead/delete-lead/${id}`);
+
+    setLeads(prev => prev.filter(l => l._id !== id));
+
+    message.success("Lead deleted successfully");
+
+  } catch (err) {
+    message.error("Delete failed");
+  }
+};
 
   const updateLeadStatus = async (id, status) => {
     try {

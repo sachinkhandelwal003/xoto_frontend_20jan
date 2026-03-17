@@ -86,20 +86,26 @@ await apiService.delete(`/agent/delete-agent/${id}`);
 
   // ✅ UPDATE ONBOARDING STATUS
   const updateOnboardingStatus = async (record, status) => {
-    const id = record?._id || record?.id;
-    if (!id) return;
+  const id = record?._id || record?.id;
+  if (!id) return;
 
-    try {
-      await apiService.post(
-  `/agent/update-agent?id=${id}`,
-  { onboarding_status: status }
-);
-      message.success(`Status updated to ${status.toUpperCase()}`);
-      fetchAgents();
-    } catch (err) {
-      message.error("Status update failed");
-    }
-  };
+  try {
+
+    await apiService.post(
+      `/agent/update-agent?id=${id}`,
+      {
+        onboarding_status: status,
+        isVerified: status === "approved"   // ✅ auto verification
+      }
+    );
+
+    message.success(`Status updated to ${status.toUpperCase()}`);
+    fetchAgents();
+
+  } catch (err) {
+    message.error("Status update failed");
+  }
+};
 
   // ✅ UPDATE VERIFICATION STATUS
   const updateVerificationStatus = async (record, checked) => {
@@ -127,8 +133,9 @@ await apiService.delete(`/agent/delete-agent/${id}`);
   // Quick Stats Calculations
   const totalAgents = agents.length;
   const verifiedAgents = agents.filter(a => a.isVerified).length;
-  const pendingApprovals = agents.filter(a => a.onboarding_status === "registered" || !a.isVerified).length;
-
+const pendingApprovals = agents.filter(
+  a => a.onboarding_status !== "approved"
+).length;
   const stats = [
     { title: "Total Agents", value: totalAgents, icon: <UsergroupAddOutlined />, color: "#2563eb", bg: "#dbeafe" },
     { title: "Verified & Active", value: verifiedAgents, icon: <CheckCircleOutlined />, color: "#059669", bg: "#d1fae5" },
@@ -183,7 +190,7 @@ await apiService.delete(`/agent/delete-agent/${id}`);
           options={[
             { value: "registered", label: <Badge status="warning" text="Registered" /> },
             { value: "approved", label: <Badge status="processing" text="Approved" /> },
-            { value: "completed", label: <Badge status="success" text="Completed" /> }
+            // { value: "completed", label: <Badge status="success" text="Completed" /> }
           ]}
         />
       ),
@@ -195,10 +202,10 @@ await apiService.delete(`/agent/delete-agent/${id}`);
       render: (isVerified, record) => (
         <Space direction="vertical" size={2}>
           <Switch
-            checked={isVerified}
-            onChange={(checked) => updateVerificationStatus(record, checked)}
-            style={{ background: isVerified ? "#059669" : "#ef4444" }}
-          />
+  checked={isVerified}
+  disabled
+  style={{ background: isVerified ? "#059669" : "#ef4444" }}
+/>
           <Text type="secondary" style={{ fontSize: "11px", color: isVerified ? "#059669" : "#ef4444", fontWeight: "500" }}>
             {isVerified ? "Verified" : "Unverified"}
           </Text>
