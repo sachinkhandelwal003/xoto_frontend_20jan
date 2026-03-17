@@ -79,20 +79,23 @@ await apiService.delete(`/agency/delete-agency/${id}`);
 
   // ✅ UPDATE ONBOARDING STATUS (Admin Approval Flow)
   const updateStatus = async (record, status) => {
-    const id = record?._id;
-    if (!id) return;
+  const id = record?._id;
+  if (!id) return;
 
-    try {
-      await apiService.put(`/agency/update/${id}`, {
-  onboarding_status: status
-});
+  try {
 
-      message.success(`Agency status updated to ${status.toUpperCase()}`);
-      fetchAgencies();
-    } catch (err) {
-      message.error("Status update failed.");
-    }
-  };
+    await apiService.put(`/agency/update/${id}`, {
+      onboarding_status: status,
+      is_active: status === "approved"   // ✅ auto logic
+    });
+
+    message.success(`Agency status updated to ${status.toUpperCase()}`);
+    fetchAgencies();
+
+  } catch (err) {
+    message.error("Status update failed.");
+  }
+};
 
   const toggleActiveStatus = async (record, checked) => {
     const id = record?._id;
@@ -185,7 +188,7 @@ await apiService.delete(`/agency/delete-agency/${id}`);
           options={[
             { value: "registered", label: <Badge status="warning" text="Registered" /> },
             { value: "approved", label: <Badge status="processing" text="Approved" /> },
-            { value: "completed", label: <Badge status="success" text="Completed" /> }
+            // { value: "completed", label: <Badge status="success" text="Completed" /> }
           ]}
         />
       ),
@@ -199,10 +202,10 @@ await apiService.delete(`/agency/delete-agency/${id}`);
         <Space direction="vertical" size={2}>
           {/* ✅ Interactive Switch to Toggle Suspend/Active */}
           <Switch
-            checked={active}
-            onChange={(checked) => toggleActiveStatus(record, checked)}
-            style={{ background: active ? "#059669" : "#ef4444" }}
-          />
+  checked={active}
+  disabled
+  style={{ background: active ? "#059669" : "#ef4444" }}
+/>
           <Text type="secondary" style={{ fontSize: "11px", color: active ? "#059669" : "#ef4444", fontWeight: "500" }}>
             {active ? "Active" : "Suspended"}
           </Text>
