@@ -11,7 +11,7 @@ const { Option } = Select;
 
 // --- Phone Length Rules ---
 const PHONE_LENGTH_RULES = {
-  "AE": 8, "IN": 10, "SA": 9, "US": 10, "CA": 10, "GB": 10, "AU": 9,
+  "AE": 9, "IN": 10, "SA": 9, "US": 10, "CA": 10, "GB": 10, "AU": 9,
 };
 
 const RegisterNowPage = () => {
@@ -124,12 +124,23 @@ const RegisterNowPage = () => {
     }
 
     setOtpLoading(true);
-    setTimeout(() => {
-      message.success("OTP sent (Bypass Mode enabled)!");
+    try {
+      const payload = {
+        country_code: getCountryCode(),
+        phone_number: mobileNumber
+      };
+      await apiService.post("/otp/send-otp", payload);
+      message.success("Verification code sent to your mobile!");
       setOtpSent(true);
       setOtpVerified(false);
+    } catch (error) {
+      notification.error({
+        message: "Error",
+        description: error?.response?.data?.message || "Failed to send OTP"
+      });
+    } finally {
       setOtpLoading(false);
-    }, 800);
+    }
   };
 
   const handleVerifyOtp = async () => {

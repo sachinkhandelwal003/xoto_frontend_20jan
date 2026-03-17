@@ -183,7 +183,7 @@ const Registration = () => {
     }
   };
 
-  // --- Mobile OTP Handlers ---
+  // --- ✅ Mobile OTP Handlers (Live API Integrated) ---
   const handleSendOtp = async () => {
     if (!mobileNumber) {
       setError("mobile_number", { type: "manual", message: "Mobile number is required" });
@@ -197,7 +197,11 @@ const Registration = () => {
     
     setLoading(prev => ({ ...prev, otpSending: true }));
     try {
-      // await apiService.post("/otp/send-otp", { country_code: countryCode, phone_number: mobileNumber });
+      // ✅ API calls active
+      await apiService.post("/otp/send-otp", { 
+        country_code: countryCode, 
+        phone_number: mobileNumber 
+      });
       message.success(`OTP sent to ${fullNumber}`);
       setShowOtpInput(true);
       clearErrors("mobile_number");
@@ -212,6 +216,7 @@ const Registration = () => {
     if (!otpValue || otpValue.length < 4) return message.error("Please enter a valid OTP");
     setLoading(prev => ({ ...prev, otpVerifying: true }));
     try {
+      // ✅ Verify API
       await apiService.post("/otp/verify-otp", {
         country_code: countryCode,
         phone_number: mobileNumber,
@@ -382,13 +387,13 @@ const Registration = () => {
                          <Button 
                             type="primary" size="large" onClick={handleSendEmailOtp}
                             disabled={!watchEmail} loading={loading.emailOtpSending}
-                            style={{ width: '20%', minWidth: '100px' }}
+                            style={{ width: '20%', minWidth: '100px' , backgroundColor: '#5C039B', borderColor: '#5C039B' ,color: '#fff'}}
                          >Send OTP</Button>
                       )}
                       {(showEmailOtpInput || isEmailVerified) && (
                          <Button 
                             size="large" icon={<Edit size={16} />} onClick={handleChangeEmail}
-                            style={{ width: '20%', minWidth: '100px' }}
+                            style={{ width: '20%', minWidth: '100px' , backgroundColor: '#5C039B', borderColor: '#5C039B' ,color: '#fff'}}
                          >Change</Button>
                       )}
                     </Space.Compact>
@@ -403,7 +408,7 @@ const Registration = () => {
                                     size="large" style={{ width: '200px' }}
                                  />
                                  <Button 
-                                    type="primary" onClick={handleVerifyEmailOtp} 
+                                    type="primary" style={{ backgroundColor: '#5C039B', borderColor: '#5C039B', color: '#fff' }} onClick={handleVerifyEmailOtp} 
                                     loading={loading.emailOtpVerifying} size="large"
                                  >Verify Email</Button>
                              </div>
@@ -443,7 +448,7 @@ const Registration = () => {
                              <Button 
                                 type="primary" size="large" onClick={handleSendOtp}
                                 disabled={!mobileNumber} loading={loading.otpSending}
-                                style={{ width: '20%', minWidth: '100px' }}
+                                style={{ width: '20%', minWidth: '100px' , backgroundColor: '#5C039B', borderColor: '#5C039B' ,color: '#fff'}}
                              >Send OTP</Button>
                         )}
                         {(showOtpInput || isMobileVerified) && (
@@ -454,8 +459,8 @@ const Registration = () => {
                         <div className="mt-4 p-4 bg-gray-50 border border-purple-100 rounded-lg">
                              <Text type="secondary" className="block mb-3">Enter the 6-digit code sent to <strong>{countryCode} {mobileNumber}</strong></Text>
                              <div className="flex gap-3 items-center">
-                                 <Input placeholder="Enter OTP" maxLength={6} value={otpValue} onChange={(e) => setOtpValue(e.target.value)} size="large" style={{ width: '200px' }} />
-                                 <Button type="primary" onClick={handleVerifyOtp} loading={loading.otpVerifying} size="large">Verify OTP</Button>
+                                 <Input placeholder="Enter OTP" maxLength={6} value={otpValue} onChange={(e) => setOtpValue(e.target.value)} size="large" style={{ width: '200px'  }} />
+                                 <Button type="primary" style={{ backgroundColor: '#5C039B', borderColor: '#5C039B', color: '#fff' }} onClick={handleVerifyOtp} loading={loading.otpVerifying} size="large">Verify OTP</Button>
                              </div>
                         </div>
                     )}

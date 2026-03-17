@@ -16,19 +16,20 @@ import {
   Row,
   Col,
   AutoComplete,
-  DatePicker,
-  TimePicker
+  Space,
+  Statistic,
+  Divider,
 } from "antd";
-
 import {
   SearchOutlined,
-  // PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   CheckCircleOutlined,
   EyeOutlined,
-  // CalendarOutlined,
-  TrophyOutlined
+  TrophyOutlined,
+  UserAddOutlined,
+  UserOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
 import CustomTable from "../../CMS/pages/custom/CustomTable";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
@@ -40,11 +41,12 @@ const { Option } = Select;
 
 export default function AgentLeadDashboard() {
   const { user } = useSelector((state) => state.auth);
-const navigate = useNavigate();
+  const navigate = useNavigate();
+
   // ================= STATES =================
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("leads");
+  const [activeTab, setActiveTab] = useState("customers");
   const [searchQuery, setSearchQuery] = useState("");
   const [projects, setProjects] = useState([]);
 
@@ -55,13 +57,7 @@ const navigate = useNavigate();
   const [locationOptions, setLocationOptions] = useState([]);
   const [form] = Form.useForm();
 
-  // Modal & Form States for Site Visit Request
-  // const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
-  // const [visitLead, setVisitLead] = useState(null);
-  // const [visitLoading, setVisitLoading] = useState(false);
-  // const [visitForm] = Form.useForm();
-
-  // ================= 1. FETCH LEADS & PROJECTS =================
+  // ================= FETCH LEADS & PROJECTS =================
   const fetchLeads = async () => {
     try {
       setLoading(true);
@@ -69,29 +65,23 @@ const navigate = useNavigate();
       const list = Array.isArray(response?.data) ? response.data : response?.data?.data || [];
       setLeads(list);
     } catch (err) {
-      console.log(err);
       message.error("Failed to fetch leads.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ================= 1. FETCH PROJECTS =================
   const fetchProjects = async () => {
     try {
-      // 🔥 Yahan '?limit=1000' add kiya hai taaki backend saare projects bhej de
       const res = await apiService.get("/property/get-all-properties?limit=1000");
-      
       let list = [];
       if (Array.isArray(res?.data)) {
         list = res.data;
       } else if (res?.data?.data) {
         list = res.data.data;
       }
-
       setProjects(list);
     } catch (error) {
-      console.log(error);
       message.error("Failed to fetch projects");
     }
   };
@@ -101,7 +91,7 @@ const navigate = useNavigate();
     fetchProjects();
   }, []);
 
-  // ================= 2. DELETE & UPDATE STATUS =================
+  // ================= DELETE & UPDATE STATUS =================
   const deleteLead = async (id) => {
   try {
     await apiService.delete(`/agent/lead/delete-lead/${id}`);
@@ -125,7 +115,7 @@ const navigate = useNavigate();
     }
   };
 
-  // ================= 3. LEAD ADD / EDIT HANDLERS =================
+  // ================= LEAD ADD / EDIT HANDLERS =================
   const handleAddClick = () => {
     setSelectedLead(null);
     form.resetFields();
@@ -200,55 +190,18 @@ const navigate = useNavigate();
     }
   };
 
-  // ================= 4. SITE VISIT HANDLERS =================
-  const handleScheduleVisitClick = (lead) => {
-    setVisitLead(lead);
-    visitForm.resetFields();
-    // Pre-fill agar lead ka pehle se koi project target hai
-    visitForm.setFieldsValue({
-      property: lead?.project?._id || lead?.project
-    });
-    setIsVisitModalOpen(true);
-  };
-
-  // ================= 4. SITE VISIT HANDLERS =================
-  const onVisitSubmit = async (values) => {
-    setVisitLoading(true);
+  // ================= VIEW LEAD =================
+  const handleViewLead = async (item) => {
     try {
-      const payload = {
-  lead: visitLead._id,
-  agent: user?._id || user?.id,
-  property: values.property,
-  visitDate: values.visitDate.format("YYYY-MM-DD"),
-  visitTime: values.visitTime.format("HH:mm"),
-  clientName: `${visitLead.name.first_name} ${visitLead.name.last_name}`,
-  clientPhone: visitLead.phone_number
-};
-      // 1. Site Visit ki nayi request banayi
-      await apiService.post("/agent/lead/create-site-visit", payload); 
-      
-      // 2. NAYA ADDITION: Lead ko update kiya taaki Admin me visit_requested show ho
-      await apiService.post(`/agent/lead/update-lead/${visitLead._id}`, {
-        status: "visit",
-        visit_requested: true 
-      });
-
-      message.success("Site Visit requested successfully!");
-      setIsVisitModalOpen(false);
-      visitForm.resetFields();
-      
-      fetchLeads(); 
-      
-    } catch (error) {
-      console.error(error);
-      message.error("Failed to request site visit");
-    } finally {
-      setVisitLoading(false);
+      const res = await apiService.get(`/agent/lead/get-lead/${item._id}?includeInterests=true`);
+      navigate("../lead-details", { state: res });
+    } catch (err) {
+      message.error("Failed to load details");
     }
   };
 
-  // ================= 5. UI HELPERS & FILTERS =================
-  const getStatus = (status) => {
+  // ================= UI HELPERS =================
+  const getStatusTag = (status) => {
     switch (status?.toLowerCase()) {
       case "customer": return <Tag color="cyan">Customer</Tag>;
       case "lead": return <Tag color="gold">Lead</Tag>;
@@ -269,196 +222,182 @@ const navigate = useNavigate();
     );
   });
 
-  const activeLeads = filteredLeads.filter((l) => ["customer", "lead"].includes(l.status?.toLowerCase() || "customer"));
-  // const visits = filteredLeads.filter((l) => l.status?.toLowerCase() === "visit");
-  // const dealsAndBookings = filteredLeads.filter((l) => ["deal", "booking"].includes(l.status?.toLowerCase()));
-  // const closedLeads = filteredLeads.filter((l) => l.status?.toLowerCase() === "closed");
-  // const lostLeads = filteredLeads.filter((l) => l.status?.toLowerCase() === "lost");
+  const customers = filteredLeads.filter((l) => l.status?.toLowerCase() === "customer");
+  const onlyLeads = filteredLeads.filter((l) => l.status?.toLowerCase() === "lead");
 
-  // ================= 6. RENDER COMPONENTS =================
- const columns = [
-  {
-    title: "Client Name",
-    key: "name",
-    render: (_, item) =>
-      `${item?.name?.first_name || ""} ${item?.name?.last_name || ""}`,
-  },
-  {
-    title: "Contact Info",
-    key: "contact",
-    render: (_, item) => (
-      <div>
-        <div>{item?.phone_number}</div>
-        <div className="text-xs text-gray-500">{item?.email}</div>
-      </div>
-    ),
-  },
-  {
-    title: "Budget / Project",
-    key: "budget",
-    render: (_, item) => (
-      <div>
-        <div>{item?.budget ? `${item.budget} AED` : "-"}</div>
-        <div className="text-xs text-blue-600">
-          {item?.project?.propertyName || "-"}
-        </div>
-      </div>
-    ),
-  },
-  {
-    title: "Status",
-    key: "status",
-    render: (value) => getStatus(value),
-  },
-  {
-    title: "Action",
-    key: "action",
-    render: (_, item) => (
-      <div className="flex gap-2">
-        <Tooltip title="Edit">
-          <Button
-            type="text"
-            icon={<EditOutlined />}
-            onClick={() => handleEditClick(item)}
-          />
-        </Tooltip>
+  // Stats
+  const totalLeads = leads.length;
+  const totalCustomers = leads.filter((l) => l.status?.toLowerCase() === "customer").length;
+  const totalActiveLeads = leads.filter((l) => l.status?.toLowerCase() === "lead").length;
 
-        <Tooltip title="View">
-          <Button
-  type="text"
-  icon={<EyeOutlined />}
- onClick={() => handleViewLead(item)}
-/>
-        </Tooltip>
-
-        {item?.status === "lead" && (
-          <Tooltip title="Move to Deal">
-            <Button
-              type="text"
-              icon={<CheckCircleOutlined />}
-              onClick={() => updateLeadStatus(item._id, "deal")}
-            />
+  // ================= TABLE COLUMNS =================
+  const columns = [
+    {
+      title: "Client Name",
+      key: "name",
+      render: (_, item) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{`${item?.name?.first_name || ""} ${item?.name?.last_name || ""}`}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{item?.email || "—"}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: "Contact",
+      key: "contact",
+      render: (_, item) => (
+        <Text>{item?.phone_number || "—"}</Text>
+      ),
+    },
+    {
+      title: "Budget / Project",
+      key: "budget",
+      render: (_, item) => (
+        <Space direction="vertical" size={0}>
+          <Text>{item?.budget ? `${item.budget.toLocaleString()} AED` : "—"}</Text>
+          {item?.project?.propertyName && (
+            <Tag color="blue" style={{ margin: 0 }}>{item.project.propertyName}</Tag>
+          )}
+        </Space>
+      ),
+    },
+    {
+      title: "Status",
+      key: "status",
+      render: (_, item) => getStatusTag(item.status),
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_, item) => (
+        <Space>
+          <Tooltip title="Edit">
+            <Button type="text" icon={<EditOutlined />} onClick={() => handleEditClick(item)} />
           </Tooltip>
-        )}
-
-        {["deal", "booking"].includes(item?.status) && (
-          <Tooltip title="Close">
-            <Button
-              type="text"
-              icon={<TrophyOutlined />}
-              onClick={() => updateLeadStatus(item._id, "closed")}
-            />
+          <Tooltip title="View">
+            <Button type="text" icon={<EyeOutlined />} onClick={() => handleViewLead(item)} />
           </Tooltip>
-        )}
-
-        <Tooltip title="Delete">
-          <Button
-            danger
-            type="text"
-            icon={<DeleteOutlined />}
-            onClick={() => deleteLead(item._id)}
-          />
-        </Tooltip>
-      </div>
-    ),
-  },
-];
-
-const handleViewLead = async (item) => {
-  try {
-    const res = await apiService.get(
-      `/agent/lead/get-lead/${item._id}?includeInterests=true`
-    );
-
-    navigate("../lead-details", {
-      state: res   // 🔥 full response bhejo
-    });
-
-  } catch (err) {
-    console.error(err);
-    message.error("Failed to load details");
-  }
-};
-
-const customers = filteredLeads.filter(
-  (l) => l.status?.toLowerCase() === "customer"
-);
-
-const onlyLeads = filteredLeads.filter(
-  (l) => l.status?.toLowerCase() === "lead"
-);
+          {item?.status === "lead" && (
+            <Tooltip title="Move to Deal">
+              <Button type="text" icon={<CheckCircleOutlined />} onClick={() => updateLeadStatus(item._id, "deal")} />
+            </Tooltip>
+          )}
+          {["deal", "booking"].includes(item?.status) && (
+            <Tooltip title="Close">
+              <Button type="text" icon={<TrophyOutlined />} onClick={() => updateLeadStatus(item._id, "closed")} />
+            </Tooltip>
+          )}
+          <Tooltip title="Delete">
+            <Button danger type="text" icon={<DeleteOutlined />} onClick={() => deleteLead(item._id)} />
+          </Tooltip>
+        </Space>
+      ),
+    },
+  ];
 
   return (
-    <div className="p-6 bg-[#f6f7fb] min-h-screen relative">
-      <div className="flex justify-between mb-6">
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <Title level={3}>XOTO CRM - Lead Pipeline</Title>
-          <Text type="secondary">Manage your clients from Customer to Closed Deal</Text>
+          <Title level={2} style={{ margin: 0 }}>XOTO CRM</Title>
+          <Text type="secondary">Agent Lead Pipeline</Text>
         </div>
-        
+       
       </div>
 
-      <Card className="mb-6 rounded-xl border-none shadow-sm">
-        <Input size="large" prefix={<SearchOutlined className="text-gray-400" />} placeholder="Search by name or email..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-      </Card>
+      {/* Stats Cards */}
+      <Row gutter={16} className="mb-6">
+        <Col xs={24} sm={8}>
+          <Card className="shadow-sm hover:shadow transition-shadow">
+            <Statistic
+              title="Total Clients"
+              value={totalLeads}
+              prefix={<TeamOutlined />}
+              valueStyle={{ color: "#3b82f6" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card className="shadow-sm hover:shadow transition-shadow">
+            <Statistic
+              title="Customers"
+              value={totalCustomers}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: "#06b6d4" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card className="shadow-sm hover:shadow transition-shadow">
+            <Statistic
+              title="Active Leads"
+              value={totalActiveLeads}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: "#f59e0b" }}
+            />
+          </Card>
+        </Col>
+      </Row>
 
+        {/* Tabs with Tables */}
       <Card className="rounded-xl border-none shadow-sm">
-       <Tabs
-  activeKey={activeTab}
-  onChange={(key) => setActiveTab(key)}
-  items={[
-    {
-      key: "customers",
-      label: `Customers (${customers.length})`,
-      children: (
-        <CustomTable
-          columns={columns}
-          data={customers}
-          loading={loading}
-          
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={[
+            {
+              key: "customers",
+              label: `Customers (${customers.length})`,
+              children: <CustomTable columns={columns} data={customers} loading={loading} rowKey="_id" />,
+            },
+            {
+              key: "leads",
+              label: `Leads (${onlyLeads.length})`,
+              children: <CustomTable columns={columns} data={onlyLeads} loading={loading} rowKey="_id" />,
+            },
+          ]}
         />
-      ),
-    },
-    {
-      key: "leads",
-      label: `Leads (${onlyLeads.length})`,
-      children: (
-        <CustomTable
-          columns={columns}
-          data={onlyLeads}
-          loading={loading}
-        />
-      ),
-    },
-  ]}
-/>
       </Card>
 
       {/* ================= ADD/EDIT LEAD MODAL ================= */}
-      <Modal title={selectedLead ? "Edit Details" : "Add New Client"} open={isModalOpen} onCancel={() => setIsModalOpen(false)} footer={null} width={750} centered>
+      <Modal
+        title={selectedLead ? "Edit Client Details" : "Add New Client"}
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+        width={800}
+        centered
+        destroyOnClose
+      >
         <Form form={form} layout="vertical" onFinish={onFormFinish} className="mt-4">
+          <Divider orientation="left">Personal Information</Divider>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="first_name" label="First Name" rules={[{ required: true, message: "Required" }]}>
-                <Input placeholder="Client first name" />
+                <Input placeholder="e.g. John" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="last_name" label="Last Name" rules={[{ required: true, message: "Required" }]}>
-                <Input placeholder="Client last name" />
+                <Input placeholder="e.g. Doe" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="phone_number" label="Phone Number" rules={[{ required: true, message: "Required" }]}>
-                <Input placeholder="+971..." />
+                <Input placeholder="+971 XX XXX XXXX" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="email" label="Email">
-                <Input placeholder="Optional email" />
+                <Input placeholder="client@example.com" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+          </Row>
+
+          <Divider orientation="left">Lead Details</Divider>
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
               <Form.Item name="status" label="Status" rules={[{ required: true, message: "Select status" }]}>
                 <Select placeholder="Select pipeline stage">
                   <Option value="lead">Lead</Option>
@@ -470,97 +409,81 @@ const onlyLeads = filteredLeads.filter(
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item name="budget" label="Budget (AED)">
-                <InputNumber className="w-full" />
+            <Col xs={24} sm={12}>
+              <Form.Item name="source" label="Source" initialValue="manual">
+                <Select placeholder="How did they find us?">
+                  <Option value="manual">Manual</Option>
+                  <Option value="website">Website</Option>
+                  <Option value="referral">Referral</Option>
+                  <Option value="social">Social Media</Option>
+                </Select>
               </Form.Item>
             </Col>
-            <Col span={12}>
+          </Row>
+
+          <Divider orientation="left">Requirement</Divider>
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
+              <Form.Item name="budget" label="Budget (AED)">
+                <InputNumber className="w-full" formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
               <Form.Item name="property_type" label="Property Type">
-                <Select>
+                <Select allowClear>
                   <Option value="Apartment">Apartment</Option>
                   <Option value="Villa">Villa</Option>
                   <Option value="Townhouse">Townhouse</Option>
+                  <Option value="Penthouse">Penthouse</Option>
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item name="project" label="Target Project">
-                <Select placeholder="Select project" allowClear>
-                  {projects.map((p) => (
-                    <Option key={p._id} value={p._id}>{p.propertyName}</Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="bedrooms" label="Bedrooms">
                 <Select allowClear>
                   <Option value={1}>1 BHK</Option>
                   <Option value={2}>2 BHK</Option>
                   <Option value={3}>3 BHK</Option>
+                  <Option value={4}>4+ BHK</Option>
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={24}>
-              <Form.Item name="preferred_location" label="Preferred Location">
-                <AutoComplete options={locationOptions} onSearch={handleLocationSearch} placeholder="Search location..." allowClear />
-              </Form.Item>
-            </Col>
-            <Col span={24}>
-              <Form.Item name="requirement_description" label="Requirement / AI Notes">
-                <Input.TextArea rows={3} placeholder="Insights..." />
-              </Form.Item>
-            </Col>
-          </Row>
-          <div className="flex justify-end gap-3 mt-4">
-            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={formLoading} className="bg-[#7c3aed]">
-              {selectedLead ? "Save Changes" : "Create Profile"}
-            </Button>
-          </div>
-        </Form>
-      </Modal>
-
-      {/* ================= SITE VISIT REQUEST MODAL ================= */}
-      {/* <Modal title={`Request Site Visit for ${visitLead?.name?.first_name || "Client"}`} open={isVisitModalOpen} onCancel={() => setIsVisitModalOpen(false)} footer={null} centered>
-        <Form form={visitForm} layout="vertical" onFinish={onVisitSubmit} className="mt-4">
-          <Row gutter={16}>
-            <Col span={24}>
-              <Form.Item name="property" label="Property / Project" rules={[{ required: true, message: "Please select a property" }]}>
-                <Select placeholder="Select the property to visit">
+            <Col xs={24} sm={12}>
+              <Form.Item name="project" label="Target Project">
+                <Select placeholder="Select project" allowClear showSearch optionFilterProp="children">
                   {projects.map((p) => (
                     <Option key={p._id} value={p._id}>{p.propertyName}</Option>
                   ))}
                 </Select>
               </Form.Item>
-            </Col> */}
-            {/* Note: Developer id selection can be added here if needed, or fetched implicitly via project */}
-            {/* <Col span={24}>
-              <Form.Item name="developer" label="Developer ID (Optional / Auto-fetched)" tooltip="If your backend requires this explicitly">
-                <Input placeholder="Developer ID or Name" />
-              </Form.Item>
-            </Col> */}
-            {/* <Col span={12}>
-              <Form.Item name="visitDate" label="Expected Date" rules={[{ required: true, message: "Select date" }]}>
-                <DatePicker className="w-full" disabledDate={(current) => current && current < dayjs().startOf('day')} />
+            </Col>
+            <Col xs={24}>
+              <Form.Item name="preferred_location" label="Preferred Location">
+                <AutoComplete
+                  options={locationOptions}
+                  onSearch={handleLocationSearch}
+                  placeholder="Search location..."
+                  allowClear
+                />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item name="visitTime" label="Expected Time" rules={[{ required: true, message: "Select time" }]}>
-                <TimePicker format="HH:mm" className="w-full" />
+            <Col xs={24}>
+              <Form.Item name="requirement_description" label="Requirement / Notes">
+                <Input.TextArea rows={3} placeholder="Additional insights or AI-generated notes..." />
               </Form.Item>
-            </Col> */}
-          {/* </Row> */}
-          {/* <div className="flex justify-end gap-3 mt-4">
-            <Button onClick={() => setIsVisitModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={visitLoading} className="bg-[#7c3aed]">
-              Submit Request
-            </Button>
-          </div> */}
-        {/* </Form> */}
-      {/* </Modal> */}
+            </Col>
+          </Row>
 
+          <Form.Item name="property_interest" hidden><Input /></Form.Item>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button type="primary" htmlType="submit" loading={formLoading} className="bg-indigo-600">
+              {selectedLead ? "Save Changes" : "Create Profile"}
+            </Button>
+          </div>
+        </Form>
+      </Modal>
     </div>
   );
 }

@@ -1,44 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Tag, Typography, Avatar, Divider, Row, Col, Statistic, Button, message, Modal } from "antd";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { 
   UserOutlined, 
   MailOutlined, 
   PhoneOutlined, 
   EnvironmentOutlined, 
   DollarCircleOutlined,
-  HomeOutlined,
   FireOutlined,
   StarOutlined,
   RobotOutlined,
   FilePdfOutlined,
-  DownloadOutlined // 🔹 Naya icon modal ke download button ke liye
+  DownloadOutlined
 } from "@ant-design/icons";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 const { Title, Text, Paragraph } = Typography;
 
 export default function LeadDetails() {
   const location = useLocation();
-  const state = location.state;
+  const params = useParams();
 
-  // 🔹 States
+  // State for data and UI
+  const [loading, setLoading] = useState(true);
+  const [lead, setLead] = useState(null);
+  const [interests, setInterests] = useState([]);
+  const [analytics, setAnalytics] = useState({ totalInterests: 0, hotLeads: 0 });
   const [generatingId, setGeneratingId] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedBrochure, setSelectedBrochure] = useState(null); // Jis property ka brochure open karna hai
+  const [selectedBrochure, setSelectedBrochure] = useState(null);
 
-  if (!state) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[#f6f7fb]">
-        <Text type="secondary" className="text-lg">No Data Found</Text>
-      </div>
-    );
-  }
-
-  const { lead, interests, analytics } = state?.data || {};
+  // Helper: image URL builder
   const placeholderImg = "https://via.placeholder.com/400x250?text=No+Image+Available";
-  const backendBaseUrl = "http://localhost:8000"; // Apna backend URL yahan rakhein
+  const backendBaseUrl = "http://localhost:8000"; // Update with your actual backend URL
 
-  // 🔹 Helper function to format image URL
   const getImageUrl = (item) => {
     let imageUrl = item?.property?.image || item?.property?.images?.[0];
     if (imageUrl && !imageUrl.startsWith('http')) {
@@ -47,7 +42,48 @@ export default function LeadDetails() {
     return imageUrl || placeholderImg;
   };
 
-  // 🔹 Brochure Generate Handle Karne Ka Logic
+  // Determine if we already have data from navigation state
+  const stateData = location.state?.data || location.state; // support both nested and direct
+
+  useEffect(() => {
+    const loadData = async () => {
+      // Case 1: Data already provided via navigation state
+      if (stateData?.lead) {
+        setLead(stateData.lead);
+        setInterests(stateData.interests || []);
+        setAnalytics(stateData.analytics || { totalInterests: 0, hotLeads: 0 });
+        setLoading(false);
+        return;
+      }
+
+      // Case 2: Need to fetch using leadId
+      const leadId = params.id || location.state?.leadId;
+      if (!leadId) {
+        message.error("No lead ID provided");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await apiService.get(`/agent/lead/get-lead/${leadId}?includeInterests=true`);
+        // Adjust based on your API response structure
+        const responseData = response?.data?.data || response?.data || response;
+        setLead(responseData.lead || responseData);
+        setInterests(responseData.interests || []);
+        setAnalytics(responseData.analytics || { totalInterests: 0, hotLeads: 0 });
+      } catch (error) {
+        console.error("Failed to fetch lead details:", error);
+        message.error("Failed to load lead details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [stateData, params.id, location.state?.leadId]);
+
+  // Brochure generation handler (mock)
   const handleGenerateBrochure = (item) => {
     if (!lead?.email) {
       message.error("Lead doesn't have an email address!");
@@ -58,19 +94,33 @@ export default function LeadDetails() {
     const msgKey = 'brochure-gen';
     message.loading({ content: `AI is creating a personalized brochure for ${item?.property?.propertyName}...`, key: msgKey, duration: 0 });
 
-    // Dummy API call simulation
     setTimeout(() => {
       setGeneratingId(null);
-      setSelectedBrochure(item); // 🔹 Modal ke liye data set kiya
-      setIsModalVisible(true);   // 🔹 Modal open kiya
+      setSelectedBrochure(item);
+      setIsModalVisible(true);
       message.success({ content: `Brochure ready!`, key: msgKey, duration: 2 });
-    }, 3000); 
+    }, 3000);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#f6f7fb]">
+        <Text type="secondary" className="text-lg">Loading lead details...</Text>
+      </div>
+    );
+  }
+
+  if (!lead) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#f6f7fb]">
+        <Text type="secondary" className="text-lg">No Data Found</Text>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 md:p-10 space-y-8 bg-[#f6f7fb] min-h-screen">
-      
-      {/* 🔹 PAGE HEADER */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
           <Title level={3} className="!mb-0 text-gray-800">Lead Dashboard</Title>
@@ -79,7 +129,7 @@ export default function LeadDetails() {
       </div>
 
       <Row gutter={[24, 24]}>
-        {/* ... LEAD INFO & ANALYTICS CARDS (Pehle wale same rahenge) ... */}
+        {/* Lead Info Card */}
         <Col xs={24} lg={16}>
           <Card className="shadow-sm rounded-2xl border-none h-full">
             <div className="flex items-start gap-4 mb-6">
@@ -117,6 +167,7 @@ export default function LeadDetails() {
           </Card>
         </Col>
 
+        {/* Analytics Card */}
         <Col xs={24} lg={8}>
           <Card className="shadow-sm rounded-2xl border-none h-full bg-gradient-to-br from-blue-50 to-indigo-50">
             <Title level={5} className="!mb-6 text-indigo-900">Engagement Analytics</Title>
@@ -138,7 +189,7 @@ export default function LeadDetails() {
         </Col>
       </Row>
 
-      {/* 🔹 AI SUGGESTED PROPERTIES */}
+      {/* AI Suggested Properties */}
       <div>
         <Title level={4} className="!mb-4 text-gray-800">
           <RobotOutlined className="mr-2 text-purple-500" /> 
@@ -147,7 +198,6 @@ export default function LeadDetails() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {interests?.map((item) => {
-            
             const isThisCardGenerating = generatingId === item._id;
             const cardImage = getImageUrl(item);
 
@@ -223,19 +273,18 @@ export default function LeadDetails() {
                         : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 border-none shadow-md hover:shadow-lg'
                     }`}
                     loading={isThisCardGenerating}
-                    onClick={() => handleGenerateBrochure(item)} // 🔹 Ab poora item pass kar rahe hain
+                    onClick={() => handleGenerateBrochure(item)}
                   >
                     {isThisCardGenerating ? 'Generating...' : 'Generate AI Brochure'}
                   </Button>
                 </div>
-
               </Card>
             )
           })}
         </div>
       </div>
 
-      {/* 🔹 BROCHURE PREVIEW MODAL */}
+      {/* Brochure Preview Modal */}
       <Modal
         title={
           <div className="flex items-center gap-2 text-indigo-800 text-lg">
@@ -244,7 +293,7 @@ export default function LeadDetails() {
         }
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
-        width={800} // Thoda wide modal for brochure feel
+        width={800}
         centered
         footer={[
           <Button key="close" onClick={() => setIsModalVisible(false)} size="large">
@@ -256,7 +305,7 @@ export default function LeadDetails() {
             size="large"
             icon={<DownloadOutlined />} 
             className="bg-indigo-600 hover:bg-indigo-700"
-            onClick={() => message.info("Downloading PDF...")} // Yahan actual download logic aayega
+            onClick={() => message.info("Downloading PDF...")}
           >
             Download PDF
           </Button>,
@@ -265,7 +314,6 @@ export default function LeadDetails() {
         {selectedBrochure && (
           <div className="mt-4">
             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col md:flex-row">
-              {/* Image Section */}
               <div className="w-full md:w-2/5 h-64 md:h-auto">
                 <img 
                   src={getImageUrl(selectedBrochure)} 
@@ -273,16 +321,12 @@ export default function LeadDetails() {
                   className="w-full h-full object-cover"
                 />
               </div>
-              
-              {/* Details Section */}
               <div className="w-full md:w-3/5 p-6 space-y-4 bg-gray-50">
                 <div>
                   <Title level={4} className="!mb-1">{selectedBrochure?.property?.propertyName}</Title>
                   <Text type="secondary"><EnvironmentOutlined /> {selectedBrochure?.property?.city}</Text>
                 </div>
-                
                 <Divider className="my-2" />
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Text type="secondary" className="text-xs">Price</Text>
@@ -293,7 +337,6 @@ export default function LeadDetails() {
                     <Title level={5} className="!mb-0">{selectedBrochure?.property?.bedrooms} Beds</Title>
                   </div>
                 </div>
-
                 <div className="bg-indigo-50/50 p-4 rounded-lg border border-indigo-100 mt-4">
                   <Text strong className="text-indigo-900 block mb-2">Prepared Specifically For: {lead?.name?.first_name}</Text>
                   <Paragraph className="text-sm text-gray-600 mb-0">
@@ -305,7 +348,6 @@ export default function LeadDetails() {
           </div>
         )}
       </Modal>
-
     </div>
   );
 }

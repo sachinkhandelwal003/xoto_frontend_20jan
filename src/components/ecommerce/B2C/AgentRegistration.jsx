@@ -104,13 +104,6 @@ const StyledInput = styled(Input)`
   }
 `;
 
-const InlineButton = styled(Button)`
-  height: 45px;
-  border-radius: 8px;
-  font-weight: 500;
-  margin-left: 8px;
-`;
-
 const SubmitButton = styled(Button)`
   height: 55px;
   background: #5c039b !important;
@@ -167,7 +160,6 @@ const RegistrationAgent = () => {
       
       console.log(`✅ Upload API Response for ${type}:`, response.data);
 
-      // 🎯 FIXED URL EXTRACTION: Added `response.data?.file?.url` based on your JSON
       const uploadedUrl = response.data?.file?.url || response.data?.url || ""; 
       
       if(uploadedUrl) {
@@ -183,11 +175,10 @@ const RegistrationAgent = () => {
       setUploading((prev) => ({ ...prev, [type]: false }));
     }
 
-    // Return false to stop AntD's default form upload behavior
     return false; 
   };
 
-  // 2. Send OTP Handler
+  // ✅ 2. Send OTP Handler (Live API)
   const handleSendOtp = async () => {
     if (!phone || phone.length < 8) {
       toast.error("Please enter a valid mobile number first");
@@ -195,21 +186,49 @@ const RegistrationAgent = () => {
     }
     
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const cCode = `+${countryData.dialCode || '971'}`;
+      const pNumber = phone.replace(countryData.dialCode || '971', "");
+
+      await axios.post("https://xoto.ae/api/otp/send-otp", {
+        country_code: cCode,
+        phone_number: pNumber
+      });
+
       setOtpSent(true);
+      toast.success("Verification code sent to your mobile!");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to send OTP");
+    } finally {
       setLoading(false);
-      toast.info("Verification code sent! (Use 000033)");
-    }, 1000);
+    }
   };
 
-  // 3. Verify OTP Handler
-  const handleVerifyOtp = () => {
-    if (otpValue === "000033") {
+  // ✅ 3. Verify OTP Handler (Live API)
+  const handleVerifyOtp = async () => {
+    if (!otpValue) {
+      toast.error("Please enter the OTP");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const cCode = `+${countryData.dialCode || '971'}`;
+      const pNumber = phone.replace(countryData.dialCode || '971', "");
+
+      await axios.post("https://xoto.ae/api/otp/verify-otp", {
+        country_code: cCode,
+        phone_number: pNumber,
+        otp: otpValue
+      });
+
       setOtpVerified(true);
       setOtpSent(false);
       toast.success("Mobile Verified Successfully!");
-    } else {
-      toast.error("Invalid OTP. Hint: 000033");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Invalid OTP. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -317,36 +336,46 @@ const RegistrationAgent = () => {
             {/* --- PHONE VERIFICATION --- */}
             <div style={{ marginBottom: 30 }}>
               <Form.Item label="Phone Number" required>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <div style={{ flex: 1 }}>
-                    <PhoneInput
-                      country={'ae'} 
-                      value={phone}
-                      onChange={(phone, data) => {
-                        setPhone(phone);
-                        setCountryData(data);
-                      }}
-                      enableSearch={true}
-                      inputStyle={{
-                        width: '100%',
-                        height: '45px',
-                        fontSize: '16px'
-                      }}
-                      disabled={otpVerified}
-                    />
-                  </div>
+                <div style={{ position: 'relative' }}>
+                  <PhoneInput
+                    country={'ae'} 
+                    value={phone}
+                    onChange={(phone, data) => {
+                      setPhone(phone);
+                      setCountryData(data);
+                    }}
+                    enableSearch={true}
+                    inputStyle={{
+                      width: '100%',
+                      height: '45px',
+                      fontSize: '16px',
+                      paddingRight: '100px' // Space for inner button
+                    }}
+                    disabled={otpVerified}
+                  />
                   
-                  {otpVerified ? (
+                  {/* ✅ SEND OTP BUTTON INSIDE PHONE INPUT */}
+                  {!otpVerified ? (
                     <Button 
-                      icon={<CheckCircleFilled style={{ color: "#52c41a" }} />} 
-                      style={{ height: 45, border: '1px solid #52c41a', color: '#52c41a', background: '#f6ffed' }}
+                      type="link" 
+                      onClick={handleSendOtp} 
+                      loading={loading}
+                      disabled={!phone}
+                      style={{ 
+                        position: 'absolute', 
+                        right: '5px', 
+                        top: '6px', 
+                        zIndex: 2, 
+                        color: '#5C039B', 
+                        fontWeight: '700' 
+                      }}
                     >
-                      Verified
+                      {otpSent ? "Resend" : "Send OTP"}
                     </Button>
                   ) : (
-                    <InlineButton type="default" onClick={handleSendOtp} loading={loading}>
-                      Send OTP
-                    </InlineButton>
+                    <div style={{ position: 'absolute', right: '15px', top: '12px', zIndex: 2 }}>
+                      <CheckCircleFilled style={{ color: "#52c41a", fontSize: "20px" }} />
+                    </div>
                   )}
                 </div>
               </Form.Item>
@@ -354,16 +383,27 @@ const RegistrationAgent = () => {
               <AnimatePresence>
                 {otpSent && !otpVerified && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} style={{ overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', marginTop: 10 }}>
-                      <StyledInput 
-                        prefix={<SafetyCertificateOutlined />}
-                        placeholder="Enter 6-digit OTP" 
-                        value={otpValue}
-                        onChange={(e) => setOtpValue(e.target.value)}
-                      />
-                      <InlineButton type="primary" onClick={handleVerifyOtp} style={{background: '#000'}}>
-                        Verify
-                      </InlineButton>
+                    <div style={{ marginTop: 10 }}>
+                      <Form.Item style={{ marginBottom: 0 }}>
+                        <StyledInput 
+                          prefix={<SafetyCertificateOutlined />}
+                          placeholder="Enter 6-digit OTP" 
+                          value={otpValue}
+                          onChange={(e) => setOtpValue(e.target.value)}
+                          maxLength={6}
+                          // ✅ VERIFY BUTTON INSIDE OTP INPUT
+                          suffix={
+                            <Button 
+                              type="link" 
+                              onClick={handleVerifyOtp} 
+                              loading={loading}
+                              style={{ color: '#5C039B', fontWeight: '700', padding: 0 }}
+                            >
+                              VERIFY
+                            </Button>
+                          }
+                        />
+                      </Form.Item>
                     </div>
                   </motion.div>
                 )}
