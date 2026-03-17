@@ -365,7 +365,7 @@ const SellerPage = () => {
     { title: "Documents", icon: <CloudUploadOutlined /> },
   ];
 
-  // --- OTP HANDLERS ---
+  // --- OTP HANDLERS (LIVE API) ---
   const handleSendOtp = async () => {
     const countryCode = getValues("mobile.country_code");
     const number = getValues("mobile.number");
@@ -375,14 +375,17 @@ const SellerPage = () => {
     }
     setOtpLoading(true);
     try {
-      // API call simulation or real call
+      await apiService.post("/otp/send-otp", {
+        country_code: countryCode,
+        phone_number: number,
+      });
       message.success("OTP sent successfully!");
       setOtpSent(true);
       setOtpVerified(false);
     } catch (error) {
       notification.error({
         message: "OTP Error",
-        description: "Failed to send OTP",
+        description: error?.response?.data?.message || "Failed to send OTP",
       });
     } finally {
       setOtpLoading(false);
@@ -405,9 +408,7 @@ const SellerPage = () => {
       setOtpVerified(true);
       setOtpSent(false);
     } catch (error) {
-      // Mock success for development if API fails
-      // setOtpVerified(true); setOtpSent(false);
-      message.error("Invalid Mobile OTP");
+      message.error(error?.response?.data?.message || "Invalid Mobile OTP");
     } finally {
       setOtpLoading(false);
     }
@@ -419,6 +420,7 @@ const SellerPage = () => {
     setEnteredOtp("");
   };
 
+  // --- EMAIL OTP HANDLERS (LIVE API) ---
   const handleSendEmailOtp = async () => {
     const email = getValues("email");
     if (!email) {
@@ -434,7 +436,7 @@ const SellerPage = () => {
     } catch (error) {
       notification.error({
         message: "OTP Error",
-        description: "Failed to send OTP",
+        description: error?.response?.data?.message || "Failed to send OTP",
       });
     } finally {
       setEmailOtpLoading(false);
@@ -456,7 +458,7 @@ const SellerPage = () => {
       setEmailOtpVerified(true);
       setEmailOtpSent(false);
     } catch (error) {
-      message.error("Invalid Email OTP");
+      message.error(error?.response?.data?.message || "Invalid Email OTP");
     } finally {
       setEmailOtpLoading(false);
     }
@@ -835,6 +837,7 @@ const SellerPage = () => {
                           }
                           type={emailOtpVerified ? "default" : "primary"}
                           loading={emailOtpLoading}
+                          style={!emailOtpVerified ? { backgroundColor: '#5C039B', borderColor: '#5C039B' } : {}}
                         >
                           {emailOtpVerified ? "Change" : "Send OTP"}
                         </Button>
@@ -846,7 +849,7 @@ const SellerPage = () => {
                             value={enteredEmailOtp}
                             onChange={(e) => setEnteredEmailOtp(e.target.value)}
                           />
-                          <Button onClick={handleVerifyEmailOtp} type="primary">
+                          <Button onClick={handleVerifyEmailOtp} type="primary" style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}>
                             Verify
                           </Button>
                         </div>
@@ -924,6 +927,7 @@ const SellerPage = () => {
                           }
                           type={otpVerified ? "default" : "primary"}
                           loading={otpLoading}
+                          style={!otpVerified ? { backgroundColor: '#5C039B', borderColor: '#5C039B' } : {}}
                         >
                           {otpVerified ? "Change" : "Send OTP"}
                         </Button>
@@ -935,7 +939,7 @@ const SellerPage = () => {
                             value={enteredOtp}
                             onChange={(e) => setEnteredOtp(e.target.value)}
                           />
-                          <Button onClick={handleVerifyOtp} type="primary">
+                          <Button onClick={handleVerifyOtp} type="primary" style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}>
                             Verify
                           </Button>
                         </div>
