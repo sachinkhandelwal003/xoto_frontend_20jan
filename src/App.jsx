@@ -89,6 +89,7 @@ import AgencyDashboard from "./components/ecommerce/B2C/AgencyDashboard";
 import AgencyLayout from "./components/ecommerce/B2C/AgencyLayout";
 import Upcoming from "./components/footer/Upcoming";
 import Finicial from "./components/footer/Finicial";
+import XobiaChatbot from "./components/homepage/XobiaChatbot";
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -169,15 +170,34 @@ function LayoutWrapper({ children }) {
     "/estimate/calculator/interior", "/accountant/login", "/ecommerce/seller",
     "/freelancer/registration","/aiPlanner/enhance","/aiPlanner/sky","/aiPlanner/virtual" ,
   ];
-
+// Chatbot sirf in pages par dikhega (jo path chahiye yaha add kar lena)
+  const allowedChatbotPaths = [
+    "/",
+    "/mortgage/services",
+    "/properties",
+    "/services/interior",
+    "/landscaping",
+    "/ecommerce/b2c",
+    "/explore",
+    "/case-studies",
+    "/training",
+    "/ecosystem",
+    "/aiPlanner",
+    "/Property",
+    "/ecommerce",
+    "/about",
+    "/contact",
+    "/consultation"
+  ];
   const hideFooter = hideFooterPaths.includes(location.pathname) || isDashboard || location.pathname.startsWith("/profile/");
-
+const showChatbot = allowedChatbotPaths.includes(location.pathname);
   return (
     <div className="min-h-screen relative">
       {!hideNavbar && <Navbar />}
       {showFreelancerNavbar && <FreelancerNavbar />}
       {children}
       {!hideFooter && <Footer />}
+      {showChatbot && <XobiaChatbot />}
     </div>
   );
 }

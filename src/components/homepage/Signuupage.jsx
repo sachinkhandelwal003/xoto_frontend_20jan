@@ -20,19 +20,17 @@ import {
 import { 
   SafetyCertificateOutlined, 
   CheckCircleFilled,
-  EditOutlined // ✅ Added Edit Icon
+  EditOutlined 
 } from "@ant-design/icons";
 import { Country, State, City } from "country-state-city";
 import { AuthContext } from "../../manageApi/context/AuthContext";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
 
 const { Option } = Select;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const BRAND_PURPLE = "#5C039B";
 const BRAND_PURPLE_DARK = "#4a027d";
-
-
 
 const LeadGenerationModal = ({
   visible,
@@ -59,17 +57,20 @@ const LeadGenerationModal = ({
   const [otpValue, setOtpValue] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
   const [mobileNumber, setMobileNumber] = useState("");
-// --- EMAIL OTP STATES ---
-const [emailOtpSent, setEmailOtpSent] = useState(false);
-const [emailOtpVerified, setEmailOtpVerified] = useState(false);
-const [emailOtpValue, setEmailOtpValue] = useState("");
-const [emailOtpLoading, setEmailOtpLoading] = useState(false);
+  
+  // --- EMAIL OTP STATES ---
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailOtpVerified, setEmailOtpVerified] = useState(false);
+  const [emailOtpValue, setEmailOtpValue] = useState("");
+  const [emailOtpLoading, setEmailOtpLoading] = useState(false);
 
-
-const mobile = form.getFieldValue("mobile");
-const code = form.getFieldValue("country_code") || "971";
-const phone = parsePhoneNumberFromString(`+${code}${mobile}`);
-const isDisabled = !phone || !phone.isValid();
+  // Watchers to control button disabled state
+  const watchedEmail = Form.useWatch("email", form);
+  const watchedMobile = Form.useWatch("mobile", form);
+  const code = Form.useWatch("country_code", form) || "971";
+  
+  const phone = parsePhoneNumberFromString(`+${code}${watchedMobile}`);
+  const isDisabled = !phone || !phone.isValid();
 
   /* ================= PREPARE MOBILE CODES DATA ================= */
   const phoneCodesData = useMemo(() => {
@@ -102,7 +103,7 @@ const isDisabled = !phone || !phone.isValid();
     form.setFieldsValue({ city: undefined });
   };
 
-  // --- OTP Logic: Send OTP ---
+  // --- OTP Logic: Send Mobile OTP (Live API) ---
   const handleSendOtp = async () => {
     try {
       await form.validateFields(['mobile']);
@@ -113,11 +114,11 @@ const isDisabled = !phone || !phone.isValid();
 
       setOtpLoading(true);
       
-      // API Call
-      // await apiService.post("/otp/send-otp", {
-      //   country_code: formattedCode,
-      //   phone_number: mobileVal
-      // });
+      // ✅ Live API Call
+      await apiService.post("/otp/send-otp", {
+        country_code: formattedCode,
+        phone_number: mobileVal
+      });
 
       notification.success({ message: "OTP Sent", description: "Please check your mobile." });
       setOtpSent(true);
@@ -132,7 +133,7 @@ const isDisabled = !phone || !phone.isValid();
     }
   };
 
-  // --- OTP Logic: Verify OTP ---
+  // --- OTP Logic: Verify Mobile OTP (Live API) ---
   const handleVerifyOtp = async () => {
     if (!otpValue) {
       notification.error({ message: "Error", description: "Please enter the OTP" });
@@ -156,80 +157,72 @@ const isDisabled = !phone || !phone.isValid();
     }
   };
 
+  // --- OTP Logic: Send Email OTP (Live API) ---
+  const handleSendEmailOtp = async () => {
+    try {
+      await form.validateFields(["email"]);
+      const email = form.getFieldValue("email");
 
-const handleSendEmailOtp = async () => {
-  try {
-    await form.validateFields(["email"]);
-    const email = form.getFieldValue("email");
+      setEmailOtpLoading(true);
+      await apiService.post("/otp/email-otp/send", { email });
 
-    setEmailOtpLoading(true);
+      notification.success({
+        message: "OTP Sent",
+        description: "Please check your email inbox",
+      });
 
-    await apiService.post("/otp/email-otp/send", { email });
+      setEmailOtpSent(true);
+      setEmailOtpVerified(false);
+    } catch (error) {
+      notification.error({
+        message: "Email OTP Error",
+        description: error?.response?.data?.message || "Failed to send OTP",
+      });
+    } finally {
+      setEmailOtpLoading(false);
+    }
+  };
 
-    notification.success({
-      message: "OTP Sent",
-      description: "Please check your email inbox",
-    });
+  // --- OTP Logic: Verify Email OTP (Live API) ---
+  const handleVerifyEmailOtp = async () => {
+    if (!emailOtpValue) {
+      notification.error({ message: "Please enter OTP" });
+      return;
+    }
+    try {
+      setEmailOtpLoading(true);
+      await apiService.post("/otp/email-otp/verify", {
+        email: form.getFieldValue("email"),
+        otp: emailOtpValue,
+      });
 
-    setEmailOtpSent(true);
-    setEmailOtpVerified(false);
-  } catch (error) {
-    notification.error({
-      message: "Email OTP Error",
-      description: error?.response?.data?.message || "Failed to send OTP",
-    });
-  } finally {
-    setEmailOtpLoading(false);
-  }
-};
+      notification.success({
+        message: "Email Verified",
+        description: "Email verified successfully!",
+      });
 
-const handleVerifyEmailOtp = async () => {
-  if (!emailOtpValue) {
-    notification.error({ message: "Please enter OTP" });
-    return;
-  }
+      setEmailOtpVerified(true);
+      setEmailOtpSent(false);
+    } catch (error) {
+      notification.error({
+        message: "Verification Failed",
+        description: error?.response?.data?.message || "Invalid OTP",
+      });
+    } finally {
+      setEmailOtpLoading(false);
+    }
+  };
 
-  try {
-    setEmailOtpLoading(true);
-
-    await apiService.post("/otp/email-otp/verify", {
-      email: form.getFieldValue("email"),
-      otp: emailOtpValue,
-    });
-
-    notification.success({
-      message: "Email Verified",
-      description: "Email verified successfully!",
-    });
-
-    setEmailOtpVerified(true);
+  const handleChangeEmail = () => {
     setEmailOtpSent(false);
-  } catch (error) {
-    notification.error({
-      message: "Verification Failed",
-      description: error?.response?.data?.message || "Invalid OTP",
-    });
-  } finally {
-    setEmailOtpLoading(false);
-  }
-};
+    setEmailOtpVerified(false);
+    setEmailOtpValue("");
+  };
 
-const handleChangeEmail = () => {
-  setEmailOtpSent(false);
-  setEmailOtpVerified(false);
-  setEmailOtpValue("");
-};
-
-
-
-
-
-  // ✅ Reset Function (Isse Verify hone ke baad bhi number change kar paoge)
   const handleChangeNumber = () => {
     setOtpSent(false);
     setOtpVerified(false);
     setOtpValue("");
-    // Note: Mobile number field clear nahi kar rahe taaki user edit kar sake
   };
 
   /* ================= PREFIX SELECTOR ================= */
@@ -239,7 +232,6 @@ const handleChangeEmail = () => {
         style={{ width: 110 }}
         bordered={false}
         showSearch
-        // Disable ONLY when OTP is actively being verified or sent, enable if verified (so user knows they can change)
         disabled={otpSent && !otpVerified} 
         dropdownMatchSelectWidth={320}
         optionFilterProp="children"
@@ -323,7 +315,6 @@ const handleChangeEmail = () => {
     }
   };
 
-
   return (
     <ConfigProvider theme={{ token: { colorPrimary: BRAND_PURPLE, borderRadius: 12 } }}>
       <Modal
@@ -357,169 +348,206 @@ const handleChangeEmail = () => {
             <Title level={2}>{activeTab === "signin" ? "Welcome Back" : "Create Account"}</Title>
 
             <div className="flex p-1.5 bg-gray-100 rounded-xl my-6">
-              <button onClick={() => { setActiveTab("signin"); form.resetFields(); }} className={`flex-1 py-3 rounded-lg ${activeTab === "signin" && "bg-white shadow"}`}>Sign In</button>
-              <button onClick={() => { setActiveTab("signup"); form.resetFields(); }} className={`flex-1 py-3 rounded-lg ${activeTab === "signup" && "bg-white shadow"}`}>Create Account</button>
+              <button type="button" onClick={() => { setActiveTab("signin"); form.resetFields(); }} className={`flex-1 py-3 rounded-lg ${activeTab === "signin" && "bg-white shadow"}`}>Sign In</button>
+              <button type="button" onClick={() => { setActiveTab("signup"); form.resetFields(); }} className={`flex-1 py-3 rounded-lg ${activeTab === "signup" && "bg-white shadow"}`}>Create Account</button>
             </div>
 
             <Form form={form} layout="vertical" onFinish={handleSubmit}>
               {activeTab === "signup" && (
                 <>
                   <div className="grid grid-cols-2 gap-4">
-                    <Form.Item name="first_name" rules={[{ required: true, message: 'Required' }]}><Input prefix={<User size={18}/>} placeholder="First Name" /></Form.Item>
-                    <Form.Item name="last_name" rules={[{ required: true, message: 'Required' }]}><Input placeholder="Last Name" /></Form.Item>
+                    <Form.Item name="first_name" rules={[{ required: true, message: 'Required' }]}>
+                      <Input size="large" prefix={<User size={18}/>} placeholder="First Name" />
+                    </Form.Item>
+                    <Form.Item name="last_name" rules={[{ required: true, message: 'Required' }]}>
+                      <Input size="large" placeholder="Last Name" />
+                    </Form.Item>
                   </div>
-<Form.Item
-  label="Email"
-  required
-  validateStatus={form.getFieldError("email")?.length ? "error" : ""}
->
-  <div className="flex gap-2">
-    <Form.Item
-      name="email"
-      noStyle
-      rules={[
-        { required: true, message: "Email is required" },
-        { type: "email", message: "Invalid email address" },
-      ]}
-    >
-      <Input
-        prefix={<Mail size={18} />}
-        placeholder="Email"
-        disabled={emailOtpVerified}
-      />
-    </Form.Item>
+                  
+                  {/* ================= EMAIL SECTION ================= */}
+                  <Form.Item
+                    label="Email"
+                    required
+                    validateStatus={form.getFieldError("email")?.length ? "error" : ""}
+                    style={{ marginBottom: emailOtpSent && !emailOtpVerified ? 0 : 24 }}
+                  >
+                    <Form.Item
+                      name="email"
+                      noStyle
+                      rules={[
+                        { required: true, message: "Email is required" },
+                        { type: "email", message: "Invalid email address" },
+                      ]}
+                    >
+                      <Input
+                        size="large"
+                        prefix={<Mail size={18} />}
+                        placeholder="Email Address"
+                        disabled={emailOtpVerified}
+                        onChange={(e) => {
+                          form.setFieldsValue({ email: e.target.value });
+                          if (emailOtpVerified) {
+                            setEmailOtpVerified(false);
+                            setEmailOtpSent(false);
+                          }
+                        }}
+                        suffix={
+                          !emailOtpVerified ? (
+                            <Button 
+                              type="link" 
+                              onClick={handleSendEmailOtp} 
+                              loading={emailOtpLoading}
+                              disabled={!watchedEmail}
+                              style={{ color: BRAND_PURPLE, fontWeight: 'bold', padding: 0 }}
+                            >
+                              {emailOtpSent ? "Resend" : "Send OTP"}
+                            </Button>
+                          ) : (
+                            <span style={{ color: '#52c41a', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <CheckCircleFilled /> Verified
+                            </span>
+                          )
+                        }
+                      />
+                    </Form.Item>
+                  </Form.Item>
 
-    {/* SEND / CHANGE BUTTON */}
-    <Button
-      type={emailOtpVerified ? "default" : "primary"}
-      onClick={emailOtpVerified ? handleChangeEmail : handleSendEmailOtp}
-      loading={emailOtpLoading}
-    >
-      {emailOtpVerified ? "Change" : "Send OTP"}
-    </Button>
-  </div>
-</Form.Item>
-
-{emailOtpSent && !emailOtpVerified && (
-  <div className="mt-2 flex gap-2">
-    <Input
-      placeholder="Enter Email OTP"
-      value={emailOtpValue}
-      onChange={(e) => setEmailOtpValue(e.target.value)}
-      prefix={<SafetyCertificateOutlined />}
-    />
-    <Button type="primary" onClick={handleVerifyEmailOtp} loading={emailOtpLoading}>
-      Verify
-    </Button>
-  </div>
-)}
-
-{emailOtpVerified && (
-  <div className="mt-2 flex items-center gap-2 text-green-600">
-    <CheckCircleFilled /> Email Verified
-  </div>
-)}
-
+                  {/* Email OTP Verification */}
+                  {emailOtpSent && !emailOtpVerified && (
+                    <div style={{ marginTop: 10, marginBottom: 24, animation: 'fadeIn 0.3s ease' }}>
+                      <Input
+                        size="large"
+                        placeholder="Enter 6-digit OTP"
+                        value={emailOtpValue}
+                        onChange={(e) => setEmailOtpValue(e.target.value.replace(/\D/g, ""))}
+                        prefix={<SafetyCertificateOutlined style={{ color: BRAND_PURPLE }}/>}
+                        maxLength={6}
+                        suffix={
+                          <Button 
+                            type="link" 
+                            onClick={handleVerifyEmailOtp} 
+                            loading={emailOtpLoading}
+                            style={{ color: BRAND_PURPLE, fontWeight: 'bold', padding: 0 }}
+                          >
+                            VERIFY
+                          </Button>
+                        }
+                      />
+                      <div style={{ marginTop: 4 }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>OTP sent to {watchedEmail}</Text>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 
-              {/* --- MOBILE INPUT --- */}
-       <Form.Item
-  label="Mobile Number"
-  required
-  validateStatus={form.getFieldError("mobile")?.length ? "error" : ""}
->
-  <div className="flex gap-2">
-    <Form.Item
-      name="mobile"
-      noStyle
-      rules={[
-        { required: true, message: "Mobile number is required" },
-        {
-          validator: (_, value) => {
-            if (!value) return Promise.resolve();
+              {/* ================= PHONE NUMBER SECTION ================= */}
+              <Form.Item
+                label="Mobile Number"
+                required
+                validateStatus={form.getFieldError("mobile")?.length ? "error" : ""}
+                style={{ marginBottom: otpSent && !otpVerified ? 0 : 24 }}
+              >
+                <Form.Item
+                  name="mobile"
+                  noStyle
+                  rules={[
+                    { required: true, message: "Mobile number is required" },
+                    {
+                      validator: (_, value) => {
+                        if (!value) return Promise.resolve();
+                        const rawCode = form.getFieldValue("country_code") || "971";
+                        const formattedCode = rawCode.startsWith("+") ? rawCode : `+${rawCode}`;
+                        const phoneInstance = parsePhoneNumberFromString(`${formattedCode}${value}`);
+                        if (!phoneInstance || !phoneInstance.isValid()) {
+                          return Promise.reject("Invalid mobile number");
+                        }
+                        return Promise.resolve();
+                      },
+                    },
+                  ]}
+                >
+                  <Input
+                    size="large"
+                    addonBefore={prefixSelector}
+                    prefix={<Smartphone size={18} />}
+                    placeholder="Enter mobile number"
+                    disabled={otpVerified}
+                    onChange={(e) => {
+                      const onlyNumbers = e.target.value.replace(/\D/g, "");
+                      form.setFieldsValue({ mobile: onlyNumbers });
+                      setMobileNumber(onlyNumbers);
 
-            const rawCode = form.getFieldValue("country_code") || "971";
-            const formattedCode = rawCode.startsWith("+") ? rawCode : `+${rawCode}`;
-            const phone = parsePhoneNumberFromString(`${formattedCode}${value}`);
+                      if (otpVerified && onlyNumbers !== mobileNumber) {
+                        setOtpVerified(false);
+                        setOtpSent(false);
+                      }
+                    }}
+                    suffix={
+                      !otpVerified ? (
+                        <Button 
+                          type="link" 
+                          onClick={handleSendOtp} 
+                          loading={otpLoading}
+                          disabled={isDisabled}
+                          style={{ color: BRAND_PURPLE, fontWeight: 'bold', padding: 0 }}
+                        >
+                          {otpSent ? "Resend" : "Send OTP"}
+                        </Button>
+                      ) : (
+                        <span style={{ color: '#52c41a', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <CheckCircleFilled /> Verified
+                        </span>
+                      )
+                    }
+                  />
+                </Form.Item>
+              </Form.Item>
 
-            if (!phone || !phone.isValid()) {
-              return Promise.reject("Invalid mobile number");
-            }
-            return Promise.resolve();
-          },
-        },
-      ]}
-    >
-      <Input
-        addonBefore={prefixSelector}
-        prefix={<Smartphone size={18} />}
-        placeholder="Enter mobile number"
-        disabled={otpSent && !otpVerified}
-        onChange={(e) => {
-          const onlyNumbers = e.target.value.replace(/\D/g, "");
-          form.setFieldsValue({ mobile: onlyNumbers });
-          setMobileNumber(onlyNumbers);
-
-          if (otpVerified && onlyNumbers !== mobileNumber) {
-            setOtpVerified(false);
-            setOtpSent(false);
-          }
-        }}
-      />
-    </Form.Item>
-
-    {/* SEND / CHANGE BUTTON */}
-    {!otpVerified && (
-      <Button
-        type="primary"
-        onClick={handleSendOtp}
-        loading={otpLoading}
-        disabled={isDisabled}
-      >
-        Send OTP
-      </Button>
-    )}
-
-    {otpVerified && (
-      <Button type="default" onClick={handleChangeNumber}>
-        Change
-      </Button>
-    )}
-  </div>
-</Form.Item>
-{otpSent && !otpVerified && (
-  <div className="mt-2 mb-2 flex gap-2">
-    <Input
-      placeholder="Enter Mobile OTP"
-      value={otpValue}
-      onChange={(e) => setOtpValue(e.target.value)}
-      prefix={<SafetyCertificateOutlined />}
-    />
-    <Button type="primary" onClick={handleVerifyOtp} loading={otpLoading}>
-      Verify
-    </Button>
-  </div>
-)}
-
-
-
+              {/* Mobile OTP Verification */}
+              {otpSent && !otpVerified && (
+                <div style={{ marginTop: 10, marginBottom: 24, animation: 'fadeIn 0.3s ease' }}>
+                  <Input
+                    size="large"
+                    placeholder="Enter 6-digit OTP"
+                    value={otpValue}
+                    onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ""))}
+                    prefix={<SafetyCertificateOutlined style={{ color: BRAND_PURPLE }} />}
+                    maxLength={6}
+                    suffix={
+                      <Button 
+                        type="link" 
+                        onClick={handleVerifyOtp} 
+                        loading={otpLoading}
+                        style={{ color: BRAND_PURPLE, fontWeight: 'bold', padding: 0 }}
+                      >
+                        VERIFY
+                      </Button>
+                    }
+                  />
+                  <div style={{ marginTop: 4 }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      OTP sent to +{form.getFieldValue("country_code")} {watchedMobile}
+                    </Text>
+                  </div>
+                </div>
+              )}
 
               {activeTab === "signup" && (
                 <>
                   <Form.Item name="location_country" rules={[{ required: true, message: "Required" }]}>
-                    <Select placeholder="Select Country" showSearch onChange={handleLocationCountryChange}>
+                    <Select size="large" placeholder="Select Country" showSearch onChange={handleLocationCountryChange}>
                       {countriesList.map((c) => <Option key={c.isoCode} value={c.isoCode}>{c.name}</Option>)}
                     </Select>
                   </Form.Item>
                   <div className="grid grid-cols-2 gap-4">
                     <Form.Item name="state" rules={[{ required: true, message: "Required" }]}>
-                      <Select placeholder="State" disabled={!statesList.length} onChange={handleLocationStateChange}>
+                      <Select size="large" placeholder="State" disabled={!statesList.length} onChange={handleLocationStateChange}>
                         {statesList.map((s) => <Option key={s.isoCode} value={s.isoCode}>{s.name}</Option>)}
                       </Select>
                     </Form.Item>
                     <Form.Item name="city" rules={[{ required: true, message: "Required" }]}>
-                      <Select placeholder="City" disabled={!citiesList.length}>
+                      <Select size="large" placeholder="City" disabled={!citiesList.length}>
                         {citiesList.map((c) => <Option key={c.name} value={c.name}>{c.name}</Option>)}
                       </Select>
                     </Form.Item>
@@ -527,13 +555,33 @@ const handleChangeEmail = () => {
                 </>
               )}
 
-              <Button type="primary" htmlType="submit" block loading={isSubmitting} className="h-14 mt-4" style={{ background: `linear-gradient(135deg, ${BRAND_PURPLE}, ${BRAND_PURPLE_DARK})`, border: "none" }}>
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                block 
+                loading={isSubmitting} 
+                className="h-14 mt-4 text-base" 
+                style={{ 
+                  background: `linear-gradient(135deg, ${BRAND_PURPLE}, ${BRAND_PURPLE_DARK})`, 
+                  border: "none",
+                  borderRadius: "12px",
+                  fontWeight: "bold"
+                }}
+              >
                 {activeTab === "signin" ? "Sign In" : "Create Account"} 
               </Button>
             </Form>
           </div>
         </div>
       </Modal>
+
+      {/* CSS for fading in the OTP box */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </ConfigProvider>
   );
 };
