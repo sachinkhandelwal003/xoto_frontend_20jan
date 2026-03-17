@@ -4,7 +4,7 @@ let socket = null;
 
 export const getSocket = () => {
   if (!socket || socket.disconnected) {
-    socket = io("http://localhost:5000", {
+    socket = io("https://xoto.ae", {
       transports: ["websocket"],
       reconnection: true,
     });
