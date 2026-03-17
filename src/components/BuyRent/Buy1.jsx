@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 // import Imagemain from "../../assets/img/buy.jpg";
 import { notification, Select } from 'antd';
 import { useTranslation } from "react-i18next";
@@ -35,6 +35,17 @@ export default function HeroSection() {
   const [loading, setLoading] = useState(false);
   
   const [api, contextHolder] = notification.useNotification();
+
+  useEffect(() => {
+  if (openModal) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "";
+  }
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, [openModal]);
 
   // 2. Prepare Country Data (Memoized)
   const countryOptions = useMemo(() => {
@@ -280,8 +291,9 @@ if (!isPhoneValid) {
 
       {/* PREMIUM MODAL */}
       {openModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-white via-blue-50 to-purple-50 max-w-4xl w-full rounded-3xl shadow-2xl relative max-h-[90vh] overflow-hidden border border-white/20">
+<div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-gradient-to-br from-white via-blue-50 to-purple-50 max-w-4xl w-full rounded-3xl shadow-2xl relative max-h-[95vh] overflow-y-auto  border border-white/20">
+
             <button onClick={() => setOpenModal(false)} className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-pink-500 text-white w-10 h-10 rounded-full text-2xl hover:scale-110 transition-all duration-300 flex items-center justify-center shadow-lg z-20">
               <X size={24} />
             </button>
@@ -304,7 +316,8 @@ if (!isPhoneValid) {
               </div>
             </div>
 
-            <div className="p-8 overflow-y-auto max-h-[60vh] custom-scrollbar">
+            <div className="p-8 overflow-y-auto max-h-[70vh] custom-scrollbar">
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Common Name Fields */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -538,6 +551,14 @@ if (!isPhoneValid) {
         .custom-select-hero.ant-select-focused .ant-select-selector {
           border-color: #3b82f6 !important;
           box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
+        }
+          
+@media (max-width: 640px) {
+          .modal-container {
+            max-height: 95vh !important;
+            margin: 0.5rem !important;
+            border-radius: 1rem !important;
+          }
         }
       `}</style>
     </>

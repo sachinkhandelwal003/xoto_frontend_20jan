@@ -49,12 +49,12 @@ export default function EcoSmartLiving() {
     <section className="relative w-full overflow-hidden pb-20 bg-white min-h-screen">
       {/* Wave */}
       <div className="absolute -bottom-[15px] md:-bottom-[140px] lg:-bottom-[90px] left-0 w-full z-0 pointer-events-none">
-  <img
-    src={waveBg}
-    alt="wave-bg"
-    className="w-full object-cover opacity-90"
-  />
-</div>
+        <img
+          src={waveBg}
+          alt="wave-bg"
+          className="w-full object-cover opacity-90"
+        />
+      </div>
 
 
       <div className="relative z-10 text-center mt-16 px-4 md:px-6">
@@ -73,15 +73,15 @@ export default function EcoSmartLiving() {
         {/* FEATURES GRID */}
         <div className="mt-14 w-full max-w-6xl mx-auto flex justify-center">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-6 md:gap-x-12 lg:gap-20">
-            
+
             {/* 1. Gradient Card */}
             <div className="flex justify-center">
               <div className="group rounded-full p-[8px] ring-4 ring-transparent hover:ring-[#5C039B] active:ring-[#5C039B] transition-all duration-300">
                 <div className="w-[140px] h-[140px] md:w-[200px] md:h-[200px] rounded-full flex flex-col items-center justify-center text-center text-white bg-gradient-to-br from-purple-600 via-blue-500 to-cyan-400 shadow-xl group-hover:scale-105 transition-all px-2 md:px-4">
-                  <span className="text-xs md:text-sm font-bold leading-tight">
+                  <span className="text-xs md:text-xl font-bold leading-tight">
                     {t(features[0].title)}
                   </span>
-                  <p className="text-[9px] md:text-[11px] mt-1 md:mt-2 opacity-90 leading-tight">
+                  <p className="text-[9px] md:text-[11px] mt-1 md:mt-2 opacity-0 group-hover:opacity-100 transition-all duration-300 leading-tight">
                     {t(features[0].text)}
                   </p>
                 </div>
@@ -93,15 +93,18 @@ export default function EcoSmartLiving() {
               <div key={i} className="flex justify-center">
                 <div className="group rounded-full p-[8px] ring-4 ring-transparent hover:ring-[#5C039B] active:ring-[#5C039B] transition-all duration-300">
                   <div
-                    className="w-[140px] h-[140px] md:w-[200px] md:h-[200px] rounded-full bg-cover bg-center shadow-lg group-hover:scale-105 transition-all overflow-hidden relative"
+                    className="w-[140px] h-[140px] md:w-[200px] md:h-[200px] rounded-full bg-cover bg-center shadow-lg transition-all duration-300 overflow-hidden relative group-hover:scale-105"
                     style={{ backgroundImage: `url(${item.image})` }}
                   >
-                    <div className="bg-black/40 w-full h-full flex flex-col items-center justify-center px-2 text-center text-white">
+                    <div className="w-full h-full flex flex-col items-center justify-center px-2 text-center text-white bg-black/40  transition-all duration-300">
                       <span className="text-sm md:text-xl font-semibold leading-tight">
                         {t(item.title)}
                       </span>
                       {/* Optional Text */}
                       {/* <span className="text-[10px] md:text-xs mt-1 opacity-90">{t(item.text)}</span> */}
+                      <span className="text-[10px] md:text-xs mt-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        {t(item.text)}
+                      </span>
                     </div>
                   </div>
                 </div>

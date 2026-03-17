@@ -245,7 +245,7 @@ export default function Footer() {
       </Link>
 
       {i.comingSoon && (
-        <span className="absolute -top-3 right-8 text-[8px] font-bold bg-[#F5D7C8] text-black px-3 py-[2px] rounded-full shadow-sm uppercase">
+        <span className="absolute -top-2 right-18 text-[8px] font-bold bg-[#F5D7C8] text-black px-3 py-[2px] rounded-full shadow-sm uppercase">
           {t("comingsoon")}<br/>
         </span>
       )}
