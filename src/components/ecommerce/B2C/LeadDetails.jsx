@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, Tag, Typography, Avatar, Divider, Row, Col, Statistic, Button, message, Modal } from "antd";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom"; // Added useNavigate
 import { 
   UserOutlined, 
   MailOutlined, 
@@ -20,6 +20,7 @@ const { Title, Text, Paragraph } = Typography;
 export default function LeadDetails() {
   const location = useLocation();
   const params = useParams();
+  const navigate = useNavigate(); // Added for navigation
 
   // State for data and UI
   const [loading, setLoading] = useState(true);
@@ -35,7 +36,7 @@ export default function LeadDetails() {
   const backendBaseUrl = "http://localhost:8000"; // Update with your actual backend URL
 
   const getImageUrl = (item) => {
-    let imageUrl = item?.property?.image || item?.property?.images?.[0];
+    let imageUrl = item?.property?.image || item?.property?.photos?.[0] || item?.property?.mainLogo;
     if (imageUrl && !imageUrl.startsWith('http')) {
       imageUrl = `${backendBaseUrl}${imageUrl}`;
     }
@@ -83,7 +84,7 @@ export default function LeadDetails() {
     loadData();
   }, [stateData, params.id, location.state?.leadId]);
 
-  // Brochure generation handler (mock)
+  // Brochure generation handler - UPDATED to navigate to brochure generator
   const handleGenerateBrochure = (item) => {
     if (!lead?.email) {
       message.error("Lead doesn't have an email address!");
@@ -91,15 +92,19 @@ export default function LeadDetails() {
     }
 
     setGeneratingId(item._id);
-    const msgKey = 'brochure-gen';
-    message.loading({ content: `AI is creating a personalized brochure for ${item?.property?.propertyName}...`, key: msgKey, duration: 0 });
-
+    
+    // Simulate AI processing
     setTimeout(() => {
       setGeneratingId(null);
-      setSelectedBrochure(item);
-      setIsModalVisible(true);
-      message.success({ content: `Brochure ready!`, key: msgKey, duration: 2 });
-    }, 3000);
+      // Navigate to brochure generator with property and lead data
+      navigate('brocure', { 
+        state: { 
+          property: item.property,
+          lead: lead,
+          matchScore: item?.ai_match?.score 
+        } 
+      });
+    }, 1500);
   };
 
   if (loading) {
@@ -156,7 +161,7 @@ export default function LeadDetails() {
               <div className="flex items-center gap-3 text-gray-600">
                 <DollarCircleOutlined className="text-lg text-yellow-500" />
                 <Text strong>Budget: </Text>
-                <Text>{lead?.budget || "Not specified"}</Text>
+                <Text>{lead?.budget ? `${lead.budget.toLocaleString()} AED` : "Not specified"}</Text>
               </div>
               <div className="flex items-center gap-3 text-gray-600">
                 <EnvironmentOutlined className="text-lg text-red-400" />
@@ -244,7 +249,9 @@ export default function LeadDetails() {
                 <div className="flex justify-between items-center mb-4 p-3 bg-gray-50/80 rounded-xl border border-gray-100">
                   <div>
                     <Text type="secondary" className="text-xs block mb-1">Price</Text>
-                    <Text strong className="text-indigo-600 text-base">{item?.property?.price}</Text>
+                    <Text strong className="text-indigo-600 text-base">
+                      {item?.property?.price?.toLocaleString()} {item?.property?.currency || 'AED'}
+                    </Text>
                   </div>
                   <div className="w-[1px] h-8 bg-gray-200"></div>
                   <div className="text-right">
@@ -278,13 +285,14 @@ export default function LeadDetails() {
                     {isThisCardGenerating ? 'Generating...' : 'Generate AI Brochure'}
                   </Button>
                 </div>
+
               </Card>
             )
           })}
         </div>
       </div>
 
-      {/* Brochure Preview Modal */}
+      {/* Brochure Preview Modal - Keep this for backward compatibility or remove if not needed */}
       <Modal
         title={
           <div className="flex items-center gap-2 text-indigo-800 text-lg">
@@ -330,7 +338,9 @@ export default function LeadDetails() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Text type="secondary" className="text-xs">Price</Text>
-                    <Title level={5} className="!mb-0 text-indigo-600">{selectedBrochure?.property?.price}</Title>
+                    <Title level={5} className="!mb-0 text-indigo-600">
+                      {selectedBrochure?.property?.price?.toLocaleString()} {selectedBrochure?.property?.currency || 'AED'}
+                    </Title>
                   </div>
                   <div>
                     <Text type="secondary" className="text-xs">Layout</Text>
