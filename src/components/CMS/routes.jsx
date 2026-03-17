@@ -92,6 +92,7 @@ import AgentPresentations from "../ecommerce/B2C/AgentPresentations";
 import AgentSiteVisits from "../ecommerce/B2C/AgentSiteVisits";
 import AgentDeals from "../ecommerce/B2C/AgentDeals";
 import AgentCommission from "../ecommerce/B2C/AgentCommission";
+import LeadDetails from "../ecommerce/B2C/LeadDetails";
 // import AgentLeadDetails from "../ecommerce/B2C/AgentLeadDetails";
 import AgentCreateDeal from "../ecommerce/B2C/AgentCreateDeal";
 import AgentDealDetails from "../ecommerce/B2C/AgentDealDetails";
@@ -325,7 +326,7 @@ const CmsRoutes = () => {
   {/* Leads */}
   <Route path="agent-leads" element={<AgentLeadDashboard />} />
     <Route path="agent-leads/add" element={<AgentLeadSuggestionCreate />} />
-
+<Route path="lead-details" element={<LeadDetails />} />
   <Route path="agent-lead/:id" element={<Addleaddetails/>} />
   {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
         
