@@ -9,7 +9,7 @@ import {
   TagOutlined, WalletOutlined, BankOutlined,
   ShareAltOutlined, ExportOutlined, MessageOutlined,
   AppstoreOutlined, ArrowLeftOutlined, EditOutlined, RobotOutlined, MoneyCollectOutlined,
-  EyeOutlined, DownloadOutlined
+  EyeOutlined, DownloadOutlined, RightOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 
@@ -147,7 +147,7 @@ const getSafeUrl = (url) => {
 
 const exchangeRates = { AED: 1, USD: 0.272, EUR: 0.25, GBP: 0.21, INR: 22.6 };
 
-// 🔥 PROFESSIONAL LUXURY PDF STYLESHEET - EXACT MATCH WITH IMAGE 🔥
+// 🔥 PROFESSIONAL LUXURY PDF STYLESHEET 🔥
 const pdfStyles = StyleSheet.create({
   page: { 
     padding: 0, 
@@ -156,490 +156,254 @@ const pdfStyles = StyleSheet.create({
     position: 'relative' 
   },
 
-  // COVER PAGE - EXACT MATCH WITH IMAGE
+  // 🔥 GLOBAL HEADER & FOOTER FOR ALL PAGES 🔥
+  globalHeader: {
+    position: 'absolute', top: 15, right: 40, zIndex: 10
+  },
+  globalHeaderLogo: {
+    width: 70, height: 25, objectFit: 'contain'
+  },
+  globalFooter: {
+    position: 'absolute', bottom: 15, left: 40, right: 40, flexDirection: 'row', justifyContent: 'space-between',
+    borderTopWidth: 1, borderTopColor: '#e5e5e5', paddingTop: 8, zIndex: 10
+  },
+  globalFooterText: {
+    fontSize: 9, color: '#888', textTransform: 'uppercase', letterSpacing: 1
+  },
+  globalFooterBrand: {
+    fontSize: 9, color: '#c9a05e', fontWeight: 'bold', letterSpacing: 1
+  },
+
+  // COVER PAGE 
   coverContainer: {
-    height: '100%',
-    position: 'relative',
-    backgroundColor: '#000'
+    height: '100%', position: 'relative', backgroundColor: '#000'
   },
   coverBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    opacity: 0.9
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.9
   },
   coverOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    zIndex: 2
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 2
   },
   coverContent: {
-    position: 'relative',
-    zIndex: 3,
-    height: '100%',
-    padding: 40,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between'
+    position: 'relative', zIndex: 3, height: '100%', padding: 40, display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
   },
   
   // TOP BAR WITH LOGO, LINE AND DEVELOPER NAME
   coverTopBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 10,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10,
   },
   topLeftContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 15,
+    flexDirection: 'row', alignItems: 'center', gap: 15,
   },
   xotoLogoCover: {
-    width: 80,
-    height: 30,
-    objectFit: 'contain'
+    width: 80, height: 30, objectFit: 'contain'
   },
   verticalLine: {
-    width: 1,
-    height: 30,
-    backgroundColor: '#c9a05e',
-    marginHorizontal: 10,
+    width: 1, height: 30, backgroundColor: '#c9a05e', marginHorizontal: 10,
   },
   developerNameCover: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontSize: 16, fontWeight: 'bold', color: '#fff', textTransform: 'uppercase', letterSpacing: 1,
   },
   coverFoundText: {
-    fontSize: 12,
-    color: '#fff',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    opacity: 0.9
+    fontSize: 12, color: '#fff', textTransform: 'uppercase', letterSpacing: 2, opacity: 0.9
   },
 
   // CENTER TITLE SECTION
   coverCenterContent: {
-    alignItems: 'center',
-    marginTop: 'auto',
-    marginBottom: 'auto',
+    alignItems: 'center', marginTop: 'auto', marginBottom: 'auto',
   },
   coverPreTitle: {
-    fontSize: 14,
-    color: '#fff',
-    textTransform: 'uppercase',
-    letterSpacing: 3,
-    marginBottom: 15,
-    opacity: 0.8
+    fontSize: 14, color: '#fff', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 15, opacity: 0.8
   },
   coverTitle: {
-    fontSize: 56,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    marginBottom: 8,
-    letterSpacing: 2
+    fontSize: 56, fontWeight: 'bold', color: '#fff', textAlign: 'center', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 2
   },
   coverSubTitle: {
-    fontSize: 24,
-    color: '#fff',
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: 4,
-    opacity: 0.9,
-    marginBottom: 20,
+    fontSize: 24, color: '#fff', textAlign: 'center', textTransform: 'uppercase', letterSpacing: 4, opacity: 0.9, marginBottom: 20,
   },
   coverDate: {
-    fontSize: 11,
-    color: '#fff',
-    opacity: 0.6,
-    marginTop: 10,
+    fontSize: 11, color: '#fff', opacity: 0.6, marginTop: 10,
   },
 
-  // BOTTOM AGENT BAR - EXACT MATCH WITH IMAGE
+  // BOTTOM AGENT BAR 
   coverBottomBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginTop: 'auto',
-    paddingBottom: 10,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', paddingBottom: 10,
   },
   bottomLeftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 15,
+    flexDirection: 'row', alignItems: 'center', gap: 15,
   },
   agentCircleImg: {
-    width: 65,
-    height: 65,
-    borderRadius: 32.5,
-    objectFit: 'cover',
-    borderWidth: 2,
-    borderColor: '#c9a05e'
+    width: 65, height: 65, borderRadius: 32.5, objectFit: 'cover', borderWidth: 2, borderColor: '#c9a05e'
   },
   agentDetailsCol: {
     flexDirection: 'column',
   },
   agentNameCover: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 2,
+    fontSize: 16, fontWeight: 'bold', color: '#fff', marginBottom: 2,
   },
   agentRoleCover: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.7)',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 4,
+    fontSize: 10, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4,
   },
   agentEmail: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.9)',
-    marginBottom: 2,
+    fontSize: 10, color: 'rgba(255,255,255,0.9)', marginBottom: 2,
   },
   agentPhone: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.9)',
+    fontSize: 10, color: 'rgba(255,255,255,0.9)',
   },
   bottomRightSection: {
-    alignItems: 'flex-end',
-    justifyContent: 'flex-end',
+    alignItems: 'flex-end', justifyContent: 'flex-end',
   },
   agentWebsite: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#c9a05e',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontSize: 14, fontWeight: 'bold', color: '#c9a05e', textTransform: 'uppercase', letterSpacing: 1,
   },
 
-  // PAGE 2 - PROJECT OVERVIEW WITH GOLDEN ACCENTS
+  // PAGE 2 - PROJECT OVERVIEW
   page2Container: {
-    flexDirection: 'row',
-    height: '100%',
-    backgroundColor: '#fff'
+    flexDirection: 'row', height: '100%', backgroundColor: '#fff'
   },
   page2Left: {
-    flex: 1,
-    padding: 40,
-    backgroundColor: '#faf9f7'
+    flex: 1, padding: 40, backgroundColor: '#faf9f7'
   },
   page2Right: {
-    flex: 1,
-    padding: 40
+    flex: 1, padding: 40
   },
   developerTag: {
-    fontSize: 12,
-    color: '#c9a05e',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginBottom: 15,
-    fontWeight: 'bold'
+    fontSize: 12, color: '#c9a05e', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 15, fontWeight: 'bold'
   },
   projectTitle: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#111',
-    marginBottom: 30
+    fontSize: 36, fontWeight: 'bold', color: '#111', marginBottom: 30
   },
   infoCard: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 20,
-    shadow: '0 4px 12px rgba(0,0,0,0.05)'
+    backgroundColor: '#fff', padding: 20, borderRadius: 12, marginBottom: 20, shadow: '0 4px 12px rgba(0,0,0,0.05)'
   },
   infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    paddingBottom: 10
+    flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0', paddingBottom: 10
   },
   infoLabel: {
-    fontSize: 11,
-    color: '#888',
-    textTransform: 'uppercase'
+    fontSize: 11, color: '#888', textTransform: 'uppercase'
   },
   infoValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#111'
+    fontSize: 14, fontWeight: 'bold', color: '#111'
   },
   
   // LUXURY TABLE DESIGN
   tableContainer: {
-    marginTop: 20,
-    borderWidth: 1,
-    borderColor: '#e5e5e5',
-    borderRadius: 12,
-    overflow: 'hidden'
+    marginTop: 20, borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 12, overflow: 'hidden'
   },
   tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#111',
-    padding: 15
+    flexDirection: 'row', backgroundColor: '#111', padding: 15
   },
   tableHeaderCell: {
-    flex: 1,
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#fff',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5
+    flex: 1, fontSize: 10, fontWeight: 'bold', color: '#fff', textTransform: 'uppercase', letterSpacing: 0.5
   },
   tableRow: {
-    flexDirection: 'row',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    backgroundColor: '#fff'
+    flexDirection: 'row', padding: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0', backgroundColor: '#fff'
   },
   tableCell: {
-    flex: 1,
-    fontSize: 11,
-    color: '#444'
+    flex: 1, fontSize: 11, color: '#444'
   },
   tableCellBold: {
-    flex: 1,
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#c9a05e'
+    flex: 1, fontSize: 12, fontWeight: 'bold', color: '#c9a05e'
   },
 
   // PAGE 3 - DESCRIPTION WITH ELEGANT TYPOGRAPHY
   page3Image: {
-    width: '100%',
-    height: 250,
-    objectFit: 'cover',
-    marginBottom: 30
+    width: '100%', height: 250, objectFit: 'cover', marginBottom: 30
   },
   sectionTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#111',
-    marginBottom: 20,
-    borderBottomWidth: 2,
-    borderBottomColor: '#c9a05e',
-    paddingBottom: 10
+    fontSize: 28, fontWeight: 'bold', color: '#111', marginBottom: 20, borderBottomWidth: 2, borderBottomColor: '#c9a05e', paddingBottom: 10
   },
   descriptionText: {
-    fontSize: 11,
-    lineHeight: 1.8,
-    color: '#444',
-    marginBottom: 20,
-    textAlign: 'justify'
+    fontSize: 11, lineHeight: 1.8, color: '#444', marginBottom: 20, textAlign: 'justify'
   },
   subHeading: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#111',
-    marginTop: 20,
-    marginBottom: 10
+    fontSize: 16, fontWeight: 'bold', color: '#111', marginTop: 20, marginBottom: 10
   },
 
   // PAGE 4 - ARCHITECTURE GRID
   archGrid: {
-    flexDirection: 'row',
-    gap: 2,
-    height: '50%'
+    flexDirection: 'row', gap: 2, height: '50%'
   },
   archImage: {
-    flex: 1,
-    height: '100%',
-    objectFit: 'cover'
+    flex: 1, height: '100%', objectFit: 'cover'
   },
   archFullImage: {
-    width: '100%',
-    height: '48%',
-    objectFit: 'cover',
-    marginTop: 2
+    width: '100%', height: '48%', objectFit: 'cover', marginTop: 2
   },
 
-  // PAGE 5 - AMENITIES WITH ICONIC DESIGN
+  // PAGE 5 - AMENITIES
   amenitiesContainer: {
     padding: 40
   },
   amenitiesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 15,
-    marginTop: 30,
-    marginBottom: 40
+    flexDirection: 'row', flexWrap: 'wrap', gap: 15, marginTop: 30, marginBottom: 40
   },
   amenityItem: {
-    width: '30%',
-    padding: 20,
-    backgroundColor: '#f8f8f8',
-    alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#f0f0f0'
+    width: '30%', padding: 20, backgroundColor: '#f8f8f8', alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: '#f0f0f0'
   },
   amenityText: {
-    fontSize: 11,
-    color: '#333',
-    textAlign: 'center',
-    fontWeight: '500'
+    fontSize: 11, color: '#333', textAlign: 'center', fontWeight: '500'
   },
   amenitiesImage: {
-    width: '100%',
-    height: 350,
-    objectFit: 'cover',
-    borderRadius: 20
+    width: '100%', height: 350, objectFit: 'cover', borderRadius: 20
   },
 
-  // PAGE 6 - MASTERPLAN
+  // PAGE 6 - MASTERPLAN (LOCATION)
   masterplanContainer: {
     padding: 40
   },
   masterplanImage: {
-    width: '100%',
-    height: '70%',
-    objectFit: 'contain',
-    marginTop: 30
+    width: '100%', height: 500, objectFit: 'cover', borderRadius: 16, marginTop: 10
   },
 
-  // PAGE 7 - PAYMENT PLAN WITH VISUAL DESIGN
+  // PAGE 7 - PAYMENT PLAN
   paymentContainer: {
     padding: 40
   },
   paymentCard: {
-    backgroundColor: '#111',
-    padding: 40,
-    borderRadius: 20,
-    marginTop: 30,
-    marginBottom: 30
+    backgroundColor: '#111', padding: 40, borderRadius: 20, marginTop: 30, marginBottom: 30
   },
   paymentRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)'
+    flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)'
   },
   paymentLabel: {
-    fontSize: 14,
-    color: '#fff',
-    textTransform: 'uppercase',
-    letterSpacing: 1
+    fontSize: 14, color: '#fff', textTransform: 'uppercase', letterSpacing: 1
   },
   paymentValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#c9a05e'
+    fontSize: 24, fontWeight: 'bold', color: '#c9a05e'
   },
   paymentTotal: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#c9a05e',
-    textAlign: 'center',
-    marginTop: 30
+    fontSize: 48, fontWeight: 'bold', color: '#c9a05e', textAlign: 'center', marginTop: 30
   },
 
-  // PAGE 8-9 - UNITS SHOWCASE
-  unitsContainer: {
-    padding: 40
-  },
-  unitsGrid: {
-    flexDirection: 'row',
-    gap: 20,
-    marginTop: 30,
-    marginBottom: 40
-  },
-  unitCard: {
-    flex: 1,
-    backgroundColor: '#f8f8f8',
-    padding: 25,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: '#e5e5e5'
-  },
-  unitType: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111',
-    marginBottom: 15
-  },
-  unitPrice: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#c9a05e',
-    marginBottom: 10
-  },
-  unitArea: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 5
-  },
-  unitPricePerSqm: {
-    fontSize: 11,
-    color: '#888'
-  },
-  unitsImage: {
-    width: '100%',
-    height: 400,
-    objectFit: 'cover',
-    borderRadius: 20
-  },
+  // PAGE 8-9 - UNITS SHOWCASE (NEW LIST UI)
+  unitsContainer: { padding: 40 },
+  unitListContainer: { marginTop: 20, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, overflow: 'hidden' },
+  unitListRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#f0f0f0', backgroundColor: '#fff' },
+  unitListText: { fontSize: 12, color: '#374151' },
+  unitListBold: { fontSize: 14, fontWeight: 'bold', color: '#111827' },
+  unitListPrice: { fontSize: 14, fontWeight: 'bold', color: '#111827' },
+  unitsImage: { width: '100%', height: 300, objectFit: 'cover', borderRadius: 20, marginTop: 40 },
 
-  // PAGE 10 - DEVELOPER
+  // PAGE 10 - DEVELOPER (WHITE BG, BIG LOGO)
   developerContainer: {
-    padding: 40,
-    backgroundColor: 'linear-gradient(135deg, #111 0%, #222 100%)'
+    padding: 40, backgroundColor: '#ffffff', height: '100%', display: 'flex', flexDirection: 'column'
   },
   developerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 20,
-    borderBottomWidth: 2,
-    borderBottomColor: '#c9a05e',
-    paddingBottom: 10
+    fontSize: 32, fontWeight: 'bold', color: '#111', marginBottom: 20, borderBottomWidth: 2, borderBottomColor: '#c9a05e', paddingBottom: 10, width: '100%'
   },
-  developerText: {
-    fontSize: 12,
-    lineHeight: 1.8,
-    color: '#ccc',
-    marginBottom: 30
+  developerLogoContainer: {
+    width: '100%', height: '45%', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 30, backgroundColor: '#faf9f7', borderRadius: 12
   },
   developerLogo: {
-    width: 200,
-    height: 100,
-    objectFit: 'contain',
-    marginTop: 20
+    width: '80%', height: '80%', objectFit: 'contain'
   },
-
-  // FOOTER
-  footer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 40,
-    right: 40,
-    flexDirection: 'row',
-    justifyContent: 'space-between'
+  developerText: {
+    fontSize: 12, lineHeight: 1.8, color: '#444', textAlign: 'justify', width: '100%'
   },
-  footerText: {
-    fontSize: 9,
-    color: '#999',
-    textTransform: 'uppercase',
-    letterSpacing: 1
-  }
 });
 
-// 🔥 PROPERTY BROCHURE TEMPLATE - EXACT MATCH WITH IMAGE 🔥
+// 🔥 PROPERTY BROCHURE TEMPLATE 🔥
 const PropertyBrochure = ({ property, preferences, agent, translations, currentLang }) => {
   const xotoLogo = getSafeUrl("https://xotostaging.s3.me-central-1.amazonaws.com/properties/1773403122746-image_109-removebg-preview.png");
   
@@ -647,6 +411,11 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
   const safeImages = gallery.length > 0 ? gallery.map(img => getSafeUrl(img)) : [getSafeUrl("")];
   const devName = property?.developer?.name || "PRESCOTT";
   const propertyName = property?.propertyName || "THE CADEN";
+
+  const unitTypesArray = property?.unitType?.length > 0 ? property.unitType : ["1 Bedroom", "2 Bedrooms", "3 Bedrooms"];
+  const fullAddress = `${property?.country || "AE"}, ${property?.city || "Dubai"}, ${property?.area || "Area"}`;
+  
+  const dynamicAmenities = property?.amenities?.length > 0 ? property.amenities : ["Infinity Pool", "Outdoor Gym", "BBQ Area", "Rooftop Terraces", "Co-working Space", "Water Lounges", "Cinema", "Club House", "Spa"];
 
   const t = (key) => translations[currentLang]?.[key] || translations.EN[key];
 
@@ -666,17 +435,28 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
   const slidesToShow = preferences.slides || [];
   const currentDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
 
+  // 🔥 SHARED HEADER & FOOTER COMPONENT FOR ALL INNER PAGES 🔥
+  const HeaderFooter = () => (
+    <>
+      <View style={pdfStyles.globalHeader} fixed>
+        <PdfImage src={xotoLogo} style={pdfStyles.globalHeaderLogo} />
+      </View>
+      <View style={pdfStyles.globalFooter} fixed>
+        <PdfText style={pdfStyles.globalFooterText}>{propertyName}</PdfText>
+        <PdfText style={pdfStyles.globalFooterBrand}>XOTO.AE</PdfText>
+      </View>
+    </>
+  );
+
   return (
     <Document>
-      {/* PAGE 1: COVER - EXACT MATCH WITH IMAGE */}
+      {/* PAGE 1: COVER */}
       {slidesToShow.includes('Cover slide') && (
         <Page size="A4" style={pdfStyles.coverContainer}>
-          {/* Full Background Image */}
           <PdfImage src={safeImages[0]} style={pdfStyles.coverBackground} />
           <View style={pdfStyles.coverOverlay} />
           
           <View style={pdfStyles.coverContent}>
-            {/* Top Bar with XOTO Logo and Line */}
             <View style={pdfStyles.coverTopBar}>
               <View style={pdfStyles.topLeftContainer}>
                 <PdfImage src={xotoLogo} style={pdfStyles.xotoLogoCover} />
@@ -686,7 +466,6 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
               <PdfText style={pdfStyles.coverFoundText}>{t('lookWhatWeFound')}</PdfText>
             </View>
 
-            {/* Center Title */}
             <View style={pdfStyles.coverCenterContent}>
               <PdfText style={pdfStyles.coverPreTitle}>PRESENTING</PdfText>
               <PdfText style={pdfStyles.coverTitle}>{propertyName}</PdfText>
@@ -694,7 +473,6 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
               <PdfText style={pdfStyles.coverDate}>{t('dateOfCreation')} {currentDate}</PdfText>
             </View>
 
-            {/* Bottom Agent Details - EXACT MATCH WITH IMAGE */}
             <View style={pdfStyles.coverBottomBar}>
               <View style={pdfStyles.bottomLeftSection}>
                 <PdfImage src={agentPhoto} style={pdfStyles.agentCircleImg} />
@@ -713,29 +491,27 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
         </Page>
       )}
 
-      {/* PAGE 2: PROJECT OVERVIEW WITH TABLE */}
+      {/* PAGE 2: PROJECT OVERVIEW */}
       {slidesToShow.includes('Project description') && (
         <Page size="A4" style={pdfStyles.page}>
+          <HeaderFooter />
           <View style={pdfStyles.page2Container}>
-            {/* Left Column - Info */}
             <View style={pdfStyles.page2Left}>
               <PdfText style={pdfStyles.developerTag}>DEVELOPER</PdfText>
-              <PdfText style={pdfStyles.projectTitle}>Prescott</PdfText>
+              <PdfText style={pdfStyles.projectTitle}>{devName}</PdfText>
               
               <View style={pdfStyles.infoCard}>
                 <View style={pdfStyles.infoRow}>
-                  <PdfText style={pdfStyles.infoLabel}>Up to 30 months left</PdfText>
-                  <PdfText style={pdfStyles.infoValue}>Q3 2028 Handover</PdfText>
+                  <PdfText style={pdfStyles.infoLabel}>Handover Status</PdfText>
+                  <PdfText style={pdfStyles.infoValue}>{property?.handover || "TBA"}</PdfText>
                 </View>
               </View>
 
               <PdfImage src={safeImages[1] || safeImages[0]} style={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 12 }} />
             </View>
 
-            {/* Right Column - Table */}
             <View style={pdfStyles.page2Right}>
               <View style={pdfStyles.tableContainer}>
-                {/* Table Header */}
                 <View style={pdfStyles.tableHeader}>
                   <PdfText style={pdfStyles.tableHeaderCell}>Unit Type</PdfText>
                   <PdfText style={pdfStyles.tableHeaderCell}>Bedrooms</PdfText>
@@ -743,8 +519,6 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
                   <PdfText style={pdfStyles.tableHeaderCell}>Area (m²)</PdfText>
                   <PdfText style={pdfStyles.tableHeaderCell}>Price From</PdfText>
                 </View>
-
-                {/* Table Rows */}
                 <View style={pdfStyles.tableRow}>
                   <PdfText style={pdfStyles.tableCell}>Apartments</PdfText>
                   <PdfText style={pdfStyles.tableCell}>1 Bedroom</PdfText>
@@ -752,7 +526,6 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
                   <PdfText style={pdfStyles.tableCell}>72-79</PdfText>
                   <PdfText style={pdfStyles.tableCellBold}>{preferences.currency} 1,800,000</PdfText>
                 </View>
-
                 <View style={pdfStyles.tableRow}>
                   <PdfText style={pdfStyles.tableCell}>Apartments</PdfText>
                   <PdfText style={pdfStyles.tableCell}>2 Bedrooms</PdfText>
@@ -760,7 +533,6 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
                   <PdfText style={pdfStyles.tableCell}>113-129</PdfText>
                   <PdfText style={pdfStyles.tableCellBold}>{preferences.currency} 2,845,000</PdfText>
                 </View>
-
                 <View style={[pdfStyles.tableRow, { borderBottomWidth: 0 }]}>
                   <PdfText style={pdfStyles.tableCell}>Apartments</PdfText>
                   <PdfText style={pdfStyles.tableCell}>3 Bedrooms</PdfText>
@@ -774,34 +546,14 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
         </Page>
       )}
 
-      {/* PAGE 3: DESCRIPTION WITH FULL IMAGE */}
-      {/* {slidesToShow.includes('Project description') && (
-        <Page size="A4" style={pdfStyles.page}>
-          <View style={{ padding: 40 }}>
-            <PdfText style={pdfStyles.sectionTitle}>Description</PdfText>
-            
-            <PdfText style={pdfStyles.subHeading}>Project General Facts</PdfText>
-            <PdfText style={pdfStyles.descriptionText}>
-              The Caden by Prescott Real Estate Development rises at the meeting point of city energy and natural calm within Meydan Horizon, one of Dubai's most forward-looking communities. Its design captures the duality of urban vitality and serene living - modern architecture opening toward tranquil lagoon views, with interiors that emphasize light, balance, and intelligent comfort.
-            </PdfText>
-            
-            <PdfImage src={safeImages[2] || safeImages[1]} style={pdfStyles.page3Image} />
-            
-            <PdfText style={pdfStyles.subHeading}>Finishing and Materials</PdfText>
-            <PdfText style={pdfStyles.descriptionText}>
-              Modern finishing with high-quality materials. Fully fitted kitchens with premium appliances and smart home automation.
-            </PdfText>
-          </View>
-        </Page>
-      )} */}
-{/* PAGE 3: DESCRIPTION WITH FULL IMAGE */}
+      {/* PAGE 3: DESCRIPTION */}
       {slidesToShow.includes('Project description') && (
         <Page size="A4" style={pdfStyles.page}>
+          <HeaderFooter />
           <View style={{ padding: 40 }}>
             <PdfText style={pdfStyles.sectionTitle}>Description</PdfText>
             
             <PdfText style={pdfStyles.subHeading}>Project General Facts</PdfText>
-            {/* 🔥 YAHAN CHANGE KIYA HAI - DYNAMIC DESCRIPTION ADD KIYA 🔥 */}
             <PdfText style={pdfStyles.descriptionText}>
               {property?.description || "Detailed description for this property is not available yet."}
             </PdfText>
@@ -815,9 +567,11 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
           </View>
         </Page>
       )}
-      {/* PAGE 4: ARCHITECTURE - FULL PAGE IMAGES */}
+
+      {/* PAGE 4: ARCHITECTURE (Added padding to accommodate header/footer) */}
       {(safeImages.length > 3 && slidesToShow.includes('Project description')) && (
-        <Page size="A4" style={pdfStyles.page}>
+        <Page size="A4" style={[pdfStyles.page, { padding: 40 }]}>
+          <HeaderFooter />
           <View style={pdfStyles.archGrid}>
             <PdfImage src={safeImages[3]} style={pdfStyles.archImage} />
             <PdfImage src={safeImages[4] || safeImages[3]} style={pdfStyles.archImage} />
@@ -829,39 +583,39 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
       {/* PAGE 5: FEATURES & AMENITIES */}
       {slidesToShow.includes('Location') && (
         <Page size="A4" style={pdfStyles.page}>
+          <HeaderFooter />
           <View style={pdfStyles.amenitiesContainer}>
             <PdfText style={pdfStyles.sectionTitle}>Features & Amenities</PdfText>
-            
             <View style={pdfStyles.amenitiesGrid}>
-              {["Infinity Pool", "Outdoor Gym", "BBQ Area", "Rooftop Terraces", 
-                "Co-working Space", "Water Lounges", "Cinema", "Club House", "Spa"].map((item, i) => (
+              {dynamicAmenities.slice(0, 9).map((item, i) => (
                 <View key={i} style={pdfStyles.amenityItem}>
                   <PdfText style={pdfStyles.amenityText}>{item}</PdfText>
                 </View>
               ))}
             </View>
-
             <PdfImage src={safeImages[6] || safeImages[0]} style={pdfStyles.amenitiesImage} />
           </View>
         </Page>
       )}
 
-      {/* PAGE 6: MASTERPLAN - FULL PAGE */}
+      {/* PAGE 6: MASTERPLAN / LOCATION */}
       {slidesToShow.includes('Location') && (
         <Page size="A4" style={pdfStyles.page}>
+          <HeaderFooter />
           <View style={pdfStyles.masterplanContainer}>
-            <PdfText style={pdfStyles.sectionTitle}>Masterplan</PdfText>
+            <PdfText style={pdfStyles.sectionTitle}>Location</PdfText>
+            <PdfText style={{ fontSize: 16, color: '#374151', fontWeight: 'bold', marginBottom: 20 }}>📍 {fullAddress}</PdfText>
             <PdfImage src={safeImages[7] || safeImages[0]} style={pdfStyles.masterplanImage} />
           </View>
         </Page>
       )}
 
-      {/* PAGE 7: PAYMENT PLAN - ELEGANT DESIGN */}
+      {/* PAGE 7: PAYMENT PLAN */}
       {slidesToShow.includes('Payment plans') && (
         <Page size="A4" style={pdfStyles.page}>
+          <HeaderFooter />
           <View style={pdfStyles.paymentContainer}>
             <PdfText style={pdfStyles.sectionTitle}>Payment Plan</PdfText>
-            
             <View style={pdfStyles.paymentCard}>
               <View style={pdfStyles.paymentRow}>
                 <PdfText style={pdfStyles.paymentLabel}>On Booking</PdfText>
@@ -876,7 +630,6 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
                 <PdfText style={pdfStyles.paymentValue}>40%</PdfText>
               </View>
             </View>
-
             <PdfText style={pdfStyles.paymentTotal}>20/40/40%</PdfText>
           </View>
         </Page>
@@ -885,37 +638,19 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
       {/* PAGE 8: TYPICAL UNITS */}
       {slidesToShow.includes('Unit prices') && (
         <Page size="A4" style={pdfStyles.page}>
+          <HeaderFooter />
           <View style={pdfStyles.unitsContainer}>
-            <PdfText style={pdfStyles.sectionTitle}>Typical Units</PdfText>
-            
-            <PdfText style={[pdfStyles.descriptionText, { marginBottom: 20 }]}>
-              Available Units: 1 BR (19 units) • 2 BR (2 units) • 3 BR (6 units)
-            </PdfText>
+            <PdfText style={pdfStyles.sectionTitle}>Units & Availability</PdfText>
 
-            <View style={pdfStyles.unitsGrid}>
-              {/* 1 Bedroom Card */}
-              <View style={pdfStyles.unitCard}>
-                <PdfText style={pdfStyles.unitType}>1 Bedroom</PdfText>
-                <PdfText style={pdfStyles.unitPrice}>{preferences.currency} {displayPrice(1800000)}</PdfText>
-                <PdfText style={pdfStyles.unitArea}>72 - 79 m²</PdfText>
-                <PdfText style={pdfStyles.unitPricePerSqm}>AED 23,795/m²</PdfText>
-              </View>
-
-              {/* 2 Bedroom Card */}
-              <View style={pdfStyles.unitCard}>
-                <PdfText style={pdfStyles.unitType}>2 Bedrooms</PdfText>
-                <PdfText style={pdfStyles.unitPrice}>{preferences.currency} {displayPrice(2845000)}</PdfText>
-                <PdfText style={pdfStyles.unitArea}>113 - 129 m²</PdfText>
-                <PdfText style={pdfStyles.unitPricePerSqm}>AED 23,798/m²</PdfText>
-              </View>
-            </View>
-
-            {/* 3 Bedroom Card */}
-            <View style={[pdfStyles.unitCard, { marginBottom: 30 }]}>
-              <PdfText style={pdfStyles.unitType}>3 Bedrooms</PdfText>
-              <PdfText style={pdfStyles.unitPrice}>{preferences.currency} {displayPrice(4241000)} - {displayPrice(4906000)}</PdfText>
-              <PdfText style={pdfStyles.unitArea}>188 - 197 m²</PdfText>
-              <PdfText style={pdfStyles.unitPricePerSqm}>AED 21,633 - 24,891/m²</PdfText>
+            <View style={pdfStyles.unitListContainer}>
+              {unitTypesArray.map((unit, index, arr) => (
+                <View style={[pdfStyles.unitListRow, index === arr.length - 1 ? { borderBottomWidth: 0 } : {}]} key={index}>
+                  <View style={{ flex: 1.5 }}><PdfText style={pdfStyles.unitListBold}>{unit}</PdfText></View>
+                  <View style={{ flex: 1 }}><PdfText style={pdfStyles.unitListText}>1 Unit</PdfText></View>
+                  <View style={{ flex: 1.5 }}><PdfText style={pdfStyles.unitListText}>{property?.builtUpArea_min ? displayArea(property.builtUpArea_min) : "TBA"} {preferences.measureUnit}</PdfText></View>
+                  <View style={{ flex: 1.5, alignItems: 'flex-end' }}><PdfText style={pdfStyles.unitListPrice}>{preferences.currency} {displayPrice(property?.price_min || property?.price)}</PdfText></View>
+                </View>
+              ))}
             </View>
 
             <PdfImage src={safeImages[8] || safeImages[0]} style={pdfStyles.unitsImage} />
@@ -926,16 +661,19 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
       {/* PAGE 9: DEVELOPER */}
       {slidesToShow.includes('Developer') && (
         <Page size="A4" style={pdfStyles.page}>
+          <HeaderFooter />
           <View style={pdfStyles.developerContainer}>
             <PdfText style={pdfStyles.developerTitle}>The Developer</PdfText>
             
-            <PdfText style={pdfStyles.developerText}>
-              At Prescott, they don't just build structures; they craft modern lifestyles. Their team of experts is dedicated to pushing the boundaries of design, integrating the latest technologies to create spaces that adapt to the needs of tomorrow. Driven by a commitment to sustainability, Prescott infuse eco-conscious practices into every aspect of their development process, ensuring a greener, more sustainable future for generations to come.
-            </PdfText>
-
             {property?.developer?.logo && (
-              <PdfImage src={getSafeUrl(property.developer.logo)} style={pdfStyles.developerLogo} />
+              <View style={pdfStyles.developerLogoContainer}>
+                <PdfImage src={getSafeUrl(property.developer.logo)} style={pdfStyles.developerLogo} />
+              </View>
             )}
+
+            <PdfText style={pdfStyles.developerText}>
+              {property?.about_developer || property?.developer?.description || `At ${devName}, they don't just build structures; they craft modern lifestyles. Their team of experts is dedicated to pushing the boundaries of design, integrating the latest technologies to create spaces that adapt to the needs of tomorrow. Driven by a commitment to sustainability, they infuse eco-conscious practices into every aspect of their development process, ensuring a greener, more sustainable future for generations to come.`}
+            </PdfText>
           </View>
         </Page>
       )}
@@ -962,7 +700,7 @@ export default function AgentProjectDetails() {
   const [pdfPreferences, setPdfPreferences] = useState({
     language: 'EN',
     currency: 'AED',
-    measureUnit: 'ft2',
+    measureUnit: 'sqft',
     slides: ['Cover slide', 'Project description', 'Developer', 'Unit prices', 'Payment plans', 'Location']
   });
 
@@ -996,22 +734,7 @@ export default function AgentProjectDetails() {
     }
   };
 
-  // const handleImproveWithAI = async () => {
-  //   setIsImprovingAI(true);
-  //   message.loading({ content: "XOTO AI is enhancing the description...", key: "ai_load" });
-  //   try {
-  //     setTimeout(() => {
-  //       setCustomDescription(`✨ ${customDescription} (Enhanced by Xoto AI for maximum conversion and luxury appeal.)`);
-  //       message.success({ content: "Description improved!", key: "ai_load", duration: 2 });
-  //       setIsImprovingAI(false);
-  //     }, 1500);
-  //   } catch (error) {
-  //     message.error({ content: "AI Error. Try again.", key: "ai_load" });
-  //     setIsImprovingAI(false);
-  //   }
-  // };
-const handleImproveWithAI = async () => {
-    // 1. Check karte hain ki user ne pehle se kuch description likha hai ya nahi
+  const handleImproveWithAI = async () => {
     if (!customDescription || customDescription.trim() === "") {
       message.warning("Please enter some description first!");
       return;
@@ -1021,14 +744,12 @@ const handleImproveWithAI = async () => {
     message.loading({ content: "XOTO AI is enhancing the description...", key: "ai_load" });
 
     try {
-      // 2. Apni API key ko environment variable se uthate hain
       const apiKey = import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY;
 
       if (!apiKey) {
         throw new Error("API Key nahi mili! Please check your .env file.");
       }
 
-      // 3. OpenAI ko request bhejte hain
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -1036,7 +757,7 @@ const handleImproveWithAI = async () => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "gpt-3.5-turbo", // Ye model sasta aur fast hai, isme 404 error nahi aayega
+          model: "gpt-3.5-turbo", 
           messages: [
             {
               role: "system",
@@ -1044,7 +765,7 @@ const handleImproveWithAI = async () => {
             },
             {
               role: "user",
-              content: customDescription // Ye wo text hai jo aap box mein likhoge
+              content: customDescription 
             }
           ],
           temperature: 0.7,
@@ -1052,20 +773,17 @@ const handleImproveWithAI = async () => {
         })
       });
 
-      // 4. Agar API se koi error aaya (jaise 404 ya 401), toh usko pakadte hain
       if (!response.ok) {
         const errData = await response.json();
         console.error("OpenAI Error Details:", errData);
         throw new Error(errData.error?.message || `API fail ho gayi (Error code: ${response.status})`);
       }
 
-      // 5. Agar sab sahi raha, toh AI ka answer nikalte hain
       const data = await response.json();
       
       if (data.choices && data.choices.length > 0) {
         const improvedText = data.choices[0].message.content;
         
-        // 6. Text box ko naye AI wale text se update kar dete hain
         setCustomDescription(improvedText);
         message.success({ content: "Description perfectly enhanced!", key: "ai_load", duration: 2 });
       } else {
@@ -1075,9 +793,10 @@ const handleImproveWithAI = async () => {
       console.error("AI Improvement error:", error);
       message.error({ content: "AI Error: " + error.message, key: "ai_load", duration: 5 });
     } finally {
-      setIsImprovingAI(false); // Loader band kar dete hain
+      setIsImprovingAI(false); 
     }
   };
+
   const handleGenerateOffer = async (actionType = 'download') => { 
     setIsGenerating(true);
     const key = "updatable";
@@ -1180,6 +899,10 @@ const handleImproveWithAI = async () => {
   const languages = [ { code: 'EN', name: 'English' }, { code: 'HI', name: 'Hindi' }, { code: 'AR', name: 'Arabic' }, { code: 'RU', name: 'Russian' }, { code: 'ZH', name: 'Chinese' }, { code: 'FA', name: 'Persian' } ];
   const currencies = [ { code: 'AED', name: 'United Arab Emirates Dirham' }, { code: 'USD', name: 'US Dollar' }, { code: 'EUR', name: 'Euro' }, { code: 'GBP', name: 'British Pound' }, { code: 'INR', name: 'Indian Rupee' } ];
 
+  const fullAddress = `${property?.country || "AE"}, ${property?.city || "Dubai"}, ${property?.area || "Area"}`;
+
+  const displayAmenitiesUI = property?.amenities?.length > 0 ? property.amenities : ["Infinity Pool", "Outdoor Gym", "BBQ Area", "Rooftop Terraces", "Co-working Space", "Water Lounges", "Cinema", "Club House", "Spa"];
+
   return (
     <div style={{ padding: "24px 40px", background: "#fff", minHeight: "100vh" }}>
       <Button type="link" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ paddingLeft: 0, marginBottom: 16, color: "#555" }}>Back to Projects</Button>
@@ -1210,32 +933,81 @@ const handleImproveWithAI = async () => {
 
           <Divider style={{ margin: "40px 0" }} />
 
-          <Title level={3} style={{ marginBottom: 24 }}>Units & Availability</Title>
-          <Collapse defaultActiveKey={['1']} ghost expandIconPosition="end" style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12 }}>
-            <Panel header={
-                <Row justify="space-between" align="middle" style={{ width: "100%", paddingRight: 16 }}>
-                  <Col><Text strong style={{ fontSize: 16 }}>{property.bedrooms || "Studio/1"} Bedroom</Text></Col>
-                  <Col><Text type="secondary">Various Units</Text></Col>
-                  <Col><Text type="secondary">{property.builtUpArea_min || 0} sqft</Text></Col>
-                  <Col><Text strong style={{ fontSize: 16 }}>{property.currency || "AED"} {Number(property.price || 0).toLocaleString()}</Text></Col>
-                </Row>
-              } key="1">
-              <div style={{ background: "#f9fafb", padding: 16, borderRadius: 8, marginTop: 10 }}>
-                <Row justify="space-between" align="middle">
-                  <Col span={4}><div style={{ width: 60, height: 40, background: "#e5e7eb", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center" }}><AppstoreOutlined style={{ color: "#9ca3af", fontSize: 20 }}/></div></Col>
-                  <Col span={4}><Text strong>{property.bedrooms || 1} Bedroom</Text></Col>
-                  <Col span={4}><Text>{property.propertyType || "Apartment"}</Text></Col>
-                  <Col span={4}><Text>{property.builtUpArea_min || 0} sqft</Text></Col>
-                  <Col span={6}>
-                    <Text strong style={{ display: "block" }}>{property.currency || "AED"} {Number(property.price || 0).toLocaleString()}</Text>
-                    <Text type="secondary" style={{ fontSize: 12 }}>{Math.round((property.price || 0) / (property.builtUpArea_min || 1))} AED/sqft</Text>
-                  </Col>
-                </Row>
+          {/* AMENITIES PROPER BOX UI */}
+          <Title level={3} style={{ marginBottom: 24 }}>Amenities</Title>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+            {displayAmenitiesUI.map((amenity, index) => (
+              <div key={index} style={{
+                padding: "10px 16px", 
+                border: "1px solid #e5e7eb", 
+                borderRadius: "8px", 
+                background: "#fff",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#374151",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+              }}>
+                <span style={{ color: "#6366f1", fontSize: "16px", fontWeight: "bold" }}>✓</span>
+                {amenity}
               </div>
-            </Panel>
-          </Collapse>
+            ))}
+          </div>
+
+          <Divider style={{ margin: "40px 0" }} />
+
+          {/* UNITS & AVAILABILITY - NEW UI BLOCK */}
+          <Title level={3} style={{ marginBottom: 24 }}>Units & Availability</Title>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {property?.unitType?.length > 0 ? (
+              property.unitType.map((unit, index) => (
+                <div key={index} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "16px 20px", background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb",
+                  cursor: "pointer", transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.05)"}
+                onMouseLeave={(e) => e.currentTarget.style.boxShadow = "none"}
+                >
+                  <div style={{ flex: 1.5 }}><Text strong style={{ fontSize: 15, color: "#111827" }}>{unit}</Text></div>
+                  <div style={{ flex: 1 }}><Text style={{ color: "#374151", fontWeight: 500 }}>1 Unit</Text></div>
+                  <div style={{ flex: 1.5 }}><Text style={{ color: "#374151", fontWeight: 500 }}>{property.builtUpArea_min || 0} {property.builtUpAreaUnit || "sqft"}</Text></div>
+                  <div style={{ flex: 1.5, textAlign: "right", paddingRight: 16 }}><Text strong style={{ fontSize: 15, color: "#111827" }}>{Number(property.price_min || property.price || 0).toLocaleString()} {property.currency || "AED"}</Text></div>
+                  <div><Button shape="default" icon={<RightOutlined />} size="small" style={{ borderRadius: 6, borderColor: "#d1d5db", color: "#6b7280" }} /></div>
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: "16px", background: "#f9fafb", borderRadius: 8 }}><Text type="secondary">Unit details not available</Text></div>
+            )}
+          </div>
+
+          <Divider style={{ margin: "40px 0" }} />
+
+          {/* LOCATION MAP - NEW UI BLOCK */}
+          <Title level={3} style={{ marginBottom: 16 }}>Location</Title>
+          <div style={{ marginBottom: 24 }}>
+            <Text style={{ fontSize: 16, color: "#374151", fontWeight: 500 }}>
+              <EnvironmentOutlined style={{ color: "#6366f1", marginRight: 8, fontSize: 18 }} />
+              {fullAddress}
+            </Text>
+          </div>
+          <div style={{ width: "100%", height: 400, borderRadius: 16, overflow: "hidden", border: "1px solid #e5e7eb", position: "relative" }}>
+             <iframe
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="no-referrer-when-downgrade"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent((property?.propertyName || '') + ' ' + (property?.area || '') + ' ' + (property?.city || ''))}&t=k&z=15&ie=UTF8&iwloc=&output=embed`}
+              ></iframe>
+          </div>
+
         </Col>
 
+        {/* ORIGINAL RIGHT SIDE COLUMN (UNCHANGED) */}
         <Col xs={24} lg={8}>
           <div style={{ position: "sticky", top: 24 }}>
             <Text type="secondary" style={{ fontSize: 14 }}><EnvironmentOutlined /> {property.city}, {property.country || "UAE"}</Text>
