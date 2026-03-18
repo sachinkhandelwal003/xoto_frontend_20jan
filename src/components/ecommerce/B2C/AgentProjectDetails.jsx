@@ -1091,39 +1091,57 @@ export default function AgentProjectDetails() {
 
   // 🔥 CALL CUSTOM BACKEND AI IMPROVEMENT 🔥
 // 🔥 CALL CUSTOM BACKEND AI IMPROVEMENT 🔥
-  const handleImproveWithAI = async () => {
-    if (!customDescription || customDescription.trim() === "") {
-      message.warning("Please enter some description first!");
-      return;
-    }
+// 🔥 CALL CUSTOM BACKEND AI IMPROVEMENT 🔥
+// 🔥 CALL CUSTOM BACKEND AI IMPROVEMENT 🔥
+const handleImproveWithAI = async () => {
+  if (!customDescription || customDescription.trim() === "") {
+    message.warning("Please enter some description first!");
+    return;
+  }
 
-    setIsImprovingAI(true);
-    message.loading({ content: "XOTO AI is enhancing the description...", key: "ai_load" });
+  setIsImprovingAI(true);
+  message.loading({ content: "XOTO AI is enhancing the description...", key: "ai_load" });
 
-    try {
-      // 1. Backend API Call
-      const response = await apiService.post("aiii/improve-description", {
-        description: customDescription 
+  try {
+    // 🚀 Calling API
+    const response = await apiService.post("aiii/improve-description", {
+      description: customDescription 
+    });
+
+    // 🛠️ THE FIX: Check if apiService returns data directly or inside .data
+    const responseData = response.data ? response.data : response;
+    
+    console.log("🔥 BACKEND RESPONSE:", responseData); // Ab ye undefined nahi aayega
+
+    // Flexible checks
+    const isSuccess = responseData?.success === true || responseData?.responsse?.success === true || responseData?.status === "success";
+    const improvedText = responseData?.improvedDescription || responseData?.data || responseData?.text || responseData?.responsse?.improvedDescription;
+
+    if (isSuccess && improvedText) {
+      setCustomDescription(improvedText);
+      message.success({ 
+        content: "Description perfectly enhanced!", 
+        key: "ai_load", 
+        duration: 2 
       });
-
-      // 🛠️ MAIN FIX: Custom API Service check (Handle both response.data and direct response)
-      const resData = response.data !== undefined ? response.data : response;
-
-      // 2. Success Check
-      if (resData?.success && resData?.improvedDescription) {
-        setCustomDescription(resData.improvedDescription);
-        message.success({ content: "Description perfectly enhanced!", key: "ai_load", duration: 2 });
-      } else {
-        console.log("Backend Raw Response:", resData); // Taki console me dikh jaye kya aaya hai
-        throw new Error(resData?.message || "Backend se valid response nahi aaya");
-      }
-    } catch (error) {
-      console.error("AI Improvement error:", error);
-      message.error({ content: "AI Error: Failed to improve description", key: "ai_load", duration: 5 });
-    } finally {
-      setIsImprovingAI(false); 
+    } else {
+      console.error("Format mismatch in response:", responseData);
+      message.error({ 
+        content: "AI responded, but format was wrong. Check console.", 
+        key: "ai_load" 
+      });
     }
-  };
+  } catch (error) {
+    console.error("AI Improvement error:", error);
+    message.error({ 
+      content: "Backend error. Make sure server is running locally!", 
+      key: "ai_load", 
+      duration: 5 
+    });
+  } finally {
+    setIsImprovingAI(false); 
+  }
+};
 
   const handleGenerateOffer = async (actionType = 'download') => { 
     setIsGenerating(true);
@@ -1179,7 +1197,7 @@ export default function AgentProjectDetails() {
       };
       
       // Generate HTML content
-      const htmlContent = generateHTMLTemplate(updatedProperty, agentInfo, pdfPreferences, currentTranslations, activeLang, customDescription);
+ const htmlContent = generateHTMLTemplate(updatedProperty, agentInfo, pdfPreferences, currentTranslations, activeLang, customDescription);
 
       if (actionType === 'view') {
         const previewWindow = window.open('', '_blank');
@@ -1187,24 +1205,50 @@ export default function AgentProjectDetails() {
         previewWindow.document.close();
         message.success({ content: "Preview opened in new tab!", key });
       } else {
-        // Generate PDF using html2canvas and jsPDF
+        // 🔥 NAYA PDF GENERATION LOGIC 🔥
         const container = document.createElement('div');
         container.innerHTML = htmlContent;
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        container.style.top = '-9999px';
+        
+        // 1. Force desktop dimensions taaki CSS Grid aur layout na toote
+        container.style.position = 'fixed';
+        container.style.top = '20000px'; // Screen se bahut neeche rakha hai taaki user ko dikhe na
+        container.style.left = '0';
+        container.style.width = '1200px'; // Exact width assign ki
+        container.style.zIndex = '-9999';
         document.body.appendChild(container);
+
+        // 2. 1.5 seconds ka wait kiya taaki saari images aur fonts load ho jayein
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
         const pages = container.querySelectorAll('.page');
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
         for (let i = 0; i < pages.length; i++) {
           if (i > 0) pdf.addPage();
-          const canvas = await html2canvas(pages[i], { scale: 2, logging: false, useCORS: true, allowTaint: false });
-          const imgData = canvas.toDataURL('image/png');
+          
+          // 3. '100vh' ko fixed pixels mein badla taaki A4 ratio maintain rahe (1200px width par height ~1697px chahiye hoti hai)
+          pages[i].style.height = '1697px'; 
+          pages[i].style.minHeight = '1697px'; 
+          pages[i].style.maxHeight = '1697px';
+          pages[i].style.overflow = 'hidden';
+
+          // 4. html2canvas Config update ki windowWidth ke sath
+          const canvas = await html2canvas(pages[i], { 
+            scale: 2, // High res ke liye
+            logging: false, 
+            useCORS: true, 
+            
+            allowTaint: true,
+            windowWidth: 1200, // html2canvas ko strictly bata diya ki screen 1200px ki hai
+            backgroundColor: '#ffffff'
+          });
+          
+          // Use JPEG format instead of PNG (File size chota rahega aur white border/glitch nahi aayega)
+          const imgData = canvas.toDataURL('image/jpeg', 0.95); 
           const imgWidth = 210;
           const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, undefined, 'FAST');
+          
+          pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight, undefined, 'FAST');
         }
 
         document.body.removeChild(container);
@@ -1511,7 +1555,16 @@ export default function AgentProjectDetails() {
             )}
             <div style={{ display: 'flex', gap: 10 }}>
               <Button style={{ flex: 1 }} icon={<EditOutlined />} onClick={() => setIsEditingDesc(!isEditingDesc)}>{isEditingDesc ? 'Save' : 'Edit'}</Button>
-              <Button type="primary" style={{ flex: 1, background: 'linear-gradient(90deg, #5C039B 0%, #a855f7 100%)', border: 'none' }} icon={<RobotOutlined />} loading={isImprovingAI} onClick={handleImproveWithAI}>Improve with AI</Button>
+              {/* <Button type="primary" style={{ flex: 1, background: 'linear-gradient(90deg, #5C039B 0%, #a855f7 100%)', border: 'none' }} icon={<RobotOutlined />} loading={isImprovingAI} onClick={handleImproveWithAI}>Improve with AI</Button> */}
+            <Button 
+  type="primary" 
+  style={{ flex: 1, background: 'linear-gradient(90deg, #5C039B 0%, #a855f7 100%)', border: 'none' }} 
+  icon={<RobotOutlined />} 
+  loading={isImprovingAI} // 👈 Ye loader spinner dikhayega
+  onClick={handleImproveWithAI}
+>
+  Improve with AI
+</Button>
             </div>
           </div>
 
