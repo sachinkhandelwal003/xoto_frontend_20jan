@@ -13,9 +13,9 @@
   "offerings": [
     { "label": "تنسيق الحدائق", "path": "/landscaping" },
     { "label": "التصميم الداخلي", "path": "/services/interior" },
-    { "label": "الإيجار", "path": "/marketplace" },
-    { "label": "شراء", "path": "/marketplace" },
-    { "label": "بيع", "path": "/marketplace" },
+    { "label": "الإيجار", "path": "/Property" },
+    { "label": "شراء", "path": "/Property" },
+    { "label": "بيع", "path": "/Property" },
     { "label": "الرهون العقارية", "path": "/mortgage/services" }
     
   ],

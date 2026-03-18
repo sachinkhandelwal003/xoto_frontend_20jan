@@ -4,17 +4,15 @@ import { useNavigate } from "react-router-dom";
 import {
   Card, Typography, Input, Button, Tag, Tooltip, message,
   Tabs, Modal, Form, Select, InputNumber, Row, Col,
-  AutoComplete, Space, Statistic, Divider, Avatar
+  AutoComplete, Space, Statistic, Divider
 } from "antd";
 import {
   SearchOutlined, EditOutlined, DeleteOutlined,
   CheckCircleOutlined, EyeOutlined, TrophyOutlined,
-  TeamOutlined, UserOutlined, FireOutlined, UserAddOutlined,
-  MailOutlined, PhoneOutlined, EnvironmentOutlined,DollarOutlined 
+  TeamOutlined, UserOutlined, FireOutlined,UserAddOutlined 
 } from "@ant-design/icons";
 import CustomTable from "../../CMS/pages/custom/CustomTable";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
-import { showConfirmDialog, showSuccessAlert, showErrorAlert } from "../../../manageApi/utils/sweetAlert";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -44,26 +42,19 @@ export default function AgentLeadDashboard() {
   const [projects, setProjects] = useState([]);
   const [stats, setStats] = useState({ total: 0, customers: 0, activeLeads: 0 });
 
-  // Pagination State
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalResults: 0,
-    itemsPerPage: 10,
-  });
-
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   const [locationOptions, setLocationOptions] = useState([]);
 
-  // ================= FETCH LEADS & PROJECTS =================
-  const fetchLeads = async (page = 1, itemsPerPage = 10, status = activeTab, search = searchQuery) => {
-    setLoading(true);
+  // Fetch Leads with Status & Search Query parameters
+  const fetchLeads = async (status = activeTab, search = searchQuery) => {
     try {
-      let url = `/agent/lead/get-all-leads?page=${page}&limit=${itemsPerPage}`;
+      setLoading(true);
+      let url = `/agent/lead/get-all-leads?limit=100`;
       
+      // Append filters based on selected tab and search
       if (status !== "all") url += `&status=${status}`;
       if (search) url += `&search=${search}`;
 
@@ -72,19 +63,11 @@ export default function AgentLeadDashboard() {
       
       setLeads(list);
       
-      // Update pagination
-      setPagination({
-        currentPage: response?.pagination?.currentPage || page,
-        totalPages: response?.pagination?.totalPages || 1,
-        totalResults: response?.pagination?.totalItems || response?.count || list.length,
-        itemsPerPage: itemsPerPage,
-      });
-
-      // Update top metric cards only when viewing "all" without search
+      // If fetching "all", update the top metric cards
       if (status === "all" && !search) {
         setStats({
-          total: response?.pagination?.totalItems || response?.count || list.length,
-          customers: list.filter(l => l.status === 'customer').length, // Approximated from current page or needs separate aggregate API
+          total: list.length,
+          customers: list.filter(l => l.status === 'customer').length,
           activeLeads: list.filter(l => l.status === 'lead').length,
         });
       }
@@ -110,54 +93,46 @@ export default function AgentLeadDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ================= EVENT HANDLERS =================
-  const handleTabChange = (key) => {
-    setActiveTab(key);
-    fetchLeads(1, pagination.itemsPerPage, key, searchQuery);
-  };
+  // Re-fetch whenever the tab changes
+  useEffect(() => {
+    fetchLeads(activeTab, searchQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
-  const handlePageChange = (page, itemsPerPage) => {
-    fetchLeads(page, itemsPerPage, activeTab, searchQuery);
-  };
-
+  // Handle Search input
   const handleSearch = (e) => {
     const val = e.target.value;
     setSearchQuery(val);
-    fetchLeads(1, pagination.itemsPerPage, activeTab, val);
+    fetchLeads(activeTab, val);
   };
 
+  // Actions
   const deleteLead = async (id) => {
-    const result = await showConfirmDialog(
-      'Remove Lead',
-      'Are you sure you want to permanently delete this lead from your pipeline?',
-      'Delete'
-    );
-    if (result.isConfirmed) {
-      try {
-        await apiService.delete(`/agent/lead/delete-lead/${id}`);
-        showSuccessAlert('Deleted', 'Lead removed from pipeline successfully.');
-        fetchLeads(pagination.currentPage, pagination.itemsPerPage, activeTab, searchQuery);
-      } catch (err) {
-        showErrorAlert('Error', 'Failed to delete the lead.');
-      }
+    try {
+      await apiService.delete(`/agent/lead/delete-lead/${id}`);
+      setLeads((prev) => prev.filter((l) => l._id !== id));
+      message.success("Lead removed from pipeline");
+    } catch (err) {
+      message.error("Delete failed");
     }
   };
 
   const updateLeadStatus = async (id, status) => {
     try {
       await apiService.post(`/agent/lead/update-status/${id}`, { status });
-      message.success(`Lead successfully moved to ${status}`);
-      fetchLeads(pagination.currentPage, pagination.itemsPerPage, activeTab, searchQuery);
+      message.success(`Lead moved to ${status}`);
+      fetchLeads(); // Refresh table
     } catch (error) {
       message.error("Status update failed");
     }
   };
 
+  // Navigate to Details strictly via ID param
   const handleViewLead = (item) => {
     navigate(`../lead-details/${item._id}`);
   };
 
-  // ================= FORM HANDLERS =================
+  // Form handling
   const handleAddClick = () => {
     setSelectedLead(null);
     form.resetFields();
@@ -232,26 +207,23 @@ export default function AgentLeadDashboard() {
     }
   };
 
-  // ================= UI COMPONENTS =================
   const getStatusTag = (status) => {
     switch (status?.toLowerCase()) {
-      case "customer": return <Tag color="cyan" className="rounded-full px-3">Customer</Tag>;
-      case "lead": return <Tag color="gold" className="rounded-full px-3">Lead</Tag>;
-      case "visit": return <Tag color="blue" className="rounded-full px-3">Site Visit</Tag>;
-      case "deal": return <Tag color="purple" className="rounded-full px-3">Deal</Tag>;
-      case "booking": return <Tag color="magenta" className="rounded-full px-3">Booking</Tag>;
-      case "closed": return <Tag color="success" className="rounded-full px-3">Closed</Tag>;
-      case "lost": return <Tag color="error" className="rounded-full px-3">Lost</Tag>;
-      default: return <Tag color="default" className="rounded-full px-3">{status}</Tag>;
+      case "customer": return <Tag color="cyan">Customer</Tag>;
+      case "lead": return <Tag color="gold">Lead</Tag>;
+      case "visit": return <Tag color="blue">Site Visit</Tag>;
+      case "deal": return <Tag color="purple">Deal</Tag>;
+      case "booking": return <Tag color="magenta">Booking</Tag>;
+      case "closed": return <Tag color="success">Closed</Tag>;
+      case "lost": return <Tag color="red">Lost</Tag>;
+      default: return <Tag color="default">{status}</Tag>;
     }
   };
 
-  // CustomTable Columns matching the exact structure used in Freelancer requests
   const columns = [
     {
-      key: "applicant",
       title: "Client Profile",
-      sortable: true,
+      key: "name",
       render: (_, item) => (
         <div className="flex items-center gap-3">
           <Avatar size={40} className="bg-indigo-100 text-indigo-600 font-bold">
@@ -269,16 +241,12 @@ export default function AgentLeadDashboard() {
       ),
     },
     {
-      key: "contact",
       title: "Contact",
-      render: (_, item) => (
-        <Text className="text-gray-600">
-          <PhoneOutlined className="mr-1.5 text-gray-400"/> 
-          {item?.phone_number || '--'}
-        </Text>
-      ),
+      dataIndex: "phone_number",
+      key: "contact",
     },
     {
+      title: "Target / Budget",
       key: "budget",
       title: "Target / Budget",
       render: (_, item) => (
@@ -287,42 +255,40 @@ export default function AgentLeadDashboard() {
             <DollarOutlined /> {item?.budget ? `${item.budget.toLocaleString()} AED` : "N/A"}
           </Text>
           {item?.project?.propertyName && (
-            <Tag color="blue" className="rounded-md mt-1 border-none bg-blue-50">
-              {item.project.propertyName}
-            </Tag>
+            <Tag color="blue" style={{ margin: 0, marginTop: 4 }}>{item.project.propertyName}</Tag>
           )}
         </Space>
       ),
     },
     {
+      title: "Stage",
       key: "status",
       title: "Stage",
       render: (_, item) => getStatusTag(item.status),
     },
     {
-      key: "actions",
       title: "Actions",
-      align: "right",
+      key: "action",
       render: (_, item) => (
         <Space>
           <Tooltip title="View Intelligence Hub">
-            <Button type="text" className="text-indigo-600 hover:bg-indigo-50 rounded-lg" icon={<EyeOutlined />} onClick={() => handleViewLead(item)} />
+            <Button type="primary" ghost icon={<EyeOutlined />} onClick={() => handleViewLead(item)} />
           </Tooltip>
-          <Tooltip title="Edit Profile">
-            <Button type="text" className="text-gray-600 hover:bg-gray-100 rounded-lg" icon={<EditOutlined />} onClick={() => handleEditClick(item)} />
+          <Tooltip title="Edit">
+            <Button type="text" icon={<EditOutlined />} onClick={() => handleEditClick(item)} />
           </Tooltip>
           {item?.status === "lead" && (
             <Tooltip title="Convert to Deal">
-              <Button type="text" className="text-emerald-600 hover:bg-emerald-50 rounded-lg" icon={<CheckCircleOutlined />} onClick={() => updateLeadStatus(item._id, "deal")} />
+              <Button type="text" className="text-green-600" icon={<CheckCircleOutlined />} onClick={() => updateLeadStatus(item._id, "deal")} />
             </Tooltip>
           )}
           {["deal", "booking"].includes(item?.status) && (
             <Tooltip title="Mark as Closed Won">
-              <Button type="text" className="text-yellow-600 hover:bg-yellow-50 rounded-lg" icon={<TrophyOutlined />} onClick={() => updateLeadStatus(item._id, "closed")} />
+              <Button type="text" className="text-yellow-500" icon={<TrophyOutlined />} onClick={() => updateLeadStatus(item._id, "closed")} />
             </Tooltip>
           )}
           <Tooltip title="Remove">
-            <Button danger type="text" className="hover:bg-red-50 rounded-lg" icon={<DeleteOutlined />} onClick={() => deleteLead(item._id)} />
+            <Button danger type="text" icon={<DeleteOutlined />} onClick={() => deleteLead(item._id)} />
           </Tooltip>
         </Space>
       ),
@@ -331,98 +297,63 @@ export default function AgentLeadDashboard() {
 
   return (
     <div className="p-6 md:p-10 space-y-6 bg-[#f6f7fb] min-h-screen">
-      
-      {/* ---------------- HEADER ---------------- */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <Title level={2} className="!mb-1 text-gray-800 flex items-center gap-3">
-            <TeamOutlined className="text-indigo-600" /> Pipeline Manager
-          </Title>
-          <Text type="secondary" className="text-base">Track, organize, and convert your real estate prospects</Text>
+          <Title level={2} className="!mb-1 text-gray-800">Pipeline Manager</Title>
+          <Text type="secondary">Track, organize, and convert your real estate prospects</Text>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
           <Input 
             prefix={<SearchOutlined className="text-gray-400" />} 
             placeholder="Search by name or phone..." 
-            className="rounded-xl w-full md:w-72 border-gray-200"
+            className="rounded-xl w-full md:w-64"
             size="large"
             onChange={handleSearch}
             value={searchQuery}
             allowClear
           />
-          <Button 
-            type="primary" 
-            size="large" 
-            icon={<UserAddOutlined />} 
-            onClick={handleAddClick} 
-            className="bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md border-none"
-          >
+          <Button type="primary" size="large" icon={<UserAddOutlined />} onClick={handleAddClick} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">
             Add Client
           </Button>
         </div>
       </div>
 
-      {/* ---------------- STATS ---------------- */}
+      {/* Stats */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={8}>
           <Card className="shadow-sm rounded-2xl border-none">
-            <Statistic title={<Text type="secondary" className="text-xs font-bold uppercase tracking-wider block mb-1">Total Pipeline</Text>} value={stats.total} prefix={<TeamOutlined className="text-gray-400 mr-2"/>} valueStyle={{ color: "#4f46e5", fontWeight: 'bold' }} />
+            <Statistic title="Total Pipeline Size" value={stats.total} prefix={<TeamOutlined />} valueStyle={{ color: "#4f46e5" }} />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card className="shadow-sm rounded-2xl border-none bg-cyan-50/50">
-            <Statistic title={<Text type="secondary" className="text-xs font-bold uppercase tracking-wider block mb-1 text-cyan-600">Customers</Text>} value={stats.customers} prefix={<UserOutlined className="text-cyan-400 mr-2"/>} valueStyle={{ color: "#0891b2", fontWeight: 'bold' }} />
+          <Card className="shadow-sm rounded-2xl border-none">
+            <Statistic title="Initial Customers" value={stats.customers} prefix={<UserOutlined />} valueStyle={{ color: "#06b6d4" }} />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card className="shadow-sm rounded-2xl border-none bg-orange-50/50">
-            <Statistic title={<Text type="secondary" className="text-xs font-bold uppercase tracking-wider block mb-1 text-orange-500">Active Leads</Text>} value={stats.activeLeads} prefix={<FireOutlined className="text-orange-400 mr-2"/>} valueStyle={{ color: "#ea580c", fontWeight: 'bold' }} />
+          <Card className="shadow-sm rounded-2xl border-none">
+            <Statistic title="Active Hot Leads" value={stats.activeLeads} prefix={<FireOutlined />} valueStyle={{ color: "#f59e0b" }} />
           </Card>
         </Col>
       </Row>
 
-      {/* ---------------- TABS & CUSTOM TABLE ---------------- */}
-      <Card className="rounded-2xl border-none shadow-sm custom-pro-tabs overflow-hidden bg-white">
+      {/* Dynamic Tabs mapping directly to API query */}
+      <Card className="rounded-2xl border-none shadow-sm">
         <Tabs
           activeKey={activeTab}
-          onChange={handleTabChange}
-          type="card"
+          onChange={setActiveTab}
           size="large"
           items={PIPELINE_STATUSES.map((status) => ({
             key: status.key,
             label: status.label,
-            children: (
-              <div className="p-2">
-                <CustomTable 
-                  columns={columns} 
-                  data={leads} 
-                  totalItems={pagination.totalResults}
-                  currentPage={pagination.currentPage}
-                  itemsPerPage={pagination.itemsPerPage}
-                  onPageChange={handlePageChange}
-                  loading={loading} 
-                />
-              </div>
-            )
+            children: <CustomTable columns={columns} data={leads} loading={loading} rowKey="_id" />,
           }))}
         />
       </Card>
 
-      {/* ---------------- ADD/EDIT LEAD MODAL ---------------- */}
-      <Modal 
-        title={
-          <div className="flex items-center gap-2 text-lg">
-            <UserAddOutlined className="text-indigo-600" />
-            {selectedLead ? "Edit Client Profile" : "New Prospect Profile"}
-          </div>
-        } 
-        open={isModalOpen} 
-        onCancel={() => setIsModalOpen(false)} 
-        footer={null} 
-        width={800} 
-        centered 
-        destroyOnClose
-      >
+      {/* Add/Edit Modal Form */}
+      <Modal title={selectedLead ? "Edit Profile" : "New Prospect Profile"} open={isModalOpen} onCancel={() => setIsModalOpen(false)} footer={null} width={800} centered destroyOnClose>
         <Form form={form} layout="vertical" onFinish={onFormFinish} className="mt-4">
           <Divider orientation="left" className="text-gray-500 text-xs uppercase font-bold tracking-wider">Personal Information</Divider>
           <Row gutter={16}>
@@ -438,7 +369,7 @@ export default function AgentLeadDashboard() {
             </Col>
             <Col xs={24} sm={12}>
               <Form.Item name="phone_number" label="Phone Number" rules={[{ required: true, message: "Required" }]}>
-                <Input size="large" className="rounded-xl" prefix={<PhoneOutlined className="text-gray-400"/>} placeholder="+971 50 123 4567" />
+                <Input placeholder="+971 50 123 4567" />
               </Form.Item>
             </Col>
             <Col xs={24} sm={12}>
@@ -448,11 +379,11 @@ export default function AgentLeadDashboard() {
             </Col>
           </Row>
 
-          <Divider orientation="left" className="text-gray-500 text-xs uppercase font-bold tracking-wider">Pipeline Details</Divider>
+          <Divider orientation="left">Pipeline Details</Divider>
           <Row gutter={16}>
             <Col xs={24} sm={12}>
               <Form.Item name="status" label="Pipeline Stage" rules={[{ required: true, message: "Select status" }]}>
-                <Select size="large" className="rounded-xl" placeholder="Select stage">
+                <Select placeholder="Select stage">
                   {PIPELINE_STATUSES.filter(s => s.key !== 'all').map(s => (
                     <Option key={s.key} value={s.key}>{s.label}</Option>
                   ))}
@@ -460,8 +391,8 @@ export default function AgentLeadDashboard() {
               </Form.Item>
             </Col>
             <Col xs={24} sm={12}>
-              <Form.Item name="source" label="Lead Source" initialValue="manual">
-                <Select size="large" className="rounded-xl" placeholder="How did they find us?">
+              <Form.Item name="source" label="Source" initialValue="manual">
+                <Select placeholder="How did they find us?">
                   <Option value="manual">Manual Entry</Option>
                   <Option value="website">Website Lead</Option>
                   <Option value="site_visit">Site Visit</Option>
@@ -471,11 +402,11 @@ export default function AgentLeadDashboard() {
             </Col>
           </Row>
 
-          <Divider orientation="left" className="text-gray-500 text-xs uppercase font-bold tracking-wider">Property Requirements</Divider>
+          <Divider orientation="left">Requirements</Divider>
           <Row gutter={16}>
             <Col xs={24} sm={12}>
               <Form.Item name="budget" label="Max Budget (AED)">
-                <InputNumber size="large" className="w-full rounded-xl" formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
+                <InputNumber className="w-full" formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
               </Form.Item>
             </Col>
             <Col xs={24} sm={12}>
@@ -500,7 +431,7 @@ export default function AgentLeadDashboard() {
             </Col>
             <Col xs={24} sm={12}>
               <Form.Item name="project" label="Target Project">
-                <Select size="large" className="rounded-xl" placeholder="Search specific project" allowClear showSearch optionFilterProp="children">
+                <Select placeholder="Select specific project" allowClear showSearch optionFilterProp="children">
                   {projects.map((p) => (
                     <Option key={p._id} value={p._id}>{p.propertyName}</Option>
                   ))}
@@ -509,19 +440,19 @@ export default function AgentLeadDashboard() {
             </Col>
             <Col xs={24}>
               <Form.Item name="preferred_location" label="Preferred Location">
-                <AutoComplete size="large" className="rounded-xl" options={locationOptions} onSearch={handleLocationSearch} placeholder="Search exact location..." allowClear />
+                <AutoComplete options={locationOptions} onSearch={handleLocationSearch} placeholder="Search exact location..." allowClear />
               </Form.Item>
             </Col>
             <Col xs={24}>
-              <Form.Item name="requirement_description" label="Agent Notes">
-                <Input.TextArea rows={3} className="rounded-xl" placeholder="Add detailed specific requirements here..." />
+              <Form.Item name="requirement_description" label="AI / Agent Notes">
+                <Input.TextArea rows={3} placeholder="Add detailed specific requirements here..." />
               </Form.Item>
             </Col>
           </Row>
 
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-            <Button size="large" className="rounded-xl" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" size="large" loading={formLoading} className="bg-indigo-600 rounded-xl shadow-md border-none">
+          <div className="flex justify-end gap-3 mt-6">
+            <Button onClick={() => setIsModalOpen(false)} size="large">Cancel</Button>
+            <Button type="primary" htmlType="submit" size="large" loading={formLoading} className="bg-indigo-600">
               {selectedLead ? "Save Profile" : "Create Profile"}
             </Button>
           </div>

@@ -149,6 +149,8 @@ import XotoBlitzCampaigns from "./pages/XotoBlitzCampaigns";
 import AgentLeadSuggestionCreate from "../ecommerce/B2C/AgentLeadSuggestionCreate";
 import MyChatRequests from "../chat/Mychatrequests";
 import AdminChatRequests from "../chat/Adminchatrequests";
+import BrochureGenerator from "../ecommerce/B2C/BrochureGenerator";
+import TrackBrochure from "../ecommerce/B2C/TrackBrochure";
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -328,7 +330,10 @@ const CmsRoutes = () => {
   {/* Leads */}
   <Route path="agent-leads" element={<AgentLeadDashboard />} />
     <Route path="agent-leads/add" element={<AgentLeadSuggestionCreate />} />
-<Route path="lead-details" element={<LeadDetails />} />
+<Route path="lead-details/:id" element={<LeadDetails />} />
+<Route path="lead-details/brocure" element={<BrochureGenerator />} />
+<Route path="track-brochures" element={<TrackBrochure />} />
+
   <Route path="agent-lead/:id" element={<Addleaddetails/>} />
   {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
         

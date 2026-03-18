@@ -1,0 +1,16 @@
+{
+  "homeDesign": {
+    "title1": "Todo lo que",
+    "title2": "necesitas para tu",
+    "title3": "viaje inmobiliario",
+    "description": "Desde encontrar la propiedad adecuada hasta financiarla y transformar tu hogar — XOTO reúne cada paso en una plataforma inteligente.",
+    "hotspots": {
+      "exterior": "Encuentra tu propiedad perfecta",
+      "interior": "Diseña los interiores de tus sueños",
+      "furniture": "Compra todo lo que tu hogar necesita",
+      "landscaping": "Crea impresionantes espacios al aire libre",
+      "image": "Monetiza tu propiedad",
+      "virtual": "Financia tu hogar de forma inteligente"
+    }
+  }
+}
