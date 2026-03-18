@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next"; // ✅ Added i18n hook
+import { useTranslation } from "react-i18next"; 
 
 import Pool from "./../assets/img/home/Pool.png";
-import wavemap from "./../assets/img/wavee.png";
+import wavemap from "./../assets/img/ai powered.jpg";
 
 export default function HomeJourneySection() {
   const [mobileView, setMobileView] = useState("both");
 
-  const { t } = useTranslation("home2"); // ✅ Using home2 namespace
+  const { t } = useTranslation("home2"); 
 
   return (
     <section className="relative w-full min-h-screen overflow-hidden">
@@ -17,7 +17,7 @@ export default function HomeJourneySection() {
       <div className="absolute inset-0 pointer-events-none">
         <img
           src={Pool}
-          alt={t("homeJourney.imageAlt.background")} // ✅ i18n ALT text
+          alt={t("homeJourney.imageAlt.background")} 
           className="w-full h-full object-cover"
         />
       </div>
@@ -47,11 +47,11 @@ export default function HomeJourneySection() {
           {/* RIGHT IMAGE */}
           <div className="relative w-full max-w-xl lg:max-w-3xl p-4 rounded-2xl">
             <div className="rounded-xl overflow-hidden flex justify-center">
-              <img
-                src={wavemap}
-                alt={t("homeJourney.imageAlt.map")} // ✅ i18n ALT text
-                className="w-100 object-cover block"
-              />
+             <img
+  src={wavemap}
+  alt={t("homeJourney.imageAlt.map")} // ✅ i18n ALT text
+  className="w-100 object-cover block rounded-3xl bg-white" 
+/>
             </div>
           </div>
         </div>

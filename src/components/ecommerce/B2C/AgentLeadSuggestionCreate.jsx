@@ -156,7 +156,7 @@ export default function AgentLeadSuggestionCreate() {
   const renderAISuggestions = () => {
     if (aiLoading) {
       return (
-        <div className="flex flex-col items-center justify-center py-20">
+        <div className="p-4 md:p-8 bg-gradient-to-br from-gray-100 via-slate-100 to-gray-200 min-h-screen">
           <Spin size="large" />
           <Text className="mt-6 text-gray-500 font-medium">Analyzing requirements...</Text>
           <Text className="text-gray-400 text-sm mt-1">Scanning premium inventory matches</Text>
@@ -208,10 +208,10 @@ export default function AgentLeadSuggestionCreate() {
                       alt={suggestion.property.propertyName}
                       className="w-full h-full object-cover rounded-lg border border-gray-100"
                     />
-                    <div className="absolute top-2 right-2 shadow-sm">
+                    <div className="absolute top-2 right-2 shadow-lg">
                       <Tag
                         color={isHighMatch ? '#52c41a' : '#faad14'}
-                        className="m-0 border-none font-bold px-2 py-0.5 rounded-md shadow-sm"
+                        className="m-0 border-none font-bold px-2 py-0.5 rounded-md shadow-lg"
                       >
                         {suggestion.matchScore}% Match
                       </Tag>
@@ -286,7 +286,7 @@ export default function AgentLeadSuggestionCreate() {
       <Row gutter={[24, 24]}>
         {/* ================= LEFT SIDE - LEAD FORM ================= */}
         <Col xs={24} lg={13} xl={14}>
-          <Card className="rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/50 h-full">
+         <Card className="rounded-2xl border border-gray-200 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.12)] transition-all duration-300 h-full">
             <Form
               form={form}
               layout="vertical"
@@ -433,14 +433,7 @@ export default function AgentLeadSuggestionCreate() {
         {/* ================= RIGHT SIDE - AI SUGGESTIONS ================= */}
         <Col xs={24} lg={11} xl={10}>
           <div className="sticky top-6">
-            <Card
-              className="rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden"
-              bodyStyle={{ 
-                height: 'calc(100vh - 140px)', 
-                minHeight: '600px',
-                padding: '0' 
-              }}
-            >
+            <Card className="rounded-3xl border border-gray-200 bg-white shadow-[10px_10px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.12)] transition-all duration-300 overflow-hidden">
               {/* Internal Header for AI Card */}
               <div className="bg-gray-50 border-b border-gray-100 p-5">
                 <div className="flex justify-between items-center">

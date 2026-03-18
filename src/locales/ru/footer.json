@@ -13,9 +13,9 @@
   "offerings": [
     { "label": "Ландшафтный дизайн", "path": "/landscaping" },
     { "label": "Интерьеры", "path": "/services/interior" },
-    { "label": "Аренда", "path": "/marketplace" },
-    { "label": "Купить", "path": "/marketplace" },
-    { "label": "Продать", "path": "/marketplace" },
+    { "label": "Аренда", "path": "/Property" },
+    { "label": "Купить", "path": "/Property" },
+    { "label": "Продать", "path": "/Property" },
     { "label": "Ипотека", "path": "/mortgage/services" }
     
   ],
