@@ -1,118 +1,119 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-
 import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-
 import {
-  RiseOutlined,
-  FileTextOutlined,
-  TeamOutlined,
-  HomeOutlined,
-  PercentageOutlined,
-  BellOutlined,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
+  RiseOutlined, FileTextOutlined, HomeOutlined,
+  BellOutlined, ArrowUpOutlined, ArrowDownOutlined,
+  MessageOutlined, CheckCircleOutlined, ReloadOutlined,
 } from "@ant-design/icons";
-
 import {
-  Card,
-  Row,
-  Col,
-  Select,
-  Button,
-  Typography,
-  Tag,
-  Avatar,
-  List,
-  Spin,
+  Card, Row, Col, Select, Button, Typography, Tag,
+  Spin, Badge, notification, List, Avatar,
 } from "antd";
-
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
+import { getSocket, registerSocket } from "../../../utils/socket";
+import ChatDrawer from "../../chat/ChatDrawer";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const DeveloperDashboard = () => {
-
-  const navigate = useNavigate();
-
-  const { user } = useSelector((state) => state.auth || {});
+  const navigate    = useNavigate();
+  const { user }    = useSelector((state) => state.auth || {});
   const developerId = user?._id || user?.id || user?.sub;
 
-  const [timeRange, setTimeRange] = useState("7d");
-  const [loading, setLoading] = useState(true);
-
-  const [stats, setStats] = useState([]);
-  const [leadsTrend, setLeadsTrend] = useState([]);
-  const [unitsSoldMonthly, setUnitsSoldMonthly] = useState([]);
+  const [timeRange, setTimeRange]             = useState("7d");
+  const [loading, setLoading]                 = useState(true);
+  const [refreshing, setRefreshing]           = useState(false);
+  const [stats, setStats]                     = useState([]);
   const [inventoryStatus, setInventoryStatus] = useState([]);
-  const [dealFunnel, setDealFunnel] = useState([]);
-  const [recentDeals, setRecentDeals] = useState([]);
-  const [upcomingVisits, setUpcomingVisits] = useState([]);
-  const [topProjects, setTopProjects] = useState([]);
+  const [dealFunnel, setDealFunnel]           = useState([]);
+
+  // Chat states
+  const [chatNotifs, setChatNotifs]     = useState([]);
+  const [activeChat, setActiveChat]     = useState(null);
+  const [showChatList, setShowChatList] = useState(false);
+
   const COLORS = ["#3b82f6", "#f59e0b", "#10b981"];
 
- useEffect(() => {
-  if (!developerId) return;
-
-  fetchDashboard();
-}, [developerId, timeRange]);
-
- const fetchDashboard = async () => {
-  try {
-    const res = await apiService.get(
-      `/property/developer-dashboard/${developerId}`
-    );
-
-    if (res?.success) {
-      setStats(res.stats || []);
-      setInventoryStatus(res.inventoryStatus || []);
-      setDealFunnel(res.dealFunnel || []);
-      setTopProjects(res.topProjects || []);
+  // Fetch dashboard data
+  const fetchDashboard = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    try {
+      const res = await apiService.get(`/property/developer-dashboard/${developerId}`);
+      if (res?.success) {
+        setStats(res.stats || []);
+        setInventoryStatus(res.inventoryStatus || []);
+        setDealFunnel(res.dealFunnel || []);
+      }
+    } catch (err) {
+      console.log("Dashboard error:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  };
 
-  } catch (err) {
-    console.log("Dashboard error:", err);
-  }
+  useEffect(() => {
+    if (!developerId) return;
+    fetchDashboard();
+  }, [developerId, timeRange]);
 
-  setLoading(false);
-};
+  // Fetch approved chat requests
+  const fetchApprovedChats = async () => {
+    try {
+      const res  = await apiService.get("/chat-request/developer-approved");
+      const list = Array.isArray(res?.data?.data) ? res.data.data
+                 : Array.isArray(res?.data)       ? res.data
+                 : [];
+      setChatNotifs(list);
+    } catch (err) {
+      console.log("Chat fetch error:", err);
+    }
+  };
 
-  const quickActions = [
-    {
-      label: "Projects",
-      icon: <RiseOutlined />,
-      color: "#3b82f6",
-      onClick: () => navigate("/dashboard/developer/developer-projects"),
-    },
-    {
-      label: "Inventory",
-      icon: <HomeOutlined />,
-      color: "#10b981",
-      onClick: () => navigate("/dashboard/developer/inventory"),
-    },
-    {
-      label: "Bookings",
-      icon: <FileTextOutlined />,
-      color: "#6366f1",
-      onClick: () => navigate("/dashboard/developer/bookings"),
-    },
-  ];
+  // Socket setup
+  useEffect(() => {
+    if (!developerId) return;
+    registerSocket(developerId);
+    fetchApprovedChats();
+    const sock = getSocket();
+    sock.on("chat_approved_for_developer", () => {
+      notification.success({
+        message:     "New Chat Available!",
+        description: "A chat request has been approved. Click to open.",
+        placement:   "topRight",
+        duration:    8,
+        btn: (
+          <Button
+            type="primary"
+            size="small"
+            style={{ background: "#7c3aed" }}
+            onClick={() => { fetchApprovedChats(); setShowChatList(true); }}
+          >
+            Open Chat
+          </Button>
+        ),
+      });
+      fetchApprovedChats();
+    });
+    return () => sock.off("chat_approved_for_developer");
+  }, [developerId]);
+
+  // Chat data
+  const chatLead = activeChat?.lead
+    ? (typeof activeChat.lead === "object" ? activeChat.lead : { _id: activeChat.lead })
+    : null;
+
+  const chatAgentId   = chatLead?.agent?._id || chatLead?.agent || activeChat?.agentId || null;
+  const chatAgentName = chatLead?.agent?.first_name
+    ? `${chatLead.agent.first_name} ${chatLead.agent.last_name || ""}`
+    : "Agent";
 
   if (loading) {
     return (
@@ -126,34 +127,119 @@ const DeveloperDashboard = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
 
       {/* HEADER */}
-
       <div className="flex justify-between items-center mb-8">
         <div>
           <Title level={2}>Developer Dashboard</Title>
-          <Text type="secondary">
-            Monitor projects, inventory, visits and deals.
-          </Text>
+          <Text type="secondary">Monitor projects, inventory, visits and deals.</Text>
         </div>
 
-        <div className="flex gap-3">
-          <Select
-            defaultValue="7d"
-            style={{ width: 160 }}
-            onChange={setTimeRange}
-          >
+        <div className="flex gap-3 items-center">
+          <Select defaultValue="7d" style={{ width: 160 }} onChange={setTimeRange}>
             <Option value="7d">Last 7 Days</Option>
             <Option value="30d">Last 30 Days</Option>
             <Option value="90d">Last 90 Days</Option>
           </Select>
 
-          <Button type="primary" icon={<BellOutlined />}>
-            Alerts
+          {/* Home Button */}
+          <Button
+            icon={<HomeOutlined />}
+            onClick={() => navigate("/")}
+          >
+            Home
           </Button>
+
+          {/* Refresh Button */}
+          <Button
+            icon={<ReloadOutlined spin={refreshing} />}
+            loading={refreshing}
+            onClick={() => { fetchDashboard(true); fetchApprovedChats(); }}
+          >
+            Refresh
+          </Button>
+
+          {/* Chat Notification Button */}
+          <Badge count={chatNotifs.length} color="#7c3aed">
+            <Button
+              type="primary"
+              icon={<MessageOutlined />}
+              style={{ background: "#7c3aed", borderColor: "#7c3aed" }}
+              onClick={() => setShowChatList(!showChatList)}
+            >
+              Chats
+            </Button>
+          </Badge>
+
+          <Button type="primary" icon={<BellOutlined />}>Alerts</Button>
         </div>
       </div>
 
-      {/* STATS */}
+      {/* Chat List Panel */}
+      {showChatList && (
+        <Card
+          className="mb-6 shadow-md"
+          title={
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <MessageOutlined style={{ color: "#7c3aed" }} />
+              <span>Approved Chats</span>
+              <Tag color="purple">{chatNotifs.length}</Tag>
+            </div>
+          }
+          extra={<Button size="small" onClick={() => setShowChatList(false)}>Close</Button>}
+        >
+          {chatNotifs.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "20px", color: "#aaa" }}>
+              No approved chats found.
+            </div>
+          ) : (
+            <List
+              dataSource={chatNotifs}
+              renderItem={(req) => {
+                const lead      = typeof req.lead === "object" ? req.lead : null;
+                const agentName = lead?.agent?.first_name
+                  ? `${lead.agent.first_name} ${lead.agent.last_name || ""}`
+                  : req.agentName || "Agent";
+                return (
+                  <List.Item
+                    actions={[
+                      <Button
+                        key="chat"
+                        type="primary"
+                        size="small"
+                        icon={<MessageOutlined />}
+                        style={{ background: "#7c3aed", borderColor: "#7c3aed" }}
+                        onClick={() => { setActiveChat(req); setShowChatList(false); }}
+                      >
+                        Open Chat
+                      </Button>
+                    ]}
+                  >
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar style={{ background: "#7c3aed" }}>
+                          {agentName.charAt(0).toUpperCase()}
+                        </Avatar>
+                      }
+                      title={
+                        <span>
+                          <Tag color="green" icon={<CheckCircleOutlined />}>Approved</Tag>
+                          {agentName}
+                        </span>
+                      }
+                      description={
+                        <span style={{ fontSize: 12, color: "#888" }}>
+                          Topic: {req.topic?.replace("_", " ")} &bull; {req.reason?.slice(0, 50)}...
+                        </span>
+                      }
+                    />
+                  </List.Item>
+                );
+              }}
+            />
+          )}
+        </Card>
+      )}
 
+      {/* STATS */}
       <Row gutter={[16, 16]} className="mb-8">
         {stats.map((stat, i) => (
           <Col xs={24} sm={12} lg={6} key={i}>
@@ -163,28 +249,17 @@ const DeveloperDashboard = () => {
                   <Text type="secondary">{stat.label}</Text>
                   <Title level={3}>{stat.value}</Title>
                 </div>
-
-                <div
-                  style={{
-                    background: stat.bg,
-                    color: stat.color,
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
+                <div style={{
+                  background: stat.bg, color: stat.color,
+                  width: 40, height: 40, borderRadius: 10,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
                   {stat.icon}
                 </div>
               </div>
-
               <Tag
                 color={stat.change > 0 ? "green" : "red"}
-                icon={
-                  stat.change > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />
-                }
+                icon={stat.change > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
               >
                 {Math.abs(stat.change)}%
               </Tag>
@@ -193,55 +268,54 @@ const DeveloperDashboard = () => {
         ))}
       </Row>
 
-      {/* INVENTORY PIE CHART */}
-
+      {/* CHARTS */}
       <Row gutter={[16, 16]}>
-
         <Col xs={24} lg={12}>
           <Card title="Inventory Status">
-
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-
-                <Pie
-                  data={inventoryStatus}
-                  dataKey="value"
-                  outerRadius={120}
-                  label
-                >
-                  {inventoryStatus.map((entry, index) => (
+                <Pie data={inventoryStatus} dataKey="value" outerRadius={120} label>
+                  {inventoryStatus.map((_, index) => (
                     <Cell key={index} fill={COLORS[index]} />
                   ))}
                 </Pie>
-
                 <Tooltip />
                 <Legend />
-
               </PieChart>
             </ResponsiveContainer>
-
           </Card>
         </Col>
-
         <Col xs={24} lg={12}>
           <Card title="Sales Pipeline">
-
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={dealFunnel}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="stage" />
                 <YAxis />
                 <Tooltip />
-
                 <Bar dataKey="count" fill="#6366f1" />
-
               </BarChart>
             </ResponsiveContainer>
-
           </Card>
         </Col>
-
       </Row>
+
+      {/* ChatDrawer */}
+      {activeChat && user && chatLead && chatAgentId && (
+        <ChatDrawer
+          lead={chatLead}
+          currentUser={{
+            ...user,
+            _id:        user?._id || user?.id,
+            type:       "developer",
+            first_name: user?.first_name || user?.company_name || "Developer",
+            last_name:  user?.last_name  || "",
+          }}
+          otherUserId={chatAgentId}
+          otherName={chatAgentName}
+          onClose={() => setActiveChat(null)}
+        />
+      )}
 
     </div>
   );

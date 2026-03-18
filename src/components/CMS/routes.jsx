@@ -147,6 +147,8 @@ import XobiaTrainingAdmin from "./pages/XobiaTrainingAdmin";
 import GlobalSettings from "./pages/GlobalSettings";
 import XotoBlitzCampaigns from "./pages/XotoBlitzCampaigns";
 import AgentLeadSuggestionCreate from "../ecommerce/B2C/AgentLeadSuggestionCreate";
+import MyChatRequests from "../chat/Mychatrequests";
+import AdminChatRequests from "../chat/Adminchatrequests";
 import BrochureGenerator from "../ecommerce/B2C/BrochureGenerator";
 import TrackBrochure from "../ecommerce/B2C/TrackBrochure";
 const roleSlugMap = {
@@ -361,6 +363,8 @@ const CmsRoutes = () => {
 
   {/* Presentations */}
   <Route path="presentations" element={<AgentPresentations />} />
+  <Route path="My-Chats" element={<MyChatRequests />} />
+
 
 
 
@@ -377,6 +381,8 @@ const CmsRoutes = () => {
       <Route path="/ai-training" element={<XobiaTrainingAdmin />} />
       <Route path="/global-settings" element={<GlobalSettings />} />
       <Route path="/marketing-hub" element={<XotoBlitzCampaigns />} />
+      <Route path="/admin-chat-requests" element={<AdminChatRequests />} />
+"
       
 {/* Agency */}
 <Route path="manage-agents" element={<AgencyManageAgents />} />
