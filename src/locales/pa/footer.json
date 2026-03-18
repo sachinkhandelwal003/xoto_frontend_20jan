@@ -13,9 +13,9 @@
   "offerings": [
     { "label": "ਲੈਂਡਸਕੇਪਿੰਗ", "path": "/landscaping" },
     { "label": "ਇੰਟੀਰੀਅਰ", "path": "/services/interior" },
-    { "label": "ਕਿਰਾਇਆ", "path": "/marketplace" },
-    { "label": "ਖਰੀਦੋ", "path": "/marketplace" },
-    { "label": "ਵੇਚੋ", "path": "/marketplace" },
+    { "label": "ਕਿਰਾਇਆ", "path": "/Property" },
+    { "label": "ਖਰੀਦੋ", "path": "/Property" },
+    { "label": "ਵੇਚੋ", "path": "/Property" },
     { "label": "ਹੋਮ ਲੋਨ", "path": "/mortgage/services" }
     
   ],

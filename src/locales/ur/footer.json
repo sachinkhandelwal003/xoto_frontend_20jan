@@ -13,9 +13,9 @@
   "offerings": [
     { "label": "لینڈ اسکیپنگ", "path": "/landscaping" },
     { "label": "انٹیریئرز", "path": "/services/interior" },
-    { "label": "کرایہ", "path": "/marketplace" },
-    { "label": "خریدیں", "path": "/marketplace" },
-    { "label": "بیچیں", "path": "/marketplace" },
+    { "label": "کرایہ", "path": "/Property" },
+    { "label": "خریدیں", "path": "/Property" },
+    { "label": "بیچیں", "path": "/Property" },
     { "label": "ہوم لون", "path": "/mortgage/services" }
     
   ],

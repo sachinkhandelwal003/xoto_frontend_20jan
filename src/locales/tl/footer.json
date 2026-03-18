@@ -13,9 +13,9 @@
   "offerings": [
     { "label": "Landscaping", "path": "/landscaping" },
     { "label": "Disenyong Panloob", "path": "/services/interior" },
-    { "label": "Umuupa", "path": "/marketplace" },
-    { "label": "Bumibili", "path": "/marketplace" },
-    { "label": "Nagbebenta", "path": "/marketplace" },
+    { "label": "Umuupa", "path": "/Property" },
+    { "label": "Bumibili", "path": "/Property" },
+    { "label": "Nagbebenta", "path": "/Property" },
     { "label": "Pautang sa Bahay", "path": "/mortgage/services" }
   ],
   "resources": [
