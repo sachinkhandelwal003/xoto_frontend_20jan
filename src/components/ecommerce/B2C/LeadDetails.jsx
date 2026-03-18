@@ -3,14 +3,15 @@ import { useSelector } from "react-redux";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { 
   Card, Tag, Typography, Avatar, Divider, Row, Col, 
-  Statistic, Button, message, Modal, Spin, Space 
+  Statistic, Button, message, Modal, Spin, Space, Form, Input, DatePicker, TimePicker
 } from "antd";
 import { 
   UserOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined, 
   DollarCircleOutlined, FireOutlined, StarOutlined, RobotOutlined, 
-  FilePdfOutlined, DownloadOutlined, LineChartOutlined
+  FilePdfOutlined, DownloadOutlined, LineChartOutlined, CheckCircleOutlined, CalendarOutlined,EyeOutlined 
 } from "@ant-design/icons";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
+import dayjs from "dayjs";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -27,22 +28,29 @@ export default function LeadDetails() {
   const params = useParams();
   const navigate = useNavigate();
   
-  // Get user from Redux to build dynamic route
   const { user } = useSelector((s) => s.auth);
   const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
 
-  // State for data and UI
+  // Data States
   const [loading, setLoading] = useState(true);
   const [lead, setLead] = useState(null);
   const [interests, setInterests] = useState([]);
   const [analytics, setAnalytics] = useState({ totalInterests: 0, hotLeads: 0 });
+  
+  // UI Interaction States
   const [generatingId, setGeneratingId] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedBrochure, setSelectedBrochure] = useState(null);
 
-  // Helper: image URL builder (Using import.meta.env for Vite compatibility)
+  // Site Visit States
+  const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
+  const [visitLoading, setVisitLoading] = useState(false);
+  const [selectedInterestForVisit, setSelectedInterestForVisit] = useState(null);
+  const [visitForm] = Form.useForm();
+
+  // Helper: image URL builder
   const placeholderImg = "https://via.placeholder.com/400x250?text=No+Image+Available";
-  const backendBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const backendBaseUrl = import.meta.env?.VITE_API_URL || "http://localhost:5000";
 
   const getImageUrl = (item) => {
     let imageUrl = item?.property?.image || item?.property?.photos?.[0] || item?.property?.mainLogo;
@@ -52,77 +60,103 @@ export default function LeadDetails() {
     return imageUrl || placeholderImg;
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      const stateData = location.state?.data || location.state;
+  const loadData = async () => {
+    const leadId = params.id || location.state?.leadId || location.state?.lead?._id;
+    if (!leadId) {
+      message.error("No lead ID provided");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await apiService.get(`/agent/lead/get-lead/${leadId}?includeInterests=true`);
+      const responseData = response?.data?.data || response?.data || response;
       
-      // Case 1: Data already provided via navigation state
-      if (stateData?.lead) {
-        setLead(stateData.lead);
-        setInterests(stateData.interests || []);
-        setAnalytics(stateData.analytics || { totalInterests: 0, hotLeads: 0 });
-        setLoading(false);
-        return;
-      }
+      setLead(responseData.lead || responseData);
+      setInterests(responseData.interests || []);
+      setAnalytics(responseData.analytics || { totalInterests: 0, hotLeads: 0 });
+    } catch (error) {
+      console.error("Failed to fetch lead details:", error);
+      message.error("Failed to load lead details");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // Case 2: Need to fetch using leadId
-      const leadId = params.id || location.state?.leadId;
-      if (!leadId) {
-        message.error("No lead ID provided");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const response = await apiService.get(`/agent/lead/get-lead/${leadId}?includeInterests=true`);
-        const responseData = response?.data?.data || response?.data || response;
-        
-        setLead(responseData.lead || responseData);
-        setInterests(responseData.interests || []);
-        setAnalytics(responseData.analytics || { totalInterests: 0, hotLeads: 0 });
-      } catch (error) {
-        console.error("Failed to fetch lead details:", error);
-        message.error("Failed to load lead details");
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     loadData();
-  }, [params.id, location.state]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.id]);
 
-  // Brochure generation handler - Uses old logic routing to 'brocure'
+  // Navigate to Brochure Generator
   const handleGenerateBrochure = (item) => {
-  if (!lead?.email) {
-    message.error("Lead doesn't have an email address!");
-    return;
-  }
+    if (!lead?.email) {
+      message.error("Lead doesn't have an email address!");
+      return;
+    }
 
-  setGeneratingId(item._id);
-  
-  setTimeout(() => {
-    setGeneratingId(null);
-    // ✅ Pass lead WITH interests
-    navigate(`/dashboard/${roleSlug}/lead-details/brocure`, { 
-      state: { 
-        property: item.property,
-        lead: {
-          ...lead,
-          interests: interests  // ✅ Include the interests array!
-        },
-        matchScore: item?.ai_match?.score,
-        analytics: analytics  // Also pass analytics if needed
-      } 
+    setGeneratingId(item._id);
+    
+    setTimeout(() => {
+      setGeneratingId(null);
+      navigate(`/dashboard/${roleSlug}/lead-details/brocure`, { 
+        state: { 
+          property: item.property,
+          lead: { ...lead, interests: interests },
+          matchScore: item?.ai_match?.score,
+          analytics: analytics
+        } 
+      });
+    }, 1500);
+  };
+
+  // Open Site Visit Modal
+  const openSiteVisitModal = (item) => {
+    setSelectedInterestForVisit(item);
+    visitForm.setFieldsValue({
+      clientName: `${lead?.name?.first_name || ''} ${lead?.name?.last_name || ''}`.trim(),
+      clientPhone: lead?.phone_number || ''
     });
-  }, 1500);
-};
+    setIsVisitModalOpen(true);
+  };
+
+  // Submit Site Visit
+  const handleCreateSiteVisit = async (values) => {
+    try {
+      setVisitLoading(true);
+      
+      const payload = {
+        lead: lead._id,
+        property: selectedInterestForVisit.property._id,
+        interestId: selectedInterestForVisit._id,
+        scheduledDate: values.scheduledDate.format("YYYY-MM-DD"),
+        visitTime: values.visitTime.format("hh:mm A"),
+        clientName: values.clientName,
+        clientPhone: values.clientPhone
+      };
+
+      await apiService.post("/agent/lead/create-site-visit", payload);
+      
+      message.success("Site visit scheduled successfully!");
+      setIsVisitModalOpen(false);
+      visitForm.resetFields();
+      
+      // Refresh lead data to show updated pipeline statuses
+      loadData();
+    } catch (error) {
+      console.error("Site visit error:", error);
+      message.error("Failed to schedule site visit.");
+    } finally {
+      setVisitLoading(false);
+    }
+  };
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#f6f7fb]">
         <Spin size="large" />
-        <Text type="secondary" className="mt-4 text-lg">Loading lead details...</Text>
+        <Text type="secondary" className="mt-4 text-lg">Loading lead intelligence...</Text>
       </div>
     );
   }
@@ -143,13 +177,12 @@ export default function LeadDetails() {
     <div className="p-6 md:p-10 space-y-8 bg-[#f6f7fb] min-h-screen">
       
       {/* ---------------- HEADER ---------------- */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div>
           <Title level={3} className="!mb-1 text-gray-800">Lead Intelligence Hub</Title>
           <Text type="secondary">Detailed overview and AI property matches</Text>
         </div>
         <div>
-          {/* Track Brochures button using dynamic roleSlug */}
           <Button 
             type="primary" 
             size="large"
@@ -165,7 +198,7 @@ export default function LeadDetails() {
       <Row gutter={[24, 24]}>
         {/* ---------------- LEAD INFO CARD ---------------- */}
         <Col xs={24} lg={16}>
-          <Card className="shadow-sm rounded-2xl border-none h-full">
+          <Card className="shadow-sm rounded-2xl border-none h-full border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
                 <Avatar size={72} icon={<UserOutlined />} className="bg-gradient-to-tr from-blue-500 to-indigo-500 shadow-md" />
@@ -174,10 +207,10 @@ export default function LeadDetails() {
                     {lead?.name?.first_name} {lead?.name?.last_name}
                   </Title>
                   <Space>
-                    <Tag color={lead?.is_hot ? "volcano" : "blue"} className="rounded-full px-3 py-0.5 border-none shadow-sm font-medium m-0">
+                    <Tag color={lead?.is_hot ? "volcano" : "blue"} className="rounded-full px-3 py-0.5 border-none shadow-sm font-bold m-0">
                       {lead?.source?.replace('_', ' ').toUpperCase()} LEAD
                     </Tag>
-                    <Tag color="purple" className="rounded-full px-3 py-0.5 border-none shadow-sm font-medium m-0">
+                    <Tag color="purple" className="rounded-full px-3 py-0.5 border-none shadow-sm font-bold m-0">
                       STATUS: {lead?.status?.toUpperCase()}
                     </Tag>
                   </Space>
@@ -279,12 +312,14 @@ export default function LeadDetails() {
             {interests?.map((item) => {
               const isThisCardGenerating = generatingId === item._id;
               const cardImage = getImageUrl(item);
+              const isBrochureSent = item?.brochure?.sent;
+              const isBrochureViewed = item?.brochure?.viewed;
 
               return (
                 <Card 
                   key={item._id} 
                   hoverable
-                  className="overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 rounded-2xl border-gray-100 flex flex-col group bg-white"
+                  className="overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 rounded-2xl border-gray-200 flex flex-col group bg-white"
                   cover={
                     <div className="relative h-60 overflow-hidden bg-gray-100">
                       <img 
@@ -294,12 +329,17 @@ export default function LeadDetails() {
                         className={`object-cover w-full h-full transition-transform duration-700 ${isThisCardGenerating ? 'scale-110 blur-sm' : 'group-hover:scale-105'}`}
                       />
                       
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
 
-                      <div className="absolute top-4 right-4">
-                        <Tag className="rounded-full font-bold shadow-lg px-3 py-1.5 text-sm border border-white/20 backdrop-blur-md bg-green-500/95 text-white m-0">
+                      <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
+                        <Tag className="rounded-full font-bold shadow-lg px-3 py-1 text-sm border border-white/20 backdrop-blur-md bg-green-500/95 text-white m-0">
                           {item?.ai_match?.score}% Match
                         </Tag>
+                        {isBrochureViewed && (
+                          <Tag color="purple" className="rounded-full font-bold shadow-lg px-3 py-1 text-xs border border-white/20 backdrop-blur-md bg-purple-600/90 text-white m-0">
+                            <EyeOutlined /> Viewed
+                          </Tag>
+                        )}
                       </div>
 
                       <div className="absolute bottom-4 left-4 right-4 text-white">
@@ -321,48 +361,70 @@ export default function LeadDetails() {
                       )}
                     </div>
                   }
-                  bodyStyle={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column' }}
+                  bodyStyle={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}
                 >
-                  <div className="flex justify-between items-center mb-5 p-4 bg-gray-50/80 rounded-xl border border-gray-100">
+                  <div className="flex justify-between items-center mb-5 p-3 bg-gray-50 rounded-xl border border-gray-100">
                     <div>
                       <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider block mb-1">Selling Price</Text>
-                      <Text strong className="text-indigo-600 text-[17px]">
+                      <Text strong className="text-indigo-600 text-[16px]">
                         {item?.property?.price?.toLocaleString()} {item?.property?.currency || 'AED'}
                       </Text>
                     </div>
-                    <div className="w-[1px] h-10 bg-gray-200"></div>
+                    <div className="w-[1px] h-8 bg-gray-200"></div>
                     <div className="text-right">
                       <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider block mb-1">Space Layout</Text>
-                      <Text strong className="text-gray-700 text-[17px]">{item?.property?.bedrooms} Beds</Text>
+                      <Text strong className="text-gray-700 text-[16px]">{item?.property?.bedrooms} Beds</Text>
                     </div>
                   </div>
 
                   <div className="mb-6 flex-1">
-                    <Text strong className="text-[11px] uppercase text-gray-400 tracking-wider mb-3 block">Match Justification</Text>
-                    <ul className="space-y-2.5 text-sm text-gray-600 pl-1">
-                      {item?.ai_match?.reasons?.slice(0, 4).map((reason, i) => (
+                    <Text strong className="text-[11px] uppercase text-gray-400 tracking-wider mb-2 block">Match Justification</Text>
+                    <ul className="space-y-2 text-sm text-gray-600 pl-1">
+                      {item?.ai_match?.reasons?.slice(0, 3).map((reason, i) => (
                         <li key={i} className="leading-snug flex items-start gap-2">
-                           <span className="flex-1">{reason}</span>
+                           <span className="flex-1 truncate" title={reason}>{reason}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  <div className="mt-auto pt-4 border-t border-gray-100">
-                    <Button 
-                      type={isThisCardGenerating ? "default" : "primary"}
-                      size="large"
-                      icon={isThisCardGenerating ? null : <FilePdfOutlined />}
-                      className={`w-full font-semibold rounded-xl transition-all ${
-                        isThisCardGenerating 
-                          ? 'bg-indigo-50 border-indigo-200 text-indigo-500' 
-                          : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 border-none shadow-md hover:shadow-lg hover:-translate-y-0.5'
-                      }`}
-                      loading={isThisCardGenerating}
-                      onClick={() => handleGenerateBrochure(item)}
-                    >
-                      {isThisCardGenerating ? 'Generating...' : 'Create AI Brochure'}
-                    </Button>
+                  <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-3">
+                    
+                    {/* 1. Brochure Generation Logic */}
+                    {!isBrochureSent ? (
+                      <Button 
+                        type="primary"
+                        size="large"
+                        icon={<FilePdfOutlined />}
+                        className="w-full font-bold rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 border-none shadow-sm"
+                        loading={isThisCardGenerating}
+                        onClick={() => handleGenerateBrochure(item)}
+                      >
+                        Create AI Brochure
+                      </Button>
+                    ) : (
+                      <Button 
+                        disabled
+                        size="large"
+                        className="w-full font-bold rounded-xl bg-gray-100 text-gray-500 border-gray-200"
+                      >
+                        <CheckCircleOutlined className="text-green-500" /> Brochure Sent
+                      </Button>
+                    )}
+
+                    {/* 2. Site Visit Trigger (Only if Brochure is Viewed) */}
+                    {isBrochureViewed && (
+                      <Button 
+                        type="primary"
+                        size="large"
+                        icon={<CalendarOutlined />}
+                        className="w-full font-bold rounded-xl bg-emerald-500 hover:bg-emerald-600 border-none shadow-md"
+                        onClick={() => openSiteVisitModal(item)}
+                      >
+                        Schedule Site Visit
+                      </Button>
+                    )}
+
                   </div>
                 </Card>
               )
@@ -371,72 +433,83 @@ export default function LeadDetails() {
         )}
       </div>
 
-      {/* Brochure Preview Modal */}
+      {/* ---------------- SITE VISIT SCHEDULING MODAL ---------------- */}
       <Modal
         title={
-          <div className="flex items-center gap-2 text-indigo-800 text-lg">
-            <FilePdfOutlined /> Brochure Preview
-          </div>
-        }
-        open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
-        width={800}
-        centered
-        footer={[
-          <Button key="close" onClick={() => setIsModalVisible(false)} size="large" className="rounded-xl">
-            Close
-          </Button>,
-          <Button 
-            key="download" 
-            type="primary" 
-            size="large"
-            icon={<DownloadOutlined />} 
-            className="bg-indigo-600 hover:bg-indigo-700 rounded-xl border-none shadow-md"
-            onClick={() => message.info("Downloading PDF...")}
-          >
-            Download PDF
-          </Button>,
-        ]}
-      >
-        {selectedBrochure && (
-          <div className="mt-4">
-            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm flex flex-col md:flex-row">
-              <div className="w-full md:w-2/5 h-64 md:h-auto">
-                <img 
-                  src={getImageUrl(selectedBrochure)} 
-                  alt={selectedBrochure?.property?.propertyName}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="w-full md:w-3/5 p-6 space-y-4 bg-gray-50">
-                <div>
-                  <Title level={4} className="!mb-1 text-gray-800">{selectedBrochure?.property?.propertyName}</Title>
-                  <Text type="secondary"><EnvironmentOutlined /> {selectedBrochure?.property?.city}</Text>
-                </div>
-                <Divider className="my-2" />
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Text type="secondary" className="text-[11px] uppercase font-bold tracking-wider">Price</Text>
-                    <Title level={5} className="!mb-0 text-indigo-600">
-                      {selectedBrochure?.property?.price?.toLocaleString()} {selectedBrochure?.property?.currency || 'AED'}
-                    </Title>
-                  </div>
-                  <div>
-                    <Text type="secondary" className="text-[11px] uppercase font-bold tracking-wider">Layout</Text>
-                    <Title level={5} className="!mb-0">{selectedBrochure?.property?.bedrooms} Beds</Title>
-                  </div>
-                </div>
-                <div className="bg-indigo-50/70 p-4 rounded-xl border border-indigo-100 mt-4">
-                  <Text strong className="text-indigo-900 block mb-1">Prepared Specifically For: {lead?.name?.first_name}</Text>
-                  <Paragraph className="text-sm text-gray-600 mb-0">
-                    Based on our AI analysis, this property matches <b>{selectedBrochure?.ai_match?.score}%</b> of the required criteria.
-                  </Paragraph>
-                </div>
-              </div>
+          <div className="flex items-center gap-3">
+            <Avatar size={40} className="bg-emerald-100 text-emerald-600" icon={<CalendarOutlined />} />
+            <div>
+              <Title level={5} className="!mb-0 text-gray-800">Schedule Site Visit</Title>
+              <Text type="secondary" className="text-xs font-normal">
+                {selectedInterestForVisit?.property?.propertyName}
+              </Text>
             </div>
           </div>
-        )}
+        }
+        open={isVisitModalOpen}
+        onCancel={() => { setIsVisitModalOpen(false); visitForm.resetFields(); }}
+        footer={null}
+        centered
+        destroyOnClose
+      >
+        <Divider className="my-4" />
+        <Form form={visitForm} layout="vertical" onFinish={handleCreateSiteVisit}>
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
+              <Form.Item 
+                name="scheduledDate" 
+                label="Visit Date" 
+                rules={[{ required: true, message: 'Please select a date' }]}
+              >
+                <DatePicker className="w-full" size="large" format="YYYY-MM-DD" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item 
+                name="visitTime" 
+                label="Visit Time" 
+                rules={[{ required: true, message: 'Please select a time' }]}
+              >
+                <TimePicker use12Hours format="hh:mm A" className="w-full" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item 
+                name="clientName" 
+                label="Client Name" 
+                rules={[{ required: true }]}
+              >
+                <Input size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item 
+                name="clientPhone" 
+                label="Client Phone" 
+                rules={[{ required: true }]}
+              >
+                <Input size="large" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <div className="flex justify-end gap-3 mt-4">
+            <Button size="large" className="rounded-xl" onClick={() => setIsVisitModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              type="primary" 
+              htmlType="submit" 
+              size="large" 
+              loading={visitLoading}
+              className="rounded-xl bg-emerald-500 hover:bg-emerald-600 border-none shadow-md"
+            >
+              Confirm Booking
+            </Button>
+          </div>
+        </Form>
       </Modal>
+
     </div>
   );
 }
