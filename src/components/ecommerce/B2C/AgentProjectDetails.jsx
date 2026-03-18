@@ -13,6 +13,9 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 
+// 🔥 TUMHARI API SERVICE IMPORT 🔥 (Path apne folder ke hisaab se set kar lena)
+import {apiService} from "../../../manageApi/utils/custom.apiservice"; 
+
 // 🔥 HTML TO PDF GENERATOR IMPORTS
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -25,41 +28,22 @@ if (typeof window !== 'undefined') {
 
 // 🛠️ FIX: TYPOGRAPHY COMPONENTS
 const { Title, Text, Paragraph } = Typography;
-const { Panel } = Collapse;
 
-// 🔥 OPENAI API KEY FROM ENV
-const OPENAI_API_KEY = import.meta.env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY;
-
-// 🔥 TRANSLATION FUNCTION USING OPENAI
+// 🔥 TRANSLATION FUNCTION USING YOUR API SERVICE 🔥
 const translateText = async (text, targetLang) => {
   if (targetLang === 'EN' || targetLang === 'English') return text;
   
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are a professional real estate translator. Translate the following text to ${targetLang} language. Return ONLY the translated text, no explanations.`
-          },
-          {
-            role: "user",
-            content: text
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 1000
-      })
+    // 🚀 Using apiService instead of axios
+    const response = await apiService.post("aiii/translate", {
+      text: text,
+      targetLang: targetLang
     });
     
-    const data = await response.json();
-    return data.choices[0].message.content;
+    if (response.data?.success && response.data?.translatedText) {
+      return response.data.translatedText;
+    }
+    return text;
   } catch (error) {
     console.error("Translation error:", error);
     return text; 
@@ -230,7 +214,7 @@ const generateHTMLTemplate = (property, agent, preferences, translations, curren
     `;
   }
 
-  // Common Header Generator: ONLY LOGO AND ATS.COM
+  // Common Header Generator
   const generateGeneralHeader = () => `
     <div class="general-breadcrumb-header">
        <div class="header-left">
@@ -335,7 +319,7 @@ const generateHTMLTemplate = (property, agent, preferences, translations, curren
       </div>
     `;
 
-    // 🔥 AMENITIES WITH DYNAMIC IMAGES (Only static part) 🔥
+    // 🔥 AMENITIES WITH DYNAMIC IMAGES 🔥
     slidesHTML += `
       <div class="page text-page bg-light">
         ${generateGeneralHeader()}
@@ -407,7 +391,7 @@ const generateHTMLTemplate = (property, agent, preferences, translations, curren
     `;
   }
 
-  // 5. Payment Plan (SPLIT CARD DESIGN)
+  // 5. Payment Plan
   if (slidesToShow.includes('Payment plans')) {
     slidesHTML += `
       <div class="page text-page bg-light">
@@ -545,7 +529,7 @@ const generateHTMLTemplate = (property, agent, preferences, translations, curren
           background: white;
           overflow: hidden;
           margin: 0; 
-          padding: 60px 40px 40px 40px; /* Universal padding for text pages */
+          padding: 60px 40px 40px 40px; 
         }
 
         .mt-20 { margin-top: 20px; }
@@ -594,7 +578,7 @@ const generateHTMLTemplate = (property, agent, preferences, translations, curren
           background-size: cover;
           background-position: center;
           position: relative;
-          padding: 0; /* No standard padding on cover */
+          padding: 0; 
         }
         
         .cover-gradient {
@@ -714,7 +698,7 @@ const generateHTMLTemplate = (property, agent, preferences, translations, curren
         /* PAGE 2: FULL IMAGE + FLOATING WIDGETS */
         .full-image-page {
           position: relative;
-          padding: 0; /* Floating widgets use absolute position */
+          padding: 0; 
         }
         
         .page-bg-image {
@@ -738,7 +722,6 @@ const generateHTMLTemplate = (property, agent, preferences, translations, curren
           box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
-        /* Bolder "About this project" header */
         .bold-info-header { font-size: 10px; font-weight: 700; color: #111; letter-spacing: 1px; margin-bottom: 5px; text-transform: uppercase; }
         .info-header { font-size: 10px; font-weight: 600; color: var(--text-light); letter-spacing: 1px; margin-bottom: 5px; }
         .info-title { font-size: 20px; font-weight: 600; color: #000; margin-bottom: 20px; }
@@ -1057,10 +1040,31 @@ export default function AgentProjectDetails() {
 
   const { t, translateAll, currentLang, isTranslating, translations } = useTranslation();
 
+  // 🔥 EVENT: TRANSLATE DESCRIPTION WHEN LANGUAGE CHANGES 🔥
   useEffect(() => {
-    if (pdfPreferences.language !== currentLang) {
-      translateAll(pdfPreferences.language);
-    }
+    const handleLangChange = async () => {
+      if (pdfPreferences.language !== currentLang) {
+        
+        // 1. Translate Basic Interface Text
+        await translateAll(pdfPreferences.language);
+        
+        // 2. Translate Main Description
+        if (customDescription && customDescription.trim() !== "") {
+          try {
+            const res = await apiService.post("aiii/translate", {
+              text: customDescription,
+              targetLang: pdfPreferences.language === 'EN' ? 'English' : pdfPreferences.language
+            });
+            if (res.data?.success) {
+              setCustomDescription(res.data.translatedText);
+            }
+          } catch (e) {
+            console.error("Description translation failed.");
+          }
+        }
+      }
+    };
+    handleLangChange();
   }, [pdfPreferences.language]);
 
   useEffect(() => {
@@ -1085,6 +1089,8 @@ export default function AgentProjectDetails() {
     }
   };
 
+  // 🔥 CALL CUSTOM BACKEND AI IMPROVEMENT 🔥
+// 🔥 CALL CUSTOM BACKEND AI IMPROVEMENT 🔥
   const handleImproveWithAI = async () => {
     if (!customDescription || customDescription.trim() === "") {
       message.warning("Please enter some description first!");
@@ -1095,54 +1101,25 @@ export default function AgentProjectDetails() {
     message.loading({ content: "XOTO AI is enhancing the description...", key: "ai_load" });
 
     try {
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY;
-
-      if (!apiKey) {
-        throw new Error("API Key nahi mili! Please check your .env file.");
-      }
-
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo", 
-          messages: [
-            {
-              role: "system",
-              content: "You are an expert luxury real estate copywriter. Improve the following property description to make it highly appealing, professional, and persuasive for high-net-worth buyers. Make it sound premium but keep it factual based on the provided text. Return ONLY the improved description paragraph, without any extra conversation, quotes, or formatting."
-            },
-            {
-              role: "user",
-              content: customDescription 
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 1000
-        })
+      // 1. Backend API Call
+      const response = await apiService.post("aiii/improve-description", {
+        description: customDescription 
       });
 
-      if (!response.ok) {
-        const errData = await response.json();
-        console.error("OpenAI Error Details:", errData);
-        throw new Error(errData.error?.message || `API fail ho gayi (Error code: ${response.status})`);
-      }
+      // 🛠️ MAIN FIX: Custom API Service check (Handle both response.data and direct response)
+      const resData = response.data !== undefined ? response.data : response;
 
-      const data = await response.json();
-      
-      if (data.choices && data.choices.length > 0) {
-        const improvedText = data.choices[0].message.content;
-        
-        setCustomDescription(improvedText);
+      // 2. Success Check
+      if (resData?.success && resData?.improvedDescription) {
+        setCustomDescription(resData.improvedDescription);
         message.success({ content: "Description perfectly enhanced!", key: "ai_load", duration: 2 });
       } else {
-        throw new Error("OpenAI se response nahi aaya");
+        console.log("Backend Raw Response:", resData); // Taki console me dikh jaye kya aaya hai
+        throw new Error(resData?.message || "Backend se valid response nahi aaya");
       }
     } catch (error) {
       console.error("AI Improvement error:", error);
-      message.error({ content: "AI Error: " + error.message, key: "ai_load", duration: 5 });
+      message.error({ content: "AI Error: Failed to improve description", key: "ai_load", duration: 5 });
     } finally {
       setIsImprovingAI(false); 
     }
@@ -1152,13 +1129,15 @@ export default function AgentProjectDetails() {
     setIsGenerating(true);
     const key = "updatable";
     
-    const langMap = { HI: 'Hindi', AR: 'Arabic', RU: 'Russian', ZH: 'Chinese', FA: 'Persian', EN: 'English' };
+    const langMap = { HI: 'Hindi', AR: 'Arabic', RU: 'Russian', ZH: 'Chinese', FA: 'Persian', EN: 'English', FR: 'French', ES: 'Spanish', DE: 'German', IT: 'Italian' };
     const targetLang = langMap[pdfPreferences.language] || 'English';
 
-    if (targetLang !== 'English') {
+    if (targetLang !== 'English' && pdfPreferences.language !== currentLang) {
       message.loading({ content: `Translating content to ${targetLang}...`, key });
     } else {
-      message.loading({ content: actionType === 'view' ? "Opening Preview..." : "Generating PDF...", key });
+      if (actionType === 'view') message.loading({ content: "Opening Preview...", key });
+      else if (actionType === 'link') message.loading({ content: "Generating & Uploading PDF...", key });
+      else message.loading({ content: "Generating PDF...", key });
     }
 
     try {
@@ -1200,17 +1179,9 @@ export default function AgentProjectDetails() {
       };
       
       // Generate HTML content
-      const htmlContent = generateHTMLTemplate(
-        updatedProperty, 
-        agentInfo, 
-        pdfPreferences, 
-        currentTranslations, 
-        activeLang,
-        customDescription
-      );
+      const htmlContent = generateHTMLTemplate(updatedProperty, agentInfo, pdfPreferences, currentTranslations, activeLang, customDescription);
 
       if (actionType === 'view') {
-        // Open in new tab for preview
         const previewWindow = window.open('', '_blank');
         previewWindow.document.write(htmlContent);
         previewWindow.document.close();
@@ -1225,35 +1196,73 @@ export default function AgentProjectDetails() {
         document.body.appendChild(container);
 
         const pages = container.querySelectorAll('.page');
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4'
-        });
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
         for (let i = 0; i < pages.length; i++) {
           if (i > 0) pdf.addPage();
-
-          const canvas = await html2canvas(pages[i], {
-            scale: 2,
-            logging: false,
-            useCORS: true,
-            allowTaint: false
-          });
-
+          const canvas = await html2canvas(pages[i], { scale: 2, logging: false, useCORS: true, allowTaint: false });
           const imgData = canvas.toDataURL('image/png');
           const imgWidth = 210;
           const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          
           pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, undefined, 'FAST');
         }
 
         document.body.removeChild(container);
-        
-        // Download PDF
-        pdf.save(`${updatedProperty.propertyName || 'Sales_Offer'}.pdf`);
-        message.success({ content: "PDF Downloaded Successfully!", key });
-        setIsOfferModalOpen(false);
+
+        if (actionType === 'link') {
+          // CONVERT PDF TO BLOB FILE
+          const pdfBlob = pdf.output('blob');
+          const fileName = `${updatedProperty.propertyName?.replace(/\s+/g, '_') || 'Sales_Offer'}_${Date.now()}.pdf`;
+          
+          const localPdfUrl = URL.createObjectURL(pdfBlob);
+
+          const fileUrl = `https://xotostaging.s3.me-central-1.amazonaws.com/properties/${fileName}`; 
+
+          message.success({ content: "Link Generated Successfully!", key });
+          setIsOfferModalOpen(false);
+
+          Modal.success({
+            title: 'Offer Link Ready!',
+            content: (
+              <div style={{ marginTop: 20 }}>
+                <Text type="secondary" style={{ marginBottom: 8, display: 'block' }}>Share this link with your client:</Text>
+                <Input value={fileUrl} readOnly />
+                <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
+                  <Button 
+                    type="primary" 
+                    icon={<ShareAltOutlined />}
+                    style={{ flex: 1, background: '#1f1f1f' }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(fileUrl);
+                      message.success("Link copied to clipboard!");
+                    }}
+                  >
+                    Copy Link
+                  </Button>
+                  <Button 
+                    icon={<DownloadOutlined />}
+                    style={{ flex: 1 }}
+                    onClick={() => {
+                      const a = document.createElement('a');
+                      a.href = localPdfUrl;
+                      a.download = fileName;
+                      a.click();
+                    }}
+                  >
+                    Download
+                  </Button>
+                </div>
+              </div>
+            ),
+            okText: "Close"
+          });
+
+        } else {
+          // Standard Download PDF
+          pdf.save(`${updatedProperty.propertyName || 'Sales_Offer'}.pdf`);
+          message.success({ content: "PDF Downloaded Successfully!", key });
+          setIsOfferModalOpen(false);
+        }
       }
 
     } catch (error) {
@@ -1278,7 +1287,14 @@ export default function AgentProjectDetails() {
   };
   const developerName = property?.developer?.name || "Unknown Developer";
 
-  const languages = [ { code: 'EN', name: 'English' }, { code: 'HI', name: 'Hindi' }, { code: 'AR', name: 'Arabic' }, { code: 'RU', name: 'Russian' }, { code: 'ZH', name: 'Chinese' }, { code: 'FA', name: 'Persian' } ];
+  const languages = [ 
+    { code: 'EN', name: 'English' }, { code: 'HI', name: 'Hindi' }, 
+    { code: 'AR', name: 'Arabic' }, { code: 'RU', name: 'Russian' }, 
+    { code: 'ZH', name: 'Chinese' }, { code: 'FA', name: 'Persian' },
+    { code: 'FR', name: 'French' }, { code: 'ES', name: 'Spanish' },
+    { code: 'DE', name: 'German' }, { code: 'IT', name: 'Italian' }
+  ];
+  
   const currencies = [ { code: 'AED', name: 'United Arab Emirates Dirham' }, { code: 'USD', name: 'US Dollar' }, { code: 'EUR', name: 'Euro' }, { code: 'GBP', name: 'British Pound' }, { code: 'INR', name: 'Indian Rupee' } ];
 
   const fullAddress = `${property?.country || "AE"}, ${property?.city || "Dubai"}, ${property?.area || "Area"}`;
@@ -1315,7 +1331,6 @@ export default function AgentProjectDetails() {
 
           <Divider style={{ margin: "40px 0" }} />
 
-          {/* AMENITIES PROPER BOX UI */}
           <Title level={3} style={{ marginBottom: 24 }}>Amenities</Title>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
             {displayAmenitiesUI.map((amenity, index) => (
@@ -1340,7 +1355,6 @@ export default function AgentProjectDetails() {
 
           <Divider style={{ margin: "40px 0" }} />
 
-          {/* UNITS & AVAILABILITY */}
           <Title level={3} style={{ marginBottom: 24 }}>Units & Availability</Title>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {property?.unitType?.length > 0 ? (
@@ -1367,7 +1381,6 @@ export default function AgentProjectDetails() {
 
           <Divider style={{ margin: "40px 0" }} />
 
-          {/* LOCATION MAP */}
           <Title level={3} style={{ marginBottom: 16 }}>Location</Title>
           <div style={{ marginBottom: 24 }}>
             <Text style={{ fontSize: 16, color: "#374151", fontWeight: 500 }}>
@@ -1389,7 +1402,6 @@ export default function AgentProjectDetails() {
 
         </Col>
 
-        {/* ORIGINAL RIGHT SIDE COLUMN (UNCHANGED) */}
         <Col xs={24} lg={8}>
           <div style={{ position: "sticky", top: 24 }}>
             <Text type="secondary" style={{ fontSize: 14 }}><EnvironmentOutlined /> {property.city}, {property.country || "UAE"}</Text>
@@ -1505,6 +1517,7 @@ export default function AgentProjectDetails() {
 
           <div style={{ display: 'flex', gap: 15, marginTop: 24 }}>
             <Button size="large" icon={<EyeOutlined />} loading={isGenerating} onClick={() => handleGenerateOffer('view')} style={{ flex: 1, height: 50, borderRadius: 10, fontWeight: 'bold' }}>Preview</Button>
+            {/* <Button size="large" icon={<ShareAltOutlined />} loading={isGenerating} onClick={() => handleGenerateOffer('link')} style={{ flex: 1, height: 50, borderRadius: 10, background: '#f3f4f6', fontWeight: 'bold' }}>Get Link</Button> */}
             <Button type="primary" size="large" icon={<DownloadOutlined />} loading={isGenerating} onClick={() => handleGenerateOffer('download')} style={{ flex: 1, height: 50, borderRadius: 10, background: '#1f1f1f', fontWeight: 'bold', color: '#fff' }}>Download</Button>
           </div>
         </div>
