@@ -13,8 +13,9 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 
-// 🔥 PDF GENERATOR IMPORTS
-import { pdf, Document, Page, Text as PdfText, View, Image as PdfImage, StyleSheet, Font } from '@react-pdf/renderer';
+// 🔥 HTML TO PDF GENERATOR IMPORTS
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 // 🛠️ FIX: BUFFER IS NOT DEFINED ERROR
 import { Buffer } from 'buffer';
@@ -90,7 +91,8 @@ const useTranslation = () => {
       duringConstruction: "During construction",
       uponHandover: "Upon Handover",
       handover: "Handover",
-      paymentPlanOption: "Payment Plan Option All options",
+      paymentPlanOption: "Payment Plan Option",
+      allOptions: "All options",
       dateOfCreation: "Date of creation",
       finishing: "Finishing and materials",
       architecture: "ARCHITECTURE",
@@ -147,277 +149,40 @@ const getSafeUrl = (url) => {
 
 const exchangeRates = { AED: 1, USD: 0.272, EUR: 0.25, GBP: 0.21, INR: 22.6 };
 
-// 🔥 PROFESSIONAL LUXURY PDF STYLESHEET 🔥
-const pdfStyles = StyleSheet.create({
-  page: { 
-    padding: 0, 
-    backgroundColor: '#ffffff', 
-    fontFamily: 'Helvetica',
-    position: 'relative' 
-  },
-
-  // 🔥 GLOBAL HEADER & FOOTER FOR ALL PAGES 🔥
-  globalHeader: {
-    position: 'absolute', top: 15, right: 40, zIndex: 10
-  },
-  globalHeaderLogo: {
-    width: 70, height: 25, objectFit: 'contain'
-  },
-  globalFooter: {
-    position: 'absolute', bottom: 15, left: 40, right: 40, flexDirection: 'row', justifyContent: 'space-between',
-    borderTopWidth: 1, borderTopColor: '#e5e5e5', paddingTop: 8, zIndex: 10
-  },
-  globalFooterText: {
-    fontSize: 9, color: '#888', textTransform: 'uppercase', letterSpacing: 1
-  },
-  globalFooterBrand: {
-    fontSize: 9, color: '#c9a05e', fontWeight: 'bold', letterSpacing: 1
-  },
-
-  // COVER PAGE 
-  coverContainer: {
-    height: '100%', position: 'relative', backgroundColor: '#000'
-  },
-  coverBackground: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.9
-  },
-  coverOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 2
-  },
-  coverContent: {
-    position: 'relative', zIndex: 3, height: '100%', padding: 40, display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
-  },
+// 🔥 SMART AMENITY IMAGE MATCHER 🔥
+const getAmenityImage = (amenityName) => {
+  const name = amenityName.toLowerCase();
+  if (name.includes('pool') || name.includes('water lounge') || name.includes('water')) return "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?q=80&w=800&auto=format&fit=crop";
+  if (name.includes('gym') || name.includes('fitness')) return "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=800&auto=format&fit=crop";
+  if (name.includes('cinema') || name.includes('theater')) return "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=800&auto=format&fit=crop";
+  if (name.includes('bbq') || name.includes('barbecue') || name.includes('grill')) return "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?q=80&w=800&auto=format&fit=crop";
+  if (name.includes('spa') || name.includes('sauna') || name.includes('massage')) return "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=800&auto=format&fit=crop";
+  if (name.includes('lounge') || name.includes('club house') || name.includes('club')) return "https://images.unsplash.com/photo-1574643033501-1b0780287f3b?q=80&w=800&auto=format&fit=crop";
+  if (name.includes('work') || name.includes('office') || name.includes('business') || name.includes('co-working')) return "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop";
+  if (name.includes('terrace') || name.includes('roof') || name.includes('deck')) return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=800&auto=format&fit=crop";
+  if (name.includes('garden') || name.includes('park') || name.includes('green')) return "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop";
+  if (name.includes('kids') || name.includes('play')) return "https://images.unsplash.com/photo-1598346762291-aee88549193f?q=80&w=800&auto=format&fit=crop";
+  if (name.includes('yoga') || name.includes('zen')) return "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=800&auto=format&fit=crop";
+  if (name.includes('parking') || name.includes('valet')) return "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?q=80&w=800&auto=format&fit=crop";
   
-  // TOP BAR WITH LOGO, LINE AND DEVELOPER NAME
-  coverTopBar: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10,
-  },
-  topLeftContainer: {
-    flexDirection: 'row', alignItems: 'center', gap: 15,
-  },
-  xotoLogoCover: {
-    width: 80, height: 30, objectFit: 'contain'
-  },
-  verticalLine: {
-    width: 1, height: 30, backgroundColor: '#c9a05e', marginHorizontal: 10,
-  },
-  developerNameCover: {
-    fontSize: 16, fontWeight: 'bold', color: '#fff', textTransform: 'uppercase', letterSpacing: 1,
-  },
-  coverFoundText: {
-    fontSize: 12, color: '#fff', textTransform: 'uppercase', letterSpacing: 2, opacity: 0.9
-  },
+  return "https://images.unsplash.com/photo-1600607686527-6fb886090705?q=80&w=800&auto=format&fit=crop"; 
+};
 
-  // CENTER TITLE SECTION
-  coverCenterContent: {
-    alignItems: 'center', marginTop: 'auto', marginBottom: 'auto',
-  },
-  coverPreTitle: {
-    fontSize: 14, color: '#fff', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 15, opacity: 0.8
-  },
-  coverTitle: {
-    fontSize: 56, fontWeight: 'bold', color: '#fff', textAlign: 'center', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 2
-  },
-  coverSubTitle: {
-    fontSize: 24, color: '#fff', textAlign: 'center', textTransform: 'uppercase', letterSpacing: 4, opacity: 0.9, marginBottom: 20,
-  },
-  coverDate: {
-    fontSize: 11, color: '#fff', opacity: 0.6, marginTop: 10,
-  },
 
-  // BOTTOM AGENT BAR 
-  coverBottomBar: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', paddingBottom: 10,
-  },
-  bottomLeftSection: {
-    flexDirection: 'row', alignItems: 'center', gap: 15,
-  },
-  agentCircleImg: {
-    width: 65, height: 65, borderRadius: 32.5, objectFit: 'cover', borderWidth: 2, borderColor: '#c9a05e'
-  },
-  agentDetailsCol: {
-    flexDirection: 'column',
-  },
-  agentNameCover: {
-    fontSize: 16, fontWeight: 'bold', color: '#fff', marginBottom: 2,
-  },
-  agentRoleCover: {
-    fontSize: 10, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4,
-  },
-  agentEmail: {
-    fontSize: 10, color: 'rgba(255,255,255,0.9)', marginBottom: 2,
-  },
-  agentPhone: {
-    fontSize: 10, color: 'rgba(255,255,255,0.9)',
-  },
-  bottomRightSection: {
-    alignItems: 'flex-end', justifyContent: 'flex-end',
-  },
-  agentWebsite: {
-    fontSize: 14, fontWeight: 'bold', color: '#c9a05e', textTransform: 'uppercase', letterSpacing: 1,
-  },
-
-  // PAGE 2 - PROJECT OVERVIEW
-  page2Container: {
-    flexDirection: 'row', height: '100%', backgroundColor: '#fff'
-  },
-  page2Left: {
-    flex: 1, padding: 40, backgroundColor: '#faf9f7'
-  },
-  page2Right: {
-    flex: 1, padding: 40
-  },
-  developerTag: {
-    fontSize: 12, color: '#c9a05e', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 15, fontWeight: 'bold'
-  },
-  projectTitle: {
-    fontSize: 36, fontWeight: 'bold', color: '#111', marginBottom: 30
-  },
-  infoCard: {
-    backgroundColor: '#fff', padding: 20, borderRadius: 12, marginBottom: 20, shadow: '0 4px 12px rgba(0,0,0,0.05)'
-  },
-  infoRow: {
-    flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0', paddingBottom: 10
-  },
-  infoLabel: {
-    fontSize: 11, color: '#888', textTransform: 'uppercase'
-  },
-  infoValue: {
-    fontSize: 14, fontWeight: 'bold', color: '#111'
-  },
-  
-  // LUXURY TABLE DESIGN
-  tableContainer: {
-    marginTop: 20, borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 12, overflow: 'hidden'
-  },
-  tableHeader: {
-    flexDirection: 'row', backgroundColor: '#111', padding: 15
-  },
-  tableHeaderCell: {
-    flex: 1, fontSize: 10, fontWeight: 'bold', color: '#fff', textTransform: 'uppercase', letterSpacing: 0.5
-  },
-  tableRow: {
-    flexDirection: 'row', padding: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0', backgroundColor: '#fff'
-  },
-  tableCell: {
-    flex: 1, fontSize: 11, color: '#444'
-  },
-  tableCellBold: {
-    flex: 1, fontSize: 12, fontWeight: 'bold', color: '#c9a05e'
-  },
-
-  // PAGE 3 - DESCRIPTION WITH ELEGANT TYPOGRAPHY
-  page3Image: {
-    width: '100%', height: 250, objectFit: 'cover', marginBottom: 30
-  },
-  sectionTitle: {
-    fontSize: 28, fontWeight: 'bold', color: '#111', marginBottom: 20, borderBottomWidth: 2, borderBottomColor: '#c9a05e', paddingBottom: 10
-  },
-  descriptionText: {
-    fontSize: 11, lineHeight: 1.8, color: '#444', marginBottom: 20, textAlign: 'justify'
-  },
-  subHeading: {
-    fontSize: 16, fontWeight: 'bold', color: '#111', marginTop: 20, marginBottom: 10
-  },
-
-  // PAGE 4 - ARCHITECTURE GRID
-  archGrid: {
-    flexDirection: 'row', gap: 2, height: '50%'
-  },
-  archImage: {
-    flex: 1, height: '100%', objectFit: 'cover'
-  },
-  archFullImage: {
-    width: '100%', height: '48%', objectFit: 'cover', marginTop: 2
-  },
-
-  // PAGE 5 - AMENITIES
-  amenitiesContainer: {
-    padding: 40
-  },
-  amenitiesGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 15, marginTop: 30, marginBottom: 40
-  },
-  amenityItem: {
-    width: '30%', padding: 20, backgroundColor: '#f8f8f8', alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: '#f0f0f0'
-  },
-  amenityText: {
-    fontSize: 11, color: '#333', textAlign: 'center', fontWeight: '500'
-  },
-  amenitiesImage: {
-    width: '100%', height: 350, objectFit: 'cover', borderRadius: 20
-  },
-
-  // PAGE 6 - MASTERPLAN (LOCATION)
-  masterplanContainer: {
-    padding: 40
-  },
-  masterplanImage: {
-    width: '100%', height: 500, objectFit: 'cover', borderRadius: 16, marginTop: 10
-  },
-
-  // PAGE 7 - PAYMENT PLAN
-  paymentContainer: {
-    padding: 40
-  },
-  paymentCard: {
-    backgroundColor: '#111', padding: 40, borderRadius: 20, marginTop: 30, marginBottom: 30
-  },
-  paymentRow: {
-    flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)'
-  },
-  paymentLabel: {
-    fontSize: 14, color: '#fff', textTransform: 'uppercase', letterSpacing: 1
-  },
-  paymentValue: {
-    fontSize: 24, fontWeight: 'bold', color: '#c9a05e'
-  },
-  paymentTotal: {
-    fontSize: 48, fontWeight: 'bold', color: '#c9a05e', textAlign: 'center', marginTop: 30
-  },
-
-  // PAGE 8-9 - UNITS SHOWCASE (NEW LIST UI)
-  unitsContainer: { padding: 40 },
-  unitListContainer: { marginTop: 20, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, overflow: 'hidden' },
-  unitListRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#f0f0f0', backgroundColor: '#fff' },
-  unitListText: { fontSize: 12, color: '#374151' },
-  unitListBold: { fontSize: 14, fontWeight: 'bold', color: '#111827' },
-  unitListPrice: { fontSize: 14, fontWeight: 'bold', color: '#111827' },
-  unitsImage: { width: '100%', height: 300, objectFit: 'cover', borderRadius: 20, marginTop: 40 },
-
-  // PAGE 10 - DEVELOPER (WHITE BG, BIG LOGO)
-  developerContainer: {
-    padding: 40, backgroundColor: '#ffffff', height: '100%', display: 'flex', flexDirection: 'column'
-  },
-  developerTitle: {
-    fontSize: 32, fontWeight: 'bold', color: '#111', marginBottom: 20, borderBottomWidth: 2, borderBottomColor: '#c9a05e', paddingBottom: 10, width: '100%'
-  },
-  developerLogoContainer: {
-    width: '100%', height: '45%', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 30, backgroundColor: '#faf9f7', borderRadius: 12
-  },
-  developerLogo: {
-    width: '80%', height: '80%', objectFit: 'contain'
-  },
-  developerText: {
-    fontSize: 12, lineHeight: 1.8, color: '#444', textAlign: 'justify', width: '100%'
-  },
-});
-
-// 🔥 PROPERTY BROCHURE TEMPLATE 🔥
-const PropertyBrochure = ({ property, preferences, agent, translations, currentLang }) => {
-  const xotoLogo = getSafeUrl("https://xotostaging.s3.me-central-1.amazonaws.com/properties/1773403122746-image_109-removebg-preview.png");
+// 🔥 PROFESSIONAL LUXURY HTML TEMPLATE FOR PDF 🔥
+const generateHTMLTemplate = (property, agent, preferences, translations, currentLang, customDescription) => {
+  const xotoLogo = "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1773403122746-image_109-removebg-preview.png";
   
   const gallery = property?.photos || [];
-  const safeImages = gallery.length > 0 ? gallery.map(img => getSafeUrl(img)) : [getSafeUrl("")];
-  const devName = property?.developer?.name || "PRESCOTT";
-  const propertyName = property?.propertyName || "THE CADEN";
+  const safeImages = gallery.length > 0 ? gallery.map(img => getSafeUrl(img)).filter(Boolean) : [getSafeUrl("")];
+
+  const devName = property?.developer?.name || "Prescott";
+  const propertyName = property?.propertyName || "The Caden";
 
   const unitTypesArray = property?.unitType?.length > 0 ? property.unitType : ["1 Bedroom", "2 Bedrooms", "3 Bedrooms"];
   const fullAddress = `${property?.country || "AE"}, ${property?.city || "Dubai"}, ${property?.area || "Area"}`;
-  
-  const dynamicAmenities = property?.amenities?.length > 0 ? property.amenities : ["Infinity Pool", "Outdoor Gym", "BBQ Area", "Rooftop Terraces", "Co-working Space", "Water Lounges", "Cinema", "Club House", "Spa"];
 
-  const t = (key) => translations[currentLang]?.[key] || translations.EN[key];
+  const dynamicAmenities = property?.amenities?.length > 0 ? property.amenities : ["Infinity Pool", "Outdoor Gym", "BBQ Area", "Rooftop Terraces", "Co-working Space", "Water Lounges", "Spa", "Cinema", "Club House"];
 
   const displayPrice = (basePrice) => {
     let p = Number(basePrice || 0);
@@ -425,260 +190,846 @@ const PropertyBrochure = ({ property, preferences, agent, translations, currentL
     return Math.round(p * rate).toLocaleString();
   };
 
-  const displayArea = (baseArea) => {
-    let a = Number(baseArea || 0);
-    if (preferences.measureUnit === 'm2') return Math.round(a / 10.7639);
-    return Math.round(a);
-  };
-
-  const agentPhoto = getSafeUrl(agent?.photo);
+  const agentPhoto = getSafeUrl(agent?.photo) || "https://via.placeholder.com/150";
   const slidesToShow = preferences.slides || [];
   const currentDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
 
-  // 🔥 SHARED HEADER & FOOTER COMPONENT FOR ALL INNER PAGES 🔥
-  const HeaderFooter = () => (
-    <>
-      <View style={pdfStyles.globalHeader} fixed>
-        <PdfImage src={xotoLogo} style={pdfStyles.globalHeaderLogo} />
-      </View>
-      <View style={pdfStyles.globalFooter} fixed>
-        <PdfText style={pdfStyles.globalFooterText}>{propertyName}</PdfText>
-        <PdfText style={pdfStyles.globalFooterBrand}>XOTO.AE</PdfText>
-      </View>
-    </>
-  );
+  const t = (key) => translations[currentLang]?.[key] || translations.EN[key];
 
-  return (
-    <Document>
-      {/* PAGE 1: COVER */}
-      {slidesToShow.includes('Cover slide') && (
-        <Page size="A4" style={pdfStyles.coverContainer}>
-          <PdfImage src={safeImages[0]} style={pdfStyles.coverBackground} />
-          <View style={pdfStyles.coverOverlay} />
+  let slidesHTML = '';
+
+  // 1. Cover Slide
+  if (slidesToShow.includes('Cover slide')) {
+    slidesHTML += `
+      <div class="page cover-page" style="background-image: url('${safeImages[0]}');">
+        <div class="cover-gradient"></div>
+        <div class="absolute-top-left large-cover-logo-container">
+           <img src="${xotoLogo}" class="xoto-logo-cover" />
+        </div>
+        <div class="cover-content-bottom">
+          <div class="cover-text-left">
+            <div class="pre-title">${t('lookWhatWeFound') || 'Look what we found for you'}</div>
+            <h1 class="main-title">${propertyName} by<br/>${devName}</h1>
+            <div class="date-text">Date of creation ${currentDate}</div>
+          </div>
+          <div class="agent-glass-card">
+            <img src="${agentPhoto}" class="agent-card-img" />
+            <div class="agent-card-name">${agent?.name || "Ayush Rajpalani"}</div>
+            <div class="agent-card-brand">ats.com</div>
+            <div class="agent-card-contact">
+               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+               <span>${agent?.phone || "+971503747474"}</span>
+            </div>
+            <div class="agent-card-contact">
+               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+               <span>${agent?.email || "ayush2222@yopmail.com"}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Common Header Generator: ONLY LOGO AND ATS.COM
+  const generateGeneralHeader = () => `
+    <div class="general-breadcrumb-header">
+       <div class="header-left">
+         <img src="${xotoLogo}" class="header-logo" />
+       </div>
+       <span class="brand-accent">ATS.COM</span>
+    </div>
+  `;
+
+  // 2. Project Overview / Table
+  if (slidesToShow.includes('Project description')) {
+    slidesHTML += `
+      <div class="page full-image-page">
+        <img src="${safeImages[1] || safeImages[0]}" class="page-bg-image" />
+        
+        <div class="page-absolute-top">
+           ${generateGeneralHeader()}
+        </div>
+        
+        <div class="floating-info-card">
+          <div class="info-header bold-info-header">${t('aboutProject') || 'ABOUT THE PROJECT'}</div>
+          <div class="info-title">${propertyName} by ${devName}</div>
+          <div class="info-grid">
+            <div class="info-col">
+              <span class="info-label">Developer</span>
+              <span class="info-value">${devName}</span>
+            </div>
+            <div class="info-col">
+              <span class="info-label">Building start</span>
+              <span class="info-value">${property?.buildingStart || "Q4 2025"}</span>
+            </div>
+            <div class="info-col">
+              <span class="info-label">Handover</span>
+              <span class="info-value">${property?.handover || "Q3 2028"}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="floating-table-card">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Unit type</th>
+                <th>Bedrooms</th>
+                <th>Amount</th>
+                <th>Area, ${preferences.measureUnit === 'm2' ? 'm²' : 'sq.ft'}</th>
+                <th>Price from</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Apartments</td>
+                <td>1 Bedroom</td>
+                <td>19/32</td>
+                <td>${preferences.measureUnit === 'm2' ? '72-79' : '775-850'}</td>
+                <td class="price-highlight">${preferences.currency} 1,800,000</td>
+              </tr>
+              <tr>
+                <td>Apartments</td>
+                <td>2 Bedrooms</td>
+                <td>2/8</td>
+                <td>${preferences.measureUnit === 'm2' ? '113-129' : '1,216-1,389'}</td>
+                <td class="price-highlight">${preferences.currency} 2,845,000</td>
+              </tr>
+              <tr>
+                <td>Apartments</td>
+                <td>3 Bedrooms</td>
+                <td>6/9</td>
+                <td>${preferences.measureUnit === 'm2' ? '188-197' : '2,024-2,120'}</td>
+                <td class="price-highlight">${preferences.currency} 4,241,000</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="page text-page">
+        ${generateGeneralHeader()}
+
+        <div class="content-wrapper mt-40">
+          <div class="page-header-text bold-info-header">${t('aboutProject') || 'ABOUT THE PROJECT'}</div>
+          <h1 class="page-main-title">${propertyName} by ${devName}</h1>
+          <div class="page-sub-title">Developer ${devName}</div>
           
-          <View style={pdfStyles.coverContent}>
-            <View style={pdfStyles.coverTopBar}>
-              <View style={pdfStyles.topLeftContainer}>
-                <PdfImage src={xotoLogo} style={pdfStyles.xotoLogoCover} />
-                <View style={pdfStyles.verticalLine} />
-                <PdfText style={pdfStyles.developerNameCover}>{devName}</PdfText>
-              </View>
-              <PdfText style={pdfStyles.coverFoundText}>{t('lookWhatWeFound')}</PdfText>
-            </View>
+          <h2 class="section-heading mt-40">Description</h2>
+          <h3 class="section-subheading">Project general facts</h3>
+          
+          <div class="body-text">
+            ${customDescription || property?.description || `The Caden by Prescott Real Estate Development rises at the meeting point of city energy and natural calm within Meydan Horizon, one of Dubai's most forward-looking communities.<br><br>
+            Its design captures the duality of urban vitality and serene living modern architecture opening toward tranquil lagoon views, with interiors that emphasize light, balance, and intelligent comfort.`}
+          </div>
 
-            <View style={pdfStyles.coverCenterContent}>
-              <PdfText style={pdfStyles.coverPreTitle}>PRESENTING</PdfText>
-              <PdfText style={pdfStyles.coverTitle}>{propertyName}</PdfText>
-              <PdfText style={pdfStyles.coverSubTitle}>BY {devName}</PdfText>
-              <PdfText style={pdfStyles.coverDate}>{t('dateOfCreation')} {currentDate}</PdfText>
-            </View>
+          <h3 class="section-subheading mt-30">Finishing and materials</h3>
+          <div class="body-text">Modern finishing with high-quality materials.</div>
+          
+          <h3 class="section-subheading mt-20">Kitchen and appliances</h3>
+          <div class="body-text">Fully fitted kitchens with premium appliances.</div>
+          
+          <h3 class="section-subheading mt-20">Furnishing</h3>
+          <div class="body-text">Yes.</div>
+        </div>
+      </div>
+    `;
 
-            <View style={pdfStyles.coverBottomBar}>
-              <View style={pdfStyles.bottomLeftSection}>
-                <PdfImage src={agentPhoto} style={pdfStyles.agentCircleImg} />
-                <View style={pdfStyles.agentDetailsCol}>
-                  <PdfText style={pdfStyles.agentNameCover}>{agent?.name || "AyuSh Rajpalani"}</PdfText>
-                  <PdfText style={pdfStyles.agentRoleCover}>{t('advisor')}</PdfText>
-                  <PdfText style={pdfStyles.agentEmail}>{agent?.email || "ayush2222@yopmail.com"}</PdfText>
-                  <PdfText style={pdfStyles.agentPhone}>{agent?.phone || "+971503747474"}</PdfText>
-                </View>
-              </View>
-              <View style={pdfStyles.bottomRightSection}>
-                <PdfText style={pdfStyles.agentWebsite}>XOTO.AE</PdfText>
-              </View>
-            </View>
-          </View>
-        </Page>
-      )}
+    // 🔥 AMENITIES WITH DYNAMIC IMAGES (Only static part) 🔥
+    slidesHTML += `
+      <div class="page text-page bg-light">
+        ${generateGeneralHeader()}
 
-      {/* PAGE 2: PROJECT OVERVIEW */}
-      {slidesToShow.includes('Project description') && (
-        <Page size="A4" style={pdfStyles.page}>
-          <HeaderFooter />
-          <View style={pdfStyles.page2Container}>
-            <View style={pdfStyles.page2Left}>
-              <PdfText style={pdfStyles.developerTag}>DEVELOPER</PdfText>
-              <PdfText style={pdfStyles.projectTitle}>{devName}</PdfText>
-              
-              <View style={pdfStyles.infoCard}>
-                <View style={pdfStyles.infoRow}>
-                  <PdfText style={pdfStyles.infoLabel}>Handover Status</PdfText>
-                  <PdfText style={pdfStyles.infoValue}>{property?.handover || "TBA"}</PdfText>
-                </View>
-              </View>
+        <div class="content-wrapper mt-40">
+          <h2 class="section-heading mb-30">${t('amenities') || 'Features & Amenities'}</h2>
+          
+          <div class="amenities-rich-grid">
+            ${dynamicAmenities.map(item => `
+              <div class="amenity-rich-card">
+                <img src="${getAmenityImage(item)}" alt="${item}" class="amenity-rich-img" />
+                <div class="amenity-rich-title">${item}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
-              <PdfImage src={safeImages[1] || safeImages[0]} style={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 12 }} />
-            </View>
+  // 3. Architecture Slides
+  if (slidesToShow.includes('Project description')) {
+    slidesHTML += `
+      <div class="page dark-page">
+        ${generateGeneralHeader()}
+        <div class="full-center-image mt-40">
+          <img src="${safeImages[2] || safeImages[0]}" class="rounded-image" style="max-height: 80vh; width: auto; object-fit: contain;" />
+        </div>
+        <div class="arch-footer">#${devName}</div>
+      </div>
 
-            <View style={pdfStyles.page2Right}>
-              <View style={pdfStyles.tableContainer}>
-                <View style={pdfStyles.tableHeader}>
-                  <PdfText style={pdfStyles.tableHeaderCell}>Unit Type</PdfText>
-                  <PdfText style={pdfStyles.tableHeaderCell}>Bedrooms</PdfText>
-                  <PdfText style={pdfStyles.tableHeaderCell}>Amount</PdfText>
-                  <PdfText style={pdfStyles.tableHeaderCell}>Area (m²)</PdfText>
-                  <PdfText style={pdfStyles.tableHeaderCell}>Price From</PdfText>
-                </View>
-                <View style={pdfStyles.tableRow}>
-                  <PdfText style={pdfStyles.tableCell}>Apartments</PdfText>
-                  <PdfText style={pdfStyles.tableCell}>1 Bedroom</PdfText>
-                  <PdfText style={pdfStyles.tableCell}>19/32</PdfText>
-                  <PdfText style={pdfStyles.tableCell}>72-79</PdfText>
-                  <PdfText style={pdfStyles.tableCellBold}>{preferences.currency} 1,800,000</PdfText>
-                </View>
-                <View style={pdfStyles.tableRow}>
-                  <PdfText style={pdfStyles.tableCell}>Apartments</PdfText>
-                  <PdfText style={pdfStyles.tableCell}>2 Bedrooms</PdfText>
-                  <PdfText style={pdfStyles.tableCell}>2/8</PdfText>
-                  <PdfText style={pdfStyles.tableCell}>113-129</PdfText>
-                  <PdfText style={pdfStyles.tableCellBold}>{preferences.currency} 2,845,000</PdfText>
-                </View>
-                <View style={[pdfStyles.tableRow, { borderBottomWidth: 0 }]}>
-                  <PdfText style={pdfStyles.tableCell}>Apartments</PdfText>
-                  <PdfText style={pdfStyles.tableCell}>3 Bedrooms</PdfText>
-                  <PdfText style={pdfStyles.tableCell}>6/9</PdfText>
-                  <PdfText style={pdfStyles.tableCell}>188-197</PdfText>
-                  <PdfText style={pdfStyles.tableCellBold}>{preferences.currency} 4,241,000</PdfText>
-                </View>
-              </View>
-            </View>
-          </View>
-        </Page>
-      )}
+      <div class="page text-page">
+        ${generateGeneralHeader()}
+        <div class="split-image-grid mt-40">
+          <img src="${safeImages[3] || safeImages[0]}" class="rounded-image h-full" />
+          <img src="${safeImages[4] || safeImages[0]}" class="rounded-image h-full" />
+        </div>
+        <div class="arch-footer dark-text">#${devName}</div>
+      </div>
+    `;
+  }
 
-      {/* PAGE 3: DESCRIPTION */}
-      {slidesToShow.includes('Project description') && (
-        <Page size="A4" style={pdfStyles.page}>
-          <HeaderFooter />
-          <View style={{ padding: 40 }}>
-            <PdfText style={pdfStyles.sectionTitle}>Description</PdfText>
-            
-            <PdfText style={pdfStyles.subHeading}>Project General Facts</PdfText>
-            <PdfText style={pdfStyles.descriptionText}>
-              {property?.description || "Detailed description for this property is not available yet."}
-            </PdfText>
-            
-            <PdfImage src={safeImages[2] || safeImages[1]} style={pdfStyles.page3Image} />
-            
-            <PdfText style={pdfStyles.subHeading}>Finishing and Materials</PdfText>
-            <PdfText style={pdfStyles.descriptionText}>
-              Modern finishing with high-quality materials. Fully fitted kitchens with premium appliances and smart home automation.
-            </PdfText>
-          </View>
-        </Page>
-      )}
+  // 4. Location Page
+  if (slidesToShow.includes('Location')) {
+    slidesHTML += `
+      <div class="page text-page">
+        ${generateGeneralHeader()}
+        <div class="content-wrapper mt-40">
+          <h2 class="section-heading mb-30">${t('primeLocation') || 'Prime Location'}</h2>
+          
+          <div class="body-text mb-30">
+            <strong><span style="color: #D4B886; margin-right: 5px;">📍</span>${fullAddress}</strong><br/><br/>
+            ${property?.locationDescription || "Meydan City is an extraordinary community situated in the heart of Dubai, known for its blend of luxury, sophistication, and world-class amenities. Spanning over a vast area, it offers a unique living experience that combines urban convenience with a tranquil and scenic environment."}
+          </div>
 
-      {/* PAGE 4: ARCHITECTURE (Added padding to accommodate header/footer) */}
-      {(safeImages.length > 3 && slidesToShow.includes('Project description')) && (
-        <Page size="A4" style={[pdfStyles.page, { padding: 40 }]}>
-          <HeaderFooter />
-          <View style={pdfStyles.archGrid}>
-            <PdfImage src={safeImages[3]} style={pdfStyles.archImage} />
-            <PdfImage src={safeImages[4] || safeImages[3]} style={pdfStyles.archImage} />
-          </View>
-          <PdfImage src={safeImages[5] || safeImages[0]} style={pdfStyles.archFullImage} />
-        </Page>
-      )}
+          <div class="location-map-wrapper" style="width: 100%; height: 500px; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+             <iframe
+                width="100%"
+                height="100%"
+                style="border: 0;"
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="no-referrer-when-downgrade"
+                src="https://maps.google.com/maps?q=${encodeURIComponent(propertyName + ' ' + fullAddress)}&t=m&z=14&ie=UTF8&iwloc=&output=embed"
+              ></iframe>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
-      {/* PAGE 5: FEATURES & AMENITIES */}
-      {slidesToShow.includes('Location') && (
-        <Page size="A4" style={pdfStyles.page}>
-          <HeaderFooter />
-          <View style={pdfStyles.amenitiesContainer}>
-            <PdfText style={pdfStyles.sectionTitle}>Features & Amenities</PdfText>
-            <View style={pdfStyles.amenitiesGrid}>
-              {dynamicAmenities.slice(0, 9).map((item, i) => (
-                <View key={i} style={pdfStyles.amenityItem}>
-                  <PdfText style={pdfStyles.amenityText}>{item}</PdfText>
-                </View>
-              ))}
-            </View>
-            <PdfImage src={safeImages[6] || safeImages[0]} style={pdfStyles.amenitiesImage} />
-          </View>
-        </Page>
-      )}
+  // 5. Payment Plan (SPLIT CARD DESIGN)
+  if (slidesToShow.includes('Payment plans')) {
+    slidesHTML += `
+      <div class="page text-page bg-light">
+        ${generateGeneralHeader()}
+        
+        <div class="payment-split-container mt-40">
+           <div class="payment-left-card">
+              <div>
+                <div class="pay-sub">${t('paymentPlanOption') || 'Payment Plan Option'}</div>
+                <div class="pay-main">${t('paymentPlan') || 'Payment Plan'}</div>
+              </div>
+              <div class="pay-footer">
+                <div class="pay-footer-title">${t('allOptions') || 'All options'}</div>
+                <div class="pay-footer-action">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
+                  <span>${t('paymentPlan') || 'Payment Plan'}</span>
+                </div>
+              </div>
+           </div>
 
-      {/* PAGE 6: MASTERPLAN / LOCATION */}
-      {slidesToShow.includes('Location') && (
-        <Page size="A4" style={pdfStyles.page}>
-          <HeaderFooter />
-          <View style={pdfStyles.masterplanContainer}>
-            <PdfText style={pdfStyles.sectionTitle}>Location</PdfText>
-            <PdfText style={{ fontSize: 16, color: '#374151', fontWeight: 'bold', marginBottom: 20 }}>📍 {fullAddress}</PdfText>
-            <PdfImage src={safeImages[7] || safeImages[0]} style={pdfStyles.masterplanImage} />
-          </View>
-        </Page>
-      )}
+           <div class="payment-right-card">
+             <div class="pay-row">
+               <span>${t('onBooking') || 'On booking'}</span>
+               <strong>${property?.paymentPlan_initialPercentage || "20"}%</strong>
+             </div>
+             <div class="pay-row">
+               <span>${t('duringConstruction') || 'During construction'}</span>
+               <strong>${property?.paymentPlan_duringPercentage || "40"}%</strong>
+             </div>
+             <div class="pay-row border-0">
+               <span>${t('uponHandover') || 'Upon Handover'}</span>
+               <strong>${property?.paymentPlan_laterPercentage || "40"}%</strong>
+             </div>
+           </div>
+        </div>
+      </div>
+    `;
+  }
 
-      {/* PAGE 7: PAYMENT PLAN */}
-      {slidesToShow.includes('Payment plans') && (
-        <Page size="A4" style={pdfStyles.page}>
-          <HeaderFooter />
-          <View style={pdfStyles.paymentContainer}>
-            <PdfText style={pdfStyles.sectionTitle}>Payment Plan</PdfText>
-            <View style={pdfStyles.paymentCard}>
-              <View style={pdfStyles.paymentRow}>
-                <PdfText style={pdfStyles.paymentLabel}>On Booking</PdfText>
-                <PdfText style={pdfStyles.paymentValue}>20%</PdfText>
-              </View>
-              <View style={pdfStyles.paymentRow}>
-                <PdfText style={pdfStyles.paymentLabel}>During Construction</PdfText>
-                <PdfText style={pdfStyles.paymentValue}>40%</PdfText>
-              </View>
-              <View style={[pdfStyles.paymentRow, { borderBottomWidth: 0 }]}>
-                <PdfText style={pdfStyles.paymentLabel}>Upon Handover</PdfText>
-                <PdfText style={pdfStyles.paymentValue}>40%</PdfText>
-              </View>
-            </View>
-            <PdfText style={pdfStyles.paymentTotal}>20/40/40%</PdfText>
-          </View>
-        </Page>
-      )}
+  // 6. Typical Units
+  if (slidesToShow.includes('Unit prices')) {
+    slidesHTML += `
+      <div class="page text-page">
+        ${generateGeneralHeader()}
+        
+        <div class="content-wrapper mt-40" style="max-width: 100%;">
+          <h2 class="section-heading">${t('typicalUnits') || 'Typical Units'}</h2>
+          <div class="availability-info mt-20">
+             <strong>Number of available units:</strong><br>
+             Apartments: 1 Bedroom - 19 | Apartments: 2 Bedrooms - 2 | Apartments: 3 Bedrooms - 6
+          </div>
+          
+          <div class="floorplan-layout mt-40">
+             <div class="fp-images">
+                <img src="${safeImages[0]}" class="rounded-image" style="height: 400px; object-fit: contain;" />
+             </div>
+             <div class="fp-details">
+                <div class="unit-block">
+                   <div class="unit-title">Apartments: 1 Bedroom</div>
+                   <div class="unit-specs">from AED 1,800,000 to AED 2,238,000</div>
+                   <div class="unit-specs text-grey">from 72 m² to 79 m²</div>
+                   <div class="unit-specs text-light-grey">from AED 23,795/m² to AED 28,956/m²</div>
+                </div>
+                <div class="unit-block mt-30">
+                   <div class="unit-title">Apartments: 2 Bedrooms</div>
+                   <div class="unit-specs">from AED 2,845,000 to AED 3,233,000</div>
+                   <div class="unit-specs text-grey">from 113 m² to 129 m²</div>
+                   <div class="unit-specs text-light-grey">from AED 23,798/m² to AED 26,136/m²</div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
-      {/* PAGE 8: TYPICAL UNITS */}
-      {slidesToShow.includes('Unit prices') && (
-        <Page size="A4" style={pdfStyles.page}>
-          <HeaderFooter />
-          <View style={pdfStyles.unitsContainer}>
-            <PdfText style={pdfStyles.sectionTitle}>Units & Availability</PdfText>
+  // 7. Developer Slide
+  if (slidesToShow.includes('Developer') || slidesToShow.includes('Project description')) {
+    const devDesc = property?.developer?.description || `At Prescott, they don't just build structures; they craft modern lifestyles. Their team of experts is dedicated to pushing the boundaries of design, integrating the latest technologies to create spaces that adapt to the needs of tomorrow. Driven by a commitment to sustainability, Prescott infuse eco-conscious practices into every aspect of their development process, ensuring a greener, more sustainable future for generations to come.`;
+    
+    slidesHTML += `
+      <div class="page dark-page flex-col-between">
+        ${generateGeneralHeader()}
 
-            <View style={pdfStyles.unitListContainer}>
-              {unitTypesArray.map((unit, index, arr) => (
-                <View style={[pdfStyles.unitListRow, index === arr.length - 1 ? { borderBottomWidth: 0 } : {}]} key={index}>
-                  <View style={{ flex: 1.5 }}><PdfText style={pdfStyles.unitListBold}>{unit}</PdfText></View>
-                  <View style={{ flex: 1 }}><PdfText style={pdfStyles.unitListText}>1 Unit</PdfText></View>
-                  <View style={{ flex: 1.5 }}><PdfText style={pdfStyles.unitListText}>{property?.builtUpArea_min ? displayArea(property.builtUpArea_min) : "TBA"} {preferences.measureUnit}</PdfText></View>
-                  <View style={{ flex: 1.5, alignItems: 'flex-end' }}><PdfText style={pdfStyles.unitListPrice}>{preferences.currency} {displayPrice(property?.price_min || property?.price)}</PdfText></View>
-                </View>
-              ))}
-            </View>
+        <div class="developer-content mt-40">
+           <h1 class="developer-massive-title">${devName}</h1>
 
-            <PdfImage src={safeImages[8] || safeImages[0]} style={pdfStyles.unitsImage} />
-          </View>
-        </Page>
-      )}
+           <div class="developer-logo-wrapper">
+              <img src="${property?.developer?.logo || safeImages[0]}" alt="${devName}" class="developer-fullscreen-logo" />
+           </div>
 
-      {/* PAGE 9: DEVELOPER */}
-      {slidesToShow.includes('Developer') && (
-        <Page size="A4" style={pdfStyles.page}>
-          <HeaderFooter />
-          <View style={pdfStyles.developerContainer}>
-            <PdfText style={pdfStyles.developerTitle}>The Developer</PdfText>
-            
-            {property?.developer?.logo && (
-              <View style={pdfStyles.developerLogoContainer}>
-                <PdfImage src={getSafeUrl(property.developer.logo)} style={pdfStyles.developerLogo} />
-              </View>
-            )}
+           <div class="developer-description-box">
+              <p>${devDesc}</p>
+           </div>
+        </div>
 
-            <PdfText style={pdfStyles.developerText}>
-              {property?.about_developer || property?.developer?.description || `At ${devName}, they don't just build structures; they craft modern lifestyles. Their team of experts is dedicated to pushing the boundaries of design, integrating the latest technologies to create spaces that adapt to the needs of tomorrow. Driven by a commitment to sustainability, they infuse eco-conscious practices into every aspect of their development process, ensuring a greener, more sustainable future for generations to come.`}
-            </PdfText>
-          </View>
-        </Page>
-      )}
-    </Document>
-  );
+        <div class="arch-footer">#${devName}</div>
+      </div>
+    `;
+  }
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>${propertyName} - Brochure</title>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+          --dark-bg: #1A1A1A;
+          --mid-grey: #828282;
+          --light-bg: #FAFAFA;
+          --accent-sand: #D4B886;
+          --text-main: #333333;
+          --text-light: #666666;
+          --border-radius: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+          font-family: 'Inter', sans-serif;
+          background: #E5E5E5;
+          -webkit-print-color-adjust: exact;
+          overflow-x: hidden;
+        }
+
+        .page {
+          width: 100%;
+          min-height: 100vh;
+          position: relative;
+          page-break-after: always;
+          background: white;
+          overflow: hidden;
+          margin: 0; 
+          padding: 60px 40px 40px 40px; /* Universal padding for text pages */
+        }
+
+        .mt-20 { margin-top: 20px; }
+        .mt-30 { margin-top: 30px; }
+        .mt-40 { margin-top: 40px; }
+        .mb-30 { margin-bottom: 30px; }
+        .text-grey { color: var(--text-light); }
+        .text-light-grey { color: #999; font-size: 12px; }
+        .rounded-image { border-radius: var(--border-radius); object-fit: cover; width: 100%; }
+        .h-full { height: 100%; }
+        .flex-center { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .flex-col-between { display: flex; flex-direction: column; justify-content: space-between; }
+        .absolute-top { position: absolute; top: 40px; left: 40px; right: 40px; width: calc(100% - 80px); }
+        .page-absolute-top { position: absolute; top: 0; left: 0; right: 0; padding: 60px 40px 0 40px; z-index: 10; }
+        .bg-light { background: var(--light-bg); }
+
+        /* Universal General Breadcrumb Header with Logo */
+        .general-breadcrumb-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          width: 100%;
+          font-size: 12px;
+          letter-spacing: 1px;
+          font-weight: 500;
+          color: #000;
+          margin-bottom: 0;
+        }
+
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+        }
+
+        .header-logo {
+          width: 60px;
+          height: auto;
+          object-fit: contain;
+        }
+        
+        .brand-accent { color: var(--accent-sand); font-weight: 600; }
+
+        /* COVER PAGE STYLES */
+        .cover-page {
+          background-size: cover;
+          background-position: center;
+          position: relative;
+          padding: 0; /* No standard padding on cover */
+        }
+        
+        .cover-gradient {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 50%;
+          background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.85) 100%);
+          z-index: 1;
+        }
+
+        .absolute-top-left {
+          position: absolute;
+          top: 40px;
+          left: 40px;
+          z-index: 2;
+        }
+        
+        .large-cover-logo-container {
+          top: 60px;
+        }
+
+        .xoto-logo-cover {
+          width: 140px;
+          height: auto;
+          object-fit: contain;
+        }
+
+        .cover-content-bottom {
+          position: absolute;
+          bottom: 40px;
+          left: 40px;
+          right: 40px;
+          z-index: 2;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+        }
+
+        .cover-text-left {
+          color: white;
+          max-width: 60%;
+        }
+
+        .pre-title {
+          font-size: 22px;
+          font-weight: 400;
+          margin-bottom: 10px;
+          color: rgba(255,255,255,0.9);
+        }
+
+        .main-title {
+          font-size: 72px;
+          font-weight: 600;
+          line-height: 1.05;
+          margin-bottom: 15px;
+          color: white;
+        }
+
+        .date-text {
+          font-size: 16px;
+          color: rgba(255,255,255,0.6);
+          font-weight: 400;
+        }
+
+        .agent-glass-card {
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 20px;
+          padding: 25px;
+          width: 320px;
+          color: white;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .agent-card-img {
+          width: 100px;
+          height: 100px;
+          border-radius: 16px;
+          object-fit: cover;
+          margin-bottom: 15px;
+        }
+
+        .agent-card-name {
+          font-size: 24px;
+          font-weight: 600;
+          margin-bottom: 5px;
+        }
+
+        .agent-card-brand {
+          font-size: 14px;
+          color: rgba(255,255,255,0.6);
+          margin-bottom: 25px;
+        }
+
+        .agent-card-contact {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 14px;
+          margin-bottom: 12px;
+          color: rgba(255,255,255,0.9);
+        }
+        
+        .agent-card-contact:last-child {
+          margin-bottom: 0;
+        }
+
+        .agent-card-contact svg {
+          opacity: 0.7;
+          flex-shrink: 0;
+        }
+
+        /* PAGE 2: FULL IMAGE + FLOATING WIDGETS */
+        .full-image-page {
+          position: relative;
+          padding: 0; /* Floating widgets use absolute position */
+        }
+        
+        .page-bg-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          position: absolute;
+          top: 0;
+          left: 0;
+        }
+
+        .floating-info-card {
+          position: absolute;
+          bottom: 220px;
+          left: 40px;
+          background: rgba(255,255,255,0.95);
+          backdrop-filter: blur(10px);
+          padding: 24px;
+          border-radius: 12px;
+          width: 350px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        /* Bolder "About this project" header */
+        .bold-info-header { font-size: 10px; font-weight: 700; color: #111; letter-spacing: 1px; margin-bottom: 5px; text-transform: uppercase; }
+        .info-header { font-size: 10px; font-weight: 600; color: var(--text-light); letter-spacing: 1px; margin-bottom: 5px; }
+        .info-title { font-size: 20px; font-weight: 600; color: #000; margin-bottom: 20px; }
+        
+        .info-grid { display: flex; flex-direction: column; gap: 15px; }
+        .info-col { display: flex; flex-direction: column; }
+        .info-label { font-size: 11px; color: var(--text-light); margin-bottom: 2px; }
+        .info-value { font-size: 14px; font-weight: 600; color: #000; }
+
+        .floating-table-card {
+          position: absolute;
+          bottom: 40px;
+          left: 40px;
+          right: 40px;
+          background: rgba(255,255,255,0.95);
+          backdrop-filter: blur(10px);
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .custom-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 14px;
+        }
+        
+        .custom-table th {
+          text-align: left;
+          color: var(--text-light);
+          font-weight: 500;
+          padding-bottom: 15px;
+          border-bottom: 1px solid #EAEAEA;
+        }
+        
+        .custom-table td {
+          padding: 15px 0;
+          border-bottom: 1px solid #EAEAEA;
+          color: var(--text-main);
+        }
+        
+        .custom-table tr:last-child td { border-bottom: none; padding-bottom: 0; }
+        .price-highlight { font-weight: 600; color: #000; }
+
+        /* TEXT PAGES */
+        .text-page {
+          background: white;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .content-wrapper {
+          max-width: 1200px; 
+          margin: 0 auto;
+          width: 100%;
+        }
+
+        .page-header-text { font-size: 12px; color: #111; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase;}
+        
+        .page-main-title { font-size: 36px; font-weight: 600; color: #000; margin-bottom: 5px; }
+        .page-sub-title { font-size: 16px; color: var(--text-light); font-weight: 400; }
+        
+        .section-heading { font-size: 28px; font-weight: 600; color: #000; margin-bottom: 15px; }
+        .section-subheading { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 8px; }
+        
+        .body-text {
+          font-size: 16px; 
+          line-height: 1.6;
+          color: var(--text-light);
+          text-align: justify;
+        }
+
+        /* ARCHITECTURE PAGES */
+        .dark-page {
+          background: #000;
+          display: flex;
+          flex-direction: column;
+          color: white;
+        }
+
+        .full-center-image {
+          flex: 1;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 0;
+          width: 100%;
+        }
+
+        .split-image-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 30px;
+          height: 75vh;
+          width: 100%;
+        }
+
+        .arch-footer {
+          text-align: right;
+          font-size: 12px;
+          font-weight: 500;
+          opacity: 0.7;
+          width: 100%;
+          position: absolute;
+          bottom: 40px;
+          right: 40px;
+        }
+
+        /* AMENITIES NEW GRID WITH IMAGES */
+        .amenities-rich-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 24px;
+          width: 100%;
+        }
+        
+        .amenity-rich-card {
+          background: #fff;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+          border: 1px solid #EAEAEA;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .amenity-rich-img {
+          width: 100%;
+          height: 200px;
+          object-fit: cover;
+        }
+
+        .amenity-rich-title {
+          padding: 16px;
+          font-size: 16px;
+          font-weight: 600;
+          color: #000;
+          text-align: center;
+        }
+
+        /* PAYMENT PLAN STYLES (SPLIT CARD DESIGN) */
+        .payment-split-container {
+          display: grid;
+          grid-template-columns: 1fr 2fr;
+          gap: 30px;
+          height: 60vh;
+          width: 100%;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .payment-left-card {
+          background: #F9FAFB;
+          border-radius: 16px;
+          padding: 40px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          border: 1px solid #EAEAEA;
+        }
+
+        .pay-sub {
+          font-size: 16px;
+          color: #4B5563;
+          margin-bottom: 12px;
+        }
+
+        .pay-main {
+          font-size: 32px;
+          font-weight: 700;
+          color: #000;
+        }
+
+        .pay-footer-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: #000;
+          margin-bottom: 8px;
+        }
+
+        .pay-footer-action {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          color: #4B5563;
+        }
+
+        .payment-right-card {
+          background: #FFFFFF;
+          border-radius: 16px;
+          padding: 40px 60px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 50px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+          border: 1px solid #EAEAEA;
+        }
+
+        .pay-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 20px;
+          color: #111827;
+          font-weight: 600;
+        }
+
+        .pay-row strong {
+          font-size: 24px;
+          font-weight: 700;
+        }
+
+        /* TYPICAL UNITS */
+        .availability-info { font-size: 15px; color: var(--text-light); line-height: 1.6; }
+        .floorplan-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: start; width: 100%; }
+        .fp-images img { width: 100%; background: var(--light-bg); padding: 30px; border-radius: 16px; }
+        
+        .unit-title { font-size: 22px; font-weight: 600; color: #000; margin-bottom: 10px; }
+        .unit-specs { font-size: 16px; margin-bottom: 6px; color: var(--text-main); }
+
+        /* DEVELOPER PAGE STYLES */
+        .developer-content {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          justify-content: center;
+          position: relative;
+        }
+
+        .developer-massive-title {
+          font-size: 56px;
+          font-weight: 400;
+          letter-spacing: 4px;
+          text-transform: uppercase;
+          margin-bottom: 30px;
+          text-align: center;
+          color: white;
+        }
+
+        .developer-logo-wrapper {
+          width: 100%;
+          height: 60vh;
+          border-radius: var(--border-radius);
+          overflow: hidden;
+          margin: 0 auto;
+        }
+
+        .developer-fullscreen-logo {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          filter: grayscale(20%) brightness(0.9); 
+        }
+
+        .developer-description-box {
+          margin-top: -80px; 
+          padding: 40px;
+          background: rgba(26, 26, 26, 0.7);
+          backdrop-filter: blur(15px);
+          -webkit-backdrop-filter: blur(15px);
+          border-left: 4px solid var(--accent-sand);
+          border-radius: 0 16px 16px 0;
+          max-width: 900px;
+          margin-left: auto;
+          margin-right: auto;
+          z-index: 10;
+          box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+          position: relative;
+        }
+
+        .developer-description-box p {
+          font-size: 16px;
+          line-height: 1.8;
+          color: rgba(255, 255, 255, 0.95);
+          text-align: justify;
+          margin: 0;
+        }
+
+        @media print {
+          body { background: white; }
+          .page { box-shadow: none; margin: 0; min-height: auto; height: 100vh; }
+        }
+      </style>
+    </head>
+    <body>
+      ${slidesHTML}
+    </body>
+    </html>
+  `;
 };
 
 // 🔥 MAIN COMPONENT 
@@ -848,34 +1199,65 @@ export default function AgentProjectDetails() {
         [activeLang]: translations[activeLang] || translations.EN 
       };
       
-      const blob = await pdf(
-        <PropertyBrochure 
-          property={updatedProperty} 
-          agent={agentInfo} 
-          preferences={pdfPreferences}
-          translations={currentTranslations} 
-          currentLang={activeLang}
-        />
-      ).toBlob();
-      
-      const url = URL.createObjectURL(blob);
-      
+      // Generate HTML content
+      const htmlContent = generateHTMLTemplate(
+        updatedProperty, 
+        agentInfo, 
+        pdfPreferences, 
+        currentTranslations, 
+        activeLang,
+        customDescription
+      );
+
       if (actionType === 'view') {
-        window.open(url, '_blank'); 
+        // Open in new tab for preview
+        const previewWindow = window.open('', '_blank');
+        previewWindow.document.write(htmlContent);
+        previewWindow.document.close();
         message.success({ content: "Preview opened in new tab!", key });
       } else {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${updatedProperty.propertyName || 'Sales_Offer'}.pdf`;
-        link.click();
+        // Generate PDF using html2canvas and jsPDF
+        const container = document.createElement('div');
+        container.innerHTML = htmlContent;
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.top = '-9999px';
+        document.body.appendChild(container);
+
+        const pages = container.querySelectorAll('.page');
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+
+        for (let i = 0; i < pages.length; i++) {
+          if (i > 0) pdf.addPage();
+
+          const canvas = await html2canvas(pages[i], {
+            scale: 2,
+            logging: false,
+            useCORS: true,
+            allowTaint: false
+          });
+
+          const imgData = canvas.toDataURL('image/png');
+          const imgWidth = 210;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          
+          pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, undefined, 'FAST');
+        }
+
+        document.body.removeChild(container);
+        
+        // Download PDF
+        pdf.save(`${updatedProperty.propertyName || 'Sales_Offer'}.pdf`);
         message.success({ content: "PDF Downloaded Successfully!", key });
         setIsOfferModalOpen(false);
       }
-      
-      setTimeout(() => URL.revokeObjectURL(url), 5000); 
 
     } catch (error) {
-      console.error("PDF Crash Error: ", error);
+      console.error("PDF Generation Error: ", error);
       message.error({ content: "Failed to generate PDF.", key });
     } finally {
       setIsGenerating(false);
@@ -958,7 +1340,7 @@ export default function AgentProjectDetails() {
 
           <Divider style={{ margin: "40px 0" }} />
 
-          {/* UNITS & AVAILABILITY - NEW UI BLOCK */}
+          {/* UNITS & AVAILABILITY */}
           <Title level={3} style={{ marginBottom: 24 }}>Units & Availability</Title>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {property?.unitType?.length > 0 ? (
@@ -985,7 +1367,7 @@ export default function AgentProjectDetails() {
 
           <Divider style={{ margin: "40px 0" }} />
 
-          {/* LOCATION MAP - NEW UI BLOCK */}
+          {/* LOCATION MAP */}
           <Title level={3} style={{ marginBottom: 16 }}>Location</Title>
           <div style={{ marginBottom: 24 }}>
             <Text style={{ fontSize: 16, color: "#374151", fontWeight: 500 }}>
@@ -1001,7 +1383,7 @@ export default function AgentProjectDetails() {
                 loading="lazy"
                 allowFullScreen
                 referrerPolicy="no-referrer-when-downgrade"
-                src={`https://maps.google.com/maps?q=${encodeURIComponent((property?.propertyName || '') + ' ' + (property?.area || '') + ' ' + (property?.city || ''))}&t=k&z=15&ie=UTF8&iwloc=&output=embed`}
+                src={`https://maps.google.com/maps?q=${encodeURIComponent((property?.propertyName || '') + ' ' + (property?.area || '') + ' ' + (property?.city || ''))}&t=m&z=15&ie=UTF8&iwloc=&output=embed`}
               ></iframe>
           </div>
 
@@ -1095,10 +1477,10 @@ export default function AgentProjectDetails() {
           <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
             {['Cover slide', 'Project description', 'Developer', 'Unit prices', 'Payment plans', 'Location'].map(item => (
               <Checkbox key={item} defaultChecked={pdfPreferences.slides.includes(item)} onChange={(e) => {
-                   let newSlides = [...pdfPreferences.slides];
-                   if(e.target.checked) { if(!newSlides.includes(item)) newSlides.push(item); } 
-                   else { newSlides = newSlides.filter(s => s !== item); }
-                   setPdfPreferences({...pdfPreferences, slides: newSlides});
+                    let newSlides = [...pdfPreferences.slides];
+                    if(e.target.checked) { if(!newSlides.includes(item)) newSlides.push(item); } 
+                    else { newSlides = newSlides.filter(s => s !== item); }
+                    setPdfPreferences({...pdfPreferences, slides: newSlides});
                 }}>{item}</Checkbox>
             ))}
           </div>

@@ -1,0 +1,16 @@
+{
+  "homeDesign": {
+    "title1": "您的房产之旅",
+    "title2": "所需的",
+    "title3": "一切",
+    "description": "从寻找合适的房产到为其融资并改造您的房屋 —— XOTO 将每一个步骤整合在一个智能平台上。",
+    "hotspots": {
+      "exterior": "寻找您完美的房产",
+      "interior": "设计您梦想的室内装潢",
+      "furniture": "购买您家庭所需的一切",
+      "landscaping": "打造令人惊叹的户外空间",
+      "image": "将您的房产变现",
+      "virtual": "以智能方式为您的房屋融资"
+    }
+  }
+}

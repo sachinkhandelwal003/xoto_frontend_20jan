@@ -13,9 +13,9 @@
   "offerings": [
     { "label": "लैंडस्केपिंग", "path": "/landscaping" },
     { "label": "इंटीरियर्स", "path": "/services/interior" },
-    { "label": "किराया", "path": "/marketplace" },
-    { "label": "खरीदें", "path": "/marketplace" },
-    { "label": "बेचें", "path": "/marketplace" },
+    { "label": "किराया", "path": "/Property" },
+    { "label": "खरीदें", "path": "/Property" },
+    { "label": "बेचें", "path": "/Property" },
     { "label": "होम लोन", "path": "/mortgage/services" }
     
   ],

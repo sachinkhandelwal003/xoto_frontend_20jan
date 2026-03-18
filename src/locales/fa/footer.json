@@ -13,9 +13,9 @@
   "offerings": [
     { "label": "محوطه‌سازی", "path": "/landscaping" },
     { "label": "طراحی داخلی", "path": "/services/interior" },
-    { "label": "اجاره", "path": "/marketplace" },
-    { "label": "خرید", "path": "/marketplace" },
-    { "label": "فروش", "path": "/marketplace" },
+    { "label": "اجاره", "path": "/Property" },
+    { "label": "خرید", "path": "/Property" },
+    { "label": "فروش", "path": "/Property" },
     { "label": "وام مسکن", "path": "/mortgage/services" }
     
   ],
