@@ -235,22 +235,25 @@ export default function Footer() {
     {t("titles.resources")}
   </h4>
 
-  {resources.map((i, k) => (
-    <div key={k} className="relative mb-3">
-      <Link
-        to={i.path}
-        className="text-white/70 block"
-      >
-        {i.label}
-      </Link>
+ {resources.map((i, k) => (
+  <div key={k} className="mb-3">
+    
+    <Link
+      to={i.path}
+      className="text-white/70 inline-block relative"
+    >
+      {i.label}
 
       {i.comingSoon && (
-        <span className="absolute -top-2 right-15 text-[8px] font-bold bg-[#F5D7C8] text-black px-3 py-[2px] rounded-full shadow-sm uppercase">
-          {t("coming soon")}<br/>
+        <span className="absolute top-1/2 -translate-y-1/2 left-full ml-0.5 text-[7px] font-bold bg-[#F5D7C8] text-black px-3 py-[2px] rounded-full shadow-sm uppercase whitespace-nowrap">
+          {t("coming soon")}
         </span>
       )}
-    </div>
-  ))}
+
+    </Link>
+
+  </div>
+))}
 </div>
 
 

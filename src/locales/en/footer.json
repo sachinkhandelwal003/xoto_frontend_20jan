@@ -31,7 +31,7 @@
     { "label": "Agent", "path": "/login" },
     { "label": "Execution Partners", "path": "/login "  },
    {"label": "Developers","comingSoon": true}, 
-   {"label": "Financial Institutions","comingSoon": true}
+   {"label": "Financial  Institutions","comingSoon": true}
   ],
 
   "knowledge": [
