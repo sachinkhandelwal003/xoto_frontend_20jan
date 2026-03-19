@@ -1,0 +1,43 @@
+{
+  "heading": "Ang Aming Portfolio ng Produkto sa Mortgage",
+  "cards": {
+    "residential": {
+      "title": "Mga Solusyon sa\nResidential Mortgage",
+      "features": [
+        "Mga Pautang sa Pagbili ng Bahay",
+        "Pagpopondo ng Off-Plan at Handa nang Ari-arian",
+        "Mga Mortgage para sa mga Non-Resident",
+        "Pagpopondo sa Konstruksyon at Pagpapatayo ng Bahay"
+      ]
+    },
+    "commercial": {
+      "title": "Mga Solusyon sa\nCommercial Mortgage",
+      "features": [
+        "Pagpopondo sa Opisina at Retail",
+        "Pananalapi sa Hotel at Hospitality",
+        "Commercial Refinance"
+      ]
+    },
+    "equity": {
+      "title": "Purong Equity",
+      "features": [
+        "Pautang laban sa ari-arian"
+      ]
+    },
+    "buyout": {
+      "title": "Buyout (Refinance)",
+      "features": [
+        "Pag-refinance ng Mortgage",
+        "Buyout ng umiiral na mortgage",
+        "Equity release",
+        "Mga Top-Up na Pautang"
+      ]
+    },
+    "buyoutEquity": {
+      "title": "Buyout + Equity",
+      "features": [
+        "Pagsasama-sama ng utang laban sa Ari-arian"
+      ]
+    }
+  }
+}

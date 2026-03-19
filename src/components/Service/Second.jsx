@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import HouseChart from "../../assets/img/mortgage.png";
+import HouseChart from "../../assets/img/new 1.png";
 import waveBg from "../../assets/img/wave/wave2.png";
 import GetPreApprovedModal from "../homepage/GetPreApprovedModal";
 
@@ -8,11 +8,8 @@ const Second = () => {
   const { t, i18n } = useTranslation("mort2");
 
   const [active, setActive] = useState("borrow");
-  const [feature, setFeature] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
 
-  // 4 steps = 25% each
-  const progress = feature * 25;
   const isRTL = i18n.language === "fa";
 
   const dmSans = { fontFamily: "'DM Sans', sans-serif" };
@@ -44,14 +41,8 @@ const Second = () => {
         </div>
 
         {/* CONTENT CONTAINER */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
-          {/* TITLE */}
-          <h2
-            className="text-center text-3xl md:text-5xl font-bold text-black mb-8"
-            style={dmSans}
-          >
-            {t("title")}
-          </h2>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 top-4">
+
 
           {/* MODE BUTTONS (Gradient Container) */}
           <div
@@ -68,7 +59,7 @@ const Second = () => {
               items-center
             "
           >
-            {["borrow", "estimate", "check"].map((mode) => (
+            {["borrow", "estimate", ].map((mode) => (
               <button
                 key={mode}
                 onClick={() => setActive(mode)}
@@ -92,117 +83,70 @@ const Second = () => {
             ))}
           </div>
 
-          {/* IMAGE */}
-          <div className="w-full flex justify-center mb-10">
-            <img
-              src={HouseChart}
-              alt={t("imageAlt")}
-              className="w-56 sm:w-72 md:w-80 object-contain drop-shadow-xl"
-            />
-          </div>
+         {/* --- TOP ROW (Text & Image) --- */}
+         <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8 lg:px-8 relative top-6 ">
+            
+    {/* LEFT SIDE: Text */}
+    <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left z-20 ">
+      
+      <h2
+  className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-[1.15] mb-6 whitespace-pre-line"
+  style={dmSans}
+>
+  {t("title")}
+</h2>
 
-          {/* --- DESKTOP VIEW (Horizontal Bar) --- */}
-          <div className="hidden lg:block mb-6">
-            <div className="w-full max-w-4xl mx-auto h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-2 bg-green-500 rounded-full transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
+      {/* Subtitle / Description */}
+      <p 
+        className="text-base sm:text-lg text-gray-600 max-w-md leading-relaxed" 
+        style={dmSans}
+      >
+        {t("description")} 
+      </p>
 
-          <div className="hidden lg:flex w-full relative z-20 justify-between max-w-4xl mx-auto text-left gap-4">
-            {[1, 2, 3, 4].map((num) => (
-              <div
-                key={num}
-                onClick={() => setFeature(num)}
-                className={`cursor-pointer transition-all duration-300 ${
-                  feature === num ? "scale-[1.05]" : ""
-                }`}
-              >
-                <p className={`text-xs mb-1 ${feature === num ? "text-[var(--color-primary)]" : "text-gray-400"}`}>
-                  {t(`features.${num}.label`)}
-                </p>
-                <h3 className={`text-lg font-semibold ${feature === num ? "text-[var(--color-primary)]" : "text-black"}`}>
-                  {t(`features.${num}.title`)}
-                </h3>
-              </div>
-            ))}
-          </div>
+    </div>
 
-          {/* --- MOBILE VIEW (Vertical Timeline like screenshot) --- */}
-          <div className="lg:hidden relative max-w-xs mx-auto">
-            {/* Vertical Gray Line */}
-            <div className="absolute left-2 top-2 bottom-4 w-1.5 bg-gray-200 rounded-full"></div>
+    {/* RIGHT SIDE: House Image */}
+    <div className="w-full lg:w-1/2 relative flex justify-center lg:justify-end z-20 relative top-10 right-20">
+      <img
+        src={HouseChart}
+        alt={t("imageAlt")}
+        className="w-full max-w-[350px] sm:max-w-[450px] lg:max-w-[500px] object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+      />
+    </div>
 
-            {/* Vertical Green Progress Line */}
-            <div
-              className="absolute left-2 top-2 w-1.5 bg-green-500 rounded-full transition-all duration-500 ease-out"
-              style={{ height: `${(feature / 4) * 100}%` }}
-            ></div>
+  </div>
 
-            <div className="flex flex-col gap-8 pl-8">
-              {[1, 2, 3, 4].map((num) => (
-                <div
-                  key={num}
-                  onClick={() => setFeature(num)}
-                  className="cursor-pointer relative"
-                >
-                  <p
-                    className={`text-sm font-medium mb-1 transition-colors duration-300 ${
-                      feature >= num ? "text-black" : "text-gray-400"
-                    }`}
-                  >
-                    {t(`features.${num}.label`)}
-                  </p>
-                  <h3
-                    className={`text-xl font-bold transition-colors duration-300 ${
-                      feature === num
-                        ? "text-[var(--color-primary)]"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    {t(`features.${num}.title`)}
-                  </h3>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* --- BOTTOM ROW (Calculate Button & Disclaimer) --- */}
+        <div className="w-full flex flex-col items-center justify-center z-20 relative top-8">
+  <div className="w-full max-w-[380px] sm:max-w-[480px] lg:max-w-[600px]">
 
-          {/* CTA BUTTON - Now opens the modal */}
-          <div className="flex justify-center z-20 relative mt-12 px-4">
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="
-                w-full
-                max-w-[420px] sm:max-w-[480px] md:max-w-[420px]
-                px-8 sm:px-12
-                py-4
-                bg-[var(--color-primary)]
-                text-white
-                text-base sm:text-lg
-                rounded-xl
-                shadow-lg
-                hover:opacity-90
-                transition-opacity
-              "
-              style={dmSans}
-            >
-              {t("cta")}
-            </button>
-          </div>
+    {/* CTA BUTTON */}
+    <div className="w-full flex justify-center ">
+  <button
+    onClick={() => setIsModalOpen(true)}
+    className="w-[500px] py-3 bg-[#5C039B] text-white text-xl sm:text-2xl font-semibold rounded-xl shadow-lg hover:bg-purple-900 hover:-translate-y-1 transition-all duration-300 whitespace-nowrap"
+    style={dmSans}
+  >
+    {t("cta")}
+  </button>
+</div>
 
-          {/* DISCLAIMER */}
-          <p
-            className="text-center mt-6 text-xs sm:text-sm text-[var(--color-primary)] italic px-6"
-            style={dmSans}
-          >
-            {t("disclaimer")}
-          </p>
+    {/* DISCLAIMER */}
+    <p
+      className="mt-4 text-lg lg:text-lg text-[#5C039B] italic text-center px-4"
+      style={dmSans}
+    >
+      {t("disclaimer")}
+    </p>
+
+  </div>
+</div>
+
         </div>
       </section>
 
-      {/* MODAL - Rendered outside the section for proper overlay & z-index */}
+      {/* MODAL - Rendered outside the section for proper overlay */}
       <GetPreApprovedModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}

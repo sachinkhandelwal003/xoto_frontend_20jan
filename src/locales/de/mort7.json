@@ -1,0 +1,43 @@
+{
+  "heading": "Unser Hypothekenprodukt-Portfolio",
+  "cards": {
+    "residential": {
+      "title": "Private\nHypothekenlösungen",
+      "features": [
+        "Hauskaufkredite",
+        "Finanzierung von Off-Plan- & fertigen Immobilien",
+        "Hypotheken für Gebietsfremde",
+        "Bau- und Hausbaufinanzierung"
+      ]
+    },
+    "commercial": {
+      "title": "Gewerbliche\nHypothekenlösungen",
+      "features": [
+        "Büro- & Einzelhandelsfinanzierung",
+        "Hotel- & Gastgewerbefinanzierung",
+        "Gewerbliche Refinanzierung"
+      ]
+    },
+    "equity": {
+      "title": "Reines Eigenkapital",
+      "features": [
+        "Kredit gegen Immobilie"
+      ]
+    },
+    "buyout": {
+      "title": "Buyout (Refinanzierung)",
+      "features": [
+        "Hypothekenrefinanzierung",
+        "Übernahme bestehender Hypotheken",
+        "Eigenkapitalfreisetzung",
+        "Aufstockungsdarlehen"
+      ]
+    },
+    "buyoutEquity": {
+      "title": "Buyout + Eigenkapital",
+      "features": [
+        "Schuldenkonsolidierung gegen Immobilie"
+      ]
+    }
+  }
+}

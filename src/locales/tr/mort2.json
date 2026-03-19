@@ -1,18 +1,11 @@
 {
-    "title": "Konut Kredinizi Güvenle Planlayın",
-    "modes": {
-      "borrow": "Ne kadar kredi alabilirim?",
-      "estimate": "Aylık ödeme tahmini",
-      "check": "Uygunluk kontrolü"
-    },
-    "imageAlt": "Konut kredisi görseli",
-    "features": {
-      "1": { "label": "Özellik 1", "title": "Mülk değeri" },
-      "2": { "label": "Özellik 2", "title": "Peşinat" },
-      "3": { "label": "Özellik 3", "title": "Vade" },
-      "4": { "label": "Özellik 4", "title": "Maksimum kredi tutarı" }
-    },
-    "cta": "Ön Onay Al",
-    "disclaimer": "Tahminler bilgilendirme amaçlıdır. Nihai koşullar kredi onayına tabidir."
-  }
-  
+  "title": "Ev Alma Bütçenizi Anlayın",
+  "description": "Ne kadar borç alabileceğinizi görmek ve aylık ipotek ödemelerinizi tahmin etmek için yapay zeka destekli hesaplayıcılarımızı kullanın.",
+  "modes": {
+    "borrow": "Ev alma bütçenizi öğrenin",
+    "estimate": "Aylık taksitlerinizi (EMI) anlayın"
+  },
+  "imageAlt": "İpotek İllüstrasyonu",
+  "cta": "Hesapla",
+  "disclaimer": "Tahminler gösterge niteliğindedir. Kesin şartlar kredi onayına tabidir."
+}
