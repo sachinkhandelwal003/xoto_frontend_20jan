@@ -1,0 +1,23 @@
+{
+  "heading1": "We Make Lenders",
+  "heading2": "Work for You",
+  "description": "Xoto partners with leading banks and institutions so you get access to exclusive mortgage offers — faster, easier, and with full transparency.",
+  "labels": {
+    "aiOffers": {
+      "title": "AI Matched Offers",
+      "text": "We match you to mortgage plans suited to your income, property, and goals."
+    },
+    "guidance": {
+      "title": "Personal Guidance",
+      "text": "Our mortgage experts help guide you through every step, including paperwork."
+    },
+    "transparentCost": {
+      "title": "Transparent Cost",
+      "text": "All fees, interest, and charges are shown upfront — no last-minute surprises."
+    },
+    "fastProcess": {
+      "title": "Fast Process",
+      "text": "Fastest Pre approval to disbursement."
+    }
+  }
+}

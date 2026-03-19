@@ -1,0 +1,23 @@
+{
+  "heading1": "Nous faisons travailler",
+  "heading2": "les prêteurs pour vous",
+  "description": "Xoto s'associe aux principales banques et institutions pour vous donner accès à des offres hypothécaires exclusives — plus rapidement, plus facilement et en toute transparence.",
+  "labels": {
+    "aiOffers": {
+      "title": "Offres correspondantes via l'IA",
+      "text": "Nous vous proposons des plans hypothécaires adaptés à vos revenus, à votre propriété et à vos objectifs."
+    },
+    "guidance": {
+      "title": "Accompagnement personnel",
+      "text": "Nos experts en prêts hypothécaires vous guident à chaque étape, y compris pour les formalités administratives."
+    },
+    "transparentCost": {
+      "title": "Coût transparent",
+      "text": "Tous les frais, intérêts et charges sont affichés dès le départ — pas de surprises de dernière minute."
+    },
+    "fastProcess": {
+      "title": "Processus rapide",
+      "text": "Le processus le plus rapide, de la pré-approbation au décaissement."
+    }
+  }
+}

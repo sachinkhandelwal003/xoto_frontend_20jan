@@ -1,0 +1,43 @@
+{
+  "heading": "Nuestra cartera de productos hipotecarios",
+  "cards": {
+    "residential": {
+      "title": "Soluciones hipotecarias\nresidenciales",
+      "features": [
+        "Préstamos para compra de vivienda",
+        "Financiación de propiedades sobre plano y listas",
+        "Hipotecas para no residentes",
+        "Financiación de construcción"
+      ]
+    },
+    "commercial": {
+      "title": "Soluciones hipotecarias\ncomerciales",
+      "features": [
+        "Financiación de oficinas y comercio",
+        "Financiación de hoteles y hostelería",
+        "Refinanciación comercial"
+      ]
+    },
+    "equity": {
+      "title": "Capital puro",
+      "features": [
+        "Préstamo con garantía hipotecaria"
+      ]
+    },
+    "buyout": {
+      "title": "Compra (Refinanciación)",
+      "features": [
+        "Refinanciación de hipotecas",
+        "Compra de hipoteca existente",
+        "Liberación de capital",
+        "Préstamos complementarios"
+      ]
+    },
+    "buyoutEquity": {
+      "title": "Compra + Capital",
+      "features": [
+        "Consolidación de deudas con garantía hipotecaria"
+      ]
+    }
+  }
+}
