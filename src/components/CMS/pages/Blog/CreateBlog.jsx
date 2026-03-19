@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+// 1. AXIOS HATA KAR APISERVICE IMPORT KIYA
 import { apiService } from "../../../../manageApi/utils/custom.apiservice"; 
 
 import {
@@ -192,44 +193,27 @@ const BlogManagement = () => {
       }
   };
 
- 
-
- const processImageState = (currentFileList) => {
-  if (!currentFileList || currentFileList.length === 0) return "";
-  return currentFileList[0]?.url || "";
-};
-
-   const handleImageChange = async (setterFn, { file, fileList: newFileList }) => {
-  if (file.status === 'removed') {
-    setterFn([]);
-    return;
-  }
-
-  const uploadingFile = { 
-    ...newFileList[newFileList.length - 1], 
-    status: 'uploading' 
+  const processImageState = async (currentFileList) => {
+      if (!currentFileList || currentFileList.length === 0) return "";
+      if (currentFileList[0].url) {
+          return currentFileList[0].url;
+      }
+      if (currentFileList[0].originFileObj) {
+          return await uploadFile(currentFileList[0].originFileObj);
+      }
+      return "";
   };
-  setterFn([uploadingFile]);
-
-  try {
-    const url = await uploadFile(file.originFileObj || file);
-    setterFn([{ ...uploadingFile, status: 'done', url }]);
-  } catch (err) {
-    setterFn([{ ...uploadingFile, status: 'error' }]);
-    message.error('Image upload failed');
-  }
-};
 
 
   // --- 3. SAVE HANDLER (UPDATED TO APISERVICE) ---
   const handleSave = async (values) => {
     setSaving(true);
     try {
-      const [featuredUrl, coverUrl, authorImgUrl] = [
-  processImageState(fileList),
-  processImageState(coverFileList),
-  processImageState(authorFileList),
-];
+      const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([
+          processImageState(fileList),
+          processImageState(coverFileList),
+          processImageState(authorFileList)
+      ]);
 
       const payload = {
         title: values.title,
@@ -550,7 +534,7 @@ const BlogManagement = () => {
                                 listType="picture-card"
                                 fileList={authorFileList}
                                 onPreview={handlePreview}
-                                onChange={({ file, fileList }) => handleImageChange(setAuthorFileList, { file, fileList })}
+                                onChange={({ fileList }) => setAuthorFileList(fileList)}
                                 beforeUpload={(file) => validateImage(file, 1, 10)}
                                 maxCount={1}
                                 showUploadList={{ showPreviewIcon: true, showRemoveIcon: true }}
@@ -585,7 +569,7 @@ const BlogManagement = () => {
                         listType="picture-card"
                         fileList={fileList}
                         onPreview={handlePreview}
-                        onChange={({ file, fileList }) => handleImageChange(setFileList, { file, fileList })}
+                        onChange={({ fileList }) => setFileList(fileList)}
                         beforeUpload={(file) => validateImage(file, 1, 10)}
                         maxCount={1}
                         accept=".jpg,.jpeg,.png,.pdf"
@@ -603,7 +587,7 @@ const BlogManagement = () => {
                         listType="picture-card"
                         fileList={coverFileList}
                         onPreview={handlePreview}
-                        onChange={({ file, fileList }) => handleImageChange(setCoverFileList, { file, fileList })}
+                        onChange={({ fileList }) => setCoverFileList(fileList)}
                         beforeUpload={(file) => validateImage(file, 0.2, 2)}
                         maxCount={1}
                         accept=".jpg,.jpeg,.png"
