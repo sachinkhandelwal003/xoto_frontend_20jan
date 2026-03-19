@@ -8,7 +8,7 @@ import lowWaterPlant from "../../assets/img/jungle.png";
 import ecoMaterials from "../../assets/img/wooden.png";
 import automatedControl from "../../assets/img/mobile.png";
 import futureReady from "../../assets/img/something.png";
-
+import  plant from "../../assets/img/adddddd.jpeg"
 export default function EcoSmartLiving() {
   const { t } = useTranslation("scape1");
 
@@ -16,8 +16,8 @@ export default function EcoSmartLiving() {
     {
       type: "smart",
       title: "features.smartIrrigation.title",
-      text: "features.smartIrrigation.text",
-      gradient: true,
+      // text: "features.smartIrrigation.text",    
+     image: plant,
     },
     {
       title: "features.solarLighting",
@@ -71,7 +71,7 @@ export default function EcoSmartLiving() {
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-6 md:gap-x-12 lg:gap-20">
             
             {/* 1. Smart Irrigation (Gradient Card) */}
-            <div className="flex justify-center">
+            {/* <div className="flex justify-center">
               <div className="group rounded-full p-[8px] ring-4 ring-transparent hover:ring-[#5C039B] active:ring-[#5C039B] transition-all duration-300">
                 <div className="w-[140px] h-[140px] md:w-[200px] md:h-[200px] rounded-full flex flex-col items-center justify-center text-center text-white bg-gradient-to-br from-purple-600 via-blue-500 to-cyan-400 shadow-xl group-hover:scale-105 transition-all px-2 md:px-4">
                   <span className="text-xs md:text-lg font-bold leading-tight">
@@ -82,10 +82,10 @@ export default function EcoSmartLiving() {
                   </p>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Remaining Features (Image Cards) */}
-            {features.slice(1).map((item, i) => (
+            {features.slice(0).map((item, i) => (
               <div key={i} className="flex justify-center">
                 <div className="group rounded-full p-[8px] ring-4 ring-transparent hover:ring-[#5C039B] active:ring-[#5C039B] transition-all duration-300">
                   <div
