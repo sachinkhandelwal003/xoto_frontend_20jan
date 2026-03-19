@@ -40,7 +40,7 @@ const [loading, setLoading] = useState(true);
   }, []);
 
   return (
-    <div className="flex justify-center p-6">
+    <div className="flex justify-center p-2">
       <Card
         loading={loading}
         className="w-full max-w-4xl rounded-xl overflow-hidden shadow-lg border-0"

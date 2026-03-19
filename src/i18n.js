@@ -52,7 +52,7 @@ import arstakeholders from "./locales/Ar/stakeholders.json";
 import arpartnerForm from "./locales/Ar/partnerForm.json";
 import arbuiltForEveryone from "./locales/Ar/builtForEveryone.json";
 import arCta from "./locales/Ar/cta.json";
-
+import arHome6 from "./locales/Ar/home6.json";
 import arMort1 from "./locales/ar/mort1.json";
 import arMort2 from "./locales/ar/mort2.json";
 import arMort3 from "./locales/ar/mort3.json";
@@ -74,6 +74,7 @@ import enHome2 from "./locales/en/home2.json";
 import enHome3 from "./locales/en/home3.json";
 import enHome4 from "./locales/en/home4.json";
 import enHome5 from "./locales/en/home5.json";
+import enHome6 from "./locales/en/home6.json"
 import enFooter from "./locales/en/footer.json";
 import enInterior1 from "./locales/en/interior1.json";
 import enInterior2 from "./locales/en/interior2.json";
@@ -127,6 +128,7 @@ import hiHome2 from "./locales/hi/home2.json";
 import hiHome3 from "./locales/hi/home3.json";
 import hiHome4 from "./locales/hi/home4.json";
 import hiHome5 from "./locales/hi/home5.json";
+import hiHome6 from "./locales/hi/home6.json";
 import hiFooter from "./locales/hi/footer.json";
 import hiInterior1 from "./locales/hi/interior1.json";
 import hiInterior2 from "./locales/hi/interior2.json";
@@ -180,6 +182,7 @@ import deHome2 from "./locales/de/home2.json";
 import deHome3 from "./locales/de/home3.json";
 import deHome4 from "./locales/de/home4.json";
 import deHome5 from "./locales/de/home5.json";
+import deHome6 from "./locales/de/home6.json";
 import deFooter from "./locales/de/footer.json";
 import deInterior1 from "./locales/de/interior1.json";
 import deInterior2 from "./locales/de/interior2.json";
@@ -234,6 +237,7 @@ import esHome2 from "./locales/es/home2.json";
 import esHome3 from "./locales/es/home3.json";
 import esHome4 from "./locales/es/home4.json";
 import esHome5 from "./locales/es/home5.json";
+import esHome6 from "./locales/es/home6.json";
 import esFooter from "./locales/es/footer.json";
 import esInterior1 from "./locales/es/interior1.json";
 import esInterior2 from "./locales/es/interior2.json";
@@ -288,6 +292,7 @@ import frHome2 from "./locales/fr/home2.json";
 import frHome3 from "./locales/fr/home3.json";
 import frHome4 from "./locales/fr/home4.json";
 import frHome5 from "./locales/fr/home5.json";
+import frHome6 from "./locales/fr/home6.json";
 import frFooter from "./locales/fr/footer.json";
 import frInterior1 from "./locales/fr/interior1.json";
 import frInterior2 from "./locales/fr/interior2.json";
@@ -342,6 +347,7 @@ import ruHome2 from "./locales/ru/home2.json";
 import ruHome3 from "./locales/ru/home3.json";
 import ruHome4 from "./locales/ru/home4.json";
 import ruHome5 from "./locales/ru/home5.json";
+import ruHome6 from "./locales/ru/home6.json";
 import ruFooter from "./locales/ru/footer.json";
 import ruInterior1 from "./locales/ru/interior1.json";
 import ruInterior2 from "./locales/ru/interior2.json";
@@ -396,6 +402,7 @@ import trHome2 from "./locales/tr/home2.json";
 import trHome3 from "./locales/tr/home3.json";
 import trHome4 from "./locales/tr/home4.json";
 import trHome5 from "./locales/tr/home5.json";
+import trHome6 from "./locales/tr/home6.json";
 import trFooter from "./locales/tr/footer.json";
 import trInterior1 from "./locales/tr/interior1.json";
 import trInterior2 from "./locales/tr/interior2.json";
@@ -450,6 +457,7 @@ import zhHome2 from "./locales/zh/home2.json";
 import zhHome3 from "./locales/zh/home3.json";
 import zhHome4 from "./locales/zh/home4.json";
 import zhHome5 from "./locales/zh/home5.json";
+import zhHome6 from "./locales/zh/home6.json";
 import zhFooter from "./locales/zh/footer.json";
 import zhInterior1 from "./locales/zh/interior1.json";
 import zhInterior2 from "./locales/zh/interior2.json";
@@ -503,6 +511,7 @@ import tlHome2 from "./locales/tl/home2.json";
 import tlHome3 from "./locales/tl/home3.json";
 import tlHome4 from "./locales/tl/home4.json";
 import tlHome5 from "./locales/tl/home5.json";
+import tlHome6 from "./locales/tl/home6.json";
 import tlFooter from "./locales/tl/footer.json";
 import tlInterior1 from "./locales/tl/interior1.json";
 import tlInterior2 from "./locales/tl/interior2.json";
@@ -556,6 +565,7 @@ import fahome2 from "./locales/fa/home2.json";
 import fahome3 from "./locales/fa/home3.json";
 import fahome4 from "./locales/fa/home4.json";
 import fahome5 from "./locales/fa/home5.json";
+import faHome6 from "./locales/fa/home6.json";
 import fafooter from "./locales/fa/footer.json";
 import faInterior1 from "./locales/fa/interior1.json";
 import faInterior2 from "./locales/fa/interior2.json";
@@ -611,6 +621,7 @@ import urhome2 from "./locales/ur/home2.json";
 import urhome3 from "./locales/ur/home3.json";
 import urhome4 from "./locales/ur/home4.json";
 import urhome5 from "./locales/ur/home5.json";
+import urhome6 from "./locales/ur/home6.json";
 import urInterior1 from "./locales/ur/interior1.json";
 import urInterior2 from "./locales/ur/interior2.json";
 import urInterior3 from "./locales/ur/interior3.json";
@@ -664,6 +675,7 @@ import pahome2 from "./locales/pa/home2.json";
 import pahome3 from "./locales/pa/home3.json";
 import pahome4 from "./locales/pa/home4.json";
 import pahome5 from "./locales/pa/home5.json";
+import paHome6 from "./locales/pa/home6.json";
 import pafooter from "./locales/pa/footer.json";
 import paInterior1 from "./locales/pa/interior1.json";
 import paInterior2 from "./locales/pa/interior2.json";
@@ -719,6 +731,7 @@ i18n
         home3: enHome3,
         home4: enHome4,
         home5: enHome5,
+        home6: enHome6,
         footer: enFooter,
         interior1: enInterior1,
         interior2: enInterior2,
@@ -771,6 +784,7 @@ i18n
         home3: arhome3,
         home4: arhome4,
         home5: arhome5,
+        home6: arHome6,
         footer: arfooter,
         interior1: arInterior1,
         interior2: arInterior2,
@@ -824,6 +838,7 @@ i18n
         home3: arhome3,
         home4: arhome4,
         home5: arhome5,
+        home6: arHome6,
         footer: arfooter,
         interior1: arInterior1,
         interior2: arInterior2,
@@ -877,6 +892,7 @@ i18n
         home3: hiHome3,
         home4: hiHome4,
         home5: hiHome5,
+        home6: hiHome6,
         footer: hiFooter,
         interior1: hiInterior1,
         interior2: hiInterior2,
@@ -930,6 +946,7 @@ i18n
         home3: deHome3,
         home4: deHome4,
         home5: deHome5,
+        home6: deHome6,
         footer: deFooter,
         interior1: deInterior1,
         interior2: deInterior2,
@@ -983,6 +1000,7 @@ i18n
         home3: esHome3,
         home4: esHome4,
         home5: esHome5,
+        home6: esHome6,
         footer: esFooter,
         interior1: esInterior1,
         interior2: esInterior2,
@@ -1036,6 +1054,7 @@ i18n
         home3: frHome3,
         home4: frHome4,
         home5: frHome5,
+        home6:frHome6,
         footer: frFooter,
         interior1: frInterior1,
         interior2: frInterior2,
@@ -1089,6 +1108,7 @@ i18n
         home3: ruHome3,
         home4: ruHome4,
         home5: ruHome5,
+        home6: ruHome6,
         footer: ruFooter,
         interior1: ruInterior1,
         interior2: ruInterior2,
@@ -1142,6 +1162,7 @@ i18n
         home3: trHome3,
         home4: trHome4,
         home5: trHome5,
+        home6: trHome6,
         footer: trFooter,
         interior1: trInterior1,
         interior2: trInterior2,
@@ -1195,6 +1216,7 @@ i18n
         home3: zhHome3,
         home4: zhHome4,
         home5: zhHome5,
+        home6: zhHome6,
         footer: zhFooter,
         interior1: zhInterior1,
         interior2: zhInterior2,
@@ -1248,6 +1270,7 @@ i18n
         home3: tlHome3,
         home4: tlHome4,
         home5: tlHome5,
+        home6: tlHome6,
         footer: tlFooter,
         interior1: tlInterior1,
         interior2: tlInterior2,
@@ -1301,6 +1324,7 @@ i18n
         home3: fahome3,
         home4: fahome4,
         home5: fahome5,
+        home6: faHome6,
         footer: fafooter,
         interior1: faInterior1,
         interior2: faInterior2,
@@ -1354,6 +1378,7 @@ i18n
         home3: urhome3,
         home4: urhome4,
         home5: urhome5,
+        home6: urhome6,
         footer: urfooter,
         interior1: urInterior1,
         interior2: urInterior2,
@@ -1407,6 +1432,7 @@ i18n
         home3: pahome3,
         home4: pahome4,
         home5: pahome5,
+        home6: paHome6,
         footer: pafooter,
         interior1: paInterior1,
         interior2: paInterior2,

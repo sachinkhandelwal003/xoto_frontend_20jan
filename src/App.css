@@ -67,3 +67,20 @@ clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 
 
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* First aur last card ke liye space */
+.scrollbar-hide > *:first-child {
+  margin-left: 0.5rem;
+}
+.scrollbar-hide > *:last-child {
+  margin-right: 0.5rem;
+}
+
+

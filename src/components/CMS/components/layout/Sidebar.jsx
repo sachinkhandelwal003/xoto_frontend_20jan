@@ -7,6 +7,7 @@ import { useFreelancer } from '../../../../../src/context/FreelancerContext';
 
 import logoNew from '../../../../assets/img/logoNew.png'; 
 import favicon from '../../../../assets/img/logonewww.png'; 
+import { icon } from '@fortawesome/fontawesome-svg-core';
 
 /* --- CUSTOM LINKS CONFIGURATION --- */
 // /dashboard/superadmin/developer/property
@@ -98,6 +99,11 @@ const CUSTOM_ROLE_LINKS = {
           title: "Deals & Commissions", 
           path: "/dashboard/{roleSlug}/DealCommissionManager",
           icon: "fas fa-file-invoice-dollar" 
+        },
+        {
+          title: "Chat Request",
+          path: "/dashboard/{roleSlug}/admin-chat-requests",
+          icon: "fas fa-comment-dots"
         }
       ]
     },
@@ -232,6 +238,11 @@ const CUSTOM_ROLE_LINKS = {
   title: "Site Visits",
   icon: "fas fa-map-marker-alt",
   path: "/dashboard/{roleSlug}/visits",
+},
+{
+  title: "My-Chats",
+  icon: "fas fa-comment-dots",
+  path: "/dashboard/{roleSlug}/My-Chats",
 },
 {
   title: "Deals",

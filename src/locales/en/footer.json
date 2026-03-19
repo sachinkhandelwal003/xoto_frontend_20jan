@@ -14,10 +14,10 @@
 
   "offerings": [
      { "label": "Mortgages", "path": "/mortgage/services" },
-        { "label": "Buy", "path": "/marketplace" },
+        { "label": "Buy", "path": "/Property" },
  
-    { "label": "Sell", "path": "/marketplace" },
-    { "label": "Rentals", "path": "/marketplace" },
+    { "label": "Sell", "path": "/Property" },
+    { "label": "Rentals", "path": "/Property" },
     { "label": "Interiors", "path": "/services/interior" },
     { "label": "Landscaping", "path": "/landscaping" }
    

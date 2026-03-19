@@ -702,165 +702,156 @@ export default function AgentProjectDetails() {
     }
   };
 
-  // ── PDF / PREVIEW GENERATOR ────────────────
-  const handleGenerateOffer = async (actionType = 'download') => {
-    setIsGenerating(true);
-    const key = "updatable";
+ const handleGenerateOffer = async (actionType = 'download') => { 
+  setIsGenerating(true);
+  const key = "updatable";
+  
+  const langMap = { HI: 'Hindi', AR: 'Arabic', RU: 'Russian', ZH: 'Chinese', FA: 'Persian', EN: 'English', FR: 'French', ES: 'Spanish', DE: 'German', IT: 'Italian' };
+  const targetLang = langMap[pdfPreferences.language] || 'English';
 
-    if (actionType === 'view')     message.loading({ content: "Opening Preview...",   key });
-    else if (actionType === 'link') message.loading({ content: "Generating PDF...",    key });
-    else                            message.loading({ content: "Generating PDF...",    key });
+  if (targetLang !== 'English' && pdfPreferences.language !== currentLang) {
+    message.loading({ content: `Translating content to ${targetLang}...`, key });
+  } else {
+    if (actionType === 'view') message.loading({ content: "Opening Preview...", key });
+    else message.loading({ content: "Generating PDF for download...", key });
+  }
 
-    try {
-      // ── agent info ──────────────────────────
-      const rawData   = localStorage.getItem("user_data") || localStorage.getItem("user") || localStorage.getItem("full_agent_profile");
-      const storedUser = rawData ? JSON.parse(rawData) : null;
-      const agentId   = storedUser?.id || storedUser?._id;
+  try {
+    const rawData = localStorage.getItem("user_data") || localStorage.getItem("user") || localStorage.getItem("full_agent_profile");
+    const storedUser = rawData ? JSON.parse(rawData) : null;
+    const agentId = storedUser?.id || storedUser?._id;
 
-      let agentInfo = {
-        name:  storedUser?.first_name ? `${storedUser.first_name} ${storedUser.last_name || ''}`.trim() : "DEMO AGENT",
-        email: storedUser?.email        || "agent@xoto.ae",
-        phone: storedUser?.phone_number ? `${storedUser.country_code || '+971'} ${storedUser.phone_number}` : "+971 50 000 0000",
-        photo: storedUser?.profile_photo || ""
-      };
+    let agentInfo = {
+      name: storedUser?.first_name ? `${storedUser.first_name} ${storedUser.last_name || ''}`.trim() : "DEMO AGENT",
+      email: storedUser?.email || "agent@xoto.ae",
+      phone: storedUser?.phone_number ? `${storedUser.country_code || '+971'} ${storedUser.phone_number}` : "+971 50 000 0000",
+      photo: storedUser?.profile_photo || ""
+    };
 
-      if (agentId) {
-        try {
-          const res = await axios.get(`https://xoto.ae/api/agent/${agentId}`);
-          if (res.data?.data) {
-            const d = res.data.data;
-            agentInfo = { ...agentInfo, name: `${d.first_name||''} ${d.last_name||''}`.trim(), email: d.email, phone: `${d.country_code||'+971'} ${d.phone_number||''}`.trim(), photo: d.profile_photo || agentInfo.photo };
-          }
-        } catch (_) { /* fallback to localStorage */ }
+    if (agentId) {
+      try {
+        const res = await axios.get(`https://xoto.ae/api/agent/${agentId}`); 
+        if (res.data && res.data.data) {
+          const dbAgent = res.data.data;
+          agentInfo = { 
+            ...agentInfo, 
+            name: `${dbAgent.first_name || ''} ${dbAgent.last_name || ''}`.trim(), 
+            email: dbAgent.email, 
+            phone: `${dbAgent.country_code || '+971'} ${dbAgent.phone_number || ''}`.trim(), 
+            photo: dbAgent.profile_photo || agentInfo.photo 
+          };
+        }
+      } catch (err) {
+        console.warn("API error, using local storage fallback for agent");
       }
+    }
 
-      const updatedProperty    = { ...property, description: customDescription };
-      const activeLang         = pdfPreferences.language;
-      const currentTranslations = { EN: translations.EN, [activeLang]: translations[activeLang] || translations.EN };
+    const updatedProperty = { ...property, description: customDescription };
+    
+    const activeLang = pdfPreferences.language;
+    const currentTranslations = {
+      EN: translations.EN,
+      [activeLang]: translations[activeLang] || translations.EN 
+    };
+    
+    // Generate HTML content
+    const htmlContent = generateHTMLTemplate(updatedProperty, agentInfo, pdfPreferences, currentTranslations, activeLang, customDescription);
 
-      const htmlContent = generateHTMLTemplate(updatedProperty, agentInfo, pdfPreferences, currentTranslations, activeLang, customDescription);
-
-      // ── PREVIEW ─────────────────────────────
-      if (actionType === 'view') {
-        const previewWindow = window.open('', '_blank');
-        previewWindow.document.write(htmlContent);
-        previewWindow.document.close();
-        message.success({ content: "Preview opened in new tab!", key });
-        setIsOfferModalOpen(false);
-        return;
-      }
-
-      // ── PDF DOWNLOAD / LINK ──────────────────
-      // Mount a hidden container at exact PDF_WIDTH_PX
+    if (actionType === 'view') {
+      // PREVIEW - Open in new tab
+      const previewWindow = window.open('', '_blank');
+      previewWindow.document.write(htmlContent);
+      previewWindow.document.close();
+      message.success({ content: "Preview opened in new tab!", key });
+    } else {
+      // DOWNLOAD - Generate PDF and download
+      
+      // Create a container for the HTML content
       const container = document.createElement('div');
       container.innerHTML = htmlContent;
-
-      // Position off-screen but NOT display:none (html2canvas needs layout)
-      Object.assign(container.style, {
-        position:   'fixed',
-        top:        '-99999px',
-        left:       '0',
-        width:      `${PDF_WIDTH_PX}px`,
-        zIndex:     '-9999',
-        background: 'white',
-      });
+      
+      // Style the container for proper rendering
+      container.style.position = 'fixed';
+      container.style.top = '-10000px'; // Hide off-screen
+      container.style.left = '0';
+      container.style.width = '1200px';
+      container.style.zIndex = '-9999';
+      container.style.backgroundColor = '#ffffff';
       document.body.appendChild(container);
 
-      // Wait for images + fonts
-      await new Promise(r => setTimeout(r, 2000));
+      // Wait for images to load
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       const pages = container.querySelectorAll('.page');
-      const pdf   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdf = new jsPDF({ 
+        orientation: 'portrait', 
+        unit: 'mm', 
+        format: 'a4',
+        compress: true
+      });
 
       for (let i = 0; i < pages.length; i++) {
         if (i > 0) pdf.addPage();
+        
+        // Set page dimensions for A4 ratio
+        pages[i].style.height = '1697px'; 
+        pages[i].style.minHeight = '1697px'; 
+        pages[i].style.maxHeight = '1697px';
+        pages[i].style.overflow = 'hidden';
 
-        // Force exact pixel dimensions on each page
-        const pg = pages[i];
-        pg.style.width     = `${PDF_WIDTH_PX}px`;
-        pg.style.height    = `${PDF_HEIGHT_PX}px`;
-        pg.style.minHeight = `${PDF_HEIGHT_PX}px`;
-        pg.style.maxHeight = `${PDF_HEIGHT_PX}px`;
-        pg.style.overflow  = 'hidden';
-
-        const canvas = await html2canvas(pg, {
-          scale:           2,           // 2× for crisp output
-          logging:         false,
-          useCORS:         true,
-          allowTaint:      true,
-          windowWidth:     PDF_WIDTH_PX,   // matches body width in template
-          windowHeight:    PDF_HEIGHT_PX,
-          scrollX:         0,
-          scrollY:         0,
-          backgroundColor: '#ffffff',
-          x:               0,
-          y:               0,
-          width:           PDF_WIDTH_PX,
-          height:          PDF_HEIGHT_PX,
-        });
-
-        // Always fill the full A4 page — no white strips
-        pdf.addImage(
-          canvas.toDataURL('image/jpeg', 0.95),
-          'JPEG',
-          0, 0,           // x, y offset in mm
-          A4_MM_W,        // 210mm  — full width
-          A4_MM_H,        // 297mm  — full height
-          undefined,
-          'FAST'
-        );
+        try {
+          // Render page to canvas
+          const canvas = await html2canvas(pages[i], { 
+            scale: 2,
+            logging: false, 
+            useCORS: true, 
+            allowTaint: true,
+            windowWidth: 1200,
+            backgroundColor: '#ffffff',
+            onclone: (clonedDoc) => {
+              // Ensure all images are loaded in clone
+              const images = clonedDoc.querySelectorAll('img');
+              return Promise.all(Array.from(images).map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(resolve => {
+                  img.onload = resolve;
+                  img.onerror = resolve;
+                });
+              }));
+            }
+          });
+          
+          // Convert to image and add to PDF
+          const imgData = canvas.toDataURL('image/jpeg', 0.95); 
+          const imgWidth = 210;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          
+          pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight, undefined, 'FAST');
+        } catch (pageError) {
+          console.error(`Error rendering page ${i}:`, pageError);
+        }
       }
 
+      // Remove container
       document.body.removeChild(container);
 
-      if (actionType === 'link') {
-        const pdfBlob  = pdf.output('blob');
-        const fileName = `${updatedProperty.propertyName?.replace(/\s+/g,'_') || 'Sales_Offer'}_${Date.now()}.pdf`;
-        const localUrl = URL.createObjectURL(pdfBlob);
-        const fileUrl  = `https://xotostaging.s3.me-central-1.amazonaws.com/properties/${fileName}`;
-
-        message.success({ content: "Link Generated!", key });
-        setIsOfferModalOpen(false);
-
-        Modal.success({
-          title: 'Offer Link Ready!',
-          content: (
-            <div style={{ marginTop: 20 }}>
-              <Text type="secondary" style={{ marginBottom: 8, display: 'block' }}>Share this link with your client:</Text>
-              <Input value={fileUrl} readOnly />
-              <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
-                <Button type="primary" icon={<ShareAltOutlined />} style={{ flex: 1, background: '#1f1f1f' }}
-                  onClick={() => { navigator.clipboard.writeText(fileUrl); message.success("Link copied!"); }}>
-                  Copy Link
-                </Button>
-                <Button icon={<DownloadOutlined />} style={{ flex: 1 }}
-                  onClick={() => { const a = document.createElement('a'); a.href = localUrl; a.download = fileName; a.click(); }}>
-                  Download
-                </Button>
-              </div>
-            </div>
-          ),
-          okText: "Close"
-        });
-      } else {
-        pdf.save(`${updatedProperty.propertyName || 'Sales_Offer'}.pdf`);
-        message.success({ content: "PDF Downloaded Successfully!", key });
-        setIsOfferModalOpen(false);
-      }
-
-    } catch (error) {
-      console.error("PDF Generation Error:", error);
-      message.error({ content: "Failed to generate PDF.", key });
-    } finally {
-      setIsGenerating(false);
+      // Save the PDF
+      const fileName = `${updatedProperty.propertyName?.replace(/\s+/g, '_') || 'Sales_Offer'}_${Date.now()}.pdf`;
+      pdf.save(fileName);
+      
+      message.success({ content: "PDF Downloaded Successfully!", key });
+      setIsOfferModalOpen(false);
     }
-  };
 
-  // ─────────────────────────────────────────────
-  // RENDER GUARDS
-  // ─────────────────────────────────────────────
-  if (loading)    return <div style={{ height:"100vh", display:"flex", justifyContent:"center", alignItems:"center" }}><Spin size="large" /></div>;
-  if (!property)  return <div style={{ padding:40, textAlign:"center" }}><Title level={4}>Project not found!</Title></div>;
+  } catch (error) {
+    console.error("PDF Generation Error: ", error);
+    message.error({ content: "Failed to generate PDF. Please try again.", key });
+  } finally {
+    setIsGenerating(false);
+  }
+};
+  if (loading) return <div style={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}><Spin size="large" /></div>;
+  if (!property) return <div style={{ padding: 40, textAlign: "center" }}><Title level={4}>Project not found!</Title></div>;
 
   // ── derived values ──────────────────────────
   const getImage       = () => property?.photos?.[0] || property?.mainLogo || "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1773392643245-15.jpg";

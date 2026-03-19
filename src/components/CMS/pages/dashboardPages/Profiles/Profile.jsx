@@ -45,7 +45,7 @@ const Profile = () => {
       case 17: 
       return <DeveloperProfile /> ;
 
-      case 18:
+      case 1:
         return <GridAdminProfile />
 
     default:

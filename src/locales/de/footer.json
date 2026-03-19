@@ -13,9 +13,9 @@
   "offerings": [
     { "label": "Landschaftsbau", "path": "/landscaping" },
     { "label": "Innenausbau", "path": "/services/interior" },
-    { "label": "Vermietung", "path": "/marketplace" },
-    { "label": "Kaufen", "path": "/marketplace" },
-    { "label": "Verkaufen", "path": "/marketplace" },
+    { "label": "Vermietung", "path": "/Property" },
+    { "label": "Kaufen", "path": "/Property" },
+    { "label": "Verkaufen", "path": "/Property" },
     { "label": "Hypotheken", "path": "/mortgage/services" }
     
   ],
