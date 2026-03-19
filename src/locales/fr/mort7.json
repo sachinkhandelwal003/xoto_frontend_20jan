@@ -1,0 +1,43 @@
+{
+  "heading": "Notre portefeuille de produits hypothécaires",
+  "cards": {
+    "residential": {
+      "title": "Solutions hypothécaires\nrésidentielles",
+      "features": [
+        "Prêts pour l'achat d'une maison",
+        "Financement de propriétés sur plan et prêtes",
+        "Hypothèques pour non-résidents",
+        "Financement de la construction"
+      ]
+    },
+    "commercial": {
+      "title": "Solutions hypothécaires\ncommerciales",
+      "features": [
+        "Financement de bureaux et de commerces",
+        "Financement d'hôtels et d'accueil",
+        "Refinancement commercial"
+      ]
+    },
+    "equity": {
+      "title": "Capitaux propres purs",
+      "features": [
+        "Prêt garanti par une propriété"
+      ]
+    },
+    "buyout": {
+      "title": "Rachat (Refinancement)",
+      "features": [
+        "Refinancement hypothécaire",
+        "Rachat d'hypothèque existante",
+        "Libération de capital",
+        "Prêts d'appoint"
+      ]
+    },
+    "buyoutEquity": {
+      "title": "Rachat + Capitaux propres",
+      "features": [
+        "Consolidation de dettes garantie par une propriété"
+      ]
+    }
+  }
+}

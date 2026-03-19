@@ -1,0 +1,43 @@
+{
+  "heading": "Our Mortgage Product Portfolio",
+  "cards": {
+    "residential": {
+      "title": "Residential\nMortgage Solutions",
+      "features": [
+        "Home Purchase Loans",
+        "Off-Plan & Ready Property Financing",
+        "Non-Resident Mortgages",
+        "Construction & Home Building Finance"
+      ]
+    },
+    "commercial": {
+      "title": "Commercial\nMortgage Solutions",
+      "features": [
+        "Office & Retail Financing",
+        "Hotel & Hospitality Finance",
+        "Commercial Refinance"
+      ]
+    },
+    "equity": {
+      "title": "Pure Equity",
+      "features": [
+        "Loan against property"
+      ]
+    },
+    "buyout": {
+      "title": "Buyout (Refinance)",
+      "features": [
+        "Mortgage Refinancing",
+        "Buyout of existing mortgage",
+        "Equity release",
+        "Top-Up Loans"
+      ]
+    },
+    "buyoutEquity": {
+      "title": "Buyout + Equity",
+      "features": [
+        "Debt consolidation Against Property"
+      ]
+    }
+  }
+}
