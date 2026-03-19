@@ -6,8 +6,8 @@ import { motion } from "framer-motion";
 // these keys are working perfectly:---
 // const PUBLIC_KEY = "16018716-ebb1-4148-a6f5-70cb3a6bf952";
 // const ASSISTANT_ID = "5a97a57e-d69d-4b1b-9ed8-5a51ddcc96c2";
-const PUBLIC_KEY = "769f2651-af67-4715-aab2-8eb176d9faaf";
-const ASSISTANT_ID = "7e0a48d4-106d-44ce-9be8-c5b46c24cc9c";
+const PUBLIC_KEY = "9c43b895-f0d3-48e4-b75a-f8ff05e7f5df";
+const ASSISTANT_ID = "4e96eeb1-2953-42c6-a362-e0582701700f";
 
 
 function VoiceAIInterface({ onClose }) {
