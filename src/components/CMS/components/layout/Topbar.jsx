@@ -60,22 +60,31 @@ const Topbar = () => {
     fetchProfileData();
   }, []);
 
-  // ✅ Helper to safely get Name (Handles Object vs String)
+  // ✅ Helper to safely get Name
   const getDisplayName = () => {
-    // 1. Try API Data
-    if (userProfile?.name) {
-      if (typeof userProfile.name === 'object') {
-        return `${userProfile.name.first_name || ''} ${userProfile.name.last_name || ''}`.trim();
-      }
-      return userProfile.name;
+    const apiData = userProfile?.data || userProfile;
+    const reduxData = user?.data || user;
+
+    if (apiData?.first_name) {
+      return `${apiData.first_name} ${apiData.last_name || ''}`.trim();
     }
     
-    // 2. Try Redux Data (Fallback)
-    if (user?.name) {
-      if (typeof user.name === 'object') {
-        return `${user.name.first_name || ''} ${user.name.last_name || ''}`.trim();
+    if (apiData?.name) {
+      if (typeof apiData.name === 'object') {
+        return `${apiData.name.first_name || ''} ${apiData.name.last_name || ''}`.trim();
       }
-      return user.name;
+      return apiData.name;
+    }
+    
+    if (reduxData?.first_name) {
+      return `${reduxData.first_name} ${reduxData.last_name || ''}`.trim();
+    }
+    
+    if (reduxData?.name) {
+      if (typeof reduxData.name === 'object') {
+        return `${reduxData.name.first_name || ''} ${reduxData.name.last_name || ''}`.trim();
+      }
+      return reduxData.name;
     }
 
     return "User";
@@ -83,7 +92,18 @@ const Topbar = () => {
 
   // ✅ Helper for Email
   const getDisplayEmail = () => {
-    return userProfile?.email || user?.email || "";
+    const apiData = userProfile?.data || userProfile;
+    const reduxData = user?.data || user;
+    return apiData?.email || reduxData?.email || "";
+  };
+
+  // 🚀 NAYA HELPER: Photo ko safely nikalne ke liye
+  const getProfilePhoto = () => {
+    const apiData = userProfile?.data || userProfile;
+    const reduxData = user?.data || user;
+    
+    // Check karega dono formats: profile_photo (Agent) aur profilePic (Customer)
+    return apiData?.profile_photo || apiData?.profilePic || reduxData?.profile_photo || reduxData?.profilePic || null;
   };
 
   /* ---------------- NOTIFICATIONS ---------------- */
@@ -126,6 +146,7 @@ const Topbar = () => {
     "7": "freelancer",
     "11": "accountant",
     "12": "supervisor",
+    "16": "agent"
   }[roleCode] ?? "dashboard";
 
   const handleLogout = async () => {
@@ -294,18 +315,18 @@ const Topbar = () => {
             trigger={["click"]}
           >
             <div className="flex items-center gap-2 cursor-pointer">
-              {/* ✅ Change Here: Using Name's First Letter */}
-        <Avatar
-      title={getDisplayName()}
-      src={userProfile?.profilePic} // 👈 Ye rahi photo
-      style={{ 
-        backgroundColor: colors.primary || "#722ed1",
-        verticalAlign: 'middle' 
-      }}
-    >
-      {/* Fallback agar photo na ho */}
-      {!userProfile?.profilePic && getDisplayName()?.charAt(0)?.toUpperCase()}
-    </Avatar>
+              
+              {/* ✅ PHOTO FIX: Naya getProfilePhoto() helper laga diya */}
+              <Avatar
+                title={getDisplayName()}
+                src={getProfilePhoto()} 
+                style={{ 
+                  backgroundColor: colors?.primary || "#722ed1",
+                  verticalAlign: 'middle' 
+                }}
+              >
+                {!getProfilePhoto() && getDisplayName()?.charAt(0)?.toUpperCase()}
+              </Avatar>
 
               <div className="hidden md:flex flex-col leading-tight">
                 <Text strong className="text-sm">

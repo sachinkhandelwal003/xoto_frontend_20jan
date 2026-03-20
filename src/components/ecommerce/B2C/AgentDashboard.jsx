@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import {
   AreaChart,
   Area,
@@ -23,13 +24,50 @@ import {
 } from "@ant-design/icons";
 import { Card, Row, Col, Select, Button, Typography, Tag, Avatar, List } from "antd";
 
+// import { apiService } from '../../../manageApi/utils/custom.apiservice';
+
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const AgentDashboard = () => {
   const [timeRange, setTimeRange] = useState("7d");
+  const [userProfile, setUserProfile] = useState(null);
 
-  // 📊 Leads Trend
+  const user = useSelector((state) => state.auth?.user);
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        // const profileRes = await apiService.get('/profile/get-profile-data');
+        // if (profileRes.data) {
+        //   setUserProfile(profileRes.data);
+        // }
+      } catch (error) {
+        console.error("Failed to load profile", error);
+      }
+    };
+
+    if (user?.id || user?._id) {
+       fetchProfileData();
+    }
+  }, [user]);
+
+  const getDisplayName = () => {
+    if (userProfile?.data?.first_name) {
+      return `${userProfile.data.first_name} ${userProfile.data.last_name || ''}`.trim();
+    }
+    if (user?.first_name) {
+      return `${user.first_name} ${user.last_name || ''}`.trim();
+    }
+    if (user?.name) {
+      if (typeof user.name === 'object') {
+        return `${user.name.first_name || ''} ${user.name.last_name || ''}`.trim();
+      }
+      return user.name;
+    }
+    return 'Agent';
+  };
+
   const leadsTrend = [
     { name: "Mon", leads: 3 },
     { name: "Tue", leads: 5 },
@@ -40,7 +78,6 @@ const AgentDashboard = () => {
     { name: "Sun", leads: 8 },
   ];
 
-  // 🏠 Deals Closed Monthly
   const dealsClosed = [
     { month: "Jan", deals: 1 },
     { month: "Feb", deals: 2 },
@@ -50,40 +87,12 @@ const AgentDashboard = () => {
     { month: "Jun", deals: 3 },
   ];
 
-  // 📌 Stats Cards
+  // 📌 Stats Cards (Active Leads color updated to #5C039B)
   const stats = [
-    {
-      label: "Active Leads",
-      value: "18",
-      change: 10,
-      icon: <TeamOutlined />,
-      color: "#E11D48",
-      bg: "#fff1f2",
-    },
-    {
-      label: "Site Visits",
-      value: "9",
-      change: 6,
-      icon: <HomeOutlined />,
-      color: "#3b82f6",
-      bg: "#eff6ff",
-    },
-    {
-      label: "Deals Closed",
-      value: "5",
-      change: 3,
-      icon: <DollarOutlined />,
-      color: "#10b981",
-      bg: "#ecfdf5",
-    },
-    {
-      label: "Conversion Rate",
-      value: "27%",
-      change: -2,
-      icon: <PercentageOutlined />,
-      color: "#f59e0b",
-      bg: "#fffbeb",
-    },
+    { label: "Active Leads", value: "18", change: 10, icon: <TeamOutlined />, color: "#5C039B", bg: "#f3e8ff" },
+    { label: "Site Visits", value: "9", change: 6, icon: <HomeOutlined />, color: "#3b82f6", bg: "#eff6ff" },
+    { label: "Deals Closed", value: "5", change: 3, icon: <DollarOutlined />, color: "#10b981", bg: "#ecfdf5" },
+    { label: "Conversion Rate", value: "27%", change: -2, icon: <PercentageOutlined />, color: "#f59e0b", bg: "#fffbeb" },
   ];
 
   const recentClients = [
@@ -100,7 +109,7 @@ const AgentDashboard = () => {
       <div className="flex flex-col md:flex-row justify-between items-center mb-8">
         <div>
           <Title level={2} style={{ margin: 0 }}>
-            Agent Dashboard
+            Welcome, {getDisplayName()} 👋
           </Title>
           <Text type="secondary">
             Track your leads, visits & performance.
@@ -114,11 +123,12 @@ const AgentDashboard = () => {
             <Option value="90d">Last 90 Days</Option>
           </Select>
 
+          {/* 👈 BUTTON THEME CHANGED HERE */}
           <Button
             type="primary"
             size="large"
             icon={<BellOutlined />}
-            style={{ background: "#E11D48", borderColor: "#E11D48" }}
+            style={{ background: "#5C039B", borderColor: "#5C039B" }}
           >
             Alerts
           </Button>
@@ -172,11 +182,12 @@ const AgentDashboard = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
+                {/* 👈 CHART COLOR CHANGED HERE */}
                 <Area
                   type="monotone"
                   dataKey="leads"
-                  stroke="#E11D48"
-                  fill="#ffe4e6"
+                  stroke="#5C039B"
+                  fill="#f3e8ff"
                   strokeWidth={3}
                 />
               </AreaChart>
@@ -209,7 +220,8 @@ const AgentDashboard = () => {
                 <List.Item>
                   <List.Item.Meta
                     avatar={
-                      <Avatar style={{ backgroundColor: "#fff1f2", color: "#E11D48" }}>
+                      // 👈 AVATAR THEME CHANGED HERE
+                      <Avatar style={{ backgroundColor: "#f3e8ff", color: "#5C039B" }}>
                         {item.name.charAt(0)}
                       </Avatar>
                     }

@@ -32,6 +32,9 @@ const DeveloperDashboard = () => {
   const [stats, setStats]                     = useState([]);
   const [inventoryStatus, setInventoryStatus] = useState([]);
   const [dealFunnel, setDealFunnel]           = useState([]);
+  
+  // ✅ Profile state for Display Name
+  const [userProfile, setUserProfile]         = useState(null);
 
   // Chat states
   const [chatNotifs, setChatNotifs]     = useState([]);
@@ -39,6 +42,18 @@ const DeveloperDashboard = () => {
   const [showChatList, setShowChatList] = useState(false);
 
   const COLORS = ["#3b82f6", "#f59e0b", "#10b981"];
+
+  // ✅ Fetch Profile Data
+  const fetchProfileData = async () => {
+    try {
+      const res = await apiService.get('/profile/get-profile-data');
+      if (res.data) {
+        setUserProfile(res.data);
+      }
+    } catch (err) {
+      console.error("Profile fetch error:", err);
+    }
+  };
 
   // Fetch dashboard data
   const fetchDashboard = async (isRefresh = false) => {
@@ -63,6 +78,33 @@ const DeveloperDashboard = () => {
     if (!developerId) return;
     fetchDashboard();
   }, [developerId, timeRange]);
+
+  // Ek baar profile fetch karne ke liye alag useEffect
+  useEffect(() => {
+    if (developerId) fetchProfileData();
+  }, [developerId]);
+
+  // ✅ SMART HELPER: Name nikalne ke liye (Company name bhi support karega)
+  const getDisplayName = () => {
+    const apiData = userProfile?.data || userProfile;
+    const reduxData = user?.data || user;
+
+    if (apiData?.first_name) return `${apiData.first_name} ${apiData.last_name || ''}`.trim();
+    if (apiData?.name) {
+      if (typeof apiData.name === 'object') return `${apiData.name.first_name || ''} ${apiData.name.last_name || ''}`.trim();
+      return apiData.name;
+    }
+    if (apiData?.company_name) return apiData.company_name;
+
+    if (reduxData?.first_name) return `${reduxData.first_name} ${reduxData.last_name || ''}`.trim();
+    if (reduxData?.name) {
+      if (typeof reduxData.name === 'object') return `${reduxData.name.first_name || ''} ${reduxData.name.last_name || ''}`.trim();
+      return reduxData.name;
+    }
+    if (reduxData?.company_name) return reduxData.company_name;
+
+    return "Developer";
+  };
 
   // Fetch approved chat requests
   const fetchApprovedChats = async () => {
@@ -129,7 +171,10 @@ const DeveloperDashboard = () => {
       {/* HEADER */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <Title level={2}>Developer Dashboard</Title>
+          {/* ✅ YAHAN CHANGE KIYA HAI */}
+          <Title level={2} style={{ margin: 0 }}>
+            Welcome, {getDisplayName()} 👋
+          </Title>
           <Text type="secondary">Monitor projects, inventory, visits and deals.</Text>
         </div>
 
@@ -308,7 +353,7 @@ const DeveloperDashboard = () => {
             ...user,
             _id:        user?._id || user?.id,
             type:       "developer",
-            first_name: user?.first_name || user?.company_name || "Developer",
+            first_name: getDisplayName(), // yahan bhi theek kar diya taaki chat me naam aae
             last_name:  user?.last_name  || "",
           }}
           otherUserId={chatAgentId}
