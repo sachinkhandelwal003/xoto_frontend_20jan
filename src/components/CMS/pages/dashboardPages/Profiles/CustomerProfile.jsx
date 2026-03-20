@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Avatar, Badge, Descriptions, Tag, Button, Upload, message, Spin } from "antd";
+import { 
+  Card, Avatar, Badge, Descriptions, Tag, Button, 
+  Upload, message, Spin, Modal, Form, Input, Row, Col 
+} from "antd";
 import {
   UserOutlined,
   MailOutlined,
@@ -9,7 +12,8 @@ import {
   PhoneOutlined,
   EnvironmentOutlined,
   CameraOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  EditOutlined
 } from "@ant-design/icons";
 import { apiService } from "../../../../../manageApi/utils/custom.apiservice";
 
@@ -18,13 +22,16 @@ const CustomerProfile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  
+  // Edit Modal States
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [form] = Form.useForm();
 
-  // ✅ 1. Get Profile Data
   const getProfile = async () => {
     try {
       setLoading(true);
       const response = await apiService.get("profile/get-profile-data");
-      // Unwrap data as per your API structure
       setProfile(response?.data?.data || response?.data || response);
     } catch (error) {
       console.error(error);
@@ -34,7 +41,10 @@ const CustomerProfile = () => {
     }
   };
 
-  // ✅ 2. Automatic Upload & Save Flow
+  useEffect(() => {
+    getProfile();
+  }, []);
+
   const handleAvatarUpload = async (options) => {
     const { file } = options;
     const formData = new FormData();
@@ -42,16 +52,10 @@ const CustomerProfile = () => {
 
     try {
       setAvatarUploading(true);
-
-      // STEP A: S3 Upload
       const uploadRes = await apiService.post("/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      console.log("📸 UPLOAD RESPONSE:", uploadRes);
-
-      // Extracting the URL from your specific response structure
-      // uploadRes.data.file.url -> "https://xotostaging.s3..."
       const imageUrl = uploadRes?.data?.file?.url || uploadRes?.file?.url;
 
       if (!imageUrl) {
@@ -59,13 +63,7 @@ const CustomerProfile = () => {
         return;
       }
 
-      // STEP B: Update Database Immediately
-      // URL: http://localhost:5000/api/users/edit/customer
-      await apiService.put("users/edit/customer", {
-        profilePic: imageUrl,
-      });
-
-      // STEP C: Refresh UI
+      await apiService.put("users/edit/customer", { profilePic: imageUrl });
       await getProfile();
       message.success("Profile photo updated successfully!");
 
@@ -91,9 +89,25 @@ const CustomerProfile = () => {
     },
   };
 
-  useEffect(() => {
-    getProfile();
-  }, []);
+  const showEditModal = () => {
+    form.setFieldsValue(profile);
+    setIsModalVisible(true);
+  };
+
+  const handleUpdate = async (values) => {
+    setUpdating(true);
+    try {
+      await apiService.put("profile/update-profile", values);
+      message.success("Customer profile updated!");
+      setIsModalVisible(false);
+      getProfile();
+    } catch (error) {
+      console.error(error);
+      message.error("Failed to update profile");
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const fullName = profile?.name
     ? `${profile?.name?.first_name || ""} ${profile?.name?.last_name || ""}`
@@ -124,50 +138,65 @@ const CustomerProfile = () => {
             className="rounded-2xl overflow-hidden shadow-lg border-0"
             cover={<div className="h-40 bg-gradient-to-r from-[#5C039B] to-[#9c27b0]" />}
           >
-            <div className="flex flex-col items-center -mt-20 mb-8 relative">
-              <Badge
-                count={
-                  <Upload {...uploadProps}>
-                    <div className="bg-white border rounded-full p-2 shadow-lg cursor-pointer hover:scale-110 transition-transform">
-                      {avatarUploading ? <Spin size="small" /> : <CameraOutlined style={{ color: '#5C039B' }} />}
-                    </div>
-                  </Upload>
-                }
-                offset={[-10, 105]}
-              >
-                <Avatar
-                  size={140}
-                  src={profile?.profilePic}
-                  icon={!profile?.profilePic && <UserOutlined />}
-                  className="border-4 border-white shadow-xl bg-gray-100 object-cover"
-                />
-              </Badge>
+            {/* Header Section */}
+            <div className="relative -mt-16 mb-8 px-6">
+              
+              {/* Flexbox for Avatar (Left) and Button (Right) */}
+              <div className="flex justify-between items-end">
+                <Badge
+                  count={
+                    <Upload {...uploadProps}>
+                      <div className="bg-white border rounded-full p-2 shadow-lg cursor-pointer hover:scale-110 transition-transform">
+                        {avatarUploading ? <Spin size="small" /> : <CameraOutlined style={{ color: '#5C039B' }} />}
+                      </div>
+                    </Upload>
+                  }
+                  offset={[-15, 85]}
+                >
+                  <Avatar
+                    size={120}
+                    src={profile?.profilePic}
+                    icon={!profile?.profilePic && <UserOutlined />}
+                    className="border-4 border-white shadow-xl bg-gray-100 object-cover"
+                  />
+                </Badge>
 
-              <h2 className="mt-5 text-2xl font-bold text-gray-800">{fullName}</h2>
-              <Tag color="purple" className="px-4 py-1 rounded-full border-none bg-purple-100 text-[#5C039B]">
-                Customer Account
-              </Tag>
+                {/* Edit Button properly aligned to the right */}
+                <Button 
+                  icon={<EditOutlined />} 
+                  onClick={showEditModal}
+                  className="mb-2 font-medium border-gray-300 shadow-sm rounded-md"
+                >
+                  Edit Profile
+                </Button>
+              </div>
+
+              {/* Name & Tag Below Avatar */}
+              <div className="mt-4">
+                <h2 className="text-2xl font-bold text-gray-800 m-0">{fullName}</h2>
+                <div className="mt-2">
+                  <Tag color="purple" className="px-4 py-1 rounded-full border-none bg-purple-100 text-[#5C039B]">
+                    Customer Account
+                  </Tag>
+                </div>
+              </div>
             </div>
 
             <Descriptions bordered column={1} className="bg-white rounded-lg">
               <Descriptions.Item label={<span className="font-semibold text-gray-600"><MailOutlined className="mr-2" /> Email</span>}>
                 {profile?.email}
               </Descriptions.Item>
-
               <Descriptions.Item label={<span className="font-semibold text-gray-600"><PhoneOutlined className="mr-2" /> Mobile</span>}>
                 {phoneNumber}
               </Descriptions.Item>
-
               <Descriptions.Item label={<span className="font-semibold text-gray-600"><EnvironmentOutlined className="mr-2" /> Location</span>}>
                 {profile?.location?.city ? `${profile.location.city}, ${profile.location.country || ''}` : "Not provided"}
               </Descriptions.Item>
-
               <Descriptions.Item label={<span className="font-semibold text-gray-600"><CheckCircleOutlined className="mr-2" /> Status</span>}>
                 <Tag color={profile?.isActive ? "green" : "red"}>
                   {profile?.isActive ? "Active" : "Inactive"}
                 </Tag>
               </Descriptions.Item>
-
               <Descriptions.Item label={<span className="font-semibold text-gray-600"><CalendarOutlined className="mr-2" /> Member Since</span>}>
                 {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "N/A"}
               </Descriptions.Item>
@@ -175,6 +204,69 @@ const CustomerProfile = () => {
           </Card>
         )}
       </div>
+
+      {/* Edit Profile Modal */}
+      <Modal 
+        title="Edit Customer Profile" 
+        open={isModalVisible} 
+        onCancel={() => setIsModalVisible(false)} 
+        footer={null} 
+        width={600}
+        destroyOnClose
+      >
+        <Form form={form} layout="vertical" onFinish={handleUpdate} className="mt-4">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name={['name', 'first_name']} label="First Name" rules={[{ required: true }]}>
+                <Input placeholder="John" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name={['name', 'last_name']} label="Last Name" rules={[{ required: true }]}>
+                <Input placeholder="Doe" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item name="email" label="Email Address">
+            <Input disabled placeholder="customer@example.com" />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={6}>
+              <Form.Item name={['mobile', 'country_code']} label="Code">
+                <Input placeholder="+91" />
+              </Form.Item>
+            </Col>
+            <Col span={18}>
+              <Form.Item name={['mobile', 'number']} label="Mobile Number">
+                <Input placeholder="1234567890" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name={['location', 'city']} label="City">
+                <Input placeholder="e.g. Mumbai" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name={['location', 'country']} label="Country">
+                <Input placeholder="e.g. India" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+            <Button onClick={() => setIsModalVisible(false)}>Cancel</Button>
+            <Button type="primary" htmlType="submit" loading={updating} className="bg-[#5C039B] hover:bg-purple-800">
+              Save Changes
+            </Button>
+          </div>
+        </Form>
+      </Modal>
+
     </div>
   );
 };
