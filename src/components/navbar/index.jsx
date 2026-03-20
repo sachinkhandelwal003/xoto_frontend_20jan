@@ -14,21 +14,21 @@ import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "../../manageApi/store/authSlice";
 
 /* ------------------- LANGUAGE DATA ------------------- */
-export const languages = [
-  { code: "en", name: "EN", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#012169" /></svg>) },
-  { code: "hi", name: "HI", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#FF9933" /><rect y="5" width="20" height="5" fill="#FFF" /><rect y="10" width="20" height="5" fill="#138808" /></svg>) },
-  { code: "ar", name: "AR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#007A3D" /></svg>) },
-  { code: "ru", name: "RU", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#FFF" /><rect y="5" width="20" height="5" fill="#0039A6" /><rect y="10" width="20" height="5" fill="#D52B1E" /></svg>) },
-  { code: "zh", name: "ZH", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#EE1C25" /></svg>) },
-  { code: "fa", name: "FA", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#239F40" /><rect y="5" width="20" height="5" fill="#FFF" /><rect y="10" width="20" height="5" fill="#DA0000" /></svg>) },
-  { code: "tr", name: "TR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#E30A17" /></svg>) },
-  { code: "es", name: "ES", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#AA151B" /></svg>) },
-  { code: "pa", name: "PA", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#FF9933" /><rect y="5" width="20" height="5" fill="#FFF" /><rect y="10" width="20" height="5" fill="#138808" /></svg>) },
-  { code: "fr", name: "FR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="6.67" height="15" fill="#002395" /><rect x="6.67" width="6.66" height="15" fill="#FFF" /><rect x="13.33" width="6.67" height="15" fill="#ED2939" /></svg>) },
-  { code: "de", name: "DE", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#000" /><rect y="5" width="20" height="5" fill="#DD0000" /><rect y="10" width="20" height="5" fill="#FFCE00" /></svg>) },
-  { code: "tl", name: "TL", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="7.5" fill="#0038A8" /><rect y="7.5" width="20" height="7.5" fill="#CE1126" /></svg>) },
-  { code: "ur", name: "UR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#01411C" /></svg>) },
-];
+  export const languages = [
+    { code: "en", name: "EN", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#012169" /></svg>) },
+    { code: "hi", name: "HI", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#FF9933" /><rect y="5" width="20" height="5" fill="#FFF" /><rect y="10" width="20" height="5" fill="#138808" /></svg>) },
+    { code: "ar", name: "AR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#007A3D" /></svg>) },
+    { code: "ru", name: "RU", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#FFF" /><rect y="5" width="20" height="5" fill="#0039A6" /><rect y="10" width="20" height="5" fill="#D52B1E" /></svg>) },
+    { code: "zh", name: "ZH", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#EE1C25" /></svg>) },
+    { code: "fa", name: "FA", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#239F40" /><rect y="5" width="20" height="5" fill="#FFF" /><rect y="10" width="20" height="5" fill="#DA0000" /></svg>) },
+    { code: "tr", name: "TR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#E30A17" /></svg>) },
+    { code: "es", name: "ES", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#AA151B" /></svg>) },
+    { code: "pa", name: "PA", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#FF9933" /><rect y="5" width="20" height="5" fill="#FFF" /><rect y="10" width="20" height="5" fill="#138808" /></svg>) },
+    { code: "fr", name: "FR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="6.67" height="15" fill="#002395" /><rect x="6.67" width="6.66" height="15" fill="#FFF" /><rect x="13.33" width="6.67" height="15" fill="#ED2939" /></svg>) },
+    { code: "de", name: "DE", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#000" /><rect y="5" width="20" height="5" fill="#DD0000" /><rect y="10" width="20" height="5" fill="#FFCE00" /></svg>) },
+    { code: "tl", name: "TL", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="7.5" fill="#0038A8" /><rect y="7.5" width="20" height="7.5" fill="#CE1126" /></svg>) },
+    { code: "ur", name: "UR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#01411C" /></svg>) },
+  ];
 
 /* ------------------- NAV ITEMS ------------------- */
 const navItems = [

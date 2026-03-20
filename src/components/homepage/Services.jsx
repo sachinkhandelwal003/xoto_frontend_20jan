@@ -7,15 +7,17 @@ import  FOurth from '../Service/FOurth'
 import  Buy6 from '../BuyRent/Buy6'
 import Buy4 from '../BuyRent/Buy4'
 import  Sixth from '../Service/Sixth'
+import Seventh from '../Service/Seventh'
 const Service = () => {
   return (
     <div>
       {/* <h1>hello</h1> */}
       <First/>
       <Second/>
+           <Seventh/>
       <Third/>
       <Buy4 />
-      {/* <FOurth/> */}
+      <FOurth/>
       <Buy6/>
        {/* <Fifth/> */}
            <Sixth/>
