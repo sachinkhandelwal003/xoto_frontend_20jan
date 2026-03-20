@@ -151,6 +151,7 @@ import MyChatRequests from "../chat/Mychatrequests";
 import AdminChatRequests from "../chat/Adminchatrequests";
 import BrochureGenerator from "../ecommerce/B2C/BrochureGenerator";
 import TrackBrochure from "../ecommerce/B2C/TrackBrochure";
+import WaitingApproval from "../ecommerce/B2C/WaitingApproval";
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -364,6 +365,10 @@ const CmsRoutes = () => {
   {/* Presentations */}
   <Route path="presentations" element={<AgentPresentations />} />
   <Route path="My-Chats" element={<MyChatRequests />} />
+
+
+ 
+
 
 
 

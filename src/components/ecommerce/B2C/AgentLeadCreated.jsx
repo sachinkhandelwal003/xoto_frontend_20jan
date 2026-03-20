@@ -62,7 +62,7 @@ export default function AgentLeadDashboard() {
   const fetchLeads = async (page = 1, itemsPerPage = 10, status = activeTab, search = searchQuery) => {
     setLoading(true);
     try {
-      let url = `/agent/lead/get-all-leads?page=${page}&limit=${itemsPerPage}`;
+      let url = `/agent/lead/get-all-leads?page=${page}&limit=${itemsPerPage}&agent=${user?._id || user?.id}`;
       
       if (status !== "all") url += `&status=${status}`;
       if (search) url += `&search=${search}`;

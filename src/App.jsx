@@ -90,6 +90,9 @@ import AgencyLayout from "./components/ecommerce/B2C/AgencyLayout";
 import Upcoming from "./components/footer/Upcoming";
 import Finicial from "./components/footer/Finicial";
 import XobiaChatbot from "./components/homepage/XobiaChatbot";
+import WaitingApproval from "./components/ecommerce/B2C/WaitingApproval";
+import ForgotPassword from "./components/CMS/pages/forgot-password";
+import ResetPassword from "./components/CMS/pages/reset-password";
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -316,6 +319,10 @@ function App() {
               <Route path="/check" element={<Checker />} />
               <Route path="/upcoming-soon" element={<Upcoming />} />
               <Route path="/finance-soon" element={<Finicial />} />
+               <Route path="/waiting-approval" element={<WaitingApproval />} />
+               <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+
               
               <Route
                 path="/dashboard/:roleSlug/*"
