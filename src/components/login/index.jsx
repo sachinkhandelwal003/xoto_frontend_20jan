@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
+import { Link } from "react-router-dom";
 import {
   Form,
   Input,
@@ -629,6 +630,7 @@ const Login = () => {
               style={{ borderRadius: 12, height: 48 }}
             />
           </Form.Item>
+          
 
           <Form.Item
             name="password"
@@ -640,6 +642,40 @@ const Login = () => {
               style={{ borderRadius: 12, height: 48 }}
             />
           </Form.Item>
+          {/* Forgot Password */}
+{(
+  selectedPartnerType === "agent" || 
+  selectedPartnerType === "vendor-b2c" || 
+  selectedPartnerType === "freelancer" ||
+  selectedPartnerType === "developer" 
+  
+) && (
+  <div style={{ textAlign: "right", marginTop: -8, marginBottom: 16 }}>
+    <Link
+      to={`/forgot-password?role=${
+  selectedPartnerType === "agent" ? "agent" :
+  selectedPartnerType === "vendor-b2c" ? "vendor" :
+  selectedPartnerType === "freelancer" ? "freelancer" :
+  selectedPartnerType === "developer" ? "developer" :
+  selectedPartnerType === "agency" ? "agency" :
+  ""
+}`}
+      
+      style={{
+        color: selectedPartnerType === "agent" ? "#E11D48" :
+  selectedPartnerType === "vendor-b2c" ? "#03A4F4" :
+  selectedPartnerType === "freelancer" ? "#5C039B" :
+  selectedPartnerType === "developer" ? "#F97316" :
+
+  "#888",
+        fontSize: 13,
+        fontWeight: 500
+      }}
+    >
+      Forgot Password?
+    </Link>
+  </div>
+)}
 
           <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
             <Button

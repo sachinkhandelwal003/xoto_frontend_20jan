@@ -28,7 +28,8 @@ import {
   PropertySafetyOutlined,
   CompassOutlined,
   CheckCircleOutlined,
-  ClockCircleOutlined
+  ClockCircleOutlined,
+  TeamOutlined   // ← agent section ke liye
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -38,11 +39,9 @@ const LeadManagement = () => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
   
-  // Monitoring Filters State
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Modal State
   const [viewModal, setViewModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
 
@@ -54,6 +53,7 @@ const LeadManagement = () => {
       const list = Array.isArray(res?.data)
         ? res.data
         : res?.data?.data || [];
+         console.log("AGENT OBJECT:", list[0]?.agent);
       setLeads(list);
     } catch (error) {
       console.log(error);
@@ -93,17 +93,15 @@ const LeadManagement = () => {
       email: l?.email,
       phone: l?.phone_number,
       agentName: `${l?.agent?.first_name || ""} ${l?.agent?.last_name || ""}`,
+      agentEmail: l?.agent?.email || "",
+      agentPhone: l?.agent?.phone_number || l?.agent?.phone || "",
       createdAtFormatted: new Date(l.createdAt).toLocaleDateString(),
     }))
     .filter((l) => {
-      // Search Box Logic
-      const matchSearch = 
-        l.leadName.toLowerCase().includes(searchText.toLowerCase()) || 
+      const matchSearch =
+        l.leadName.toLowerCase().includes(searchText.toLowerCase()) ||
         (l.email && l.email.toLowerCase().includes(searchText.toLowerCase()));
-      
-      // Status Dropdown Logic
       const matchStatus = statusFilter === "all" || l.status === statusFilter;
-
       return matchSearch && matchStatus;
     });
 
@@ -223,9 +221,9 @@ const LeadManagement = () => {
             style={{ width: 300 }}
             size="large"
           />
-          <Select 
-            value={statusFilter} 
-            onChange={(val) => setStatusFilter(val)} 
+          <Select
+            value={statusFilter}
+            onChange={(val) => setStatusFilter(val)}
             style={{ width: 180 }}
             size="large"
           >
@@ -266,6 +264,8 @@ const LeadManagement = () => {
       >
         {selectedLead && (
           <div className="mt-4">
+
+            {/* ── Lead Name + Status ── */}
             <Row gutter={[16, 16]}>
               <Col span={12}>
                 <Text type="secondary">Lead Name</Text>
@@ -281,6 +281,7 @@ const LeadManagement = () => {
 
             <Divider />
 
+            {/* ── Lead Contact ── */}
             <Row gutter={[16, 16]}>
               <Col span={12}>
                 <Text type="secondary">
@@ -300,6 +301,49 @@ const LeadManagement = () => {
 
             <Divider />
 
+            {/* ── Agent Details (NAYA SECTION) ── */}
+            <Title level={5}>
+              <TeamOutlined className="mr-2" /> Assigned Agent
+            </Title>
+
+            <div className="bg-blue-50 p-4 rounded-lg mt-3 mb-2">
+              <Row gutter={[16, 16]} align="middle">
+                <Col span={2}>
+                  <Avatar
+                    icon={<UserOutlined />}
+                    style={{ backgroundColor: "#1677ff" }}
+                    size={42}
+                  />
+                </Col>
+                <Col span={22}>
+                  <Row gutter={[16, 8]}>
+                    <Col span={8}>
+                      <Text type="secondary">Agent Name</Text>
+                      <br />
+                      <Text strong>{selectedLead.agentName || "N/A"}</Text>
+                    </Col>
+                    <Col span={8}>
+                      <Text type="secondary">
+                        <MailOutlined className="mr-1" /> Email
+                      </Text>
+                      <br />
+                      <Text strong>{selectedLead.agentEmail || "N/A"}</Text>
+                    </Col>
+                    <Col span={8}>
+                      <Text type="secondary">
+                        <PhoneOutlined className="mr-1" /> Phone
+                      </Text>
+                      <br />
+                      <Text strong>{selectedLead.agentPhone || "N/A"}</Text>
+                    </Col>
+                  </Row>
+                </Col>
+              </Row>
+            </div>
+
+            <Divider />
+
+            {/* ── Property & Preferences ── */}
             <Title level={5}>
               <PropertySafetyOutlined className="mr-2" /> Property & Preferences
             </Title>
@@ -329,15 +373,13 @@ const LeadManagement = () => {
                 </Col>
 
                 {selectedLead.visit_date && (
-                  <>
-                    <Col span={12}>
-                      <Text type="secondary">Scheduled Visit:</Text>
-                      <br />
-                      <Text strong style={{ color: "#52c41a" }}>
-                        {selectedLead.visit_date} {selectedLead.visit_time && `at ${selectedLead.visit_time}`}
-                      </Text>
-                    </Col>
-                  </>
+                  <Col span={12}>
+                    <Text type="secondary">Scheduled Visit:</Text>
+                    <br />
+                    <Text strong style={{ color: "#52c41a" }}>
+                      {selectedLead.visit_date}{selectedLead.visit_time && ` at ${selectedLead.visit_time}`}
+                    </Text>
+                  </Col>
                 )}
 
                 <Col span={12}>
@@ -353,6 +395,7 @@ const LeadManagement = () => {
                 </Col>
               </Row>
             </div>
+
           </div>
         )}
       </Modal>

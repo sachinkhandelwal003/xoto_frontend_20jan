@@ -19,9 +19,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { toast } from "react-toastify";
-import axios from "axios"; 
-import PhoneInput from "react-phone-input-2"; 
-import "react-phone-input-2/lib/style.css"; 
+import axios from "axios";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 
 import {
   MailOutlined,
@@ -148,7 +148,7 @@ const RegistrationAgent = () => {
   // ✅ INSTANT UPLOAD FUNCTION (Fixed API Response Parsing)
   const handleInstantUpload = async (file, type) => {
     setUploading((prev) => ({ ...prev, [type]: true }));
-    
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -157,12 +157,12 @@ const RegistrationAgent = () => {
       const response = await axios.post(UPLOAD_API, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      
+
       console.log(`✅ Upload API Response for ${type}:`, response.data);
 
-      const uploadedUrl = response.data?.file?.url || response.data?.url || ""; 
-      
-      if(uploadedUrl) {
+      const uploadedUrl = response.data?.file?.url || response.data?.url || "";
+
+      if (uploadedUrl) {
         setUrls((prev) => ({ ...prev, [type]: uploadedUrl }));
         toast.success(`${type} uploaded successfully!`);
       } else {
@@ -175,7 +175,7 @@ const RegistrationAgent = () => {
       setUploading((prev) => ({ ...prev, [type]: false }));
     }
 
-    return false; 
+    return false;
   };
 
   // ✅ 2. Send OTP Handler (Live API)
@@ -184,11 +184,11 @@ const RegistrationAgent = () => {
       toast.error("Please enter a valid mobile number first");
       return;
     }
-    
+
     setLoading(true);
     try {
       const cCode = `+${countryData.dialCode || '971'}`;
-      const pNumber = phone.replace(countryData.dialCode || '971', "");
+      const pNumber = phone.slice((countryData?.dialCode || '971').length);
 
       await axios.post("https://xoto.ae/api/otp/send-otp", {
         country_code: cCode,
@@ -198,7 +198,12 @@ const RegistrationAgent = () => {
       setOtpSent(true);
       toast.success("Verification code sent to your mobile!");
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to send OTP");
+      const errorMessage =
+        error?.response?.data?.errors?.[0] ||
+        error?.response?.data?.message ||
+        "Failed to send OTP";
+
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -214,7 +219,7 @@ const RegistrationAgent = () => {
     setLoading(true);
     try {
       const cCode = `+${countryData.dialCode || '971'}`;
-      const pNumber = phone.replace(countryData.dialCode || '971', "");
+      const pNumber = phone.slice((countryData?.dialCode || '971').length);
 
       await axios.post("https://xoto.ae/api/otp/verify-otp", {
         country_code: cCode,
@@ -223,10 +228,15 @@ const RegistrationAgent = () => {
       });
 
       setOtpVerified(true);
-      setOtpSent(false);
+      setOtpVerified(true);
       toast.success("Mobile Verified Successfully!");
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Invalid OTP. Please try again.");
+      const errorMessage =
+        error?.response?.data?.errors?.[0] ||
+        error?.response?.data?.message ||
+        "Invalid OTP";
+
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -242,14 +252,14 @@ const RegistrationAgent = () => {
         last_name: values.last_name,
         email: values.email,
         password: values.password,
-        phone_number: phone.replace(countryData.dialCode, ""),
+        phone_number: phone.slice((countryData?.dialCode || '').length),
         country_code: `+${countryData.dialCode}`,
         country: countryData.name || "United Arab Emirates",
         operating_city: values.operating_city,
         specialization: values.specialization,
-        profile_photo: urls.profile,   
-        id_proof: urls.idProof,        
-        rera_certificate: urls.rera    
+        profile_photo: urls.profile,
+        id_proof: urls.idProof,
+        rera_certificate: urls.rera
       };
 
       console.log("🚀 Final JSON Payload being sent to Live Signup API:", payload);
@@ -265,13 +275,24 @@ const RegistrationAgent = () => {
       );
 
       toast.success("Agent Registration Successful");
-      console.log("🎉 Signup Response:", response.data);
+
+// 🔥 redirect to waiting page
+navigate("/waiting-approval");
 
     } catch (error) {
       console.error("Signup Error:", error);
-      toast.error(
-        error.message || error.response?.data?.message || "Registration failed"
-      );
+      const errorMessage =
+  error?.response?.data?.errors?.[0] ||
+  error?.response?.data?.message ||
+  "Registration failed";
+
+toast.error(errorMessage);
+
+// 🔥 CRITICAL RESET (warna user phas jayega)
+setOtpVerified(false);
+setOtpSent(false);
+setOtpValue("");
+
     } finally {
       setSubmitting(false);
     }
@@ -295,22 +316,22 @@ const RegistrationAgent = () => {
         </HeaderSection>
 
         <MainCard $isMobile={isMobile} bordered={false}>
-          <Form 
-            form={form} 
-            layout="vertical" 
-            onFinish={handleFinish} 
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleFinish}
             onFinishFailed={(errorInfo) => {
               console.error("❌ Form Validation Failed! Required fields are missing:", errorInfo);
             }}
             initialValues={{ specialization: 'residential' }}
           >
-            
+
             {/* --- PERSONAL DETAILS --- */}
             <div style={{ marginBottom: 30 }}>
               <AntSpace style={{ marginBottom: 20, color: '#f26522', fontWeight: 600 }}>
                 <UserOutlined /> Personal Details
               </AntSpace>
-              
+
               <Row gutter={16}>
                 <Col xs={24} md={12}>
                   <Form.Item name="first_name" label="First Name" rules={[{ required: true, message: 'Required' }]}>
@@ -329,7 +350,7 @@ const RegistrationAgent = () => {
               </Form.Item>
 
               <Form.Item name="password" label="Password" rules={[{ required: true, min: 6 }]}>
-                <Input.Password style={{height: 45, borderRadius: 8}} prefix={<LockOutlined />} placeholder="Password" />
+                <Input.Password style={{ height: 45, borderRadius: 8 }} prefix={<LockOutlined />} placeholder="Password" />
               </Form.Item>
             </div>
 
@@ -338,7 +359,7 @@ const RegistrationAgent = () => {
               <Form.Item label="Phone Number" required>
                 <div style={{ position: 'relative' }}>
                   <PhoneInput
-                    country={'ae'} 
+                    country={'ae'}
                     value={phone}
                     onChange={(phone, data) => {
                       setPhone(phone);
@@ -353,21 +374,25 @@ const RegistrationAgent = () => {
                     }}
                     disabled={otpVerified}
                   />
-                  
+
                   {/* ✅ SEND OTP BUTTON INSIDE PHONE INPUT */}
                   {!otpVerified ? (
-                    <Button 
-                      type="link" 
-                      onClick={handleSendOtp} 
+                    <Button
+                      type="link"
+                      onClick={() => {
+  setOtpValue("");      // clear old OTP
+  setOtpVerified(false);
+  handleSendOtp();
+}}
                       loading={loading}
                       disabled={!phone}
-                      style={{ 
-                        position: 'absolute', 
-                        right: '5px', 
-                        top: '6px', 
-                        zIndex: 2, 
-                        color: '#5C039B', 
-                        fontWeight: '700' 
+                      style={{
+                        position: 'absolute',
+                        right: '5px',
+                        top: '6px',
+                        zIndex: 2,
+                        color: '#5C039B',
+                        fontWeight: '700'
                       }}
                     >
                       {otpSent ? "Resend" : "Send OTP"}
@@ -377,6 +402,20 @@ const RegistrationAgent = () => {
                       <CheckCircleFilled style={{ color: "#52c41a", fontSize: "20px" }} />
                     </div>
                   )}
+                  {(otpSent || otpVerified) && (
+  <div style={{ marginTop: 8 }}>
+    <Button
+      type="link"
+      onClick={() => {
+        setOtpVerified(false);  // 🔓 unlock input
+        setOtpSent(false);      // hide OTP input
+        setOtpValue("");        // clear old OTP
+      }}
+    >
+      Change Number
+    </Button>
+  </div>
+)}
                 </div>
               </Form.Item>
 
@@ -385,17 +424,17 @@ const RegistrationAgent = () => {
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} style={{ overflow: 'hidden' }}>
                     <div style={{ marginTop: 10 }}>
                       <Form.Item style={{ marginBottom: 0 }}>
-                        <StyledInput 
+                        <StyledInput
                           prefix={<SafetyCertificateOutlined />}
-                          placeholder="Enter 6-digit OTP" 
+                          placeholder="Enter 6-digit OTP"
                           value={otpValue}
                           onChange={(e) => setOtpValue(e.target.value)}
                           maxLength={6}
                           // ✅ VERIFY BUTTON INSIDE OTP INPUT
                           suffix={
-                            <Button 
-                              type="link" 
-                              onClick={handleVerifyOtp} 
+                            <Button
+                              type="link"
+                              onClick={handleVerifyOtp}
                               loading={loading}
                               style={{ color: '#5C039B', fontWeight: '700', padding: 0 }}
                             >
@@ -420,7 +459,7 @@ const RegistrationAgent = () => {
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item name="specialization" label="Specialization" rules={[{ required: true }]}>
-                  <Select placeholder="Select specialization" style={{height: 45}}>
+                  <Select placeholder="Select specialization" style={{ height: 45 }}>
                     <Option value="residential">Residential</Option>
                     <Option value="commercial">Commercial</Option>
                     <Option value="luxury">Luxury Real Estate</Option>
@@ -433,56 +472,56 @@ const RegistrationAgent = () => {
             <Row gutter={16} style={{ marginTop: 20 }}>
               <Col xs={24} md={8}>
                 <Form.Item label="Profile Photo">
-                  <Upload 
-                    showUploadList={false} 
+                  <Upload
+                    showUploadList={false}
                     beforeUpload={(file) => handleInstantUpload(file, 'profile')}
                   >
-                    <Button 
-                      icon={urls.profile ? <CheckOutlined /> : <UploadOutlined />} 
-                      block 
+                    <Button
+                      icon={urls.profile ? <CheckOutlined /> : <UploadOutlined />}
+                      block
                       style={{ height: 45, borderColor: urls.profile ? '#52c41a' : '#d9d9d9', color: urls.profile ? '#52c41a' : 'inherit' }}
                       loading={uploading.profile}
                     >
                       {urls.profile ? "Uploaded" : "Upload Photo"}
                     </Button>
                   </Upload>
-                  {urls.profile && <div style={{marginTop: 5, fontSize: 12, color: '#52c41a'}}>Image saved!</div>}
+                  {urls.profile && <div style={{ marginTop: 5, fontSize: 12, color: '#52c41a' }}>Image saved!</div>}
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
                 <Form.Item label="ID Proof">
-                  <Upload 
-                    showUploadList={false} 
+                  <Upload
+                    showUploadList={false}
                     beforeUpload={(file) => handleInstantUpload(file, 'idProof')}
                   >
-                    <Button 
-                      icon={urls.idProof ? <CheckOutlined /> : <UploadOutlined />} 
-                      block 
+                    <Button
+                      icon={urls.idProof ? <CheckOutlined /> : <UploadOutlined />}
+                      block
                       style={{ height: 45, borderColor: urls.idProof ? '#52c41a' : '#d9d9d9', color: urls.idProof ? '#52c41a' : 'inherit' }}
                       loading={uploading.idProof}
                     >
                       {urls.idProof ? "Uploaded" : "Upload Emirates ID"}
                     </Button>
                   </Upload>
-                  {urls.idProof && <div style={{marginTop: 5, fontSize: 12, color: '#52c41a'}}>ID saved!</div>}
+                  {urls.idProof && <div style={{ marginTop: 5, fontSize: 12, color: '#52c41a' }}>ID saved!</div>}
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
                 <Form.Item label="RERA Certificate">
-                  <Upload 
-                    showUploadList={false} 
+                  <Upload
+                    showUploadList={false}
                     beforeUpload={(file) => handleInstantUpload(file, 'rera')}
                   >
-                    <Button 
-                      icon={urls.rera ? <CheckOutlined /> : <UploadOutlined />} 
-                      block 
+                    <Button
+                      icon={urls.rera ? <CheckOutlined /> : <UploadOutlined />}
+                      block
                       style={{ height: 45, borderColor: urls.rera ? '#52c41a' : '#d9d9d9', color: urls.rera ? '#52c41a' : 'inherit' }}
                       loading={uploading.rera}
                     >
                       {urls.rera ? "Uploaded" : "Upload RERA"}
                     </Button>
                   </Upload>
-                  {urls.rera && <div style={{marginTop: 5, fontSize: 12, color: '#52c41a'}}>Certificate saved!</div>}
+                  {urls.rera && <div style={{ marginTop: 5, fontSize: 12, color: '#52c41a' }}>Certificate saved!</div>}
                 </Form.Item>
               </Col>
             </Row>

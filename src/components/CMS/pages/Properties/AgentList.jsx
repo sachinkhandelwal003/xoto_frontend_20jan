@@ -365,9 +365,7 @@ const pendingApprovals = agents.filter(
               <Descriptions.Item label="Subscription">
                 <Tag icon={<CrownOutlined />} color="gold">{selectedAgent.subscriptionPlan || 'Free'}</Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="Role & ID" span={2}>
-                <Text code>{selectedAgent.role}</Text> / <Text type="secondary" style={{ fontSize: "12px" }}>{selectedAgent._id || selectedAgent.id}</Text>
-              </Descriptions.Item>
+              
             </Descriptions>
 
             <Divider orientation="left" style={{ marginTop: "32px" }}>Uploaded Documents</Divider>

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import waveBg from "../../assets/img/wave/waveint4.png";
 
 // Images
-import solarLighting from "../../assets/img/light.png";
+import solarLighting from "../../assets/img/landscap/LED.jpeg";
 import lowWaterPlant from "../../assets/img/chowk.png";
 import ecoMaterials from "../../assets/img/plant.png";
 import automatedControl from "../../assets/img/tab.png";
