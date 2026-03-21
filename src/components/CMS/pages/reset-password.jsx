@@ -97,7 +97,7 @@ const ResetPassword = () => {
 });
       setIsError(false);
       setIsSuccess(true);
-      setMessage(res.data.message);
+      setMessage(res?.message || res?.data?.message || "Password reset successfully.");
       setTimeout(() => navigate("/login"), 2500);
     } catch (err) {
       setIsError(true);

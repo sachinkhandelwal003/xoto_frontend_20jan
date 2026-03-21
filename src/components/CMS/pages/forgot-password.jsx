@@ -85,7 +85,7 @@ const ForgotPassword = () => {
 });
       setIsError(false);
       setSubmitted(true);
-      setMessage(res.data.message);
+      setMessage(res?.message || res?.data?.message || "Reset link sent successfully.");
     } catch (err) {
       setIsError(true);
       setMessage(err?.message || err?.data?.message || "Something went wrong.");
