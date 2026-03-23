@@ -623,7 +623,7 @@ const ProductDetail = () => {
             ))}
           </div>
 
-          {/* Tab content */}
+          {/* Tab content     */}    
           <div className="p-6">
             <AnimatePresence mode="wait">
               {tab === "description" && (
