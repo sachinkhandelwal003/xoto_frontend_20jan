@@ -6,11 +6,13 @@ import { useSelector } from "react-redux";
 import Dashboard from "./pages/Dashboard";
 import VendorDashboard from "./pages/VendorDashboard";
 import Freelancerdashboard from "./pages/Freelancerdashboard";
+import CustomerList from "./pages/dashboardPages/customerlist";
 import Modules from "./pages/modules/Modules";
 import Permission from "./pages/permission/Permission";
 import Role from "./pages/role/Role";
 import VendorB2C from "./pages/dashboardPages/managevendor/VendorB2C";
 import VendorB2CProfile from "./pages/dashboardPages/managevendor/VendorB2CProfile";
+import VendorInventory from "../ecommerce/B2C/products/vendorinventory";
 import ProductRequestB2C from "./pages/dashboardPages/manageProducts/ProductRequestB2C";
 import CategoryFreelancers from "./pages/dashboardPages/managefreelancer/freelancer/categoryandsubcategory/CategoryFreelancers";
 import Freelancers from "./pages/dashboardPages/managefreelancer/freelancer/Freelancers";
@@ -311,6 +313,7 @@ const CmsRoutes = () => {
        <Route path="product/inventory/:id" element={<Inventory />} />
        
       <Route path="seller/:id" element={<VendorB2CProfile />} />
+      <Route path="inventory" element={<VendorInventory />} />
 
             {/* <Route path="projects/:id" element={<ViewProject/>} /> */}
             <Route path="quotation/received" element={<ReceivedQuotation />} />
@@ -376,6 +379,7 @@ const CmsRoutes = () => {
       {/* admin */}
       <Route path="/agent-list" element={<AgentList />} />
       <Route path="/agency-list" element={<AgencyList />} />    
+      <Route path="/customers/list" element={<CustomerList />} />
       {/* <Route path="/agent-registration" element={<AgentRegistration />} /> */}
       <Route path="/developer-list" element={<DeveloperList />} />
       <Route path="/property-list" element={<AdminPropertyGrid />} />
