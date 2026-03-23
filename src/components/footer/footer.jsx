@@ -85,7 +85,7 @@ export default function Footer() {
   </a>
 
   {/* Twitter */}
-  <a href="https://www.linkedin.com/company/xotouae/?viewAsMember=true" target="_blank" rel="noopener noreferrer">
+  <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
     <img 
       src={twitterIcon} 
       alt="Twitter" 
