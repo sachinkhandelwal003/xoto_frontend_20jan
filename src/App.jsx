@@ -27,7 +27,7 @@ import Productdetails from "./components/ecommerce/Productdetails.jsx";
 import MainEcommercePage from "./components/ecommerce/Index";
 import HomeB2B from "./components/ecommerce/B2B/Home";
 import HomeB2C from "./components/ecommerce/B2C/Home";
-import CartPage from "./components/ecommerce/CartPage";
+import CartPage from "./components/ecommerce/B2C/products/CartPage.jsx";
 import CmsApp from "./components/CMS/CmsApp";
 import AITool from "./components/AI/Tool/AITool";
 const NotFound = lazy(() => import("./components/NotFound"));
@@ -93,6 +93,8 @@ import XobiaChatbot from "./components/homepage/XobiaChatbot";
 import WaitingApproval from "./components/ecommerce/B2C/WaitingApproval";
 import ForgotPassword from "./components/CMS/pages/forgot-password";
 import ResetPassword from "./components/CMS/pages/reset-password";
+import CheckoutPage from "./components/ecommerce/B2C/products/CheckoutPage";
+import PaymentSuccess from "./components/ecommerce/B2C/products/PaymentSuccess";
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -146,7 +148,7 @@ function LayoutWrapper({ children }) {
     "/designs/Tool", "/dashboard", "/customer/dashboard", "/admin/login",
     "/user/login", "/other/login", "/aiPlanner", "/aiPlanner/interior",
     "/aiPlanner/landscape", "/estimate/calculator", "/estimate/calculator/interior",
-    "/accountant/login", "/ecommerce/seller", "/ecommerce/cart","/aiPlanner/enhance","/aiPlanner/sky","/aiPlanner/virtual" ,
+    "/accountant/login", "/ecommerce/seller","/aiPlanner/enhance","/aiPlanner/sky","/aiPlanner/virtual" ,
   ];
   const isDashboard = location.pathname.startsWith("/dashboard");
   const hideNavbar = hideNavbarPaths.includes(location.pathname) || isDashboard;
@@ -257,6 +259,12 @@ function App() {
               <Route path="/accountant/login" element={<AccountantLogin />} />
               <Route path="/consultation" element={<Consult />} />
               <Route path="/designs" element={<Designs />} />
+                            <Route path="/ecommerce/cart" element={<CartPage />} />
+                            <Route path="/ecommerce/checkout" element={<CheckoutPage />} />
+                            <Route path="/ecommerce/payment/success" element={<PaymentSuccess />} />
+
+              
+
               <Route
                 path="/designs/Tool"
                 element={
@@ -291,7 +299,7 @@ function App() {
               <Route path="/ecommerce/seller" element={<SellerPage />} />
               <Route path="/ecommerce/seller/b2b" element={<Sellerb2b />} />
               <Route path="/ecommerce/b2b" element={<HomeB2B />} />
-              <Route path="/ecommerce/cart" element={<CartPage />} />
+              
               <Route path="/ecommerce/filter" element={<ProductFilterPage />} />
               <Route path="/ecommerce/product/:id" element={<Productdetails />} />
               <Route path="/social" element={<Social />} />
