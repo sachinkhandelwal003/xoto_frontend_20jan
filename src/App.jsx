@@ -315,15 +315,15 @@ function App() {
               {/* <Route path="/freelancer/create-business" element={<CreateBusiness />} /> */}
               {/* <Route path="/freelancer/business" element={<Businesspage />} /> */}
               <Route path="/freelancer/registration" element={<Registration />} />
-              <Route path="/interior/living-room" element={<LivingRoom />} />
-              <Route path="/interior/bathroom" element={<Bathroom />} />
-              <Route path="/interior/bedroom" element={<Bedroom />} />
-              <Route path="/interior/modular-kitchen" element={<Kitchen />} />
-              <Route path="/interior/study-room" element={<Studyroom />} />
-              <Route path="/interior/wardrobe" element={<Wardrobe />} />
-              <Route path="/magazines" element={<Magazine />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/customer/dashboard" element={<Customerdashboard />} />
+              {/* <Route path="/interior/living-room" element={<LivingRoom />} /> */}
+              {/* <Route path="/interior/bathroom" element={<Bathroom />} /> */}
+              {/* <Route path="/interior/bedroom" element={<Bedroom />} /> */}
+              {/* <Route path="/interior/modular-kitchen" element={<Kitchen />} /> */}
+              {/* <Route path="/interior/study-room" element={<Studyroom />} /> */}
+              {/* <Route path="/interior/wardrobe" element={<Wardrobe />} /> */}
+              {/* <Route path="/magazines" element={<Magazine />} /> */}
+              {/* <Route path="/profile" element={<Profile />} /> */}
+              {/* <Route path="/customer/dashboard" element={<Customerdashboard />} /> */}
               <Route path="/check" element={<Checker />} />
               <Route path="/upcoming-soon" element={<Upcoming />} />
               <Route path="/finance-soon" element={<Finicial />} />
