@@ -1,22 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
-  FiEye,
-  FiShoppingCart,
-  FiHeart,
-  FiShare2,
-  FiStar,
+  FiEye, FiShoppingCart, FiHeart, FiShare2, FiStar, FiMinus, FiPlus, FiTrash2,
 } from "react-icons/fi";
 import { MdLocalOffer } from "react-icons/md";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
 import { useProducts } from "../../context/ProductContext";
 import { toast } from "react-toastify";
 
-/* ------------------ PRODUCT CARD ------------------ */
-const ProductCard = ({ product, onAddToCart, adding }) => {
+/* ─────────────────────────────────────────────────
+   PRODUCT CARD
+───────────────────────────────────────────────── */
+const ProductCard = ({ product, onAddToCart, cartItem, onIncrease, onDecrease, onRemove, updating }) => {
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
 
@@ -28,13 +26,13 @@ const ProductCard = ({ product, onAddToCart, adding }) => {
       ? Math.round((1 - product.discountedPrice / product.price) * 100)
       : 0;
 
-  // ✅ Name truncate — 2 lines max
-  const truncate = (str, n) =>
-    str?.length > n ? str.slice(0, n) + "..." : str;
+  const inCart = cartItem && cartItem.quantity > 0;
 
   return (
-    <div className="relative bg-white rounded-xl overflow-hidden border border-gray-100 
-                    hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+    <div className="relative bg-white rounded-xl overflow-hidden flex flex-col h-full
+                    transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5"
+      style={{ border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
+    >
 
       {/* TAGS */}
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
@@ -56,20 +54,18 @@ const ProductCard = ({ product, onAddToCart, adding }) => {
           onClick={() => setIsLiked(!isLiked)}
           className="bg-white p-1.5 rounded-full shadow hover:shadow-md transition"
         >
-          <FiHeart
-            size={16}
-            className={isLiked ? "text-red-500 fill-red-500" : "text-gray-500"}
-          />
+          <FiHeart size={16} className={isLiked ? "text-red-500 fill-red-500" : "text-gray-400"} />
         </button>
         <button className="bg-white p-1.5 rounded-full shadow hover:shadow-md transition">
-          <FiShare2 size={16} className="text-gray-500" />
+          <FiShare2 size={16} className="text-gray-400" />
         </button>
       </div>
 
-      {/* IMAGE — fixed height */}
+      {/* IMAGE */}
       <div
-        className="h-52 bg-gray-100 cursor-pointer overflow-hidden flex-shrink-0"
+        className="h-52 bg-gray-50 cursor-pointer overflow-hidden flex-shrink-0"
         onClick={() => navigate(`/ecommerce/product/${product._id}`)}
+        style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}
       >
         <img
           src={mainImage}
@@ -92,7 +88,7 @@ const ProductCard = ({ product, onAddToCart, adding }) => {
           </div>
         </div>
 
-        {/* Product Name — fixed 2 lines */}
+        {/* Product Name */}
         <h3 className="font-bold text-gray-800 text-sm leading-snug mb-1 line-clamp-2 min-h-[40px]">
           {product.name}
         </h3>
@@ -122,8 +118,10 @@ const ProductCard = ({ product, onAddToCart, adding }) => {
           )}
         </div>
 
-        {/* Buttons */}
+        {/* ── Buttons / Quantity Controls ── */}
         <div className="flex gap-2">
+
+          {/* View button — always visible */}
           <motion.button
             whileHover={{ scale: 1.04 }}
             onClick={() => navigate(`/ecommerce/product/${product._id}`)}
@@ -134,49 +132,135 @@ const ProductCard = ({ product, onAddToCart, adding }) => {
             <FiEye size={14} /> View
           </motion.button>
 
-          <motion.button
-            whileHover={{ scale: adding ? 1 : 1.04 }}
-            disabled={adding}
-            onClick={() => onAddToCart(product)}
-            className={`flex-1 px-3 py-2.5 rounded-lg flex items-center justify-center 
-                        gap-1.5 text-sm font-medium transition duration-200
-                        ${adding
-                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "bg-gray-900 hover:bg-black text-white"
-                        }`}
-          >
-            {adding ? (
-              <>
-                <div className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent 
-                                rounded-full animate-spin" />
-                Adding...
-              </>
-            ) : (
-              <>
-                <FiShoppingCart size={14} /> Add to Cart
-              </>
-            )}
-          </motion.button>
-        </div>
+          {/* ── Add to Cart OR Quantity Controls ── */}
+          <AnimatePresence mode="wait">
+            {inCart ? (
+              /* Quantity controls */
+              <motion.div
+                key="qty"
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 flex items-center justify-between bg-purple-50 
+                           border border-purple-200 rounded-lg px-2 py-1.5"
+              >
+                {/* Decrease / Remove */}
+                <button
+                  onClick={() => cartItem.quantity === 1 ? onRemove(cartItem) : onDecrease(cartItem)}
+                  disabled={updating}
+                  className="w-7 h-7 rounded-md bg-white border border-purple-200 
+                             flex items-center justify-center text-purple-600
+                             hover:bg-purple-100 transition disabled:opacity-50"
+                >
+                  {cartItem.quantity === 1
+                    ? <FiTrash2 size={12} className="text-red-400" />
+                    : <FiMinus size={12} />
+                  }
+                </button>
 
+                {/* Count */}
+                <span className="font-bold text-purple-700 text-sm min-w-[20px] text-center">
+                  {updating ? (
+                    <span className="inline-block w-3 h-3 border-2 border-purple-500 
+                                     border-t-transparent rounded-full animate-spin" />
+                  ) : cartItem.quantity}
+                </span>
+
+                {/* Increase */}
+                <button
+                  onClick={() => onIncrease(cartItem)}
+                  disabled={updating}
+                  className="w-7 h-7 rounded-md bg-purple-600 flex items-center 
+                             justify-center text-white hover:bg-purple-700 
+                             transition disabled:opacity-50"
+                >
+                  <FiPlus size={12} />
+                </button>
+              </motion.div>
+            ) : (
+              /* Add to Cart button */
+              <motion.button
+                key="add"
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={{ duration: 0.2 }}
+                whileHover={{ scale: updating ? 1 : 1.04 }}
+                disabled={updating}
+                onClick={() => onAddToCart(product)}
+                className={`flex-1 px-3 py-2.5 rounded-lg flex items-center justify-center 
+                            gap-1.5 text-sm font-medium transition duration-200
+                            ${updating
+                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                              : "bg-gray-900 hover:bg-black text-white"
+                            }`}
+              >
+                {updating ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent 
+                                     rounded-full animate-spin inline-block" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <FiShoppingCart size={14} /> Add to Cart
+                  </>
+                )}
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
 };
 
-/* ------------------ MAIN COMPONENT ------------------ */
+/* ─────────────────────────────────────────────────
+   MAIN COMPONENT
+───────────────────────────────────────────────── */
 const Products = () => {
   const { t } = useTranslation("ecommerce");
   const navigate = useNavigate();
   const { products, loading } = useProducts();
   const { user, token } = useSelector((state) => state.auth);
 
-  const [addingId, setAddingId] = useState(null);
+  const customerId = user?._id || user?.id;
 
-  /* -------- ADD TO CART -------- */
+  // { productId: { _id, quantity, price, ... } }
+  const [cartMap, setCartMap]       = useState({});
+  const [addingId, setAddingId]     = useState(null);
+  const [updatingId, setUpdatingId] = useState(null);
+
+  /* ── Total cart items count ── */
+  const totalCartItems = Object.values(cartMap).reduce(
+    (acc, item) => acc + (item.quantity || 0), 0
+  );
+
+  /* ── Fetch cart on mount ── */
+  useEffect(() => {
+    if (!customerId || !token) return;
+    fetchCart();
+  }, [customerId, token]);
+
+  const fetchCart = async () => {
+    try {
+      const res = await apiService.get(`/products/cart/get?customerId=${customerId}`);
+      const items = res?.data?.items || res?.items || [];
+      // Build map: productId → cartItem
+      const map = {};
+      items.forEach(item => {
+        const pid = item.productId?._id || item.productId;
+        if (pid) map[pid] = item;
+      });
+      setCartMap(map);
+    } catch (err) {
+      console.error("Cart fetch failed:", err);
+    }
+  };
+
+  /* ── Add to Cart ── */
   const handleAddToCart = async (product) => {
-
-    // ✅ Login check
     if (!token || !user) {
       toast.error("Please login to add items to cart");
       navigate("/user/login");
@@ -184,26 +268,30 @@ const Products = () => {
     }
 
     setAddingId(product._id);
-
     try {
       const payload = {
         productId: product._id,
-        customerId: user._id || user.id,
-        price: product.discountedPrice > 0
-          ? product.discountedPrice
-          : product.price,
+        customerId,
         quantity: 1,
       };
-
-      // Color attach karo agar hai
       if (product.ProductColors?.[0]?._id) {
         payload.productColorId = product.ProductColors[0]._id;
       }
 
-      await apiService.post("/products/cart/add", payload);
+      const res = await apiService.post("/products/cart/add", payload);
+      const cartItem = res?.data?.data || res?.data;
+
+      // Update cartMap instantly
+      setCartMap(prev => ({
+        ...prev,
+        [product._id]: {
+          ...cartItem,
+          productId: product,
+          quantity: cartItem?.quantity || 1,
+        }
+      }));
 
       toast.success("Added to cart! 🛒");
-
     } catch (err) {
       toast.error(err?.message || "Failed to add to cart");
     } finally {
@@ -211,12 +299,70 @@ const Products = () => {
     }
   };
 
+  /* ── Increase quantity ── */
+  const handleIncrease = async (cartItem) => {
+    const pid = cartItem.productId?._id || cartItem.productId;
+    setUpdatingId(pid);
+    try {
+      await apiService.put("/products/cart/update", {
+        cartItemId: cartItem._id,
+        quantity: cartItem.quantity + 1,
+      });
+      setCartMap(prev => ({
+        ...prev,
+        [pid]: { ...prev[pid], quantity: prev[pid].quantity + 1 }
+      }));
+    } catch (err) {
+      toast.error("Failed to update");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  /* ── Decrease quantity ── */
+  const handleDecrease = async (cartItem) => {
+    const pid = cartItem.productId?._id || cartItem.productId;
+    setUpdatingId(pid);
+    try {
+      await apiService.put("/products/cart/update", {
+        cartItemId: cartItem._id,
+        quantity: cartItem.quantity - 1,
+      });
+      setCartMap(prev => ({
+        ...prev,
+        [pid]: { ...prev[pid], quantity: prev[pid].quantity - 1 }
+      }));
+    } catch (err) {
+      toast.error("Failed to update");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  /* ── Remove from cart ── */
+  const handleRemove = async (cartItem) => {
+    const pid = cartItem.productId?._id || cartItem.productId;
+    setUpdatingId(pid);
+    try {
+      await apiService.delete(`/products/cart/remove?cartItemId=${cartItem._id}`);
+      setCartMap(prev => {
+        const next = { ...prev };
+        delete next[pid];
+        return next;
+      });
+      toast.success("Removed from cart");
+    } catch (err) {
+      toast.error("Failed to remove");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent 
-                          rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
           <p className="text-purple-600 font-semibold">Loading XOTO...</p>
         </div>
       </div>
@@ -237,9 +383,7 @@ const Products = () => {
         <div className="relative z-10">
           <h1 className="text-4xl font-bold">
             {t("experience.title.prefix")}{" "}
-            <span className="text-purple-400">
-              {t("experience.title.brand")}
-            </span>{" "}
+            <span className="text-purple-400">{t("experience.title.brand")}</span>{" "}
             {t("experience.title.suffix")}
           </h1>
           <motion.button
@@ -257,12 +401,33 @@ const Products = () => {
       <section className="py-16 max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-3xl font-bold uppercase">New Arrivals</h2>
+
+          {/* ── Cart button with badge ── */}
           <button
             onClick={() => navigate("/ecommerce/cart")}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 
+            className="relative flex items-center gap-2 bg-purple-600 hover:bg-purple-700 
                        text-white px-5 py-2.5 rounded-xl font-medium transition duration-200"
           >
-            <FiShoppingCart /> View Cart
+            <FiShoppingCart size={18} />
+            View Cart
+
+            {/* Badge */}
+            <AnimatePresence>
+              {totalCartItems > 0 && (
+                <motion.span
+                  key="badge"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white 
+                             text-xs font-bold rounded-full min-w-[20px] h-5 
+                             flex items-center justify-center px-1
+                             shadow-md"
+                >
+                  {totalCartItems > 99 ? "99+" : totalCartItems}
+                </motion.span>
+              )}
+            </AnimatePresence>
           </button>
         </div>
 
@@ -273,18 +438,26 @@ const Products = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.slice(0, 8).map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-                adding={addingId === product._id}
-                onAddToCart={handleAddToCart}
-              />
-            ))}
+            {products.slice(0, 8).map((product) => {
+              const pid = product._id;
+              const cartItem = cartMap[pid] || null;
+              return (
+                <ProductCard
+                  key={pid}
+                  product={product}
+                  cartItem={cartItem}
+                  adding={addingId === pid}
+                  updating={updatingId === pid}
+                  onAddToCart={handleAddToCart}
+                  onIncrease={handleIncrease}
+                  onDecrease={handleDecrease}
+                  onRemove={handleRemove}
+                />
+              );
+            })}
           </div>
         )}
       </section>
-
     </div>
   );
 };
