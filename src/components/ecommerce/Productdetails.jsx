@@ -673,7 +673,7 @@ const ProductDetail = () => {
                           {row.label}
                         </span>
                         <span className="text-sm font-medium text-gray-800 text-right max-w-[60%] truncate">
-                          {row.value}
+                          {row.value} 
                         </span>
                       </div>
                     ))}
