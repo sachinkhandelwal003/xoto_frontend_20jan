@@ -356,8 +356,6 @@ const Login = () => {
     }
   };
 
-  
-
   // ✅ MAIN LOGIN SUBMIT
   const onFinish = async (values) => {
     setLoading(true);
@@ -383,10 +381,7 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
-    
   };
-
-  
 
   const handleRegister = () => {
     if (selectedPartnerType === "freelancer") navigate("/freelancer/registration");
