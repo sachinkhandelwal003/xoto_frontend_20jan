@@ -11,7 +11,7 @@ const CustomTable = ({
   currentPage: propCurrentPage = 1,
   itemsPerPage: propItemsPerPage = 10,
   onPageChange,
-  onFilter, // Parent function to handle API calls on search (Server Side)
+  onFilter, 
   loading = false,
   showSearch = true,
 }) => {

@@ -10,6 +10,9 @@ import {
   PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined,
   ShoppingOutlined, CheckOutlined, CloseOutlined
 } from '@ant-design/icons';
+import CustomTable from '../../../CMS/pages/custom/CustomTable';
+import { apiService } from '../../../../manageApi/utils/custom.apiservice';
+import { showToast } from '../../../../manageApi/utils/toast';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -65,19 +68,26 @@ const ProductManagementContent = () => {
     } catch (err) { console.error(err); }
   };
 
-  const fetchProducts = async (page = 1, limit = 10, search = '') => {
-      const vendor_id = user._id || user.id;
+ const fetchProducts = async (page = 1, limit = 10, search = '') => {
+  const vendor_id = user._id || user.id;
 
-    setLoading(true);
-    try {
-      const response = await axios.get(`${BASE_URL}/api/products/get-all-products`, {
-        params: { page, limit,vendor_id, search: search || undefined }
-      });
-      setProducts(response.data?.data?.products || []);
-      setTotal(response.data?.data?.pagination?.total || 0);
-    } catch (err) { message.error("Failed to load products."); } 
-    finally { setLoading(false); }
-  };
+  setLoading(true);
+  try {
+    const response = await apiService.get('/products/get-all-products', {
+      page,
+      limit,
+      vendor_id,
+      search
+    });
+
+    setProducts(response?.data?.products || []);
+    setTotal(response?.data?.pagination?.total || 0);
+  } catch (err) {
+    showToast("error", "Failed to load products");
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchBrands();
@@ -162,12 +172,13 @@ const ProductManagementContent = () => {
         ? `${BASE_URL}/api/products/edit-product-by-id?id=${editingId}`
         : `${BASE_URL}/api/products/create-products`;
 
-      const response = await axios.post(url, payload);
-      if (response.data.success) {
-        notification.success({ message: 'Success', description: 'Product saved in AED.', placement: 'topRight' });
-        closeModal();
-        fetchProducts(currentPage, pageSize);
-      }
+     const response = await apiService.post(url, payload);
+
+if (response.success) {
+  showToast("success", editingId ? "Product updated" : "Product created");
+  closeModal();
+  fetchProducts(currentPage, pageSize);
+}
     } catch (err) {
       message.error(err.response?.data?.message || "Format Error: Check your fields");
     } finally { setSaving(false); }
@@ -282,19 +293,18 @@ const ProductManagementContent = () => {
             size="large"
           />
         </div>
-        <Table 
-          columns={columns} 
-          dataSource={products} 
-          loading={loading} 
-          rowKey="_id" 
-          scroll={{ x: 800 }}
-          pagination={{
-            current: currentPage,
-            pageSize: pageSize,
-            total: total,
-            onChange: (p) => setCurrentPage(p)
-          }}
-        />
+       <CustomTable
+  columns={columns}
+  data={products}
+  loading={loading}
+  rowKey="_id"
+  pagination={{
+    current: currentPage,
+    pageSize: pageSize,
+    total: total,
+    onChange: (p) => setCurrentPage(p)
+  }}
+/>
       </Card>
 
       <Modal 
