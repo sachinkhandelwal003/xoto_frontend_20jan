@@ -5,8 +5,8 @@ import axios from "axios";
 
 // Set base URL globally
 // const API_BASE = 'https://kotiboxglobaltech.online/api';
-// const API_BASE = 'http://localhost:5000/api';
-const API_BASE = 'https://xoto.ae/api';
+const API_BASE = 'http://localhost:5000/api';
+// const API_BASE = 'https://xoto.ae/api';
 
 
   
