@@ -37,6 +37,12 @@ const getImageId = (img) => {
   return null;
 };
 
+/* ---------- HELPER: match by label OR name (case-insensitive) ---------- */
+const matchItem = (item, keyword) => {
+  const label = (item?.label || item?.name || "").toLowerCase();
+  return label.includes(keyword.toLowerCase());
+};
+
 const TypesGallery = () => {
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -52,7 +58,7 @@ const TypesGallery = () => {
 
   const [uploadModal, setUploadModal] = useState({
     open: false,
-    type: "", // preview | moodboard
+    type: "",
     title: "",
     uploadedUrl: "",
     preview: "",
@@ -66,6 +72,41 @@ const TypesGallery = () => {
       .catch(() => message.error("Failed to load categories"));
   }, []);
 
+  /* ---------- AUTO-SELECT: Landscaping > Hardware > Paving ---------- */
+  useEffect(() => {
+    if (!categories.length) return;
+
+    const autoSelect = async () => {
+      // 1️⃣ Find "Landscaping" — checks both name & label
+      const cat = categories.find((c) => matchItem(c, "landscaping"));
+      if (!cat) return;
+      setSelectedCat(cat._id);
+
+      // 2️⃣ Load subcategories and find "Hardware"
+      const subRes = await apiService.get(`${API_PREFIX}/${cat._id}/subcategories`);
+      const subs = subRes.data || subRes.subcategories || [];
+      setSubcategories(subs);
+
+      const sub = subs.find((s) => matchItem(s, "hardscape"));
+      if (!sub) return;
+      setSelectedSub(sub._id);
+
+      // 3️⃣ Load types and find "Paving"
+      const typeRes = await apiService.get(
+        `${API_PREFIX}/${cat._id}/subcategories/${sub._id}/types`
+      );
+      const typeList = typeRes.data || typeRes.types || [];
+      setTypes(typeList);
+
+      const paving = typeList.find((t) => matchItem(t, "paving"));
+      if (!paving) return;
+      setSelectedType(paving._id);
+    };
+
+    autoSelect().catch((err) => console.error("Auto-select error:", err));
+  }, [categories]);
+
+  /* ---------- MANUAL CHANGE HANDLERS ---------- */
   const handleCatChange = async (val) => {
     setSelectedCat(val);
     setSelectedSub(null);
@@ -73,7 +114,7 @@ const TypesGallery = () => {
     setGallery(null);
 
     const res = await apiService.get(`${API_PREFIX}/${val}/subcategories`);
-    setSubcategories(res.data || []);
+    setSubcategories(res.data || res.subcategories || []);
   };
 
   const handleSubChange = async (val) => {
@@ -84,7 +125,7 @@ const TypesGallery = () => {
     const res = await apiService.get(
       `${API_PREFIX}/${selectedCat}/subcategories/${val}/types`
     );
-    setTypes(res.data || []);
+    setTypes(res.data || res.types || []);
   };
 
   /* ---------- FETCH GALLERY ---------- */
@@ -120,12 +161,7 @@ const TypesGallery = () => {
 
       if (!uploadedUrl) throw new Error("Upload URL missing");
 
-      setUploadModal((p) => ({
-        ...p,
-        uploadedUrl,
-        preview: uploadedUrl,
-      }));
-
+      setUploadModal((p) => ({ ...p, uploadedUrl, preview: uploadedUrl }));
       message.success("Image uploaded");
     } catch (err) {
       console.error(err);
@@ -133,16 +169,11 @@ const TypesGallery = () => {
     } finally {
       setActionLoading(false);
     }
-
     return false;
   };
 
   const removeImage = () => {
-    setUploadModal((p) => ({
-      ...p,
-      uploadedUrl: "",
-      preview: "",
-    }));
+    setUploadModal((p) => ({ ...p, uploadedUrl: "", preview: "" }));
   };
 
   /* ---------- SAVE DATA ---------- */
@@ -155,28 +186,18 @@ const TypesGallery = () => {
       if (type === "moodboard") {
         await apiService.post(
           `${API_PREFIX}/types/${selectedType}/gallery/moodboard`,
-          {
-            moodBoardImages: [{ title: title || "Untitled", url: uploadedUrl }],
-          }
+          { moodBoardImages: [{ title: title || "Untitled", url: uploadedUrl }] }
         );
       } else {
         await apiService.post(
           `${API_PREFIX}/types/${selectedType}/gallery/preview`,
-          {
-            previewFile: { title: title || "Preview", url: uploadedUrl },
-          }
+          { previewFile: { title: title || "Preview", url: uploadedUrl } }
         );
       }
 
       message.success("Saved successfully");
       fetchGallery();
-      setUploadModal({
-        open: false,
-        type: "",
-        title: "",
-        uploadedUrl: "",
-        preview: "",
-      });
+      setUploadModal({ open: false, type: "", title: "", uploadedUrl: "", preview: "" });
     } catch (err) {
       console.error(err);
       message.error("Save failed");
@@ -210,33 +231,58 @@ const TypesGallery = () => {
         {/* FILTERS */}
         <Card className="mb-6">
           <div className="grid md:grid-cols-3 gap-6">
-            <Select placeholder="Category" onChange={handleCatChange}>
+            <Select
+              placeholder="Category"
+              value={selectedCat}
+              onChange={handleCatChange}
+            >
               {categories.map((c) => (
-                <Select.Option key={c._id} value={c._id}>{c.name}</Select.Option>
+                <Select.Option key={c._id} value={c._id}>
+                  {c.name || c.label}
+                </Select.Option>
               ))}
             </Select>
 
-            <Select placeholder="Subcategory" disabled={!selectedCat} onChange={handleSubChange}>
+            <Select
+              placeholder="Subcategory"
+              disabled={!selectedCat}
+              value={selectedSub}
+              onChange={handleSubChange}
+            >
               {subcategories.map((s) => (
-                <Select.Option key={s._id} value={s._id}>{s.label}</Select.Option>
+                <Select.Option key={s._id} value={s._id}>
+                  {s.label || s.name}
+                </Select.Option>
               ))}
             </Select>
 
-            <Select placeholder="Master Type" disabled={!selectedSub} onChange={setSelectedType}>
+            <Select
+              placeholder="Master Type"
+              disabled={!selectedSub}
+              value={selectedType}
+              onChange={setSelectedType}
+            >
               {types.map((t) => (
-                <Select.Option key={t._id} value={t._id}>{t.label}</Select.Option>
+                <Select.Option key={t._id} value={t._id}>
+                  {t.label || t.name}
+                </Select.Option>
               ))}
             </Select>
           </div>
         </Card>
 
-        {loading ? <Spin /> : selectedType ? (
+        {loading ? (
+          <Spin />
+        ) : selectedType ? (
           <>
             <div className="flex justify-between mb-4">
               <Title level={4}>Moodboard</Title>
-              <Button icon={<PlusOutlined />} onClick={() =>
-                setUploadModal({ open: true, type: "moodboard", title: "", uploadedUrl: "", preview: "" })
-              }>
+              <Button
+                icon={<PlusOutlined />}
+                onClick={() =>
+                  setUploadModal({ open: true, type: "moodboard", title: "", uploadedUrl: "", preview: "" })
+                }
+              >
                 Add Image
               </Button>
             </div>
@@ -248,9 +294,14 @@ const TypesGallery = () => {
                   return (
                     <Card
                       key={imageId || index}
-                      cover={<img src={img.url} className="h-48 w-full object-cover" />}
+                      cover={
+                        <img src={img.url} className="h-48 w-full object-cover" />
+                      }
                       actions={[
-                        <Popconfirm title="Delete?" onConfirm={() => deleteImage(imageId, "moodboard")}>
+                        <Popconfirm
+                          title="Delete?"
+                          onConfirm={() => deleteImage(imageId, "moodboard")}
+                        >
                           <DeleteOutlined className="text-red-500" />
                         </Popconfirm>,
                       ]}
@@ -260,9 +311,13 @@ const TypesGallery = () => {
                   );
                 })}
               </div>
-            ) : <Empty />}
+            ) : (
+              <Empty />
+            )}
           </>
-        ) : <Empty description="Select a master type" />}
+        ) : (
+          <Empty description="Select a master type" />
+        )}
       </div>
 
       {/* UPLOAD MODAL */}
@@ -270,7 +325,9 @@ const TypesGallery = () => {
         open={uploadModal.open}
         title={uploadModal.type === "preview" ? "Upload Preview" : "Add Moodboard Image"}
         onOk={submitData}
-        onCancel={() => setUploadModal({ open: false, type: "", title: "", uploadedUrl: "", preview: "" })}
+        onCancel={() =>
+          setUploadModal({ open: false, type: "", title: "", uploadedUrl: "", preview: "" })
+        }
       >
         <Space direction="vertical" className="w-full">
           {!uploadModal.uploadedUrl ? (
@@ -288,13 +345,13 @@ const TypesGallery = () => {
           )}
 
           <Input
-  placeholder="Image title"
-  value={uploadModal.title}
-  className="text-center" // ✅ Ye line add kari hai center alignment ke liye
-  onChange={(e) =>
-    setUploadModal((p) => ({ ...p, title: e.target.value }))
-  }
-/>
+            placeholder="Image title"
+            value={uploadModal.title}
+            className="text-center"
+            onChange={(e) =>
+              setUploadModal((p) => ({ ...p, title: e.target.value }))
+            }
+          />
         </Space>
       </Modal>
 
