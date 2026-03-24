@@ -84,7 +84,7 @@ const PropertyManagement = () => {
       const resData = response;
       const list = Array.isArray(resData?.data) ? resData.data : (Array.isArray(resData) ? resData : []);
       setProperties(list);
-      setTotal(response?.pagination?.total || response?.total || list.length);
+      setTotal(response?.pagination?.totalItems || 0);
     } catch (err) {
       message.error("Failed to load properties");
     } finally {
