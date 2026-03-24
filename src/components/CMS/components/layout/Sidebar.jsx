@@ -30,10 +30,19 @@ const CUSTOM_ROLE_LINKS = {
         title: "Agents",
         path: "/dashboard/superadmin/agent-list"
       },
+      
       {
         title: "Agencies",
         path: "/dashboard/superadmin/agency-list"
       }
+    ]
+  },
+  {
+    title: "Customers",
+    icon: "fas fa-users",
+    path: "/dashboard/superadmin/customers",
+    submenus: [
+      { title: "All Customers", path: "/dashboard/superadmin/customers/list" },
     ]
   },
   {
@@ -176,6 +185,13 @@ const CUSTOM_ROLE_LINKS = {
   "4": [
 
   ],
+ "5": [
+  {
+    title: "Inventory",
+    icon: "fas fa-warehouse",
+    path: "/dashboard/vendor-b2c/inventory",
+  },
+],
   "7": [
     {
       title: "Quotations", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
@@ -395,9 +411,9 @@ const roleSlugMap = {
 };
 
 const ROLE_MODULE_ORDER = {
-  '0': ['Dashboard', "All Estimation", "Deals", 'Xoto Partners', 'Projects', 'Packages', 'Estimate master', 'Consultation Bookings', 'All Users', 'Products', 'Seller B2C', 'Request', 'Payout', 'Module','properties', 'Permission', 'Role', 'Inventory', 'Settings'],
+  '0': ['Dashboard', "All Estimation", "Deals", 'Xoto Partners', 'Projects', 'Customers', 'Packages', 'Estimate master', 'Consultation Bookings', 'All Users', 'Products', 'Seller B2C', 'Request', 'Payout', 'Module','properties', 'Permission', 'Role', 'Inventory', 'Settings'],
   '1': ['Dashboard', 'Grid Admin'],
-  '5': ['Dashboard', 'Products', 'My Products', 'Orders', 'Payout', 'Settings'],
+  '5': ['Dashboard', 'Products', 'My Products', 'Inventory', 'Orders', 'Payout', 'Settings'],
   '6': ['Dashboard', 'Products', 'Projects', 'Inventory', 'Payout'],
   '7': ['Dashboard', 'My Projects', 'All Projects', 'Add Projects', 'Payout'],
 '17': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
