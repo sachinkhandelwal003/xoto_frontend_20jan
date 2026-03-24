@@ -20,6 +20,12 @@ const THEME = {
 
 const API_PREFIX = '/estimate/master/category';
 
+/* ---------- HELPER: match by label OR name (case-insensitive) ---------- */
+const matchItem = (item, keyword) => {
+  const label = (item?.label || item?.name || "").toLowerCase();
+  return label.includes(keyword.toLowerCase());
+};
+
 const TypesGallery = () => {
   const [form] = Form.useForm();
   
@@ -37,8 +43,9 @@ const TypesGallery = () => {
   const [editingId, setEditingId] = useState(null); 
   const [questionType, setQuestionType] = useState("text");
   const [options, setOptions] = useState([]);
-const [isAreaQuestion, setIsAreaQuestion] = useState(false);
-  // Load Categories on mount
+  const [isAreaQuestion, setIsAreaQuestion] = useState(false);
+
+  /* ---------- FETCH CATEGORIES ---------- */
   useEffect(() => {
     const fetchCats = async () => {
       try {
@@ -49,11 +56,46 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
     fetchCats();
   }, []);
 
+  /* ---------- AUTO-SELECT: Landscaping > Hardscape > Paving ---------- */
+  useEffect(() => {
+    if (!categories.length) return;
+
+    const autoSelect = async () => {
+      // 1️⃣ Find "Landscaping"
+      const cat = categories.find((c) => matchItem(c, "landscaping"));
+      if (!cat) return;
+      setSelectedCat(cat._id);
+
+      // 2️⃣ Load subcategories and find "Hardscape"
+      const subRes = await apiService.get(`${API_PREFIX}/${cat._id}/subcategories`);
+      const subs = subRes.data || subRes.subcategories || [];
+      setSubcategories(subs);
+
+      const sub = subs.find((s) => matchItem(s, "hardscape"));
+      if (!sub) return;
+      setSelectedSub(sub._id);
+
+      // 3️⃣ Load types and find "Paving"
+      const typeRes = await apiService.get(
+        `${API_PREFIX}/${cat._id}/subcategories/${sub._id}/types`
+      );
+      const typeList = typeRes.data || typeRes.types || [];
+      setTypes(typeList);
+
+      const paving = typeList.find((t) => matchItem(t, "paving"));
+      if (!paving) return;
+      setSelectedType(paving._id);
+    };
+
+    autoSelect().catch((err) => console.error("Auto-select error:", err));
+  }, [categories]);
+
+  /* ---------- MANUAL CHANGE HANDLERS ---------- */
   const handleCatChange = async (val) => {
     setSelectedCat(val); setSelectedSub(null); setSelectedType(null); setGallery(null);
     try {
       const res = await apiService.get(`${API_PREFIX}/${val}/subcategories`);
-      setSubcategories(res.data || []);
+      setSubcategories(res.data || res.subcategories || []);
     } catch (err) { message.error("Failed to load subcategories"); }
   };
 
@@ -61,10 +103,11 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
     setSelectedSub(val); setSelectedType(null); setGallery(null);
     try {
       const res = await apiService.get(`${API_PREFIX}/${selectedCat}/subcategories/${val}/types`);
-      setTypes(res.data || []);
+      setTypes(res.data || res.types || []);
     } catch (err) { message.error("Failed to load types"); }
   };
 
+  /* ---------- FETCH GALLERY ---------- */
   const fetchGallery = useCallback(async (typeId) => {
     if (!typeId) return;
     setLoading(true);
@@ -77,6 +120,7 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
 
   useEffect(() => { if (selectedType) fetchGallery(selectedType); }, [selectedType, fetchGallery]);
 
+  /* ---------- OPEN MODAL ---------- */
   const handleOpenModal = async (questionId = null) => {
     if (questionId) {
       setActionLoading(true);
@@ -120,12 +164,13 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
     }
   };
 
+  /* ---------- SUBMIT ---------- */
   const onFinish = async (values) => {
     setActionLoading(true);
     const payload = {
       type: selectedType,
       question: values.question,
-      areaQuestion: questionType === "number" ? isAreaQuestion : false, // ✅ added
+      areaQuestion: questionType === "number" ? isAreaQuestion : false,
       questionType,
       isActive: values.isActive ?? true,
       includeInEstimate: values.includeInEstimate ?? true,
@@ -145,11 +190,9 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
 
     try {
       if (editingId) {
-        // --- EDIT API ---
         await apiService.post(`${API_PREFIX}/types/${selectedType}/question/moodboard/edit/${editingId}`, payload);
         message.success("Question updated successfully");
       } else {
-        // --- CREATE API ---
         await apiService.post(`${API_PREFIX}/types/${selectedType}/question/moodboard`, payload);
         message.success("Question created successfully");
       }
@@ -162,6 +205,7 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
     }
   };
 
+  /* ---------- DELETE ---------- */
   const deleteQuestion = async (questionId) => {
     try {
       await apiService.post(`${API_PREFIX}/types/${selectedType}/question/moodboard/delete`, { question_id: questionId });
@@ -170,10 +214,12 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
     } catch (err) { message.error('Failed to delete'); }
   };
 
+  /* ---------- UI ---------- */
   return (
     <div className="p-6 bg-[#f0f2f5] min-h-screen">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
+
+        {/* Header */}
         <div className="bg-white p-6 rounded-2xl shadow-sm mb-6 flex justify-between items-center border-b-4" style={{ borderBottomColor: THEME.primary }}>
           <Space size="large">
             <div className="bg-purple-600 p-3 rounded-xl shadow-lg shadow-purple-200">
@@ -192,26 +238,34 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
             <div className="space-y-2">
               <Text strong className="text-xs text-gray-400 uppercase">Category</Text>
               <Select size="large" className="w-full" placeholder="Choose Category" onChange={handleCatChange} value={selectedCat}>
-                {categories.map(c => <Select.Option key={c._id} value={c._id}>{c.name}</Select.Option>)}
+                {categories.map(c => (
+                  <Select.Option key={c._id} value={c._id}>{c.name || c.label}</Select.Option>
+                ))}
               </Select>
             </div>
             <div className="space-y-2">
               <Text strong className="text-xs text-gray-400 uppercase">Subcategory</Text>
               <Select size="large" className="w-full" placeholder="Choose Sub" disabled={!selectedCat} onChange={handleSubChange} value={selectedSub}>
-                {subcategories.map(s => <Select.Option key={s._id} value={s._id}>{s.label}</Select.Option>)}
+                {subcategories.map(s => (
+                  <Select.Option key={s._id} value={s._id}>{s.label || s.name}</Select.Option>
+                ))}
               </Select>
             </div>
             <div className="space-y-2">
               <Text strong className="text-xs text-gray-400 uppercase">Master Type</Text>
               <Select size="large" className="w-full" placeholder="Choose Type" disabled={!selectedSub} onChange={setSelectedType} value={selectedType}>
-                {types.map(t => <Select.Option key={t._id} value={t._id}>{t.label}</Select.Option>)}
+                {types.map(t => (
+                  <Select.Option key={t._id} value={t._id}>{t.label || t.name}</Select.Option>
+                ))}
               </Select>
             </div>
           </div>
         </Card>
 
         {loading ? (
-          <div className="text-center py-20 bg-white rounded-3xl"><Spin indicator={<LoadingOutlined style={{ fontSize: 48, color: THEME.primary }} spin />} /></div>
+          <div className="text-center py-20 bg-white rounded-3xl">
+            <Spin indicator={<LoadingOutlined style={{ fontSize: 48, color: THEME.primary }} spin />} />
+          </div>
         ) : selectedType ? (
           <div className="space-y-8">
             <section>
@@ -222,7 +276,6 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
                   </div>
                   <Title level={4} className="m-0">Estimate Questions</Title>
                 </div>
-
                 <Button
                   type="primary"
                   icon={<PlusOutlined />}
@@ -240,18 +293,17 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
                       <div className="flex justify-between items-start gap-4">
                         <Title level={5} className="m-0 flex-1">{obj.question}</Title>
                         <Space>
-                          <Button 
-                            type="text" 
-                            className="text-purple-600 hover:bg-purple-50" 
-                            icon={<EyeOutlined />} 
-                            onClick={() => handleOpenModal(obj._id)} 
+                          <Button
+                            type="text"
+                            className="text-purple-600 hover:bg-purple-50"
+                            icon={<EyeOutlined />}
+                            onClick={() => handleOpenModal(obj._id)}
                           />
                           <Popconfirm title="Delete question?" onConfirm={() => deleteQuestion(obj._id)}>
                             <Button danger type="text" icon={<DeleteOutlined />} />
                           </Popconfirm>
                         </Space>
                       </div>
-
                       {obj.questionType === "options" && obj.options?.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-2">
                           {obj.options.map((opt, index) => (
@@ -269,6 +321,7 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
               )}
             </section>
 
+            {/* Modal */}
             <Modal
               title={
                 <div className="flex items-center gap-3">
@@ -283,10 +336,10 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
               centered
               destroyOnClose
             >
-              <Form 
-                form={form} 
-                layout="vertical" 
-                onFinish={onFinish} 
+              <Form
+                form={form}
+                layout="vertical"
+                onFinish={onFinish}
                 initialValues={{ isActive: true, includeInEstimate: true, valueType: "number", valueSubType: "persqft" }}
               >
                 <Form.Item label="Question" name="question" rules={[{ required: true, message: 'Please enter the question' }]}>
@@ -315,7 +368,8 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
                   {questionType !== "text" && (
                     <Form.Item label="Default Value Sub Type" name="valueSubType">
                       <Select>
-<Select.Option value="persqft">Per Sq. Ft</Select.Option>                        <Select.Option value="flat">Flat</Select.Option>
+                        <Select.Option value="persqft">Per Sq. Ft</Select.Option>
+                        <Select.Option value="flat">Flat</Select.Option>
                       </Select>
                     </Form.Item>
                   )}
@@ -328,15 +382,15 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
                       {options.map((opt, index) => (
                         <div key={index} className="grid grid-cols-12 gap-2 items-center">
                           <div className="col-span-6">
-                            <Input 
-                              placeholder="Option Title" 
-                              value={opt.title} 
+                            <Input
+                              placeholder="Option Title"
+                              value={opt.title}
                               disabled={questionType === "yesorno"}
                               onChange={e => {
                                 const newOpts = [...options];
                                 newOpts[index].title = e.target.value;
                                 setOptions(newOpts);
-                              }} 
+                              }}
                             />
                           </div>
                           <div className="col-span-3">
@@ -350,15 +404,15 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
                             </Select>
                           </div>
                           <div className="col-span-3">
-                            <InputNumber 
-                              style={{ width: "100%" }} 
+                            <InputNumber
+                              style={{ width: "100%" }}
                               placeholder="Price"
-                              value={opt.value} 
+                              value={opt.value}
                               onChange={v => {
                                 const newOpts = [...options];
                                 newOpts[index].value = v;
                                 setOptions(newOpts);
-                              }} 
+                              }}
                             />
                           </div>
                         </div>
@@ -371,28 +425,26 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
                     </div>
                   </div>
                 )}
-{questionType === "number" && (
-  <Form.Item label="Is Area Based Question ?">
-    <Select
-      value={isAreaQuestion}
-      onChange={(val) => setIsAreaQuestion(val)}
-    >
-      <Select.Option value={true}>Yes (Area Based)</Select.Option>
-      <Select.Option value={false}>No (Normal Number)</Select.Option>
-    </Select>
-  </Form.Item>
-)}
+
+                {questionType === "number" && (
+                  <Form.Item label="Is Area Based Question ?">
+                    <Select value={isAreaQuestion} onChange={(val) => setIsAreaQuestion(val)}>
+                      <Select.Option value={true}>Yes (Area Based)</Select.Option>
+                      <Select.Option value={false}>No (Normal Number)</Select.Option>
+                    </Select>
+                  </Form.Item>
+                )}
+
                 <Divider className="my-4" />
 
                 <div className="flex justify-end gap-3">
                   <Button size="large" onClick={() => setQuestionModalOpen(false)} className="rounded-lg">
                     Cancel
                   </Button>
-                  
                   {editingId ? (
-                    <Button 
-                      type="primary" 
-                      htmlType="submit" 
+                    <Button
+                      type="primary"
+                      htmlType="submit"
                       size="large"
                       loading={actionLoading}
                       style={{ background: THEME.success, border: "none", borderRadius: 8, padding: '0 30px' }}
@@ -400,9 +452,9 @@ const [isAreaQuestion, setIsAreaQuestion] = useState(false);
                       Update Question
                     </Button>
                   ) : (
-                    <Button 
-                      type="primary" 
-                      htmlType="submit" 
+                    <Button
+                      type="primary"
+                      htmlType="submit"
                       size="large"
                       loading={actionLoading}
                       style={{ background: THEME.primary, border: "none", borderRadius: 8, padding: '0 30px' }}
