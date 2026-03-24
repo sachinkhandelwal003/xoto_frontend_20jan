@@ -110,29 +110,37 @@ const Property = () => {
         setFetchLoading(true);
 
         // Correct endpoint (no extra /api/)
-        const res = await apiService.get("/property/marketplace");
+const res = await apiService.get("/property/get-all-properties", {
+  page: 1,
+  limit: 10,
+  isFeatured: false
+});
 
-        console.log("Marketplace API Response:", res);
+if (res && Array.isArray(res.data)) {
 
-        if (res.success && res.data && Array.isArray(res.data.properties)) {
-          const transformed = res.data.properties.map((item) => ({
-            id: item._id,
-            price: item.price
-              ? `${item.currency || "AED"} ${Number(item.price).toLocaleString()}`
-              : "Price on Request",
-            period: item.propertyType === "rent" ? "/month" : "",
-            name: item.propertyName || "Luxury Property",
-            location: item.area && item.city ? `${item.area}, ${item.city}` : "Dubai, UAE",
-            beds: item.bedrooms || 0,
-            bathrooms: item.bathrooms || 0,
-            area: item.builtUpArea
-              ? `${item.builtUpArea} ${item.builtUpAreaUnit || "sqft"}`
-              : "N/A",
-            imgUrl: item.photos?.[0] || item.mainLogo || "https://via.placeholder.com/400x300?text=No+Image",
-          }));
+  const list = res.data;
 
-          setProperties(transformed);
-        } else {
+  const limited = list.slice(0, 3); // ✅ only 3
+
+  const transformedProperties = limited.map((item) => ({
+    id: item._id,
+    imgUrl: item.photos?.[0] || item.mainLogo || "https://via.placeholder.com/400x300?text=No+Image",
+    title: item.propertyName || "Unnamed Property",
+    price: item.price
+      ? `${item.currency || "AED"} ${Number(item.price).toLocaleString()}`
+      : "Price on Request",
+    location: item.area && item.city ? `${item.area}, ${item.city}` : "Dubai, UAE",
+    bedrooms: item.bedrooms || 0,
+    bathrooms: item.bathrooms || 0,
+    area: item.builtUpArea
+      ? `${item.builtUpArea} ${item.builtUpAreaUnit || "sqft"}`
+      : "N/A",
+    tag: item.propertyType === "rent" ? "Rent" : "Sell",
+    liked: false,
+  }));
+
+  setProperties(transformedProperties);
+}else {
           throw new Error("Invalid API response format");
         }
       } catch (err) {

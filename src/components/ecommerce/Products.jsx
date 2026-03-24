@@ -28,6 +28,38 @@ const ProductCard = ({ product, onAddToCart, cartItem, onIncrease, onDecrease, o
 
   const inCart = cartItem && cartItem.quantity > 0;
 
+
+const handleShare = async () => {
+  const productUrl = `${window.location.origin}/ecommerce/product/${product._id}`;
+  const shareData = {
+    title: product.name,
+    text: `Check out ${product.name} on Xoto — AED ${
+      product.discountedPrice > 0
+        ? Number(product.discountedPrice).toFixed(2)
+        : Number(product.price).toFixed(2)
+    }`,
+    url: productUrl,
+  };
+
+  try {
+    // ✅ Mobile pe native share sheet open hoga
+    if (navigator.share) {
+      await navigator.share(shareData);
+    } else {
+      // ✅ Desktop pe clipboard copy
+      await navigator.clipboard.writeText(
+        `${shareData.text}\n${shareData.url}`
+      );
+      toast.success("Link copied to clipboard! 📋");
+    }
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      // User ne share cancel kiya — ignore karo
+      toast.error("Failed to share");
+    }
+  }
+};
+
   return (
     <div className="relative bg-white rounded-xl overflow-hidden flex flex-col h-full
                     transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5"
@@ -50,16 +82,21 @@ const ProductCard = ({ product, onAddToCart, cartItem, onIncrease, onDecrease, o
 
       {/* ACTIONS */}
       <div className="absolute top-3 right-3 z-10 flex flex-col gap-2">
-        <button
-          onClick={() => setIsLiked(!isLiked)}
-          className="bg-white p-1.5 rounded-full shadow hover:shadow-md transition"
-        >
-          <FiHeart size={16} className={isLiked ? "text-red-500 fill-red-500" : "text-gray-400"} />
-        </button>
-        <button className="bg-white p-1.5 rounded-full shadow hover:shadow-md transition">
-          <FiShare2 size={16} className="text-gray-400" />
-        </button>
-      </div>
+  <button
+    onClick={() => setIsLiked(!isLiked)}
+    className="bg-white p-1.5 rounded-full shadow hover:shadow-md transition"
+  >
+    <FiHeart size={16} className={isLiked ? "text-red-500 fill-red-500" : "text-gray-400"} />
+  </button>
+
+  {/* ✅ Share button — working */}
+  <button
+    onClick={handleShare}
+    className="bg-white p-1.5 rounded-full shadow hover:shadow-md transition"
+  >
+    <FiShare2 size={16} className="text-gray-400 hover:text-purple-500 transition" />
+  </button>
+</div>
 
       {/* IMAGE */}
       <div

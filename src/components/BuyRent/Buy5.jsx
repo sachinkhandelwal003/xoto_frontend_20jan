@@ -119,27 +119,37 @@ const OurProperty = () => {
     const fetchProperties = async () => {
       try {
         setFetchLoading(true);
-        const res = await apiService.get("/property/marketplace");
+const res = await apiService.get("/property/get-all-properties", {
+  page: 1,
+  limit: 10,
+  isFeatured: false
+});
 
-        if (res.success && res.data && Array.isArray(res.data.properties)) {
-          const transformedProperties = res.data.properties.map((item) => ({
-            id: item._id,
-            image: item.photos?.[0] || item.mainLogo || "https://via.placeholder.com/400x300?text=No+Image",
-            title: item.propertyName || "Unnamed Property",
-            price: item.price
-              ? `${item.currency || "AED"} ${Number(item.price).toLocaleString()}`
-              : "Price on Request",
-            location: item.area && item.city ? `${item.area}, ${item.city}` : "Dubai, UAE",
-            bedrooms: item.bedrooms || 0,
-            bathrooms: item.bathrooms || 0,
-            area: item.builtUpArea
-              ? `${item.builtUpArea} ${item.builtUpAreaUnit || "sqft"}`
-              : "N/A",
-            tag: item.propertyType === "rent" ? "Rent" : "Sell",
-            liked: false,
-          }));
-          setProperties(transformedProperties.slice(0, 9));
-        }
+if (res && Array.isArray(res.data)) {
+
+  const list = res.data;
+
+  const limited = list.slice(0, 3); // ✅ only 3
+
+  const transformedProperties = limited.map((item) => ({
+    id: item._id,
+    image: item.photos?.[0] || item.mainLogo || "https://via.placeholder.com/400x300?text=No+Image",
+    title: item.propertyName || "Unnamed Property",
+    price: item.price
+      ? `${item.currency || "AED"} ${Number(item.price).toLocaleString()}`
+      : "Price on Request",
+    location: item.area && item.city ? `${item.area}, ${item.city}` : "Dubai, UAE",
+    bedrooms: item.bedrooms || 0,
+    bathrooms: item.bathrooms || 0,
+    area: item.builtUpArea
+      ? `${item.builtUpArea} ${item.builtUpAreaUnit || "sqft"}`
+      : "N/A",
+    tag: item.propertyType === "rent" ? "Rent" : "Sell",
+    liked: false,
+  }));
+
+  setProperties(transformedProperties);
+}
       } catch (err) {
         console.error("❌ Error fetching marketplace properties:", err);
         openNotification("error", "Failed to Load Properties", "Please try again later.");
