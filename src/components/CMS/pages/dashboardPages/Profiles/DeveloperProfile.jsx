@@ -1,45 +1,152 @@
 import React, { useEffect, useState } from "react";
 import { 
   Card, Avatar, Badge, Descriptions, Tag, Space, Row, Col, 
-  Statistic, Divider, Typography, Button, Modal, Form, Input, message, Upload, Tooltip 
+  Divider, Typography, Button, Modal, Form, Input, 
+  message, Upload, Tooltip, Tabs, Alert, Skeleton, 
+  Steps, List
 } from "antd"; 
 import {
   UserOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined,
-  SafetyCertificateOutlined, GlobalOutlined, FileProtectOutlined,
-  InfoCircleOutlined, CheckCircleOutlined, FileDoneOutlined,
-  TrophyOutlined, AreaChartOutlined, EditOutlined, CameraOutlined, LoadingOutlined
+  GlobalOutlined, FileProtectOutlined, InfoCircleOutlined, 
+  CheckCircleOutlined, EditOutlined, CameraOutlined, 
+  LoadingOutlined, UploadOutlined, SafetyCertificateOutlined,
+  BankOutlined, VerifiedOutlined, ClockCircleOutlined, 
+  CloseCircleOutlined, EyeOutlined, DownloadOutlined, InboxOutlined,
+  FilePdfOutlined, DeleteOutlined, IdcardOutlined,
+  CheckCircleFilled, WarningOutlined, SyncOutlined
 } from "@ant-design/icons";
 import { apiService } from "../../../../../manageApi/utils/custom.apiservice";
 
-const { Text } = Typography; 
+const { Text, Title, Paragraph } = Typography;
+const { Step } = Steps;
 
 const DeveloperProfile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
+  // Profile Edit States
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [form] = Form.useForm();
   const [imageUploading, setImageUploading] = useState(false);
 
+  // KYC States
+  const [kycStatusData, setKycStatusData] = useState(null);
+  const [kycLoading, setKycLoading] = useState(false);
+  const [submittingKyc, setSubmittingKyc] = useState(false);
+  const [kycFiles, setKycFiles] = useState({
+    passport: null,
+    emirates_id: null,
+    trade_license: null
+  });
+  const [existingKycDocs, setExistingKycDocs] = useState([]);
+
+  // Agreement States
+  const [agreementData, setAgreementData] = useState(null);
+  const [uploadingAgreement, setUploadingAgreement] = useState(false);
+  const [stagedAgreements, setStagedAgreements] = useState([]); 
+
+  // Status Helper Functions
+  const isKycVerified = () => {
+    return kycStatusData?.kycStatus === 'approved' || profile?.kycStatus === 'approved';
+  };
+  
+  const isKycUnderReview = () => {
+    return kycStatusData?.kycStatus === 'pending' || profile?.kycStatus === 'pending' || 
+           kycStatusData?.onboardingStatus === 'kyc_submitted' || profile?.onboardingStatus === 'kyc_submitted';
+  };
+  
+  const isKycRejected = () => {
+    return kycStatusData?.kycStatus === 'rejected' || profile?.kycStatus === 'rejected';
+  };
+
+  const hasKycDocuments = () => {
+    return existingKycDocs.length > 0 || (profile?.kycDocuments && profile.kycDocuments.length > 0);
+  };
+  
+  const isAgreementSigned = () => {
+    return agreementData?.agreementSigned === true || profile?.agreementSigned === true;
+  };
+  
+  const isAgreementUnderReview = () => {
+    return agreementData?.agreementUnderReview === true || 
+           (profile?.agreementDocuments && profile.agreementDocuments.length > 0 && !profile?.agreementSigned);
+  };
+
+  const hasAgreementDocuments = () => {
+    return (agreementData?.agreementDocuments && agreementData.agreementDocuments.length > 0) || 
+           (profile?.agreementDocuments && profile.agreementDocuments.length > 0);
+  };
+
+  // Fetch Profile
   const getProfile = async () => {
-    setLoading(true);
     try {
       const response = await apiService.get("profile/get-profile-data");
       const data = response?.data?.data || response?.data;
       setProfile(data);
+      
+      if (data?.kycDocuments?.length > 0) {
+        setExistingKycDocs(data.kycDocuments);
+        const existingDocsMap = {};
+        data.kycDocuments.forEach(doc => {
+          existingDocsMap[doc.type] = {
+            type: doc.type,
+            name: doc.name,
+            url: doc.url,
+            _id: doc._id,
+            uploadedAt: doc.uploadedAt
+          };
+        });
+        setKycFiles(prev => ({ ...prev, ...existingDocsMap }));
+      }
     } catch (error) {
       console.error(error);
       message.error("Failed to fetch profile data");
-    } finally {
-      setLoading(false);
     }
   };
 
+  // Fetch KYC Status
+  const getKycStatus = async () => {
+    try {
+      const response = await apiService.get("developer/kyc/status");
+      if (response?.data?.success) {
+        setKycStatusData(response.data.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch KYC status", error);
+    }
+  };
+
+  // Fetch Agreement Data
+  const getAgreement = async () => {
+    try {
+      const response = await apiService.get("developer/agreement");
+      const data = response?.data?.data || response?.data;
+      setAgreementData(data);
+    } catch (error) {
+      console.error("Failed to fetch agreement", error);
+    }
+  };
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    await Promise.all([getProfile(), getKycStatus(), getAgreement()]);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    getProfile();
+    fetchAllData();
   }, []);
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([getProfile(), getKycStatus(), getAgreement()]);
+    setIsRefreshing(false);
+    message.success("Data refreshed successfully!");
+  };
+
+  // Profile Picture Upload
   const beforeImageUpload = (file) => {
     const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
     if (!isJpgOrPng) message.error('You can only upload JPG/PNG file!');
@@ -48,18 +155,19 @@ const DeveloperProfile = () => {
     return isJpgOrPng && isLt2M;
   };
 
-  const handleImageUploadRequest = async ({ file }) => {
+  const handleImageUploadRequest = async ({ file, onSuccess, onError }) => {
     const formData = new FormData();
     formData.append('profilePicture', file); 
-
     setImageUploading(true);
     try {
       await apiService.post("profile/update-profile-picture", formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       message.success("Profile picture updated successfully!");
+      onSuccess("ok");
       getProfile(); 
     } catch (error) {
+      onError(error);
       message.error("Failed to upload profile picture.");
     } finally {
       setImageUploading(false);
@@ -67,7 +175,18 @@ const DeveloperProfile = () => {
   };
 
   const showEditModal = () => {
-    form.setFieldsValue(profile); 
+    form.setFieldsValue({
+      name: profile?.name,
+      email: profile?.email,
+      country_code: profile?.country_code,
+      phone_number: profile?.phone_number,
+      websiteUrl: profile?.websiteUrl,
+      reraNumber: profile?.reraNumber,
+      address: profile?.address,
+      city: profile?.city,
+      country: profile?.country,
+      description: profile?.description,
+    });
     setIsModalVisible(true);
   };
 
@@ -79,190 +198,932 @@ const DeveloperProfile = () => {
       setIsModalVisible(false);
       getProfile(); 
     } catch (error) {
-      message.error("Failed to update profile");
+      message.error(error?.response?.data?.message || "Failed to update profile");
     } finally {
       setUpdating(false);
     }
   };
 
-  return (
-    <div className="flex justify-center p-4">
-      <Card
-        loading={loading}
-        className="w-full max-w-4xl rounded-xl overflow-hidden shadow-lg border-0"
-        cover={<div className="h-32 bg-gradient-to-br from-indigo-800 to-black" />}
-      >
-        {/* Header Section */}
-        <div className="relative -mt-16 mb-5 px-6">
-          <div className="flex justify-between items-end">
-            <Badge
-              dot
-              status={profile?.isVerifiedByAdmin ? "success" : "warning"}
-              offset={[-10, 80]}
+  // 🟢 KYC UPLOAD LOGIC (UPDATED WITH EXTENSION & CUSTOM NAME)
+  const handleKycFileChange = async (type, options) => {
+    const { file, onSuccess, onError } = options;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await apiService.post("https://xoto.ae/api/upload", formData);
+      const resData = response?.data ?? response;
+      const fileUrl = resData?.file?.url;
+
+      if (!fileUrl) {
+        throw new Error("No URL returned from upload");
+      }
+
+      // File extension and default name nikaal rahe hain rename UI ke liye
+      const extension = file.name.substring(file.name.lastIndexOf('.'));
+      const defaultName = file.name.substring(0, file.name.lastIndexOf('.'));
+
+      setKycFiles(prev => ({
+        ...prev,
+        [type]: { 
+          type, 
+          name: file.name, 
+          customName: defaultName, 
+          extension: extension, 
+          url: fileUrl 
+        }
+      }));
+
+      onSuccess("ok");
+      message.success(`${file.name} attached! You can rename it below.`);
+
+    } catch (err) {
+      console.error(err);
+      onError(err);
+      message.error(`Failed to attach ${file.name}`);
+    }
+  };
+
+  const handleRemoveKycDoc = async (type) => {
+    if (!isKycRejected()) {
+      message.warning("Cannot remove documents after submission");
+      return;
+    }
+    
+    try {
+      await apiService.delete(`developer/kyc/document/${type}`);
+      setKycFiles(prev => ({ ...prev, [type]: null }));
+      setExistingKycDocs(prev => prev.filter(doc => doc.type !== type));
+      message.success("Document removed successfully");
+    } catch (error) {
+      message.error("Failed to remove document");
+    }
+  };
+
+  const submitKyc = async () => {
+    if (isKycVerified()) {
+      message.warning("KYC is already verified");
+      return;
+    }
+    if (isKycUnderReview()) {
+      message.warning("KYC is already under review");
+      return;
+    }
+    if (!kycFiles.passport?.url || !kycFiles.emirates_id?.url || !kycFiles.trade_license?.url) {
+      message.warning("Please attach all required KYC documents (Passport, Emirates ID, Trade License).");
+      return;
+    }
+
+    setSubmittingKyc(true);
+    try {
+      // 🟢 CUSTOM NAME aur EXTENSION ko jodd kar final name bana rahe hain
+      const payload = {
+        kycDocuments: [
+          { 
+            type: "passport", 
+            name: `${kycFiles.passport.customName.trim()}${kycFiles.passport.extension}`, 
+            url: kycFiles.passport.url 
+          },
+          { 
+            type: "emirates_id", 
+            name: `${kycFiles.emirates_id.customName.trim()}${kycFiles.emirates_id.extension}`, 
+            url: kycFiles.emirates_id.url 
+          },
+          { 
+            type: "trade_license", 
+            name: `${kycFiles.trade_license.customName.trim()}${kycFiles.trade_license.extension}`, 
+            url: kycFiles.trade_license.url 
+          }
+        ]
+      };
+
+      await apiService.post("developer/kyc/submit", payload);
+      message.success("KYC Documents submitted successfully!");
+      
+      setKycStatusData(prev => ({
+        ...prev,
+        kycStatus: 'pending',
+        onboardingStatus: 'kyc_submitted'
+      }));
+
+      getProfile();
+      getKycStatus();
+    } catch (error) {
+      message.error(error?.response?.data?.message || "Failed to submit KYC");
+    } finally {
+      setSubmittingKyc(false);
+    }
+  };
+
+  // Agreement Upload
+  const submitStagedAgreements = async () => {
+    if (stagedAgreements.length === 0) return;
+    
+    setUploadingAgreement(true);
+
+    try {
+      const uploadedDocs = [];
+
+      for (let i = 0; i < stagedAgreements.length; i++) {
+        const item = stagedAgreements[i];
+        const formData = new FormData();
+        formData.append("file", item.file);
+
+        const response = await apiService.post("https://xoto.ae/api/upload", formData);
+        const resData = response?.data ?? response;
+        const fileUrl = resData?.file?.url;
+
+        if (!fileUrl) {
+          throw new Error(`Failed to upload ${item.customName}`);
+        }
+
+        uploadedDocs.push({
+          type: i === 0 ? "main_agreement" : "addendum", 
+          name: `${item.customName.trim()}.pdf`,
+          url: fileUrl,
+        });
+      }
+
+      const payload = {
+        agreementDocuments: uploadedDocs,
+      };
+
+      await apiService.post("developer/agreement/upload", payload);
+
+      message.success("Agreement(s) submitted successfully!");
+      setStagedAgreements([]); 
+      
+      getAgreement();
+      getProfile();
+
+    } catch (error) {
+      console.error(error);
+      message.error(error.message || "Agreement upload failed");
+    } finally {
+      setUploadingAgreement(false);
+    }
+  };
+
+  const getKycStatusConfig = () => {
+    if (isKycVerified()) {
+      return {
+        status: 'verified',
+        color: '#52c41a',
+        bgColor: '#f6ffed',
+        borderColor: '#b7eb8f',
+        icon: <CheckCircleFilled style={{ fontSize: 40 }} />,
+        title: 'KYC Verified',
+        description: 'Your identity has been successfully verified. You now have full access to all platform features.',
+        showDocuments: true,
+        step: 2
+      };
+    }
+    
+    if (isKycUnderReview() || (hasKycDocuments() && !isKycRejected())) {
+      return {
+        status: 'review',
+        color: '#faad14',
+        bgColor: '#fff7e6',
+        borderColor: '#ffd666',
+        icon: <ClockCircleOutlined style={{ fontSize: 40 }} />,
+        title: 'KYC Under Review',
+        description: 'Your KYC documents have been submitted and are currently under review by our verification team.',
+        showDocuments: true,
+        step: 1
+      };
+    }
+    
+    if (isKycRejected()) {
+      return {
+        status: 'rejected',
+        color: '#ff4d4f',
+        bgColor: '#fff2f0',
+        borderColor: '#ffccc7',
+        icon: <CloseCircleOutlined style={{ fontSize: 40 }} />,
+        title: 'KYC Rejected',
+        description: kycStatusData?.kycRejectionReason || profile?.kycRejectionReason || 'Your KYC submission was rejected. Please review and resubmit.',
+        showDocuments: true,
+        showResubmit: true,
+        step: 1
+      };
+    }
+    
+    return {
+      status: 'not_started',
+      color: '#ff4d4f',
+      bgColor: '#fff2f0',
+      borderColor: '#ffccc7',
+      icon: <WarningOutlined style={{ fontSize: 40 }} />,
+      title: 'Action Required',
+      description: 'Complete your KYC verification to unlock all features.',
+      showDocuments: false,
+      showForm: true,
+      step: 0
+    };
+  };
+
+  const getAgreementStatusConfig = () => {
+    if (isAgreementSigned()) {
+      return {
+        status: 'signed',
+        color: '#52c41a',
+        bgColor: '#f6ffed',
+        borderColor: '#b7eb8f',
+        icon: <CheckCircleFilled style={{ fontSize: 40 }} />,
+        title: 'Agreement Signed & Active',
+        description: 'Your developer agreement has been verified and is active.',
+        showDocuments: true,
+        showForm: false,
+        step: 2 
+      };
+    }
+    
+    if (isAgreementUnderReview() || hasAgreementDocuments()) {
+      return {
+        status: 'review',
+        color: '#faad14',
+        bgColor: '#fff7e6',
+        borderColor: '#ffd666',
+        icon: <ClockCircleOutlined style={{ fontSize: 40 }} />,
+        title: 'Agreement Under Review',
+        description: 'Your signed agreement has been uploaded and is being reviewed by our team.',
+        showDocuments: true,
+        showForm: false,
+        step: 1 
+      };
+    }
+    
+    return {
+      status: 'pending',
+      color: '#ff4d4f',
+      bgColor: '#fff2f0',
+      borderColor: '#ffccc7',
+      icon: <WarningOutlined style={{ fontSize: 40 }} />,
+      title: 'Action Required',
+      description: 'Please sign the developer agreement to start listing properties.',
+      showDocuments: false,
+      showForm: true,
+      step: 0 
+    };
+  };
+
+  const kycConfig = getKycStatusConfig();
+  const agreementConfig = getAgreementStatusConfig();
+
+  const renderKycDocumentsList = () => {
+    const documents = existingKycDocs.length > 0 ? existingKycDocs : Object.values(kycFiles).filter(doc => doc?.url);
+    if (documents.length === 0) return null;
+    
+    const showRemoveButton = isKycRejected();
+
+    return (
+      <div className="mt-6 text-left">
+        <Text strong className="block mb-3">Uploaded Documents:</Text>
+        <List
+          dataSource={documents}
+          renderItem={(doc) => (
+            <List.Item
+              className="hover:bg-gray-50 rounded-lg transition-colors border px-4 mb-2 bg-white shadow-sm"
+              actions={[
+                <Button 
+                  type="link" 
+                  icon={<EyeOutlined />} 
+                  onClick={() => window.open(doc.url, '_blank')}
+                  className="text-purple-600"
+                >
+                  View
+                </Button>,
+                <Button 
+                  type="link" 
+                  icon={<DownloadOutlined />} 
+                  onClick={() => window.open(doc.url, '_blank')}
+                  className="text-purple-600"
+                >
+                  Download
+                </Button>,
+                ...(showRemoveButton ? [
+                  <Button 
+                    type="link" 
+                    danger 
+                    icon={<DeleteOutlined />} 
+                    onClick={() => handleRemoveKycDoc(doc.type)}
+                  >
+                    Remove
+                  </Button>
+                ] : [])
+              ]}
             >
-              <Upload
-                showUploadList={false}
-                beforeUpload={beforeImageUpload}
-                customRequest={handleImageUploadRequest}
-                disabled={imageUploading}
-              >
-                <Tooltip title="Change Photo">
-                  <div className="relative group cursor-pointer rounded-full border-4 border-white shadow-md bg-white">
-                    {imageUploading && (
-                      <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center z-20">
-                        <LoadingOutlined className="text-white text-xl" spin />
-                      </div>
+              <List.Item.Meta
+                avatar={<FilePdfOutlined style={{ fontSize: 28, color: '#ff4d4f' }} />}
+                title={<Text strong className="text-sm">{doc.name}</Text>}
+                description={
+                  <Space direction="vertical" size={0}>
+                    <Text type="secondary" className="text-xs capitalize">
+                      {doc.type?.replace('_', ' ').toUpperCase()}
+                    </Text>
+                    {doc.uploadedAt && (
+                      <Text type="secondary" className="text-xs">
+                        Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()}
+                      </Text>
                     )}
-                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                      <CameraOutlined className="text-white text-2xl" />
-                    </div>
-                    <Avatar size={100} icon={<UserOutlined />} src={profile?.logo} />
-                  </div>
-                </Tooltip>
-              </Upload>
-            </Badge>
+                  </Space>
+                }
+              />
+            </List.Item>
+          )}
+        />
+      </div>
+    );
+  };
 
-            <Button 
-              icon={<EditOutlined />} 
-              onClick={showEditModal}
-              className="mb-2 font-medium border-gray-300 shadow-sm"
+  const renderAgreementDocuments = () => {
+    const docsToRender = agreementData?.agreementDocuments?.length 
+      ? agreementData.agreementDocuments 
+      : profile?.agreementDocuments;
+
+    if (!docsToRender || docsToRender.length === 0) return null;
+    
+    return (
+      <div className="mt-6 text-left">
+        <Text strong className="block mb-3">Uploaded Documents:</Text>
+        <List
+          dataSource={docsToRender}
+          renderItem={(doc) => (
+            <List.Item
+              className="hover:bg-gray-50 rounded-lg transition-colors border px-4 mb-2 bg-white shadow-sm"
+              actions={[
+                <Button 
+                  type="link" 
+                  icon={<EyeOutlined />} 
+                  onClick={() => window.open(doc.url, '_blank')}
+                  className="text-purple-600"
+                >
+                  View
+                </Button>,
+                <Button 
+                  type="link" 
+                  icon={<DownloadOutlined />} 
+                  onClick={() => window.open(doc.url, '_blank')}
+                  className="text-purple-600"
+                >
+                  Download
+                </Button>
+              ]}
             >
-              Edit Profile
-            </Button>
-          </div>
+              <List.Item.Meta
+                avatar={<FilePdfOutlined style={{ fontSize: 28, color: '#ff4d4f' }} />}
+                title={<Text strong>{doc.name || doc.type?.replace('_', ' ').toUpperCase()}</Text>}
+                description={`Uploaded: ${new Date(doc.uploadedAt || Date.now()).toLocaleDateString()}`}
+              />
+            </List.Item>
+          )}
+        />
+      </div>
+    );
+  };
 
-          <div className="mt-4">
-            <h2 className="text-2xl font-bold text-gray-800 mb-1">
-              {profile?.name || "Company Name"}
-            </h2>
-            <Space>
-              <Tag color="purple" className="rounded-full">Property Developer</Tag>
-              {profile?.isVerifiedByAdmin && (
-                <Tag color="green" className="rounded-full"><CheckCircleOutlined /> Verified</Tag>
+  // 🟢 RENDER KYC UPLOAD FORM WITH RENAME FEATURE
+  const renderKycUploadForm = () => {
+    if (hasKycDocuments() && !isKycRejected()) {
+      return null;
+    }
+    
+    return (
+      <Card 
+        title={
+          <div className="flex items-center gap-2">
+            <UploadOutlined className="text-purple-500 text-lg" />
+            <span className="font-semibold">Attach & Rename Documents</span>
+          </div>
+        } 
+        className="shadow-sm border rounded-lg mt-6 bg-gray-50"
+      >
+        <Row gutter={[24, 24]}>
+          {/* PASSPORT */}
+          <Col span={24} md={8}>
+            <div className="border rounded-xl p-6 text-center hover:shadow-lg transition-all duration-300 bg-white">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <UserOutlined className="text-purple-500 text-2xl" />
+              </div>
+              <Text strong className="block mb-3 text-base">1. Passport Copy</Text>
+              
+              {!kycFiles.passport ? (
+                <>
+                  <Text type="secondary" className="text-xs block mb-3">PDF or Image (Max 5MB)</Text>
+                  <Upload customRequest={(options) => handleKycFileChange('passport', options)} showUploadList={false} maxCount={1}>
+                    <Button icon={<UploadOutlined />} size="large" className="mt-2">Select File</Button>
+                  </Upload>
+                </>
+              ) : (
+                <div className="mt-3 text-left">
+                  <div className="text-green-600 text-sm flex items-center justify-center gap-1 mb-2">
+                    <CheckCircleOutlined /> File Attached
+                  </div>
+                  <Input 
+                    value={kycFiles.passport.customName} 
+                    onChange={(e) => setKycFiles(prev => ({
+                      ...prev, 
+                      passport: { ...prev.passport, customName: e.target.value }
+                    }))}
+                    placeholder="Document Name"
+                    suffix={<span className="text-gray-400">{kycFiles.passport.extension}</span>}
+                    className="mb-2"
+                  />
+                  <Upload customRequest={(options) => handleKycFileChange('passport', options)} showUploadList={false} maxCount={1}>
+                    <Button type="link" size="small">Change File</Button>
+                  </Upload>
+                </div>
               )}
-            </Space>
-          </div>
-        </div>
-
-        {/* Stats Row */}
-        <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-100 mx-6">
-          <Row gutter={16} className="text-center">
-            <Col span={6}>
-              <Statistic title="Leads" value={profile?.leadsGenerated_stats || 0} prefix={<AreaChartOutlined className="text-blue-500" />} />
-            </Col>
-            <Col span={6}>
-              <Statistic title="Units" value={profile?.unitsSold_stats || 0} prefix={<TrophyOutlined className="text-green-500" />} />
-            </Col>
-            <Col span={6}>
-              <Statistic title="Presentations" value={profile?.presentationsGenerated_stats || 0} prefix={<FileDoneOutlined className="text-purple-500" />} />
-            </Col>
-            <Col span={6}>
-              <Statistic title="Conv. Rate" value={profile?.conversionRate_stats || 0} suffix="%" />
-            </Col>
-          </Row>
-        </div>
-
-        <Divider />
-
-        <div className="px-6 pb-6">
-          <Descriptions bordered column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }} size="middle">
-            <Descriptions.Item label={<><MailOutlined className="mr-2" /> Email</>}>{profile?.email || "N/A"}</Descriptions.Item>
-            <Descriptions.Item label={<><PhoneOutlined className="mr-2" /> Phone</>}>{profile?.country_code} {profile?.phone_number}</Descriptions.Item>
-            <Descriptions.Item label={<><EnvironmentOutlined className="mr-2" /> Location</>} span={2}>
-              <span className="capitalize">{profile?.address || "N/A"}</span>
-              {profile?.city && <div className="text-gray-400 text-xs">{profile.city}, {profile.country}</div>}
-            </Descriptions.Item>
-            <Descriptions.Item label={<><GlobalOutlined className="mr-2" /> Website</>}>
-              {profile?.websiteUrl ? <a href={profile.websiteUrl} target="_blank" rel="noreferrer" className="text-blue-500">{profile.websiteUrl}</a> : "N/A"}
-            </Descriptions.Item>
-            <Descriptions.Item label={<><FileProtectOutlined className="mr-2" /> RERA Number</>}>{profile?.reraNumber || "N/A"}</Descriptions.Item>
-            <Descriptions.Item label={<><InfoCircleOutlined className="mr-2" /> About Company</>} span={2}>{profile?.description || "No description provided."}</Descriptions.Item>
-          </Descriptions>
+            </div>
+          </Col>
+          
+          {/* EMIRATES ID */}
+          <Col span={24} md={8}>
+            <div className="border rounded-xl p-6 text-center hover:shadow-lg transition-all duration-300 bg-white">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <IdcardOutlined className="text-blue-500 text-2xl" />
+              </div>
+              <Text strong className="block mb-3 text-base">2. Emirates ID</Text>
+              
+              {!kycFiles.emirates_id ? (
+                <>
+                  <Text type="secondary" className="text-xs block mb-3">PDF or Image (Max 5MB)</Text>
+                  <Upload customRequest={(options) => handleKycFileChange('emirates_id', options)} showUploadList={false} maxCount={1}>
+                    <Button icon={<UploadOutlined />} size="large" className="mt-2">Select File</Button>
+                  </Upload>
+                </>
+              ) : (
+                <div className="mt-3 text-left">
+                  <div className="text-green-600 text-sm flex items-center justify-center gap-1 mb-2">
+                    <CheckCircleOutlined /> File Attached
+                  </div>
+                  <Input 
+                    value={kycFiles.emirates_id.customName} 
+                    onChange={(e) => setKycFiles(prev => ({
+                      ...prev, 
+                      emirates_id: { ...prev.emirates_id, customName: e.target.value }
+                    }))}
+                    placeholder="Document Name"
+                    suffix={<span className="text-gray-400">{kycFiles.emirates_id.extension}</span>}
+                    className="mb-2"
+                  />
+                  <Upload customRequest={(options) => handleKycFileChange('emirates_id', options)} showUploadList={false} maxCount={1}>
+                    <Button type="link" size="small">Change File</Button>
+                  </Upload>
+                </div>
+              )}
+            </div>
+          </Col>
+          
+          {/* TRADE LICENSE */}
+          <Col span={24} md={8}>
+            <div className="border rounded-xl p-6 text-center hover:shadow-lg transition-all duration-300 bg-white">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BankOutlined className="text-green-500 text-2xl" />
+              </div>
+              <Text strong className="block mb-3 text-base">3. Trade License</Text>
+              
+              {!kycFiles.trade_license ? (
+                <>
+                  <Text type="secondary" className="text-xs block mb-3">PDF or Image (Max 5MB)</Text>
+                  <Upload customRequest={(options) => handleKycFileChange('trade_license', options)} showUploadList={false} maxCount={1}>
+                    <Button icon={<UploadOutlined />} size="large" className="mt-2">Select File</Button>
+                  </Upload>
+                </>
+              ) : (
+                <div className="mt-3 text-left">
+                  <div className="text-green-600 text-sm flex items-center justify-center gap-1 mb-2">
+                    <CheckCircleOutlined /> File Attached
+                  </div>
+                  <Input 
+                    value={kycFiles.trade_license.customName} 
+                    onChange={(e) => setKycFiles(prev => ({
+                      ...prev, 
+                      trade_license: { ...prev.trade_license, customName: e.target.value }
+                    }))}
+                    placeholder="Document Name"
+                    suffix={<span className="text-gray-400">{kycFiles.trade_license.extension}</span>}
+                    className="mb-2"
+                  />
+                  <Upload customRequest={(options) => handleKycFileChange('trade_license', options)} showUploadList={false} maxCount={1}>
+                    <Button type="link" size="small">Change File</Button>
+                  </Upload>
+                </div>
+              )}
+            </div>
+          </Col>
+        </Row>
+        
+        <Divider className="my-6" />
+        
+        <div className="text-center">
+          <Button 
+            type="primary" 
+            size="large" 
+            onClick={submitKyc} 
+            loading={submittingKyc} 
+            icon={<SafetyCertificateOutlined />}
+            className="bg-purple-600 hover:bg-purple-700 border-purple-600 px-8 h-12 text-base font-semibold"
+            disabled={!kycFiles.passport?.url || !kycFiles.emirates_id?.url || !kycFiles.trade_license?.url}
+          >
+            Submit KYC Documents
+          </Button>
         </div>
       </Card>
+    );
+  };
 
-      {/* Edit Modal with ALL FIELDS */}
+  const renderAgreementUploadForm = () => {
+    if (isAgreementSigned() || isAgreementUnderReview()) {
+      return null;
+    }
+    
+    return (
+      <div className="mt-6 border-t pt-6">
+        <Title level={5} className="!mb-4">Sign & Upload Agreements (Up to 2 files)</Title>
+        <Space size="middle" className="flex-wrap justify-center mb-4">
+          <Button 
+            size="large" 
+            icon={<DownloadOutlined />}
+            className="h-10 px-6"
+            onClick={() => window.open('https://cdn.reelly.io/agreements/developer_template.pdf', '_blank')}
+          >
+            Download Template
+          </Button>
+          
+          <Upload 
+            multiple
+            beforeUpload={(file) => {
+              setStagedAgreements(prev => {
+                if (prev.length >= 2) {
+                  message.warning("You can only upload a maximum of 2 agreements.");
+                  return prev;
+                }
+                const defaultName = file.name.substring(0, file.name.lastIndexOf('.'));
+                return [...prev, { uid: file.uid, file, customName: defaultName }];
+              });
+              return false; 
+            }}
+            showUploadList={false}
+          >
+            <Button 
+              size="large" 
+              type="dashed"
+              icon={<UploadOutlined />}
+              className="h-10 px-6"
+              disabled={stagedAgreements.length >= 2}
+            >
+              Select PDF File
+            </Button>
+          </Upload>
+        </Space>
+
+        {stagedAgreements.length > 0 && (
+          <div className="max-w-lg mx-auto text-left bg-gray-50 p-4 rounded-xl border mb-4 mt-2">
+            <Text strong className="block mb-3 text-gray-700">Selected Files (Rename if needed):</Text>
+            
+            {stagedAgreements.map((item) => (
+              <div key={item.uid} className="flex items-center gap-3 mb-3 bg-white p-2 border rounded-lg shadow-sm">
+                <FilePdfOutlined className="text-red-500 text-2xl" />
+                <div className="flex-1">
+                  <Input 
+                    value={item.customName} 
+                    onChange={(e) => {
+                      const newName = e.target.value;
+                      setStagedAgreements(prev => prev.map(f => f.uid === item.uid ? { ...f, customName: newName } : f));
+                    }}
+                    placeholder="Enter document name"
+                    suffix={<span className="text-gray-400">.pdf</span>}
+                  />
+                </div>
+                <Button 
+                  type="text" 
+                  danger 
+                  icon={<DeleteOutlined />} 
+                  onClick={() => setStagedAgreements(prev => prev.filter(f => f.uid !== item.uid))}
+                />
+              </div>
+            ))}
+
+            <Button 
+              type="primary" 
+              block 
+              size="large" 
+              loading={uploadingAgreement} 
+              onClick={submitStagedAgreements}
+              className="bg-[#5C039B] hover:bg-purple-700 mt-2"
+            >
+              Submit Agreement(s)
+            </Button>
+          </div>
+        )}
+
+        <Text type="secondary" className="text-xs block mt-2">
+          * Please download the template, sign it, and upload the signed PDF. You can upload up to 2 files.
+        </Text>
+      </div>
+    );
+  };
+
+  const tabItems = [
+    {
+      key: "1",
+      label: <span className="text-base font-medium"><InfoCircleOutlined className="mr-2" />Profile Details</span>,
+      children: (
+        <div className="pt-6">
+          <Descriptions 
+            bordered 
+            column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }} 
+            size="middle"
+            labelStyle={{ fontWeight: 600, background: "#FAFAFA", width: '180px' }}
+          >
+            <Descriptions.Item label={<><MailOutlined className="mr-2 text-purple-500" /> Email</>}>
+              <Text copyable className="text-gray-700">{profile?.email || "N/A"}</Text>
+            </Descriptions.Item>
+            <Descriptions.Item label={<><PhoneOutlined className="mr-2 text-purple-500" /> Phone</>}>
+              <Text className="text-gray-700">{profile?.country_code} {profile?.phone_number}</Text>
+            </Descriptions.Item>
+            <Descriptions.Item label={<><EnvironmentOutlined className="mr-2 text-purple-500" /> Location</>} span={2}>
+              <div>
+                <Text strong className="text-gray-700">{profile?.address || "N/A"}</Text>
+                {profile?.city && (
+                  <div className="text-gray-500 text-sm mt-1">
+                    {profile.city}, {profile.country}
+                  </div>
+                )}
+              </div>
+            </Descriptions.Item>
+            <Descriptions.Item label={<><GlobalOutlined className="mr-2 text-purple-500" /> Website</>}>
+              {profile?.websiteUrl ? (
+                <a href={profile.websiteUrl} target="_blank" rel="noreferrer" className="text-purple-600 hover:text-purple-800">
+                  {profile.websiteUrl}
+                </a>
+              ) : "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label={<><FileProtectOutlined className="mr-2 text-purple-500" /> RERA Number</>}>
+              {profile?.reraNumber || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label={<><BankOutlined className="mr-2 text-purple-500" /> About Company</>} span={2}>
+              <Paragraph className="mb-0 text-gray-700">{profile?.description || "No description provided."}</Paragraph>
+            </Descriptions.Item>
+          </Descriptions>
+        </div>
+      ),
+    },
+    {
+      key: "2",
+      label: <span className="text-base font-medium"><SafetyCertificateOutlined className="mr-2" />KYC & Verification</span>,
+      children: (
+        <div className="pt-6">
+          {kycLoading ? (
+            <div className="text-center p-10">
+              <Skeleton.Avatar active size="large" />
+              <Skeleton paragraph={{ rows: 3 }} className="mt-4" />
+            </div>
+          ) : (
+            <div>
+              <Card 
+                className="shadow-sm rounded-lg"
+                style={{ background: kycConfig.bgColor, borderColor: kycConfig.borderColor }}
+              >
+                <div className="mb-6 border-b pb-6" style={{ borderColor: kycConfig.borderColor }}>
+                  <Steps current={kycConfig.step} size="small" className="max-w-2xl mx-auto">
+                    <Step title="Upload Documents" />
+                    <Step title="Under Review" />
+                    <Step title="Verified" />
+                  </Steps>
+                </div>
+
+                <div className="text-center pb-4">
+                  <div className="mx-auto mb-6" style={{ color: kycConfig.color }}>
+                    {kycConfig.icon}
+                  </div>
+                  <Title level={4} className="mb-3">{kycConfig.title}</Title>
+                  <Text type="secondary" className="text-base block mb-6">
+                    {kycConfig.description}
+                  </Text>
+                  
+                  {hasKycDocuments() && renderKycDocumentsList()}
+                  
+                  {kycConfig.showResubmit && (
+                    <div className="mt-6">
+                      <Button 
+                        size="large" 
+                        type="primary" 
+                        onClick={() => {
+                          setKycStatusData(prev => ({ ...prev, kycStatus: 'not_submitted', onboardingStatus: null }));
+                        }}
+                        icon={<UploadOutlined />}
+                        className="bg-purple-600 hover:bg-purple-700 border-purple-600 h-12 px-6"
+                      >
+                        Resubmit KYC
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              {renderKycUploadForm()}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "3",
+      label: <span className="text-base font-medium"><FileProtectOutlined className="mr-2" />Developer Agreement</span>,
+      children: (
+        <div className="pt-6">
+          {agreementConfig && (
+            <Card 
+              className="shadow-sm rounded-lg"
+              style={{ background: agreementConfig.bgColor, borderColor: agreementConfig.borderColor }}
+            >
+              <div className="mb-6 border-b pb-6" style={{ borderColor: agreementConfig.borderColor }}>
+                <Steps current={agreementConfig.step} size="small" className="max-w-2xl mx-auto">
+                  <Step title="Upload Agreement" />
+                  <Step title="Under Review" />
+                  <Step title="Verified" />
+                </Steps>
+              </div>
+
+              <div className="text-center pb-4">
+                <div className="mx-auto mb-6" style={{ color: agreementConfig.color }}>
+                  {agreementConfig.icon}
+                </div>
+                <Title level={4} className="mb-3">{agreementConfig.title}</Title>
+                <Text type="secondary" className="text-base block mb-6">
+                  {agreementConfig.description}
+                </Text>
+                
+                {agreementConfig.showDocuments && renderAgreementDocuments()}
+                {renderAgreementUploadForm()}
+              </div>
+            </Card>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  if (loading && !profile) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <Card className="w-full max-w-4xl rounded-xl">
+          <Skeleton active avatar paragraph={{ rows: 6 }} />
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-50 min-h-screen py-8 px-4">
+      <div className="max-w-6xl mx-auto">
+        <Card
+          className="w-full rounded-2xl overflow-hidden shadow-lg border-0 mb-8"
+          cover={
+            <div className="h-48 bg-gradient-to-r from-purple-600 via-purple-500 to-purple-700 relative">
+              <div className="absolute inset-0 bg-black/10" />
+            </div>
+          }
+          bodyStyle={{ padding: 0 }}
+        >
+          <div className="relative px-8 pt-2 pb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+              <div className="relative -mt-16">
+                <Badge dot status={profile?.isVerifiedByAdmin ? "success" : "warning"} offset={[-5, 85]}>
+                  <Upload showUploadList={false} beforeUpload={beforeImageUpload} customRequest={handleImageUploadRequest} disabled={imageUploading}>
+                    <Tooltip title="Change Photo">
+                      <div className="relative group cursor-pointer">
+                        {imageUploading && (
+                          <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center z-20">
+                            <LoadingOutlined className="text-white text-3xl" spin />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                          <CameraOutlined className="text-white text-3xl" />
+                        </div>
+                        <Avatar size={128} icon={<UserOutlined />} src={profile?.logo} className="border-4 border-white shadow-xl bg-white" />
+                      </div>
+                    </Tooltip>
+                  </Upload>
+                </Badge>
+              </div>
+
+              <div className="flex-1 mt-4 md:mt-0">
+                <div className="flex flex-wrap justify-between items-start gap-4">
+                  <div>
+                    <Title level={2} className="mb-2 !text-gray-800">
+                      {profile?.name || "Company Name"}
+                    </Title>
+                    <Space size={12} wrap>
+                      <Tag color="purple" icon={<BankOutlined />} className="rounded-full px-4 py-1.5 text-sm font-medium border-0 bg-purple-100 text-purple-700">
+                        Property Developer
+                      </Tag>
+                      {profile?.isVerifiedByAdmin ? (
+                        <Tag color="success" icon={<VerifiedOutlined />} className="rounded-full px-4 py-1.5 text-sm font-medium border-0 bg-green-100 text-green-700">
+                          Verified Developer
+                        </Tag>
+                      ) : (
+                        <Tag color="warning" icon={<ClockCircleOutlined />} className="rounded-full px-4 py-1.5 text-sm font-medium border-0 bg-yellow-100 text-yellow-700">
+                          Pending Verification
+                        </Tag>
+                      )}
+                    </Space>
+                  </div>
+                  
+                  <Space>
+                    <Button 
+                      icon={<SyncOutlined spin={isRefreshing} />} 
+                      onClick={handleRefresh} 
+                      size="large" 
+                      className="font-medium shadow-sm rounded-lg h-10 px-4"
+                    >
+                      Refresh
+                    </Button>
+                    <Button 
+                      icon={<EditOutlined />} 
+                      onClick={showEditModal} 
+                      size="large" 
+                      className="font-medium shadow-sm rounded-lg h-10 px-6"
+                    >
+                      Edit Profile
+                    </Button>
+                  </Space>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="w-full rounded-xl shadow-sm border-0" bodyStyle={{ padding: "0 24px 24px 24px" }}>
+          <Tabs defaultActiveKey="1" items={tabItems} size="large" className="profile-tabs" tabBarStyle={{ borderBottom: '2px solid #f0f0f0', paddingTop: '10px', marginBottom: '0' }} />
+        </Card>
+      </div>
+
       <Modal 
-        title="Update Profile Information" 
-        open={isModalVisible} 
-        onCancel={() => setIsModalVisible(false)} 
-        footer={null} 
-        width={700}
-        destroyOnClose
+        title={
+          <div className="flex items-center gap-2">
+            <EditOutlined className="text-purple-500 text-xl" />
+            <span className="text-xl font-semibold">Edit Profile Information</span>
+          </div>
+        }
+        open={isModalVisible} onCancel={() => setIsModalVisible(false)} footer={null} width={800} destroyOnClose className="edit-profile-modal"
       >
-        <Form form={form} layout="vertical" onFinish={handleUpdate} className="mt-4">
+        <Form form={form} layout="vertical" onFinish={handleUpdate} className="mt-4" initialValues={profile}>
+          <Divider orientation="left" className="!text-sm !mt-0"><Space><UserOutlined /> Basic Information</Space></Divider>
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="name" label="Company Name" rules={[{ required: true, message: 'Required' }]}>
-                <Input placeholder="e.g. Acme Properties" />
+            <Col span={24}>
+              <Form.Item name="name" label="Company Name" rules={[{ required: true, message: 'Please enter company name' }]}>
+                <Input size="large" placeholder="e.g. Acme Properties" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="email" label="Official Email" rules={[{ type: 'email', message: 'Invalid email' }]}>
-                <Input placeholder="email@company.com" />
+              <Form.Item name="email" label="Email"><Input size="large" disabled placeholder="Email" /></Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="phone_number" label="Phone Number"><Input size="large" placeholder="Phone Number" /></Form.Item>
+            </Col>
+            <Col span={24}>
+              <Form.Item name="websiteUrl" label="Website URL"><Input size="large" placeholder="https://www.example.com" /></Form.Item>
+            </Col>
+            <Col span={24}>
+              <Form.Item name="reraNumber" label="RERA Number"><Input size="large" placeholder="RERA Registration Number" /></Form.Item>
+            </Col>
+            <Col span={24}>
+              <Form.Item name="address" label="Address"><Input size="large" placeholder="Street Address" /></Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="city" label="City"><Input size="large" placeholder="City" /></Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="country" label="Country"><Input size="large" placeholder="Country" /></Form.Item>
+            </Col>
+            <Col span={24}>
+              <Form.Item name="description" label="Company Description">
+                <Input.TextArea size="large" rows={4} placeholder="Tell us about your company..." />
               </Form.Item>
             </Col>
           </Row>
-
-          <Row gutter={16}>
-            <Col span={6}>
-              <Form.Item name="country_code" label="Code">
-                <Input placeholder="+91" />
-              </Form.Item>
-            </Col>
-            <Col span={18}>
-              <Form.Item name="phone_number" label="Phone Number">
-                <Input placeholder="9876543210" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="websiteUrl" label="Website URL">
-                <Input placeholder="https://www.company.com" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="reraNumber" label="RERA Registration Number">
-                <Input placeholder="RERA-12345-XYZ" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Divider orientation="left" plain><Text type="secondary" style={{fontSize: '12px'}}>Location Details</Text></Divider>
-
-          <Form.Item name="address" label="Office Address">
-            <Input.TextArea rows={2} placeholder="Full building address..." />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="city" label="City">
-                <Input placeholder="e.g. Dubai" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="country" label="Country">
-                <Input placeholder="e.g. UAE" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Divider orientation="left" plain><Text type="secondary" style={{fontSize: '12px'}}>Company Bio</Text></Divider>
-
-          <Form.Item name="description" label="About Company">
-            <Input.TextArea rows={4} placeholder="Briefly describe your company's history and expertise..." />
-          </Form.Item>
-
-          <div className="flex justify-end gap-2 mt-4">
-            <Button onClick={() => setIsModalVisible(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={updating}>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button size="large" onClick={() => setIsModalVisible(false)}>Cancel</Button>
+            <Button type="primary" htmlType="submit" loading={updating} size="large" icon={<EditOutlined />} className="bg-purple-600 hover:bg-purple-700 border-purple-600">
               Update Profile
             </Button>
           </div>
         </Form>
       </Modal>
+
+      <style jsx="true">{`
+        .profile-tabs :global(.ant-tabs-tab) { padding: 16px 24px; margin: 0 !important; font-weight: 500; font-size: 15px; }
+        .profile-tabs :global(.ant-tabs-tab:hover) { color: #7C3AED; }
+        .profile-tabs :global(.ant-tabs-tab-active) { color: #7C3AED; font-weight: 600; }
+        .profile-tabs :global(.ant-tabs-tab-active .ant-tabs-tab-btn) { color: #7C3AED; }
+        .profile-tabs :global(.ant-tabs-ink-bar) { background: #7C3AED; height: 3px !important; border-radius: 2px; }
+        .edit-profile-modal :global(.ant-modal-header) { border-bottom: 2px solid #f0f0f0; padding: 20px 24px; border-radius: 12px 12px 0 0; }
+        .edit-profile-modal :global(.ant-modal-body) { padding: 24px; max-height: 70vh; overflow-y: auto; }
+      `}</style>
     </div>
   );
 };
