@@ -18,7 +18,7 @@ const HeroSection = () => {
   return (
     <section className="relative w-full overflow-hidden flex items-center justify-center text-white py-20 md:py-28 xl:py-36">
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/30 z-[1]" />
+     <div className="absolute inset-0 bg-black/60 z-[1]" />
 
 
 {/* Background Image */}
