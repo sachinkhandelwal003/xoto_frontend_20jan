@@ -26,15 +26,15 @@ const CUSTOM_ROLE_LINKS = {
         title: "Property Management",
         path: "/dashboard/superadmin/developer/property"
       },
-      {
-        title: "Agents",
-        path: "/dashboard/superadmin/agent-list"
-      },
+      // {
+      //   title: "Agents",
+      //   path: "/dashboard/superadmin/agent-list"
+      // },
       
-      {
-        title: "Agencies",
-        path: "/dashboard/superadmin/agency-list"
-      }
+      // {
+      //   title: "Agencies",
+      //   path: "/dashboard/superadmin/agency-list"
+      // }
     ]
   },
   {
@@ -45,17 +45,17 @@ const CUSTOM_ROLE_LINKS = {
       { title: "All Customers", path: "/dashboard/superadmin/customers/list" },
     ]
   },
-  {
-    title: "Setting",
-    icon: "fas fa-cog",
-    path: "/dashboard/superadmin/setting",
-    submenus: [
-      {
-        title: "Email Setting",
-        path: "/dashboard/superadmin/setting/email"
-      }
-    ]
-  }
+  // {
+  //   title: "Setting",
+  //   icon: "fas fa-cog",
+  //   path: "/dashboard/superadmin/setting",
+  //   submenus: [
+  //     {
+  //       title: "Email Setting",
+  //       path: "/dashboard/superadmin/setting/email"
+  //     }
+  //   ]
+  // }
 ],
 
 "1": [
@@ -513,8 +513,19 @@ const Sidebar = () => {
       } 
     });
     
-    ordered.push(...Object.values(modulesMap));
-    return [...tree, ...ordered];
+    // ordered.push(...Object.values(modulesMap));
+    // return [...tree, ...ordered];
+    const HIDE_MODULES = ['Permission'];
+
+ordered.push(
+  ...Object.values(modulesMap).filter(
+    m => !HIDE_MODULES.includes(m.title)
+  )
+);
+
+return [...tree, ...ordered.filter(
+  m => !HIDE_MODULES.includes(m.title)
+)];
   }, [permissions, basePath, isPendingApproval, roleCode, user, token, roleSlug]);
 
   // --- RENDER ---
