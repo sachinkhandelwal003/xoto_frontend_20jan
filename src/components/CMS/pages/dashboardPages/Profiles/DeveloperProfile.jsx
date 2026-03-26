@@ -402,7 +402,13 @@ const DeveloperProfile = () => {
         borderColor: '#ffccc7',
         icon: <CloseCircleOutlined style={{ fontSize: 40 }} />,
         title: 'KYC Rejected',
-        description: kycStatusData?.kycRejectionReason || profile?.kycRejectionReason || 'Your KYC submission was rejected. Please review and resubmit.',
+        // description: kycStatusData?.kycRejectionReason || profile?.kycRejectionReason || 'Your KYC submission was rejected. Please review and resubmit.',
+       description:
+  kycStatusData?.adminRemark ||
+  kycStatusData?.kycRejectionReason ||
+  profile?.adminRemark ||
+  profile?.kycRejectionReason ||
+  "Your KYC has been processed.",
         showDocuments: true,
         showResubmit: true,
         step: 1
@@ -416,7 +422,11 @@ const DeveloperProfile = () => {
       borderColor: '#ffccc7',
       icon: <WarningOutlined style={{ fontSize: 40 }} />,
       title: 'Action Required',
-      description: 'Complete your KYC verification to unlock all features.',
+      // description: 'Complete your KYC verification to unlock all features.',
+      description:
+  agreementData?.adminRemark ||
+  profile?.agreementRemark ||
+  'Your developer agreement has been verified and is active.',
       showDocuments: false,
       showForm: true,
       step: 0
@@ -812,7 +822,7 @@ const DeveloperProfile = () => {
               size="large" 
               loading={uploadingAgreement} 
               onClick={submitStagedAgreements}
-              className="bg-[#5C039B] hover:bg-purple-700 mt-2"
+              className="bg-[#5C039B]  mt-2"
             >
               Submit Agreement(s)
             </Button>

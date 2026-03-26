@@ -36,12 +36,12 @@
 
   "knowledge": [
     { "label": "Knowledge Hub", "path": "/explore" },
-    { "label": "Our Sustainability Focus", "path": "/about" },
+    { "label": "Our Sustainability Focus", "path": "" },
   
-    { "label": "Submit Your Feedback", "path": "/about" },
+    { "label": "Submit Your Feedback", "path": "" },
     { "label": "Contact Us", "path": "/contact" },
-    { "label": "Privacy Policy", "path": "/about" },
-    { "label": "Terms Of Use", "path": "/about" }
+    { "label": "Privacy Policy", "path": "" },
+    { "label": "Terms Of Use", "path": "" }
   ],
 
   "locations": "UAE | Saudi Arabia",
