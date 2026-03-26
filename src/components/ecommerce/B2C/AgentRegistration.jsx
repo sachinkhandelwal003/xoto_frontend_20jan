@@ -137,6 +137,11 @@ const RegistrationAgent = () => {
   const [phone, setPhone] = useState("");
   const [countryData, setCountryData] = useState({});
 
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+const [emailOtpVerified, setEmailOtpVerified] = useState(false);
+const [emailOtpValue, setEmailOtpValue] = useState("");
+const [emailLoading, setEmailLoading] = useState(false);
+
   // ✅ INSTANT UPLOAD STATES
   const [urls, setUrls] = useState({ profile: "", idProof: "", rera: "" });
   const [uploading, setUploading] = useState({ profile: false, idProof: false, rera: false });
@@ -242,6 +247,50 @@ const RegistrationAgent = () => {
     }
   };
 
+  const handleSendEmailOtp = async () => {
+  const email = form.getFieldValue("email");
+
+  if (!email) {
+    toast.error("Enter email first");
+    return;
+  }
+
+  setEmailLoading(true);
+  try {
+    await axios.post("https://xoto.ae/api/otp/email-otp/send", { email });
+
+    setEmailOtpSent(true);
+    setEmailOtpVerified(false);
+    toast.success("OTP sent to email");
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "Failed");
+  } finally {
+    setEmailLoading(false);
+  }
+};
+
+const handleVerifyEmailOtp = async () => {
+  if (!emailOtpValue) {
+    toast.error("Enter OTP");
+    return;
+  }
+
+  setEmailLoading(true);
+  try {
+    await axios.post("https://xoto.ae/api/otp/email-otp/verify", {
+      email: form.getFieldValue("email"),
+      otp: emailOtpValue,
+    });
+
+    setEmailOtpVerified(true);
+    toast.success("Email verified");
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "Invalid OTP");
+  } finally {
+    setEmailLoading(false);
+  }
+};
+
   // 4. Main Form Submit Handler
   const handleFinish = async (values) => {
     try {
@@ -346,8 +395,63 @@ setOtpValue("");
               </Row>
 
               <Form.Item name="email" label="Email" rules={[{ required: true, type: "email" }]}>
-                <StyledInput prefix={<MailOutlined />} placeholder="Email Address" />
-              </Form.Item>
+ <StyledInput
+  prefix={<MailOutlined />}
+  placeholder="Email Address"
+  disabled={emailOtpVerified}
+  onChange={(e) => {
+    form.setFieldsValue({ email: e.target.value });
+
+    // 🔥 CRITICAL RESET
+    if (emailOtpVerified) {
+      setEmailOtpVerified(false);
+      setEmailOtpSent(false);
+      setEmailOtpValue("");
+    }
+  }}
+    suffix={
+      !emailOtpVerified ? (
+        <Button
+          type="link"
+          onClick={handleSendEmailOtp}
+          loading={emailLoading}
+        >
+          {emailOtpSent ? "Resend" : "Send OTP"}
+        </Button>
+      ) : (
+        <CheckCircleFilled style={{ color: "green" }} />
+      )
+    }
+  />
+
+</Form.Item>
+  {emailOtpSent && !emailOtpVerified && (
+  <StyledInput
+    placeholder="Enter Email OTP"
+    value={emailOtpValue}
+    onChange={(e) => setEmailOtpValue(e.target.value)}
+    maxLength={6}
+    suffix={
+      <Button type="link" onClick={handleVerifyEmailOtp} loading={emailLoading}>
+        VERIFY
+      </Button>
+    }
+  />
+)}
+{(emailOtpSent || emailOtpVerified) && (
+  <div style={{ marginTop: 8 }}>
+    <Button
+      type="link"
+      onClick={() => {
+        setEmailOtpVerified(false);  // 🔓 unlock input
+        setEmailOtpSent(false);      // hide OTP input
+        setEmailOtpValue("");        // clear OTP
+      }}
+    >
+      Change Email
+    </Button>
+  </div>
+)}
 
               <Form.Item name="password" label="Password" rules={[{ required: true, min: 6 }]}>
                 <Input.Password style={{ height: 45, borderRadius: 8 }} prefix={<LockOutlined />} placeholder="Password" />
@@ -362,9 +466,15 @@ setOtpValue("");
                     country={'ae'}
                     value={phone}
                     onChange={(phone, data) => {
-                      setPhone(phone);
-                      setCountryData(data);
-                    }}
+  setPhone(phone);
+  setCountryData(data);
+
+  if (otpVerified) {
+    setOtpVerified(false);
+    setOtpSent(false);
+    setOtpValue("");
+  }
+}}
                     enableSearch={true}
                     inputStyle={{
                       width: '100%',
@@ -526,7 +636,7 @@ setOtpValue("");
               </Col>
             </Row>
 
-            <SubmitButton type="primary" block htmlType="submit" loading={submitting} disabled={!otpVerified}>
+            <SubmitButton type="primary" block htmlType="submit" loading={submitting} disabled={!otpVerified || !emailOtpVerified}>
               COMPLETE REGISTRATION
             </SubmitButton>
           </Form>

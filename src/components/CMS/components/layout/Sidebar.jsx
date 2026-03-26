@@ -225,6 +225,15 @@ const CUSTOM_ROLE_LINKS = {
   //   path: "/dashboard/{roleSlug}/agent-leads",
   // },
       {
+      title: "Secondary Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/create-secondary-plans",
+      submenus: [
+        { title: "Create Properties", path: "/dashboard/{roleSlug}/create-secondary-plans" },
+                        { title: "Secondary Plans", path: "/dashboard/{roleSlug}/secondary-plans" },
+
+
+      ],
+    },
+      {
       title: "Leads", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/agent-leads",
       submenus: [
         { title: "Create Leads", path: "/dashboard/{roleSlug}/agent-leads/add" },

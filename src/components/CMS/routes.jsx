@@ -117,6 +117,7 @@ import DeveloperBookingDetails from "../ecommerce/B2C/DeveloperBookingDetails";
 import DeveloperList from "./pages/DeveloperList";
 import DeveloperAnalytics from "../ecommerce/B2C/DeveloperAnalytics";
 import DeveloperCommissionScheme from "../ecommerce/B2C/DeveloperCommisionScheme"; 
+import DeveloperDetail from "./pages/Developerdetail";
 import DealCommissionManager from "./pages/DealCommissionManager";
 import BankProductManagement from "../homepage/BankProductManagement";
 
@@ -154,6 +155,12 @@ import AdminChatRequests from "../chat/Adminchatrequests";
 import BrochureGenerator from "../ecommerce/B2C/BrochureGenerator";
 import TrackBrochure from "../ecommerce/B2C/TrackBrochure";
 import WaitingApproval from "../ecommerce/B2C/WaitingApproval";
+
+
+import CreateSecondaryPlans from "./pages/Properties/CreateSecondaryPlans"; 
+import SecondaryPlans from "./pages/Properties/SecondaryPlans";
+
+
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -367,7 +374,10 @@ const CmsRoutes = () => {
 
   {/* Presentations */}
   <Route path="presentations" element={<AgentPresentations />} />
-  <Route path="My-Chats" element={<MyChatRequests />} />
+
+  <Route path="create-secondary-plans" element={<CreateSecondaryPlans />} />
+  <Route path="secondary-plans" element={<SecondaryPlans />} />
+  {/* <Route path="waiting-approval" element={<WaitingApproval />} /> */}
 
 
  
@@ -381,7 +391,7 @@ const CmsRoutes = () => {
       <Route path="/agency-list" element={<AgencyList />} />    
       <Route path="/customers/list" element={<CustomerList />} />
       {/* <Route path="/agent-registration" element={<AgentRegistration />} /> */}
-      <Route path="/developer-list" element={<DeveloperList />} />
+      <Route path="developer-list" element={<DeveloperList />} />
       <Route path="/property-list" element={<AdminPropertyGrid />} />
       <Route path="/DealCommissionManager" element={<DealCommissionManager />} />
       <Route path="/lead-management" element={<LeadManagement />} />
@@ -390,7 +400,7 @@ const CmsRoutes = () => {
       <Route path="/ai-training" element={<XobiaTrainingAdmin />} />
       <Route path="/global-settings" element={<GlobalSettings />} />
       <Route path="/marketing-hub" element={<XotoBlitzCampaigns />} />
-      <Route path="/admin-chat-requests" element={<AdminChatRequests />} />
+      {/* <Route path="/admin-chat-requests" element={<AdminChatRequests />} /> */}
 "
       
 {/* Agency */}
@@ -427,6 +437,7 @@ const CmsRoutes = () => {
 <Route path="analytics" element={<DeveloperAnalytics/>}/>
 <Route path="commission-scheme" element={<DeveloperCommissionScheme />} />
 <Route path="commission-scheme/:id" element={<DeveloperCommissionScheme />} />
+<Route path="/developer/view/:id" element={<DeveloperDetail />} />
   {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
   {/* <Route path="team" element={<DeveloperTeam/>}/> */}
 
