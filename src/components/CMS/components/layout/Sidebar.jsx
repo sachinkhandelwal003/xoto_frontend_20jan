@@ -283,7 +283,7 @@ const CUSTOM_ROLE_LINKS = {
   {
   title:"Inventory / Units",
   icon:"fas fa-layer-group",
-  path:"/dashboard/{roleSlug}/inventory",
+  path:"/dashboard/{roleSlug}/developerinventory",
 },
 {
   title:"Leads Tracking",
