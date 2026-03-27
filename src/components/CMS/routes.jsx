@@ -119,6 +119,8 @@ import DeveloperList from "./pages/DeveloperList";
 import DeveloperAnalytics from "../ecommerce/B2C/DeveloperAnalytics";
 import DeveloperCommissionScheme from "../ecommerce/B2C/DeveloperCommisionScheme"; 
 import DealCommissionManager from "./pages/DealCommissionManager";
+import DeveloperAddProperty from "../ecommerce/B2C/DveloperAddProperty";
+import DeveloperPropertyEdit from "../ecommerce/B2C/DeveloperPropertyEdit";
 import BankProductManagement from "../homepage/BankProductManagement";
 
 import AgencyManageAgents from "../ecommerce/B2C/AgencyManageAgents";
@@ -421,9 +423,11 @@ const CmsRoutes = () => {
 {/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
 {/* Developer */}
 <Route path="developer-projects" element={<DeveloperProjects/>}/>
+ <Route path="developer-projects/add" element={<DeveloperAddProperty />} /> 
 <Route path="developer-projects/add" element={<DeveloperAddProject/>}/>
 <Route path="developer-projects/:id" element={<DeveloperProjectDetails/>}/>
-<Route path="inventory" element={<DeveloperInventory/>}/>
+<Route path="edit-property/:id" element={<DeveloperPropertyEdit />} />
+<Route path="developerinventory" element={<DeveloperInventory/>}/>
 <Route path="/inventory/add" element={<DeveloperAddUnit/>}/>
 <Route path="/inventory/:id" element={<DeveloperUnitDetails/>}/>
 <Route path="/inventory/:id/edit" element={<DeveloperEditUnit/>}/>
@@ -439,7 +443,7 @@ const CmsRoutes = () => {
   {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
   {/* <Route path="team" element={<DeveloperTeam/>}/> */}
 
-      {/* Catch-all fallback */}
+      
     </Routes>
   );
 };
