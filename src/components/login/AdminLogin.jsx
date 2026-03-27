@@ -349,7 +349,7 @@ const AdminLogin = () => {
             </div>
 
             {/* Test Credentials Box */}
-            <TestCredBox>
+            {/* <TestCredBox>
                <div style={{ marginBottom: 4, fontWeight: 'bold', color: '#333' }}>Developer Test Mode:</div>
                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                  <span>SuperAdmin:</span>
@@ -359,7 +359,7 @@ const AdminLogin = () => {
                  <span>Password:</span>
                  <Text copyable={{ text: 'Super1@gmail.com' }} style={{ color: '#5C039B', fontWeight: 600 }}>Super1@gmail.com</Text>
                </div>
-            </TestCredBox>
+            </TestCredBox> */}
 
           </GlassCard>
         </motion.div>
