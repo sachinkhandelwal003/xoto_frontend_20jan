@@ -108,6 +108,10 @@ const AdminDashboard = () => {
         <div>
           <Title level={2} style={{ margin: 0 }}>Platform Overview</Title>
           <Text type="secondary">High-level snapshot of Xoto Grid operations and metrics.</Text>
+          
+        </div>
+        <div className="flex gap-3 bg-primary text-white cursor-pointer p-2 rounded-lg shadow-sm"> 
+        <button className='cursor-pointer' onClick={() => window.location.href = '/'}>Go To Home</button>
         </div>
       </div>
 
