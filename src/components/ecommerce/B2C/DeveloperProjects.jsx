@@ -11,11 +11,11 @@ import {
   Form,
   Divider,
   Select,
-  DatePicker,
   InputNumber,
   Upload,
   Switch,
-  Space
+  Space,
+  Alert
 } from "antd";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import { showToast } from "../../../manageApi/utils/toast";
@@ -23,8 +23,7 @@ import CustomTable from "../../../components/CMS/pages/custom/CustomTable";
 import {
   PlusOutlined,
   SearchOutlined,
-  HomeOutlined,
-  UploadOutlined
+  HomeOutlined
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -41,44 +40,49 @@ export default function DeveloperProjects() {
   const navigate = useNavigate();
 
   const { user, token } = useSelector((state) => state.auth);
-  const developerId = user?._id || user?.id;
 
-  const [projects, setProjects] = useState([]);
-  const [filtered, setFiltered] = useState([]);
+  // ✅ user.id confirmed from console log
+  const developerId = user?.id || user?._id || null;
+
+  const [projects, setProjects]     = useState([]);
+  const [filtered, setFiltered]     = useState([]);
   const [tableLoading, setTableLoading] = useState(false);
-  const [search, setSearch] = useState("");
-  const [developerName, setDeveloperName] = useState("");
+  const [search, setSearch]         = useState("");
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [formLoading, setFormLoading] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form] = Form.useForm();
-
-  const [logoList, setLogoList] = useState([]);
-  const [photoList, setPhotoList] = useState([]);
-  const [brochureUrl, setBrochureUrl] = useState(null);
+  const [formLoading, setFormLoading]   = useState(false);
+  const [editingId, setEditingId]       = useState(null);
+  const [form]                          = Form.useForm();
+  const [photoList, setPhotoList]       = useState([]);
+  const [photoError, setPhotoError]     = useState("");
 
   // ================= FETCH PROJECTS =================
   const fetchProjects = async () => {
     if (!developerId) return;
     try {
       setTableLoading(true);
-      const json = await apiService.get("/property/get-all-properties", {
-        developer: developerId,
-        limit: 1000
-      });
+      const json = await apiService.get("/", { limit: 1000 });
+      const list = json?.data?.data || [];
 
-      const list = json?.data || [];
+     const mapped = list
+  .filter(p => {
+    if (p.listingType !== "developer") return false;
 
-      const mapped = list.map(p => ({
-        key: p._id,
-        propertyName: p.propertyName || "Untitled",  // ✅ name ki jagah propertyName key rakhi
-        location: `${p.area || ""} ${p.city || ""}`.trim(),
-        units: p.builtUpArea_min ? `${p.builtUpArea_min}-${p.builtUpArea_max}` : "-",
-        sold: p.unitType?.length || 0,
-        status: p.approvalStatus || "pending",
-        rejectionReason: p.rejectionReason || ""
-      }));
+    const byDeveloper   = p.developer?.toString()   === developerId ||
+                          p.developer?._id?.toString() === developerId;
+    const byCreatedBy   = p.createdBy?.toString()   === developerId;
+
+    return byDeveloper || byCreatedBy;
+  })
+        .map((p, index) => ({
+          key: p._id || p.id || `row-${index}`,
+          propertyName: p.projectName || "Untitled",
+          location: `${p.areaName || ""} ${p.city || ""}`.trim(),
+          units: p.area ? `${p.area} sqft` : "-",
+          sold: p.unitType ? 1 : 0,
+          status: p.approvalStatus || "pending",
+          rejectionReason: p.rejectionReason || ""
+        }));
 
       setProjects(mapped);
       setFiltered(mapped);
@@ -90,9 +94,7 @@ export default function DeveloperProjects() {
     }
   };
 
-  useEffect(() => {
-    fetchProjects();
-  }, [developerId, token]);
+  useEffect(() => { fetchProjects(); }, [developerId, token]);
 
   useEffect(() => {
     const q = search.toLowerCase();
@@ -104,81 +106,152 @@ export default function DeveloperProjects() {
     );
   }, [search, projects]);
 
-  useEffect(() => {
-    const fetchDeveloper = async () => {
-      try {
-        if (!developerId) return;
-        const res = await apiService.get("/property/get-developer-by-id", { id: developerId });
-        const dev = res?.data?.data || res?.data;
-        setDeveloperName(dev?.name || "");
-      } catch (error) {
-        console.error("Failed to load developer", error);
-      }
-    };
-    fetchDeveloper();
-  }, [developerId]);
-
-  // ================= MODAL HANDLERS =================
+  // ================= MODAL =================
   const openModal = () => {
     setEditingId(null);
     form.resetFields();
-    setLogoList([]);
     setPhotoList([]);
-    setBrochureUrl(null);
+    setPhotoError("");
     setModalVisible(true);
   };
 
-  const closeModal = () => setModalVisible(false);
+  const closeModal = () => {
+    setModalVisible(false);
+    setEditingId(null);
+    form.resetFields();
+    setPhotoList([]);
+    setPhotoError("");
+  };
 
   const validateImageSize = (file) => {
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) showToast("error", "Image must be smaller than 2MB!");
-    return isLt2M;
+    return isLt2M || Upload.LIST_IGNORE;
   };
 
+  // ================= UPLOAD =================
+  const customUploadRequest = async ({ file, onSuccess, onError }) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res  = await fetch(UPLOAD_API, { method: "POST", body: formData });
+      const data = await res.json();
+
+      console.log("=== UPLOAD RESPONSE ===", JSON.stringify(data));
+
+      if (!res.ok || data.success === false) throw new Error(data.message || "Upload failed");
+
+      onSuccess(data, file);
+    } catch (err) {
+      console.error("Upload error:", err);
+      onError(err);
+    }
+  };
+
+  const extractPhotoUrl = (fileItem) => {
+    const r = fileItem.response;
+    if (!r) return null;
+    return (
+      r.url             || r.imageUrl         || r.image_url      ||
+      r.secure_url      || r.link             || r.path           ||
+      r.filePath        || r.fileUrl          ||
+      r.data?.url       || r.data?.imageUrl   || r.data?.secure_url ||
+      r.data?.path      || r.data?.link       ||
+      r.file?.url       || r.file?.imageUrl   || r.file?.image_url ||
+      r.file?.secure_url || r.file?.path      || r.file?.filePath  ||
+      r.file?.fileUrl   || r.file?.link       || r.file?.location  ||
+      r.file?.key       || r.file?.filename   || r.file?.name      ||
+      r.result?.url     || r.result?.secure_url ||
+      null
+    );
+  };
+
+  // ================= SAVE =================
   const handleSave = async (values) => {
+    if (photoList.some(f => f.status === "uploading")) {
+      showToast("error", "Please wait for all photos to finish uploading.");
+      return;
+    }
+
+    const failed = photoList.filter(f => f.status === "error");
+    if (failed.length > 0) {
+      setPhotoError(`${failed.length} photo(s) failed. Please remove and re-add them.`);
+      return;
+    }
+
+    const doneFiles = photoList.filter(f => f.status === "done");
+    if (doneFiles.length === 0) {
+      setPhotoError("Please upload at least one photo before saving.");
+      return;
+    }
+
+    const photos = doneFiles.map(f => extractPhotoUrl(f)).filter(Boolean);
+    if (photos.length === 0) {
+      console.error("URL extraction failed. Responses:", JSON.stringify(doneFiles.map(f => f.response)));
+      setPhotoError("Could not read photo URL from server. Check console → 'UPLOAD RESPONSE'.");
+      return;
+    }
+
+    setPhotoError("");
+
     try {
       setFormLoading(true);
-      const photos = photoList.map(p => p.response?.url || p.url).filter(Boolean);
-      const mainLogo = logoList[0]?.response?.url || logoList[0]?.url || "";
 
-      const payload = {
-        ...values,
-        developer: developerId,
-        photos,
-        mainLogo,
-        brochure: brochureUrl
-      };
+      // ✅ KEY FIX: Send BOTH createdBy AND developerId so backend finds whichever it expects
+     const payload = {
+  ...values,
+  price:       Number(values.price),
+  area:        Number(values.area),
+  commission:  values.commission ? Number(values.commission) : 0,
+  photos,
+  listingType:  "developer",
+  developer:    developerId,   // ✅ matches: if (!data.developer) in controller
+  createdBy:    developerId,
+};
+      console.log("=== SUBMITTING PAYLOAD ===", payload);
 
-      const data = await apiService.post("/property/create-properties", payload);
+      const data = editingId
+        ? await apiService.put(`/property/${editingId}`, payload)
+        : await apiService.post("/property", payload);
 
       if (data) {
-        showToast("success", "Property submitted. Waiting for admin approval.");
+        showToast("success", editingId
+          ? "Property updated and resubmitted for approval."
+          : "Property submitted. Waiting for admin approval."
+        );
         closeModal();
         fetchProjects();
       } else {
-        showToast("error", "Failed to save property");
+        showToast("error", "Failed to save property.");
       }
     } catch (error) {
-      console.error(error);
-      showToast("error", "Something went wrong");
+      console.error("Save error:", error);
+      const backendMsg = error?.response?.data?.message || "Something went wrong.";
+      showToast("error", backendMsg);
     } finally {
       setFormLoading(false);
     }
   };
 
+  // ✅ Single toast for all form validation errors
+  const handleFinishFailed = ({ errorFields }) => {
+    showToast("error", errorFields?.[0]?.errors?.[0] || "Please fill in all required fields.");
+  };
+
   const getColor = (status) => {
     if (status === "approved") return "green";
-    if (status === "pending") return "orange";
+    if (status === "pending")  return "orange";
     if (status === "rejected") return "red";
   };
 
   // ================= TABLE COLUMNS =================
   const columns = [
     {
+      key: "col-property",
       title: "Property",
-      dataIndex: "propertyName", // ✅ ab "name" nahi "propertyName" hai
-      render: (_, record) => (  // ✅ _ ignore karo, record se directly lo
+      dataIndex: "propertyName",
+      render: (_, record) => (
         <div>
           <Text strong style={{ fontSize: 15 }}>{record.propertyName || "N/A"}</Text><br />
           <Text type="secondary" style={{ fontSize: 12 }}>{record.location}</Text>
@@ -186,19 +259,22 @@ export default function DeveloperProjects() {
       )
     },
     {
+      key: "col-units",
       title: "Area Range",
       dataIndex: "units",
-      render: (_, record) => <Text>{record.units}</Text>  // ✅ record se lo
+      render: (_, record) => <Text>{record.units}</Text>
     },
     {
+      key: "col-sold",
       title: "Unit Types",
       dataIndex: "sold",
-      render: (_, record) => <Tag color="purple">{record.sold} Units</Tag>  // ✅ record se lo
+      render: (_, record) => <Tag color="purple">{record.sold} Units</Tag>
     },
     {
+      key: "col-status",
       title: "Status",
       dataIndex: "status",
-      render: (_, record) => (  // ✅ record se lo
+      render: (_, record) => (
         <div>
           <Tag color={getColor(record.status)}>
             {record.status?.toUpperCase()}
@@ -212,6 +288,7 @@ export default function DeveloperProjects() {
       )
     },
     {
+      key: "col-action",
       title: "Action",
       render: (_, record) => (
         <Space>
@@ -227,6 +304,9 @@ export default function DeveloperProjects() {
               danger
               onClick={() => {
                 setEditingId(record.key);
+                setPhotoList([]);
+                setPhotoError("");
+                form.resetFields();
                 setModalVisible(true);
               }}
             >
@@ -238,8 +318,11 @@ export default function DeveloperProjects() {
     }
   ];
 
+  const isUploading = photoList.some(f => f.status === "uploading");
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
+
       {/* HEADER */}
       <Row justify="space-between" align="middle" className="mb-6">
         <Col>
@@ -291,153 +374,182 @@ export default function DeveloperProjects() {
         loading={tableLoading}
         pagination={{ pageSize: 10, style: { padding: "16px" } }}
         showSearch={true}
-         onRefresh={fetchProjects} 
-            // onPageChange={(page, limit) => fetchProjects(page, limit, search)}
+        onRefresh={fetchProjects}
       />
 
-      {/* ================= ADD/EDIT PROPERTY MODAL ================= */}
+      {/* ================= MODAL ================= */}
       <Modal
-        title={editingId ? "View / Edit Property" : "Add New Property"}
+        title={editingId ? "Edit & Resubmit Property" : "Add New Property"}
         open={modalVisible}
         onCancel={closeModal}
         footer={null}
         width={1000}
-        style={{ top: 20, marginRight: 60 }}
+        style={{ top: 20 }}
+        destroyOnClose
       >
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSave}
+          onFinishFailed={handleFinishFailed}
           initialValues={{
-            currency: 'AED', lengthUnit: 'ft', breadthUnit: 'ft', builtUpAreaUnit: 'sqft',
-            transactionType: 'sell', propertySubType: 'off_plan', propertyType: 'Apartment',
-            isAvailable: true, country: 'United Arab Emirates', state: 'Dubai', city: 'Dubai', postalCode: '00000',
-            notReadyYet: true, isFeatured: false,
-            commissionType: "percentage",
-            commissionValue: 3,
-            commissionStage: "booking",
-            amenities: [], location_highlights: [], unitType: []
+            projectType: "new",
+            unitType: "Apartment",
+            bedrooms: "1",
+            country: "UAE",
+            shareCommission: false,
+            commission: 0
           }}
         >
-          {/* SECTION 1: BASIC INFO */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Basic Information</Divider>
+          {/* SECTION 1 */}
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Project Details</Divider>
           <Row gutter={16}>
-            <Col xs={24} md={8}><Form.Item name="propertyName" label="Property Name" rules={[{ required: true }]}><Input /></Form.Item></Col>
-            <Col xs={24} md={8}><Form.Item label="Developer"><Input value={user?.email} disabled /></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="transactionType" label="Transaction"><Select><Option value="sell">Sell</Option><Option value="rent">Rent</Option></Select></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="propertyType" label="Prop Type"><Input placeholder="e.g Apartment" /></Form.Item></Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="projectType" label="Project Type" rules={[{ required: true, message: "Select project type" }]}>
+                <Select>
+                  <Option value="new">New</Option>
+                  <Option value="existing">Existing</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="projectName" label="Project Name" rules={[{ required: true, message: "Enter project name" }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="developerName" label="Developer Name" rules={[{ required: true, message: "Enter developer name" }]}>
+                <Input placeholder="Enter Developer Name" />
+              </Form.Item>
+            </Col>
           </Row>
           <Row gutter={16}>
-            <Col xs={24} md={6}><Form.Item name="propertySubType" label="Sub Type"><Select><Option value="ready">Ready</Option><Option value="off_plan">Off Plan</Option><Option value="resale">Resale</Option></Select></Form.Item></Col>
-            <Col xs={24} md={12}><Form.Item name="unitType" label="Unit Types Available"><Select mode="tags" placeholder="Type and press enter (e.g. Studio, 1 bed)" /></Form.Item></Col>
-            <Col xs={24} md={6}><Form.Item name="handover" label="Handover Date"><DatePicker style={{ width: '100%' }} /></Form.Item></Col>
-          </Row>
-          <Form.Item name="description" label="Description"><TextArea rows={3} /></Form.Item>
-
-          {/* SECTION 2: PRICING */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Pricing & Payment Plan</Divider>
-          <Row gutter={16}>
-            <Col xs={12} md={4}><Form.Item name="currency" label="Currency"><Select><Option value="AED">AED</Option><Option value="USD">USD</Option></Select></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="price" label="Fixed Price"><InputNumber style={{ width: '100%' }} formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} /></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="price_min" label="Min Price"><InputNumber style={{ width: '100%' }} formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} /></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="price_max" label="Max Price"><InputNumber style={{ width: '100%' }} formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} /></Form.Item></Col>
-            <Col xs={24} md={5}><Form.Item name="downPayment" label="Down Payment"><InputNumber style={{ width: '100%' }} suffix="%" /></Form.Item></Col>
-          </Row>
-          <Row gutter={16}>
-            <Col xs={12} md={12}><Form.Item name="paymentPlan_initialPercentage" label="Payment Plan (Initial %)"><InputNumber style={{ width: '100%' }} suffix="%" /></Form.Item></Col>
-            <Col xs={12} md={12}><Form.Item name="paymentPlan_laterPercentage" label="Payment Plan (Later %)"><InputNumber style={{ width: '100%' }} suffix="%" /></Form.Item></Col>
-          </Row>
-
-          {/* SECTION: COMMISSION */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Commission Scheme</Divider>
-          <Row gutter={16}>
-            <Col xs={12} md={6}><Form.Item name="commissionType" label="Commission Type"><Select><Option value="percentage">Percentage (%)</Option><Option value="fixed">Fixed Amount</Option></Select></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="commissionValue" label="Commission Value"><InputNumber style={{ width: "100%" }} /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="commissionStage" label="Commission Stage"><Select><Option value="booking">On Booking</Option><Option value="contract">On Contract</Option><Option value="handover">On Handover</Option></Select></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="commissionNotes" label="Commission Notes"><Input placeholder="Optional note" /></Form.Item></Col>
+            <Col xs={24}>
+              <Form.Item name="location" label="General Location" rules={[{ required: true, message: "Enter location" }]}>
+                <Input placeholder="e.g. Downtown Dubai" />
+              </Form.Item>
+            </Col>
           </Row>
 
-          {/* SECTION 3: CONFIGURATION */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Area & Configuration</Divider>
+          {/* SECTION 2 */}
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Property Info</Divider>
           <Row gutter={16}>
-            <Col xs={12} md={4}><Form.Item name="bedrooms" label="Bedrooms"><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="bathrooms" label="Bathrooms"><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="builtUpArea_min" label="Min Area (sqft)"><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="builtUpArea_max" label="Max Area (sqft)"><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="builtUpAreaUnit" label="Unit"><Select><Option value="sqft">Sq. Ft</Option><Option value="sqm">Sq. M</Option></Select></Form.Item></Col>
-          </Row>
-          <Row gutter={16}>
-            <Col xs={12} md={6}><Form.Item name="length" label="Length"><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="lengthUnit" label="Unit"><Select><Option value="ft">ft</Option><Option value="m">m</Option></Select></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="breadth" label="Breadth"><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="breadthUnit" label="Unit"><Select><Option value="ft">ft</Option><Option value="m">m</Option></Select></Form.Item></Col>
+            <Col xs={12} md={6}>
+              <Form.Item name="unitType" label="Unit Type" rules={[{ required: true, message: "Select unit type" }]}>
+                <Select>
+                  <Option value="Apartment">Apartment</Option>
+                  <Option value="Villa">Villa</Option>
+                  <Option value="Townhouse">Townhouse</Option>
+                  <Option value="Duplex">Duplex</Option>
+                  <Option value="Penthouse">Penthouse</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={12} md={6}>
+              <Form.Item name="bedrooms" label="Bedrooms" rules={[{ required: true, message: "Select bedrooms" }]}>
+                <Select>
+                  {["Studio","1","2","3","4","5","6","7","8+"].map(b => (
+                    <Option key={b} value={b}>{b}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={12} md={6}>
+              <Form.Item name="price" label="Price" rules={[{ required: true, message: "Enter price" }]}>
+                <InputNumber
+                  style={{ width: "100%" }}
+                  formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                  parser={v => v.replace(/,/g, "")}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={12} md={6}>
+              <Form.Item name="area" label="Area (sqft/sqm)" rules={[{ required: true, message: "Enter area" }]}>
+                <InputNumber style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
           </Row>
 
-          {/* SECTION 4: LOCATION */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Location Details</Divider>
+          <Form.Item name="description" label="Description">
+            <TextArea rows={3} />
+          </Form.Item>
+
+          {/* UPLOAD */}
+          <Form.Item label="Property Photos" required>
+            <Upload
+              listType="picture-card"
+              fileList={photoList}
+              customRequest={customUploadRequest}
+              multiple
+              beforeUpload={validateImageSize}
+              accept="image/*"
+              onChange={({ fileList, file }) => {
+                setPhotoList(fileList);
+                if (file.status === "done") setPhotoError("");
+              }}
+              onRemove={() => setPhotoError("")}
+            >
+              <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
+            </Upload>
+
+            {isUploading && (
+              <Text type="secondary" style={{ fontSize: 12, display: "block", marginTop: 4 }}>
+                ⏳ Uploading… please wait before saving.
+              </Text>
+            )}
+            {!isUploading && photoList.length > 0 && photoList.every(f => f.status === "done") && (
+              <Text style={{ fontSize: 12, display: "block", marginTop: 4, color: "green" }}>
+                ✅ All photos uploaded successfully.
+              </Text>
+            )}
+            {photoError && (
+              <Alert type="error" message={photoError} showIcon style={{ marginTop: 8 }} />
+            )}
+          </Form.Item>
+
+          {/* SECTION 3 */}
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Commission</Divider>
+          <Row gutter={16} align="middle">
+            <Col xs={12} md={6}>
+              <Form.Item name="shareCommission" label="Share Commission" valuePropName="checked">
+                <Switch />
+              </Form.Item>
+            </Col>
+            <Col xs={12} md={6}>
+              <Form.Item name="commission" label="Commission Amount">
+                <InputNumber style={{ width: "100%" }} min={0} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* SECTION 4 */}
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Specific Location Details</Divider>
           <Row gutter={16}>
-            <Col xs={24} md={12}><Form.Item name="googleLocation" label="Google Maps Link"><Input placeholder="http://..." /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="buildingNo" label="Building / Plot No"><Input /></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="buildingNo" label="Building No"><Input /></Form.Item></Col>
             <Col xs={12} md={6}><Form.Item name="street" label="Street"><Input /></Form.Item></Col>
-          </Row>
-          <Row gutter={16}>
-            <Col xs={12} md={6}><Form.Item name="area" label="Area"><Input /></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="areaName" label="Area Name"><Input /></Form.Item></Col>
             <Col xs={12} md={6}><Form.Item name="city" label="City"><Input /></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="state" label="State"><Input /></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="country" label="Country"><Input /></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="postalCode" label="Zip Code"><Input /></Form.Item></Col>
           </Row>
-          <Form.Item name="location_highlights" label="Location Highlights">
-            <Select mode="tags" placeholder="Add highlights (e.g. Near Metro, Beach Access)" />
-          </Form.Item>
-
-          {/* SECTION 5: MEDIA */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Media & Assets</Divider>
           <Row gutter={16}>
-            <Col xs={24} md={6}>
-              <Form.Item label="Main Logo">
-                <Upload listType="picture-card" fileList={logoList} action={UPLOAD_API} maxCount={1} beforeUpload={validateImageSize} onChange={({ fileList }) => setLogoList(fileList)}>
-                  {logoList.length >= 1 ? null : <div><PlusOutlined /><div style={{ marginTop: 8 }}>Logo</div></div>}
-                </Upload>
-              </Form.Item>
-            </Col>
+            <Col xs={12} md={6}><Form.Item name="state" label="State"><Input /></Form.Item></Col>
+            <Col xs={12} md={6}><Form.Item name="country" label="Country"><Input /></Form.Item></Col>
             <Col xs={24} md={12}>
-              <Form.Item label="Property Photos">
-                <Upload listType="picture-card" fileList={photoList} action={UPLOAD_API} multiple beforeUpload={validateImageSize} onChange={({ fileList }) => setPhotoList(fileList)}>
-                  <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
-                </Upload>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}>
-              <Form.Item label="Brochure (PDF)">
-                <Upload action={UPLOAD_API} name="file" maxCount={1} onChange={(info) => {
-                  if (info.file.status === 'done') {
-                    setBrochureUrl(info.file.response?.file?.url || info.file.response?.url);
-                    showToast("success", "Brochure linked!");
-                  }
-                }}>
-                  <Button icon={<UploadOutlined />}>Upload PDF</Button>
-                </Upload>
-                {brochureUrl && <Text type="success" style={{ display: 'block', marginTop: 8 }}>Brochure Uploaded</Text>}
+              <Form.Item name="googleLocation" label="Google Maps Link">
+                <Input placeholder="http://..." />
               </Form.Item>
             </Col>
           </Row>
 
-          {/* SECTION 6: EXTRAS */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Additional Details</Divider>
-          <Form.Item name="amenities" label="Amenities">
-            <Select mode="tags" placeholder="Add amenities (e.g. Pool, Gym, Parking)" />
-          </Form.Item>
-          <Form.Item name="about_developer" label="About Developer (Specific to project)"><TextArea rows={2} /></Form.Item>
-          <Row gutter={16}>
-            <Col xs={8}><Form.Item name="isAvailable" label="Available" valuePropName="checked"><Switch /></Form.Item></Col>
-            <Col xs={8}><Form.Item name="notReadyYet" label="Construction (Not Ready)" valuePropName="checked"><Switch /></Form.Item></Col>
-            <Col xs={8}><Form.Item name="isFeatured" label="Featured Property" valuePropName="checked"><Switch /></Form.Item></Col>
-          </Row>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px', paddingBottom: '16px' }}>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "24px", paddingBottom: "16px" }}>
             <Button onClick={closeModal} size="large">Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={formLoading} size="large" style={{ backgroundColor: THEME.primary }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={formLoading}
+              size="large"
+              style={{ backgroundColor: THEME.primary }}
+              disabled={isUploading}
+            >
               {editingId ? "Update Property" : "Save Property"}
             </Button>
           </div>

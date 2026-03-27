@@ -61,35 +61,58 @@ const Topbar = () => {
   }, []);
 
   // ✅ Helper to safely get Name
-  const getDisplayName = () => {
+ const getDisplayName = () => {
+  try {
     const apiData = userProfile?.data || userProfile;
     const reduxData = user?.data || user;
 
-    if (apiData?.first_name) {
-      return `${apiData.first_name} ${apiData.last_name || ''}`.trim();
+    // API data se try karo
+    if (apiData?.first_name && typeof apiData.first_name === 'string') {
+      const full = `${apiData.first_name} ${apiData.last_name || ''}`.trim();
+      if (full) return full;
     }
-    
+
     if (apiData?.name) {
       if (typeof apiData.name === 'object') {
-        return `${apiData.name.first_name || ''} ${apiData.name.last_name || ''}`.trim();
+        const full = `${apiData.name.first_name || ''} ${apiData.name.last_name || ''}`.trim();
+        if (full) return full;
       }
-      return apiData.name;
+      if (typeof apiData.name === 'string' && apiData.name.trim()) {
+        return apiData.name.trim();
+      }
     }
-    
-    if (reduxData?.first_name) {
-      return `${reduxData.first_name} ${reduxData.last_name || ''}`.trim();
+
+    // Redux data se try karo
+    if (reduxData?.first_name && typeof reduxData.first_name === 'string') {
+      const full = `${reduxData.first_name} ${reduxData.last_name || ''}`.trim();
+      if (full) return full;
     }
-    
+
     if (reduxData?.name) {
       if (typeof reduxData.name === 'object') {
-        return `${reduxData.name.first_name || ''} ${reduxData.name.last_name || ''}`.trim();
+        const full = `${reduxData.name.first_name || ''} ${reduxData.name.last_name || ''}`.trim();
+        if (full) return full;
       }
-      return reduxData.name;
+      if (typeof reduxData.name === 'string' && reduxData.name.trim()) {
+        return reduxData.name.trim();
+      }
     }
 
-    return "User";
-  };
+    // Username ya email se fallback
+    if (reduxData?.username && typeof reduxData.username === 'string') {
+      return reduxData.username.trim();
+    }
 
+    if (reduxData?.email && typeof reduxData.email === 'string') {
+      return reduxData.email.split('@')[0]; // email ka pehla part use karo
+    }
+
+  } catch (e) {
+    // kuch bhi ho, crash mat karo
+  }
+
+  return "User"; // Last fallback
+};
   // ✅ Helper for Email
   const getDisplayEmail = () => {
     const apiData = userProfile?.data || userProfile;

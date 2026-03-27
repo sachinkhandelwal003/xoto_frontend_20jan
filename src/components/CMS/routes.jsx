@@ -55,7 +55,7 @@ import MasterCategory from "./pages/estimateMaster/MasterCategory";
 import Enquiry from "./pages/dashboardPages/consult/Enquiry";
 import PropertyLeads from "./pages/dashboardPages/consult/PropertyLeads";
 import Meta from "./pages/dashboardPages/consult/MetaLeads";
-
+import MyListings from "./pages/MyListings";
 import UpdateProfilePage from "./pages/dashboardPages/updates/UpdateProfilepage";
 import Inventory from "../ecommerce/B2C/products/Inventory";
 import ManageWarehouses from "../ecommerce/setting/ManageWareHouses";
@@ -95,6 +95,7 @@ import AgentSiteVisits from "../ecommerce/B2C/AgentSiteVisits";
 import AgentDeals from "../ecommerce/B2C/AgentDeals";
 import AgentCommission from "../ecommerce/B2C/AgentCommission";
 import LeadDetails from "../ecommerce/B2C/LeadDetails";
+import AddProperty from "../ecommerce/B2C/AddProperty";
 // import AgentLeadDetails from "../ecommerce/B2C/AgentLeadDetails";
 import AgentCreateDeal from "../ecommerce/B2C/AgentCreateDeal";
 import AgentDealDetails from "../ecommerce/B2C/AgentDealDetails";
@@ -142,6 +143,9 @@ import AgencyDeals from "../ecommerce/B2C/AgencyDeals";
 // import AddBrand from "../ecommerce/B2C/products/AddBrand"
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminPropertyGrid from "./pages/AdminPropertyGrid";
+import AdminPropertyListings from "./pages/Adminpropertylistings"
+import AdminPropertyDetail from "./pages/Adminpropertydetails";
+import AdminOffPlanCreate from "./pages/Adminoffplancreate";
 import LeadManagement from "./pages/LeadManagement";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import VerificationQueue from "./pages/VerificationQueue";
@@ -404,6 +408,12 @@ const CmsRoutes = () => {
       <Route path="/marketing-hub" element={<XotoBlitzCampaigns />} />
       {/* <Route path="/admin-chat-requests" element={<AdminChatRequests />} /> */}
 "
+      <Route path="/admin-chat-requests" element={<AdminChatRequests />} />
+      <Route path="/my-listings" element={<MyListings />} />\
+      <Route path="/properties" element={<AdminPropertyListings />} />
+<Route path="/properties/:id" element={<AdminPropertyDetail />} />
+<Route path="/properties/create-offplan" element={<AdminOffPlanCreate />} />
+
       
 {/* Agency */}
 <Route path="manage-agents" element={<AgencyManageAgents />} />
@@ -411,6 +421,7 @@ const CmsRoutes = () => {
 <Route path="performance" element={<AgencyPerformance />} />
 <Route path="commission" element={<AgencyCommission />} />
 <Route path="lead-management" element={<AgencyLeadManagement />} />
+<Route path="add-property" element={<AddProperty />} />
 {/* <Route path="targets" element={<AgencyTargets />} /> */}
 {/* <Route path="leaderboard" element={<AgencyLeaderboard />} /> */}
 {/* <Route path="incentives" element={<AgencyIncentives />} /> */}

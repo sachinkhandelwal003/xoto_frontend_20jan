@@ -5,18 +5,25 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 import { useTranslation } from "react-i18next";
-import ADIB from "../../assets/xoto_partners/bank logos/ADIB.png";
-import Ajman from "../../assets/xoto_partners/bank logos/Ajman Bank.png";
-import DIB from "../../assets/xoto_partners/bank logos/DIB.png";
-import FAB from "../../assets/xoto_partners/bank logos/FAB.png";
-import HSBC from "../../assets/xoto_partners/bank logos/HSBC.png";
-import Mashreq from "../../assets/xoto_partners/bank logos/Mashreq Bank.png";
-import NBF from "../../assets/xoto_partners/bank logos/NBF bank (1).png";
-import RAK from "../../assets/xoto_partners/bank logos/RAK (1).png";
-import SC from "../../assets/xoto_partners/bank logos/SC (1).png";
-import SIB from "../../assets/xoto_partners/bank logos/SIB (1).png";
-import UAB from "../../assets/xoto_partners/bank logos/UAB (1).png";
+// import ADIB from "../../assets/xoto_partners/xoto_logo1.png";
+import Ajman from "../../assets/xoto_partners/xoto_logo2.png";
+import DIB from "../../assets/xoto_partners/xoto_logo3.png";
+import FAB from "../../assets/xoto_partners/xoto_logo4.png";
+import HSBC from "../../assets/xoto_partners/xoto_logo5.png";
+import Mashreq from "../../assets/xoto_partners/xoto_logo6.png";
+import NBF from "../../assets/xoto_partners/xoto_logo7.png";
+import RAK from "../../assets/xoto_partners/xoto_logo8.png";
+import SC from "../../assets/xoto_partners/xoto_logo9.png";
+import SIB from "../../assets/xoto_partners/xoto_logo10.png";
+import UAB from "../../assets/xoto_partners/xoto_logo11.png";
 
+
+// import partner6 from '../../assets/xoto_partners/xoto_logo6.png';
+// import partner7 from '../../assets/xoto_partners/xoto_logo7.png';
+// import partner8 from '../../assets/xoto_partners/xoto_logo8.png';
+// import partner9 from '../../assets/xoto_partners/xoto_logo9.png';
+// import partner10 from '../../assets/xoto_partners/xoto_logo10.png';
+// import partner11 from '../../assets/xoto_partners/xoto_logo11.png';
 import waveint5 from "../../assets/img/wave/waveint5.png"; 
 
 
@@ -25,7 +32,7 @@ export default function TrustPresenceSection() {
 
   // Define the logos array
 const logos = [
-  { icon: ADIB, name: "ADIB" },
+  // { icon: ADIB, name: "ADIB" },
   { icon: Ajman, name: "Ajman Bank" },
   { icon: DIB, name: "DIB" },
   { icon: FAB, name: "FAB" },
@@ -87,18 +94,18 @@ const logos = [
       hover:scale-115
     "
   >
-    <img
-      src={logo.icon}
-      alt={logo.name}
-      className="
-        max-w-[75%] max-h-[95%]
-        sm:max-w-[80%] sm:max-h-[90%]
-        md:max-w-[75%] md:max-h-[95%]
-        object-contain
-        transition-all duration-300
-        group-hover:scale-110
-      "
-    />
+ <img
+  src={logo.icon}
+  alt={logo.name}
+  className="
+    max-w-[75%] max-h-[95%]
+    sm:max-w-[80%] sm:max-h-[90%]
+    md:max-w-[75%] md:max-h-[95%]
+    object-contain
+    transition-all duration-300
+    group-hover:scale-110
+  "
+/>
 
     <div className="absolute inset-0 rounded-full bg-purple-200/30 blur-2xl opacity-0  transition"></div>
   </div>
