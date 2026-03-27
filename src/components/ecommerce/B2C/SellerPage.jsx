@@ -246,6 +246,7 @@ const SellerPage = () => {
     handleSubmit,
     trigger,
     setError,
+    clearErrors, // ✅ ADDED
     watch,
     setValue,
     getValues,
@@ -383,10 +384,21 @@ const SellerPage = () => {
       setOtpSent(true);
       setOtpVerified(false);
     } catch (error) {
-      notification.error({
-        message: "OTP Error",
-        description: error?.response?.data?.message || "Failed to send OTP",
-      });
+      const errData = error.response?.data;
+      // ✅ SMART ERROR CATCH
+      if (errData?.errors && errData.errors.length > 0) {
+        errData.errors.forEach(err => {
+          const fieldName = (err.field === 'mobile' || err.field === 'mobile.number') ? 'mobile.number' : err.field;
+          setError(fieldName, { type: "manual", message: err.message });
+        });
+      } else if (errData?.message && /(mobile|number|phone)/i.test(errData.message)) {
+        setError("mobile.number", { type: "manual", message: errData.message });
+      } else {
+        notification.error({
+          message: "OTP Error",
+          description: errData?.message || "Failed to send OTP",
+        });
+      }
     } finally {
       setOtpLoading(false);
     }
@@ -434,10 +446,20 @@ const SellerPage = () => {
       setEmailOtpSent(true);
       setEmailOtpVerified(false);
     } catch (error) {
-      notification.error({
-        message: "OTP Error",
-        description: error?.response?.data?.message || "Failed to send OTP",
-      });
+      const errData = error.response?.data;
+      // ✅ SMART ERROR CATCH
+      if (errData?.errors && errData.errors.length > 0) {
+        errData.errors.forEach(err => {
+          if (err.field === 'email') setError("email", { type: "manual", message: err.message });
+        });
+      } else if (errData?.message && /email/i.test(errData.message)) {
+        setError("email", { type: "manual", message: errData.message });
+      } else {
+        notification.error({
+          message: "OTP Error",
+          description: errData?.message || "Failed to send OTP",
+        });
+      }
     } finally {
       setEmailOtpLoading(false);
     }
@@ -619,16 +641,44 @@ const SellerPage = () => {
       message.success("Registration successful! Awaiting approval.");
     } catch (err) {
       const res = err.response?.data;
-      if (res?.errors && Array.isArray(res.errors)) {
-        res.errors.forEach((e) =>
-          setError(e.field, { type: "server", message: e.message }),
-        );
-        notification.error({
-          message: "Validation Error",
-          description: res.errors[0]?.message,
+      
+      // ✅ SMART ERROR CATCH FOR SUBMIT
+      if (res?.errors && Array.isArray(res.errors) && res.errors.length > 0) {
+        let isStep0Error = false;
+
+        res.errors.forEach((e) => {
+          let fieldName = e.field;
+          if (fieldName === "mobile.number" || fieldName === "mobile") fieldName = "mobile.number";
+          
+          setError(fieldName, { type: "server", message: e.message });
+          if (["email", "mobile", "mobile.number"].includes(fieldName)) {
+            isStep0Error = true;
+          }
         });
+
+        // Agar Email ya Mobile ki error hai toh wapas Step 0 pe bhej do
+        if (isStep0Error) setCurrentStep(0);
+
+      } else if (res?.message) {
+        const msg = res.message.toLowerCase();
+        let isSet = false;
+        
+        if (msg.includes("email")) {
+          setError("email", { type: "server", message: res.message });
+          isSet = true;
+        }
+        if (msg.includes("mobile") || msg.includes("phone") || msg.includes("number")) {
+          setError("mobile.number", { type: "server", message: res.message });
+          isSet = true;
+        }
+        
+        if (isSet) {
+          setCurrentStep(0); // Wapas Step 0 pe jao jahan error hai
+        } else {
+          message.error(res.message || "Registration failed.");
+        }
       } else {
-        message.error(res?.message || "Registration failed.");
+        message.error("Registration failed.");
       }
     } finally {
       setSubmitting(false);
@@ -826,6 +876,10 @@ const SellerPage = () => {
                               size="large"
                               {...field}
                               disabled={emailOtpVerified}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                clearErrors("email"); // ✅ Typing par error hide
+                              }}
                             />
                           )}
                         />
@@ -916,6 +970,7 @@ const SellerPage = () => {
                                 field.onChange(
                                   e.target.value.replace(/\D/g, ""),
                                 );
+                                clearErrors("mobile.number"); // ✅ Typing par error hide
                                 if (otpVerified) setOtpVerified(false);
                               }}
                             />

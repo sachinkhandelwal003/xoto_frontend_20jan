@@ -75,7 +75,10 @@ const Registration = () => {
     setError,
     clearErrors,
     formState: { errors },
-  } = useForm({ mode: "onChange" });
+  } = useForm({ 
+    mode: "onChange",
+    shouldUnregister: false // ✅ ZAROORI: Taki purane steps ka data delete na ho
+  });
 
   const watchEmail = watch("email");
 
@@ -156,7 +159,13 @@ const Registration = () => {
       message.success("OTP sent! Please check your email inbox.");
       setShowEmailOtpInput(true);
     } catch (error) {
-      message.error(error.response?.data?.message || "Failed to send Email OTP");
+      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
+        error.response.data.errors.forEach(err => {
+          if (err.field === 'email') setError("email", { type: "manual", message: err.message });
+        });
+      } else {
+        message.error(error.response?.data?.message || "Failed to send Email OTP");
+      }
     } finally {
       setLoading(prev => ({ ...prev, emailOtpSending: false }));
     }
@@ -183,7 +192,7 @@ const Registration = () => {
     }
   };
 
-  // --- ✅ Mobile OTP Handlers (Live API Integrated) ---
+  // --- Mobile OTP Handlers ---
   const handleSendOtp = async () => {
     if (!mobileNumber) {
       setError("mobile_number", { type: "manual", message: "Mobile number is required" });
@@ -197,7 +206,6 @@ const Registration = () => {
     
     setLoading(prev => ({ ...prev, otpSending: true }));
     try {
-      // ✅ API calls active
       await apiService.post("/otp/send-otp", { 
         country_code: countryCode, 
         phone_number: mobileNumber 
@@ -206,7 +214,14 @@ const Registration = () => {
       setShowOtpInput(true);
       clearErrors("mobile_number");
     } catch (error) {
-      message.error(error.response?.data?.message || "Failed to send OTP");
+      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
+        error.response.data.errors.forEach(err => {
+          const fieldName = err.field === 'mobile' ? 'mobile_number' : err.field;
+          setError(fieldName, { type: "manual", message: err.message });
+        });
+      } else {
+        message.error(error.response?.data?.message || "Failed to send OTP");
+      }
     } finally {
       setLoading(prev => ({ ...prev, otpSending: false }));
     }
@@ -216,7 +231,6 @@ const Registration = () => {
     if (!otpValue || otpValue.length < 4) return message.error("Please enter a valid OTP");
     setLoading(prev => ({ ...prev, otpVerifying: true }));
     try {
-      // ✅ Verify API
       await apiService.post("/otp/verify-otp", {
         country_code: countryCode,
         phone_number: mobileNumber,
@@ -284,7 +298,7 @@ const Registration = () => {
       name: { first_name: data.first_name, last_name: data.last_name },
       mobile: { country_code: countryCode, number: mobileNumber.replace(/\D/g, "") },
       is_mobile_verified: isMobileVerified,
-      is_email_verified: isEmailVerified, // added flag
+      is_email_verified: isEmailVerified,
       location: { country: countryName, state: stateName, city: data.city },
       professional: { experience_years: Number(data.experience_years), bio: data.bio, skills: [], availability: "Full-time" },
       services_offered: services.map(s => ({
@@ -300,7 +314,19 @@ const Registration = () => {
       setSuccess(true);
       message.success("Registration successful!");
     } catch (err) {
-      message.error(err.response?.data?.message || "Registration failed");
+      if (err.response?.data?.errors && err.response.data.errors.length > 0) {
+        err.response.data.errors.forEach(error => {
+          const fieldName = error.field === 'mobile' ? 'mobile_number' : error.field;
+          setError(fieldName, { type: "manual", message: error.message });
+        });
+        
+        // Agar error Step 0 ke fields me aati hai, toh wapas wahan bhej do
+        const hasStep0Error = err.response.data.errors.some(e => ['email', 'mobile', 'first_name', 'last_name'].includes(e.field));
+        if (hasStep0Error) setStep(0);
+      } else {
+        // Validation Failed popup sir tab aayega jab backend se koi normal text error ho
+        message.error(err.response?.data?.message || "Registration failed");
+      }
     } finally {
       setLoading(prev => ({ ...prev, submitting: false }));
     }
@@ -347,7 +373,8 @@ const Registration = () => {
             <h2 className="text-4xl font-bold text-gray-800 mb-2">Execution Partners Registration</h2>
             <p className="text-gray-600 mb-8">Step {step + 1} of 3</p>
 
-            <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
+            {/* ✅ onFinish ki jagah onSubmitCapture lagaya hai */}
+            <Form layout="vertical" onSubmitCapture={handleSubmit(onSubmit)}>
               {/* STEP 0: BASIC INFO */}
               {step === 0 && (
                 <>
@@ -606,7 +633,11 @@ const Registration = () => {
                     </Select>
                   </Form.Item>
 
-                  <Form.Item label="Preferred Payment Method" required>
+                  <Form.Item 
+                    label="Preferred Payment Method" required
+                    validateStatus={errors.preferred_method ? "error" : ""} 
+                    help={errors.preferred_method?.message}
+                  >
                     <Controller
                       name="preferred_method" control={control} rules={{ required: "Required" }}
                       render={({ field }) => (
@@ -619,14 +650,14 @@ const Registration = () => {
 
                   <Form.Item>
                     <Controller
-                      name="agreed_to_terms" control={control} rules={{ required: "You must agree" }}
+                      name="agreed_to_terms" control={control} rules={{ required: "You must agree to terms" }}
                       render={({ field }) => (
                         <Checkbox checked={field.value} onChange={e => field.onChange(e.target.checked)}>
                           I agree to <a href="#" className="text-purple-600">Terms</a> & <a href="#" className="text-purple-600">Privacy Policy</a>
                         </Checkbox>
                       )}
                     />
-                    {errors.agreed_to_terms && <div className="ant-form-item-explain-error">{errors.agreed_to_terms.message}</div>}
+                    {errors.agreed_to_terms && <div style={{ color: '#ff4d4f', marginTop: '5px' }}>{errors.agreed_to_terms.message}</div>}
                   </Form.Item>
 
                   <div className="flex justify-between mt-12">
