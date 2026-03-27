@@ -159,7 +159,7 @@ import WaitingApproval from "../ecommerce/B2C/WaitingApproval";
 
 import CreateSecondaryPlans from "./pages/Properties/CreateSecondaryPlans"; 
 import SecondaryPlans from "./pages/Properties/SecondaryPlans";
-
+import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail";
 
 const roleSlugMap = {
   0: "superadmin",
@@ -377,6 +377,8 @@ const CmsRoutes = () => {
 
   <Route path="create-secondary-plans" element={<CreateSecondaryPlans />} />
   <Route path="secondary-plans" element={<SecondaryPlans />} />
+
+<Route path="secondary/:id" element={<SecondaryPropertyDetail />} />
   {/* <Route path="waiting-approval" element={<WaitingApproval />} /> */}
 
 

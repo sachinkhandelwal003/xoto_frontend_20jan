@@ -21,7 +21,9 @@ import {
   SearchOutlined, 
   SlidersOutlined,
   DownOutlined,
-  CloseCircleOutlined
+  CloseCircleOutlined,
+  TeamOutlined,        // Beds icon
+  ExpandOutlined       // Area icon
 } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -76,8 +78,10 @@ export default function SecondaryPlans() {
   const fetchProjects = async (pageNo = 1, append = false) => {
     try {
       setLoading(true);
-      // ✅ Updated API Endpoint
-      const res = await apiService.get(`/properties/agent/property/secondary?page=${pageNo}&limit=20`);
+      // ✅ propertyType=secondary query param added
+      const res = await apiService.get(
+        `/properties/agent/property/secondary?propertyType=secondary&page=${pageNo}&limit=20`
+      );
 
       const list = Array.isArray(res?.data?.data)
         ? res.data.data
@@ -117,7 +121,7 @@ export default function SecondaryPlans() {
       // 1. Search Box
       const matchSearch = !q || p.propertyName?.toLowerCase().includes(q) || p.city?.toLowerCase().includes(q) || p.area?.toLowerCase().includes(q);
       
-      // 2. Developer (Updated for developerName since developer id might be null in JSON)
+      // 2. Developer
       const matchDeveloper = selectedDevelopers.length === 0 || 
         selectedDevelopers.includes(p.developer?._id) || 
         selectedDevelopers.some(devId => {
@@ -130,7 +134,7 @@ export default function SecondaryPlans() {
       const matchPriceMin = !priceMin || propertyPrice >= priceMin;
       const matchPriceMax = !priceMax || propertyPrice <= priceMax;
 
-      // 4. Unit Type (Updated to use p.unitType)
+      // 4. Unit Type
       const pType = p.unitType ? p.unitType.toLowerCase() : "";
       const matchUnitType = selectedUnitTypes.length === 0 || selectedUnitTypes.some(ut => pType.includes(ut.toLowerCase().replace('s', '')));
 
@@ -140,7 +144,7 @@ export default function SecondaryPlans() {
       const matchPaymentPct = initialPct <= preHandoverPct;
       const matchPostHandover = !postHandoverOnly || laterPct > 0;
 
-      // 6. Handover (Updated to use availableFrom or completionDate)
+      // 6. Handover
       let matchHandover = true;
       if (handoverFrom || handoverTo) {
         let propYear = 0;
@@ -168,7 +172,7 @@ export default function SecondaryPlans() {
     fetchProjects(next, true);
   };
 
-  // ✅ 1. Date Format Helper (Updated for availableFrom)
+  // ✅ Date Format Helper
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -181,15 +185,15 @@ export default function SecondaryPlans() {
     });
   };
 
-  // ✅ 2. Image Extraction Helper (JSON me photos object hai array nahi)
+  // ✅ Image Extraction Helper
   const getCoverImage = (p) => {
     if (p.photos?.architecture?.length > 0) return p.photos.architecture[0];
     if (p.photos?.interior?.length > 0) return p.photos.interior[0];
     if (p.mainLogo) return p.mainLogo;
-    return "https://images.unsplash.com/photo-1560518883-ce09059eeffa"; // fallback
+    return "https://images.unsplash.com/photo-1560518883-ce09059eeffa";
   };
 
-  // ================= POPOVER CONTENTS (Same as before) =================
+  // ================= POPOVER CONTENTS =================
   const devPopoverContent = (
     <div style={{ width: 320, padding: '12px 0 0', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '0 16px 12px' }}>
@@ -353,20 +357,18 @@ export default function SecondaryPlans() {
       <Row gutter={[20, 24]}>
         {filtered.map(p => (
           <Col xs={24} sm={12} md={8} lg={6} key={p._id}>
-            <Card hoverable onClick={() => navigate(`/dashboard/agent/projects/${p._id}`)} 
+            <Card hoverable onClick={() => navigate(`/dashboard/agent/secondary/${p._id}`)}
               style={{ borderRadius: 12, overflow: "hidden", border: "1px solid #e8e8e8", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }} 
               bodyStyle={{ padding: "20px 16px 16px" }}>
               
               <div style={{ position: "relative", height: 210, margin: "-20px -16px 16px -16px" }}>
-                {/* ✅ Image Source Updated */}
                 <img src={getCoverImage(p)} alt={p.propertyName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 
                 <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 8, flexWrap: "wrap", right: 12 }}>
                   <span style={{ background: "#fff", color: "#333", padding: "4px 8px", borderRadius: 6, fontSize: 12, fontWeight: 600, boxShadow: "0 2px 4px rgba(0,0,0,0.1)", textTransform: 'capitalize' }}>
-                    {p.projectStatus || p.propertySubType || "Off Plan"}
+                    {p.projectStatus || p.propertySubType || "Secondary"}
                   </span>
                   
-                  {/* ✅ Handover / Available From Updated */}
                   {(p.availableFrom || p.completionDate?.year) && (
                     <span style={{ background: "#fff", color: "#333", padding: "4px 8px", borderRadius: 6, fontSize: 12, fontWeight: 600, boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
                       Handover: {p.availableFrom ? formatDate(p.availableFrom) : p.completionDate?.year}
@@ -381,18 +383,19 @@ export default function SecondaryPlans() {
 
               <Title level={5} style={{ margin: "4px 0 2px", fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.propertyName}</Title>
               
-              {/* ✅ Developer Name from JSON field */}
               <Text type="secondary" style={{ display: "block", marginBottom: 8, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {p.area || p.city} • by {p.developerName || "Developer"}
               </Text>
 
-              {/* ✅ New Detail Row for Beds & Area from JSON */}
+              {/* ✅ Emoji hataaye, Ant Design Icons laaye */}
               <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-                <Text type="secondary" style={{ fontSize: 13, background: "#f3f4f6", padding: "2px 8px", borderRadius: 4 }}>
-                  🛏️ {p.bedrooms} Beds
+                <Text type="secondary" style={{ fontSize: 13, background: "#f3f4f6", padding: "2px 8px", borderRadius: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                  <TeamOutlined style={{ fontSize: 13, color: "#6b7280" }} />
+                  {p.bedrooms} Beds
                 </Text>
-                <Text type="secondary" style={{ fontSize: 13, background: "#f3f4f6", padding: "2px 8px", borderRadius: 4 }}>
-                  📐 {p.builtUpArea} {p.builtUpAreaUnit || 'sqft'}
+                <Text type="secondary" style={{ fontSize: 13, background: "#f3f4f6", padding: "2px 8px", borderRadius: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                  <ExpandOutlined style={{ fontSize: 13, color: "#6b7280" }} />
+                  {p.builtUpArea} {p.builtUpAreaUnit || 'sqft'}
                 </Text>
               </div>
 
@@ -403,7 +406,6 @@ export default function SecondaryPlans() {
                 </Col>
                 <Col style={{ textAlign: "right" }}>
                   <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 2 }}>Payment plan</Text>
-                  {/* Defaulting to Contact Us if payment plan is empty as per JSON */}
                   <Text strong style={{ fontSize: 14 }}>
                     {p.paymentPlan?.length > 0 ? "Available" : "Contact Us"} <InfoCircleOutlined style={{ color: "#bfbfbf", marginLeft: 4 }} />
                   </Text>

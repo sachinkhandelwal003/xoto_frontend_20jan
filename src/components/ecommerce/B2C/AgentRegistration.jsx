@@ -12,7 +12,6 @@ import {
   Divider,
   Select,
   Upload,
-  Tag,
   Space as AntSpace
 } from "antd";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,6 +36,12 @@ import {
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 const { Option } = Select;
+
+// ── helper: extract errors[0] or message from API response ─────────────────
+const getErrorMsg = (error, fallback = "Something went wrong") =>
+  error?.response?.data?.errors?.[0] ||
+  error?.response?.data?.message ||
+  fallback;
 
 /* ===================== XOTO BRAND STYLES ===================== */
 
@@ -98,7 +103,7 @@ const StyledInput = styled(Input)`
   border-radius: 8px;
   background: #ffffff;
   border: 1px solid #d9d9d9;
-  
+
   &:hover, &:focus {
     border-color: #5c039b !important;
   }
@@ -113,7 +118,7 @@ const SubmitButton = styled(Button)`
   font-size: 16px;
   letter-spacing: 0.5px;
   margin-top: 20px;
-  
+
   &:hover {
     background: #4a027d !important;
     transform: translateY(-1px);
@@ -138,32 +143,34 @@ const RegistrationAgent = () => {
   const [countryData, setCountryData] = useState({});
 
   const [emailOtpSent, setEmailOtpSent] = useState(false);
-const [emailOtpVerified, setEmailOtpVerified] = useState(false);
-const [emailOtpValue, setEmailOtpValue] = useState("");
-const [emailLoading, setEmailLoading] = useState(false);
+  const [emailOtpVerified, setEmailOtpVerified] = useState(false);
+  const [emailOtpValue, setEmailOtpValue] = useState("");
+  const [emailLoading, setEmailLoading] = useState(false);
 
-  // ✅ INSTANT UPLOAD STATES
   const [urls, setUrls] = useState({ profile: "", idProof: "", rera: "" });
   const [uploading, setUploading] = useState({ profile: false, idProof: false, rera: false });
 
-  // LIVE APIs
-  const UPLOAD_API = "https://xoto.ae/api/upload";
-  const SIGNUP_API = "https://xoto.ae/api/agent/agent-signup";
+  // ── Inline error states (shown below fields, no toast) ──────────────────────
+  const [phoneError, setPhoneError]         = useState("");
+  const [otpError, setOtpError]             = useState("");
+  const [emailOtpError, setEmailOtpError]   = useState("");
+  const [uploadError, setUploadError]       = useState({ profile: "", idProof: "", rera: "" });
+  const [submitError, setSubmitError]       = useState("");
 
-  // ✅ INSTANT UPLOAD FUNCTION (Fixed API Response Parsing)
+  const UPLOAD_API = "https://xoto.ae/api/upload";
+  const SIGNUP_API  = "https://xoto.ae/api/agent/agent-signup";
+
+  // ── 1. Instant Upload ───────────────────────────────────────────────────────
   const handleInstantUpload = async (file, type) => {
     setUploading((prev) => ({ ...prev, [type]: true }));
-
+    setUploadError((prev) => ({ ...prev, [type]: "" }));
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      console.log(`📤 Uploading ${type} instantly...`);
       const response = await axios.post(UPLOAD_API, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
-      console.log(`✅ Upload API Response for ${type}:`, response.data);
 
       const uploadedUrl = response.data?.file?.url || response.data?.url || "";
 
@@ -171,11 +178,10 @@ const [emailLoading, setEmailLoading] = useState(false);
         setUrls((prev) => ({ ...prev, [type]: uploadedUrl }));
         toast.success(`${type} uploaded successfully!`);
       } else {
-        toast.error("Upload failed: API didn't return a URL.");
+        setUploadError((prev) => ({ ...prev, [type]: "Upload failed: no URL returned." }));
       }
     } catch (error) {
-      console.error(`❌ Instant upload error for ${type}:`, error);
-      toast.error(`Failed to upload ${type}.`);
+      setUploadError((prev) => ({ ...prev, [type]: getErrorMsg(error, `Failed to upload ${type}.`) }));
     } finally {
       setUploading((prev) => ({ ...prev, [type]: false }));
     }
@@ -183,166 +189,154 @@ const [emailLoading, setEmailLoading] = useState(false);
     return false;
   };
 
-  // ✅ 2. Send OTP Handler (Live API)
+  // ── 2. Send Phone OTP ───────────────────────────────────────────────────────
   const handleSendOtp = async () => {
     if (!phone || phone.length < 8) {
-      toast.error("Please enter a valid mobile number first");
+      setPhoneError("Please enter a valid mobile number first");
       return;
     }
-
+    setPhoneError("");
     setLoading(true);
     try {
-      const cCode = `+${countryData.dialCode || '971'}`;
+      const cCode   = `+${countryData.dialCode || '971'}`;
       const pNumber = phone.slice((countryData?.dialCode || '971').length);
 
       await axios.post("https://xoto.ae/api/otp/send-otp", {
         country_code: cCode,
-        phone_number: pNumber
+        phone_number: pNumber,
       });
 
       setOtpSent(true);
       toast.success("Verification code sent to your mobile!");
     } catch (error) {
-      const errorMessage =
-        error?.response?.data?.errors?.[0] ||
-        error?.response?.data?.message ||
-        "Failed to send OTP";
-
-      toast.error(errorMessage);
+      setPhoneError(getErrorMsg(error, "Failed to send OTP"));
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ 3. Verify OTP Handler (Live API)
+  // ── 3. Verify Phone OTP ─────────────────────────────────────────────────────
   const handleVerifyOtp = async () => {
     if (!otpValue) {
-      toast.error("Please enter the OTP");
+      setOtpError("Please enter the OTP");
       return;
     }
-
+    setOtpError("");
     setLoading(true);
     try {
-      const cCode = `+${countryData.dialCode || '971'}`;
+      const cCode   = `+${countryData.dialCode || '971'}`;
       const pNumber = phone.slice((countryData?.dialCode || '971').length);
 
       await axios.post("https://xoto.ae/api/otp/verify-otp", {
         country_code: cCode,
         phone_number: pNumber,
-        otp: otpValue
+        otp: otpValue,
       });
 
       setOtpVerified(true);
-      setOtpVerified(true);
-      toast.success("Mobile Verified Successfully!");
+      toast.success("Mobile verified successfully!");
     } catch (error) {
-      const errorMessage =
-        error?.response?.data?.errors?.[0] ||
-        error?.response?.data?.message ||
-        "Invalid OTP";
-
-      toast.error(errorMessage);
+      setOtpError(getErrorMsg(error, "Invalid OTP"));
     } finally {
       setLoading(false);
     }
   };
 
+  // ── 4. Send Email OTP ───────────────────────────────────────────────────────
   const handleSendEmailOtp = async () => {
-  const email = form.getFieldValue("email");
-
-  if (!email) {
-    toast.error("Enter email first");
-    return;
-  }
-
-  setEmailLoading(true);
-  try {
-    await axios.post("https://xoto.ae/api/otp/email-otp/send", { email });
-
-    setEmailOtpSent(true);
-    setEmailOtpVerified(false);
-    toast.success("OTP sent to email");
-  } catch (err) {
-    toast.error(err?.response?.data?.message || "Failed");
-  } finally {
-    setEmailLoading(false);
-  }
-};
-
-const handleVerifyEmailOtp = async () => {
-  if (!emailOtpValue) {
-    toast.error("Enter OTP");
-    return;
-  }
-
-  setEmailLoading(true);
-  try {
-    await axios.post("https://xoto.ae/api/otp/email-otp/verify", {
-      email: form.getFieldValue("email"),
-      otp: emailOtpValue,
-    });
-
-    setEmailOtpVerified(true);
-    toast.success("Email verified");
-  } catch (err) {
-    toast.error(err?.response?.data?.message || "Invalid OTP");
-  } finally {
-    setEmailLoading(false);
-  }
-};
-
-  // 4. Main Form Submit Handler
-  const handleFinish = async (values) => {
+    const email = form.getFieldValue("email");
+    if (!email) {
+      form.setFields([{ name: "email", errors: ["Enter email first"] }]);
+      return;
+    }
+    setEmailOtpError("");
+    setEmailLoading(true);
     try {
-      setSubmitting(true);
+      await axios.post("https://xoto.ae/api/otp/email-otp/send", { email });
+      setEmailOtpSent(true);
+      setEmailOtpVerified(false);
+      toast.success("OTP sent to email");
+    } catch (err) {
+      form.setFields([{ name: "email", errors: [getErrorMsg(err, "Failed to send email OTP")] }]);
+    } finally {
+      setEmailLoading(false);
+    }
+  };
 
+  // ── 5. Verify Email OTP ─────────────────────────────────────────────────────
+  const handleVerifyEmailOtp = async () => {
+    if (!emailOtpValue) {
+      setEmailOtpError("Please enter the OTP");
+      return;
+    }
+    setEmailOtpError("");
+    setEmailLoading(true);
+    try {
+      await axios.post("https://xoto.ae/api/otp/email-otp/verify", {
+        email: form.getFieldValue("email"),
+        otp: emailOtpValue,
+      });
+      setEmailOtpVerified(true);
+      toast.success("Email verified");
+    } catch (err) {
+      setEmailOtpError(getErrorMsg(err, "Invalid email OTP"));
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  // ── 6. Final Submit ─────────────────────────────────────────────────────────
+  const handleFinish = async (values) => {
+    setSubmitting(true);
+    try {
       const payload = {
-        first_name: values.first_name,
-        last_name: values.last_name,
-        email: values.email,
-        password: values.password,
-        phone_number: phone.slice((countryData?.dialCode || '').length),
-        country_code: `+${countryData.dialCode}`,
-        country: countryData.name || "United Arab Emirates",
-        operating_city: values.operating_city,
-        specialization: values.specialization,
-        profile_photo: urls.profile,
-        id_proof: urls.idProof,
-        rera_certificate: urls.rera
+        first_name:        values.first_name,
+        last_name:         values.last_name,
+        email:             values.email,
+        password:          values.password,
+        phone_number:      phone.slice((countryData?.dialCode || '').length),
+        country_code:      `+${countryData.dialCode}`,
+        country:           countryData.name || "United Arab Emirates",
+        operating_city:    values.operating_city,
+        specialization:    values.specialization,
+        profile_photo:     urls.profile,
+        id_proof:          urls.idProof,
+        rera_certificate:  urls.rera,
       };
 
-      console.log("🚀 Final JSON Payload being sent to Live Signup API:", payload);
-
-      const response = await axios.post(
-        SIGNUP_API,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json"
-          }
-        }
-      );
+      await axios.post(SIGNUP_API, payload, {
+        headers: { "Content-Type": "application/json" },
+      });
 
       toast.success("Agent Registration Successful");
+      navigate("/waiting-approval");
+    }catch (error) {
+  const apiError = error?.response?.data;
+  const message = apiError?.message || "";
 
-// 🔥 redirect to waiting page
-navigate("/waiting-approval");
+  // ✅ PHONE ERROR HANDLE (MAIN FIX)
+  if (message.toLowerCase().includes("phone")) {
+    setPhoneError(message);
+  }
 
-    } catch (error) {
-      console.error("Signup Error:", error);
-      const errorMessage =
-  error?.response?.data?.errors?.[0] ||
-  error?.response?.data?.message ||
-  "Registration failed";
+  // ✅ FIELD ERRORS (अगर backend सही दे)
+  else if (apiError?.errors) {
+    const fieldErrors = Object.keys(apiError.errors).map((key) => ({
+      name: key,
+      errors: [apiError.errors[key][0]],
+    }));
 
-toast.error(errorMessage);
+    form.setFields(fieldErrors);
+  } 
 
-// 🔥 CRITICAL RESET (warna user phas jayega)
-setOtpVerified(false);
-setOtpSent(false);
-setOtpValue("");
+  else {
+    setSubmitError(message || "Registration failed");
+  }
 
-    } finally {
+  setOtpVerified(false);
+  setOtpSent(false);
+  setOtpValue("");
+}finally {
       setSubmitting(false);
     }
   };
@@ -370,7 +364,7 @@ setOtpValue("");
             layout="vertical"
             onFinish={handleFinish}
             onFinishFailed={(errorInfo) => {
-              console.error("❌ Form Validation Failed! Required fields are missing:", errorInfo);
+              console.error("Form validation failed:", errorInfo);
             }}
             initialValues={{ specialization: 'residential' }}
           >
@@ -394,67 +388,73 @@ setOtpValue("");
                 </Col>
               </Row>
 
+              {/* Email + OTP */}
               <Form.Item name="email" label="Email" rules={[{ required: true, type: "email" }]}>
- <StyledInput
-  prefix={<MailOutlined />}
-  placeholder="Email Address"
-  disabled={emailOtpVerified}
-  onChange={(e) => {
-    form.setFieldsValue({ email: e.target.value });
+                <StyledInput
+                  prefix={<MailOutlined />}
+                  placeholder="Email Address"
+                  disabled={emailOtpVerified}
+                  onChange={(e) => {
+                    form.setFieldsValue({ email: e.target.value });
+                    if (emailOtpVerified) {
+                      setEmailOtpVerified(false);
+                      setEmailOtpSent(false);
+                      setEmailOtpValue("");
+                    }
+                  }}
+                  suffix={
+                    !emailOtpVerified ? (
+                      <Button type="link" onClick={handleSendEmailOtp} loading={emailLoading}>
+                        {emailOtpSent ? "Resend" : "Send OTP"}
+                      </Button>
+                    ) : (
+                      <CheckCircleFilled style={{ color: "green" }} />
+                    )
+                  }
+                />
+              </Form.Item>
 
-    // 🔥 CRITICAL RESET
-    if (emailOtpVerified) {
-      setEmailOtpVerified(false);
-      setEmailOtpSent(false);
-      setEmailOtpValue("");
-    }
-  }}
-    suffix={
-      !emailOtpVerified ? (
-        <Button
-          type="link"
-          onClick={handleSendEmailOtp}
-          loading={emailLoading}
-        >
-          {emailOtpSent ? "Resend" : "Send OTP"}
-        </Button>
-      ) : (
-        <CheckCircleFilled style={{ color: "green" }} />
-      )
-    }
-  />
+              {emailOtpSent && !emailOtpVerified && (
+                <>
+                  <StyledInput
+                    placeholder="Enter Email OTP"
+                    value={emailOtpValue}
+                    onChange={(e) => { setEmailOtpValue(e.target.value); setEmailOtpError(""); }}
+                    maxLength={6}
+                    suffix={
+                      <Button type="link" onClick={handleVerifyEmailOtp} loading={emailLoading}>
+                        VERIFY
+                      </Button>
+                    }
+                  />
+                  {/* Inline email OTP error */}
+                  {emailOtpError && (
+                    <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{emailOtpError}</div>
+                  )}
+                </>
+              )}
 
-</Form.Item>
-  {emailOtpSent && !emailOtpVerified && (
-  <StyledInput
-    placeholder="Enter Email OTP"
-    value={emailOtpValue}
-    onChange={(e) => setEmailOtpValue(e.target.value)}
-    maxLength={6}
-    suffix={
-      <Button type="link" onClick={handleVerifyEmailOtp} loading={emailLoading}>
-        VERIFY
-      </Button>
-    }
-  />
-)}
-{(emailOtpSent || emailOtpVerified) && (
-  <div style={{ marginTop: 8 }}>
-    <Button
-      type="link"
-      onClick={() => {
-        setEmailOtpVerified(false);  // 🔓 unlock input
-        setEmailOtpSent(false);      // hide OTP input
-        setEmailOtpValue("");        // clear OTP
-      }}
-    >
-      Change Email
-    </Button>
-  </div>
-)}
+              {(emailOtpSent || emailOtpVerified) && (
+                <div style={{ marginTop: 8 }}>
+                  <Button
+                    type="link"
+                    onClick={() => {
+                      setEmailOtpVerified(false);
+                      setEmailOtpSent(false);
+                      setEmailOtpValue("");
+                    }}
+                  >
+                    Change Email
+                  </Button>
+                </div>
+              )}
 
               <Form.Item name="password" label="Password" rules={[{ required: true, min: 6 }]}>
-                <Input.Password style={{ height: 45, borderRadius: 8 }} prefix={<LockOutlined />} placeholder="Password" />
+                <Input.Password
+                  style={{ height: 45, borderRadius: 8 }}
+                  prefix={<LockOutlined />}
+                  placeholder="Password"
+                />
               </Form.Item>
             </div>
 
@@ -465,45 +465,28 @@ setOtpValue("");
                   <PhoneInput
                     country={'ae'}
                     value={phone}
-                    onChange={(phone, data) => {
-  setPhone(phone);
-  setCountryData(data);
-
-  if (otpVerified) {
-    setOtpVerified(false);
-    setOtpSent(false);
-    setOtpValue("");
-  }
-}}
-                    enableSearch={true}
-                    inputStyle={{
-                      width: '100%',
-                      height: '45px',
-                      fontSize: '16px',
-                      paddingRight: '100px' // Space for inner button
+                    onChange={(ph, data) => {
+                      setPhone(ph);
+                      setCountryData(data);
+                      setPhoneError("");
+                      if (otpVerified) {
+                        setOtpVerified(false);
+                        setOtpSent(false);
+                        setOtpValue("");
+                      }
                     }}
+                    enableSearch={true}
+                    inputStyle={{ width: '100%', height: '45px', fontSize: '16px', paddingRight: '100px' }}
                     disabled={otpVerified}
                   />
 
-                  {/* ✅ SEND OTP BUTTON INSIDE PHONE INPUT */}
                   {!otpVerified ? (
                     <Button
                       type="link"
-                      onClick={() => {
-  setOtpValue("");      // clear old OTP
-  setOtpVerified(false);
-  handleSendOtp();
-}}
+                      onClick={() => { setOtpValue(""); setOtpVerified(false); handleSendOtp(); }}
                       loading={loading}
                       disabled={!phone}
-                      style={{
-                        position: 'absolute',
-                        right: '5px',
-                        top: '6px',
-                        zIndex: 2,
-                        color: '#5C039B',
-                        fontWeight: '700'
-                      }}
+                      style={{ position: 'absolute', right: '5px', top: '6px', zIndex: 2, color: '#5C039B', fontWeight: '700' }}
                     >
                       {otpSent ? "Resend" : "Send OTP"}
                     </Button>
@@ -512,21 +495,22 @@ setOtpValue("");
                       <CheckCircleFilled style={{ color: "#52c41a", fontSize: "20px" }} />
                     </div>
                   )}
+
                   {(otpSent || otpVerified) && (
-  <div style={{ marginTop: 8 }}>
-    <Button
-      type="link"
-      onClick={() => {
-        setOtpVerified(false);  // 🔓 unlock input
-        setOtpSent(false);      // hide OTP input
-        setOtpValue("");        // clear old OTP
-      }}
-    >
-      Change Number
-    </Button>
-  </div>
-)}
+                    <div style={{ marginTop: 8 }}>
+                      <Button
+                        type="link"
+                        onClick={() => { setOtpVerified(false); setOtpSent(false); setOtpValue(""); setPhoneError(""); }}
+                      >
+                        Change Number
+                      </Button>
+                    </div>
+                  )}
                 </div>
+                {/* Inline phone error */}
+                {phoneError && (
+                  <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{phoneError}</div>
+                )}
               </Form.Item>
 
               <AnimatePresence>
@@ -538,9 +522,8 @@ setOtpValue("");
                           prefix={<SafetyCertificateOutlined />}
                           placeholder="Enter 6-digit OTP"
                           value={otpValue}
-                          onChange={(e) => setOtpValue(e.target.value)}
+                          onChange={(e) => { setOtpValue(e.target.value); setOtpError(""); }}
                           maxLength={6}
-                          // ✅ VERIFY BUTTON INSIDE OTP INPUT
                           suffix={
                             <Button
                               type="link"
@@ -553,6 +536,10 @@ setOtpValue("");
                           }
                         />
                       </Form.Item>
+                      {/* Inline OTP error */}
+                      {otpError && (
+                        <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{otpError}</div>
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -578,67 +565,74 @@ setOtpValue("");
               </Col>
             </Row>
 
-            {/* --- INSTANT FILE UPLOADS --- */}
+            {/* --- FILE UPLOADS --- */}
             <Row gutter={16} style={{ marginTop: 20 }}>
               <Col xs={24} md={8}>
                 <Form.Item label="Profile Photo">
-                  <Upload
-                    showUploadList={false}
-                    beforeUpload={(file) => handleInstantUpload(file, 'profile')}
-                  >
+                  <Upload showUploadList={false} beforeUpload={(file) => handleInstantUpload(file, 'profile')}>
                     <Button
                       icon={urls.profile ? <CheckOutlined /> : <UploadOutlined />}
                       block
-                      style={{ height: 45, borderColor: urls.profile ? '#52c41a' : '#d9d9d9', color: urls.profile ? '#52c41a' : 'inherit' }}
+                      style={{ height: 45, borderColor: urls.profile ? '#52c41a' : uploadError.profile ? '#ef4444' : '#d9d9d9', color: urls.profile ? '#52c41a' : 'inherit' }}
                       loading={uploading.profile}
                     >
                       {urls.profile ? "Uploaded" : "Upload Photo"}
                     </Button>
                   </Upload>
                   {urls.profile && <div style={{ marginTop: 5, fontSize: 12, color: '#52c41a' }}>Image saved!</div>}
+                  {uploadError.profile && <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{uploadError.profile}</div>}
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
                 <Form.Item label="ID Proof">
-                  <Upload
-                    showUploadList={false}
-                    beforeUpload={(file) => handleInstantUpload(file, 'idProof')}
-                  >
+                  <Upload showUploadList={false} beforeUpload={(file) => handleInstantUpload(file, 'idProof')}>
                     <Button
                       icon={urls.idProof ? <CheckOutlined /> : <UploadOutlined />}
                       block
-                      style={{ height: 45, borderColor: urls.idProof ? '#52c41a' : '#d9d9d9', color: urls.idProof ? '#52c41a' : 'inherit' }}
+                      style={{ height: 45, borderColor: urls.idProof ? '#52c41a' : uploadError.idProof ? '#ef4444' : '#d9d9d9', color: urls.idProof ? '#52c41a' : 'inherit' }}
                       loading={uploading.idProof}
                     >
                       {urls.idProof ? "Uploaded" : "Upload Emirates ID"}
                     </Button>
                   </Upload>
                   {urls.idProof && <div style={{ marginTop: 5, fontSize: 12, color: '#52c41a' }}>ID saved!</div>}
+                  {uploadError.idProof && <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{uploadError.idProof}</div>}
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
                 <Form.Item label="RERA Certificate">
-                  <Upload
-                    showUploadList={false}
-                    beforeUpload={(file) => handleInstantUpload(file, 'rera')}
-                  >
+                  <Upload showUploadList={false} beforeUpload={(file) => handleInstantUpload(file, 'rera')}>
                     <Button
                       icon={urls.rera ? <CheckOutlined /> : <UploadOutlined />}
                       block
-                      style={{ height: 45, borderColor: urls.rera ? '#52c41a' : '#d9d9d9', color: urls.rera ? '#52c41a' : 'inherit' }}
+                      style={{ height: 45, borderColor: urls.rera ? '#52c41a' : uploadError.rera ? '#ef4444' : '#d9d9d9', color: urls.rera ? '#52c41a' : 'inherit' }}
                       loading={uploading.rera}
                     >
                       {urls.rera ? "Uploaded" : "Upload RERA"}
                     </Button>
                   </Upload>
                   {urls.rera && <div style={{ marginTop: 5, fontSize: 12, color: '#52c41a' }}>Certificate saved!</div>}
+                  {uploadError.rera && <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{uploadError.rera}</div>}
                 </Form.Item>
               </Col>
             </Row>
 
-            <SubmitButton type="primary" block htmlType="submit" loading={submitting} disabled={!otpVerified || !emailOtpVerified}>
+            <SubmitButton
+              type="primary"
+              block
+              htmlType="submit"
+              loading={submitting}
+              disabled={!otpVerified || !emailOtpVerified}
+            >
               COMPLETE REGISTRATION
             </SubmitButton>
+
+            {/* Inline submit error below button */}
+            {submitError && (
+              <div style={{ color: "#ef4444", fontSize: 13, marginTop: 10, textAlign: "center", fontWeight: 500 }}>
+                {submitError}
+              </div>
+            )}
           </Form>
         </MainCard>
       </PageWrapper>
