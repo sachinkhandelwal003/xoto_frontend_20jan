@@ -169,7 +169,7 @@ const Login = () => {
     {
       id: "developer",
       label: "Developers",
-      desc: "For Agents",
+      desc: "For Developers",
        icon: <CodeOutlined style={{ fontSize: "28px" }} />,
       color: "#F97316",
       gradient: "linear-gradient(135deg, #10B981, #059669)",

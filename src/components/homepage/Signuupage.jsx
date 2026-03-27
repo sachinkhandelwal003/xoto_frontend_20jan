@@ -20,7 +20,6 @@ import {
 import { 
   SafetyCertificateOutlined, 
   CheckCircleFilled,
-  EditOutlined 
 } from "@ant-design/icons";
 import { Country, State, City } from "country-state-city";
 import { AuthContext } from "../../manageApi/context/AuthContext";
@@ -88,6 +87,65 @@ const LeadGenerationModal = ({
     });
   }, []);
 
+  /* ================= HELPER FUNCTION TO DISPLAY ERROR MESSAGES ================= */
+  const showErrorNotification = (error) => {
+    console.error("API Error:", error);
+    
+    let errorMessage = "Something went wrong. Please try again.";
+    const responseData = error?.response?.data;
+    
+    if (responseData) {
+      if (Array.isArray(responseData) && responseData.length > 0) {
+        const errors = responseData.map(err => err.message || err).join(", ");
+        errorMessage = errors;
+        
+        responseData.forEach(err => {
+          if (err.field === "email") {
+            form.setFields([{ name: "email", errors: [err.message] }]);
+          } else if (err.field === "mobile") {
+            form.setFields([{ name: "mobile", errors: [err.message] }]);
+          }
+        });
+      } 
+      else if (typeof responseData === "object") {
+        if (responseData.email) {
+          errorMessage = responseData.email;
+          form.setFields([{ name: "email", errors: [responseData.email] }]);
+        } 
+        else if (responseData.mobile) {
+          errorMessage = responseData.mobile;
+          form.setFields([{ name: "mobile", errors: [responseData.mobile] }]);
+        }
+        else if (responseData.message) {
+          errorMessage = responseData.message;
+        }
+        else {
+          const firstErrorKey = Object.keys(responseData)[0];
+          if (firstErrorKey && responseData[firstErrorKey]) {
+            errorMessage = `${firstErrorKey}: ${responseData[firstErrorKey]}`;
+          }
+        }
+      }
+      else if (typeof responseData === "string") {
+        errorMessage = responseData;
+        
+        if (errorMessage.toLowerCase().includes("email")) {
+          form.setFields([{ name: "email", errors: [errorMessage] }]);
+        } else if (errorMessage.toLowerCase().includes("mobile") || errorMessage.toLowerCase().includes("phone")) {
+          form.setFields([{ name: "mobile", errors: [errorMessage] }]);
+        }
+      }
+    }
+    
+    notification.error({
+      message: "Error",
+      description: errorMessage,
+      duration: 5,
+      placement: "top",
+      style: { marginTop: 60 },
+    });
+  };
+
   /* ================= HANDLERS ================= */
   const handleLocationCountryChange = (isoCode) => {
     const updatedStates = State.getStatesOfCountry(isoCode);
@@ -103,9 +161,10 @@ const LeadGenerationModal = ({
     form.setFieldsValue({ city: undefined });
   };
 
-  // --- OTP Logic: Send Mobile OTP (Live API) ---
+  // --- OTP Logic: Send Mobile OTP ---
   const handleSendOtp = async () => {
     try {
+      form.setFields([{ name: "mobile", errors: [] }]);
       await form.validateFields(['mobile']);
       
       const mobileVal = form.getFieldValue('mobile');
@@ -114,29 +173,33 @@ const LeadGenerationModal = ({
 
       setOtpLoading(true);
       
-      // ✅ Live API Call
       await apiService.post("/otp/send-otp", {
         country_code: formattedCode,
         phone_number: mobileVal
       });
 
-      notification.success({ message: "OTP Sent", description: "Please check your mobile." });
+      notification.success({ 
+        message: "OTP Sent", 
+        description: `OTP sent to ${formattedCode}${mobileVal}`,
+        duration: 3,
+      });
       setOtpSent(true);
       setOtpVerified(false);
     } catch (error) {
-      notification.error({ 
-        message: "Error", 
-        description: error?.response?.data?.message || "Invalid phone number or Server Error" 
-      });
+      showErrorNotification(error);
     } finally {
       setOtpLoading(false);
     }
   };
 
-  // --- OTP Logic: Verify Mobile OTP (Live API) ---
+  // --- OTP Logic: Verify Mobile OTP ---
   const handleVerifyOtp = async () => {
     if (!otpValue) {
-      notification.error({ message: "Error", description: "Please enter the OTP" });
+      notification.error({ 
+        message: "Error", 
+        description: "Please enter the OTP",
+        duration: 3,
+      });
       return;
     }
     try {
@@ -147,19 +210,24 @@ const LeadGenerationModal = ({
       const payload = { country_code: formattedCode, phone_number: mobileVal, otp: otpValue };
 
       await apiService.post("/otp/verify-otp", payload);
-      notification.success({ message: "Verified", description: "Mobile number verified successfully!" });
+      notification.success({ 
+        message: "Verified", 
+        description: "Mobile number verified successfully!",
+        duration: 3,
+      });
       setOtpVerified(true);
       setOtpSent(false); 
     } catch (error) {
-      notification.error({ message: "Verification Failed", description: error?.response?.data?.message || "Invalid OTP." });
+      showErrorNotification(error);
     } finally {
       setOtpLoading(false);
     }
   };
 
-  // --- OTP Logic: Send Email OTP (Live API) ---
+  // --- OTP Logic: Send Email OTP ---
   const handleSendEmailOtp = async () => {
     try {
+      form.setFields([{ name: "email", errors: [] }]);
       await form.validateFields(["email"]);
       const email = form.getFieldValue("email");
 
@@ -168,25 +236,27 @@ const LeadGenerationModal = ({
 
       notification.success({
         message: "OTP Sent",
-        description: "Please check your email inbox",
+        description: `OTP sent to ${email}`,
+        duration: 3,
       });
 
       setEmailOtpSent(true);
       setEmailOtpVerified(false);
     } catch (error) {
-      notification.error({
-        message: "Email OTP Error",
-        description: error?.response?.data?.message || "Failed to send OTP",
-      });
+      showErrorNotification(error);
     } finally {
       setEmailOtpLoading(false);
     }
   };
 
-  // --- OTP Logic: Verify Email OTP (Live API) ---
+  // --- OTP Logic: Verify Email OTP ---
   const handleVerifyEmailOtp = async () => {
     if (!emailOtpValue) {
-      notification.error({ message: "Please enter OTP" });
+      notification.error({ 
+        message: "Error", 
+        description: "Please enter OTP",
+        duration: 3,
+      });
       return;
     }
     try {
@@ -199,30 +269,16 @@ const LeadGenerationModal = ({
       notification.success({
         message: "Email Verified",
         description: "Email verified successfully!",
+        duration: 3,
       });
 
       setEmailOtpVerified(true);
       setEmailOtpSent(false);
     } catch (error) {
-      notification.error({
-        message: "Verification Failed",
-        description: error?.response?.data?.message || "Invalid OTP",
-      });
+      showErrorNotification(error);
     } finally {
       setEmailOtpLoading(false);
     }
-  };
-
-  const handleChangeEmail = () => {
-    setEmailOtpSent(false);
-    setEmailOtpVerified(false);
-    setEmailOtpValue("");
-  };
-
-  const handleChangeNumber = () => {
-    setOtpSent(false);
-    setOtpVerified(false);
-    setOtpValue("");
   };
 
   /* ================= PREFIX SELECTOR ================= */
@@ -240,6 +296,7 @@ const LeadGenerationModal = ({
           form.setFieldsValue({ country_code: val });
           setOtpVerified(false);
           setOtpSent(false);
+          form.setFields([{ name: "mobile", errors: [] }]);
         }}
       >
         {phoneCodesData.map((item) => (
@@ -256,10 +313,26 @@ const LeadGenerationModal = ({
 
   /* ================= SUBMIT HANDLER ================= */
   const handleSubmit = async (values) => {
+    // Note: Since the button is now disabled until verification, 
+    // these manual checks are an extra layer of safety.
     if (activeTab === "signup" && !otpVerified) {
-      notification.error({ message: "Verification Required", description: "Please verify mobile." });
+      notification.error({ 
+        message: "Verification Required", 
+        description: "Please verify your mobile number before creating account.",
+        duration: 4,
+      });
       return;
     }
+    
+    if (activeTab === "signup" && !emailOtpVerified) {
+      notification.error({ 
+        message: "Verification Required", 
+        description: "Please verify your email address before creating account.",
+        duration: 4,
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -269,6 +342,11 @@ const LeadGenerationModal = ({
 
       if (activeTab === "signin") {
         const loginData = await login("/users/login/customer", { mobile: mobilePayload });
+        notification.success({
+          message: "Success",
+          description: "Logged in successfully!",
+          duration: 3,
+        });
         onAuthSuccess?.(loginData);
         onCancel();
       } else {
@@ -288,6 +366,11 @@ const LeadGenerationModal = ({
         };
         const response = await apiService.post("/users/signup/customer", signupPayload);
         if (response?.success) {
+          notification.success({
+            message: "Account Created",
+            description: "Your account has been created successfully!",
+            duration: 3,
+          });
           const loginData = await login("/users/login/customer", { mobile: mobilePayload });
           onAuthSuccess?.(loginData);
           onCancel();
@@ -295,25 +378,16 @@ const LeadGenerationModal = ({
       }
     } catch (error) {
       console.error("Signup/Login Error:", error);
-      let errorMessage = "Something went wrong. Please try again.";
-      const responseData = error?.response?.data;
-
-      if (Array.isArray(responseData) && responseData.length > 0) {
-        errorMessage = responseData[0]?.message || errorMessage;
-      } else if (responseData?.message) {
-        errorMessage = responseData.message;
-      }
-
-      notification.error({
-        message: "Error",
-        description: errorMessage,
-        duration: 5,
-        placement: "top",
-      });
+      showErrorNotification(error);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Determine if the main submit button should be disabled
+  const isSubmitDisabled = activeTab === "signin" 
+    ? !otpVerified 
+    : (!otpVerified || !emailOtpVerified);
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: BRAND_PURPLE, borderRadius: 12 } }}>
@@ -348,18 +422,50 @@ const LeadGenerationModal = ({
             <Title level={2}>{activeTab === "signin" ? "Welcome Back" : "Create Account"}</Title>
 
             <div className="flex p-1.5 bg-gray-100 rounded-xl my-6">
-              <button type="button" onClick={() => { setActiveTab("signin"); form.resetFields(); }} className={`flex-1 py-3 rounded-lg ${activeTab === "signin" && "bg-white shadow"}`}>Sign In</button>
-              <button type="button" onClick={() => { setActiveTab("signup"); form.resetFields(); }} className={`flex-1 py-3 rounded-lg ${activeTab === "signup" && "bg-white shadow"}`}>Create Account</button>
+              <button 
+                type="button" 
+                onClick={() => { 
+                  setActiveTab("signin"); 
+                  form.resetFields();
+                  setOtpVerified(false);
+                  setOtpSent(false);
+                  setEmailOtpVerified(false);
+                  setEmailOtpSent(false);
+                }} 
+                className={`flex-1 py-3 rounded-lg ${activeTab === "signin" && "bg-white shadow"}`}
+              >
+                Sign In
+              </button>
+              <button 
+                type="button" 
+                onClick={() => { 
+                  setActiveTab("signup"); 
+                  form.resetFields();
+                  setOtpVerified(false);
+                  setOtpSent(false);
+                  setEmailOtpVerified(false);
+                  setEmailOtpSent(false);
+                }} 
+                className={`flex-1 py-3 rounded-lg ${activeTab === "signup" && "bg-white shadow"}`}
+              >
+                Create Account
+              </button>
             </div>
 
             <Form form={form} layout="vertical" onFinish={handleSubmit}>
               {activeTab === "signup" && (
                 <>
                   <div className="grid grid-cols-2 gap-4">
-                    <Form.Item name="first_name" rules={[{ required: true, message: 'Required' }]}>
+                    <Form.Item 
+                      name="first_name" 
+                      rules={[{ required: true, message: 'First name is required' }]}
+                    >
                       <Input size="large" prefix={<User size={18}/>} placeholder="First Name" />
                     </Form.Item>
-                    <Form.Item name="last_name" rules={[{ required: true, message: 'Required' }]}>
+                    <Form.Item 
+                      name="last_name" 
+                      rules={[{ required: true, message: 'Last name is required' }]}
+                    >
                       <Input size="large" placeholder="Last Name" />
                     </Form.Item>
                   </div>
@@ -369,6 +475,7 @@ const LeadGenerationModal = ({
                     label="Email"
                     required
                     validateStatus={form.getFieldError("email")?.length ? "error" : ""}
+                    help={form.getFieldError("email")?.length ? form.getFieldError("email")[0] : null}
                     style={{ marginBottom: emailOtpSent && !emailOtpVerified ? 0 : 24 }}
                   >
                     <Form.Item
@@ -376,7 +483,7 @@ const LeadGenerationModal = ({
                       noStyle
                       rules={[
                         { required: true, message: "Email is required" },
-                        { type: "email", message: "Invalid email address" },
+                        { type: "email", message: "Please enter a valid email address" },
                       ]}
                     >
                       <Input
@@ -390,6 +497,7 @@ const LeadGenerationModal = ({
                             setEmailOtpVerified(false);
                             setEmailOtpSent(false);
                           }
+                          form.setFields([{ name: "email", errors: [] }]);
                         }}
                         suffix={
                           !emailOtpVerified ? (
@@ -446,6 +554,7 @@ const LeadGenerationModal = ({
                 label="Mobile Number"
                 required
                 validateStatus={form.getFieldError("mobile")?.length ? "error" : ""}
+                help={form.getFieldError("mobile")?.length ? form.getFieldError("mobile")[0] : null}
                 style={{ marginBottom: otpSent && !otpVerified ? 0 : 24 }}
               >
                 <Form.Item
@@ -460,7 +569,7 @@ const LeadGenerationModal = ({
                         const formattedCode = rawCode.startsWith("+") ? rawCode : `+${rawCode}`;
                         const phoneInstance = parsePhoneNumberFromString(`${formattedCode}${value}`);
                         if (!phoneInstance || !phoneInstance.isValid()) {
-                          return Promise.reject("Invalid mobile number");
+                          return Promise.reject("Please enter a valid mobile number");
                         }
                         return Promise.resolve();
                       },
@@ -482,6 +591,7 @@ const LeadGenerationModal = ({
                         setOtpVerified(false);
                         setOtpSent(false);
                       }
+                      form.setFields([{ name: "mobile", errors: [] }]);
                     }}
                     suffix={
                       !otpVerified ? (
@@ -535,18 +645,27 @@ const LeadGenerationModal = ({
 
               {activeTab === "signup" && (
                 <>
-                  <Form.Item name="location_country" rules={[{ required: true, message: "Required" }]}>
+                  <Form.Item 
+                    name="location_country" 
+                    rules={[{ required: true, message: "Please select your country" }]}
+                  >
                     <Select size="large" placeholder="Select Country" showSearch onChange={handleLocationCountryChange}>
                       {countriesList.map((c) => <Option key={c.isoCode} value={c.isoCode}>{c.name}</Option>)}
                     </Select>
                   </Form.Item>
                   <div className="grid grid-cols-2 gap-4">
-                    <Form.Item name="state" rules={[{ required: true, message: "Required" }]}>
+                    <Form.Item 
+                      name="state" 
+                      rules={[{ required: true, message: "Please select your state" }]}
+                    >
                       <Select size="large" placeholder="State" disabled={!statesList.length} onChange={handleLocationStateChange}>
                         {statesList.map((s) => <Option key={s.isoCode} value={s.isoCode}>{s.name}</Option>)}
                       </Select>
                     </Form.Item>
-                    <Form.Item name="city" rules={[{ required: true, message: "Required" }]}>
+                    <Form.Item 
+                      name="city" 
+                      rules={[{ required: true, message: "Please select your city" }]}
+                    >
                       <Select size="large" placeholder="City" disabled={!citiesList.length}>
                         {citiesList.map((c) => <Option key={c.name} value={c.name}>{c.name}</Option>)}
                       </Select>
@@ -555,14 +674,16 @@ const LeadGenerationModal = ({
                 </>
               )}
 
+              {/* MAIN SUBMIT BUTTON */}
               <Button 
                 type="primary" 
                 htmlType="submit" 
                 block 
+                disabled={isSubmitDisabled} 
                 loading={isSubmitting} 
                 className="h-14 mt-4 text-base" 
                 style={{ 
-                  background: `linear-gradient(135deg, ${BRAND_PURPLE}, ${BRAND_PURPLE_DARK})`, 
+                  background: isSubmitDisabled ? undefined : `linear-gradient(135deg, ${BRAND_PURPLE}, ${BRAND_PURPLE_DARK})`, 
                   border: "none",
                   borderRadius: "12px",
                   fontWeight: "bold"
@@ -580,8 +701,7 @@ const LeadGenerationModal = ({
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+        } `}</style>
     </ConfigProvider>
   );
 };

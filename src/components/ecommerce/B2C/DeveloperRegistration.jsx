@@ -12,13 +12,25 @@ import {
   Modal,
   Select,
   notification,
+  Divider,
+  Progress,
+  Space,
 } from "antd";
 import {
   CodeOutlined,
   SafetyOutlined,
   SafetyCertificateOutlined,
   CheckCircleFilled,
-  BuildOutlined
+  BuildOutlined,
+  EnvironmentOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  LockOutlined,
+  UserOutlined,
+  GlobalOutlined,
+  RocketOutlined,
+  StarOutlined,
+  TrophyOutlined,
 } from "@ant-design/icons";
 import { useForm, Controller } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -48,7 +60,8 @@ const DeveloperRegistration = () => {
   const [enteredEmailOtp, setEnteredEmailOtp] = useState("");
   const [emailOtpLoading, setEmailOtpLoading] = useState(false);
 
-  const themeColor = "#5C039B";
+  const themeColor = "#5C029B";
+  const lightBg = "#F8F5FC";
 
   const {
     control,
@@ -64,19 +77,25 @@ const DeveloperRegistration = () => {
       email: "",
       password: "",
       phone_number: "",
-      country_code: "+971", // Default UAE Code
-      country: "AE", // Default ISO Code for UAE
+      country_code: "+971",
+      country: "AE",
       city: "",
       address: "",
     },
   });
 
-  // Watchers
   const selectedCountry = watch("country");
   const watchedPhoneNumber = watch("phone_number");
   const watchedEmail = watch("email");
+  const formValues = watch();
 
-  // Load Cities when Country changes
+  // Calculate form completion percentage
+  const calculateCompletion = () => {
+    const requiredFields = ["name", "email", "password", "phone_number", "country", "city", "address"];
+    const filledFields = requiredFields.filter(field => formValues[field] && formValues[field] !== "");
+    return Math.floor((filledFields.length / requiredFields.length) * 100);
+  };
+
   useEffect(() => {
     if (selectedCountry) {
       const updatedCities = City.getCitiesOfCountry(selectedCountry);
@@ -86,7 +105,6 @@ const DeveloperRegistration = () => {
     }
   }, [selectedCountry]);
 
-  // Prepare Phone Codes with Flag Images
   const countryPhoneData = useMemo(() => {
     const allCountries = Country.getAllCountries();
     return allCountries.map((c) => ({
@@ -98,9 +116,6 @@ const DeveloperRegistration = () => {
     }));
   }, []);
 
-  // -----------------------------------------------------------
-  // 🟢 MOBILE OTP HANDLERS
-  // -----------------------------------------------------------
   const handleSendOtp = async () => {
     const countryCode = getValues("country_code");
     const number = getValues("phone_number");
@@ -154,9 +169,6 @@ const DeveloperRegistration = () => {
     }
   };
 
-  // -----------------------------------------------------------
-  // 🟢 EMAIL OTP HANDLERS
-  // -----------------------------------------------------------
   const handleSendEmailOtp = async () => {
     const email = getValues("email");
     if (!email) {
@@ -204,52 +216,48 @@ const DeveloperRegistration = () => {
     }
   };
 
-  // -----------------------------------------------------------
-  // POPUPS & SUBMIT
-  // -----------------------------------------------------------
-
   const showSuccessPopup = () => {
     Modal.success({
       centered: true,
       title: (
-        <div style={{ fontSize: 20, fontWeight: 700, color: "#52c41a" }}>
-          Thank You!
+        <div style={{ fontSize: 20, fontWeight: 800, color: "#52c41a" }}>
+          <CheckCircleFilled style={{ marginRight: 8, fontSize: 24 }} />
+          Registration Submitted!
         </div>
       ),
       content: (
-        <div style={{ marginTop: 10, fontSize: 15, lineHeight: 1.7, color: "#444" }}>
-          <div>
-            Thank you for your submission! We’ve received your information and will
-            review it shortly. Our team will get in touch with you soon to discuss
-            the next steps.
-          </div>
-          <div style={{ marginTop: 12, fontWeight: 500 }}>
-            An email has also been sent to your registered email address.
+        <div style={{ marginTop: 12, fontSize: 15, lineHeight: 1.6 }}>
+          <div style={{ fontWeight: 500, marginBottom: 12 }}>Thank you for your submission!</div>
+          <div>We'll review it shortly and get back to you within 24-48 hours.</div>
+          <div style={{ marginTop: 12, background: "#f0f9ff", padding: "12px", borderRadius: 8, border: "1px solid #bae7ff" }}>
+            <MailOutlined style={{ marginRight: 8, color: "#52c41a", fontSize: 16 }} />
+            <span style={{ fontWeight: 500 }}>An email has been sent to your registered email address.</span>
           </div>
         </div>
       ),
       okText: "Go to Login",
-      onOk: () => navigate("/login"), // ✅ Navigates to /login on success
+      okButtonProps: { style: { background: themeColor, borderColor: themeColor, fontWeight: 600 } },
+      onOk: () => navigate("/login"),
     });
   };
 
   const showAlreadyRegisteredPopup = () => {
     Modal.info({
       centered: true,
-      title: <div style={{ fontSize: 20, fontWeight: 700 }}>Already Registered</div>,
+      title: <div style={{ fontSize: 20, fontWeight: 800 }}>Already Registered</div>,
       content: (
-        <div style={{ marginTop: 10, fontSize: 15, lineHeight: 1.7 }}>
-          <div>This email or phone number is already registered.</div>
-          <div>Please log in to continue.</div>
+        <div style={{ marginTop: 12, fontSize: 15 }}>
+          <div style={{ marginBottom: 8 }}>This email or phone number is already registered with us.</div>
+          <div style={{ fontWeight: 500 }}>Please log in to continue with your account.</div>
         </div>
       ),
       okText: "Go to Login",
-      onOk: () => navigate("/login"), // ✅ Direct to login if already exists
+      okButtonProps: { style: { background: themeColor, borderColor: themeColor, fontWeight: 600 } },
+      onOk: () => navigate("/login"),
     });
   };
 
   const onSubmit = async (data) => {
-    // --- CHECK BOTH VERIFICATIONS ---
     if (!otpVerified) {
       message.error("Please verify your phone number to continue.");
       return;
@@ -264,7 +272,6 @@ const DeveloperRegistration = () => {
     try {
       const countryObj = Country.getCountryByCode(data.country);
 
-      // JSON payload formatted exactly as required
       const registerPayload = {
         name: data.name,
         email: data.email,
@@ -279,14 +286,11 @@ const DeveloperRegistration = () => {
       await apiService.post("/developer/create-developer", registerPayload);
       showSuccessPopup();
     } catch (err) {
-      console.log("Developer register error:", err);
       const status = err?.response?.status;
       const res = err?.response?.data;
-      const apiMsg =
-        res?.message || res?.error || "Registration failed. Please try again.";
+      const apiMsg = res?.message || res?.error || "Registration failed. Please try again.";
 
-      const isAlreadyRegistered =
-        status === 409 ||
+      const isAlreadyRegistered = status === 409 ||
         apiMsg.toLowerCase().includes("already") ||
         apiMsg.toLowerCase().includes("exist") ||
         apiMsg.toLowerCase().includes("duplicate");
@@ -302,29 +306,46 @@ const DeveloperRegistration = () => {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", background: "#f5f5f5" }}>
-      <Row style={{ width: "100%", margin: 0 }}>
+    <div style={{ minHeight: "100vh", display: "flex", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+      <Row style={{ width: "100%", margin: 0, minHeight: "100vh" }}>
         
         {/* ================= LEFT SIDE (BRANDING) ================= */}
         <Col
           xs={24}
-          md={10}
+          md={8}
           style={{
-            background: `linear-gradient(135deg, ${themeColor} 0%, #3a0263 100%)`,
+            background: `linear-gradient(135deg, ${themeColor} 0%, #3a0163 100%)`,
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
-            padding: "60px 40px",
+            padding: "48px 40px",
             color: "#fff",
             position: "relative",
-            overflow: "hidden"
+            overflow: "hidden",
+            boxShadow: "4px 0 20px rgba(0,0,0,0.1)",
           }}
         >
           {/* Decorative Background Elements */}
-          <div style={{ position: "absolute", top: -50, left: -50, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }}></div>
-          <div style={{ position: "absolute", bottom: -100, right: -50, width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }}></div>
+          <div style={{
+            position: "absolute",
+            top: "-20%",
+            right: "-10%",
+            width: "300px",
+            height: "300px",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)",
+          }}></div>
+          <div style={{
+            position: "absolute",
+            bottom: "-10%",
+            left: "-10%",
+            width: "250px",
+            height: "250px",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)",
+          }}></div>
           
-          <div style={{ zIndex: 1, maxWidth: 500, margin: "0 auto" }}>
+          <div style={{ zIndex: 1 }}>
             <div
               style={{
                 display: "inline-flex",
@@ -332,34 +353,60 @@ const DeveloperRegistration = () => {
                 justifyContent: "center",
                 width: 70,
                 height: 70,
-                background: "rgba(255,255,255,0.2)",
-                borderRadius: "16px",
-                marginBottom: 24,
+                background: "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.1) 100%)",
+                borderRadius: "18px",
+                marginBottom: 32,
                 backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255,255,255,0.3)"
+                border: "1px solid rgba(255,255,255,0.3)",
+                boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
               }}
             >
-              <BuildOutlined style={{ fontSize: 32, color: "#fff" }} />
+              <BuildOutlined style={{ fontSize: 36, color: "#fff" }} />
             </div>
 
-            <Title level={1} style={{ color: "#fff", margin: 0, fontWeight: 800, fontSize: "3rem", lineHeight: 1.2 }}>
-              Developer <br/> Registration
+            <Title level={1} style={{ color: "#fff", margin: 0, fontWeight: 800, fontSize: "2.5rem", lineHeight: 1.2, letterSpacing: "-0.02em" }}>
+              Developer <br/>Registration
             </Title>
-            <div style={{ width: 60, height: 4, background: "#fff", marginTop: 24, marginBottom: 24, borderRadius: 2 }}></div>
+            <div style={{ width: 70, height: 4, background: "#fff", marginTop: 20, marginBottom: 24, borderRadius: 2 }}></div>
             
-            <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 18, lineHeight: 1.6, display: "block" }}>
-              Join our exclusive network of top-tier property developers. Register your company to showcase your premium projects to a global audience.
+            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, lineHeight: 1.6, display: "block", fontWeight: 500 }}>
+              Join our exclusive network of top-tier property developers. Register to showcase your premium projects to a global audience.
             </Text>
             
             <div style={{ marginTop: 40, display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <CheckCircleFilled style={{ color: "#fff", fontSize: 20 }} />
-                <Text style={{ color: "#fff", fontSize: 16 }}>Admin Approval Required</Text>
+                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <CheckCircleFilled style={{ color: "#fff", fontSize: 16 }} />
+                </div>
+                <Text style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Admin Approval Required</Text>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <CheckCircleFilled style={{ color: "#fff", fontSize: 20 }} />
-                <Text style={{ color: "#fff", fontSize: 16 }}>Secure Verification Process</Text>
+                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <SafetyCertificateOutlined style={{ color: "#fff", fontSize: 16 }} />
+                </div>
+                <Text style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Secure Verification Process</Text>
               </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <TrophyOutlined style={{ color: "#fff", fontSize: 16 }} />
+                </div>
+                <Text style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Premium Exposure & Benefits</Text>
+              </div>
+            </div>
+
+            <Divider style={{ background: "rgba(255,255,255,0.2)", margin: "32px 0 24px" }} />
+            
+            <div>
+              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, fontWeight: 500 }}>
+                Already have an account?{" "}
+                <Button 
+                  type="link" 
+                  onClick={() => navigate("/login")} 
+                  style={{ color: "#fff", fontWeight: 800, padding: 0, fontSize: 13 }}
+                >
+                  Sign In →
+                </Button>
+              </Text>
             </div>
           </div>
         </Col>
@@ -367,44 +414,50 @@ const DeveloperRegistration = () => {
         {/* ================= RIGHT SIDE (FORM) ================= */}
         <Col
           xs={24}
-          md={14}
+          md={16}
           style={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            padding: "40px 20px",
-            background: "#f8f9fa" // Light aesthetic gray
+            padding: "40px 24px",
+            background: "#fff",
           }}
         >
-          <div style={{ width: "100%", maxWidth: 650 }}>
+          <div style={{ width: "100%", maxWidth: 620 }}>
             <Card
               bordered={false}
               style={{
                 borderRadius: 20,
-                boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+                boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
                 background: "#fff",
+                transition: "all 0.3s ease",
               }}
-              bodyStyle={{ padding: "40px 32px" }}
+              bodyStyle={{ padding: "36px 40px" }}
             >
-              <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
-                <Spin spinning={submitting}>
-                  <Title
-                    level={4}
-                    style={{
-                      marginBottom: 24,
-                      color: "#333",
-                      borderBottom: "1px solid #f0f0f0",
-                      paddingBottom: 12,
-                    }}
-                  >
-                    <CodeOutlined style={{ color: themeColor, marginRight: 8 }} />
-                    Company Information
-                  </Title>
+              <div style={{ marginBottom: 28, textAlign: "center" }}>
+                <Title level={3} style={{ margin: 0, color: "#1a1a1a", fontWeight: 800, letterSpacing: "-0.5px" }}>
+                  Create Your Account
+                </Title>
+                <Text type="secondary" style={{ fontSize: 14, marginTop: 8, display: "block", fontWeight: 500 }}>
+                  Join us and start your journey
+                </Text>
+                <div style={{ marginTop: 16 }}>
+                  <Progress 
+                    percent={calculateCompletion()} 
+                    strokeColor={themeColor}
+                    showInfo={true}
+                    format={(percent) => `${percent}% Complete`}
+                    size="small"
+                    strokeWidth={6}
+                  />
+                </div>
+              </div>
 
-                  {/* Company Name */}
+              <Form layout="vertical" onFinish={handleSubmit(onSubmit)} size="middle">
+                <Spin spinning={submitting}>
+                  {/* Company Info */}
                   <Form.Item
-                    label={<span style={{ fontWeight: 500 }}>Company Name</span>}
-                    required
+                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Company Name <span style={{ color: "#ff4d4f" }}>*</span></span>}
                     validateStatus={errors.name ? "error" : ""}
                     help={errors.name?.message}
                   >
@@ -413,18 +466,22 @@ const DeveloperRegistration = () => {
                       control={control}
                       rules={{ required: "Company name is required" }}
                       render={({ field }) => (
-                        <Input size="large" placeholder="Emirates Hills Properties" {...field} />
+                        <Input 
+                          placeholder="e.g., Emirates Hills Properties" 
+                          prefix={<UserOutlined style={{ color: themeColor, fontWeight: "bold" }} />}
+                          style={{ borderRadius: 10, padding: "8px 12px", fontWeight: 500 }}
+                          {...field} 
+                        />
                       )}
                     />
                   </Form.Item>
 
-                  {/* ================= EMAIL SECTION ================= */}
+                  {/* Email */}
                   <Form.Item
-                    label={<span style={{ fontWeight: 500 }}>Email Address</span>}
-                    required
+                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Email Address <span style={{ color: "#ff4d4f" }}>*</span></span>}
                     validateStatus={errors.email ? "error" : ""}
                     help={errors.email?.message}
-                    style={{ marginBottom: emailOtpSent && !emailOtpVerified ? 0 : 24 }}
+                    style={{ marginBottom: emailOtpSent && !emailOtpVerified ? 0 : 16 }}
                   >
                     <Controller
                       name="email"
@@ -435,8 +492,9 @@ const DeveloperRegistration = () => {
                       }}
                       render={({ field }) => (
                         <Input
-                          size="large"
-                          placeholder="info@emirateshills.ae"
+                          placeholder="info@company.com"
+                          prefix={<MailOutlined style={{ color: themeColor }} />}
+                          style={{ borderRadius: 10, padding: "8px 12px", fontWeight: 500 }}
                           {...field}
                           disabled={emailOtpVerified}
                           onChange={(e) => {
@@ -453,12 +511,12 @@ const DeveloperRegistration = () => {
                                 onClick={handleSendEmailOtp}
                                 loading={emailOtpLoading}
                                 disabled={!watchedEmail}
-                                style={{ color: themeColor, fontWeight: "bold", padding: 0 }}
+                                style={{ color: themeColor, fontWeight: 700, padding: 0, fontSize: 13 }}
                               >
-                                {emailOtpSent ? "Resend" : "Send OTP"}
+                                {emailOtpSent ? "Resend OTP" : "Send OTP"}
                               </Button>
                             ) : (
-                              <span style={{ color: "#52c41a", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                              <span style={{ color: "#52c41a", fontWeight: 700, fontSize: 13 }}>
                                 <CheckCircleFilled /> Verified
                               </span>
                             )
@@ -469,73 +527,59 @@ const DeveloperRegistration = () => {
                   </Form.Item>
 
                   {emailOtpSent && !emailOtpVerified && (
-                    <div style={{ marginTop: 10, marginBottom: 24, animation: "fadeIn 0.3s ease" }}>
+                    <div style={{ marginTop: -12, marginBottom: 16 }}>
                       <Input
-                        size="large"
                         placeholder="Enter 6-digit OTP"
                         prefix={<SafetyCertificateOutlined style={{ color: themeColor }} />}
                         value={enteredEmailOtp}
                         onChange={(e) => setEnteredEmailOtp(e.target.value.replace(/\D/g, ""))}
                         maxLength={6}
+                        style={{ borderRadius: 10, fontWeight: 500 }}
                         suffix={
                           <Button
                             type="primary"
+                            size="small"
                             onClick={handleVerifyEmailOtp}
                             loading={emailOtpLoading}
-                            style={{ background: themeColor, borderColor: themeColor, fontWeight: "bold" }}
+                            style={{ background: themeColor, borderColor: themeColor, fontWeight: 700, borderRadius: 6 }}
                           >
-                            VERIFY
+                            Verify
                           </Button>
                         }
                       />
-                      <div style={{ marginTop: 6 }}>
-                        <Text type="secondary" style={{ fontSize: 13 }}>
-                          OTP sent to <span style={{ fontWeight: 500 }}>{watchedEmail}</span>
-                        </Text>
-                      </div>
                     </div>
                   )}
 
-                  {/* ================= PHONE NUMBER SECTION ================= */}
+                  {/* Phone */}
                   <Form.Item
-                    label={<span style={{ fontWeight: 500 }}>Phone Number</span>}
-                    required
+                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Phone Number <span style={{ color: "#ff4d4f" }}>*</span></span>}
                     validateStatus={errors.phone_number ? "error" : ""}
                     help={errors.phone_number?.message}
-                    style={{ marginBottom: otpSent && !otpVerified ? 0 : 24 }}
+                    style={{ marginBottom: otpSent && !otpVerified ? 0 : 16 }}
                   >
-                    <div style={{ display: "flex", gap: "8px", alignItems: "stretch" }}>
-                      <div style={{ width: "130px" }}>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <div style={{ width: "110px" }}>
                         <Controller
                           name="country_code"
                           control={control}
                           rules={{ required: "Required" }}
                           render={({ field }) => (
                             <Select
-                              size="large"
+                              size="middle"
                               showSearch
                               disabled={otpVerified}
-                              optionFilterProp="children"
-                              filterOption={(input, option) =>
-                                (option["data-search"] || "").toLowerCase().includes(input.toLowerCase())
-                              }
+                              style={{ borderRadius: 10, fontWeight: 500 }}
                               {...field}
-                              style={{ width: "100%" }}
                             >
-                              {countryPhoneData.map((country, index) => (
-                                <Option
-                                  key={`${country.iso}-${index}`}
-                                  value={country.value}
-                                  data-search={country.searchStr}
-                                >
-                                  <div style={{ display: "flex", alignItems: "center" }}>
+                              {countryPhoneData.slice(0, 50).map((country, index) => (
+                                <Option key={`${country.iso}-${index}`} value={country.value}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                     <img
                                       src={`https://flagcdn.com/w20/${country.iso}.png`}
                                       width="20"
                                       alt={country.name}
-                                      style={{ marginRight: 6 }}
                                     />
-                                    <span>{country.phone}</span>
+                                    <span style={{ fontWeight: 500 }}>{country.phone}</span>
                                   </div>
                                 </Option>
                               ))}
@@ -557,16 +601,17 @@ const DeveloperRegistration = () => {
                               const phoneNumber = parsePhoneNumberFromString(fullNumber);
                               return (
                                 (phoneNumber && phoneNumber.isValid()) ||
-                                `Invalid length for ${countryCode}`
+                                `Invalid number`
                               );
                             },
                           }}
                           render={({ field }) => (
                             <Input
-                              size="large"
                               placeholder="501234567"
+                              prefix={<PhoneOutlined style={{ color: themeColor }} />}
                               maxLength={15}
                               disabled={otpVerified}
+                              style={{ borderRadius: 10, fontWeight: 500 }}
                               {...field}
                               onChange={(e) => {
                                 field.onChange(e.target.value.replace(/\D/g, ""));
@@ -582,12 +627,12 @@ const DeveloperRegistration = () => {
                                     onClick={handleSendOtp}
                                     loading={otpLoading}
                                     disabled={!watchedPhoneNumber}
-                                    style={{ color: themeColor, fontWeight: "bold", padding: 0 }}
+                                    style={{ color: themeColor, fontWeight: 700, padding: 0, fontSize: 13 }}
                                   >
-                                    {otpSent ? "Resend" : "Send OTP"}
+                                    {otpSent ? "Resend OTP" : "Send OTP"}
                                   </Button>
                                 ) : (
-                                  <span style={{ color: "#52c41a", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                                  <span style={{ color: "#52c41a", fontWeight: 700, fontSize: 13 }}>
                                     <CheckCircleFilled /> Verified
                                   </span>
                                 )
@@ -600,37 +645,32 @@ const DeveloperRegistration = () => {
                   </Form.Item>
 
                   {otpSent && !otpVerified && (
-                    <div style={{ marginTop: 10, marginBottom: 24, animation: "fadeIn 0.3s ease" }}>
+                    <div style={{ marginTop: -12, marginBottom: 16 }}>
                       <Input
-                        size="large"
                         placeholder="Enter 6-digit OTP"
                         prefix={<SafetyCertificateOutlined style={{ color: themeColor }} />}
                         value={enteredOtp}
                         onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ""))}
                         maxLength={6}
+                        style={{ borderRadius: 10, fontWeight: 500 }}
                         suffix={
                           <Button
                             type="primary"
+                            size="small"
                             onClick={handleVerifyOtp}
                             loading={otpLoading}
-                            style={{ background: themeColor, borderColor: themeColor, fontWeight: "bold" }}
+                            style={{ background: themeColor, borderColor: themeColor, fontWeight: 700, borderRadius: 6 }}
                           >
-                            VERIFY
+                            Verify
                           </Button>
                         }
                       />
-                      <div style={{ marginTop: 6 }}>
-                        <Text type="secondary" style={{ fontSize: 13 }}>
-                          OTP sent to <span style={{ fontWeight: 500 }}>{getValues("country_code")} {watchedPhoneNumber}</span>
-                        </Text>
-                      </div>
                     </div>
                   )}
 
                   {/* Password */}
                   <Form.Item
-                    label={<span style={{ fontWeight: 500 }}>Account Password</span>}
-                    required
+                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Password <span style={{ color: "#ff4d4f" }}>*</span></span>}
                     validateStatus={errors.password ? "error" : ""}
                     help={errors.password?.message}
                   >
@@ -639,38 +679,32 @@ const DeveloperRegistration = () => {
                       control={control}
                       rules={{
                         required: "Password is required",
-                        minLength: { value: 6, message: "Minimum 6 characters required" },
+                        minLength: { value: 6, message: "Minimum 6 characters" },
                       }}
                       render={({ field }) => (
                         <Input.Password
-                          size="large"
                           placeholder="Create a strong password"
+                          prefix={<LockOutlined style={{ color: themeColor }} />}
+                          style={{ borderRadius: 10, fontWeight: 500 }}
                           {...field}
                         />
                       )}
                     />
                   </Form.Item>
 
-                  <Title
-                    level={4}
-                    style={{
-                      marginBottom: 24,
-                      marginTop: 32,
-                      color: "#333",
-                      borderBottom: "1px solid #f0f0f0",
-                      paddingBottom: 12,
-                    }}
-                  >
-                    <CodeOutlined style={{ color: themeColor, marginRight: 8 }} />
-                    Location Details
-                  </Title>
+                  <Divider style={{ margin: "20px 0" }} />
 
-                  {/* Location Section */}
+                  {/* Location */}
+                  <div style={{ marginBottom: 16 }}>
+                    <Title level={5} style={{ marginBottom: 16, color: themeColor, fontWeight: 800 }}>
+                      <EnvironmentOutlined style={{ marginRight: 8 }} />
+                      Location Details
+                    </Title>
+                  </div>
                   <Row gutter={16}>
                     <Col xs={24} md={12}>
                       <Form.Item
-                        label={<span style={{ fontWeight: 500 }}>Country</span>}
-                        required
+                        label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Country <span style={{ color: "#ff4d4f" }}>*</span></span>}
                         validateStatus={errors.country ? "error" : ""}
                         help={errors.country?.message}
                       >
@@ -680,20 +714,18 @@ const DeveloperRegistration = () => {
                           rules={{ required: "Country is required" }}
                           render={({ field }) => (
                             <Select
-                              size="large"
+                              size="middle"
                               showSearch
                               placeholder="Select Country"
                               optionFilterProp="children"
-                              filterOption={(input, option) =>
-                                option.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                              }
+                              style={{ borderRadius: 10, fontWeight: 500 }}
                               onChange={(val) => {
                                 field.onChange(val);
                                 setValue("city", undefined);
                               }}
                               value={field.value}
                             >
-                              {Country.getAllCountries().map((country) => (
+                              {Country.getAllCountries().slice(0, 100).map((country) => (
                                 <Option key={country.isoCode} value={country.isoCode}>
                                   {country.name}
                                 </Option>
@@ -706,8 +738,7 @@ const DeveloperRegistration = () => {
 
                     <Col xs={24} md={12}>
                       <Form.Item
-                        label={<span style={{ fontWeight: 500 }}>City</span>}
-                        required
+                        label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>City <span style={{ color: "#ff4d4f" }}>*</span></span>}
                         validateStatus={errors.city ? "error" : ""}
                         help={errors.city?.message}
                       >
@@ -718,10 +749,10 @@ const DeveloperRegistration = () => {
                           render={({ field }) =>
                             citiesList.length > 0 ? (
                               <Select
-                                size="large"
+                                size="middle"
                                 showSearch
                                 placeholder="Select City"
-                                optionFilterProp="children"
+                                style={{ borderRadius: 10, fontWeight: 500 }}
                                 {...field}
                               >
                                 {citiesList.map((city) => (
@@ -731,7 +762,7 @@ const DeveloperRegistration = () => {
                                 ))}
                               </Select>
                             ) : (
-                              <Input size="large" placeholder="City" {...field} />
+                              <Input placeholder="Enter City" style={{ borderRadius: 10, fontWeight: 500 }} {...field} />
                             )
                           }
                         />
@@ -739,10 +770,8 @@ const DeveloperRegistration = () => {
                     </Col>
                   </Row>
 
-                  {/* Address */}
                   <Form.Item
-                    label={<span style={{ fontWeight: 500 }}>Full Address</span>}
-                    required
+                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Address <span style={{ color: "#ff4d4f" }}>*</span></span>}
                     validateStatus={errors.address ? "error" : ""}
                     help={errors.address?.message}
                   >
@@ -751,7 +780,12 @@ const DeveloperRegistration = () => {
                       control={control}
                       rules={{ required: "Address is required" }}
                       render={({ field }) => (
-                        <Input size="large" placeholder="Building No, Street Name..." {...field} />
+                        <Input.TextArea
+                          placeholder="Building No, Street Name, Area..."
+                          rows={2}
+                          style={{ borderRadius: 10, fontWeight: 500 }}
+                          {...field}
+                        />
                       )}
                     />
                   </Form.Item>
@@ -764,25 +798,34 @@ const DeveloperRegistration = () => {
                     loading={submitting}
                     disabled={!otpVerified || !emailOtpVerified}
                     style={{
-                      height: 54,
-                      background: themeColor,
+                      height: 48,
+                      background: `linear-gradient(135deg, ${themeColor} 0%, #3a0163 100%)`,
                       borderColor: themeColor,
-                      fontWeight: "bold",
-                      color: "#fff",
+                      fontWeight: 800,
                       fontSize: 16,
                       borderRadius: 12,
-                      marginTop: 10,
-                      boxShadow: `0 4px 14px ${themeColor}60`
+                      marginTop: 16,
+                      boxShadow: `0 4px 15px ${themeColor}60`,
+                      letterSpacing: "0.5px",
                     }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
                   >
+                    <RocketOutlined style={{ marginRight: 8 }} />
                     Submit Registration
                   </Button>
 
-                  <div style={{ marginTop: 24, textAlign: "center" }}>
-                    <Text type="secondary" style={{ fontSize: 13 }}>
-                      <SafetyOutlined style={{ color: "#52c41a", marginRight: 4 }} />
-                      Your data is securely encrypted.
-                    </Text>
+                  <div style={{ marginTop: 20, textAlign: "center" }}>
+                    <Space split={<Divider type="vertical" />}>
+                      <Text style={{ fontSize: 12, fontWeight: 500 }}>
+                        <SafetyOutlined style={{ color: "#52c41a", marginRight: 4 }} />
+                        Secure Encryption
+                      </Text>
+                      <Text style={{ fontSize: 12, fontWeight: 500 }}>
+                        <CheckCircleFilled style={{ color: "#52c41a", marginRight: 4 }} />
+                        24/7 Support
+                      </Text>
+                    </Space>
                   </div>
                 </Spin>
               </Form>
@@ -791,17 +834,42 @@ const DeveloperRegistration = () => {
         </Col>
       </Row>
 
-      {/* CSS for fading in the OTP box */}
       <style jsx global>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-5px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        .ant-input-affix-wrapper, .ant-select-selector, .ant-input, .ant-input-password {
+          border-radius: 10px !important;
+          transition: all 0.3s ease !important;
+          border: 1px solid #e0e0e0 !important;
+        }
+        
+        .ant-input-affix-wrapper:hover, .ant-select-selector:hover, .ant-input:hover, .ant-input-password:hover {
+          border-color: ${themeColor} !important;
+          box-shadow: 0 0 0 2px ${themeColor}20 !important;
+        }
+        
+        .ant-input-affix-wrapper:focus, .ant-select-selector:focus, .ant-input:focus, .ant-input-password:focus {
+          border-color: ${themeColor} !important;
+          box-shadow: 0 0 0 3px ${themeColor}30 !important;
+        }
+        
+        .ant-btn-primary {
+          transition: all 0.3s ease !important;
+        }
+        
+        .ant-btn-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px ${themeColor}80 !important;
+        }
+        
+        .ant-form-item-label > label {
+          font-weight: 700 !important;
+        }
+        
+        .ant-progress-text {
+          font-weight: 600 !important;
+        }
+        
+        .ant-modal-content {
+          border-radius: 20px !important;
         }
       `}</style>
     </div>

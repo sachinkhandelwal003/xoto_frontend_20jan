@@ -91,7 +91,7 @@ const getProgressText = (progress) => {
   }
   return {
     title: "Generating Final Design",
-    subtitle: "Generating your final landscape design…",
+    subtitle: "Generating your final Interior design…",
   };
 };
 

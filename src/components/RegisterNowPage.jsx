@@ -22,11 +22,12 @@ const RegisterNowPage = () => {
     control,
     handleSubmit,
     setError,
+    clearErrors,
     watch,
     formState: { errors },
   } = useForm({ mode: "onBlur" });
 
-  const watchEmail = watch("email"); // To check if email is entered before sending OTP
+  const watchEmail = watch("email"); 
 
   const [countryIso, setCountryIso] = useState("AE");
   const [mobileNumber, setMobileNumber] = useState("");
@@ -80,10 +81,21 @@ const RegisterNowPage = () => {
       setEmailOtpSent(true);
       setEmailOtpVerified(false);
     } catch (error) {
-      notification.error({
-        message: "Email Error",
-        description: error?.response?.data?.message || "Failed to send OTP to email."
-      });
+      const errData = error.response?.data;
+      
+      // ✅ Check if it's an array of errors OR a string message containing "email"
+      if (errData?.errors && errData.errors.length > 0) {
+        errData.errors.forEach(err => {
+          if (err.field === 'email') setError("email", { type: "manual", message: err.message });
+        });
+      } else if (errData?.message && /email/i.test(errData.message)) {
+        setError("email", { type: "manual", message: errData.message });
+      } else {
+        notification.error({
+          message: "Email Error",
+          description: errData?.message || "Failed to send OTP to email."
+        });
+      }
     } finally {
       setEmailOtpLoading(false);
     }
@@ -105,10 +117,13 @@ const RegisterNowPage = () => {
       setEmailOtpVerified(true);
       setEmailOtpSent(false);
     } catch (error) {
-      notification.error({
-        message: "Verification Failed",
-        description: error?.response?.data?.message || "Invalid Email OTP"
-      });
+      const errData = error.response?.data;
+      if (errData?.message && /otp/i.test(errData.message)) {
+        // You can set error to email field or just show popup for invalid OTP
+        notification.error({ message: "Verification Failed", description: errData.message });
+      } else {
+        notification.error({ message: "Verification Failed", description: "Invalid Email OTP" });
+      }
     } finally {
       setEmailOtpLoading(false);
     }
@@ -134,10 +149,22 @@ const RegisterNowPage = () => {
       setOtpSent(true);
       setOtpVerified(false);
     } catch (error) {
-      notification.error({
-        message: "Error",
-        description: error?.response?.data?.message || "Failed to send OTP"
-      });
+      const errData = error.response?.data;
+      
+      // ✅ Smart catch for mobile errors to show below input
+      if (errData?.errors && errData.errors.length > 0) {
+        errData.errors.forEach(err => {
+          const fieldName = (err.field === 'mobile' || err.field === 'mobile.number') ? 'mobileNumber' : err.field;
+          setError(fieldName, { type: "manual", message: err.message });
+        });
+      } else if (errData?.message && /(mobile|number|phone)/i.test(errData.message)) {
+        setError("mobileNumber", { type: "manual", message: errData.message });
+      } else {
+        notification.error({
+          message: "Error",
+          description: errData?.message || "Failed to send OTP"
+        });
+      }
     } finally {
       setOtpLoading(false);
     }
@@ -171,6 +198,8 @@ const RegisterNowPage = () => {
 
   /* ================= SUBMIT LOGIC ================= */
 
+ /* ================= SUBMIT LOGIC ================= */
+
   const onSubmit = async (data) => {
     if (!otpVerified || !emailOtpVerified) {
       message.error("Please verify both email and mobile number.");
@@ -195,23 +224,53 @@ const RegisterNowPage = () => {
       navigate("/dashboard/customer", { replace: true });
     } catch (err) {
       const apiError = err?.response?.data;
-      if (Array.isArray(apiError) && apiError.length > 0) {
-        const firstErr = apiError[0];
-        if (firstErr.message) {
-          showToast(firstErr.message, "error");
-          if (/already|exists/i.test(firstErr.message)) {
-            setTimeout(() => navigate("/user/login"), 2000);
-          }
+      
+      // ✅ Helper function taaki agar message me dono ka naam ho to dono jagah error dikhe
+      const setFieldErrors = (errorMessage) => {
+        const msg = errorMessage.toLowerCase();
+        let isSet = false;
+        
+        if (msg.includes("email")) {
+          setError("email", { type: "manual", message: errorMessage });
+          isSet = true;
         }
-      } else if (apiError?.errors && Array.isArray(apiError.errors)) {
+        if (msg.includes("mobile") || msg.includes("phone") || msg.includes("number")) {
+          setError("mobileNumber", { type: "manual", message: errorMessage });
+          isSet = true;
+        }
+        
+        // Agar message me field ka naam nahi hai tabhi toast aayega
+        if (!isSet) {
+          showToast(errorMessage, "error");
+        }
+        
+        // 2 sec baad login page pe bhej do
+        if (msg.includes("already") || msg.includes("exists")) {
+          setTimeout(() => navigate("/user/login"), 2000);
+        }
+      };
+
+      if (apiError?.errors && Array.isArray(apiError.errors) && apiError.errors.length > 0) {
         apiError.errors.forEach((e) => {
           let fieldName = e.field;
           if (fieldName.includes("name.")) fieldName = fieldName.split(".")[1];
-          if (fieldName === "mobile.number") fieldName = "mobileNumber";
+          if (fieldName === "mobile.number" || fieldName === "mobile") fieldName = "mobileNumber";
           setError(fieldName, { type: "manual", message: e.message });
         });
-      } else {
-        showToast(apiError?.message || "Registration failed. Try again.", "error");
+      } 
+      else if (apiError?.message) {
+        setFieldErrors(apiError.message);
+      } 
+      else if (Array.isArray(apiError) && apiError.length > 0) {
+        const firstErr = apiError[0];
+        if (firstErr.message) {
+          setFieldErrors(firstErr.message);
+        } else if (typeof firstErr === "string") {
+          setFieldErrors(firstErr);
+        }
+      } 
+      else {
+        showToast("Registration failed. Try again.", "error");
       }
     } finally {
       setLoading(false);
@@ -272,6 +331,10 @@ const RegisterNowPage = () => {
                         prefix={<Mail size={18} />} 
                         placeholder="example@mail.com"
                         disabled={emailOtpVerified}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          clearErrors("email");
+                        }}
                         suffix={emailOtpVerified && <CheckCircle size={16} className="text-green-500" />}
                       />
                     )} 
@@ -338,6 +401,7 @@ const RegisterNowPage = () => {
                       setMobileNumber("");
                       setOtpSent(false);
                       setOtpVerified(false);
+                      clearErrors("mobileNumber"); 
                     }}
                     className="w-full custom-select-register"
                     showSearch
@@ -362,7 +426,10 @@ const RegisterNowPage = () => {
                         prefix={<Phone size={16} className="text-gray-400" />}
                         value={mobileNumber}
                         disabled={otpVerified}
-                        onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ""))}
+                        onChange={(e) => {
+                          setMobileNumber(e.target.value.replace(/\D/g, ""));
+                          clearErrors("mobileNumber"); 
+                        }}
                         placeholder="Enter digits"
                         maxLength={PHONE_LENGTH_RULES[countryIso] || 15}
                         suffix={otpVerified && <CheckCircle size={16} className="text-green-500" />}
