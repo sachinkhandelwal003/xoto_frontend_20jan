@@ -12,12 +12,11 @@ import {
 } from 'lucide-react';
 import {
   Button, Modal, Progress, Card, Tag,
-  notification, Typography, Divider, Spin,Empty 
+  notification, Typography, Divider, Spin, Empty 
 } from 'antd';
 import { useSelector } from 'react-redux';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
 import LeadGenerationModal from '../Signuupage';
-// import logoNew from "../../../assets/img/logonew2.png";
 
 const { Paragraph } = Typography;
 
@@ -95,7 +94,6 @@ const getProgressText = (progress) => {
   };
 };
 
-
 const InteriorPlanner = () => {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
@@ -129,10 +127,10 @@ const InteriorPlanner = () => {
   const [showStyleModal, setShowStyleModal] = useState(false);
   const [showElementModal, setShowElementModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  
-  // --- UPGRADE MODAL STATE ---
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [upgradeMessage, setUpgradeMessage] = useState('');
+
+  // --- UPGRADE MODAL STATE (Commented for future use) ---
+  // const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  // const [upgradeMessage, setUpgradeMessage] = useState('');
 
   // UI & Results
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
@@ -194,7 +192,7 @@ const InteriorPlanner = () => {
       const apiDesigns = res?.data || [];
       console.log("Library Data: ", apiDesigns);
   
-      // ✅ FIX: Sahi mapping jo 'imageUrl' aur 'images' dono ko handle karegi
+      // Sahi mapping jo 'imageUrl' aur 'images' dono ko handle karegi
       const formatted = apiDesigns.flatMap((d, index) => {
         // Agar array of images hai
         if (d.images && Array.isArray(d.images)) {
@@ -227,7 +225,7 @@ const InteriorPlanner = () => {
     }
   };
   
-  // ✅ FIX: Jab user load ho ya Library/Upload Modal khule, tabhi data fetch karo
+  // Jab user load ho ya Library/Upload Modal khule, tabhi data fetch karo
   useEffect(() => {
     if (user && (showLibraryModal || showUploadModal)) {
       fetchLibraryDesigns();
@@ -304,15 +302,13 @@ const processUploadedFile = async (file) => {
   }
 };
 
-  
-
   const handleGenerateClick = async () => {
     if (!selectedImage) {
       notification.warning({ message: 'Please upload a photo first' });
       return;
     }
 
-     if (!isCustomerLoggedIn) {
+      if (!isCustomerLoggedIn) {
     setPendingGeneration(true); 
     setShowAuthModal(true);
     return;
@@ -353,8 +349,6 @@ const processUploadedFile = async (file) => {
     generateAIDesigns(userData);
   }
 };
-
-// ccfsfsfs
 
   const generateAIDesigns = async (currentUser) => {
     setIsGenerating(true);
@@ -425,13 +419,13 @@ const processUploadedFile = async (file) => {
 
       const resData = response;
 
-      // --- LIMIT CHECK ---
-      if (resData.status === false && resData.aiImageGeneration === false) {
-        setIsGenerating(false);
-        setUpgradeMessage(resData.message || "Limit reached. Upgrade to continue.");
-        setShowUpgradeModal(true);
-        return; 
-      }
+      // --- LIMIT CHECK (Commented for future use) ---
+      // if (resData.status === false && resData.aiImageGeneration === false) {
+      //   setIsGenerating(false);
+      //   setUpgradeMessage(resData.message || "Limit reached. Upgrade to continue.");
+      //   setShowUpgradeModal(true);
+      //   return; 
+      // }
 
       // Success
       if (resData?.imageUrl) {
@@ -463,6 +457,10 @@ const processUploadedFile = async (file) => {
           setIsGenerating(false);
           setShowGeneratedModal(true);
         }, 500);
+      } else {
+          // If response does not have imageUrl but also didn't throw an error
+          setIsGenerating(false);
+          notification.error({ message: 'Generation Failed', description: resData.message || 'Could not generate image.' });
       }
     } catch (error) {
       console.error('Generation failed:', error);
@@ -479,14 +477,21 @@ const processUploadedFile = async (file) => {
         return;
       }
 
-      if (errRes && (errRes.aiImageGeneration === false || errRes.status === false)) {
-          setIsGenerating(false);
-          setUpgradeMessage(errRes.message || "Please upgrade to generate more images.");
-          setShowUpgradeModal(true);
-          return;
-      }
+      // --- LIMIT ERROR CHECK (Commented for future use) ---
+      // if (errRes && (errRes.aiImageGeneration === false || errRes.status === false)) {
+      //     setIsGenerating(false);
+      //     setUpgradeMessage(errRes.message || "Please upgrade to generate more images.");
+      //     setShowUpgradeModal(true);
+      //     return;
+      // }
 
+      // Generic error handling
       setIsGenerating(false);
+      notification.error({
+          message: 'Generation Error',
+          description: errRes?.message || error.message || "Something went wrong."
+      });
+      
     } finally {
       clearInterval(interval);
     }
@@ -517,8 +522,6 @@ const downloadImage = async (imageUrl, name) => {
     });
   }
 };
-
-
 
   const MobileTabItem = ({ icon: Icon, label, id, onClick }) => (
     <button
@@ -826,8 +829,8 @@ const downloadImage = async (imageUrl, name) => {
       {/* MODALS */}
       <LeadGenerationModal visible={showAuthModal} onCancel={() => setShowAuthModal(false)} onAuthSuccess={handleAuthSuccess} />
 
-      {/* --- UPGRADE MODAL --- */}
-      <Modal
+      {/* --- UPGRADE MODAL (Commented for future use) --- */}
+      {/* <Modal
         open={showUpgradeModal}
         footer={null}
         onCancel={() => setShowUpgradeModal(false)}
@@ -850,7 +853,8 @@ const downloadImage = async (imageUrl, name) => {
                 <Button type="text" block className="text-gray-400" onClick={() => setShowUpgradeModal(false)}>Maybe Later</Button>
             </div>
         </div>
-      </Modal>
+      </Modal> 
+      */}
 
       <Modal open={showGeneratedModal} footer={null} onCancel={() => setShowGeneratedModal(false)} width={1000} centered bodyStyle={{ padding: 0, borderRadius: '24px', overflow: 'hidden' }} style={{ maxWidth: '95vw' }}>
         <div className="flex flex-col h-[80vh] lg:h-[500px] lg:flex-row">
