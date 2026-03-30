@@ -163,6 +163,7 @@ import TrackBrochure from "../ecommerce/B2C/TrackBrochure";
 import WaitingApproval from "../ecommerce/B2C/WaitingApproval";
 import AgentDetail from "./pages/Properties/Agentdetail";
 
+import OnBoardingpage from "./pages/dashboardPages/OnBoardingpage";
 
 import CreateSecondaryPlans from "./pages/Properties/CreateSecondaryPlans"; 
 import SecondaryPlans from "./pages/Properties/SecondaryPlans";
@@ -401,7 +402,8 @@ const CmsRoutes = () => {
       <Route path="/agency-list" element={<AgencyList />} />    
       <Route path="/customers/list" element={<CustomerList />} />
       {/* <Route path="/agent-registration" element={<AgentRegistration />} /> */}
-      <Route path="developer-list" element={<DeveloperList />} />
+      <Route path="/developer-list" element={<DeveloperList />} />
+      <Route path="/onboarding" element={<OnBoardingpage />} />
       <Route path="/property-list" element={<AdminPropertyGrid />} />
       <Route path="/DealCommissionManager" element={<DealCommissionManager />} />
       <Route path="/lead-management" element={<LeadManagement />} />
