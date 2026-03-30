@@ -73,7 +73,13 @@ const CUSTOM_ROLE_LINKS = {
         { 
           title: "Developers", 
           path: "/dashboard/{roleSlug}/developer-list",
-          icon: "fas fa-user-tie" 
+          icon: "fas fa-user-tie" ,
+           submenus: [
+             { title: "Developer List", path: "/dashboard/{roleSlug}/developer-list" },
+        { title: "On Boarding developer", path: "/dashboard/{roleSlug}/onboarding" },
+             
+
+      ],  
         },
         { 
           title: "Agents", 
