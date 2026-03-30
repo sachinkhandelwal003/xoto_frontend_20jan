@@ -168,6 +168,7 @@ import OnBoardingpage from "./pages/dashboardPages/OnBoardingpage";
 import CreateSecondaryPlans from "./pages/Properties/CreateSecondaryPlans"; 
 import SecondaryPlans from "./pages/Properties/SecondaryPlans";
 import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail";
+import PropertyDetailPage from "./pages/Propertydetailpage";
 
 const roleSlugMap = {
   0: "superadmin",
@@ -419,6 +420,7 @@ const CmsRoutes = () => {
       <Route path="/properties" element={<AdminPropertyListings />} />
 <Route path="/properties/:id" element={<AdminPropertyDetail />} />
 <Route path="/properties/create-offplan" element={<AdminOffPlanCreate />} />
+<Route path="/property-list/property-detail/:id" element={<PropertyDetailPage />} />
 
       
 {/* Agency */}
