@@ -20,7 +20,12 @@ import {
   Tabs,
   Drawer,
   Badge,
-  InputNumber
+  InputNumber,
+  Descriptions,
+  List,
+  Collapse,
+  Timeline,
+  Tooltip
 } from "antd";
 
 import {
@@ -30,7 +35,17 @@ import {
   BankOutlined,
   HomeOutlined,
   FilterOutlined,
-  ClearOutlined
+  ClearOutlined,
+  DollarOutlined,
+  ApartmentOutlined,
+  CalendarOutlined,
+  FilePdfOutlined,
+  VideoCameraOutlined,
+  CarOutlined,
+  SwitcherOutlined,
+  WifiOutlined,
+  HeartOutlined,
+  StarOutlined
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
@@ -38,6 +53,7 @@ import dayjs from "dayjs";
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
+const { Panel } = Collapse;
 
 const AdminPropertyList = () => {
   const [properties, setProperties] = useState([]);
@@ -74,7 +90,7 @@ const AdminPropertyList = () => {
     toDate: null
   });
 
-  const [viewModal, setViewModal] = useState(false);
+  const [viewDrawer, setViewDrawer] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
 
   const [rejectModal, setRejectModal] = useState(false);
@@ -86,23 +102,19 @@ const AdminPropertyList = () => {
     setLoading(true);
 
     try {
-      // Build query params
       const params = new URLSearchParams({
         page: currentPage,
         limit: pageSize,
       });
 
-      // Search
       if (searchText) {
         params.append("search", searchText);
       }
 
-      // Approval Status from tabs
       if (activeTab !== "all") {
         params.append("approvalStatus", activeTab);
       }
 
-      // Advanced Filters
       if (filters.propertySubType) params.append("propertySubType", filters.propertySubType);
       if (filters.listingStatus) params.append("listingStatus", filters.listingStatus);
       if (filters.unitType) params.append("unitType", filters.unitType);
@@ -146,37 +158,36 @@ const AdminPropertyList = () => {
   }, [searchText, activeTab, currentPage, filters]);
 
   // ================= UPDATE STATUS =================
- // NEW
-const approveProperty = async (id) => {
-  try {
-    await apiService.put(`/properties/admin/property/approve/${id}`, {
-      remarks: "All documents verified. Property approved."
-    });
-    message.success("Property approved");
-    fetchAllProperties();
-  } catch (err) {
-    console.log(err);
-    message.error("Approval failed");
-  }
-};
+  const approveProperty = async (id) => {
+    try {
+      await apiService.put(`/properties/admin/property/approve/${id}`, {
+        remarks: "All documents verified. Property approved."
+      });
+      message.success("Property approved");
+      fetchAllProperties();
+    } catch (err) {
+      console.log(err);
+      message.error("Approval failed");
+    }
+  };
 
-const rejectProperty = async (id, reason) => {
-  try {
-    await apiService.put(`/properties/admin/property/reject/${id}`, {
-      rejectionReason: reason
-    });
-    message.success("Property rejected");
-    fetchAllProperties();
-  } catch (err) {
-    console.log(err);
-    message.error("Rejection failed");
-  }
-};
+  const rejectProperty = async (id, reason) => {
+    try {
+      await apiService.put(`/properties/admin/property/reject/${id}`, {
+        rejectionReason: reason
+      });
+      message.success("Property rejected");
+      fetchAllProperties();
+    } catch (err) {
+      console.log(err);
+      message.error("Rejection failed");
+    }
+  };
 
   // ================= CLEAR FILTERS =================
   const clearFilters = () => {
     setFilters({
-      propertySubType: "",
+      propertySubType: "off_plan",
       listingStatus: "",
       unitType: "",
       bedroomType: "",
@@ -200,12 +211,23 @@ const rejectProperty = async (id, reason) => {
 
   // ================= CHECK ACTIVE FILTERS =================
   const getActiveFilterCount = () => {
-    return Object.values(filters).filter(val => val !== "" && val !== null).length;
+    return Object.values(filters).filter(val => val !== "" && val !== null && val !== "off_plan").length;
   };
 
-  const openModal = (record) => {
+  const openViewDrawer = (record) => {
     setSelectedProperty(record);
-    setViewModal(true);
+    setViewDrawer(true);
+  };
+
+  // Helper to get all photos as flat array
+  const getAllPhotos = (property) => {
+    const photos = property.photos || {};
+    return [
+      ...(photos.architecture || []),
+      ...(photos.interior || []),
+      ...(photos.lobby || []),
+      ...(photos.other || [])
+    ];
   };
 
   return (
@@ -221,124 +243,113 @@ const rejectProperty = async (id, reason) => {
         </Col>
       </Row>
 
-     {/* PROPERTY TYPE SELECTOR */}
-<Card
-  className="mb-4"
-  style={{ borderRadius: 12, border: "1px solid #f0f0f0" }}
->
-  <div style={{ display: "flex", gap: 12 }}>
-    
-    {/* OFF PLAN */}
-    <Button
-      type={filters.propertySubType === "off_plan" ? "primary" : "default"}
-      onClick={() => {
-        setFilters({ ...filters, propertySubType: "off_plan" });
-        setCurrentPage(1);
-      }}
-      style={{
-        background:
-          filters.propertySubType === "off_plan" ? "#5c039b" : "#fafafa",
-        borderColor:
-          filters.propertySubType === "off_plan" ? "#5c039b" : "#e5e7eb",
-        color:
-          filters.propertySubType === "off_plan" ? "#fff" : "#374151",
-        borderRadius: 8,
-        padding: "6px 18px",
-        fontWeight: 500
-      }}
-    >
-      Off-Plan
-    </Button>
+      {/* PROPERTY TYPE SELECTOR */}
+      <Card
+        className="mb-4"
+        style={{ borderRadius: 12, border: "1px solid #f0f0f0" }}
+      >
+        <div style={{ display: "flex", gap: 12 }}>
+          <Button
+            type={filters.propertySubType === "off_plan" ? "primary" : "default"}
+            onClick={() => {
+              setFilters({ ...filters, propertySubType: "off_plan" });
+              setCurrentPage(1);
+            }}
+            style={{
+              background: filters.propertySubType === "off_plan" ? "#5c039b" : "#fafafa",
+              borderColor: filters.propertySubType === "off_plan" ? "#5c039b" : "#e5e7eb",
+              color: filters.propertySubType === "off_plan" ? "#fff" : "#374151",
+              borderRadius: 8,
+              padding: "6px 18px",
+              fontWeight: 500
+            }}
+          >
+            Off-Plan
+          </Button>
 
-    {/* SECONDARY */}
-    <Button
-      type={filters.propertySubType === "secondary" ? "primary" : "default"}
-      onClick={() => {
-        setFilters({ ...filters, propertySubType: "secondary" });
-        setCurrentPage(1);
-      }}
-      style={{
-        background:
-          filters.propertySubType === "secondary" ? "#5c039b" : "#fafafa",
-        borderColor:
-          filters.propertySubType === "secondary" ? "#5c039b" : "#e5e7eb",
-        color:
-          filters.propertySubType === "secondary" ? "#fff" : "#374151",
-        borderRadius: 8,
-        padding: "6px 18px",
-        fontWeight: 500
-      }}
-    >
-      Secondary
-    </Button>
+          <Button
+            type={filters.propertySubType === "secondary" ? "primary" : "default"}
+            onClick={() => {
+              setFilters({ ...filters, propertySubType: "secondary" });
+              setCurrentPage(1);
+            }}
+            style={{
+              background: filters.propertySubType === "secondary" ? "#5c039b" : "#fafafa",
+              borderColor: filters.propertySubType === "secondary" ? "#5c039b" : "#e5e7eb",
+              color: filters.propertySubType === "secondary" ? "#fff" : "#374151",
+              borderRadius: 8,
+              padding: "6px 18px",
+              fontWeight: 500
+            }}
+          >
+            Secondary
+          </Button>
+        </div>
+      </Card>
 
-  </div>
-</Card>
+      {/* STATUS TABS */}
+      <Card
+        className="mb-4"
+        style={{
+          borderRadius: 12,
+          border: "1px solid #f0f0f0"
+        }}
+      >
+        <style>
+          {`
+            .custom-tabs .ant-tabs-nav {
+              margin-bottom: 0;
+            }
 
-{/* STATUS TABS */}
-<Card
-  className="mb-4"
-  style={{
-    borderRadius: 12,
-    border: "1px solid #f0f0f0"
-  }}
->
-  <style>
-    {`
-      .custom-tabs .ant-tabs-nav {
-        margin-bottom: 0;
-      }
+            .custom-tabs .ant-tabs-tab {
+              padding: 6px 20px;
+              font-size: 14px;
+              font-weight: 500;
+              border-radius: 8px;
+              transition: all 0.2s ease;
+            }
 
-      .custom-tabs .ant-tabs-tab {
-        padding: 6px 20px;
-        font-size: 14px;
-        font-weight: 500;
-        border-radius: 8px;
-        transition: all 0.2s ease;
-      }
+            .custom-tabs .ant-tabs-tab:hover {
+              background: #f3f4f6;
+            }
 
-      .custom-tabs .ant-tabs-tab:hover {
-        background: #f3f4f6;
-      }
+            .custom-tabs .ant-tabs-tab-active {
+              background: #5c039b !important;
+            }
 
-      .custom-tabs .ant-tabs-tab-active {
-        background: #5c039b !important;
-      }
+            .custom-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+              color: #fff !important;
+            }
 
-      .custom-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
-        color: #fff !important;
-      }
+            .custom-tabs .ant-tabs-ink-bar {
+              display: none;
+            }
+          `}
+        </style>
 
-      .custom-tabs .ant-tabs-ink-bar {
-        display: none;
-      }
-    `}
-  </style>
-
-  <Tabs
-    className="custom-tabs"
-    activeKey={activeTab}
-    onChange={(key) => {
-      setActiveTab(key);
-      setCurrentPage(1);
-    }}
-    items={[
-      
-      {
-        key: "approved",
-        label: "Approved"
-      },
-      {
-        key: "pending",
-        label: "Pending"
-      },
-      {
-        key: "rejected",
-        label: "Rejected"
-      }
-    ]}
-  />
-</Card>
+        <Tabs
+          className="custom-tabs"
+          activeKey={activeTab}
+          onChange={(key) => {
+            setActiveTab(key);
+            setCurrentPage(1);
+          }}
+          items={[
+            {
+              key: "approved",
+              label: "Approved"
+            },
+            {
+              key: "pending",
+              label: "Pending"
+            },
+            {
+              key: "rejected",
+              label: "Rejected"
+            }
+          ]}
+        />
+      </Card>
 
       {/* SEARCH & FILTER BAR */}
       <Card className="mb-6">
@@ -455,7 +466,7 @@ const rejectProperty = async (id, reason) => {
                       <Button
                         size="small"
                         style={{ background: "#10b981", color: "#fff", flex: 1 }}
-                       onClick={() => approveProperty(item._id)}
+                        onClick={() => approveProperty(item._id)}
                         block
                       >
                         Approve
@@ -479,7 +490,7 @@ const rejectProperty = async (id, reason) => {
                     icon={<EyeOutlined />}
                     size="small"
                     block
-                    onClick={() => openModal(item)}
+                    onClick={() => openViewDrawer(item)}
                   >
                     View Details
                   </Button>
@@ -533,7 +544,6 @@ const rejectProperty = async (id, reason) => {
         }
       >
         <Space direction="vertical" style={{ width: "100%" }} size={16}>
-          
           {/* Listing Status */}
           <div>
             <Text strong>Listing Status</Text>
@@ -780,109 +790,252 @@ const rejectProperty = async (id, reason) => {
         </Button>
       </Drawer>
 
-      {/* ================= VIEW MODAL ================= */}
-      <Modal
+      {/* ================= PROPERTY DETAILS DRAWER ================= */}
+      <Drawer
         title="Property Details"
-        open={viewModal}
-        onCancel={() => setViewModal(false)}
-        footer={null}
-        width={900}
+        placement="right"
+        onClose={() => setViewDrawer(false)}
+        open={viewDrawer}
+        width={800}
+        destroyOnClose
       >
         {selectedProperty && (
-          <>
-            {/* Main Logo */}
-            {selectedProperty.mainLogo && (
-              <div style={{ marginBottom: 16 }}>
-                <Image
-                  src={selectedProperty.mainLogo}
-                  style={{ width: "100%", maxHeight: 300, objectFit: "cover" }}
-                />
-              </div>
+          <div>
+            {/* Main Image */}
+            <div style={{ marginBottom: 24 }}>
+              <Image
+                src={selectedProperty.mainLogo || getAllPhotos(selectedProperty)[0] || "https://via.placeholder.com/800x400"}
+                style={{ width: "100%", maxHeight: 400, objectFit: "cover", borderRadius: 8 }}
+                alt={selectedProperty.propertyName}
+              />
+            </div>
+
+            {/* Basic Info */}
+            <Descriptions title="Basic Information" bordered column={{ xs: 1, sm: 2, md: 2 }} size="small">
+              <Descriptions.Item label="Property Name">{selectedProperty.propertyName}</Descriptions.Item>
+              <Descriptions.Item label="Category">{selectedProperty.propertyCategory || "N/A"}</Descriptions.Item>
+              <Descriptions.Item label="Developer">
+                {selectedProperty.developer?.name || selectedProperty.developerName || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Transaction Type">
+                {selectedProperty.transactionType === "sell" ? "Sale" : "Rent"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Property Sub Type">
+                {selectedProperty.propertySubType === "off_plan" ? "Off-Plan" : "Secondary"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Project Status">
+                {selectedProperty.projectStatus || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Approval Status">
+                <Tag
+                  color={
+                    selectedProperty.approvalStatus === "approved"
+                      ? "green"
+                      : selectedProperty.approvalStatus === "rejected"
+                      ? "red"
+                      : "orange"
+                  }
+                >
+                  {selectedProperty.approvalStatus?.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Listing Status">
+                <Tag color={selectedProperty.listingStatus === "active" ? "green" : "red"}>
+                  {selectedProperty.listingStatus?.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Available">
+                {selectedProperty.isAvailable ? "Yes" : "No"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Featured">
+                {selectedProperty.isFeatured ? "Yes" : "No"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Created At">
+                {dayjs(selectedProperty.createdAt).format("DD MMM YYYY, hh:mm A")}
+              </Descriptions.Item>
+              <Descriptions.Item label="Last Updated">
+                {dayjs(selectedProperty.updatedAt).format("DD MMM YYYY, hh:mm A")}
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Divider orientation="left">Pricing & Units</Divider>
+            <Descriptions bordered column={{ xs: 1, sm: 2, md: 2 }} size="small">
+              <Descriptions.Item label="Price Range">
+                {selectedProperty.currency} {selectedProperty.price_min?.toLocaleString()} - {selectedProperty.price_max?.toLocaleString()}
+              </Descriptions.Item>
+              <Descriptions.Item label="Bedrooms">{selectedProperty.bedrooms || 0}</Descriptions.Item>
+              <Descriptions.Item label="Bathrooms">{selectedProperty.bathrooms || 0}</Descriptions.Item>
+              <Descriptions.Item label="Built-Up Area (min/max)">
+                {selectedProperty.builtUpArea_min} - {selectedProperty.builtUpArea_max} {selectedProperty.builtUpAreaUnit}
+              </Descriptions.Item>
+              <Descriptions.Item label="Plot Area">{selectedProperty.plotArea || "N/A"}</Descriptions.Item>
+              <Descriptions.Item label="Parking Spaces">{selectedProperty.parkingSpaces || 0}</Descriptions.Item>
+              <Descriptions.Item label="Furnishing">{selectedProperty.furnishing || "N/A"}</Descriptions.Item>
+              <Descriptions.Item label="Ownership Type">{selectedProperty.ownershipType || "N/A"}</Descriptions.Item>
+              <Descriptions.Item label="Total Units">{selectedProperty.totalUnits || 0}</Descriptions.Item>
+              <Descriptions.Item label="Sold Units">{selectedProperty.soldUnits || 0}</Descriptions.Item>
+              <Descriptions.Item label="Reserved Units">{selectedProperty.reservedUnits || 0}</Descriptions.Item>
+              <Descriptions.Item label="Booked Units">{selectedProperty.bookedUnits || 0}</Descriptions.Item>
+              {selectedProperty.eoiAmount > 0 && (
+                <Descriptions.Item label="EOI Amount">
+                  {selectedProperty.currency} {selectedProperty.eoiAmount?.toLocaleString()}
+                </Descriptions.Item>
+              )}
+              {selectedProperty.commission > 0 && (
+                <Descriptions.Item label="Commission">
+                  {selectedProperty.commission}% {selectedProperty.shareCommission && "(Shared)"}
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+
+            <Divider orientation="left">Location & Coordinates</Divider>
+            <Descriptions bordered column={{ xs: 1, sm: 2, md: 2 }} size="small">
+              <Descriptions.Item label="Area">{selectedProperty.area}</Descriptions.Item>
+              <Descriptions.Item label="City">{selectedProperty.city}</Descriptions.Item>
+              <Descriptions.Item label="Country">{selectedProperty.country}</Descriptions.Item>
+              {selectedProperty.googleLocation && (
+                <Descriptions.Item label="Google Maps">
+                  <a href={selectedProperty.googleLocation} target="_blank" rel="noopener noreferrer">
+                    View on Map
+                  </a>
+                </Descriptions.Item>
+              )}
+              {selectedProperty.coordinates && (selectedProperty.coordinates.lat || selectedProperty.coordinates.lng) && (
+                <Descriptions.Item label="Coordinates">
+                  Lat: {selectedProperty.coordinates.lat}, Lng: {selectedProperty.coordinates.lng}
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+
+            {selectedProperty.proximity && Object.values(selectedProperty.proximity).some(v => v) && (
+              <>
+                <Divider orientation="left">Proximity</Divider>
+                <Descriptions bordered column={{ xs: 1, sm: 2, md: 2 }} size="small">
+                  {selectedProperty.proximity.airport && (
+                    <Descriptions.Item label="Airport">{selectedProperty.proximity.airport}</Descriptions.Item>
+                  )}
+                  {selectedProperty.proximity.metro && (
+                    <Descriptions.Item label="Metro">{selectedProperty.proximity.metro}</Descriptions.Item>
+                  )}
+                  {selectedProperty.proximity.mall && (
+                    <Descriptions.Item label="Mall">{selectedProperty.proximity.mall}</Descriptions.Item>
+                  )}
+                  {selectedProperty.proximity.school && (
+                    <Descriptions.Item label="School">{selectedProperty.proximity.school}</Descriptions.Item>
+                  )}
+                </Descriptions>
+              </>
             )}
 
-            {/* Photos Gallery */}
-            <Image.PreviewGroup>
-              <Row gutter={[12, 12]}>
-                {selectedProperty.photos?.architecture?.map((img, i) => (
-                  <Col xs={12} sm={8} md={6} key={`arch-${i}`}>
-                    <Image src={img} />
-                  </Col>
-                ))}
-                {selectedProperty.photos?.interior?.map((img, i) => (
-                  <Col xs={12} sm={8} md={6} key={`int-${i}`}>
-                    <Image src={img} />
-                  </Col>
-                ))}
-                {selectedProperty.photos?.lobby?.map((img, i) => (
-                  <Col xs={12} sm={8} md={6} key={`lobby-${i}`}>
-                    <Image src={img} />
-                  </Col>
-                ))}
-                {selectedProperty.photos?.other?.map((img, i) => (
-                  <Col xs={12} sm={8} md={6} key={`other-${i}`}>
-                    <Image src={img} />
-                  </Col>
-                ))}
-              </Row>
-            </Image.PreviewGroup>
+            <Divider orientation="left">Description</Divider>
+            <Paragraph>{selectedProperty.description || "No description provided."}</Paragraph>
 
-            <Divider />
+            {selectedProperty.photos && getAllPhotos(selectedProperty).length > 0 && (
+              <>
+                <Divider orientation="left">Photos</Divider>
+                <Image.PreviewGroup>
+                  <Row gutter={[12, 12]}>
+                    {getAllPhotos(selectedProperty).map((url, idx) => (
+                      <Col xs={12} sm={8} md={6} key={idx}>
+                        <Image src={url} style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 8 }} />
+                      </Col>
+                    ))}
+                  </Row>
+                </Image.PreviewGroup>
+              </>
+            )}
 
-            <Title level={4}>{selectedProperty.propertyName}</Title>
+            {selectedProperty.videoUrl && (
+              <>
+                <Divider orientation="left">Video</Divider>
+                <video controls style={{ width: "100%", borderRadius: 8 }} src={selectedProperty.videoUrl} />
+              </>
+            )}
 
-            <Space direction="vertical" style={{ width: "100%" }}>
-              <Text><strong>Developer:</strong> {selectedProperty.developerName || selectedProperty.developer?.name}</Text>
-              
-              <Text>
-                <strong>Price:</strong> {selectedProperty.currency}{" "}
-                {selectedProperty.price_min?.toLocaleString()} - {selectedProperty.price_max?.toLocaleString()}
-              </Text>
+            {selectedProperty.brochure && (
+              <>
+                <Divider orientation="left">Brochure</Divider>
+                <Button icon={<FilePdfOutlined />} href={selectedProperty.brochure} target="_blank">
+                  Download Brochure
+                </Button>
+              </>
+            )}
 
-              <Text>
-                <strong>Location:</strong> {selectedProperty.area}, {selectedProperty.city}, {selectedProperty.country}
-              </Text>
+            {selectedProperty.amenities && selectedProperty.amenities.length > 0 && (
+              <>
+                <Divider orientation="left">Amenities</Divider>
+                <List
+                  dataSource={selectedProperty.amenities}
+                  renderItem={(item) => <Tag color="blue">{item}</Tag>}
+                  grid={{ gutter: 16, column: 3 }}
+                />
+              </>
+            )}
 
-              <Text>
-                <strong>Type:</strong> {selectedProperty.unitType} | {selectedProperty.bedroomType}
-              </Text>
+            {selectedProperty.facilities && Object.values(selectedProperty.facilities).some(v => v === true) && (
+              <>
+                <Divider orientation="left">Facilities</Divider>
+                <Space wrap>
+                  {selectedProperty.facilities.swimmingPool && <Tag color="purple">Swimming Pool</Tag>}
+                  {selectedProperty.facilities.gym && <Tag color="purple">Gym</Tag>}
+                  {selectedProperty.facilities.parking && <Tag color="purple">Parking</Tag>}
+                  {selectedProperty.facilities.childrenPlayArea && <Tag color="purple">Children's Play Area</Tag>}
+                  {selectedProperty.facilities.gardens && <Tag color="purple">Gardens</Tag>}
+                  {selectedProperty.facilities.security && <Tag color="purple">Security</Tag>}
+                  {selectedProperty.facilities.concierge && <Tag color="purple">Concierge</Tag>}
+                </Space>
+              </>
+            )}
 
-              <Text>
-                <strong>Area:</strong> {selectedProperty.builtUpArea_min} - {selectedProperty.builtUpArea_max} {selectedProperty.builtUpAreaUnit}
-              </Text>
+            {selectedProperty.paymentPlan && selectedProperty.paymentPlan.length > 0 && (
+              <>
+                <Divider orientation="left">Payment Plans</Divider>
+                <Collapse>
+                  {selectedProperty.paymentPlan.map((plan, idx) => (
+                    <Panel header={plan.title} key={idx}>
+                      <Timeline>
+                        {plan.stages.map((stage, sIdx) => (
+                          <Timeline.Item key={sIdx}>
+                            <strong>{stage.stage}:</strong> {stage.percentage}% - {stage.description}
+                          </Timeline.Item>
+                        ))}
+                      </Timeline>
+                    </Panel>
+                  ))}
+                </Collapse>
+              </>
+            )}
 
-              <Text>
-                <strong>Bedrooms:</strong> {selectedProperty.bedrooms} | <strong>Bathrooms:</strong> {selectedProperty.bathrooms}
-              </Text>
+            {selectedProperty.resaleConditions && (
+              <>
+                <Divider orientation="left">Resale Conditions</Divider>
+                <Paragraph>{selectedProperty.resaleConditions}</Paragraph>
+              </>
+            )}
 
-              {selectedProperty.completionDate?.fullDate && (
-                <Text>
-                  <strong>Completion:</strong>{" "}
-                  {dayjs(selectedProperty.completionDate.fullDate).format("MMM YYYY")}
-                </Text>
-              )}
+            {selectedProperty.approvedBy && (
+              <>
+                <Divider orientation="left">Approval Details</Divider>
+                <Descriptions bordered column={1} size="small">
+                  <Descriptions.Item label="Approved By">
+                    {selectedProperty.approvedBy.email || "Admin"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Approved At">
+                    {dayjs(selectedProperty.approvedAt).format("DD MMM YYYY, hh:mm A")}
+                  </Descriptions.Item>
+                </Descriptions>
+              </>
+            )}
 
-              <Paragraph>{selectedProperty.description}</Paragraph>
-
-              {/* Facilities */}
-              {selectedProperty.facilities && (
-                <>
-                  <Divider />
-                  <Title level={5}>Facilities</Title>
-                  <Space wrap>
-                    {selectedProperty.facilities.swimmingPool && <Tag color="blue">Swimming Pool</Tag>}
-                    {selectedProperty.facilities.gym && <Tag color="blue">Gym</Tag>}
-                    {selectedProperty.facilities.parking && <Tag color="blue">Parking</Tag>}
-                    {selectedProperty.facilities.childrenPlayArea && <Tag color="blue">Play Area</Tag>}
-                    {selectedProperty.facilities.gardens && <Tag color="blue">Gardens</Tag>}
-                    {selectedProperty.facilities.security && <Tag color="blue">Security</Tag>}
-                    {selectedProperty.facilities.concierge && <Tag color="blue">Concierge</Tag>}
-                  </Space>
-                </>
-              )}
-            </Space>
-          </>
+            {selectedProperty.rejectionReason && (
+              <>
+                <Divider orientation="left">Rejection Reason</Divider>
+                <Paragraph type="danger">{selectedProperty.rejectionReason}</Paragraph>
+              </>
+            )}
+          </div>
         )}
-      </Modal>
+      </Drawer>
 
       {/* ================= REJECT MODAL ================= */}
       <Modal
@@ -892,15 +1045,15 @@ const rejectProperty = async (id, reason) => {
           setRejectModal(false);
           setRejectReason("");
         }}
-       onOk={() => {
-  if (!rejectReason.trim()) {
-    message.error("Please enter rejection reason");
-    return;
-  }
-  rejectProperty(selectedId, rejectReason);
-  setRejectModal(false);
-  setRejectReason("");
-}}
+        onOk={() => {
+          if (!rejectReason.trim()) {
+            message.error("Please enter rejection reason");
+            return;
+          }
+          rejectProperty(selectedId, rejectReason);
+          setRejectModal(false);
+          setRejectReason("");
+        }}
         okText="Reject"
         okButtonProps={{ danger: true }}
       >
