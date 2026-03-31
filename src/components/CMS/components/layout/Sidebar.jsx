@@ -68,7 +68,11 @@ const CUSTOM_ROLE_LINKS = {
         { 
           title: "Agencies", 
           path: "/dashboard/{roleSlug}/agency-list",
-          icon: "fas fa-network-wired" // Network icon represents agency umbrella
+          icon: "fas fa-network-wired", // Network icon represents agency umbrella
+           submenus: [
+             { title: "Agency List", path: "/dashboard/{roleSlug}/agency-list" },
+        { title: "On Boarding Agency", path: "/dashboard/{roleSlug}/onboarding/agency" },
+           ]
         },
         { 
           title: "Developers", 
@@ -76,7 +80,7 @@ const CUSTOM_ROLE_LINKS = {
           icon: "fas fa-user-tie" ,
            submenus: [
              { title: "Developer List", path: "/dashboard/{roleSlug}/developer-list" },
-        { title: "On Boarding developer", path: "/dashboard/{roleSlug}/onboarding" },
+        { title: "On Boarding developer", path: "/dashboard/{roleSlug}/onboarding/developer" },
              
 
       ],  
@@ -84,7 +88,13 @@ const CUSTOM_ROLE_LINKS = {
         { 
           title: "Agents", 
           path: "/dashboard/{roleSlug}/agent-list",
-          icon: "fas fa-user-friends" 
+          icon: "fas fa-user-friends" ,
+           submenus: [
+             { title: "Agent List", path: "/dashboard/{roleSlug}/agent-list" },
+        { title: "On Boarding Agent", path: "/dashboard/{roleSlug}/onboarding/agent" },
+             
+
+      ],  
         },
         // { 
         //   title: "Verification Queue", 

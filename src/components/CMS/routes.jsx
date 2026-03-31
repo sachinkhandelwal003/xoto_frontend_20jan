@@ -164,11 +164,14 @@ import WaitingApproval from "../ecommerce/B2C/WaitingApproval";
 import AgentDetail from "./pages/Properties/Agentdetail";
 
 import OnBoardingpage from "./pages/dashboardPages/OnBoardingpage";
-
+import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
+import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 import CreateSecondaryPlans from "./pages/Properties/CreateSecondaryPlans"; 
 import SecondaryPlans from "./pages/Properties/SecondaryPlans";
 import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail";
 import PropertyDetailPage from "./pages/Propertydetailpage";
+// import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
+// import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 
 const roleSlugMap = {
   0: "superadmin",
@@ -404,7 +407,10 @@ const CmsRoutes = () => {
       <Route path="/customers/list" element={<CustomerList />} />
       {/* <Route path="/agent-registration" element={<AgentRegistration />} /> */}
       <Route path="/developer-list" element={<DeveloperList />} />
-      <Route path="/onboarding" element={<OnBoardingpage />} />
+      <Route path="/onboarding/developer" element={<OnBoardingpage />} />
+      <Route path="/onboarding/agent" element={<OnBoardingAgent />} />
+      <Route path="/onboarding/agency" element={<OnBoardingAgency />} />
+    
       <Route path="/property-list" element={<AdminPropertyGrid />} />
       <Route path="/DealCommissionManager" element={<DealCommissionManager />} />
       <Route path="/lead-management" element={<LeadManagement />} />

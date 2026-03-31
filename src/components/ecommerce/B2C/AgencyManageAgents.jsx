@@ -256,6 +256,7 @@ const AgencyManageAgents = () => {
     return false;
   };
 
+
   const removeFile = (type) => {
     setUrls(p=>({...p,[type]:""}));
     setUploadFiles(p=>({...p,[type]:null}));

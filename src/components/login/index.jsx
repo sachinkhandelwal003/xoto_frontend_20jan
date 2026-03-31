@@ -175,7 +175,6 @@ const Login = () => {
       gradient: "linear-gradient(135deg, #10B981, #059669)",
       type: "direct",
     },
-    // Note: Xoto Grid removed from here as it has its own route now
   ];
 
   // 2. All Partner Types (Used for Login Logic & Grid Menu)
@@ -211,66 +210,12 @@ const Login = () => {
     partnerTypes.find((t) => t.value === selectedPartnerType) || 
     partnerTypes.find((t) => t.id === selectedPartnerType);
 
- // ✅ Login success effect (CORRECTED)
-  // useEffect(() => {
-  //   if (isAuthenticated && token && !hasRedirected.current) {
-  //     hasRedirected.current = true;
-
-  //     // Safe access for role code
-  //     const roleCode = user?.role?.code?.toString() || (typeof user?.role === 'string' ? user.role : "");
-      
-  //     // 1. Priority Check: Agar User ne UI se "Developer" select kiya tha
-  //     if (selectedPartnerType === "developer") {
-  //       const developerId = user?._id || user?.id;
-  //       localStorage.setItem("developerId", developerId);
-  //       toast.success("Welcome Developer! Accessing your dashboard...");
-  //       setTimeout(() => {
-  //         navigate("/dashboard/developer", { replace: true });
-  //       }, 1500);
-  //       return;
-  //     }
-
-  //     if (selectedPartnerType === "agent") {
-  //        toast.success("Welcome Agent! Accessing your dashboard...");
-  //        setTimeout(() => {
-  //          navigate("/dashboard/agent", { replace: true });
-  //        }, 1500);
-  //        return;
-  //     }
-
-  //     // 2. Role Code Based Redirect (Backend ID Logic)
-  //     const rolePathMap = {
-  //       "0": "/dashboard/superadmin",
-  //       "1": "/dashboard/admin",
-  //       "2": "/dashboard/customer",
-  //       "5": "/dashboard/vendor-b2c",
-  //       "6": "/dashboard/vendor-b2b",
-  //       "7": "/dashboard/freelancer",
-  //       "15": "/dashboard/agency",        // Agency
-  //       "16": "/dashboard/agent",         // Agent
-  //       "17": "/dashboard/developer",     // Developer
-  //     };
-
-  //     const path = rolePathMap[roleCode] || "/dashboard";
-      
-  //     // Agar path mil gaya toh wahan bhejo, nahi toh default dashboard
-  //     if (rolePathMap[roleCode]) {
-  //       toast.success(`Welcome back! Redirecting...`);
-  //       setTimeout(() => {
-  //         navigate(path, { replace: true });
-  //       }, 1500);
-  //     } else {
-  //       // Fallback agar koi unknown role ID aa gayi
-  //       navigate("/dashboard", { replace: true });
-  //     }
-  //   }
-  // }, [isAuthenticated, user, token, navigate, selectedPartnerType]);
-// ✅ Login success effect (UPDATED)
+  // ✅ Login success effect
   useEffect(() => {
     if (isAuthenticated && token && !hasRedirected.current) {
       hasRedirected.current = true;
 
-      // 🔥 NAYA ADD KIYA: User ka poora data PDF ke liye localStorage mein save kar lo 🔥
+      // User ka poora data PDF ke liye localStorage mein save kar lo
       if (user) {
         localStorage.setItem("user_data", JSON.stringify(user));
       }
@@ -319,11 +264,11 @@ const Login = () => {
           navigate(path, { replace: true });
         }, 1500);
       } else {
-        // Fallback agar koi unknown role ID aa gayi
         navigate("/dashboard", { replace: true });
       }
     }
   }, [isAuthenticated, user, token, navigate, selectedPartnerType]);
+  
   // --- Handlers ---
   
   const handleMainSelect = (category) => {
@@ -356,7 +301,7 @@ const Login = () => {
     }
   };
 
-  // ✅ MAIN LOGIN SUBMIT
+  // ✅ MAIN LOGIN SUBMIT (SUPER ERROR EXTRACTOR KE SATH)
   const onFinish = async (values) => {
     setLoading(true);
     setGeneralError("");
@@ -375,9 +320,35 @@ const Login = () => {
         password: values.password,
       });
     } catch (err) {
-      const errorMessage = err?.message || err?.status || "Invalid credentials";
+      console.log("🔥 Backend Error Object:", err); // Debugging ke liye console log
+
+      // 👇 SUPER ERROR EXTRACTOR 👇
+      let errorMessage = "Invalid credentials"; // Default
+
+      // Check for different error structures (Axios, Fetch, or Custom)
+      if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message;
+      } else if (typeof err === 'object' && err?.message && !err.message.includes("status code")) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+
+      // Keyword check for Approval/Pending status
+      const errorStr = errorMessage.toLowerCase();
+      const isPendingOrUnapproved = errorStr.includes("not approved") || errorStr.includes("pending") || errorStr.includes("approv");
+
+      if (isPendingOrUnapproved) {
+        // Warning (Yellow) Toast for unapproved accounts
+        toast.warning(errorMessage, { position: "top-center", autoClose: 5000 });
+      } else {
+        // Normal Error (Red) Toast
+        toast.error(errorMessage, { position: "top-center" });
+      }
+
       setGeneralError(errorMessage);
-      toast.error(errorMessage, { position: "top-center" });
     } finally {
       setLoading(false);
     }
@@ -610,7 +581,8 @@ const Login = () => {
         {generalError && (
           <Alert
             message={generalError}
-            type="error"
+            // Alert color switch logic updated below
+            type={generalError.toLowerCase().includes("not approved") || generalError.toLowerCase().includes("pending") ? "warning" : "error"}
             showIcon
             style={{ marginBottom: 24, borderRadius: 12 }}
             closable
