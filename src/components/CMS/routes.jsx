@@ -361,7 +361,7 @@ const CmsRoutes = () => {
   {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
         
   {/* Projects */}
-  <Route path="projects" element={<AgentProjects />} />
+  <Route path="agent-projects" element={<AgentProjects />} />
   <Route 
      path="projects/:id" 
      element={(user?.role?.code == 16 || user?.role?.code == 1) ? <AgentProjectDetails /> : <ViewProject />} 
@@ -444,7 +444,7 @@ const CmsRoutes = () => {
 {/* <Route path="advanced-analytics" element={<AgencyAdvancedAnalytics />} /> */}
 {/* <Route path="profit-engine" element={<AgencyProfitEngine />} /> */}
 <Route path="subscription" element={<AgencySubscription />} />
-<Route path="/agency/projects" element={<AgencyProjects />} />
+<Route path="/agency-projects" element={<AgencyProjects />} />
 <Route path="/agency/deals" element={<AgencyDeals />} />
 {/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
 {/* Developer */}

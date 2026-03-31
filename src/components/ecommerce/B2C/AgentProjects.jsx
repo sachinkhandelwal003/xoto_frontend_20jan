@@ -591,7 +591,7 @@ export default function AgentProjects() {
             <Col xs={24} sm={12} md={8} lg={6} key={p._id}>
               <Card 
                 hoverable 
-                onClick={() => navigate(`/dashboard/agent/projects/${p._id}`)} 
+                onClick={() => navigate(`/dashboard/agent/agent-projects/${p._id}`)} 
                 style={{ borderRadius: 12, overflow: "hidden", border: "1px solid #e8e8e8", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", height: "100%", display: "flex", flexDirection: "column" }} 
                 bodyStyle={{ padding: "20px 16px 16px", flex: 1 }}
               >
