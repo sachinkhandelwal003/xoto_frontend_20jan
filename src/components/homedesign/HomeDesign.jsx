@@ -24,37 +24,37 @@ const HomeDesign = () => {
     {
       key: "exterior",
       icon: exterior,
-      link: "/aiPlanner/exterior",
+      link: "/Property",
       position: "top-[35%] right-[5%]",
     },
     {
       key: "interior",
       icon: interior,
-      link: "/aiPlanner/interior",
+      link: "/services/interior",
       position: "top-[35%] left-[-5%]",
     },
     {
       key: "furniture",
       icon: smart,
-      link: "/aiPlanner/furniture",
+      link: "/ecommerce/b2c",
       position: "bottom-[5%] right-[10%]",
     },
     {
       key: "landscaping",
       icon: landscaping,
-      link: "/aiPlanner/landscape",
+      link: "/landscaping",
       position: "bottom-[28%] left-[-8%]",
     },
     {
       key: "image",
       icon: image,
-      link: "/aiPlanner/enhance",
+      link: "/mortgage/services",
      position: "top-[58%] right-[2%]",
     },
     {
       key: "virtual",
       icon: virtual,
-      link: "/aiPlanner/virtual",
+      link: "/mortgage/services",
       position: "top-[10%] right-[15%]",
     },
   ];
