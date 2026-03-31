@@ -31,7 +31,7 @@ import { Country, City } from "country-state-city";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 
 const THEME      = "#5C029B";
@@ -202,6 +202,7 @@ const DeveloperRegistration = () => {
   const showSuccessPopup = () => {
     Modal.success({
       centered: true,
+      width: 480,
       title: (
         <div style={{ fontSize: 18, fontWeight: 700, color: "#52c41a" }}>
           <CheckCircleFilled style={{ marginRight: 8, fontSize: 20 }} />
@@ -385,6 +386,8 @@ const DeveloperRegistration = () => {
                 transition: "width 0.4s ease",
               }} />
             </div>
+
+      
           </div>
 
           <Spin spinning={submitting}>

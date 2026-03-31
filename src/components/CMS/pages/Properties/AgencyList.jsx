@@ -48,7 +48,7 @@ const AgencyList = () => {
   const [agencies, setAgencies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState("registered"); // 'registered' = pending
+  const [activeTab, setActiveTab] = useState("approved"); // 'registered' = pending
   
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -556,7 +556,29 @@ const AgencyList = () => {
       </Modal>
 
       {/* CUSTOM CSS FOR SEGMENTED THEME & UTILITIES */}
-    
+    <style>
+{`
+.custom-segmented-theme {
+  background: #f3f4f6;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.custom-segmented-theme .ant-segmented-item-selected {
+  background-color: #4A027C !important;
+  color: #fff !important;
+}
+
+.custom-segmented-theme .ant-segmented-item-selected:hover {
+  background-color: #4A027C !important;
+}
+
+.custom-segmented-theme .ant-segmented-item {
+  border-radius: 8px;
+  font-weight: 500;
+}
+`}
+</style>
     </div>
   );
 };
