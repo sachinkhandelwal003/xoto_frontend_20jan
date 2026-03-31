@@ -248,7 +248,7 @@ export default function DeveloperInventory() {
     if (!pid) return;
     setLoading(true);
     try {
-      let url = `/properties/developer/inventory/${pid}?page=${page}&limit=${PAGE_SIZE}`;
+      let url = `/properties/inventory/${pid}?page=${page}&limit=${PAGE_SIZE}`;
       if (statusFilter)   url += `&status=${statusFilter}`;
       if (unitTypeFilter) url += `&unitType=${unitTypeFilter}`;
       const res  = await apiService.get(url);
