@@ -47,7 +47,7 @@ const Category = () => {
                 src={imageUrl}
                 alt={name}
                 loading="lazy"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover brightness-0 invert"
                 onError={(e) => {
                   e.target.src =
                     "https://via.placeholder.com/64?text=Error";
@@ -86,27 +86,24 @@ const Category = () => {
 
   }, []);
 
-  const getOriginalColor = (index) => {
-
-    const colors = [
-      "from-[var(--color-primary)] to-pink-500",
-      "from-blue-500 to-cyan-400",
-      "from-emerald-500 to-teal-400",
-      "from-amber-500 to-orange-400",
-      "from-rose-500 to-pink-400",
-      "from-indigo-500 to-purple-400",
-      "from-violet-500 to-purple-400",
-      "from-gray-600 to-gray-400",
-      "from-fuchsia-500 to-pink-400",
-      "from-green-500 to-emerald-400",
-      "from-red-500 to-orange-400",
-      "from-red-500 to-pink-500",
-      "from-purple-600 to-blue-500",
-    ];
-
-    return colors[index % colors.length];
-
-  };
+ const getOriginalColor = (index) => {
+  const colors = [
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+  ];
+  return colors[index % colors.length];
+};
 
   const handleCategoryClick = (categoryName) => {
 
