@@ -161,6 +161,8 @@ import AdminChatRequests from "../chat/Adminchatrequests";
 import BrochureGenerator from "../ecommerce/B2C/BrochureGenerator";
 import TrackBrochure from "../ecommerce/B2C/TrackBrochure";
 import WaitingApproval from "../ecommerce/B2C/WaitingApproval";
+import AgentDetail from "./pages/Properties/Agentdetail";
+
 import OnBoardingpage from "./pages/dashboardPages/OnBoardingpage";
 import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
@@ -389,6 +391,7 @@ const CmsRoutes = () => {
 
 <Route path="secondary/:id" element={<SecondaryPropertyDetail />} />
   {/* <Route path="waiting-approval" element={<WaitingApproval />} /> */}
+ <Route path="agents/:agentId" element={<AgentDetail />} />
 
 
  
