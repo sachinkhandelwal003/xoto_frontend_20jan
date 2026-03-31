@@ -15,6 +15,10 @@ import {
   Divider,
   Progress,
   Space,
+  Steps,
+  Alert,
+  Tag,
+  Tooltip,
 } from "antd";
 import {
   CodeOutlined,
@@ -31,6 +35,9 @@ import {
   RocketOutlined,
   StarOutlined,
   TrophyOutlined,
+  IdcardOutlined,
+  TeamOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import { useForm, Controller } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -38,12 +45,13 @@ import { Country, City } from "country-state-city";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 
 const DeveloperRegistration = () => {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
 
   // Location States
   const [citiesList, setCitiesList] = useState([]);
@@ -69,6 +77,7 @@ const DeveloperRegistration = () => {
     watch,
     setValue,
     getValues,
+    trigger,
     formState: { errors },
   } = useForm({
     mode: "onChange",
@@ -89,11 +98,47 @@ const DeveloperRegistration = () => {
   const watchedEmail = watch("email");
   const formValues = watch();
 
+  // Step validation
+  const validateStep = async (step) => {
+    if (step === 0) {
+      const isStepValid = await trigger(["name", "email", "password"]);
+      if (isStepValid && emailOtpVerified) return true;
+      if (!emailOtpVerified) message.warning("Please verify your email first");
+      return false;
+    }
+    if (step === 1) {
+      const isStepValid = await trigger(["phone_number", "country_code"]);
+      if (isStepValid && otpVerified) return true;
+      if (!otpVerified) message.warning("Please verify your phone number first");
+      return false;
+    }
+    if (step === 2) {
+      const isStepValid = await trigger(["country", "city", "address"]);
+      return isStepValid;
+    }
+    return true;
+  };
+
+  const nextStep = async () => {
+    if (await validateStep(currentStep)) {
+      setCurrentStep((prev) => prev + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const prevStep = () => {
+    setCurrentStep((prev) => prev - 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   // Calculate form completion percentage
   const calculateCompletion = () => {
     const requiredFields = ["name", "email", "password", "phone_number", "country", "city", "address"];
     const filledFields = requiredFields.filter(field => formValues[field] && formValues[field] !== "");
-    return Math.floor((filledFields.length / requiredFields.length) * 100);
+    let basePercent = Math.floor((filledFields.length / requiredFields.length) * 80);
+    if (otpVerified) basePercent += 10;
+    if (emailOtpVerified) basePercent += 10;
+    return Math.min(basePercent, 100);
   };
 
   useEffect(() => {
@@ -219,6 +264,7 @@ const DeveloperRegistration = () => {
   const showSuccessPopup = () => {
     Modal.success({
       centered: true,
+      width: 480,
       title: (
         <div style={{ fontSize: 20, fontWeight: 800, color: "#52c41a" }}>
           <CheckCircleFilled style={{ marginRight: 8, fontSize: 24 }} />
@@ -305,9 +351,32 @@ const DeveloperRegistration = () => {
     }
   };
 
+  const steps = [
+    {
+      title: "Account",
+      icon: <UserOutlined />,
+      description: "Basic info & verification",
+    },
+    {
+      title: "Contact",
+      icon: <PhoneOutlined />,
+      description: "Phone verification",
+    },
+    {
+      title: "Location",
+      icon: <EnvironmentOutlined />,
+      description: "Address details",
+    },
+  ];
+
   return (
-    <div style={{ minHeight: "100vh", display: "flex", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
-      <Row style={{ width: "100%", margin: 0, minHeight: "100vh" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", position: "relative", overflowX: "hidden" }}>
+      {/* Decorative Background Elements */}
+      <div style={{ position: "absolute", top: -100, right: -100, width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%)" }} />
+      <div style={{ position: "absolute", bottom: -80, left: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)" }} />
+      <div style={{ position: "absolute", top: "40%", left: "20%", width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 70%)" }} />
+
+      <Row style={{ width: "100%", margin: 0, minHeight: "100vh", position: "relative", zIndex: 1 }}>
         
         {/* ================= LEFT SIDE (BRANDING) ================= */}
         <Col
@@ -322,28 +391,11 @@ const DeveloperRegistration = () => {
             color: "#fff",
             position: "relative",
             overflow: "hidden",
-            boxShadow: "4px 0 20px rgba(0,0,0,0.1)",
+            boxShadow: "4px 0 30px rgba(0,0,0,0.15)",
           }}
         >
-          {/* Decorative Background Elements */}
-          <div style={{
-            position: "absolute",
-            top: "-20%",
-            right: "-10%",
-            width: "300px",
-            height: "300px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)",
-          }}></div>
-          <div style={{
-            position: "absolute",
-            bottom: "-10%",
-            left: "-10%",
-            width: "250px",
-            height: "250px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)",
-          }}></div>
+          <div style={{ position: "absolute", top: "-20%", right: "-10%", width: 350, height: 350, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)" }} />
+          <div style={{ position: "absolute", bottom: "-10%", left: "-10%", width: 280, height: 280, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 70%)" }} />
           
           <div style={{ zIndex: 1 }}>
             <div
@@ -351,63 +403,65 @@ const DeveloperRegistration = () => {
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: 70,
-                height: 70,
+                width: 80,
+                height: 80,
                 background: "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.1) 100%)",
-                borderRadius: "18px",
-                marginBottom: 32,
+                borderRadius: "24px",
+                marginBottom: 40,
                 backdropFilter: "blur(10px)",
                 border: "1px solid rgba(255,255,255,0.3)",
-                boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
               }}
             >
-              <BuildOutlined style={{ fontSize: 36, color: "#fff" }} />
+              <BuildOutlined style={{ fontSize: 42, color: "#fff" }} />
             </div>
 
-            <Title level={1} style={{ color: "#fff", margin: 0, fontWeight: 800, fontSize: "2.5rem", lineHeight: 1.2, letterSpacing: "-0.02em" }}>
-              Developer <br/>Registration
+            <Title level={1} style={{ color: "#fff", margin: 0, fontWeight: 800, fontSize: "2.8rem", lineHeight: 1.2, letterSpacing: "-0.02em" }}>
+              Developer <br/>Portal
             </Title>
-            <div style={{ width: 70, height: 4, background: "#fff", marginTop: 20, marginBottom: 24, borderRadius: 2 }}></div>
+            <div style={{ width: 80, height: 4, background: "linear-gradient(90deg, #fff, transparent)", marginTop: 24, marginBottom: 28, borderRadius: 2 }} />
             
-            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, lineHeight: 1.6, display: "block", fontWeight: 500 }}>
-              Join our exclusive network of top-tier property developers. Register to showcase your premium projects to a global audience.
+            <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 16, lineHeight: 1.6, display: "block", fontWeight: 500 }}>
+              Join our exclusive network of top-tier property developers. Showcase your premium projects to a global audience of qualified buyers.
             </Text>
             
-            <div style={{ marginTop: 40, display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <CheckCircleFilled style={{ color: "#fff", fontSize: 16 }} />
+            <div style={{ marginTop: 48, display: "flex", flexDirection: "column", gap: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: "12px", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+                  <CheckCircleFilled style={{ color: "#fff", fontSize: 18 }} />
                 </div>
-                <Text style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Admin Approval Required</Text>
+                <Text style={{ color: "#fff", fontSize: 15, fontWeight: 600 }}>Admin Approval Required</Text>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <SafetyCertificateOutlined style={{ color: "#fff", fontSize: 16 }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: "12px", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+                  <SafetyCertificateOutlined style={{ color: "#fff", fontSize: 18 }} />
                 </div>
-                <Text style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Secure Verification Process</Text>
+                <Text style={{ color: "#fff", fontSize: 15, fontWeight: 600 }}>Secure Verification Process</Text>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <TrophyOutlined style={{ color: "#fff", fontSize: 16 }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: "12px", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+                  <TrophyOutlined style={{ color: "#fff", fontSize: 18 }} />
                 </div>
-                <Text style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Premium Exposure & Benefits</Text>
+                <Text style={{ color: "#fff", fontSize: 15, fontWeight: 600 }}>Premium Exposure & Benefits</Text>
               </div>
             </div>
 
-            <Divider style={{ background: "rgba(255,255,255,0.2)", margin: "32px 0 24px" }} />
+            <Divider style={{ background: "rgba(255,255,255,0.2)", margin: "48px 0 32px" }} />
             
             <div>
-              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, fontWeight: 500 }}>
+              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: 500 }}>
                 Already have an account?{" "}
                 <Button 
                   type="link" 
                   onClick={() => navigate("/login")} 
-                  style={{ color: "#fff", fontWeight: 800, padding: 0, fontSize: 13 }}
+                  style={{ color: "#fff", fontWeight: 800, padding: 0, fontSize: 14, textDecoration: "underline" }}
                 >
                   Sign In →
                 </Button>
               </Text>
             </div>
+
+      
           </div>
         </Col>
 
@@ -419,416 +473,521 @@ const DeveloperRegistration = () => {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            padding: "40px 24px",
-            background: "#fff",
+            padding: "48px 32px",
+            background: "transparent",
           }}
         >
-          <div style={{ width: "100%", maxWidth: 620 }}>
+          <div style={{ width: "100%", maxWidth: 680 }}>
             <Card
               bordered={false}
               style={{
-                borderRadius: 20,
-                boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+                borderRadius: 32,
+                boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
                 background: "#fff",
-                transition: "all 0.3s ease",
+                overflow: "hidden",
               }}
-              bodyStyle={{ padding: "36px 40px" }}
+              bodyStyle={{ padding: 0 }}
             >
-              <div style={{ marginBottom: 28, textAlign: "center" }}>
-                <Title level={3} style={{ margin: 0, color: "#1a1a1a", fontWeight: 800, letterSpacing: "-0.5px" }}>
-                  Create Your Account
-                </Title>
-                <Text type="secondary" style={{ fontSize: 14, marginTop: 8, display: "block", fontWeight: 500 }}>
-                  Join us and start your journey
-                </Text>
-                <div style={{ marginTop: 16 }}>
-                  <Progress 
-                    percent={calculateCompletion()} 
-                    strokeColor={themeColor}
-                    showInfo={true}
-                    format={(percent) => `${percent}% Complete`}
-                    size="small"
-                    strokeWidth={6}
-                  />
+              {/* Progress Header */}
+              <div style={{ 
+                background: `linear-gradient(135deg, ${themeColor}08 0%, ${themeColor}02 100%)`,
+                padding: "28px 32px 20px",
+                borderBottom: `1px solid ${themeColor}10`,
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20 }}>
+                  <div>
+                    <Title level={3} style={{ margin: 0, color: "#1a1a1a", fontWeight: 800, letterSpacing: "-0.5px" }}>
+                      Create Your Account
+                    </Title>
+                    <Text type="secondary" style={{ fontSize: 14, marginTop: 6, display: "block", fontWeight: 500 }}>
+                      Join our developer network
+                    </Text>
+                  </div>
+                  <Tag color="purple" style={{ borderRadius: 20, fontWeight: 600, padding: "4px 12px" }}>
+                    <ThunderboltOutlined /> {calculateCompletion()}% Complete
+                  </Tag>
                 </div>
+                
+                <Progress 
+                  percent={calculateCompletion()} 
+                  strokeColor={{
+                    '0%': '#5C029B',
+                    '100%': '#9B4DCA',
+                  }}
+                  showInfo={false}
+                  size="default"
+                  strokeWidth={8}
+                  trailColor={themeColor + "15"}
+                />
+                
+                <Steps 
+                  current={currentStep} 
+                  size="small"
+                  style={{ marginTop: 24 }}
+                  items={steps.map((step, idx) => ({
+                    title: step.title,
+                    description: step.description,
+                    icon: step.icon,
+                    status: currentStep > idx ? "finish" : currentStep === idx ? "process" : "wait",
+                  }))}
+                />
               </div>
 
-              <Form layout="vertical" onFinish={handleSubmit(onSubmit)} size="middle">
-                <Spin spinning={submitting}>
-                  {/* Company Info */}
-                  <Form.Item
-                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Company Name <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                    validateStatus={errors.name ? "error" : ""}
-                    help={errors.name?.message}
-                  >
-                    <Controller
-                      name="name"
-                      control={control}
-                      rules={{ required: "Company name is required" }}
-                      render={({ field }) => (
-                        <Input 
-                          placeholder="e.g., Emirates Hills Properties" 
-                          prefix={<UserOutlined style={{ color: themeColor, fontWeight: "bold" }} />}
-                          style={{ borderRadius: 10, padding: "8px 12px", fontWeight: 500 }}
-                          {...field} 
+              <div style={{ padding: "32px" }}>
+                <Form layout="vertical" onFinish={handleSubmit(onSubmit)} size="middle">
+                  <Spin spinning={submitting} tip="Submitting your application...">
+                    
+                    {/* STEP 1: Account Info */}
+                    {currentStep === 0 && (
+                      <div className="step-content">
+                        <Alert
+                          message="Let's start with your basic information"
+                          description="We'll need your company name, email, and a secure password to begin."
+                          type="info"
+                          showIcon
+                          style={{ marginBottom: 24, borderRadius: 12, background: "#f0f5ff", border: "none" }}
                         />
-                      )}
-                    />
-                  </Form.Item>
+                        
+                        <Form.Item
+                          label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Company Name <span style={{ color: "#ff4d4f" }}>*</span></span>}
+                          validateStatus={errors.name ? "error" : ""}
+                          help={errors.name?.message}
+                        >
+                          <Controller
+                            name="name"
+                            control={control}
+                            rules={{ required: "Company name is required" }}
+                            render={({ field }) => (
+                              <Input 
+                                placeholder="e.g., Emirates Hills Properties" 
+                                prefix={<UserOutlined style={{ color: themeColor }} />}
+                                size="large"
+                                style={{ borderRadius: 12, padding: "8px 12px", fontWeight: 500, border: "1px solid #e8e8e8" }}
+                                {...field} 
+                              />
+                            )}
+                          />
+                        </Form.Item>
 
-                  {/* Email */}
-                  <Form.Item
-                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Email Address <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                    validateStatus={errors.email ? "error" : ""}
-                    help={errors.email?.message}
-                    style={{ marginBottom: emailOtpSent && !emailOtpVerified ? 0 : 16 }}
-                  >
-                    <Controller
-                      name="email"
-                      control={control}
-                      rules={{
-                        required: "Required",
-                        pattern: { value: /^\S+@\S+$/i, message: "Invalid email" },
-                      }}
-                      render={({ field }) => (
-                        <Input
-                          placeholder="info@company.com"
-                          prefix={<MailOutlined style={{ color: themeColor }} />}
-                          style={{ borderRadius: 10, padding: "8px 12px", fontWeight: 500 }}
-                          {...field}
-                          disabled={emailOtpVerified}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            if (emailOtpVerified) {
-                              setEmailOtpVerified(false);
-                              setEmailOtpSent(false);
-                            }
-                          }}
-                          suffix={
-                            !emailOtpVerified ? (
-                              <Button
-                                type="link"
-                                onClick={handleSendEmailOtp}
-                                loading={emailOtpLoading}
-                                disabled={!watchedEmail}
-                                style={{ color: themeColor, fontWeight: 700, padding: 0, fontSize: 13 }}
-                              >
-                                {emailOtpSent ? "Resend OTP" : "Send OTP"}
-                              </Button>
-                            ) : (
-                              <span style={{ color: "#52c41a", fontWeight: 700, fontSize: 13 }}>
-                                <CheckCircleFilled /> Verified
-                              </span>
-                            )
-                          }
-                        />
-                      )}
-                    />
-                  </Form.Item>
-
-                  {emailOtpSent && !emailOtpVerified && (
-                    <div style={{ marginTop: -12, marginBottom: 16 }}>
-                      <Input
-                        placeholder="Enter 6-digit OTP"
-                        prefix={<SafetyCertificateOutlined style={{ color: themeColor }} />}
-                        value={enteredEmailOtp}
-                        onChange={(e) => setEnteredEmailOtp(e.target.value.replace(/\D/g, ""))}
-                        maxLength={6}
-                        style={{ borderRadius: 10, fontWeight: 500 }}
-                        suffix={
-                          <Button
-                            type="primary"
-                            size="small"
-                            onClick={handleVerifyEmailOtp}
-                            loading={emailOtpLoading}
-                            style={{ background: themeColor, borderColor: themeColor, fontWeight: 700, borderRadius: 6 }}
-                          >
-                            Verify
-                          </Button>
-                        }
-                      />
-                    </div>
-                  )}
-
-                  {/* Phone */}
-                  <Form.Item
-                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Phone Number <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                    validateStatus={errors.phone_number ? "error" : ""}
-                    help={errors.phone_number?.message}
-                    style={{ marginBottom: otpSent && !otpVerified ? 0 : 16 }}
-                  >
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <div style={{ width: "110px" }}>
-                        <Controller
-                          name="country_code"
-                          control={control}
-                          rules={{ required: "Required" }}
-                          render={({ field }) => (
-                            <Select
-                              size="middle"
-                              showSearch
-                              disabled={otpVerified}
-                              style={{ borderRadius: 10, fontWeight: 500 }}
-                              {...field}
-                            >
-                              {countryPhoneData.slice(0, 50).map((country, index) => (
-                                <Option key={`${country.iso}-${index}`} value={country.value}>
-                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    <img
-                                      src={`https://flagcdn.com/w20/${country.iso}.png`}
-                                      width="20"
-                                      alt={country.name}
-                                    />
-                                    <span style={{ fontWeight: 500 }}>{country.phone}</span>
-                                  </div>
-                                </Option>
-                              ))}
-                            </Select>
-                          )}
-                        />
-                      </div>
-
-                      <div style={{ flex: 1 }}>
-                        <Controller
-                          name="phone_number"
-                          control={control}
-                          rules={{
-                            required: "Phone number is required",
-                            validate: (value) => {
-                              const countryCode = getValues("country_code");
-                              if (!countryCode) return "Select code first";
-                              const fullNumber = `${countryCode}${value}`;
-                              const phoneNumber = parsePhoneNumberFromString(fullNumber);
-                              return (
-                                (phoneNumber && phoneNumber.isValid()) ||
-                                `Invalid number`
-                              );
-                            },
-                          }}
-                          render={({ field }) => (
-                            <Input
-                              placeholder="501234567"
-                              prefix={<PhoneOutlined style={{ color: themeColor }} />}
-                              maxLength={15}
-                              disabled={otpVerified}
-                              style={{ borderRadius: 10, fontWeight: 500 }}
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e.target.value.replace(/\D/g, ""));
-                                if (otpVerified) {
-                                  setOtpVerified(false);
-                                  setOtpSent(false);
+                        {/* Email */}
+                        <Form.Item
+                          label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Email Address <span style={{ color: "#ff4d4f" }}>*</span></span>}
+                          validateStatus={errors.email ? "error" : ""}
+                          help={errors.email?.message}
+                          style={{ marginBottom: emailOtpSent && !emailOtpVerified ? 8 : 24 }}
+                        >
+                          <Controller
+                            name="email"
+                            control={control}
+                            rules={{
+                              required: "Required",
+                              pattern: { value: /^\S+@\S+$/i, message: "Invalid email" },
+                            }}
+                            render={({ field }) => (
+                              <Input
+                                placeholder="info@company.com"
+                                prefix={<MailOutlined style={{ color: themeColor }} />}
+                                size="large"
+                                style={{ borderRadius: 12, padding: "8px 12px", fontWeight: 500, border: "1px solid #e8e8e8" }}
+                                {...field}
+                                disabled={emailOtpVerified}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  if (emailOtpVerified) {
+                                    setEmailOtpVerified(false);
+                                    setEmailOtpSent(false);
+                                  }
+                                }}
+                                suffix={
+                                  !emailOtpVerified ? (
+                                    <Button
+                                      type="link"
+                                      onClick={handleSendEmailOtp}
+                                      loading={emailOtpLoading}
+                                      disabled={!watchedEmail}
+                                      style={{ color: themeColor, fontWeight: 700, padding: 0 }}
+                                    >
+                                      {emailOtpSent ? "Resend OTP" : "Send OTP"}
+                                    </Button>
+                                  ) : (
+                                    <span style={{ color: "#52c41a", fontWeight: 700 }}>
+                                      <CheckCircleFilled /> Verified
+                                    </span>
+                                  )
                                 }
-                              }}
+                              />
+                            )}
+                          />
+                        </Form.Item>
+
+                        {emailOtpSent && !emailOtpVerified && (
+                          <div style={{ marginBottom: 24 }}>
+                            <Input
+                              placeholder="Enter 6-digit OTP"
+                              prefix={<SafetyCertificateOutlined style={{ color: themeColor }} />}
+                              value={enteredEmailOtp}
+                              onChange={(e) => setEnteredEmailOtp(e.target.value.replace(/\D/g, ""))}
+                              maxLength={6}
+                              size="large"
+                              style={{ borderRadius: 12, fontWeight: 500 }}
                               suffix={
-                                !otpVerified ? (
-                                  <Button
-                                    type="link"
-                                    onClick={handleSendOtp}
-                                    loading={otpLoading}
-                                    disabled={!watchedPhoneNumber}
-                                    style={{ color: themeColor, fontWeight: 700, padding: 0, fontSize: 13 }}
-                                  >
-                                    {otpSent ? "Resend OTP" : "Send OTP"}
-                                  </Button>
-                                ) : (
-                                  <span style={{ color: "#52c41a", fontWeight: 700, fontSize: 13 }}>
-                                    <CheckCircleFilled /> Verified
-                                  </span>
-                                )
+                                <Button
+                                  type="primary"
+                                  size="small"
+                                  onClick={handleVerifyEmailOtp}
+                                  loading={emailOtpLoading}
+                                  style={{ background: themeColor, borderColor: themeColor, fontWeight: 700, borderRadius: 8 }}
+                                >
+                                  Verify
+                                </Button>
                               }
                             />
-                          )}
-                        />
-                      </div>
-                    </div>
-                  </Form.Item>
+                          </div>
+                        )}
 
-                  {otpSent && !otpVerified && (
-                    <div style={{ marginTop: -12, marginBottom: 16 }}>
-                      <Input
-                        placeholder="Enter 6-digit OTP"
-                        prefix={<SafetyCertificateOutlined style={{ color: themeColor }} />}
-                        value={enteredOtp}
-                        onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ""))}
-                        maxLength={6}
-                        style={{ borderRadius: 10, fontWeight: 500 }}
-                        suffix={
-                          <Button
-                            type="primary"
-                            size="small"
-                            onClick={handleVerifyOtp}
-                            loading={otpLoading}
-                            style={{ background: themeColor, borderColor: themeColor, fontWeight: 700, borderRadius: 6 }}
-                          >
-                            Verify
-                          </Button>
-                        }
-                      />
-                    </div>
-                  )}
-
-                  {/* Password */}
-                  <Form.Item
-                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Password <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                    validateStatus={errors.password ? "error" : ""}
-                    help={errors.password?.message}
-                  >
-                    <Controller
-                      name="password"
-                      control={control}
-                      rules={{
-                        required: "Password is required",
-                        minLength: { value: 6, message: "Minimum 6 characters" },
-                      }}
-                      render={({ field }) => (
-                        <Input.Password
-                          placeholder="Create a strong password"
-                          prefix={<LockOutlined style={{ color: themeColor }} />}
-                          style={{ borderRadius: 10, fontWeight: 500 }}
-                          {...field}
-                        />
-                      )}
-                    />
-                  </Form.Item>
-
-                  <Divider style={{ margin: "20px 0" }} />
-
-                  {/* Location */}
-                  <div style={{ marginBottom: 16 }}>
-                    <Title level={5} style={{ marginBottom: 16, color: themeColor, fontWeight: 800 }}>
-                      <EnvironmentOutlined style={{ marginRight: 8 }} />
-                      Location Details
-                    </Title>
-                  </div>
-                  <Row gutter={16}>
-                    <Col xs={24} md={12}>
-                      <Form.Item
-                        label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Country <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                        validateStatus={errors.country ? "error" : ""}
-                        help={errors.country?.message}
-                      >
-                        <Controller
-                          name="country"
-                          control={control}
-                          rules={{ required: "Country is required" }}
-                          render={({ field }) => (
-                            <Select
-                              size="middle"
-                              showSearch
-                              placeholder="Select Country"
-                              optionFilterProp="children"
-                              style={{ borderRadius: 10, fontWeight: 500 }}
-                              onChange={(val) => {
-                                field.onChange(val);
-                                setValue("city", undefined);
-                              }}
-                              value={field.value}
-                            >
-                              {Country.getAllCountries().slice(0, 100).map((country) => (
-                                <Option key={country.isoCode} value={country.isoCode}>
-                                  {country.name}
-                                </Option>
-                              ))}
-                            </Select>
-                          )}
-                        />
-                      </Form.Item>
-                    </Col>
-
-                    <Col xs={24} md={12}>
-                      <Form.Item
-                        label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>City <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                        validateStatus={errors.city ? "error" : ""}
-                        help={errors.city?.message}
-                      >
-                        <Controller
-                          name="city"
-                          control={control}
-                          rules={{ required: "City is required" }}
-                          render={({ field }) =>
-                            citiesList.length > 0 ? (
-                              <Select
-                                size="middle"
-                                showSearch
-                                placeholder="Select City"
-                                style={{ borderRadius: 10, fontWeight: 500 }}
+                        {/* Password */}
+                        <Form.Item
+                          label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Password <span style={{ color: "#ff4d4f" }}>*</span></span>}
+                          validateStatus={errors.password ? "error" : ""}
+                          help={errors.password?.message}
+                        >
+                          <Controller
+                            name="password"
+                            control={control}
+                            rules={{
+                              required: "Password is required",
+                              minLength: { value: 6, message: "Minimum 6 characters" },
+                            }}
+                            render={({ field }) => (
+                              <Input.Password
+                                placeholder="Create a strong password"
+                                prefix={<LockOutlined style={{ color: themeColor }} />}
+                                size="large"
+                                style={{ borderRadius: 12, fontWeight: 500, border: "1px solid #e8e8e8" }}
                                 {...field}
-                              >
-                                {citiesList.map((city) => (
-                                  <Option key={city.name} value={city.name}>
-                                    {city.name}
-                                  </Option>
-                                ))}
-                              </Select>
-                            ) : (
-                              <Input placeholder="Enter City" style={{ borderRadius: 10, fontWeight: 500 }} {...field} />
-                            )
-                          }
-                        />
-                      </Form.Item>
-                    </Col>
-                  </Row>
+                              />
+                            )}
+                          />
+                        </Form.Item>
+                      </div>
+                    )}
 
-                  <Form.Item
-                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Address <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                    validateStatus={errors.address ? "error" : ""}
-                    help={errors.address?.message}
-                  >
-                    <Controller
-                      name="address"
-                      control={control}
-                      rules={{ required: "Address is required" }}
-                      render={({ field }) => (
-                        <Input.TextArea
-                          placeholder="Building No, Street Name, Area..."
-                          rows={2}
-                          style={{ borderRadius: 10, fontWeight: 500 }}
-                          {...field}
+                    {/* STEP 2: Contact Info */}
+                    {currentStep === 1 && (
+                      <div className="step-content">
+                        <Alert
+                          message="Verify your phone number"
+                          description="We'll send a verification code to your mobile number for security."
+                          type="info"
+                          showIcon
+                          style={{ marginBottom: 24, borderRadius: 12, background: "#f0f5ff", border: "none" }}
                         />
+                        
+                        <Form.Item
+                          label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Phone Number <span style={{ color: "#ff4d4f" }}>*</span></span>}
+                          validateStatus={errors.phone_number ? "error" : ""}
+                          help={errors.phone_number?.message}
+                          style={{ marginBottom: otpSent && !otpVerified ? 8 : 24 }}
+                        >
+                          <div style={{ display: "flex", gap: "12px" }}>
+                            <div style={{ width: "120px" }}>
+                              <Controller
+                                name="country_code"
+                                control={control}
+                                rules={{ required: "Required" }}
+                                render={({ field }) => (
+                                  <Select
+                                    size="large"
+                                    showSearch
+                                    disabled={otpVerified}
+                                    style={{ borderRadius: 12, fontWeight: 500 }}
+                                    dropdownStyle={{ borderRadius: 12 }}
+                                    {...field}
+                                  >
+                                    {countryPhoneData.slice(0, 50).map((country, index) => (
+                                      <Option key={`${country.iso}-${index}`} value={country.value}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                          <img
+                                            src={`https://flagcdn.com/w20/${country.iso}.png`}
+                                            width="20"
+                                            alt={country.name}
+                                            style={{ borderRadius: 2 }}
+                                          />
+                                          <span style={{ fontWeight: 500 }}>{country.phone}</span>
+                                        </div>
+                                      </Option>
+                                    ))}
+                                  </Select>
+                                )}
+                              />
+                            </div>
+
+                            <div style={{ flex: 1 }}>
+                              <Controller
+                                name="phone_number"
+                                control={control}
+                                rules={{
+                                  required: "Phone number is required",
+                                  validate: (value) => {
+                                    const countryCode = getValues("country_code");
+                                    if (!countryCode) return "Select code first";
+                                    const fullNumber = `${countryCode}${value}`;
+                                    const phoneNumber = parsePhoneNumberFromString(fullNumber);
+                                    return (
+                                      (phoneNumber && phoneNumber.isValid()) ||
+                                      "Invalid number"
+                                    );
+                                  },
+                                }}
+                                render={({ field }) => (
+                                  <Input
+                                    placeholder="501234567"
+                                    prefix={<PhoneOutlined style={{ color: themeColor }} />}
+                                    size="large"
+                                    disabled={otpVerified}
+                                    style={{ borderRadius: 12, fontWeight: 500, border: "1px solid #e8e8e8" }}
+                                    {...field}
+                                    onChange={(e) => {
+                                      field.onChange(e.target.value.replace(/\D/g, ""));
+                                      if (otpVerified) {
+                                        setOtpVerified(false);
+                                        setOtpSent(false);
+                                      }
+                                    }}
+                                    suffix={
+                                      !otpVerified ? (
+                                        <Button
+                                          type="link"
+                                          onClick={handleSendOtp}
+                                          loading={otpLoading}
+                                          disabled={!watchedPhoneNumber}
+                                          style={{ color: themeColor, fontWeight: 700, padding: 0 }}
+                                        >
+                                          {otpSent ? "Resend OTP" : "Send OTP"}
+                                        </Button>
+                                      ) : (
+                                        <span style={{ color: "#52c41a", fontWeight: 700 }}>
+                                          <CheckCircleFilled /> Verified
+                                        </span>
+                                      )
+                                    }
+                                  />
+                                )}
+                              />
+                            </div>
+                          </div>
+                        </Form.Item>
+
+                        {otpSent && !otpVerified && (
+                          <div style={{ marginBottom: 24 }}>
+                            <Input
+                              placeholder="Enter 6-digit OTP"
+                              prefix={<SafetyCertificateOutlined style={{ color: themeColor }} />}
+                              value={enteredOtp}
+                              onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ""))}
+                              maxLength={6}
+                              size="large"
+                              style={{ borderRadius: 12, fontWeight: 500 }}
+                              suffix={
+                                <Button
+                                  type="primary"
+                                  size="small"
+                                  onClick={handleVerifyOtp}
+                                  loading={otpLoading}
+                                  style={{ background: themeColor, borderColor: themeColor, fontWeight: 700, borderRadius: 8 }}
+                                >
+                                  Verify
+                                </Button>
+                              }
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* STEP 3: Location Details */}
+                    {currentStep === 2 && (
+                      <div className="step-content">
+                        <Alert
+                          message="Where are you located?"
+                          description="Please provide your business address details for verification."
+                          type="info"
+                          showIcon
+                          style={{ marginBottom: 24, borderRadius: 12, background: "#f0f5ff", border: "none" }}
+                        />
+                        
+                        <Row gutter={16}>
+                          <Col xs={24} md={12}>
+                            <Form.Item
+                              label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Country <span style={{ color: "#ff4d4f" }}>*</span></span>}
+                              validateStatus={errors.country ? "error" : ""}
+                              help={errors.country?.message}
+                            >
+                              <Controller
+                                name="country"
+                                control={control}
+                                rules={{ required: "Country is required" }}
+                                render={({ field }) => (
+                                  <Select
+                                    size="large"
+                                    showSearch
+                                    placeholder="Select Country"
+                                    optionFilterProp="children"
+                                    style={{ borderRadius: 12, fontWeight: 500 }}
+                                    dropdownStyle={{ borderRadius: 12 }}
+                                    onChange={(val) => {
+                                      field.onChange(val);
+                                      setValue("city", undefined);
+                                    }}
+                                    value={field.value}
+                                  >
+                                    {Country.getAllCountries().slice(0, 100).map((country) => (
+                                      <Option key={country.isoCode} value={country.isoCode}>
+                                        {country.name}
+                                      </Option>
+                                    ))}
+                                  </Select>
+                                )}
+                              />
+                            </Form.Item>
+                          </Col>
+
+                          <Col xs={24} md={12}>
+                            <Form.Item
+                              label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>City <span style={{ color: "#ff4d4f" }}>*</span></span>}
+                              validateStatus={errors.city ? "error" : ""}
+                              help={errors.city?.message}
+                            >
+                              <Controller
+                                name="city"
+                                control={control}
+                                rules={{ required: "City is required" }}
+                                render={({ field }) =>
+                                  citiesList.length > 0 ? (
+                                    <Select
+                                      size="large"
+                                      showSearch
+                                      placeholder="Select City"
+                                      style={{ borderRadius: 12, fontWeight: 500 }}
+                                      dropdownStyle={{ borderRadius: 12 }}
+                                      {...field}
+                                    >
+                                      {citiesList.map((city) => (
+                                        <Option key={city.name} value={city.name}>
+                                          {city.name}
+                                        </Option>
+                                      ))}
+                                    </Select>
+                                  ) : (
+                                    <Input placeholder="Enter City" size="large" style={{ borderRadius: 12, fontWeight: 500 }} {...field} />
+                                  )
+                                }
+                              />
+                            </Form.Item>
+                          </Col>
+                        </Row>
+
+                        <Form.Item
+                          label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Address <span style={{ color: "#ff4d4f" }}>*</span></span>}
+                          validateStatus={errors.address ? "error" : ""}
+                          help={errors.address?.message}
+                        >
+                          <Controller
+                            name="address"
+                            control={control}
+                            rules={{ required: "Address is required" }}
+                            render={({ field }) => (
+                              <Input.TextArea
+                                placeholder="Building No, Street Name, Area..."
+                                rows={3}
+                                size="large"
+                                style={{ borderRadius: 12, fontWeight: 500 }}
+                                {...field}
+                              />
+                            )}
+                          />
+                        </Form.Item>
+                      </div>
+                    )}
+
+                    {/* Navigation Buttons */}
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32 }}>
+                      {currentStep > 0 && (
+                        <Button 
+                          size="large" 
+                          onClick={prevStep}
+                          style={{ borderRadius: 12, fontWeight: 600, padding: "0 28px" }}
+                        >
+                          Back
+                        </Button>
                       )}
-                    />
-                  </Form.Item>
+                      
+                      {currentStep < steps.length - 1 ? (
+                        <Button 
+                          type="primary" 
+                          size="large" 
+                          onClick={nextStep}
+                          style={{ 
+                            background: `linear-gradient(135deg, ${themeColor} 0%, #3a0163 100%)`,
+                            borderColor: themeColor,
+                            fontWeight: 600,
+                            borderRadius: 12,
+                            padding: "0 32px",
+                            marginLeft: "auto",
+                            boxShadow: `0 4px 12px ${themeColor}40`,
+                          }}
+                        >
+                          Continue
+                        </Button>
+                      ) : (
+                        <Button
+                          type="primary"
+                          size="large"
+                          htmlType="submit"
+                          loading={submitting}
+                          disabled={!otpVerified || !emailOtpVerified}
+                          style={{ 
+                            background: `linear-gradient(135deg, ${themeColor} 0%, #3a0163 100%)`,
+                            borderColor: themeColor,
+                            fontWeight: 600,
+                            borderRadius: 12,
+                            padding: "0 32px",
+                            marginLeft: "auto",
+                            boxShadow: `0 4px 12px ${themeColor}40`,
+                          }}
+                        >
+                          <RocketOutlined style={{ marginRight: 8 }} />
+                          Submit Application
+                        </Button>
+                      )}
+                    </div>
 
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    block
-                    size="large"
-                    loading={submitting}
-                    disabled={!otpVerified || !emailOtpVerified}
-                    style={{
-                      height: 48,
-                      background: `linear-gradient(135deg, ${themeColor} 0%, #3a0163 100%)`,
-                      borderColor: themeColor,
-                      fontWeight: 800,
-                      fontSize: 16,
-                      borderRadius: 12,
-                      marginTop: 16,
-                      boxShadow: `0 4px 15px ${themeColor}60`,
-                      letterSpacing: "0.5px",
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
-                  >
-                    <RocketOutlined style={{ marginRight: 8 }} />
-                    Submit Registration
-                  </Button>
-
-                  <div style={{ marginTop: 20, textAlign: "center" }}>
-                    <Space split={<Divider type="vertical" />}>
-                      <Text style={{ fontSize: 12, fontWeight: 500 }}>
-                        <SafetyOutlined style={{ color: "#52c41a", marginRight: 4 }} />
-                        Secure Encryption
-                      </Text>
-                      <Text style={{ fontSize: 12, fontWeight: 500 }}>
-                        <CheckCircleFilled style={{ color: "#52c41a", marginRight: 4 }} />
-                        24/7 Support
-                      </Text>
-                    </Space>
-                  </div>
-                </Spin>
-              </Form>
+                    {/* Security Footer */}
+                    <div style={{ marginTop: 32, textAlign: "center", paddingTop: 24, borderTop: "1px solid #f0f0f0" }}>
+                      <Space split={<Divider type="vertical" />} size="middle">
+                        <Tooltip title="256-bit SSL Encryption">
+                          <Text style={{ fontSize: 12, fontWeight: 500, color: "#666" }}>
+                            <SafetyOutlined style={{ color: "#52c41a", marginRight: 4 }} />
+                            Secure Encryption
+                          </Text>
+                        </Tooltip>
+                        <Tooltip title="24/7 Customer Support">
+                          <Text style={{ fontSize: 12, fontWeight: 500, color: "#666" }}>
+                            <CheckCircleFilled style={{ color: "#52c41a", marginRight: 4 }} />
+                            24/7 Support
+                          </Text>
+                        </Tooltip>
+                        <Tooltip title="GDPR Compliant">
+                          <Text style={{ fontSize: 12, fontWeight: 500, color: "#666" }}>
+                            <GlobalOutlined style={{ color: themeColor, marginRight: 4 }} />
+                            GDPR Compliant
+                          </Text>
+                        </Tooltip>
+                      </Space>
+                    </div>
+                  </Spin>
+                </Form>
+              </div>
             </Card>
           </div>
         </Col>
@@ -836,19 +995,20 @@ const DeveloperRegistration = () => {
 
       <style jsx global>{`
         .ant-input-affix-wrapper, .ant-select-selector, .ant-input, .ant-input-password {
-          border-radius: 10px !important;
+          border-radius: 12px !important;
           transition: all 0.3s ease !important;
-          border: 1px solid #e0e0e0 !important;
+          border-color: #e8e8e8 !important;
         }
         
         .ant-input-affix-wrapper:hover, .ant-select-selector:hover, .ant-input:hover, .ant-input-password:hover {
           border-color: ${themeColor} !important;
-          box-shadow: 0 0 0 2px ${themeColor}20 !important;
+          box-shadow: 0 0 0 2px ${themeColor}15 !important;
         }
         
-        .ant-input-affix-wrapper:focus, .ant-select-selector:focus, .ant-input:focus, .ant-input-password:focus {
+        .ant-input-affix-wrapper:focus, .ant-select-selector:focus, .ant-input:focus, .ant-input-password:focus,
+        .ant-input-affix-wrapper-focused, .ant-select-focused .ant-select-selector {
           border-color: ${themeColor} !important;
-          box-shadow: 0 0 0 3px ${themeColor}30 !important;
+          box-shadow: 0 0 0 3px ${themeColor}25 !important;
         }
         
         .ant-btn-primary {
@@ -857,7 +1017,7 @@ const DeveloperRegistration = () => {
         
         .ant-btn-primary:hover {
           transform: translateY(-2px);
-          box-shadow: 0 6px 20px ${themeColor}80 !important;
+          box-shadow: 0 8px 25px ${themeColor}80 !important;
         }
         
         .ant-form-item-label > label {
@@ -869,7 +1029,36 @@ const DeveloperRegistration = () => {
         }
         
         .ant-modal-content {
-          border-radius: 20px !important;
+          border-radius: 24px !important;
+        }
+        
+        .ant-steps-item-process .ant-steps-item-icon {
+          background: ${themeColor} !important;
+          border-color: ${themeColor} !important;
+        }
+        
+        .ant-steps-item-finish .ant-steps-item-icon {
+          border-color: ${themeColor} !important;
+          color: ${themeColor} !important;
+        }
+        
+        .ant-steps-item-finish .ant-steps-item-icon > .ant-steps-icon {
+          color: ${themeColor} !important;
+        }
+        
+        .step-content {
+          animation: fadeIn 0.4s ease-out;
+        }
+        
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateX(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
         }
       `}</style>
     </div>

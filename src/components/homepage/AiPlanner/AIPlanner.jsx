@@ -136,10 +136,13 @@ const AIPlanner = () => {
         title: `Design ${index + 1}`,
         // Format date or use current time if missing
         timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-        aiAnalysis: item.aiAnalysis || "AI Generated Design",
-        styles: [], // API might not return styles history, default empty
-        elements: [],
-        fromApi: true,
+        
+      aiAnalysis: item.summary || "AI Generated Design",
+      styleName: item.styleName || null,
+      elements: item.elements || [],
+      description: item.description || null,
+      roomType: item.roomType || null,
+      fromApi: true,
       }));
 
       // Reverse to show newest first
@@ -372,26 +375,27 @@ const AIPlanner = () => {
         const aiDesc = resData.message || "Garden generated successfully";
 
 
-        const newDesign = {
-          id: Date.now(), // Temporary ID for UI until refresh
-          image: aiUrl,
-          title: `New Vision`,
-          styles: [...selectedStyles],
-          elements: [...selectedElements],
-          timestamp: "Just now",
-          aiAnalysis: aiDesc,
-          userInfo: currentUser
-        };
+       const newDesign = {
+  id: Date.now(),
+  image: aiUrl,
+  title: `New Vision`,
+  timestamp: "Just now",
+  aiAnalysis: aiDesc,
+  styleName: gardenStyles.find(s => s.value === selectedStyles[0])?.label || null,
+  elements: selectedElements.map(e => gardenElements.find(el => el.value === e)?.label),
+  description: specificRequirement || null,
+  userInfo: currentUser
+};
 
-        // Add new design to the top of the list
-        setDesigns(prev => [newDesign, ...prev]);
-        setCurrentResult({
-          url: aiUrl,
-          desc: aiDesc,
-          styles: [...selectedStyles],
-          elements: [...selectedElements],
-          instruction: specificRequirement
-        });
+setDesigns(prev => [newDesign, ...prev]);
+
+setCurrentResult({
+  url: aiUrl,
+  desc: aiDesc,
+  styles: [...selectedStyles],
+  elements: [...selectedElements],
+  instruction: specificRequirement
+});
 
         fetchLibraryDesigns();
 
@@ -746,6 +750,23 @@ const downloadImage = async (imageUrl) => {
                     <div className="p-6">
                       <h3 className="font-bold text-xl text-gray-900 mb-1">{d.title}</h3>
                       <p className="text-gray-400 text-sm">{d.timestamp}</p>
+                      {d.styleName && (
+    <span className="inline-block bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded-full mr-1">
+      {d.styleName}
+    </span>
+  )}
+  
+  {/* ✅ Elements badges */}
+  {d.elements?.slice(0, 2).map((el, i) => (
+    <span key={i} className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full mr-1">
+      {el}
+    </span>
+  ))}
+
+  {/* ✅ Summary/Description */}
+  {d.aiAnalysis && d.aiAnalysis !== "AI Generated Design" && (
+    <p className="text-gray-500 text-xs mt-2 line-clamp-2">{d.aiAnalysis}</p>
+  )}
                     </div>
                   </Card>
                 ))}

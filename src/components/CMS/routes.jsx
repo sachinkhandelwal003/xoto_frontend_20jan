@@ -169,6 +169,7 @@ import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 import CreateSecondaryPlans from "./pages/Properties/CreateSecondaryPlans"; 
 import SecondaryPlans from "./pages/Properties/SecondaryPlans";
 import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail";
+import PropertyDetailPage from "./pages/Propertydetailpage";
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 
@@ -425,6 +426,7 @@ const CmsRoutes = () => {
       <Route path="/properties" element={<AdminPropertyListings />} />
 <Route path="/properties/:id" element={<AdminPropertyDetail />} />
 <Route path="/properties/create-offplan" element={<AdminOffPlanCreate />} />
+<Route path="/property-list/property-detail/:id" element={<PropertyDetailPage />} />
 
       
 {/* Agency */}
