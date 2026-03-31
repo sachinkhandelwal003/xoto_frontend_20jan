@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-// 1. AXIOS HATA KAR APISERVICE IMPORT KIYA
 import { apiService } from "../../../../manageApi/utils/custom.apiservice"; 
+
+// --- QUILL & MARKDOWN IMPORTS ---
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import { marked } from 'marked'; // 👇 NAYA PACKAGE ADD KIYA
 
 import {
   Button, Modal, Form, Input, Popconfirm, Card, Table,
@@ -15,7 +19,6 @@ import {
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
 const { Option } = Select;
 const { useBreakpoint } = Grid;
 
@@ -27,6 +30,17 @@ const THEME = {
 
 // --- CONSTANTS ---
 const TAG_OPTIONS = ["AI", "Real Estate", "PropTech"];
+
+// --- QUILL EDITOR TOOLBAR CONFIGURATION ---
+const quillModules = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    ['link', 'blockquote'],
+    ['clean']
+  ],
+};
 
 const validateImage = (file, minMB = 1, maxMB = 10) => {
   const isValidType =
@@ -87,7 +101,7 @@ const BlogManagement = () => {
   const [previewImage, setPreviewImage] = useState('');
   const [previewTitle, setPreviewTitle] = useState('');
 
-  // --- 1. FETCH BLOGS (UPDATED TO APISERVICE) ---
+  // --- 1. FETCH BLOGS ---
   const fetchBlogs = async (page = 1, limit = 10, search = '') => {
     setLoading(true);
     try {
@@ -121,8 +135,8 @@ const BlogManagement = () => {
     return () => clearTimeout(delayDebounce);
   }, [currentPage, pageSize, searchText]);
 
-  // --- 2. FETCH SINGLE BLOG FOR EDIT (UPDATED TO APISERVICE) ---
-  const fetchBlogById = async (id) => {
+  // --- 2. FETCH SINGLE BLOG FOR EDIT ---
+const fetchBlogById = async (id) => {
     setLoading(true);
     try {
       const response = await apiService.get(`/blogs/get-blog-by-id?id=${id}`);
@@ -130,17 +144,33 @@ const BlogManagement = () => {
       if (response.success && response.data) {
         const blog = response.data;
         
-        // Populate Form
+        let finalContent = blog.content || "";
+        
+        // --- 🛠️ FORMATTING FIXER LOGIC START ---
+        // Agar content Markdown mein hai (## ya -), toh usey HTML mein convert karo
+        if (finalContent.includes('## ') || finalContent.includes('### ') || finalContent.includes('- ')) {
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = finalContent;
+            let plainText = tempDiv.innerText || tempDiv.textContent;
+            finalContent = marked.parse(plainText);
+        }
+
+        // Quill formatting ko force karne ke liye hum check karte hain 
+        // ki content empty paragraph toh nahi ban raha
+        if (finalContent === "<p><br></p>") finalContent = "";
+        // --- 🛠️ FORMATTING FIXER LOGIC END ---
+
         form.setFieldsValue({
           title: blog.title,
           subHeading: blog.subHeading, 
           slug: blog.slug,
           tags: blog.tags || [], 
           status: blog.isPublished ? 'Published' : 'Draft',
-          content: blog.content,
+          content: finalContent, // Updated content
           authorName: blog.authorName,
         });
 
+        // Image state management (same as before)
         const setInitialFile = (url, setter) => {
             if (url) {
                 setter([{
@@ -164,20 +194,19 @@ const BlogManagement = () => {
         message.error(response.message || "Failed to fetch details.");
       }
     } catch (err) {
+      console.error("Fetch Error:", err);
       message.error("Failed to fetch blog details.");
     } finally {
       setLoading(false);
     }
   };
 
-  // --- HELPER: Upload Single File (UPDATED TO APISERVICE) ---
+  // --- HELPER: Upload Single File ---
   const uploadFile = async (file) => {
       const formData = new FormData();
       formData.append('file', file);
 
       try {
-          // Note: Tumhare apiService me agar form-data ke headers automatically
-          // set nahi hote, toh wahan config pass karni pad sakti hai.
           const response = await apiService.post('/upload', formData, {
               headers: { 'Content-Type': 'multipart/form-data' }
           });
@@ -204,8 +233,7 @@ const BlogManagement = () => {
       return "";
   };
 
-
-  // --- 3. SAVE HANDLER (UPDATED TO APISERVICE) ---
+  // --- 3. SAVE HANDLER ---
   const handleSave = async (values) => {
     setSaving(true);
     try {
@@ -258,7 +286,7 @@ const BlogManagement = () => {
     }
   };
 
-  // --- 4. DELETE (UPDATED TO APISERVICE) ---
+  // --- 4. DELETE ---
   const deleteBlog = async (id) => {
     try {
       setLoading(true);
@@ -547,7 +575,7 @@ const BlogManagement = () => {
              </Col>
           </Row>
 
-          {/* Row 4: Tags          weqfwf */}
+          {/* Row 4: Tags */}
           <Form.Item name="tags" label="Tags / Category">
             <Select 
                 mode="multiple" 
@@ -561,7 +589,7 @@ const BlogManagement = () => {
             </Select>
           </Form.Item>
 
-          {/* Row 5: Images (Featured & Cover) */}
+          {/* Row 5: Images with Pixel details */}
           <Row gutter={16} className="bg-gray-50 p-4 rounded mb-4 border border-dashed border-gray-300">
              <Col xs={24} sm={12}>
                  <Form.Item label="Featured Image (Thumbnail)">
@@ -576,9 +604,11 @@ const BlogManagement = () => {
                      >
                         {fileList.length < 1 && <UploadButton />}
                      </Upload>
-                     <Text type="secondary" style={{ fontSize: "12px" }}>
-                        JPG/PNG only • Size: 1MB – 10MB • Used in cards & previews
-                     </Text>
+                     <div className="mt-2 text-xs text-gray-500 leading-relaxed">
+                        {/* <p className="m-0">📸 <strong>Format:</strong> JPG/PNG (1MB - 10MB)</p> */}
+                        <p className="m-0 text-blue-600 font-medium"><strong>Pixels:</strong> 800 x 600 px </p>
+                        {/* <p className="m-0 text-[11px]">Used for blog cards & link previews.</p> */}
+                     </div>
                  </Form.Item>
              </Col>
              <Col xs={24} sm={12}>
@@ -594,21 +624,29 @@ const BlogManagement = () => {
                      >
                         {coverFileList.length < 1 && <div className='flex flex-col items-center'><PictureOutlined /><span className='mt-1 text-xs'>Cover</span></div>}
                      </Upload>
-                     <Text type="secondary" style={{ fontSize: "12px" }}>
-                        JPG/PNG • 1MB – 10MB • Banner image
-                     </Text>
+                     <div className="mt-2 text-xs text-gray-500 leading-relaxed">
+                        {/* <p className="m-0">📸 <strong>Format:</strong> JPG/PNG (1MB - 10MB)</p> */}
+                        <p className="m-0 text-blue-600 font-medium"> <strong>Pixels:</strong> 1200 x 400 px</p>
+                        {/* <p className="m-0 text-[11px]">Shown at the top of the blog reading page.</p> */}
+                     </div>
                  </Form.Item>
              </Col>
           </Row>
 
-          {/* Row 6: Content */}
-          <Form.Item name="content" label="Blog Content" rules={[{ required: true, message: 'Please write some content' }]}>
-            <TextArea 
-                rows={8} 
-                placeholder="Write your blog content here..." 
-                showCount 
-                maxLength={10000} 
-            />
+          {/* Row 6: Content (ValuePropName FIX ke sath) */}
+          <Form.Item 
+             name="content" 
+             label="Blog Content" 
+             rules={[{ required: true, message: 'Please write some content' }]}
+             valuePropName="value"
+             trigger="onChange"
+          >
+             <ReactQuill 
+                 theme="snow"
+                 modules={quillModules}
+                 placeholder="Write your amazing blog content here..."
+                 style={{ height: '300px', marginBottom: '40px' }} 
+             />
           </Form.Item>
 
           <div className="flex justify-end gap-3 mt-6">

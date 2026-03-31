@@ -16,7 +16,7 @@ const Service = () => {
       <Second/>
            <Seventh/>
       <Third/>
-      <Buy4 />
+      {/* <Buy4 /> */}
       <FOurth/>
       <Buy6/>
        {/* <Fifth/> */}
