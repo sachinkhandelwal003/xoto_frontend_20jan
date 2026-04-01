@@ -1,4 +1,3 @@
-/* src/components/freelancers/Registration.jsx */
 import React, { useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
@@ -13,9 +12,9 @@ import registerimage from "../../assets/img/registergarden.jpg";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
 
 // --- Libraries ---
-import CountryList from 'country-list-with-dial-code-and-flag';
 import { Country, State, City } from 'country-state-city';
-import { isValidPhoneNumber } from 'libphonenumber-js';
+// ✅ IMPORTED parsePhoneNumberFromString for strict validation
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -52,9 +51,8 @@ const Registration = () => {
   const [success, setSuccess] = useState(false);
 
   // --- Mobile Verification State ---
-  const [countryCode, setCountryCode] = useState("+971");
+  const [countryCode, setCountryCode] = useState("971"); 
   const [mobileNumber, setMobileNumber] = useState("");
-  const mobileCountryOptions = useMemo(() => CountryList.getAll(), []);
   const [isMobileVerified, setIsMobileVerified] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpValue, setOtpValue] = useState("");
@@ -77,17 +75,40 @@ const Registration = () => {
     formState: { errors },
   } = useForm({ 
     mode: "onChange",
-    shouldUnregister: false // ✅ ZAROORI: Taki purane steps ka data delete na ho
+    shouldUnregister: false 
   });
 
   const watchEmail = watch("email");
 
+  // 🔥 CUSTOM COUNTRY OPTIONS WITH FLAGCDN LOGIC
+  const countryOptions = useMemo(() => {
+    const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"]; 
+    return Country.getAllCountries().map((country) => ({
+      name: country.name, code: country.phonecode, iso: country.isoCode,
+    })).sort((a, b) => {
+      const aPriority = priorityIsoCodes.includes(a.iso);
+      const bPriority = priorityIsoCodes.includes(b.iso);
+      if (aPriority && !bPriority) return -1;
+      if (!aPriority && bPriority) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, []);
+
+  // 🔥 STRICT REAL-TIME VALIDATION FOR MOBILE NUMBER
   useEffect(() => {
     register("mobile_number", { 
         required: "Mobile number is required",
-        minLength: { value: 5, message: "Number is too short" } 
+        validate: (value) => {
+          if (!value) return "Mobile number is required";
+          const fullNum = `+${countryCode}${value}`;
+          const phoneNumber = parsePhoneNumberFromString(fullNum);
+          if (phoneNumber && phoneNumber.isValid()) {
+            return true;
+          }
+          return `Invalid mobile number format for +${countryCode}`;
+        }
     });
-  }, [register]);
+  }, [register, countryCode]); // Re-register if country code changes
 
   const watchCountry = watch("country");
   const watchState = watch("state");
@@ -194,25 +215,20 @@ const Registration = () => {
 
   // --- Mobile OTP Handlers ---
   const handleSendOtp = async () => {
-    if (!mobileNumber) {
-      setError("mobile_number", { type: "manual", message: "Mobile number is required" });
-      return;
-    }
-    const fullNumber = `${countryCode}${mobileNumber}`;
-    if (!isValidPhoneNumber(fullNumber)) {
-        setError("mobile_number", { type: "manual", message: `Invalid number format for ${countryCode}` });
-        return;
-    }
+    // 🔥 Trigger validation before sending OTP
+    const isMobileValid = await trigger("mobile_number");
+    if (!isMobileValid) return;
+    
+    const fullNumber = `+${countryCode}${mobileNumber}`;
     
     setLoading(prev => ({ ...prev, otpSending: true }));
     try {
       await apiService.post("/otp/send-otp", { 
-        country_code: countryCode, 
+        country_code: `+${countryCode}`, 
         phone_number: mobileNumber 
       });
       message.success(`OTP sent to ${fullNumber}`);
       setShowOtpInput(true);
-      clearErrors("mobile_number");
     } catch (error) {
       if (error.response?.data?.errors && error.response.data.errors.length > 0) {
         error.response.data.errors.forEach(err => {
@@ -232,7 +248,7 @@ const Registration = () => {
     setLoading(prev => ({ ...prev, otpVerifying: true }));
     try {
       await apiService.post("/otp/verify-otp", {
-        country_code: countryCode,
+        country_code: `+${countryCode}`,
         phone_number: mobileNumber,
         otp: otpValue
       });
@@ -258,7 +274,7 @@ const Registration = () => {
       const formValid = await trigger(fields);
       
       if (!isMobileVerified) {
-        setError("mobile_number", { type: "manual", message: "Please verify mobile number" });
+        setError("mobile_number", { type: "manual", message: "Please verify mobile number to proceed" });
         isValid = false;
       }
       if (!isEmailVerified) {
@@ -296,7 +312,7 @@ const Registration = () => {
       password: data.password,
       confirm_password: data.confirmPassword,
       name: { first_name: data.first_name, last_name: data.last_name },
-      mobile: { country_code: countryCode, number: mobileNumber.replace(/\D/g, "") },
+      mobile: { country_code: `+${countryCode}`, number: mobileNumber.replace(/\D/g, "") },
       is_mobile_verified: isMobileVerified,
       is_email_verified: isEmailVerified,
       location: { country: countryName, state: stateName, city: data.city },
@@ -320,11 +336,9 @@ const Registration = () => {
           setError(fieldName, { type: "manual", message: error.message });
         });
         
-        // Agar error Step 0 ke fields me aati hai, toh wapas wahan bhej do
         const hasStep0Error = err.response.data.errors.some(e => ['email', 'mobile', 'first_name', 'last_name'].includes(e.field));
         if (hasStep0Error) setStep(0);
       } else {
-        // Validation Failed popup sir tab aayega jab backend se koi normal text error ho
         message.error(err.response?.data?.message || "Registration failed");
       }
     } finally {
@@ -373,7 +387,6 @@ const Registration = () => {
             <h2 className="text-4xl font-bold text-gray-800 mb-2">Execution Partners Registration</h2>
             <p className="text-gray-600 mb-8">Step {step + 1} of 3</p>
 
-            {/* ✅ onFinish ki jagah onSubmitCapture lagaya hai */}
             <Form layout="vertical" onSubmitCapture={handleSubmit(onSubmit)}>
               {/* STEP 0: BASIC INFO */}
               {step === 0 && (
@@ -450,14 +463,31 @@ const Registration = () => {
                   >
                     <Space.Compact style={{ width: '100%' }}>
                         <Select
-                            showSearch value={countryCode} size="large"
-                            onChange={(val) => { setCountryCode(val); if (errors.mobile_number?.type === 'manual') clearErrors("mobile_number"); }}
-                            style={{ width: '30%', minWidth: '110px' }} optionFilterProp="label" filterOption={filterOption}
+                            showSearch 
+                            value={countryCode} 
+                            size="large"
+                            onChange={(val) => { 
+                              setCountryCode(val); 
+                              // Trigger validation immediately when country code changes
+                              trigger("mobile_number");
+                            }}
+                            className="custom-phone-select"
+                            style={{ width: '30%', minWidth: '130px' }} 
+                            optionFilterProp="children"
+                            popupMatchSelectWidth={300}
                             disabled={showOtpInput || isMobileVerified}
                         >
-                            {mobileCountryOptions.map((country, index) => (
-                                <Option key={`${country.code}-${index}`} value={country.dial_code} label={`${country.name} ${country.dial_code}`}>
-                                    <span>{country.flag} {country.dial_code}</span>
+                            {countryOptions.map((item) => (
+                                <Option key={item.iso} value={item.code}>
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <img 
+                                          src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`} 
+                                          width="20" 
+                                          alt={item.name} 
+                                          style={{ marginRight: 8, borderRadius: 2 }} 
+                                        />
+                                        <span>+{item.code}</span>
+                                    </div>
                                 </Option>
                             ))}
                         </Select>
@@ -467,14 +497,15 @@ const Registration = () => {
                                 const val = e.target.value.replace(/\D/g, "");
                                 setMobileNumber(val);
                                 setValue("mobile_number", val, { shouldValidate: true });
-                                if (errors.mobile_number?.type === 'manual') clearErrors("mobile_number");
+                                // 🔥 Trigger real-time validation check
+                                trigger("mobile_number");
                             }}
-                            placeholder="501234567" style={{ width: '50%' }} disabled={showOtpInput || isMobileVerified}
+                            placeholder="501234567" style={{ width: '50%', borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }} disabled={showOtpInput || isMobileVerified}
                         />
                         {!isMobileVerified && !showOtpInput && (
                              <Button 
                                 type="primary" size="large" onClick={handleSendOtp}
-                                disabled={!mobileNumber} loading={loading.otpSending}
+                                disabled={!mobileNumber || errors.mobile_number} loading={loading.otpSending}
                                 style={{ width: '20%', minWidth: '100px' , backgroundColor: '#5C039B', borderColor: '#5C039B' ,color: '#fff'}}
                              >Send OTP</Button>
                         )}
@@ -484,7 +515,7 @@ const Registration = () => {
                     </Space.Compact>
                     {showOtpInput && (
                         <div className="mt-4 p-4 bg-gray-50 border border-purple-100 rounded-lg">
-                             <Text type="secondary" className="block mb-3">Enter the 6-digit code sent to <strong>{countryCode} {mobileNumber}</strong></Text>
+                             <Text type="secondary" className="block mb-3">Enter the 6-digit code sent to <strong>+{countryCode} {mobileNumber}</strong></Text>
                              <div className="flex gap-3 items-center">
                                  <Input placeholder="Enter OTP" maxLength={6} value={otpValue} onChange={(e) => setOtpValue(e.target.value)} size="large" style={{ width: '200px'  }} />
                                  <Button type="primary" style={{ backgroundColor: '#5C039B', borderColor: '#5C039B', color: '#fff' }} onClick={handleVerifyOtp} loading={loading.otpVerifying} size="large">Verify OTP</Button>
@@ -506,7 +537,6 @@ const Registration = () => {
                     <Button 
                         type="primary" size="large" onClick={next} 
                         style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}
-                        disabled={!isEmailVerified || !isMobileVerified}
                     >
                       Next <ChevronRight className="inline" />
                     </Button>
@@ -676,7 +706,24 @@ const Registration = () => {
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        /* Make sure custom phone select matches Ant Design inputs */
+        .custom-phone-select .ant-select-selector {
+          border-top-left-radius: 8px !important;
+          border-bottom-left-radius: 8px !important;
+          height: 40px !important;
+          display: flex !important;
+          align-items: center !important;
+        }
+        .custom-phone-select .ant-select-selection-item {
+          display: flex !important;
+          align-items: center !important;
+          line-height: 1 !important;
+        }
+      `}</style>
     </div>
   );
 };
+
 export default Registration;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Form,
   Input,
@@ -19,8 +19,10 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { toast } from "react-toastify";
 import axios from "axios";
-import PhoneInput from "react-phone-input-2";
-import "react-phone-input-2/lib/style.css";
+
+// ✅ Added only what is needed for phone formatting
+import { Country, City } from "country-state-city";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 import {
   MailOutlined,
@@ -30,14 +32,14 @@ import {
   SolutionOutlined,
   CheckCircleFilled,
   SafetyCertificateOutlined,
-  CheckOutlined
+  CheckOutlined,
+  EditOutlined
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 const { Option } = Select;
 
-// ── helper: extract errors[0] or message from API response ─────────────────
 const getErrorMsg = (error, fallback = "Something went wrong") =>
   error?.response?.data?.errors?.[0] ||
   error?.response?.data?.message ||
@@ -52,19 +54,6 @@ const PageWrapper = styled.div`
   flex-direction: column;
   align-items: center;
   font-family: 'Inter', sans-serif;
-
-  .react-tel-input .form-control {
-    height: 45px;
-    width: 100%;
-    border-radius: 8px;
-    border: 1px solid #d9d9d9;
-    font-family: 'Inter', sans-serif;
-  }
-  .react-tel-input .flag-dropdown {
-    border-radius: 8px 0 0 8px;
-    border: 1px solid #d9d9d9;
-    background: #fafafa;
-  }
 `;
 
 const HeaderSection = styled.div`
@@ -139,8 +128,9 @@ const RegistrationAgent = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const [phone, setPhone] = useState("");
-  const [countryData, setCountryData] = useState({});
+  // ✅ New Phone States
+  const [countryCode, setCountryCode] = useState("971"); 
+  const [mobileNumber, setMobileNumber] = useState("");
 
   const [emailOtpSent, setEmailOtpSent] = useState(false);
   const [emailOtpVerified, setEmailOtpVerified] = useState(false);
@@ -150,7 +140,7 @@ const RegistrationAgent = () => {
   const [urls, setUrls] = useState({ profile: "", idProof: "", rera: "" });
   const [uploading, setUploading] = useState({ profile: false, idProof: false, rera: false });
 
-  // ── Inline error states (shown below fields, no toast) ──────────────────────
+  // ── Inline error states ──────────────────────
   const [phoneError, setPhoneError]         = useState("");
   const [otpError, setOtpError]             = useState("");
   const [emailOtpError, setEmailOtpError]   = useState("");
@@ -160,7 +150,20 @@ const RegistrationAgent = () => {
   const UPLOAD_API = "https://xoto.ae/api/upload";
   const SIGNUP_API  = "https://xoto.ae/api/agent/agent-signup";
 
-  // ── 1. Instant Upload ───────────────────────────────────────────────────────
+  // ✅ Custom Country Options for FlagCDN
+  const countryOptions = useMemo(() => {
+    const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"]; 
+    return Country.getAllCountries().map((country) => ({
+      name: country.name, code: country.phonecode, iso: country.isoCode,
+    })).sort((a, b) => {
+      const aPriority = priorityIsoCodes.includes(a.iso);
+      const bPriority = priorityIsoCodes.includes(b.iso);
+      if (aPriority && !bPriority) return -1;
+      if (!aPriority && bPriority) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, []);
+
   const handleInstantUpload = async (file, type) => {
     setUploading((prev) => ({ ...prev, [type]: true }));
     setUploadError((prev) => ({ ...prev, [type]: "" }));
@@ -171,9 +174,7 @@ const RegistrationAgent = () => {
       const response = await axios.post(UPLOAD_API, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
       const uploadedUrl = response.data?.file?.url || response.data?.url || "";
-
       if (uploadedUrl) {
         setUrls((prev) => ({ ...prev, [type]: uploadedUrl }));
         toast.success(`${type} uploaded successfully!`);
@@ -185,27 +186,30 @@ const RegistrationAgent = () => {
     } finally {
       setUploading((prev) => ({ ...prev, [type]: false }));
     }
-
     return false;
   };
 
-  // ── 2. Send Phone OTP ───────────────────────────────────────────────────────
   const handleSendOtp = async () => {
-    if (!phone || phone.length < 8) {
-      setPhoneError("Please enter a valid mobile number first");
+    if (!mobileNumber) {
+      setPhoneError("Please enter a mobile number");
       return;
     }
+    // ✅ Strict Validation Check
+    const fullNumber = `+${countryCode}${mobileNumber}`;
+    const phoneNumberParsed = parsePhoneNumberFromString(fullNumber);
+    
+    if (!phoneNumberParsed || !phoneNumberParsed.isValid()) {
+      setPhoneError(`Invalid number format for +${countryCode}`);
+      return;
+    }
+
     setPhoneError("");
     setLoading(true);
     try {
-      const cCode   = `+${countryData.dialCode || '971'}`;
-      const pNumber = phone.slice((countryData?.dialCode || '971').length);
-
       await axios.post("https://xoto.ae/api/otp/send-otp", {
-        country_code: cCode,
-        phone_number: pNumber,
+        country_code: `+${countryCode}`,
+        phone_number: mobileNumber,
       });
-
       setOtpSent(true);
       toast.success("Verification code sent to your mobile!");
     } catch (error) {
@@ -215,7 +219,6 @@ const RegistrationAgent = () => {
     }
   };
 
-  // ── 3. Verify Phone OTP ─────────────────────────────────────────────────────
   const handleVerifyOtp = async () => {
     if (!otpValue) {
       setOtpError("Please enter the OTP");
@@ -224,15 +227,11 @@ const RegistrationAgent = () => {
     setOtpError("");
     setLoading(true);
     try {
-      const cCode   = `+${countryData.dialCode || '971'}`;
-      const pNumber = phone.slice((countryData?.dialCode || '971').length);
-
       await axios.post("https://xoto.ae/api/otp/verify-otp", {
-        country_code: cCode,
-        phone_number: pNumber,
+        country_code: `+${countryCode}`,
+        phone_number: mobileNumber,
         otp: otpValue,
       });
-
       setOtpVerified(true);
       toast.success("Mobile verified successfully!");
     } catch (error) {
@@ -242,7 +241,6 @@ const RegistrationAgent = () => {
     }
   };
 
-  // ── 4. Send Email OTP ───────────────────────────────────────────────────────
   const handleSendEmailOtp = async () => {
     const email = form.getFieldValue("email");
     if (!email) {
@@ -263,7 +261,6 @@ const RegistrationAgent = () => {
     }
   };
 
-  // ── 5. Verify Email OTP ─────────────────────────────────────────────────────
   const handleVerifyEmailOtp = async () => {
     if (!emailOtpValue) {
       setEmailOtpError("Please enter the OTP");
@@ -277,6 +274,7 @@ const RegistrationAgent = () => {
         otp: emailOtpValue,
       });
       setEmailOtpVerified(true);
+      setEmailOtpSent(false);
       toast.success("Email verified");
     } catch (err) {
       setEmailOtpError(getErrorMsg(err, "Invalid email OTP"));
@@ -285,18 +283,18 @@ const RegistrationAgent = () => {
     }
   };
 
-  // ── 6. Final Submit ─────────────────────────────────────────────────────────
   const handleFinish = async (values) => {
     setSubmitting(true);
+    setSubmitError("");
     try {
       const payload = {
         first_name:        values.first_name,
         last_name:         values.last_name,
         email:             values.email,
         password:          values.password,
-        phone_number:      phone.slice((countryData?.dialCode || '').length),
-        country_code:      `+${countryData.dialCode}`,
-        country:           countryData.name || "United Arab Emirates",
+        phone_number:      mobileNumber,
+        country_code:      `+${countryCode}`,
+        country:           "United Arab Emirates",
         operating_city:    values.operating_city,
         specialization:    values.specialization,
         profile_photo:     urls.profile,
@@ -310,33 +308,27 @@ const RegistrationAgent = () => {
 
       toast.success("Agent Registration Successful");
       navigate("/waiting-approval");
-    }catch (error) {
-  const apiError = error?.response?.data;
-  const message = apiError?.message || "";
+    } catch (error) {
+      const apiError = error?.response?.data;
+      const message = apiError?.message || "";
 
-  // ✅ PHONE ERROR HANDLE (MAIN FIX)
-  if (message.toLowerCase().includes("phone")) {
-    setPhoneError(message);
-  }
+      // ✅ INLINE ERRORS CATCH
+      if (message.toLowerCase().includes("phone") || message.toLowerCase().includes("mobile")) {
+        setPhoneError(message);
+      } else if (apiError?.errors) {
+        const fieldErrors = Object.keys(apiError.errors).map((key) => ({
+          name: key,
+          errors: [apiError.errors[key][0]],
+        }));
+        form.setFields(fieldErrors);
+      } else {
+        setSubmitError(message || "Registration failed");
+      }
 
-  // ✅ FIELD ERRORS (अगर backend सही दे)
-  else if (apiError?.errors) {
-    const fieldErrors = Object.keys(apiError.errors).map((key) => ({
-      name: key,
-      errors: [apiError.errors[key][0]],
-    }));
-
-    form.setFields(fieldErrors);
-  } 
-
-  else {
-    setSubmitError(message || "Registration failed");
-  }
-
-  setOtpVerified(false);
-  setOtpSent(false);
-  setOtpValue("");
-}finally {
+      setOtpVerified(false);
+      setOtpSent(false);
+      setOtpValue("");
+    } finally {
       setSubmitting(false);
     }
   };
@@ -363,12 +355,8 @@ const RegistrationAgent = () => {
             form={form}
             layout="vertical"
             onFinish={handleFinish}
-            onFinishFailed={(errorInfo) => {
-              console.error("Form validation failed:", errorInfo);
-            }}
             initialValues={{ specialization: 'residential' }}
           >
-
             {/* --- PERSONAL DETAILS --- */}
             <div style={{ marginBottom: 30 }}>
               <AntSpace style={{ marginBottom: 20, color: '#f26522', fontWeight: 600 }}>
@@ -427,15 +415,12 @@ const RegistrationAgent = () => {
                       </Button>
                     }
                   />
-                  {/* Inline email OTP error */}
-                  {emailOtpError && (
-                    <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{emailOtpError}</div>
-                  )}
+                  {emailOtpError && <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{emailOtpError}</div>}
                 </>
               )}
 
               {(emailOtpSent || emailOtpVerified) && (
-                <div style={{ marginTop: 8 }}>
+                <div style={{ marginTop: 8, marginBottom: 20 }}>
                   <Button
                     type="link"
                     onClick={() => {
@@ -460,24 +445,48 @@ const RegistrationAgent = () => {
 
             {/* --- PHONE VERIFICATION --- */}
             <div style={{ marginBottom: 30 }}>
-              <Form.Item label="Phone Number" required>
-                <div style={{ position: 'relative' }}>
-                  <PhoneInput
-                    country={'ae'}
-                    value={phone}
-                    onChange={(ph, data) => {
-                      setPhone(ph);
-                      setCountryData(data);
+              <Form.Item 
+                label="Phone Number" 
+                required 
+                validateStatus={phoneError ? "error" : ""} 
+                help={phoneError}
+              >
+                <div style={{ position: 'relative', display: 'flex' }}>
+                  {/* ✅ FLAGCDN SELECTOR */}
+                  <Select
+                    showSearch
+                    value={countryCode}
+                    onChange={(val) => { setCountryCode(val); setPhoneError(""); }}
+                    className="custom-phone-select"
+                    style={{ width: '120px', height: '45px' }}
+                    popupMatchSelectWidth={300}
+                    disabled={otpVerified || otpSent}
+                    optionFilterProp="children"
+                  >
+                    {countryOptions.map((item) => (
+                      <Option key={item.iso} value={item.code}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <img 
+                            src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`} 
+                            width="20" 
+                            alt={item.name} 
+                            style={{ marginRight: 8, borderRadius: 2 }} 
+                          />
+                          <span>+{item.code}</span>
+                        </div>
+                      </Option>
+                    ))}
+                  </Select>
+
+                  <StyledInput
+                    value={mobileNumber}
+                    onChange={(e) => {
+                      setMobileNumber(e.target.value.replace(/\D/g, ""));
                       setPhoneError("");
-                      if (otpVerified) {
-                        setOtpVerified(false);
-                        setOtpSent(false);
-                        setOtpValue("");
-                      }
                     }}
-                    enableSearch={true}
-                    inputStyle={{ width: '100%', height: '45px', fontSize: '16px', paddingRight: '100px' }}
-                    disabled={otpVerified}
+                    placeholder="Mobile Number"
+                    style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, paddingRight: '100px' }}
+                    disabled={otpVerified || otpSent}
                   />
 
                   {!otpVerified ? (
@@ -485,7 +494,7 @@ const RegistrationAgent = () => {
                       type="link"
                       onClick={() => { setOtpValue(""); setOtpVerified(false); handleSendOtp(); }}
                       loading={loading}
-                      disabled={!phone}
+                      disabled={!mobileNumber}
                       style={{ position: 'absolute', right: '5px', top: '6px', zIndex: 2, color: '#5C039B', fontWeight: '700' }}
                     >
                       {otpSent ? "Resend" : "Send OTP"}
@@ -495,21 +504,17 @@ const RegistrationAgent = () => {
                       <CheckCircleFilled style={{ color: "#52c41a", fontSize: "20px" }} />
                     </div>
                   )}
-
-                  {(otpSent || otpVerified) && (
-                    <div style={{ marginTop: 8 }}>
-                      <Button
-                        type="link"
-                        onClick={() => { setOtpVerified(false); setOtpSent(false); setOtpValue(""); setPhoneError(""); }}
-                      >
-                        Change Number
-                      </Button>
-                    </div>
-                  )}
                 </div>
-                {/* Inline phone error */}
-                {phoneError && (
-                  <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{phoneError}</div>
+                
+                {(otpSent || otpVerified) && (
+                  <div style={{ marginTop: 8 }}>
+                    <Button
+                      type="link"
+                      onClick={() => { setOtpVerified(false); setOtpSent(false); setOtpValue(""); setPhoneError(""); }}
+                    >
+                      Change Number
+                    </Button>
+                  </div>
                 )}
               </Form.Item>
 
@@ -536,10 +541,7 @@ const RegistrationAgent = () => {
                           }
                         />
                       </Form.Item>
-                      {/* Inline OTP error */}
-                      {otpError && (
-                        <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{otpError}</div>
-                      )}
+                      {otpError && <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{otpError}</div>}
                     </div>
                   </motion.div>
                 )}
@@ -627,7 +629,6 @@ const RegistrationAgent = () => {
               COMPLETE REGISTRATION
             </SubmitButton>
 
-            {/* Inline submit error below button */}
             {submitError && (
               <div style={{ color: "#ef4444", fontSize: 13, marginTop: 10, textAlign: "center", fontWeight: 500 }}>
                 {submitError}
@@ -636,6 +637,20 @@ const RegistrationAgent = () => {
           </Form>
         </MainCard>
       </PageWrapper>
+      <style jsx global>{`
+        .custom-phone-select .ant-select-selector {
+          border-top-left-radius: 8px !important;
+          border-bottom-left-radius: 8px !important;
+          height: 45px !important;
+          display: flex !important;
+          align-items: center !important;
+        }
+        .custom-phone-select .ant-select-selection-item {
+          display: flex !important;
+          align-items: center !important;
+          line-height: 1 !important;
+        }
+      `}</style>
     </ConfigProvider>
   );
 };

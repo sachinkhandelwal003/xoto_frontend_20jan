@@ -31,7 +31,6 @@ import {
 } from "@ant-design/icons";
 import { FiEye, FiSearch, FiRefreshCw } from "react-icons/fi";
 
-// Assuming CustomTable is in this path based on your snippet
 import CustomTable from '../../pages/custom/CustomTable';
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
 
@@ -140,6 +139,7 @@ const AgencyList = () => {
         return;
       }
       fetchAgencies(pagination.currentPage, pagination.itemsPerPage, search, activeTab);
+      setDrawerOpen(false); // Close drawer if status updated
     } catch (err) {
       message.error("Status update failed.");
     }
@@ -160,6 +160,7 @@ const AgencyList = () => {
       setRejectReason("");
       setSelectedAgencyForReject(null);
       fetchAgencies(pagination.currentPage, pagination.itemsPerPage, search, activeTab);
+      setDrawerOpen(false); // Close drawer
     } catch (err) {
       message.error("Failed to reject agency.");
     }
@@ -185,22 +186,30 @@ const AgencyList = () => {
     }
   };
 
-  // OPEN DRAWER & FETCH DETAILS
+  // ==========================================
+  // 🔥 THE MAGIC FIX: ROBUST DRAWER FETCHER
+  // ==========================================
   const openViewDrawer = async (record) => {
     setDrawerOpen(true);
     setViewDetailsLoading(true);
     setSelectedAgency(record);
-    setAgencyDetails(record); // Set basic details first
+    setAgencyDetails(record); // Set basic table details instantly so UI is never blank
     
     try {
       const res = await apiService.get(`/agency/get-agency-details/${record._id}`);
-      const responseData = res?.data || res;
-      
-      if (responseData?.success || responseData) {
-        setAgencyDetails(responseData.data || responseData);
+      console.log("📸 Drawer API Response:", res);
+
+      // Safe extraction regardless of API nesting
+      let fetchedData = res?.data?.data || res?.data?.agency || res?.data;
+      if (fetchedData?.data) fetchedData = fetchedData.data;
+
+      // Merge new data with existing record to guarantee no fields go undefined
+      if (fetchedData && typeof fetchedData === 'object') {
+        setAgencyDetails((prev) => ({ ...prev, ...fetchedData }));
       }
     } catch (err) {
-      message.error("Failed to fetch full agency details.");
+      console.error("Drawer Fetch Error:", err);
+      // We don't show an error here because the basic details from the table will still show!
     } finally {
       setViewDetailsLoading(false);
     }
@@ -238,24 +247,11 @@ const AgencyList = () => {
       });
     }
 
-    items.push({
-        type: 'divider',
-    });
-
-    // items.push({
-    //   key: 'toggle',
-    //   icon: record.is_active ? <StopOutlined style={{ color: THEME.error }} /> : <CheckCircleOutlined style={{ color: THEME.success }} />,
-    //   label: record.is_active ? 'Suspend Access' : 'Activate Access',
-    //   danger: record.is_active,
-    //   onClick: () => toggleActiveStatus(record, !record.is_active),
-    // });
-
     return items;
   };
 
   // TABLE COLUMNS
   const columns = [
-  
     {
       title: "Agency Name",
       width: 280,
@@ -289,7 +285,6 @@ const AgencyList = () => {
         </div>
       ),
     },
-    
     {
       title: "Status",
       width: 130,
@@ -299,7 +294,6 @@ const AgencyList = () => {
         return <Tag color="warning">Pending</Tag>;
       },
     },
-   
     {
       title: "Actions",
       fixed: "right",
@@ -384,7 +378,7 @@ const AgencyList = () => {
         onClose={() => setDrawerOpen(false)}
         width={420}
         title={null}
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }}
       >
         {agencyDetails && (
           <div>
@@ -409,7 +403,7 @@ const AgencyList = () => {
             <div style={{ padding: "0 24px", marginTop: -30 }}>
               <Card
                 bordered={false}
-                bodyStyle={{ padding: "16px 20px", textAlign: "center" }}
+                styles={{ body: { padding: "16px 20px", textAlign: "center" } }}
                 style={{ borderRadius: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}
               >
                 <Title level={4} style={{ margin: 0 }}>{agencyDetails.agency_name || "Unnamed Agency"}</Title>
@@ -420,12 +414,13 @@ const AgencyList = () => {
                     agencyDetails.onboarding_status === 'approved' ? 'green' : 
                     agencyDetails.onboarding_status === 'rejected' ? 'red' : 'orange'
                   }>
-                    {agencyDetails.onboarding_status?.toUpperCase()}
+                    {agencyDetails.onboarding_status?.toUpperCase() || "PENDING"}
                   </Tag>
-                  {agencyDetails.is_active
-                    ? <Tag color="blue" icon={<CheckCircleOutlined />}>System Active</Tag>
-                    : <Tag color="default" icon={<StopOutlined />}>System Suspended</Tag>
-                  }
+                  {agencyDetails.is_active !== undefined && (
+                    agencyDetails.is_active
+                      ? <Tag color="blue" icon={<CheckCircleOutlined />}>System Active</Tag>
+                      : <Tag color="default" icon={<StopOutlined />}>System Suspended</Tag>
+                  )}
                 </div>
               </Card>
             </div>
@@ -496,28 +491,30 @@ const AgencyList = () => {
               {/* Action Buttons */}
               <Space direction="vertical" style={{ width: '100%' }}>
                 {agencyDetails.onboarding_status !== 'approved' && (
-                  <Popconfirm title="Approve this agency?" onConfirm={() => { updateStatus(agencyDetails, 'approved'); setDrawerOpen(false); }}>
+                  <Popconfirm title="Approve this agency?" onConfirm={() => updateStatus(agencyDetails, 'approved')}>
                     <Button block type="primary" size="large" style={{ background: THEME.success, borderColor: THEME.success, borderRadius: 10, fontWeight: 600 }}>
                       Approve Application
                     </Button>
                   </Popconfirm>
                 )}
                 
-                <Popconfirm
-                  title={`${agencyDetails.is_active ? "Suspend" : "Activate"} system access for this agency?`}
-                  onConfirm={() => toggleActiveStatus(agencyDetails, !agencyDetails.is_active)}
-                >
-                  <Button
-                    block
-                    danger={agencyDetails.is_active}
-                    type={agencyDetails.is_active ? "default" : "primary"}
-                    size="large"
-                    style={!agencyDetails.is_active ? { background: THEME.primary, borderRadius: 10, fontWeight: 600 } : { borderRadius: 10, fontWeight: 600 }}
-                    icon={agencyDetails.is_active ? <StopOutlined /> : <CheckCircleOutlined />}
+                {agencyDetails.is_active !== undefined && (
+                  <Popconfirm
+                    title={`${agencyDetails.is_active ? "Suspend" : "Activate"} system access for this agency?`}
+                    onConfirm={() => toggleActiveStatus(agencyDetails, !agencyDetails.is_active)}
                   >
-                    {agencyDetails.is_active ? "Suspend Access" : "Activate Access"}
-                  </Button>
-                </Popconfirm>
+                    <Button
+                      block
+                      danger={agencyDetails.is_active}
+                      type={agencyDetails.is_active ? "default" : "primary"}
+                      size="large"
+                      style={!agencyDetails.is_active ? { background: THEME.primary, borderRadius: 10, fontWeight: 600 } : { borderRadius: 10, fontWeight: 600 }}
+                      icon={agencyDetails.is_active ? <StopOutlined /> : <CheckCircleOutlined />}
+                    >
+                      {agencyDetails.is_active ? "Suspend Access" : "Activate Access"}
+                    </Button>
+                  </Popconfirm>
+                )}
               </Space>
 
             </div>
@@ -556,7 +553,7 @@ const AgencyList = () => {
       </Modal>
 
       {/* CUSTOM CSS FOR SEGMENTED THEME & UTILITIES */}
-    <style>
+      <style>
 {`
 .custom-segmented-theme {
   background: #f3f4f6;
@@ -578,7 +575,7 @@ const AgencyList = () => {
   font-weight: 500;
 }
 `}
-</style>
+      </style>
     </div>
   );
 };
