@@ -215,14 +215,18 @@ const CustomTable = ({
 
     for (let i = startPage; i <= endPage; i++) {
       buttons.push(
-        <Button
-          key={i}
-          onClick={() => handlePageChangeInternal(i, itemsPerPage)}
-          type={currentPage === i ? 'primary' : 'default'}
-          className={`px-3 py-1 rounded-md ${currentPage === i ? '' : 'border border-gray-300 text-gray-700 hover:bg-gray-100'}`}
-        >
-          {i}
-        </Button>
+       <Button
+  key={i}
+  onClick={() => handlePageChangeInternal(i, itemsPerPage)}
+  type={currentPage === i ? 'primary' : 'default'}
+  style={
+    currentPage === i
+      ? { backgroundColor: '#4A027C', borderColor: '#4A027C' }
+      : {}
+  }
+>
+  {i}
+</Button>
       );
     }
 

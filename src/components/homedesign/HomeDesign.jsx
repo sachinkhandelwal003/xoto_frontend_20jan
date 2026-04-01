@@ -24,37 +24,37 @@ const HomeDesign = () => {
     {
       key: "exterior",
       icon: exterior,
-      link: "/aiPlanner/exterior",
+      link: "/Property",
       position: "top-[35%] right-[5%]",
     },
     {
       key: "interior",
       icon: interior,
-      link: "/aiPlanner/interior",
+      link: "/services/interior",
       position: "top-[35%] left-[-5%]",
     },
     {
       key: "furniture",
       icon: smart,
-      link: "/aiPlanner/furniture",
+      link: "/ecommerce/b2c",
       position: "bottom-[5%] right-[10%]",
     },
     {
       key: "landscaping",
       icon: landscaping,
-      link: "/aiPlanner/landscape",
+      link: "/landscaping",
       position: "bottom-[28%] left-[-8%]",
     },
     {
       key: "image",
       icon: image,
-      link: "/aiPlanner/enhance",
+      link: "/mortgage/services",
      position: "top-[58%] right-[2%]",
     },
     {
       key: "virtual",
       icon: virtual,
-      link: "/aiPlanner/virtual",
+      link: "/mortgage/services",
       position: "top-[10%] right-[15%]",
     },
   ];
@@ -81,12 +81,12 @@ const HomeDesign = () => {
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-black leading-tight">
               {t("homeDesign.title1")} <br />
               {t("homeDesign.title2")} <br />
-              <span className="font-bold text-black">{t("homeDesign.title3")}</span>
+              <span className="font-semibold text-black">{t("homeDesign.title3")}</span>
             </h2>
 
-            <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-lg lg:max-w-xl leading-relaxed">
-              {t("homeDesign.description")}
-            </p>
+        <p className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-600 max-w-lg lg:max-w-2xl leading-relaxed">
+  {t("homeDesign.description")}
+</p>
 
             {/* CTA Button agar aapko wapas chahiye toh isko uncomment kar sakte hain */}
             {/* <Link

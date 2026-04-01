@@ -161,11 +161,17 @@ import AdminChatRequests from "../chat/Adminchatrequests";
 import BrochureGenerator from "../ecommerce/B2C/BrochureGenerator";
 import TrackBrochure from "../ecommerce/B2C/TrackBrochure";
 import WaitingApproval from "../ecommerce/B2C/WaitingApproval";
-import OnBoardingpage from "./pages/dashboardPages/OnBoardingpage";
+import AgentDetail from "./pages/Properties/Agentdetail";
 
+import OnBoardingpage from "./pages/dashboardPages/OnBoardingpage";
+import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
+import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 import CreateSecondaryPlans from "./pages/Properties/CreateSecondaryPlans"; 
 import SecondaryPlans from "./pages/Properties/SecondaryPlans";
 import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail";
+import PropertyDetailPage from "./pages/Propertydetailpage";
+// import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
+// import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 
 const roleSlugMap = {
   0: "superadmin",
@@ -386,6 +392,7 @@ const CmsRoutes = () => {
 
 <Route path="secondary/:id" element={<SecondaryPropertyDetail />} />
   {/* <Route path="waiting-approval" element={<WaitingApproval />} /> */}
+ <Route path="agents/:agentId" element={<AgentDetail />} />
 
 
  
@@ -400,7 +407,10 @@ const CmsRoutes = () => {
       <Route path="/customers/list" element={<CustomerList />} />
       {/* <Route path="/agent-registration" element={<AgentRegistration />} /> */}
       <Route path="/developer-list" element={<DeveloperList />} />
-      <Route path="/onboarding" element={<OnBoardingpage />} />
+      <Route path="/onboarding/developer" element={<OnBoardingpage />} />
+      <Route path="/onboarding/agent" element={<OnBoardingAgent />} />
+      <Route path="/onboarding/agency" element={<OnBoardingAgency />} />
+    
       <Route path="/property-list" element={<AdminPropertyGrid />} />
       <Route path="/DealCommissionManager" element={<DealCommissionManager />} />
       <Route path="/lead-management" element={<LeadManagement />} />
@@ -416,6 +426,7 @@ const CmsRoutes = () => {
       <Route path="/properties" element={<AdminPropertyListings />} />
 <Route path="/properties/:id" element={<AdminPropertyDetail />} />
 <Route path="/properties/create-offplan" element={<AdminOffPlanCreate />} />
+<Route path="/property-list/property-detail/:id" element={<PropertyDetailPage />} />
 
       
 {/* Agency */}
