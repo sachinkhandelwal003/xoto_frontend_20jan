@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Form,
@@ -22,8 +22,17 @@ import {
   BankOutlined,
   ContactsOutlined,
   IdcardOutlined,
-  WalletOutlined // Icon for commission
+  WalletOutlined,
+  CheckOutlined
 } from "@ant-design/icons";
+
+// ✅ REMOVED react-phone-input-2
+// ✅ USING ONLY libphonenumber-js AND country-state-city
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { Country, State, City } from "country-state-city";
+
+// ✅ Import apiService
+import { apiService } from "../../../../manageApi/utils/custom.apiservice";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -49,26 +58,161 @@ const AddAgency = () => {
   const [previewImage, setPreviewImage] = useState("");
   const [previewTitle, setPreviewTitle] = useState("");
 
-  // ✅ DUMMY SUBMIT HANDLER
-  const onFinish = (values) => {
+  // ✅ LOCATION STATES
+  const [statesList, setStatesList] = useState([]);
+  const [citiesList, setCitiesList] = useState([]);
+  const [opCitiesList, setOpCitiesList] = useState([]);
+
+  // 🔥 BULLETPROOF UPLOAD STATES
+  const [urls, setUrls] = useState({
+    logo: "",
+    profile_photo: "",
+    trade_license: "",
+    rera_license: "",
+    letter_of_authority: ""
+  });
+  const [uploading, setUploading] = useState({
+    logo: false,
+    profile_photo: false,
+    trade_license: false,
+    rera_license: false,
+    letter_of_authority: false
+  });
+
+  // --- COUNTRY OPTIONS LOGIC WITH FLAGS ---
+  const countryOptions = useMemo(() => {
+    const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"]; 
+    return Country.getAllCountries().map((country) => ({
+      name: country.name, code: country.phonecode, iso: country.isoCode,
+    })).sort((a, b) => {
+      const aPriority = priorityIsoCodes.includes(a.iso);
+      const bPriority = priorityIsoCodes.includes(b.iso);
+      if (aPriority && !bPriority) return -1;
+      if (!aPriority && bPriority) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, []);
+
+  // Watch fields for cascading dropdowns
+  const addressCountry = Form.useWatch("address_country", form);
+  const addressState = Form.useWatch("address_state", form);
+  const operatingCountry = Form.useWatch("operating_country", form);
+
+  useEffect(() => {
+    if (addressCountry) {
+      setStatesList(State.getStatesOfCountry(addressCountry));
+    } else {
+      setStatesList([]);
+      setCitiesList([]);
+    }
+  }, [addressCountry]);
+
+  useEffect(() => {
+    if (addressCountry && addressState) {
+      setCitiesList(City.getCitiesOfState(addressCountry, addressState));
+    } else {
+      setCitiesList([]);
+    }
+  }, [addressCountry, addressState]);
+
+  useEffect(() => {
+    if (operatingCountry) {
+      setOpCitiesList(City.getCitiesOfCountry(operatingCountry));
+    } else {
+      setOpCitiesList([]);
+    }
+  }, [operatingCountry]);
+
+  // ==========================================
+  // 🔥 THE MAGIC FIX: BULLETPROOF INSTANT UPLOAD
+  // ==========================================
+  const handleInstantUpload = async (file, type) => {
+    setUploading((prev) => ({ ...prev, [type]: true }));
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await apiService.post("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      console.log(`📸 RAW API Response for ${type}:`, response);
+
+      // 🔥 BULLETPROOF URL EXTRACTION 🔥
+      let uploadedUrl = "";
+      if (response?.data?.file?.url) uploadedUrl = response.data.file.url;
+      else if (response?.file?.url) uploadedUrl = response.file.url;
+      else if (response?.data?.url) uploadedUrl = response.data.url;
+      else if (response?.url) uploadedUrl = response.url;
+      else if (response?.data?.fileUrl) uploadedUrl = response.data.fileUrl;
+      else if (typeof response?.data === 'string') uploadedUrl = response.data;
+
+      console.log(`✅ Extracted URL for ${type}:`, uploadedUrl);
+
+      if (uploadedUrl) {
+        setUrls((prev) => ({ ...prev, [type]: uploadedUrl }));
+        message.success(`${type} uploaded successfully!`);
+      } else {
+        message.error("Upload failed: no URL returned. Check console.");
+      }
+    } catch (error) {
+      console.error(`❌ Upload Error for ${type}:`, error);
+      message.error(`Failed to upload ${type}.`);
+    } finally {
+      setUploading((prev) => ({ ...prev, [type]: false }));
+    }
+
+    // ⛔ This stops Ant Design's default upload tracking
+    return false;
+  };
+
+  // ==========================================
+  // ✅ EXACT JSON PAYLOAD SUBMIT HANDLER
+  // ==========================================
+  const onFinish = async (values) => {
     setLoading(true);
     
-    setTimeout(() => {
-      console.log("Form Values to be sent to API:", values);
-      message.success("Agency onboarded successfully! (Dummy)");
-      setLoading(false);
+    try {
+      // ✅ Use combined phone values
+      const fullPhoneNumber = `+${values.country_code}${values.phone}`;
+      const extractedCountryCode = `+${values.country_code}`;
+
+      // 🔥 EXACT JSON STRUCTURE AS REQUESTED 🔥
+      const payload = {
+        agency_name: values.agency_name,
+        email: values.email,
+        password: values.password,
+        country_code: extractedCountryCode,
+        mobile_number: fullPhoneNumber, 
+        address: values.address_line,
+        city: values.address_city || values.operating_city,
+        profile_photo: urls.profile_photo || "",
+        logo: urls.logo || "",
+        trade_license: urls.trade_license || "",
+        letter_of_authority: urls.letter_of_authority || "",
+        rera_license: urls.rera_license || ""
+      };
+
+      console.log("🚀 FINAL EXACT JSON PAYLOAD:", JSON.stringify(payload, null, 2));
+
+      // ✅ ACTUAL API CALL
+      const response = await apiService.post("/agency/agency-signup", payload);
+      
+      message.success(response?.data?.message || "Agency onboarded successfully!");
       form.resetFields();
-      navigate(-1);
-    }, 1500);
+      setUrls({ logo: "", profile_photo: "", trade_license: "", rera_license: "", letter_of_authority: "" });
+      
+      // ✅ REDIRECT TO LIST PAGE ON SUCCESS
+      navigate("/dashboard/admin/agency-list");
+      
+    } catch (error) {
+      console.error(error);
+      message.error(error?.response?.data?.message || "Failed to onboard agency. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // ✅ File upload normalizer
-  const normFile = (e) => {
-    if (Array.isArray(e)) return e;
-    return e?.fileList;
-  };
-
-  // ✅ PREVIEW HANDLER (View Icon Logic)
   const handlePreview = async (file) => {
     if (!file.url && !file.preview) {
       file.preview = await getBase64(file.originFileObj);
@@ -99,16 +243,16 @@ const AddAgency = () => {
         layout="vertical"
         onFinish={onFinish}
         initialValues={{ 
-          country_code: "+971",
+          country_code: "971", // Default country code
+          operating_country: "AE",
+          address_country: "AE",
           agentPercentage: 70,
           agencyPercentage: 30
         }}
       >
         <Row gutter={[24, 24]}>
           
-          {/* ========================================== */}
-          {/* LEFT COLUMN - MAIN DETAILS                 */}
-          {/* ========================================== */}
+          {/* LEFT COLUMN - MAIN DETAILS */}
           <Col xs={24} lg={16}>
             
             {/* 1. AGENCY & ACCOUNT INFO */}
@@ -136,38 +280,93 @@ const AddAgency = () => {
               </Row>
             </Card>
 
-            {/* 2. CONTACT & LOCATION */}
+            {/* 2. CONTACT & OPERATING LOCATION */}
             <Card 
-              title={<Space><ContactsOutlined style={{ color: BRAND_PURPLE }}/> Contact & Location</Space>} 
+              title={<Space><ContactsOutlined style={{ color: BRAND_PURPLE }}/> Contact & Operating Location</Space>} 
               bordered={false} 
               style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}
             >
               <Row gutter={16}>
-                <Col xs={24} md={12}>
-                  <Form.Item label="Mobile Number" required>
-                    <Input.Group compact style={{ display: "flex" }}>
-                      <Form.Item name="country_code" noStyle rules={[{ required: true }]}>
-                        <Select size="large" style={{ width: "35%", borderTopLeftRadius: "8px", borderBottomLeftRadius: "8px" }}>
-                          <Option value="+971">+971 (UAE)</Option>
-                          <Option value="+91">+91 (IND)</Option>
-                          <Option value="+1">+1 (USA)</Option>
-                          <Option value="+44">+44 (UK)</Option>
+                {/* ✅ CUSTOM FLAGCDN PHONE INPUT */}
+                <Col xs={24}>
+                  <Form.Item label="Mobile Number" style={{ marginBottom: 0 }} required>
+                    <Space.Compact style={{ width: '100%' }}>
+                      <Form.Item
+                        name="country_code"
+                        noStyle
+                        rules={[{ required: true, message: 'Code is required' }]}
+                      >
+                        <Select
+                          showSearch
+                          optionFilterProp="children"
+                          className="custom-phone-select"
+                          style={{ width: '120px', height: '40px' }}
+                          popupMatchSelectWidth={300}
+                        >
+                          {countryOptions.map((item) => (
+                            <Option key={item.iso} value={item.code}>
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <img 
+                                  src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`} 
+                                  width="20" 
+                                  alt={item.name} 
+                                  style={{ marginRight: 8, borderRadius: 2 }} 
+                                />
+                                <span>+{item.code}</span>
+                              </div>
+                            </Option>
+                          ))}
                         </Select>
                       </Form.Item>
-                      <Form.Item name="mobile_number" noStyle rules={[{ required: true }]}>
-                        <Input style={{ width: "65%", borderTopRightRadius: "8px", borderBottomRightRadius: "8px" }} size="large" placeholder="50 123 4567" />
+                      <Form.Item
+                        name="phone"
+                        noStyle
+                        getValueFromEvent={(e) => e.target.value.replace(/\D/g, "")}
+                        rules={[
+                          { required: true, message: "Phone number is required" },
+                          {
+                            validator: (_, value) => {
+                              if (!value) return Promise.resolve();
+                              const code = form.getFieldValue('country_code');
+                              const fullNumber = `+${code}${value}`;
+                              const phoneNumber = parsePhoneNumberFromString(fullNumber);
+                              if (phoneNumber && phoneNumber.isValid()) {
+                                return Promise.resolve();
+                              }
+                              return Promise.reject(new Error("Invalid mobile number for this country"));
+                            }
+                          }
+                        ]}
+                      >
+                        <Input 
+                          placeholder="Mobile Number" 
+                          style={{ width: '100%', height: '40px', borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }} 
+                        />
                       </Form.Item>
-                    </Input.Group>
+                    </Space.Compact>
                   </Form.Item>
                 </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item name="city" label="City" rules={[{ required: true }]}>
-                    <Input placeholder="e.g. Dubai" size="large" style={{ borderRadius: "8px" }} />
+
+                <Col xs={24} md={12} style={{ marginTop: '24px' }}>
+                  <Form.Item name="operating_country" label="Operating Country" rules={[{ required: true }]}>
+                    <Select 
+                      size="large" showSearch placeholder="Select Country" optionFilterProp="children"
+                      style={{ borderRadius: "8px" }}
+                      onChange={() => form.setFieldsValue({ operating_city: undefined })}
+                    >
+                      {Country.getAllCountries().map((c) => (<Option key={c.isoCode} value={c.isoCode}>{c.name}</Option>))}
+                    </Select>
                   </Form.Item>
                 </Col>
-                <Col xs={24}>
-                  <Form.Item name="address" label="Full Address">
-                    <Input.TextArea placeholder="Office 123, Business Bay..." rows={2} style={{ borderRadius: "8px" }} />
+                <Col xs={24} md={12} style={{ marginTop: '24px' }}>
+                  <Form.Item name="operating_city" label="Operating City" rules={[{ required: true }]}>
+                    <Select 
+                      size="large" showSearch placeholder="Select City" optionFilterProp="children"
+                      style={{ borderRadius: "8px" }}
+                      disabled={opCitiesList.length === 0}
+                    >
+                      {opCitiesList.map((city, idx) => (<Option key={`${city.name}-${idx}`} value={city.name}>{city.name}</Option>))}
+                    </Select>
                   </Form.Item>
                 </Col>
               </Row>
@@ -177,7 +376,7 @@ const AddAgency = () => {
             <Card 
               title={<Space><WalletOutlined style={{ color: BRAND_PURPLE }}/> Default Commission Structure</Space>} 
               bordered={false} 
-              style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+              style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}
             >
               <Row gutter={16}>
                 <Col xs={24} md={12}>
@@ -192,11 +391,58 @@ const AddAgency = () => {
                 </Col>
               </Row>
             </Card>
+
+            {/* 4. HEAD OFFICE ADDRESS */}
+            <Card 
+              title={<Space><BankOutlined style={{ color: BRAND_PURPLE }}/> Head Office Address</Space>} 
+              bordered={false} 
+              style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+            >
+              <Row gutter={16}>
+                <Col xs={24} md={12}>
+                  <Form.Item name="address_country" label="Country" rules={[{ required: true }]}>
+                    <Select 
+                      size="large" showSearch placeholder="Select Country" optionFilterProp="children"
+                      onChange={() => { form.setFieldsValue({ address_state: undefined, address_city: undefined }); }}
+                    >
+                      {Country.getAllCountries().map((c) => (<Option key={c.isoCode} value={c.isoCode}>{c.name}</Option>))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item name="address_state" label="State/Emirate" rules={[{ required: true }]}>
+                    <Select 
+                      size="large" showSearch placeholder="Select State" optionFilterProp="children"
+                      disabled={statesList.length === 0}
+                      onChange={() => form.setFieldsValue({ address_city: undefined })}
+                    >
+                      {statesList.map((s) => (<Option key={s.isoCode} value={s.isoCode}>{s.name}</Option>))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col xs={24} md={12}>
+                  <Form.Item name="address_city" label="City" rules={[{ required: true }]}>
+                    <Select size="large" showSearch placeholder="Select City" optionFilterProp="children" disabled={citiesList.length === 0}>
+                      {citiesList.map((city, idx) => (<Option key={`${city.name}-${idx}`} value={city.name}>{city.name}</Option>))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item name="zip_code" label="Zip / Postal Code">
+                    <Input size="large" placeholder="e.g. 00000" style={{ borderRadius: "8px" }} />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Form.Item name="address_line" label="Street Address" rules={[{ required: true }]}>
+                <Input.TextArea placeholder="Office 123, Business Bay..." rows={2} style={{ borderRadius: "8px" }} />
+              </Form.Item>
+            </Card>
+
           </Col>
 
-          {/* ========================================== */}
-          {/* RIGHT COLUMN - MEDIA & DOCS                */}
-          {/* ========================================== */}
+          {/* RIGHT COLUMN - MEDIA & DOCS */}
           <Col xs={24} lg={8}>
             
             <Card 
@@ -204,39 +450,46 @@ const AddAgency = () => {
               bordered={false} 
               style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}
             >
-              <Text strong style={{ display: "block", marginBottom: "8px" }}>Brand Identity</Text>
-              
-              <Form.Item name="logo" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
-                <Upload name="logo" listType="picture" beforeUpload={() => false} maxCount={1} onPreview={handlePreview}>
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Upload Agency Logo</Button>
+              <Form.Item label="Agency Logo">
+                <Upload showUploadList={false} beforeUpload={(file) => handleInstantUpload(file, 'logo')} onPreview={handlePreview}>
+                  <Button icon={urls.logo ? <CheckOutlined /> : <UploadOutlined />} block style={{ borderRadius: "8px", height: 40, borderColor: urls.logo ? '#52c41a' : '#d9d9d9', color: urls.logo ? '#52c41a' : 'inherit' }} loading={uploading.logo}>
+                    {urls.logo ? "Logo Uploaded" : "Upload Logo"}
+                  </Button>
                 </Upload>
               </Form.Item>
 
-              <Form.Item name="profile_photo" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
-                <Upload name="profile_photo" listType="picture" beforeUpload={() => false} maxCount={1} onPreview={handlePreview}>
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Upload Profile Photo</Button>
+              <Form.Item label="Profile Photo">
+                <Upload showUploadList={false} beforeUpload={(file) => handleInstantUpload(file, 'profile_photo')} onPreview={handlePreview}>
+                  <Button icon={urls.profile_photo ? <CheckOutlined /> : <UploadOutlined />} block style={{ borderRadius: "8px", height: 40, borderColor: urls.profile_photo ? '#52c41a' : '#d9d9d9', color: urls.profile_photo ? '#52c41a' : 'inherit' }} loading={uploading.profile_photo}>
+                    {urls.profile_photo ? "Photo Uploaded" : "Upload Photo"}
+                  </Button>
                 </Upload>
               </Form.Item>
 
               <Divider style={{ margin: "16px 0" }} />
-
-              <Text strong style={{ display: "block", marginBottom: "8px" }}>Legal Documents</Text>
+              <Text strong style={{ display: "block", marginBottom: "16px" }}>Legal Documents</Text>
               
-              <Form.Item name="trade_license" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
-                <Upload name="trade_license" listType="picture" beforeUpload={() => false} maxCount={1} onPreview={handlePreview}>
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Trade License</Button>
+              <Form.Item label="Trade License" required>
+                <Upload showUploadList={false} beforeUpload={(file) => handleInstantUpload(file, 'trade_license')} onPreview={handlePreview}>
+                  <Button icon={urls.trade_license ? <CheckOutlined /> : <UploadOutlined />} block style={{ borderRadius: "8px", height: 40, borderColor: urls.trade_license ? '#52c41a' : '#d9d9d9', color: urls.trade_license ? '#52c41a' : 'inherit' }} loading={uploading.trade_license}>
+                    {urls.trade_license ? "Uploaded" : "Trade License"}
+                  </Button>
                 </Upload>
               </Form.Item>
 
-              <Form.Item name="rera_license" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
-                <Upload name="rera_license" listType="picture" beforeUpload={() => false} maxCount={1} onPreview={handlePreview}>
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>RERA License</Button>
+              <Form.Item label="RERA License">
+                <Upload showUploadList={false} beforeUpload={(file) => handleInstantUpload(file, 'rera_license')} onPreview={handlePreview}>
+                  <Button icon={urls.rera_license ? <CheckOutlined /> : <UploadOutlined />} block style={{ borderRadius: "8px", height: 40, borderColor: urls.rera_license ? '#52c41a' : '#d9d9d9', color: urls.rera_license ? '#52c41a' : 'inherit' }} loading={uploading.rera_license}>
+                    {urls.rera_license ? "Uploaded" : "RERA License"}
+                  </Button>
                 </Upload>
               </Form.Item>
 
-              <Form.Item name="letter_of_authority" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "0" }}>
-                <Upload name="letter_of_authority" listType="picture" beforeUpload={() => false} maxCount={1} onPreview={handlePreview}>
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Letter of Authority</Button>
+              <Form.Item label="Letter of Authority" style={{ marginBottom: "0" }}>
+                <Upload showUploadList={false} beforeUpload={(file) => handleInstantUpload(file, 'letter_of_authority')} onPreview={handlePreview}>
+                  <Button icon={urls.letter_of_authority ? <CheckOutlined /> : <UploadOutlined />} block style={{ borderRadius: "8px", height: 40, borderColor: urls.letter_of_authority ? '#52c41a' : '#d9d9d9', color: urls.letter_of_authority ? '#52c41a' : 'inherit' }} loading={uploading.letter_of_authority}>
+                    {urls.letter_of_authority ? "Uploaded" : "Letter of Authority"}
+                  </Button>
                 </Upload>
               </Form.Item>
             </Card>
@@ -246,61 +499,36 @@ const AddAgency = () => {
 
         {/* BOTTOM ACTION BAR */}
         <div style={{
-          marginTop: "24px",
-          padding: "16px 24px",
-          background: "#fff",
-          borderRadius: "12px",
-          boxShadow: "0 -2px 10px rgba(0,0,0,0.02)",
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: "12px"
+          marginTop: "24px", padding: "16px 24px", background: "#fff",
+          borderRadius: "12px", boxShadow: "0 -2px 10px rgba(0,0,0,0.02)",
+          display: "flex", justifyContent: "flex-end", gap: "12px"
         }}>
-          <Button 
-            size="large" 
-            onClick={() => navigate(-1)} 
-            style={{ borderRadius: "8px", fontWeight: "600" }}
-          >
-            Cancel
-          </Button>
-          <Button 
-            type="primary" 
-            htmlType="submit" 
-            size="large" 
-            loading={loading}
-            style={{ 
-              background: BRAND_PURPLE, 
-              borderColor: BRAND_PURPLE, 
-              borderRadius: "8px", 
-              fontWeight: "600",
-              padding: "0 32px"
-            }}
-          >
+          <Button size="large" onClick={() => navigate(-1)} style={{ borderRadius: "8px", fontWeight: "600" }}>Cancel</Button>
+          <Button type="primary" htmlType="submit" size="large" loading={loading} style={{ background: BRAND_PURPLE, borderColor: BRAND_PURPLE, borderRadius: "8px", fontWeight: "600", padding: "0 32px" }}>
             {loading ? "Onboarding..." : "Register Agency"}
           </Button>
         </div>
       </Form>
 
-      {/* ✅ IMAGE PREVIEW MODAL */}
-      <Modal
-        open={previewOpen}
-        title={previewTitle}
-        footer={null}
-        onCancel={() => setPreviewOpen(false)}
-        centered
-        bodyStyle={{ padding: "16px", textAlign: "center" }}
-      >
-        <img
-          alt="Preview"
-          style={{
-            maxWidth: "100%",
-            maxHeight: "70vh",
-            objectFit: "contain",
-            borderRadius: "8px"
-          }}
-          src={previewImage}
-        />
+      <Modal open={previewOpen} title={previewTitle} footer={null} onCancel={() => setPreviewOpen(false)} centered style={{ padding: "16px", textAlign: "center" }}>
+        <img alt="Preview" style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", borderRadius: "8px" }} src={previewImage} />
       </Modal>
 
+      <style jsx global>{`
+        /* Make sure custom phone select matches Ant Design inputs */
+        .custom-phone-select .ant-select-selector {
+          border-top-left-radius: 8px !important;
+          border-bottom-left-radius: 8px !important;
+          height: 40px !important;
+          display: flex !important;
+          align-items: center !important;
+        }
+        .custom-phone-select .ant-select-selection-item {
+          display: flex !important;
+          align-items: center !important;
+          line-height: 1 !important;
+        }
+      `}</style>
     </div>
   );
 };

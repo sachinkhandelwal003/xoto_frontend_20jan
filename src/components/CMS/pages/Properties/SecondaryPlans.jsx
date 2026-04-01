@@ -25,6 +25,7 @@ import {
   TeamOutlined,        // Beds icon
   ExpandOutlined       // Area icon
 } from "@ant-design/icons";
+import { EditOutlined, EyeOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -376,15 +377,20 @@ export default function SecondaryPlans() {
                   )}
                 </div>
 
-                <div style={{ position: "absolute", bottom: -16, left: 16, width: 44, height: 44, backgroundColor: "#000", borderRadius: 6, border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                  {p.developer?.logo ? <img src={p.developer.logo} alt="dev" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>{p.developerName ? p.developerName.charAt(0) : "D"}</span>}
-                </div>
+{(p.developer?.logo || p.developerName) && (
+  <div style={{ position: "absolute", bottom: -16, left: 16, width: 44, height: 44, backgroundColor: "#000", borderRadius: 6, border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+    {p.developer?.logo 
+      ? <img src={p.developer.logo} alt="dev" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> 
+      : <span style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>{p.developerName.charAt(0)}</span>
+    }
+  </div>
+)}
               </div>
 
               <Title level={5} style={{ margin: "4px 0 2px", fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.propertyName}</Title>
               
               <Text type="secondary" style={{ display: "block", marginBottom: 8, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {p.area || p.city} • by {p.developerName || "Developer"}
+               {p.area || p.city}{p.developerName ? ` • by ${p.developerName}` : ""}
               </Text>
 
               {/* ✅ Emoji hataaye, Ant Design Icons laaye */}
@@ -399,18 +405,42 @@ export default function SecondaryPlans() {
                 </Text>
               </div>
 
-              <Row justify="space-between" align="bottom">
-                <Col>
-                  <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 2 }}>Price from</Text>
-                  <Text strong style={{ fontSize: 16 }}>{Number(p.price || 0).toLocaleString()} {p.currency || "AED"}</Text>
-                </Col>
-                <Col style={{ textAlign: "right" }}>
-                  <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 2 }}>Payment plan</Text>
-                  <Text strong style={{ fontSize: 14 }}>
-                    {p.paymentPlan?.length > 0 ? "Available" : "Contact Us"} <InfoCircleOutlined style={{ color: "#bfbfbf", marginLeft: 4 }} />
-                  </Text>
-                </Col>
-              </Row>
+              <Row justify="space-between" align="bottom" style={{ marginBottom: 12 }}>
+  <Col>
+    <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 2 }}>Price from</Text>
+    <Text strong style={{ fontSize: 16 }}>{Number(p.price || 0).toLocaleString()} {p.currency || "AED"}</Text>
+  </Col>
+  <Col style={{ textAlign: "right" }}>
+    <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 2 }}>Payment plan</Text>
+    <Text strong style={{ fontSize: 14 }}>
+      {/* {p.paymentPlan?.length > 0 ? "Available" : "Contact Us"} <InfoCircleOutlined style={{ color: "#bfbfbf", marginLeft: 4 }} /> */}
+    </Text>
+  </Col>
+</Row>
+
+{/* Edit Button */}
+<div
+  style={{ borderTop: "1px solid #f3f4f6", paddingTop: 12, display: "flex", gap: 8 }}
+  onClick={(e) => e.stopPropagation()}
+>
+  <Button
+  icon={<EyeOutlined />}
+    block
+    style={{ borderRadius: 8, height: 36, fontWeight: 500, fontSize: 13 }}
+    onClick={() => navigate(`/dashboard/agent/secondary/${p._id}`)}
+  >
+    View
+  </Button>
+  <Button
+  icon={<EditOutlined />}
+    block
+    type="primary"
+    style={{ borderRadius: 8, height: 36, fontWeight: 500, fontSize: 13, background: "#7c3aed", borderColor: "#7c3aed" }}
+    onClick={() => navigate(`/dashboard/agent/create-secondary-plans/${p._id}`)}
+  >
+    Edit
+  </Button>
+</div>
             </Card>
           </Col>
         ))}
