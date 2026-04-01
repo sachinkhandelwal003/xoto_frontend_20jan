@@ -179,6 +179,7 @@ export default function DeveloperRegistration() {
     setEnteredEmailOtp("");
   };
 
+  /* ── Submit ── */
   const onSubmit = async (data) => {
     if (!otpVerified) return message.error("Verify your phone number");
     if (!emailOtpVerified) return message.error("Verify your email");
@@ -256,6 +257,9 @@ export default function DeveloperRegistration() {
     { key: "location", label: "Location", icon: <EnvironmentOutlined /> },
   ];
 
+  /* ════════════════════════
+     RENDER
+  ════════════════════════ */
   return (
     <ConfigProvider theme={{ token: { colorPrimary: PURPLE, borderRadius: 10 } }}>
       <div className="min-h-screen bg-gradient-to-br from-[#5a0099] to-[#3d006b] py-12 px-4">

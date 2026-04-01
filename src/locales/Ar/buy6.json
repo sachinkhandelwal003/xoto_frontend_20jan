@@ -2,46 +2,40 @@
   "heading": "ماذا يقول عملاؤنا",
   "items": [
     {
-      "title": "وجدت مكانًا رائعًا",
-      "text": "جعل RentBro الاستقرار في مدينة جديدة أمرًا سهلاً للغاية، مع أسعار عادلة وحي رائع. أنصح به بشدة.",
-      "name": "شوبهام",
-      "location": "بيون، ماهاراشترا",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "شعرت بالإرهاق عند شراء شقتي الأولى في دبي حتى اكتشفت XOTO. ساعدني فريقهم على فهم قدرتي الاقتراضية، ومقارنة خيارات الرهن العقاري، وإتمام الصفقة بسلاسة. كان كل شيء شفافًا وسريعًا.",
+      "name": "أحمد ر.",
+      "location": "وسط مدينة دبي",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859324353-ChatGPT%20Image%20Mar%2014%2C%202026%20at%2001_38_32%20PM%201.png"
     },
     {
-      "title": "تجربة سلسة",
-      "text": "كانت عملية الإيجار بالكامل سلسة وشفافة. وفر عليّ RentBro الكثير من الوقت.",
-      "name": "شوبهام",
-      "location": "بيون، ماهاراشترا",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "جعلت XOTO عملية الرهن العقاري بسيطة للغاية. في غضون أيام، حصلت على خيارات متعددة من البنوك وإرشادات واضحة حول أفضل الأسعار المتاحة. تولى المستشارون كل شيء من الأوراق حتى الموافقات.",
+      "name": "سارة ك.",
+      "location": "مرسى دبي",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859238209-Group%20309.png"
     },
     {
-      "title": "دعم رائع",
-      "text": "كان دعم العملاء سريع الاستجابة ومتعاونًا طوال العملية.",
-      "name": "شوبهام",
-      "location": "بيون، ماهاراشترا",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "ما أعجبني في XOTO هو توفر البحث عن العقارات ودعم الرهن العقاري في مكان واحد. وفّر عليّ أسابيع من الجهد ومنحني الثقة للمضي قدمًا نحو العقار المناسب.",
+      "name": "روهان مهتا",
+      "location": "خليج الأعمال",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859119654-Group%20309%20%281%29.png"
     },
     {
-      "title": "يستحق كل قرش",
-      "text": "أسعار عادلة وإعلانات موثوقة. شعرت بالثقة عند اختيار RentBro.",
-      "name": "شوبهام",
-      "location": "بيون، ماهاراشترا",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "بصفتي مستثمرًا عقاريًا في دبي، السرعة والوضوح أمران أساسيان. ساعدتني منصة XOTO على تقييم خيارات التمويل بسرعة وتأمين رهن عقاري لعقاري الاستثماري الثاني.",
+      "name": "خالد أ.",
+      "location": "قرية جميرا الدائرية",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859149102-Group%20309%20%282%29.png"
     },
     {
-      "title": "انتقال بدون توتر",
-      "text": "الانتقال إلى مدينة جديدة كان سهلاً بفضل RentBro.",
-      "name": "بونيت",
-      "location": "بيون، ماهاراشترا",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "جعلت XOTO عملية الرهن العقاري بسيطة للغاية. في غضون أيام، حصلت على خيارات متعددة من البنوك وإرشادات واضحة حول أفضل الأسعار المتاحة. تولى المستشارون كل شيء من الأوراق حتى الموافقات.",
+      "name": "سارة ك.",
+      "location": "مرسى دبي",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859238209-Group%20309.png"
     },
     {
-      "title": "حي مذهل!",
-      "text": "كانت توصيات الأحياء دقيقة للغاية. أحببت التجربة.",
-      "name": "هارش",
-      "location": "HSR Layout، بنغالور",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "ما أعجبني في XOTO هو توفر البحث عن العقارات ودعم الرهن العقاري في مكان واحد. وفّر عليّ أسابيع من الجهد ومنحني الثقة للمضي قدمًا نحو العقار المناسب.",
+      "name": "روهان مهتا",
+      "location": "خليج الأعمال",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859119654-Group%20309%20%281%29.png"
     }
   ]
 }
