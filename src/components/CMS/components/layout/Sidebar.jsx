@@ -120,16 +120,16 @@ const CUSTOM_ROLE_LINKS = {
       path: "/dashboard/{roleSlug}/lead-management",
       icon: "fas fa-filter"
     },
-    {
-      title: "Deals & Commissions",
-      path: "/dashboard/{roleSlug}/DealCommissionManager",
-      icon: "fas fa-file-invoice-dollar"
-    },
-    {
-      title: "Chat Request",
-      path: "/dashboard/{roleSlug}/admin-chat-requests",
-      icon: "fas fa-comment-dots"
-    }
+    // {
+    //   title: "Deals & Commissions",
+    //   path: "/dashboard/{roleSlug}/DealCommissionManager",
+    //   icon: "fas fa-file-invoice-dollar"
+    // },
+    // {
+    //   title: "Chat Request",
+    //   path: "/dashboard/{roleSlug}/admin-chat-requests",
+    //   icon: "fas fa-comment-dots"
+    // }
     //   ]
     // },
 
@@ -261,11 +261,11 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-map-marker-alt",
       path: "/dashboard/{roleSlug}/visits",
     },
-    {
-      title: "My-Chats",
-      icon: "fas fa-comment-dots",
-      path: "/dashboard/{roleSlug}/My-Chats",
-    },
+// ,    {
+//       title: "My-Chats",
+//       icon: "fas fa-comment-dots",
+//       path: "/dashboard/{roleSlug}/My-Chats",
+//     }
     {
       title: "Deals",
       icon: "fas fa-handshake",
@@ -276,11 +276,11 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-rupee-sign",
       path: "/dashboard/{roleSlug}/commission",
     },
-    {
-      title: "Xobia AI",
-      icon: "fas fa-credit-card",
-      path: "/dashboard/{roleSlug}/subscription",
-    },
+    // {
+    //   title: "Xobia AI",
+    //   icon: "fas fa-credit-card",
+    //   path: "/dashboard/{roleSlug}/subscription",
+    // },
 
     // {
     //   title: "Presentations",
@@ -336,77 +336,31 @@ const CUSTOM_ROLE_LINKS = {
   ],
   "15": [
     {
+      title: "Projects", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects",
+      submenus: [
+        { title: "Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects" },
+        { title: "Agent Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}//agency-agent-properties" },
+
+
+      ],
+    },
+
+        {
       title: "Manage Agents",
       icon: "fas fa-user-tie",
       path: "/dashboard/{roleSlug}/manage-agents"
     },
     {
-      title: "Performance",
-      icon: "fas fa-chart-line",
-      path: "/dashboard/{roleSlug}/performance"
-    },
-    {
-      title: "Commission",
-      icon: "fas fa-money-bill-wave",
-      path: "/dashboard/{roleSlug}/commission"
-    },
-
-    {
       title: "Lead Management",
       icon: "fas fa-user-check",
       path: "/dashboard/{roleSlug}/lead-management"
     },
-    // {
-    //   title: "Agent Targets",
-    //   icon: "fas fa-bullseye",
-    //   path: "/dashboard/{roleSlug}/targets"
-    // },
-    // {
-    //   title: "Leaderboard",
-    //   icon: "fas fa-trophy",
-    //   path: "/dashboard/{roleSlug}/leaderboard"
-    // },
-    // {
-    //   title: "Incentives",
-    //   icon: "fas fa-gift",
-    //   path: "/dashboard/{roleSlug}/incentives"
-    // },
-    // {
-    //   title: "Branches",
-    //   icon: "fas fa-building",
-    //   path: "/dashboard/{roleSlug}/branches"
-    // },
-    // {
-    //   title: "Internal Roles",
-    //   icon: "fas fa-user-shield",
-    //   path: "/dashboard/{roleSlug}/internal-roles"
-    // },
-    // {
-    //   title: "Advanced Analytics",
-    //   icon: "fas fa-chart-area",
-    //   path: "/dashboard/{roleSlug}/advanced-analytics"
-    // },
-    // {
-    //   title: "Profit Engine",
-    //   icon: "fas fa-calculator",
-    //   path: "/dashboard/{roleSlug}/profit-engine"
-    // },
-    {
-      title: "Projects",
-      icon: "fas fa-building",
-      path: "/dashboard/{roleSlug}/agency-projects"
-    },
+
     {
       title: "Deals",
       icon: "fas fa-handshake",
       path: "/dashboard/{roleSlug}/deals"
     },
-    {
-      title: "Subscription",
-      icon: "fas fa-credit-card",
-      path: "/dashboard/{roleSlug}/subscription"
-    },
-
     // {
     //   title: "Assign Projects",
     //   icon: "fas fa-tasks",

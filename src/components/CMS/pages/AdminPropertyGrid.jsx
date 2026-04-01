@@ -62,7 +62,7 @@ const PropertyCard = ({ item, onApprove, onReject }) => {
     ...(item.photos?.lobby        || []),
     ...(item.photos?.other        || []),
   ];
-  const thumb = item.mainLogo || allPhotos[0] || "https://via.placeholder.com/400x240?text=No+Image";
+  const thumb = item.mainLogo || allPhotos[0] || "";
 
   return (
     <div

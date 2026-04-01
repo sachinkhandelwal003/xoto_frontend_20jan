@@ -1,3 +1,4 @@
+import { useParams } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../../../../manageApi/utils/custom.apiservice'; 
 import {
@@ -33,9 +34,14 @@ const CreateSecondaryProperty = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [developers, setDevelopers] = useState([]);
 
+  
+
   // ================= MODE STATE =================
   // "new" = brand new listing, "existing" = link to an existing off-plan project
   const [propertyMode, setPropertyMode] = useState("new");
+
+  const { id } = useParams();
+const isEditMode = Boolean(id);
 
   // Existing Property Search
   const [existingProperties, setExistingProperties] = useState([]);
@@ -84,9 +90,10 @@ const CreateSecondaryProperty = () => {
     }
   };
 
-  useEffect(() => {
-    fetchDevelopers();
-  }, []);
+useEffect(() => {
+  fetchDevelopers();
+  if (isEditMode) fetchPropertyById();
+}, []);
 
   useEffect(() => {
     if (propertyMode === "existing") {
@@ -94,6 +101,58 @@ const CreateSecondaryProperty = () => {
     }
   }, [propertyMode]);
 
+
+const fetchPropertyById = async () => {
+  try {
+    setFormLoading(true);
+    const res = await apiService.get(`/properties/agent/property/secondary/${id}`);
+    const data = res?.data?.data || res?.data || res;
+    if (!data) return;
+
+    setPropertyMode(data.projectOption === "existing" ? "existing" : "new");
+
+    form.setFieldsValue({
+      propertyName: data.propertyName || "",
+      developerName: data.developerName || data.developer?.name || "",
+      unitType: data.unitType || undefined,
+      ownershipType: data.ownershipType || "freehold",
+      unitNumber: data.unitNumber || "",
+      floorNumber: data.floorNumber || "",
+      bedrooms: data.bedrooms || "",
+      bathrooms: data.bathrooms || "",
+      builtUpArea: data.builtUpArea || "",
+      price: data.price || "",
+      furnishing: data.furnishing || undefined,
+      availableFrom: data.availableFrom ? dayjs(data.availableFrom) : null,
+      shareCommission: data.shareCommission || false,
+      shareCommissionPercentage: data.shareCommissionPercentage || 0,
+      area: data.area || "",
+      city: data.city || "",
+      lat: data.coordinates?.lat || "",
+      lng: data.coordinates?.lng || "",
+      viewType: data.viewType || [],
+      facilities: Object.entries(data.facilities || {}).filter(([, v]) => v).map(([k]) => k),
+      description: data.description || "",
+      parkingSpaces: data.parkingSpaces || 0,
+      transactionType: data.transactionType || "sell",
+    });
+
+    if (data.mainLogo) setMainLogoList([{ uid: '-logo', name: 'main-logo', status: 'done', url: data.mainLogo }]);
+    if (data.photos?.architecture?.length > 0)
+      setArchitectureList(data.photos.architecture.map((url, i) => ({ uid: `-arch-${i}`, name: `arch-${i}`, status: 'done', url })));
+    if (data.photos?.interior?.length > 0)
+      setInteriorList(data.photos.interior.map((url, i) => ({ uid: `-int-${i}`, name: `int-${i}`, status: 'done', url })));
+    if (data.photos?.lobby?.length > 0)
+      setLobbyList(data.photos.lobby.map((url, i) => ({ uid: `-lobby-${i}`, name: `lobby-${i}`, status: 'done', url })));
+    if (data.photos?.other?.length > 0)
+      setOtherList(data.photos.other.map((url, i) => ({ uid: `-other-${i}`, name: `other-${i}`, status: 'done', url })));
+
+  } catch (err) {
+    message.error("Failed to load property for editing.");
+  } finally {
+    setFormLoading(false);
+  }
+};
   // ================= EXISTING PROPERTY SELECT → AUTO FILL =================
   const handleExistingPropertySelect = (propertyId) => {
     const property = existingProperties.find(p => p._id === propertyId);
@@ -303,12 +362,15 @@ const CreateSecondaryProperty = () => {
         showContactOnlyVerified: false,
       };
 
-      const response = await apiService.post('/properties/agent/property/create-secondary', payload);
+      const response = isEditMode
+  ? await apiService.put(`/properties/agent/property/secondary/${id}`, payload)
+  : await apiService.post('/properties/agent/property/create-secondary', payload);
 
       if (response) {
-        notification.success({
-          message: 'Property Created',
-          description: `Secondary listing "${values.propertyName}" created successfully!`,
+       notification.success({
+  message: isEditMode ? 'Property Updated' : 'Property Created',
+  description: `Secondary listing "${values.propertyName}" ${isEditMode ? 'updated' : 'created'} successfully!`,
+
           placement: 'topRight'
         });
         navigate(-1);
@@ -327,8 +389,8 @@ const CreateSecondaryProperty = () => {
       <div className="flex items-center gap-4 mb-6">
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} className="border-gray-300" />
         <div>
-          <Title level={3} style={{ margin: 0 }}>Create Secondary Property</Title>
-          <Text type="secondary">Fill in the details to list a new resale property.</Text>
+<Title level={3} style={{ margin: 0 }}>{isEditMode ? 'Edit Secondary Property' : 'Create Secondary Property'}</Title>
+<Text type="secondary">{isEditMode ? 'Update the details of this resale property.' : 'Fill in the details to list a new resale property.'}</Text>
         </div>
       </div>
 
@@ -510,15 +572,25 @@ const CreateSecondaryProperty = () => {
                 <Input size="large" placeholder="E.g. Luxury Tower Downtown" />
               </Form.Item>
             </Col>
-            <Col xs={24} md={12}>
-              <Form.Item name="developerName" label="Developer Name">
-                <Select size="large" showSearch placeholder="Search or Select Developer" optionFilterProp="children" allowClear>
-                  {developers.map(dev => (
-                    <Option key={dev._id || dev.id} value={dev.name}>{dev.name}</Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
+            {!isEditMode && propertyMode !== "existing" && (
+  <Col xs={24} md={12}>
+    <Form.Item name="developerName" label="Developer Name">
+      <Select size="large" showSearch placeholder="Search or Select Developer" optionFilterProp="children" allowClear>
+        {developers.map(dev => (
+          <Option key={dev._id || dev.id} value={dev.name}>{dev.name}</Option>
+        ))}
+      </Select>
+    </Form.Item>
+  </Col>
+)}
+
+{isEditMode && (
+  <Col xs={24} md={12}>
+    <Form.Item name="developerName" label="Developer Name">
+      <Input size="large" disabled />
+    </Form.Item>
+  </Col>
+)}
             <Col xs={12} md={6}>
               <Form.Item name="unitType" label="Unit Type" rules={[{ required: true }]}>
                 <Select size="large" placeholder="Select">
@@ -725,7 +797,7 @@ const CreateSecondaryProperty = () => {
               size="large"
               style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}
             >
-              Publish Secondary Listing
+             {isEditMode ? 'Update Listing' : 'Publish Secondary Listing'}
             </Button>
           </div>
         </Form>

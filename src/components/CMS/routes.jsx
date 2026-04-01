@@ -123,12 +123,13 @@ import DealCommissionManager from "./pages/DealCommissionManager";
 import DeveloperAddProperty from "../ecommerce/B2C/DveloperAddProperty";
 import DeveloperPropertyEdit from "../ecommerce/B2C/DeveloperPropertyEdit";
 import BankProductManagement from "../homepage/BankProductManagement";
-
+// {Agency}------------------------------------------------------------
 import AgencyManageAgents from "../ecommerce/B2C/AgencyManageAgents";
 import AgencyPerformance from "../ecommerce/B2C/AgencyPerformance";
 import AgencyAgentDetails from "../ecommerce/B2C/AgencyAgentDetails";
 import AgencyCommission from "../ecommerce/B2C/AgencyCommission";
 import AgencyLeadManagement from "../ecommerce/B2C/AgencyLeadManagement";
+import AgencyAgentProperties from "./pages/Properties/AgencyAgentProperties";
 // import AgencyTargets from "../ecommerce/B2C/AgencyTargets";
 // import AgencyLeaderboard from "../ecommerce/B2C/AgencyLeaderboard"; 
 // import AgencyIncentives from "../ecommerce/B2C/AgencyIncentives";
@@ -166,7 +167,7 @@ import AgentDetail from "./pages/Properties/Agentdetail";
 import OnBoardingpage from "./pages/dashboardPages/OnBoardingpage";
 import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
-import CreateSecondaryPlans from "./pages/Properties/CreateSecondaryPlans"; 
+import CreateSecondaryProperty from "./pages/Properties/CreateSecondaryProperty"; 
 import SecondaryPlans from "./pages/Properties/SecondaryPlans";
 import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail";
 import PropertyDetailPage from "./pages/Propertydetailpage";
@@ -364,7 +365,7 @@ const CmsRoutes = () => {
   <Route path="agent-projects" element={<AgentProjects />} />
   <Route 
      path="projects/:id" 
-     element={(user?.role?.code == 16 || user?.role?.code == 1) ? <AgentProjectDetails /> : <ViewProject />} 
+     element={ <AgentProjectDetails /> } 
   />
 
   {/* Deals */}
@@ -387,7 +388,8 @@ const CmsRoutes = () => {
   {/* Presentations */}
   <Route path="presentations" element={<AgentPresentations />} />
 
-  <Route path="create-secondary-plans" element={<CreateSecondaryPlans />} />
+ <Route path="create-secondary-plans" element={<CreateSecondaryProperty />} />
+<Route path="create-secondary-plans/:id" element={<CreateSecondaryProperty />} />
   <Route path="secondary-plans" element={<SecondaryPlans />} />
 
 <Route path="secondary/:id" element={<SecondaryPropertyDetail />} />
@@ -446,6 +448,7 @@ const CmsRoutes = () => {
 <Route path="subscription" element={<AgencySubscription />} />
 <Route path="/agency-projects" element={<AgencyProjects />} />
 <Route path="/agency/deals" element={<AgencyDeals />} />
+<Route path="/agency-agent-properties" element={<AgencyAgentProperties/>} />
 {/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
 {/* Developer */}
 <Route path="developer-projects" element={<DeveloperProjects/>}/>

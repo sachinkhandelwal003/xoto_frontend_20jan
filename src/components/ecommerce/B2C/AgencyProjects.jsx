@@ -1,330 +1,38 @@
 import {
+  Card,
   Typography,
   Row,
   Col,
   Input,
+  Button,
   Spin,
-  Tag,
-  Empty
+  message,
 } from "antd";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import {
   SearchOutlined,
-  UserAddOutlined,
+  SlidersOutlined,
   EyeOutlined,
   InfoCircleOutlined,
-  BankOutlined,
-  EnvironmentOutlined,
-  HomeOutlined,
+  TeamOutlined,
+  ExpandOutlined,
   BuildOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  ClockCircleOutlined,
-  ThunderboltOutlined,
-  ColumnWidthOutlined,
+  HomeOutlined,
 } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const { Title } = Typography;
-
-const styles = `
-  .ap-root {
-    padding: 32px 36px;
-    background: #F4F6F8;
-    min-height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  }
-
-  /* Header */
-  .ap-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 28px;
-  }
-  .ap-header-title {
-    font-size: 22px !important;
-    font-weight: 600 !important;
-    color: #111827 !important;
-    margin: 0 !important;
-    line-height: 1.3 !important;
-  }
-  .ap-header-count {
-    font-size: 13px;
-    color: #9CA3AF;
-    margin-top: 3px;
-    display: block;
-    font-weight: 400;
-  }
-
-  /* Search */
-  .ap-search .ant-input-affix-wrapper {
-    height: 40px !important;
-    border-radius: 10px !important;
-    border: 1px solid #E5E7EB !important;
-    background: #fff !important;
-    box-shadow: none !important;
-    width: 280px;
-    font-size: 13px !important;
-    transition: border-color 0.18s, box-shadow 0.18s;
-  }
-  .ap-search .ant-input-affix-wrapper:hover,
-  .ap-search .ant-input-affix-wrapper-focused {
-    border-color: #6366F1 !important;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.1) !important;
-  }
-  .ap-search .ant-input-prefix { color: #9CA3AF !important; margin-right: 6px; }
-  .ap-search .ant-input { font-size: 13px !important; color: #374151 !important; font-family: inherit !important; }
-  .ap-search .ant-input::placeholder { color: #D1D5DB !important; }
-
-  /* Card */
-  .ap-card {
-    background: #fff;
-    border: 1px solid #E5E7EB;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-    cursor: pointer;
-    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-  .ap-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 28px rgba(0,0,0,0.09);
-    border-color: #C7D2FE;
-  }
-
-  /* Image */
-  .ap-img-wrap {
-    position: relative;
-    height: 195px;
-    overflow: hidden;
-    background: #EEF0F3;
-    flex-shrink: 0;
-  }
-  .ap-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.4s ease;
-  }
-  .ap-card:hover .ap-img { transform: scale(1.04); }
-  .ap-img-gradient {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.35) 100%);
-    pointer-events: none;
-  }
-
-  .ap-badge-tl { position: absolute; top: 10px; left: 10px; }
-  .ap-badge-tr { position: absolute; top: 10px; right: 10px; }
-  .ap-badge-bl { position: absolute; bottom: 10px; left: 10px; }
-
-  .ap-tag {
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    border-radius: 6px !important;
-    padding: 2px 8px !important;
-    border: none !important;
-    line-height: 1.6 !important;
-    font-family: inherit !important;
-  }
-  .ap-tag-offplan   { background: rgba(109,40,217,0.82) !important; color: #fff !important; }
-  .ap-tag-secondary { background: rgba(37,99,235,0.82)  !important; color: #fff !important; }
-  .ap-tag-approved  { background: rgba(5,150,105,0.85)  !important; color: #fff !important; }
-  .ap-tag-rejected  { background: rgba(220,38,38,0.85)  !important; color: #fff !important; }
-  .ap-tag-pending   { background: rgba(217,119,6,0.88)  !important; color: #fff !important; }
-  .ap-tag-active    {
-    background: rgba(255,255,255,0.18) !important;
-    color: #fff !important;
-    border: 1px solid rgba(255,255,255,0.4) !important;
-    backdrop-filter: blur(6px);
-  }
-
-  .ap-dev-logo {
-    position: absolute;
-    bottom: -16px;
-    right: 14px;
-    width: 38px;
-    height: 38px;
-    background: #fff;
-    border-radius: 8px;
-    border: 2px solid #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-    overflow: hidden;
-  }
-  .ap-dev-logo img { width: 100%; height: 100%; object-fit: cover; }
-
-  /* Body */
-  .ap-body {
-    padding: 18px 16px 16px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .ap-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: #111827;
-    margin: 0 0 5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.4;
-  }
-
-  .ap-meta {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12.5px;
-    color: #9CA3AF;
-    margin-bottom: 13px;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-  .ap-meta .anticon { font-size: 11px; flex-shrink: 0; }
-  .ap-meta-sep {
-    width: 3px;
-    height: 3px;
-    background: #D1D5DB;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  /* Specs */
-  .ap-specs {
-    display: flex;
-    gap: 14px;
-    margin-bottom: 14px;
-    padding: 9px 12px;
-    background: #F9FAFB;
-    border-radius: 8px;
-    border: 1px solid #F3F4F6;
-  }
-  .ap-spec {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12.5px;
-    color: #6B7280;
-    font-weight: 500;
-  }
-  .ap-spec .anticon { font-size: 12px; color: #9CA3AF; }
-
-  /* Price row */
-  .ap-price-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-top: auto;
-    margin-bottom: 14px;
-  }
-  .ap-price-lbl {
-    font-size: 10.5px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #9CA3AF;
-    display: block;
-    margin-bottom: 3px;
-  }
-  .ap-price-val {
-    font-size: 16px;
-    font-weight: 700;
-    color: #111827;
-    line-height: 1;
-  }
-  .ap-price-currency {
-    font-size: 12px;
-    font-weight: 500;
-    color: #6366F1;
-    margin-right: 2px;
-  }
-  .ap-booking-lbl {
-    font-size: 10.5px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #9CA3AF;
-    display: block;
-    margin-bottom: 3px;
-    text-align: right;
-  }
-  .ap-booking-val {
-    font-size: 15px;
-    font-weight: 700;
-    color: #6366F1;
-    text-align: right;
-  }
-
-  .ap-divider {
-    height: 1px;
-    background: #F3F4F6;
-    margin-bottom: 12px;
-  }
-
-  /* Buttons */
-  .ap-actions { display: flex; gap: 8px; }
-
-  .ap-btn-view {
-    flex: 1;
-    height: 36px;
-    border-radius: 8px;
-    border: 1px solid #E5E7EB;
-    background: #fff;
-    color: #374151;
-    font-size: 12.5px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
-    font-family: inherit;
-  }
-  .ap-btn-view:hover {
-    background: #EEF2FF;
-    border-color: #A5B4FC;
-    color: #4F46E5;
-  }
-
-  .ap-btn-assign {
-    flex: 1;
-    height: 36px;
-    border-radius: 8px;
-    border: none;
-    background: #5f109c;
-    color: #fff;
-    font-size: 12.5px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    transition: background 0.15s;
-    font-family: inherit;
-  }
-  .ap-btn-assign:hover { background: #4338CA; }
-
-  .ap-center { display: flex; justify-content: center; padding-top: 100px; }
-  .ap-empty  { margin-top: 70px; }
-`;
+const { Title, Text } = Typography;
 
 export default function AgencyProjects() {
   const navigate = useNavigate();
-  const [properties, setProperties] = useState([]);
-  const [filtered, setFiltered]     = useState([]);
-  const [loading, setLoading]       = useState(false);
-  const [search, setSearch]         = useState("");
 
+  const [properties, setProperties] = useState([]);
+  const [filtered, setFiltered] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+
+  // ── API ──────────────────────────────────────────────────────────────────
   const fetchProjects = async () => {
     try {
       setLoading(true);
@@ -334,6 +42,7 @@ export default function AgencyProjects() {
       setFiltered(data);
     } catch (err) {
       console.error(err);
+      message.error("Failed to load properties");
       setProperties([]);
       setFiltered([]);
     } finally {
@@ -341,203 +50,376 @@ export default function AgencyProjects() {
     }
   };
 
-  useEffect(() => { fetchProjects(); }, []);
-
   useEffect(() => {
-    if (!search) { setFiltered(properties); return; }
+    fetchProjects();
+  }, []);
+
+  // ── Search filter ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!search) {
+      setFiltered(properties);
+      return;
+    }
     const q = search.toLowerCase();
     setFiltered(
-      properties.filter((p) =>
-        p.propertyName?.toLowerCase().includes(q) ||
-        p.city?.toLowerCase().includes(q) ||
-        p.area?.toLowerCase().includes(q) ||
-        (p.developer?.name || p.developerName || "").toLowerCase().includes(q)
+      properties.filter(
+        (p) =>
+          p.propertyName?.toLowerCase().includes(q) ||
+          p.city?.toLowerCase().includes(q) ||
+          p.area?.toLowerCase().includes(q) ||
+          (p.developer?.name || p.developerName || "").toLowerCase().includes(q)
       )
     );
   }, [search, properties]);
 
-  const getPriceDisplay = (p) => {
-    if (p.price_min && p.price_max && p.price_min !== p.price_max)
-      return `${p.price_min.toLocaleString()} – ${p.price_max.toLocaleString()}`;
-    const val = p.price_min || p.price || 0;
-    if (!val) return "On Request";
-    if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
-    if (val >= 1_000)     return `${(val / 1_000).toFixed(0)}K`;
-    return val.toLocaleString();
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
-  const getDeveloper = (p) => p.developer?.name || p.developerName || "Developer";
-
-  const getApprovalTag = (status) => {
-    if (status === "approved")
-      return <Tag icon={<CheckCircleOutlined />} className="ap-tag ap-tag-approved">Approved</Tag>;
-    if (status === "rejected")
-      return <Tag icon={<CloseCircleOutlined />} className="ap-tag ap-tag-rejected">Rejected</Tag>;
-    return <Tag icon={<ClockCircleOutlined />} className="ap-tag ap-tag-pending">Pending</Tag>;
+  const getCoverImage = (p) => {
+    if (p.photos?.architecture?.length > 0) return p.photos.architecture[0];
+    if (p.photos?.interior?.length > 0) return p.photos.interior[0];
+    if (p.mainLogo) return p.mainLogo;
+    return "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&q=80";
   };
 
+  const isOffPlan = (p) =>
+    p.propertySubType === "off_plan" || p.propertyType === "off_plan";
+
+  // badge: Offplan (purple) or Secondary (blue)
+  const SubTypeBadge = ({ p }) => {
+    const offplan = isOffPlan(p);
+    return (
+      <span
+        style={{
+          background: offplan ? "rgba(109,40,217,0.85)" : "rgba(37,99,235,0.85)",
+          color: "#fff",
+          padding: "4px 9px",
+          borderRadius: 6,
+          fontSize: 11,
+          fontWeight: 700,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+          backdropFilter: "blur(4px)",
+          textTransform: "capitalize",
+        }}
+      >
+        {offplan ? (
+          <BuildOutlined style={{ fontSize: 10 }} />
+        ) : (
+          <HomeOutlined style={{ fontSize: 10 }} />
+        )}
+        {offplan ? "Off-Plan" : "Secondary"}
+      </span>
+    );
+  };
+
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <>
-      <style>{styles}</style>
-      <div className="ap-root">
+    <div style={{ padding: "32px", background: "#f8f9fa", minHeight: "100vh" }}>
 
-        {/* Header */}
-        <div className="ap-header">
-          <div>
-            <Title className="ap-header-title">Properties</Title>
-            <span className="ap-header-count">{filtered.length} properties found</span>
-          </div>
-          <div className="ap-search">
-            <Input
-              prefix={<SearchOutlined />}
-              placeholder="Search by name, city, area…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              allowClear
-            />
-          </div>
+      {/* ── HEADER ── */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 24,
+          flexWrap: "wrap",
+          gap: 12,
+        }}
+      >
+        <div>
+          <Title
+            level={4}
+            style={{ margin: 0, fontWeight: 700, color: "#111827" }}
+          >
+            All Properties
+          </Title>
+          <Text type="secondary" style={{ fontSize: 13 }}>
+            {filtered.length} {filtered.length === 1 ? "property" : "properties"} found
+          </Text>
         </div>
 
-        {/* Content */}
-        {loading ? (
-          <div className="ap-center"><Spin size="large" /></div>
-        ) : filtered.length === 0 ? (
-          <Empty
-            description={<span style={{ color: "#9CA3AF", fontSize: 13 }}>No properties found</span>}
-            className="ap-empty"
-          />
-        ) : (
-          <Row gutter={[20, 22]}>
-            {filtered.map((p) => (
-              <Col xs={24} sm={12} md={8} lg={6} key={p._id}>
+        {/* Search */}
+        <Input
+          prefix={<SearchOutlined style={{ color: "#9CA3AF" }} />}
+          suffix={<SlidersOutlined style={{ color: "#9CA3AF" }} />}
+          placeholder="Search by name, city, area…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          allowClear
+          style={{ width: 260, borderRadius: 8, height: 40 }}
+        />
+      </div>
+
+      {/* ── CONTENT ── */}
+      {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", paddingTop: 100 }}>
+          <Spin size="large" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign: "center", paddingTop: 80 }}>
+          <Text type="secondary" style={{ fontSize: 15 }}>
+            No properties found
+          </Text>
+        </div>
+      ) : (
+        <Row gutter={[20, 24]}>
+          {filtered.map((p) => (
+            <Col xs={24} sm={12} md={8} lg={6} key={p._id}>
+              <Card
+                hoverable
+                onClick={() => navigate(`/dashboard/agent/secondary/${p._id}`)}
+                style={{
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  border: "1px solid #e8e8e8",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                  height: "100%",
+                }}
+                bodyStyle={{ padding: "20px 16px 16px" }}
+              >
+                {/* ── IMAGE ── */}
                 <div
-                  className="ap-card"
-                  onClick={() => navigate(`/dashboard/agency/projects/${p._id}`)}
-                  role="button"
-                  tabIndex={0}
+                  style={{
+                    position: "relative",
+                    height: 210,
+                    margin: "-20px -16px 16px -16px",
+                    overflow: "hidden",
+                  }}
                 >
-                  {/* Image */}
-                  <div className="ap-img-wrap">
-                    <img
-                      className="ap-img"
-                      src={
-                        p?.photos?.architecture?.[0] ||
-                        p?.mainLogo ||
-                        "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&q=80"
-                      }
-                      alt={p.propertyName}
-                      onError={(e) => {
-                        e.target.src =
-                          "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&q=80";
-                      }}
-                    />
-                    <div className="ap-img-gradient" />
+                  <img
+                    src={getCoverImage(p)}
+                    alt={p.propertyName}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      transition: "transform 0.4s ease",
+                    }}
+                    onError={(e) => {
+                      e.target.src =
+                        "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&q=80";
+                    }}
+                  />
 
-                    <div className="ap-badge-tl">
-                      <Tag
-                        icon={p.propertySubType === "off_plan" ? <BuildOutlined /> : <HomeOutlined />}
-                        className={`ap-tag ${p.propertySubType === "off_plan" ? "ap-tag-offplan" : "ap-tag-secondary"}`}
+                  {/* gradient overlay */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background:
+                        "linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.3) 100%)",
+                      pointerEvents: "none",
+                    }}
+                  />
+
+                  {/* TOP-LEFT: offplan / secondary badge + handover */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 12,
+                      left: 12,
+                      display: "flex",
+                      gap: 6,
+                      flexWrap: "wrap",
+                      right: 12,
+                    }}
+                  >
+                    <SubTypeBadge p={p} />
+
+                    {(p.availableFrom || p.completionDate?.year) && (
+                      <span
+                        style={{
+                          background: "#fff",
+                          color: "#333",
+                          padding: "4px 8px",
+                          borderRadius: 6,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                        }}
                       >
-                        {p.propertySubType === "off_plan" ? "Off-Plan" : "Secondary"}
-                      </Tag>
-                    </div>
-
-                    <div className="ap-badge-tr">{getApprovalTag(p.approvalStatus)}</div>
-
-                    {p.listingStatus === "active" && (
-                      <div className="ap-badge-bl">
-                        <Tag icon={<ThunderboltOutlined />} className="ap-tag ap-tag-active">
-                          Active
-                        </Tag>
-                      </div>
-                    )}
-
-                    {p.developer?.logo && (
-                      <div className="ap-dev-logo">
-                        <img src={p.developer.logo} alt="dev" />
-                      </div>
+                        Handover:{" "}
+                        {p.availableFrom
+                          ? formatDate(p.availableFrom)
+                          : p.completionDate?.year}
+                      </span>
                     )}
                   </div>
 
-                  {/* Body */}
-                  <div className="ap-body">
-                    <div className="ap-name">{p.propertyName}</div>
-
-                    <div className="ap-meta">
-                      <EnvironmentOutlined />
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {p.area || p.city}
-                      </span>
-                      <span className="ap-meta-sep" />
-                      <BankOutlined />
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {getDeveloper(p)}
-                      </span>
-                    </div>
-
-                    {(p.bedrooms > 0 || p.bathrooms > 0 || (p.builtUpArea || p.builtUpArea_min) > 0) && (
-                      <div className="ap-specs">
-                        {p.bedrooms > 0 && (
-                          <span className="ap-spec">
-                            <HomeOutlined /> {p.bedrooms} {p.bedrooms === 1 ? "Bed" : "Beds"}
-                          </span>
-                        )}
-                        {p.bathrooms > 0 && (
-                          <span className="ap-spec">
-                            <ThunderboltOutlined /> {p.bathrooms} Bath
-                          </span>
-                        )}
-                        {(p.builtUpArea || p.builtUpArea_min) > 0 && (
-                          <span className="ap-spec">
-                            <ColumnWidthOutlined />
-                            {(p.builtUpArea || p.builtUpArea_min).toLocaleString()} sqft
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="ap-price-row">
-                      <div>
-                        <span className="ap-price-lbl">Price from</span>
-                        <div className="ap-price-val">
-                          <span className="ap-price-currency">AED</span>
-                          {getPriceDisplay(p)}
-                        </div>
-                      </div>
-                      {p.paymentPlan?.length > 0 && (
-                        <div>
-                          <span className="ap-booking-lbl">Booking</span>
-                          <div className="ap-booking-val">
-                            {p.paymentPlan[0]?.stages?.[0]?.percentage}%{" "}
-                            <InfoCircleOutlined style={{ fontSize: 11, color: "#C7D2FE" }} />
-                          </div>
-                        </div>
+                  {/* DEVELOPER LOGO AVATAR */}
+                  {(p.developer?.logo || p.developerName) && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: -16,
+                        left: 16,
+                        width: 44,
+                        height: 44,
+                        backgroundColor: "#000",
+                        borderRadius: 6,
+                        border: "2px solid #fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        overflow: "hidden",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                      }}
+                    >
+                      {p.developer?.logo ? (
+                        <img
+                          src={p.developer.logo}
+                          alt="dev"
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      ) : (
+                        <span
+                          style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}
+                        >
+                          {(p.developerName || "D").charAt(0)}
+                        </span>
                       )}
                     </div>
-
-                    <div className="ap-divider" />
-
-                    <div
-                      className="ap-actions"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        className="ap-btn-view"
-                        onClick={() => navigate(`/dashboard/agency/projects/${p._id}`)}
-                      >
-                        <EyeOutlined /> View
-                      </button>
-                      <button className="ap-btn-assign">
-                        <UserAddOutlined /> Assign
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              </Col>
-            ))}
-          </Row>
-        )}
-      </div>
-    </>
+
+                {/* ── PROPERTY NAME ── */}
+                <Title
+                  level={5}
+                  style={{
+                    margin: "4px 0 2px",
+                    fontSize: 15,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {p.propertyName}
+                </Title>
+
+                {/* ── LOCATION & DEVELOPER ── */}
+                <Text
+                  type="secondary"
+                  style={{
+                    display: "block",
+                    marginBottom: 10,
+                    fontSize: 13,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {p.area || p.city}
+                  {p.developerName ? ` • by ${p.developerName}` : ""}
+                </Text>
+
+                {/* ── SPECS: Beds + Area ── */}
+                <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+                  {p.bedrooms > 0 && (
+                    <Text
+                      type="secondary"
+                      style={{
+                        fontSize: 12.5,
+                        background: "#f3f4f6",
+                        padding: "3px 9px",
+                        borderRadius: 5,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <TeamOutlined style={{ fontSize: 12, color: "#6b7280" }} />
+                      {p.bedrooms} Bed{p.bedrooms > 1 ? "s" : ""}
+                    </Text>
+                  )}
+                  {(p.builtUpArea || p.builtUpArea_min) > 0 && (
+                    <Text
+                      type="secondary"
+                      style={{
+                        fontSize: 12.5,
+                        background: "#f3f4f6",
+                        padding: "3px 9px",
+                        borderRadius: 5,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <ExpandOutlined style={{ fontSize: 12, color: "#6b7280" }} />
+                      {(p.builtUpArea || p.builtUpArea_min).toLocaleString()}{" "}
+                      {p.builtUpAreaUnit || "sqft"}
+                    </Text>
+                  )}
+                </div>
+
+                {/* ── PRICE + PAYMENT ROW ── */}
+                <Row justify="space-between" align="bottom" style={{ marginBottom: 14 }}>
+                  <Col>
+                    <Text
+                      type="secondary"
+                      style={{ fontSize: 11, display: "block", marginBottom: 2 }}
+                    >
+                      Price from
+                    </Text>
+                    <Text strong style={{ fontSize: 15 }}>
+                      {Number(p.price || p.price_min || 0).toLocaleString()}{" "}
+                      <span style={{ color: "#6366F1", fontSize: 12, fontWeight: 600 }}>
+                        {p.currency || "AED"}
+                      </span>
+                    </Text>
+                  </Col>
+                  <Col style={{ textAlign: "right" }}>
+                    <Text
+                      type="secondary"
+                      style={{ fontSize: 11, display: "block", marginBottom: 2 }}
+                    >
+                      Payment plan
+                    </Text>
+                    <Text strong style={{ fontSize: 13 }}>
+                      {p.paymentPlan?.length > 0 ? "Available" : "Contact Us"}{" "}
+                      <InfoCircleOutlined style={{ color: "#bfbfbf", fontSize: 11 }} />
+                    </Text>
+                  </Col>
+                </Row>
+
+                {/* ── VIEW BUTTON ── */}
+                <div
+                  style={{ borderTop: "1px solid #f3f4f6", paddingTop: 12 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Button
+                    icon={<EyeOutlined />}
+                    block
+                    style={{
+                      borderRadius: 8,
+                      height: 36,
+                      fontWeight: 500,
+                      fontSize: 13,
+                      borderColor: "#E5E7EB",
+                      color: "#374151",
+                    }}
+                    onClick={() => navigate(`/dashboard/agent/secondary/${p._id}`)}
+                  >
+                    View Details
+                  </Button>
+                </div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
+    </div>
   );
 }
