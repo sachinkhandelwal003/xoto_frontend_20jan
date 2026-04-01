@@ -773,7 +773,7 @@ export default function AgencyAgentProperties() {
         {/* RESULTS */}
         <div className="xp-results-bar">
           <p className="xp-results-text">
-            Showing <strong>{filtered.length}</strong> {filtered.length===1?'property':'properties'}
+            {/* Showing <strong>{filtered.length}</strong> {filtered.length===1?'property':'properties'} */}
             {search && <> for "<strong>{search}</strong>"</>}
           </p>
         </div>
