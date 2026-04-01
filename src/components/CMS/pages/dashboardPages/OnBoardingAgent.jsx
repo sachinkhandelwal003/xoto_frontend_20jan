@@ -13,8 +13,7 @@ import {
   message,
   Select,
   InputNumber,
-  Divider,
-  Modal
+  Divider
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -22,7 +21,8 @@ import {
   UserOutlined,
   ContactsOutlined,
   IdcardOutlined,
-  SolutionOutlined
+  SolutionOutlined,
+  CheckOutlined
 } from "@ant-design/icons";
 
 // ✅ Imported required packages for Country/City and Phone Validation
@@ -37,15 +37,6 @@ const { Option } = Select;
 
 const BRAND_PURPLE = "#5C039B";
 
-// Base64 converter for Image Preview
-const getBase64 = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => reject(error);
-  });
-
 const AddAgent = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
@@ -55,19 +46,11 @@ const AddAgent = () => {
   const [citiesList, setCitiesList] = useState([]);
   const selectedCountry = Form.useWatch("country", form);
 
-  // --- PREVIEW MODAL STATE ---
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewImage, setPreviewImage] = useState("");
-  const [previewTitle, setPreviewTitle] = useState("");
+  // 🔥 INSTANT UPLOAD STATES
+  const [urls, setUrls] = useState({ profile: "", idProof: "", rera: "" });
+  const [uploading, setUploading] = useState({ profile: false, idProof: false, rera: false });
 
-  // 🔥 BULLETPROOF STATE FOR UPLOADED URLS
-  const [uploadedUrls, setUploadedUrls] = useState({
-    profile_photo: "",
-    id_proof: "",
-    rera_certificate: ""
-  });
-
-  // --- NEW COUNTRY OPTIONS LOGIC ---
+  // --- COUNTRY OPTIONS LOGIC ---
   const countryOptions = useMemo(() => {
     const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"]; 
     return Country.getAllCountries().map((country) => ({
@@ -97,61 +80,66 @@ const AddAgent = () => {
     }
   }, [selectedCountry]);
 
+// ==========================================
+  // 🔥 THE MAGIC FIX: BULLETPROOF INSTANT UPLOAD 
   // ==========================================
-  // 🔥 ULTRA-ROBUST UPLOAD HANDLER
-  // ==========================================
-  const handleFileUpload = async (options, fieldName) => {
-    const { file, onSuccess, onError, onProgress } = options;
+  const handleInstantUpload = async (file, type) => {
+    setUploading((prev) => ({ ...prev, [type]: true }));
     const formData = new FormData();
     formData.append("file", file);
 
     try {
       const response = await apiService.post("/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (event) => {
-          onProgress({ percent: Math.floor((event.loaded / event.total) * 100) });
-        },
       });
 
-      console.log(`UPLOAD RAW RESPONSE FOR ${fieldName}:`, response);
+      console.log(`📸 RAW API Response for ${type}:`, response);
 
-      // 🔥 Har possible structure se URL nikalne ki koshish (Axios Interceptors ke liye)
-      let extractedUrl = "";
-      if (response?.data?.file?.url) extractedUrl = response.data.file.url;
-      else if (response?.file?.url) extractedUrl = response.file.url; 
-      else if (response?.data?.url) extractedUrl = response.data.url;
-      else if (response?.url) extractedUrl = response.url;
-      else if (typeof response?.data === 'string') extractedUrl = response.data;
+      // 🔥 BULLETPROOF URL EXTRACTION 🔥
+      // Ye har possible format se URL nikal lega chahe apiService kuch bhi return kare
+      const uploadedUrl = 
+        response?.data?.file?.url || 
+        response?.file?.url ||        // <-- Agar interceptor direct data bhej raha hai
+        response?.data?.url || 
+        response?.url || 
+        response?.data?.fileUrl ||
+        "";
 
-      console.log(`✅ EXTRACTED URL FOR ${fieldName}:`, extractedUrl);
+      console.log(`✅ Extracted URL for ${type}:`, uploadedUrl);
 
-      if (!extractedUrl) {
-        message.warning("Photo uploaded but URL not found in API response.");
+      if (uploadedUrl) {
+        setUrls((prev) => ({ ...prev, [type]: uploadedUrl }));
+        message.success(`${type} uploaded successfully!`);
       } else {
-        message.success(`${file.name} uploaded successfully!`);
+        message.error("Upload failed: no URL returned. Check console.");
       }
-
-      // State me save kar diya
-      setUploadedUrls(prev => ({ ...prev, [fieldName]: extractedUrl }));
-      
-      onSuccess({ url: extractedUrl });
     } catch (error) {
-      console.error("Upload Error:", error);
-      message.error(`${file.name} upload failed.`);
-      onError(error);
+      console.error(`❌ Upload Error for ${type}:`, error);
+      message.error(`Failed to upload ${type}.`);
+    } finally {
+      setUploading((prev) => ({ ...prev, [type]: false }));
     }
+
+    // ⛔ This stops Ant Design's default upload tracking
+    return false;
   };
 
   // ==========================================
-  // ✅ ACTUAL API SUBMIT HANDLER
+  // ✅ EXACT JSON PAYLOAD SUBMIT HANDLER
   // ==========================================
   const onFinish = async (values) => {
+    // Check if required images are uploaded manually
+    if (!urls.profile) return message.error("Please upload Profile Photo");
+    if (!urls.idProof) return message.error("Please upload ID Proof");
+
     setLoading(true);
     
     try {
+      // ✅ Formats exactly as your JSON requires
       const fullPhoneNumber = `+${values.country_code}${values.phone}`;
       const extractedCountryCode = `+${values.country_code}`;
 
+      // 🔥 EXACT JSON STRUCTURE 🔥
       const payload = {
         first_name: values.first_name,
         last_name: values.last_name,
@@ -162,28 +150,22 @@ const AddAgent = () => {
         operating_city: values.operating_city,
         specialization: values.specialization,
         country: values.country,
-        experience_years: values.experience_years || 0,
+        experience_years: Number(values.experience_years) || 0,
         rera_number: values.rera_number || "",
-        agentType: values.agentType,
-        
-        // 🔥 State se direct URLs le rahe hain
-        profile_photo: uploadedUrls.profile_photo || "",
-        id_proof: uploadedUrls.id_proof || "",
-        rera_certificate: uploadedUrls.rera_certificate || ""
+        profile_photo: urls.profile,
+        id_proof: urls.idProof,
+        rera_certificate: urls.rera || ""
       };
 
-      if (values.agentType === "agency_agent" && values.agency) {
-        payload.agency = values.agency;
-      }
-
-      console.log("🚀 FINAL PAYLOAD GOING TO BACKEND:", payload);
+      console.log("🚀 FINAL EXACT JSON PAYLOAD:", JSON.stringify(payload, null, 2));
 
       const response = await apiService.post("/agent/agent-signup", payload);
       
       message.success(response?.data?.message || "Agent onboarded successfully!");
       form.resetFields();
+      setUrls({ profile: "", idProof: "", rera: "" });
       
-      // 🔥 SUCCESS HONE PAR REDIRECT
+      // 🔥 SUCCESS REDIRECT
       navigate("/dashboard/admin/agent-list");
       
     } catch (error) {
@@ -192,15 +174,6 @@ const AddAgent = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handlePreview = async (file) => {
-    if (!file.url && !file.preview) {
-      file.preview = await getBase64(file.originFileObj);
-    }
-    setPreviewImage(file.url || file.preview);
-    setPreviewOpen(true);
-    setPreviewTitle(file.name || file.url.substring(file.url.lastIndexOf("/") + 1));
   };
 
   return (
@@ -223,7 +196,7 @@ const AddAgent = () => {
         form={form}
         layout="vertical"
         onFinish={onFinish}
-        initialValues={{ country: "United Arab Emirates", agentType: "independent", country_code: "971" }}
+        initialValues={{ country: "United Arab Emirates", country_code: "971" }}
       >
         <Row gutter={[24, 24]}>
           
@@ -375,36 +348,12 @@ const AddAgent = () => {
             >
               <Row gutter={16}>
                 <Col xs={24} md={12}>
-                  <Form.Item name="agentType" label="Agent Type" rules={[{ required: true }]}>
-                    <Select size="large" style={{ borderRadius: "8px" }}>
-                      <Option value="independent">Independent</Option>
-                      <Option value="agency_agent">Agency Agent</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-
-                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.agentType !== curr.agentType}>
-                  {({ getFieldValue }) =>
-                    getFieldValue("agentType") === "agency_agent" ? (
-                      <Col xs={24} md={12}>
-                        <Form.Item name="agency" label="Select Agency" rules={[{ required: true, message: "Agency is required" }]}>
-                          <Select placeholder="-- Choose Agency --" size="large" style={{ borderRadius: "8px" }}>
-                            <Option value="agency_id_1">Nexus Real Estate</Option>
-                            <Option value="agency_id_2">Vanguard Properties</Option>
-                          </Select>
-                        </Form.Item>
-                      </Col>
-                    ) : null
-                  }
-                </Form.Item>
-
-                <Col xs={24} md={12}>
                   <Form.Item name="specialization" label="Specialization" rules={[{ required: true }]}>
-                    <Input placeholder="e.g. Luxury Villas, Commercial" size="large" style={{ borderRadius: "8px" }} />
+                    <Input placeholder="e.g. Residential Properties, Villas" size="large" style={{ borderRadius: "8px" }} />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item name="experience_years" label="Experience (Years)">
+                  <Form.Item name="experience_years" label="Experience (Years)" rules={[{ required: true }]}>
                     <InputNumber min={0} placeholder="e.g. 5" size="large" style={{ width: "100%", borderRadius: "8px" }} />
                   </Form.Item>
                 </Col>
@@ -427,42 +376,51 @@ const AddAgent = () => {
               bordered={false} 
               style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}
             >
-              {/* 🔥 CUSTOM HANDLER PASSED FOR EACH FIELD */}
-              <Form.Item label="Profile Photo">
-                <Upload 
-                  customRequest={(options) => handleFileUpload(options, "profile_photo")} 
-                  listType="picture" 
-                  maxCount={1} 
-                  onPreview={handlePreview}
-                >
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Upload Photo</Button>
+              {/* 🔥 MAGIC UPLOAD BUTTONS */}
+              <Form.Item label="Profile Photo" required>
+                <Upload showUploadList={false} beforeUpload={(file) => handleInstantUpload(file, 'profile')}>
+                  <Button
+                    icon={urls.profile ? <CheckOutlined /> : <UploadOutlined />}
+                    block
+                    style={{ height: 45, borderColor: urls.profile ? '#52c41a' : '#d9d9d9', color: urls.profile ? '#52c41a' : 'inherit' }}
+                    loading={uploading.profile}
+                  >
+                    {urls.profile ? "Uploaded" : "Upload Photo"}
+                  </Button>
                 </Upload>
+                {urls.profile && <div style={{ marginTop: 5, fontSize: 12, color: '#52c41a' }}>Image saved!</div>}
               </Form.Item>
 
               <Divider style={{ margin: "16px 0" }} />
 
               <Text strong style={{ display: "block", marginBottom: "8px" }}>KYC & Certifications</Text>
               
-              <Form.Item label="ID Proof (Emirates ID/Passport)" style={{ marginBottom: "12px" }}>
-                <Upload 
-                  customRequest={(options) => handleFileUpload(options, "id_proof")} 
-                  listType="picture" 
-                  maxCount={1} 
-                  onPreview={handlePreview}
-                >
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Upload ID Proof</Button>
+              <Form.Item label="ID Proof (Emirates ID/Passport)" style={{ marginBottom: "12px" }} required>
+                <Upload showUploadList={false} beforeUpload={(file) => handleInstantUpload(file, 'idProof')}>
+                  <Button
+                    icon={urls.idProof ? <CheckOutlined /> : <UploadOutlined />}
+                    block
+                    style={{ height: 45, borderColor: urls.idProof ? '#52c41a' : '#d9d9d9', color: urls.idProof ? '#52c41a' : 'inherit' }}
+                    loading={uploading.idProof}
+                  >
+                    {urls.idProof ? "Uploaded" : "Upload ID Proof"}
+                  </Button>
                 </Upload>
+                {urls.idProof && <div style={{ marginTop: 5, fontSize: 12, color: '#52c41a' }}>ID saved!</div>}
               </Form.Item>
 
               <Form.Item label="RERA Certificate" style={{ marginBottom: "0" }}>
-                <Upload 
-                  customRequest={(options) => handleFileUpload(options, "rera_certificate")} 
-                  listType="picture" 
-                  maxCount={1} 
-                  onPreview={handlePreview}
-                >
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Upload RERA</Button>
+                <Upload showUploadList={false} beforeUpload={(file) => handleInstantUpload(file, 'rera')}>
+                  <Button
+                    icon={urls.rera ? <CheckOutlined /> : <UploadOutlined />}
+                    block
+                    style={{ height: 45, borderColor: urls.rera ? '#52c41a' : '#d9d9d9', color: urls.rera ? '#52c41a' : 'inherit' }}
+                    loading={uploading.rera}
+                  >
+                    {urls.rera ? "Uploaded" : "Upload RERA"}
+                  </Button>
                 </Upload>
+                {urls.rera && <div style={{ marginTop: 5, fontSize: 12, color: '#52c41a' }}>Certificate saved!</div>}
               </Form.Item>
             </Card>
 
@@ -504,21 +462,6 @@ const AddAgent = () => {
           </Button>
         </div>
       </Form>
-
-      <Modal
-        open={previewOpen}
-        title={previewTitle}
-        footer={null}
-        onCancel={() => setPreviewOpen(false)}
-        centered
-        style={{ padding: "16px", textAlign: "center" }}
-      >
-        <img
-          alt="Preview"
-          style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", borderRadius: "8px" }}
-          src={previewImage}
-        />
-      </Modal>
 
       <style jsx global>{`
         /* Make sure custom phone select matches Ant Design inputs */
