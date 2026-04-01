@@ -1,106 +1,106 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useCmsContext } from '../../contexts/CmsContext'; 
+import { useCmsContext } from '../../contexts/CmsContext';
 import { FiX, FiChevronDown } from 'react-icons/fi';
 import { useFreelancer } from '../../../../../src/context/FreelancerContext';
 
-import logoNew from '../../../../assets/img/logoNew.png'; 
-import favicon from '../../../../assets/img/logonewww.png'; 
+import logoNew from '../../../../assets/img/logoNew.png';
+import favicon from '../../../../assets/img/logonewww.png';
 import { icon } from '@fortawesome/fontawesome-svg-core';
 
 /* --- CUSTOM LINKS CONFIGURATION --- */
 // /dashboard/superadmin/developer/property
 const CUSTOM_ROLE_LINKS = {
   "0": [
-  {
-    title: "Properties",
-    icon: "fas fa-building",
-    path: "/dashboard/superadmin/properties",
-    submenus: [
-      {
-        title: "Create Developer",
-        path: "/dashboard/superadmin/developer/create"
-      },
-      {
-        title: "Property Management",
-        path: "/dashboard/superadmin/developer/property"
-      },
-      // {
-      //   title: "Agents",
-      //   path: "/dashboard/superadmin/agent-list"
-      // },
-      
-      // {
-      //   title: "Agencies",
-      //   path: "/dashboard/superadmin/agency-list"
-      // }
-    ]
-  },
-  {
-    title: "Customers",
-    icon: "fas fa-users",
-    path: "/dashboard/superadmin/customers",
-    submenus: [
-      { title: "All Customers", path: "/dashboard/superadmin/customers/list" },
-    ]
-  },
-  // {
-  //   title: "Setting",
-  //   icon: "fas fa-cog",
-  //   path: "/dashboard/superadmin/setting",
-  //   submenus: [
-  //     {
-  //       title: "Email Setting",
-  //       path: "/dashboard/superadmin/setting/email"
-  //     }
-  //   ]
-  // }
-],
+    {
+      title: "Properties",
+      icon: "fas fa-building",
+      path: "/dashboard/superadmin/properties",
+      submenus: [
+        {
+          title: "Create Developer",
+          path: "/dashboard/superadmin/developer/create"
+        },
+        {
+          title: "Property Management",
+          path: "/dashboard/superadmin/developer/property"
+        },
+        // {
+        //   title: "Agents",
+        //   path: "/dashboard/superadmin/agent-list"
+        // },
 
-"1": [
+        // {
+        //   title: "Agencies",
+        //   path: "/dashboard/superadmin/agency-list"
+        // }
+      ]
+    },
+    {
+      title: "Customers",
+      icon: "fas fa-users",
+      path: "/dashboard/superadmin/customers",
+      submenus: [
+        { title: "All Customers", path: "/dashboard/superadmin/customers/list" },
+      ]
+    },
+    // {
+    //   title: "Setting",
+    //   icon: "fas fa-cog",
+    //   path: "/dashboard/superadmin/setting",
+    //   submenus: [
+    //     {
+    //       title: "Email Setting",
+    //       path: "/dashboard/superadmin/setting/email"
+    //     }
+    //   ]
+    // }
+  ],
+
+  "1": [
     /* --- CATEGORY 1: User Management (Logistics) --- */
     // {
     //   title: "User Management",
     //   icon: "fas fa-users-cog",
     //   path: "/dashboard/{roleSlug}/users",
     //   submenus: [
-        { 
-          title: "Agencies", 
-          path: "/dashboard/{roleSlug}/agency-list",
-          icon: "fas fa-network-wired", // Network icon represents agency umbrella
-           submenus: [
-             { title: "Agency List", path: "/dashboard/{roleSlug}/agency-list" },
+    {
+      title: "Agencies",
+      path: "/dashboard/{roleSlug}/agency-list",
+      icon: "fas fa-network-wired", // Network icon represents agency umbrella
+      submenus: [
+        { title: "Agency List", path: "/dashboard/{roleSlug}/agency-list" },
         { title: "On Boarding Agency", path: "/dashboard/{roleSlug}/onboarding/agency" },
-           ]
-        },
-        { 
-          title: "Developers", 
-          path: "/dashboard/{roleSlug}/developer-list",
-          icon: "fas fa-user-tie" ,
-           submenus: [
-             { title: "Developer List", path: "/dashboard/{roleSlug}/developer-list" },
+      ]
+    },
+    {
+      title: "Developers",
+      path: "/dashboard/{roleSlug}/developer-list",
+      icon: "fas fa-user-tie",
+      submenus: [
+        { title: "Developer List", path: "/dashboard/{roleSlug}/developer-list" },
         { title: "On Boarding developer", path: "/dashboard/{roleSlug}/onboarding/developer" },
-             
 
-      ],  
-        },
-        { 
-          title: "Agents", 
-          path: "/dashboard/{roleSlug}/agent-list",
-          icon: "fas fa-user-friends" ,
-           submenus: [
-             { title: "Agent List", path: "/dashboard/{roleSlug}/agent-list" },
+
+      ],
+    },
+    {
+      title: "Agents",
+      path: "/dashboard/{roleSlug}/agent-list",
+      icon: "fas fa-user-friends",
+      submenus: [
+        { title: "Agent List", path: "/dashboard/{roleSlug}/agent-list" },
         { title: "On Boarding Agent", path: "/dashboard/{roleSlug}/onboarding/agent" },
-             
 
-      ],  
-        },
-        // { 
-        //   title: "Verification Queue", 
-        //   path: "/dashboard/{roleSlug}/verification-queue", 
-        //   icon: "fas fa-user-check" 
-        // }
+
+      ],
+    },
+    // { 
+    //   title: "Verification Queue", 
+    //   path: "/dashboard/{roleSlug}/verification-queue", 
+    //   icon: "fas fa-user-check" 
+    // }
     //   ]
     // },
 
@@ -110,26 +110,26 @@ const CUSTOM_ROLE_LINKS = {
     //   icon: "fas fa-boxes",
     //   path: "/dashboard/{roleSlug}/operations",
     //   submenus: [
-        { 
-          title: "Global Properties", 
-          path: "/dashboard/{roleSlug}/property-list",
-          icon: "fas fa-building" 
-        },
-        { 
-          title: "Lead Management", 
-          path: "/dashboard/{roleSlug}/lead-management",
-          icon: "fas fa-filter" 
-        },
-        { 
-          title: "Deals & Commissions", 
-          path: "/dashboard/{roleSlug}/DealCommissionManager",
-          icon: "fas fa-file-invoice-dollar" 
-        },
-        {
-          title: "Chat Request",
-          path: "/dashboard/{roleSlug}/admin-chat-requests",
-          icon: "fas fa-comment-dots"
-        }
+    {
+      title: "Global Properties",
+      path: "/dashboard/{roleSlug}/property-list",
+      icon: "fas fa-building"
+    },
+    {
+      title: "Lead Management",
+      path: "/dashboard/{roleSlug}/lead-management",
+      icon: "fas fa-filter"
+    },
+    // {
+    //   title: "Deals & Commissions",
+    //   path: "/dashboard/{roleSlug}/DealCommissionManager",
+    //   icon: "fas fa-file-invoice-dollar"
+    // },
+    // {
+    //   title: "Chat Request",
+    //   path: "/dashboard/{roleSlug}/admin-chat-requests",
+    //   icon: "fas fa-comment-dots"
+    // }
     //   ]
     // },
 
@@ -152,48 +152,48 @@ const CUSTOM_ROLE_LINKS = {
     //   ]
     // },
 
-    
+
   ],
   "2": [
-     {
+    {
       title: "Estimates", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
       submenus: [
         { title: "Submitted Estimates", path: "/dashboard/{roleSlug}/estimate/submitted" },
-                { title: "Received Quotation", path: "/dashboard/{roleSlug}/quotation/received" },
-                { title: "Response Submitted", path: "/dashboard/{roleSlug}/quotation/response" },
+        { title: "Received Quotation", path: "/dashboard/{roleSlug}/quotation/received" },
+        { title: "Response Submitted", path: "/dashboard/{roleSlug}/quotation/response" },
 
       ],
     },
-      {
+    {
       title: "My Projects", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects",
       submenus: [
         { title: "Ongoing Projects", path: "/dashboard/{roleSlug}/projects/ongoing" },
-                
+
 
       ],
     },
-     {
+    {
       title: "Bills", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects",
       submenus: [
         { title: "My Bills", path: "/dashboard/{roleSlug}/projects/milestone/bills" },
-                        { title: "My Invoice", path: "/dashboard/{roleSlug}/projects/invoices" },
+        { title: "My Invoice", path: "/dashboard/{roleSlug}/projects/invoices" },
 
 
       ],
     },
     {
       title: "View Library", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/ViewLibrary",
-     
 
-      
+
+
     }
   ],
-   "12": [
-     {
+  "12": [
+    {
       title: "Projects", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects/view",
       submenus: [
         { title: "Manage Projects", path: "/dashboard/{roleSlug}/projects/manage" },
-         
+
 
       ],
     }
@@ -201,235 +201,187 @@ const CUSTOM_ROLE_LINKS = {
   "4": [
 
   ],
- "5": [
-  {
-    title: "Inventory",
-    icon: "fas fa-warehouse",
-    path: "/dashboard/vendor-b2c/inventory",
-  },
-],
+  "5": [
+    {
+      title: "Inventory",
+      icon: "fas fa-warehouse",
+      path: "/dashboard/vendor-b2c/inventory",
+    },
+  ],
   "7": [
     {
       title: "Quotations", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
       submenus: [
         { title: "Submitted Quotation", path: "/dashboard/{roleSlug}/quotation/submitted" },
-                { title: "Approved Quotation", path: "/dashboard/{roleSlug}/quotation/approved" },
+        { title: "Approved Quotation", path: "/dashboard/{roleSlug}/quotation/approved" },
 
       ],
     },
   ],
   "8": [
     {
-      title: "Property Management", 
-      icon: "fas fa-building", 
-      path: "/dashboard/developer/property-management", 
+      title: "Property Management",
+      icon: "fas fa-building",
+      path: "/dashboard/developer/property-management",
       submenus: [
         { title: "All Properties", path: "/dashboard/developer/property-management/list" },
       ],
     },
   ],
-"16": [
+  "16": [
     {
-  title: "Marketplace",
-  icon: "fas fa-building",
-  path: "/dashboard/{roleSlug}/projects",
-},
+      title: "Marketplace",
+      icon: "fas fa-building",
+      path: "/dashboard/{roleSlug}/agent-projects",
+    },
 
-  // {
-  //   title: "Leads",
-  //   icon: "fas fa-user-friends",
-  //   path: "/dashboard/{roleSlug}/agent-leads",
-  // },
-      {
+    // {
+    //   title: "Leads",
+    //   icon: "fas fa-user-friends",
+    //   path: "/dashboard/{roleSlug}/agent-leads",
+    // },
+    {
       title: "Secondary Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/create-secondary-plans",
       submenus: [
         { title: "Create Properties", path: "/dashboard/{roleSlug}/create-secondary-plans" },
-                        { title: "Secondary Plans", path: "/dashboard/{roleSlug}/secondary-plans" },
-
-
+        { title: "Secondary Plans", path: "/dashboard/{roleSlug}/secondary-plans" },
       ],
     },
-      {
+    {
       title: "Leads", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/agent-leads",
       submenus: [
         { title: "Create Leads", path: "/dashboard/{roleSlug}/agent-leads/add" },
-                        { title: "Leads", path: "/dashboard/{roleSlug}/agent-leads" },
+        { title: "Leads", path: "/dashboard/{roleSlug}/agent-leads" },
 
 
       ],
     },
-  {
-  title: "Site Visits",
-  icon: "fas fa-map-marker-alt",
-  path: "/dashboard/{roleSlug}/visits",
-},
-{
-  title: "My-Chats",
-  icon: "fas fa-comment-dots",
-  path: "/dashboard/{roleSlug}/My-Chats",
-},
-{
-  title: "Deals",
-  icon: "fas fa-handshake",
-  path: "/dashboard/{roleSlug}/deals",
-},
-{
-  title: "Commission",
-  icon: "fas fa-rupee-sign",
-  path: "/dashboard/{roleSlug}/commission",
-},
-  {
-    title: "Xobia AI",
-    icon: "fas fa-credit-card",
-    path: "/dashboard/{roleSlug}/subscription",
-  },
+    {
+      title: "Site Visits",
+      icon: "fas fa-map-marker-alt",
+      path: "/dashboard/{roleSlug}/visits",
+    },
+// ,    {
+//       title: "My-Chats",
+//       icon: "fas fa-comment-dots",
+//       path: "/dashboard/{roleSlug}/My-Chats",
+//     }
+    {
+      title: "Deals",
+      icon: "fas fa-handshake",
+      path: "/dashboard/{roleSlug}/deals",
+    },
+    {
+      title: "Commission",
+      icon: "fas fa-rupee-sign",
+      path: "/dashboard/{roleSlug}/commission",
+    },
+    // {
+    //   title: "Xobia AI",
+    //   icon: "fas fa-credit-card",
+    //   path: "/dashboard/{roleSlug}/subscription",
+    // },
 
-// {
-//   title: "Presentations",
-//   icon: "fas fa-file-powerpoint",
-//   path: "/dashboard/{roleSlug}/presentations",
-// },
+    // {
+    //   title: "Presentations",
+    //   icon: "fas fa-file-powerpoint",
+    //   path: "/dashboard/{roleSlug}/presentations",
+    // },
 
 
 
-],
-"10": [],
-"17": [
-  {
-    title: "Projects",
-    icon: "fas fa-building",
-    path: "/dashboard/{roleSlug}/developer-projects"
-  },
-//   {
-//   title: "Global Projects",
-//   icon: "fas fa-building",
-//   path: "/dashboard/{roleSlug}/property-list"
-// },
-  {
-  title:"Inventory / Units",
-  icon:"fas fa-layer-group",
-  path:"/dashboard/{roleSlug}/developerinventory",
-},
-{
-  title:"Leads Tracking",
-  icon:"fas fa-users",
-  path:"/dashboard/{roleSlug}/developer-leads",
-},
-{
-  title:"Sales Revenue",
-  icon:"fas fa-chart-line",
-  path:"/dashboard/{roleSlug}/revenue",
-},
-{
-  title:"Bookings",
-  icon:"fas fa-file-signature",
-  path:"/dashboard/{roleSlug}/bookings",
-},
-  // {
-  //     title: "Analytics",
-  //     icon: "fas fa-chart-pie",
-  //     path: "/dashboard/{roleSlug}/analytics"
-  //   },
-  {
-  title: "Commission Scheme",
-  icon: "fas fa-percent",
-  path: "/dashboard/{roleSlug}/commission-scheme"
-}
-],
-"15" :[ 
-  {
-    title: "Manage Agents",
-    icon: "fas fa-user-tie",
-    path: "/dashboard/{roleSlug}/manage-agents"
-  },
-  {
-  title: "Performance",
-  icon: "fas fa-chart-line",
-  path: "/dashboard/{roleSlug}/performance"
-},
-{
-  title: "Commission",
-  icon: "fas fa-money-bill-wave",
-  path: "/dashboard/{roleSlug}/commission"
-},
+  ],
+  "10": [],
+  "17": [
+    {
+      title: "Projects",
+      icon: "fas fa-building",
+      path: "/dashboard/{roleSlug}/developer-projects"
+    },
+    //   {
+    //   title: "Global Projects",
+    //   icon: "fas fa-building",
+    //   path: "/dashboard/{roleSlug}/property-list"
+    // },
+    {
+      title: "Inventory / Units",
+      icon: "fas fa-layer-group",
+      path: "/dashboard/{roleSlug}/developerinventory",
+    },
+    {
+      title: "Leads Tracking",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/developer-leads",
+    },
+    {
+      title: "Sales Revenue",
+      icon: "fas fa-chart-line",
+      path: "/dashboard/{roleSlug}/revenue",
+    },
+    {
+      title: "Bookings",
+      icon: "fas fa-file-signature",
+      path: "/dashboard/{roleSlug}/bookings",
+    },
+    // {
+    //     title: "Analytics",
+    //     icon: "fas fa-chart-pie",
+    //     path: "/dashboard/{roleSlug}/analytics"
+    //   },
+    {
+      title: "Commission Scheme",
+      icon: "fas fa-percent",
+      path: "/dashboard/{roleSlug}/commission-scheme"
+    }
+  ],
+  "15": [
+    {
+      title: "Projects", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects",
+      submenus: [
+        { title: "Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects" },
+        { title: "Agent Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}//agency-agent-properties" },
 
-{
-  title: "Lead Management",
-  icon: "fas fa-user-check",
-  path: "/dashboard/{roleSlug}/lead-management"
-},
-// {
-//   title: "Agent Targets",
-//   icon: "fas fa-bullseye",
-//   path: "/dashboard/{roleSlug}/targets"
-// },
-// {
-//   title: "Leaderboard",
-//   icon: "fas fa-trophy",
-//   path: "/dashboard/{roleSlug}/leaderboard"
-// },
-// {
-//   title: "Incentives",
-//   icon: "fas fa-gift",
-//   path: "/dashboard/{roleSlug}/incentives"
-// },
-// {
-//   title: "Branches",
-//   icon: "fas fa-building",
-//   path: "/dashboard/{roleSlug}/branches"
-// },
-// {
-//   title: "Internal Roles",
-//   icon: "fas fa-user-shield",
-//   path: "/dashboard/{roleSlug}/internal-roles"
-// },
-// {
-//   title: "Advanced Analytics",
-//   icon: "fas fa-chart-area",
-//   path: "/dashboard/{roleSlug}/advanced-analytics"
-// },
-// {
-//   title: "Profit Engine",
-//   icon: "fas fa-calculator",
-//   path: "/dashboard/{roleSlug}/profit-engine"
-// },
-{
-  title: "Projects",
-  icon: "fas fa-building",
-  path: "/dashboard/{roleSlug}/projects"
-},
-{
-  title: "Deals",
-  icon: "fas fa-handshake",
-  path: "/dashboard/{roleSlug}/deals"
-},
-{
-  title: "Subscription",
-  icon: "fas fa-credit-card",
-  path: "/dashboard/{roleSlug}/subscription"
-},
 
-// {
-//   title: "Assign Projects",
-//   icon: "fas fa-tasks",
-//   path: "/dashboard/{roleSlug}/assign-projects"
-// }
+      ],
+    },
 
-]
+        {
+      title: "Manage Agents",
+      icon: "fas fa-user-tie",
+      path: "/dashboard/{roleSlug}/manage-agents"
+    },
+    {
+      title: "Lead Management",
+      icon: "fas fa-user-check",
+      path: "/dashboard/{roleSlug}/lead-management"
+    },
+
+    {
+      title: "Deals",
+      icon: "fas fa-handshake",
+      path: "/dashboard/{roleSlug}/deals"
+    },
+    // {
+    //   title: "Assign Projects",
+    //   icon: "fas fa-tasks",
+    //   path: "/dashboard/{roleSlug}/assign-projects"
+    // }
+
+  ]
 
 };
 
 
 const roleSlugMap = {
-  '0': 'superadmin', 
-  '1': 'admin', 
+  '0': 'superadmin',
+  '1': 'admin',
   '2': "customer",
-  '5': 'vendor-b2c', 
-  '6': 'vendor-b2b', 
+  '5': 'vendor-b2c',
+  '6': 'vendor-b2b',
   '7': 'freelancer',
-  '11': 'accountant', 
+  '11': 'accountant',
   '12': 'supervisor',
-    '15': "agency",        // Agency
+  '15': "agency",        // Agency
   '16': "agent",         // Agent
   '17': "developer",
 
@@ -437,23 +389,23 @@ const roleSlugMap = {
 };
 
 const ROLE_MODULE_ORDER = {
-  '0': ['Dashboard', "All Estimation", "Deals", 'Xoto Partners', 'Projects', 'Customers', 'Packages', 'Estimate master', 'Consultation Bookings', 'All Users', 'Products', 'Seller B2C', 'Request', 'Payout', 'Module','properties', 'Permission', 'Role', 'Inventory', 'Settings'],
+  '0': ['Dashboard', "All Estimation", "Deals", 'Xoto Partners', 'Projects', 'Customers', 'Packages', 'Estimate master', 'Consultation Bookings', 'All Users', 'Products', 'Seller B2C', 'Request', 'Payout', 'Module', 'properties', 'Permission', 'Role', 'Inventory', 'Settings'],
   '1': ['Dashboard', 'Grid Admin'],
   '5': ['Dashboard', 'Products', 'My Products', 'Inventory', 'Orders', 'Payout', 'Settings'],
   '6': ['Dashboard', 'Products', 'Projects', 'Inventory', 'Payout'],
   '7': ['Dashboard', 'My Projects', 'All Projects', 'Add Projects', 'Payout'],
-'17': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
+  '17': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
   '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
-'16': ['Dashboard','AgentLead Management'],
-'15': ['Dashboard','Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
+  '16': ['Dashboard', 'AgentLead Management'],
+  '15': ['Dashboard', 'Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
 
 };
 
 
 const Sidebar = () => {
-  const { 
-    sidebarCollapsed, 
+  const {
+    sidebarCollapsed,
     mobileSidebarCollapsed,
     toggleMobileSidebar,
     setMobileSidebarCollapsed
@@ -467,29 +419,29 @@ const Sidebar = () => {
 
   useEffect(() => {
     if (!mobileSidebarCollapsed) {
-      setMobileSidebarCollapsed(true); 
+      setMobileSidebarCollapsed(true);
     }
   }, [location.pathname, setMobileSidebarCollapsed]);
 
   // --- ROLE DETECTION LOGIC ---
-  let roleCode = '0'; 
+  let roleCode = '0';
   let displayRoleName = 'User';
 
   if (user && user.role) {
-      if (typeof user.role === 'string') {
-          roleCode = user.role; 
-          displayRoleName = user.role;
-      } else {
-          roleCode = user.role.code ? user.role.code.toString() : '0';
-          displayRoleName = user.role.name || 'User';
-      }
+    if (typeof user.role === 'string') {
+      roleCode = user.role;
+      displayRoleName = user.role;
+    } else {
+      roleCode = user.role.code ? user.role.code.toString() : '0';
+      displayRoleName = user.role.name || 'User';
+    }
   }
 
 
 
   const roleSlug = roleSlugMap[roleCode] ?? 'dashboard';
   const basePath = `/dashboard/${roleSlug}`;
-  
+
   const isFreelancer = roleCode === '7';
   const isPendingApproval = isFreelancer && freelancer && freelancer.status_info?.status !== 1;
 
@@ -532,26 +484,26 @@ const Sidebar = () => {
     // 3. Sorting
     const ordered = [];
     const customOrder = ROLE_MODULE_ORDER[roleCode] || [];
-    customOrder.forEach(t => { 
-      if (modulesMap[t]) { 
-        ordered.push(modulesMap[t]); 
-        delete modulesMap[t]; 
-      } 
+    customOrder.forEach(t => {
+      if (modulesMap[t]) {
+        ordered.push(modulesMap[t]);
+        delete modulesMap[t];
+      }
     });
-    
+
     // ordered.push(...Object.values(modulesMap));
     // return [...tree, ...ordered];
     const HIDE_MODULES = ['Permission'];
 
-ordered.push(
-  ...Object.values(modulesMap).filter(
-    m => !HIDE_MODULES.includes(m.title)
-  )
-);
+    ordered.push(
+      ...Object.values(modulesMap).filter(
+        m => !HIDE_MODULES.includes(m.title)
+      )
+    );
 
-return [...tree, ...ordered.filter(
-  m => !HIDE_MODULES.includes(m.title)
-)];
+    return [...tree, ...ordered.filter(
+      m => !HIDE_MODULES.includes(m.title)
+    )];
   }, [permissions, basePath, isPendingApproval, roleCode, user, token, roleSlug]);
 
   // --- RENDER ---
@@ -584,10 +536,10 @@ return [...tree, ...ordered.filter(
         <div className={`flex items-center p-4 border-b border-purple-800/50 ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
           <div className="flex flex-col items-center gap-3 flex-1 overflow-hidden">
             <div className="flex flex-col items-center flex-shrink-0">
-              <img 
-                src={sidebarCollapsed ? favicon : logoNew} 
-                alt="Logo" 
-                className={`transition-all duration-300 ${sidebarCollapsed ? 'h-8 w-8' : 'h-10 sm:h-12 lg:h-14 w-auto'}`} 
+              <img
+                src={sidebarCollapsed ? favicon : logoNew}
+                alt="Logo"
+                className={`transition-all duration-300 ${sidebarCollapsed ? 'h-8 w-8' : 'h-10 sm:h-12 lg:h-14 w-auto'}`}
               />
               {!sidebarCollapsed && (
                 <span className="text-white text-[8px] sm:text-[10px] whitespace-nowrap mt-1">

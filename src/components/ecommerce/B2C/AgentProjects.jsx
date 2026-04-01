@@ -108,7 +108,9 @@ export default function AgentProjects() {
       params.append("propertyType", propertyType);
       
       if (approvalStatus !== "all") params.append("approvalStatus", approvalStatus);
-      if (listingStatus !== "active") params.append("listingStatus", listingStatus);
+     if (listingStatus !== "all") {
+  params.append("listingStatus", listingStatus);
+}
       if (search) params.append("search", search);
       if (priceMin) params.append("minPrice", priceMin);
       if (priceMax) params.append("maxPrice", priceMax);
@@ -129,20 +131,12 @@ export default function AgentProjects() {
 
       const res = await apiService.get(`properties/agent/property/secondary?${params.toString()}`);
       
-      const responseData = res?.data || res;
-      
-      if (responseData) {
-        const newProperties = responseData || [];
-        setProperties(prev => append ? [...prev, ...newProperties] : newProperties);
-        setFiltered(newProperties);
-        setTotalItems(responseData.totalItems || 0);
-        setHasMore(pageNo < (responseData.pagination?.totalPages || 1));
-        setStats(responseData.stats || stats);
-      } else {
-        setProperties([]);
-        setFiltered([]);
-        setHasMore(false);
-      }
+const list = res?.data?.data || res?.data || [];
+setProperties(prev => append ? [...prev, ...list] : list);
+setFiltered(list);
+setTotalItems(res?.data?.totalItems || list.length);
+setHasMore(pageNo < (res?.data?.pagination?.totalPages || 1));
+setStats(res?.data?.stats || stats);
     } catch (err) {
       console.error(err);
       message.error("Failed to load properties");
@@ -591,7 +585,7 @@ export default function AgentProjects() {
             <Col xs={24} sm={12} md={8} lg={6} key={p._id}>
               <Card 
                 hoverable 
-                onClick={() => navigate(`/dashboard/agent/projects/${p._id}`)} 
+                onClick={() => navigate(`/dashboard/agent/agent-projects/${p._id}`)} 
                 style={{ borderRadius: 12, overflow: "hidden", border: "1px solid #e8e8e8", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", height: "100%", display: "flex", flexDirection: "column" }} 
                 bodyStyle={{ padding: "20px 16px 16px", flex: 1 }}
               >
