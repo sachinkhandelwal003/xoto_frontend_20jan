@@ -167,7 +167,8 @@ function XobiaChatbot() {
             whileHover={{ scale: 1.05, boxShadow: "0px 10px 30px rgba(139, 92, 246, 0.3)" }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[9999] flex items-center gap-4 bg-white border border-slate-100 py-2 pl-6 pr-2 rounded-full shadow-2xl"
+            // ✅ Button shifted UP using bottom-20 and md:bottom-24
+            className="fixed bottom-12 right-3 md:bottom-18 md:right-10 z-[9999] flex items-center gap-4 bg-white border border-slate-100 py-2 pl-6 pr-2 rounded-full shadow-2xl"
           >
            <div className="flex flex-col text-left">
   <span className="text-[9px] uppercase tracking-widest text-purple-500 font-bold leading-tight">AI Expert</span>

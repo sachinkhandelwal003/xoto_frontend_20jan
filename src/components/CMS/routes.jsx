@@ -181,7 +181,7 @@ import PropertyDetailPage from "./pages/Propertydetailpage";
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
-    2: "customer",
+    2: "customer",          
   5: "vendor-b2c",
   6: "vendor-b2b",
   7: "freelancer",

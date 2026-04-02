@@ -8,11 +8,11 @@ import {
   Home, LayoutDashboard, Compass,
   Image as ImageIcon, Sparkles, Upload,
   X, ArrowRight, CheckCircle2,
-  Download, Crown, Loader2, ArrowLeft, Check
+  Download, Crown, Loader2, ArrowLeft, Check, Edit2
 } from 'lucide-react';
 import {
   Button, Modal, Progress, Card, Tag,
-  notification, Typography, Divider, Spin, Empty 
+  notification, Typography, Divider, Spin, Empty, Input 
 } from 'antd';
 import { useSelector } from 'react-redux';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
@@ -111,6 +111,10 @@ const InteriorPlanner = () => {
   const [designs, setDesigns] = useState([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
 
+  // ✅ Edit Title State
+  const [editingId, setEditingId] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const progress = Math.floor(generationProgress);
@@ -127,10 +131,6 @@ const InteriorPlanner = () => {
   const [showStyleModal, setShowStyleModal] = useState(false);
   const [showElementModal, setShowElementModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-
-  // --- UPGRADE MODAL STATE (Commented for future use) ---
-  // const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  // const [upgradeMessage, setUpgradeMessage] = useState('');
 
   // UI & Results
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
@@ -149,16 +149,13 @@ const InteriorPlanner = () => {
 
     try {
       setLoadingSaved(true);
-      // API call to get history for INTERIOR
       const res = await apiService.get("/ai/get-interior-designs");
-
       const apiDesigns = res?.data || [];
 
-      // Map API response to UI format
       const formatted = apiDesigns.map((item, index) => ({
         id: item._id,
         image: item.imageUrl,
-        title: `Design ${index + 1}`,
+        title: item.title || `Design ${index + 1}`, // ✅ Fallback title handle
         timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
         aiAnalysis: "AI Generated Interior",
         styles: [], 
@@ -166,7 +163,6 @@ const InteriorPlanner = () => {
         fromApi: true,
       }));
 
-      // Set designs (reverse to show newest first)
       setDesigns(formatted.reverse());
     } catch (err) {
       console.error("Failed to load designs", err);
@@ -175,7 +171,6 @@ const InteriorPlanner = () => {
     }
   };
 
-  // Trigger fetch on mount/user change
   useEffect(() => {
     if (user) {
       fetchSavedDesigns();
@@ -190,11 +185,8 @@ const InteriorPlanner = () => {
       setLoadingLibrary(true);
       const res = await apiService.get(`/ai/get-customer-liabrary?designType=interior`);
       const apiDesigns = res?.data || [];
-      console.log("Library Data: ", apiDesigns);
   
-      // Sahi mapping jo 'imageUrl' aur 'images' dono ko handle karegi
       const formatted = apiDesigns.flatMap((d, index) => {
-        // Agar array of images hai
         if (d.images && Array.isArray(d.images)) {
           return d.images.map((img, i) => ({
             id: `${d._id}-${i}`,
@@ -203,20 +195,17 @@ const InteriorPlanner = () => {
             timestamp: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Just now',
           }));
         } 
-        // Agar single imageUrl hai (jo aap upload me bhej rahe ho)
         else {
           return [{
             id: d._id || index,
-            image: d.imageUrl || d.image, // Use imageUrl
+            image: d.imageUrl || d.image,
             title: `Library Design ${index + 1}`,
             timestamp: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Just now',
           }];
         }
       });
   
-      // Jin objects me image null hai unhe filter out kar do
       const validDesigns = formatted.filter(item => item.image);
-  
       setLibraryDesigns(validDesigns.reverse());
     } catch (err) {
       console.error("Failed to load library", err);
@@ -225,12 +214,20 @@ const InteriorPlanner = () => {
     }
   };
   
-  // Jab user load ho ya Library/Upload Modal khule, tabhi data fetch karo
   useEffect(() => {
     if (user && (showLibraryModal || showUploadModal)) {
       fetchLibraryDesigns();
     }
   }, [user, showLibraryModal, showUploadModal]);
+
+
+  // ✅ TITLE EDIT SAVE FUNCTION
+  const saveTitle = (id) => {
+    if (!editTitle.trim()) return;
+    setDesigns(prev => prev.map(d => d.id === id ? { ...d, title: editTitle } : d));
+    setEditingId(null);
+    notification.success({ message: "Design name updated!" });
+  };
 
 
   // --- Handlers ---
@@ -243,64 +240,44 @@ const InteriorPlanner = () => {
     notification.info({ message: 'Form cleared' });
   };
 
-const processUploadedFile = async (file) => {
-  if (!file || !file.type.startsWith("image/")) {
-    notification.error({ message: "Please upload a valid image file." });
-    return;
-  }
-
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    // 1️⃣ Upload to S3
-    const uploadRes = await apiService.post("upload", formData);
-
-    const uploadedUrl = uploadRes?.file?.url;
-
-    if (!uploadedUrl) {
-      throw new Error("Image upload failed");
+  const processUploadedFile = async (file) => {
+    if (!file || !file.type.startsWith("image/")) {
+      notification.error({ message: "Please upload a valid image file." });
+      return;
     }
 
-    // 2️⃣ If logged in → save to backend
-    if (isCustomerLoggedIn) {
-      await apiService.post("ai/post-customer-liabrary", {
-        designType: "interior",
-        imageUrl: uploadedUrl,
-      });
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-      fetchLibraryDesigns();
-    } 
-    // 3️⃣ If guest → save in localStorage
-    else {
-      const existing =
-        JSON.parse(localStorage.getItem("guestLibrary_interior")) || [];
+      const uploadRes = await apiService.post("upload", formData);
+      const uploadedUrl = uploadRes?.file?.url;
 
-      existing.push(uploadedUrl);
+      if (!uploadedUrl) throw new Error("Image upload failed");
 
-      localStorage.setItem(
-        "guestLibrary_interior",
-        JSON.stringify(existing)
-      );
+      if (isCustomerLoggedIn) {
+        await apiService.post("ai/post-customer-liabrary", {
+          designType: "interior",
+          imageUrl: uploadedUrl,
+        });
+        fetchLibraryDesigns();
+      } 
+      else {
+        const existing = JSON.parse(localStorage.getItem("guestLibrary_interior")) || [];
+        existing.push(uploadedUrl);
+        localStorage.setItem("guestLibrary_interior", JSON.stringify(existing));
+      }
+
+      setUploadedFile(file);
+      setSelectedImage(uploadedUrl);
+      setShowUploadModal(false);
+      notification.success({ message: "File uploaded successfully" });
+
+    } catch (error) {
+      console.error("Upload process failed:", error);
+      notification.error({ message: "Upload Failed", description: error?.message || "Could not upload image." });
     }
-
-    // 4️⃣ Update UI
-    setUploadedFile(file);
-    setSelectedImage(uploadedUrl);
-    setShowUploadModal(false);
-
-    notification.success({
-      message: "File uploaded successfully",
-    });
-
-  } catch (error) {
-    console.error("Upload process failed:", error);
-    notification.error({
-      message: "Upload Failed",
-      description: error?.message || "Could not upload image.",
-    });
-  }
-};
+  };
 
   const handleGenerateClick = async () => {
     if (!selectedImage) {
@@ -308,47 +285,41 @@ const processUploadedFile = async (file) => {
       return;
     }
 
-      if (!isCustomerLoggedIn) {
-    setPendingGeneration(true); 
-    setShowAuthModal(true);
-    return;
-  }
+    if (!isCustomerLoggedIn) {
+      setPendingGeneration(true); 
+      setShowAuthModal(true);
+      return;
+    }
 
     generateAIDesigns(user);
   };
 
- const handleAuthSuccess = async (userData) => {
-  setShowAuthModal(false);
+  const handleAuthSuccess = async (userData) => {
+    setShowAuthModal(false);
 
-  // 🔥 Move guest interior images to backend
-  const guestImages =
-    JSON.parse(localStorage.getItem("guestLibrary_interior")) || [];
+    const guestImages = JSON.parse(localStorage.getItem("guestLibrary_interior")) || [];
 
-  if (guestImages.length > 0) {
-    try {
-      for (let img of guestImages) {
-        await apiService.post("ai/post-customer-liabrary", {
-          designType: "interior",
-          imageUrl: img,
-        });
+    if (guestImages.length > 0) {
+      try {
+        for (let img of guestImages) {
+          await apiService.post("ai/post-customer-liabrary", {
+            designType: "interior",
+            imageUrl: img,
+          });
+        }
+        localStorage.removeItem("guestLibrary_interior");
+        fetchLibraryDesigns();
+        notification.success({ message: "Your previous uploads added to library!" });
+      } catch (err) {
+        console.error("Guest migration failed:", err);
       }
-
-      localStorage.removeItem("guestLibrary_interior");
-      fetchLibraryDesigns();
-
-      notification.success({
-        message: "Your previous uploads added to library!",
-      });
-    } catch (err) {
-      console.error("Guest migration failed:", err);
     }
-  }
 
-  if (pendingGeneration) {
-    setPendingGeneration(false);
-    generateAIDesigns(userData);
-  }
-};
+    if (pendingGeneration) {
+      setPendingGeneration(false);
+      generateAIDesigns(userData);
+    }
+  };
 
   const generateAIDesigns = async (currentUser) => {
     setIsGenerating(true);
@@ -356,7 +327,6 @@ const processUploadedFile = async (file) => {
 
     const formData = new FormData();
 
-    // IMAGE
     if (uploadedFile) {
       formData.append('image', uploadedFile);
     } else {
@@ -370,64 +340,37 @@ const processUploadedFile = async (file) => {
       }
     }
 
-    // REQUIRED API FIELDS
     formData.append(
       'styleName',
-      selectedStyles.length > 0
-        ? interStyles.find(s => s.value === selectedStyles[0])?.label
-        : 'Modern'
+      selectedStyles.length > 0 ? interStyles.find(s => s.value === selectedStyles[0])?.label : 'Modern'
     );
 
     formData.append(
       'elements',
-      selectedElements.length > 0
-        ? selectedElements
-            .map(e => interElements.find(el => el.value === e)?.label)
-            .join(', ')
-        : 'Sofa, Coffee Table'
+      selectedElements.length > 0 ? selectedElements.map(e => interElements.find(el => el.value === e)?.label).join(', ') : 'Sofa, Coffee Table'
     );
 
-    formData.append(
-      'description',
-      specificRequirement || 'A professional interior design'
-    );
+    formData.append('description', specificRequirement || 'A professional interior design');
 
     formData.append(
       'roomType',
-      selectedRoomType
-        ? roomTypes.find(r => r.value === selectedRoomType)?.label
-        : 'Living Room'
+      selectedRoomType ? roomTypes.find(r => r.value === selectedRoomType)?.label : 'Living Room'
     );
 
     formData.append('userId', currentUser?._id);
 
     const interval = setInterval(() => {
-      setGenerationProgress(prev =>
-        prev < 95 ? prev + (95 - prev) * 0.1 : 95
-      );
+      setGenerationProgress(prev => prev < 95 ? prev + (95 - prev) * 0.1 : 95);
     }, 500);
 
     try {
-      const response = await apiService.post(
-        '/ai/generate-interior',
-        formData,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' },
-          timeout: 120000,
-        }
-      );
+      const response = await apiService.post('/ai/generate-interior', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 120000,
+      });
 
       const resData = response;
 
-      // --- LIMIT CHECK (Commented for future use) ---
-      // if (resData.status === false && resData.aiImageGeneration === false) {
-      //   setIsGenerating(false);
-      //   setUpgradeMessage(resData.message || "Limit reached. Upgrade to continue.");
-      //   setShowUpgradeModal(true);
-      //   return; 
-      // }
-
-      // Success
       if (resData?.imageUrl) {
         const newDesign = {
           id: Date.now(),
@@ -458,70 +401,41 @@ const processUploadedFile = async (file) => {
           setShowGeneratedModal(true);
         }, 500);
       } else {
-          // If response does not have imageUrl but also didn't throw an error
-          setIsGenerating(false);
-          notification.error({ message: 'Generation Failed', description: resData.message || 'Could not generate image.' });
+        setIsGenerating(false);
+        notification.error({ message: 'Generation Failed', description: resData.message || 'Could not generate image.' });
       }
     } catch (error) {
       console.error('Generation failed:', error);
-      
       const errRes = error.response?.data;
 
       if (errRes?.error?.message === "Customer not found") {
         setIsGenerating(false); 
-        notification.error({
-          message: 'Account Required',
-          description: errRes.error.message, 
-        });
+        notification.error({ message: 'Account Required', description: errRes.error.message });
         setShowAuthModal(true);
         return;
       }
 
-      // --- LIMIT ERROR CHECK (Commented for future use) ---
-      // if (errRes && (errRes.aiImageGeneration === false || errRes.status === false)) {
-      //     setIsGenerating(false);
-      //     setUpgradeMessage(errRes.message || "Please upgrade to generate more images.");
-      //     setShowUpgradeModal(true);
-      //     return;
-      // }
-
-      // Generic error handling
       setIsGenerating(false);
-      notification.error({
-          message: 'Generation Error',
-          description: errRes?.message || error.message || "Something went wrong."
-      });
+      notification.error({ message: 'Generation Error', description: errRes?.message || error.message || "Something went wrong." });
       
     } finally {
       clearInterval(interval);
     }
   };
 
-const downloadImage = async (imageUrl, name) => {
-  try {
-    const key = imageUrl.split(".amazonaws.com/")[1];
-
-    if (!key) {
-      notification.error({
-        message: "Invalid Image URL"
-      });
-      return;
+  const downloadImage = async (imageUrl, name) => {
+    try {
+      const key = imageUrl.split(".amazonaws.com/")[1];
+      if (!key) {
+        notification.error({ message: "Invalid Image URL" });
+        return;
+      }
+      await apiService.download(`/download-pdf?key=${encodeURIComponent(key)}`, `${name}_${Date.now()}.pdf`);
+    } catch (error) {
+      console.error("Download error:", error);
+      notification.error({ message: "Download Failed", description: "PDF could not be generated." });
     }
-
-    // Backend ki PDF API call karo, seedha file download ho jayegi
-    await apiService.download(
-      `/download-pdf?key=${encodeURIComponent(key)}`,
-      `${name}_${Date.now()}.pdf`
-    );
-
-  } catch (error) {
-    console.error("Download error:", error);
-    notification.error({
-      message: "Download Failed",
-      description: "PDF could not be generated."
-    });
-  }
-};
+  };
 
   const MobileTabItem = ({ icon: Icon, label, id, onClick }) => (
     <button
@@ -585,7 +499,6 @@ const downloadImage = async (imageUrl, name) => {
         
         {/* LEFT PANEL */}
         <div className="w-full lg:w-[460px] bg-white h-full overflow-y-auto p-4 lg:p-6 border-r border-gray-400 shrink-0 z-10 custom-scrollbar pb-24 lg:pb-6">
-          {/* Mobile Header */}
           <div className="lg:hidden flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <Link to="/"><ArrowLeft className="text-gray-600" /></Link>
@@ -594,7 +507,6 @@ const downloadImage = async (imageUrl, name) => {
             {isCustomerLoggedIn && <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">Pro</div>}
           </div>
 
-          {/* Desktop Header */}
           <div className="hidden lg:flex rounded-2xl p-4 mb-8 justify-between items-center shadow-sm" style={{ backgroundColor: BRAND_PURPLE }}>
             <div className="flex items-center gap-3">
               <span className="font-bold text-lg text-white">Interior</span>
@@ -633,29 +545,16 @@ const downloadImage = async (imageUrl, name) => {
             )}
           </div>
 
-          {/* Configuration Grid */}
           <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-6 lg:mb-8">
-            <button
-              onClick={() => setShowRoomTypeModal(true)}
-              className="bg-[#F3F4F6] hover:bg-gray-100 transition-colors rounded-[20px] lg:rounded-[24px] p-4 lg:p-6 flex flex-col items-center justify-center gap-3 lg:gap-4 aspect-square relative group"
-            >
+            <button onClick={() => setShowRoomTypeModal(true)} className="bg-[#F3F4F6] hover:bg-gray-100 transition-colors rounded-[20px] lg:rounded-[24px] p-4 lg:p-6 flex flex-col items-center justify-center gap-3 lg:gap-4 aspect-square relative group">
               <div className="bg-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
                 <Home className="text-gray-500 w-5 h-5 lg:w-6 lg:h-6" />
               </div>
-
-              <span className="font-bold text-gray-700 text-sm lg:text-base">
-                Room Type
-              </span>
-
+              <span className="font-bold text-gray-700 text-sm lg:text-base">Room Type</span>
               <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                 {selectedRoomType ? 'Selected' : 'Choose'}
               </span>
-
-              {selectedRoomType && (
-                <div className="absolute top-2 right-2 text-green-500 bg-white rounded-full p-1 shadow-sm">
-                  <CheckCircle2 size={16} />
-                </div>
-              )}
+              {selectedRoomType && <div className="absolute top-2 right-2 text-green-500 bg-white rounded-full p-1 shadow-sm"><CheckCircle2 size={16} /></div>}
             </button>
 
             <button onClick={() => setShowStyleModal(true)} className="bg-[#F3F4F6] hover:bg-gray-100 transition-colors rounded-[20px] lg:rounded-[24px] p-4 lg:p-6 flex flex-col items-center justify-center gap-3 lg:gap-4 aspect-square relative group">
@@ -681,7 +580,6 @@ const downloadImage = async (imageUrl, name) => {
             </button>
           </div>
 
-          {/* Custom Instructions */}
           <div className="bg-[#F3F4F6] rounded-2xl p-4 lg:p-5 mb-6 lg:mb-8 border border-transparent hover:border-gray-200">
             <div className="flex justify-between items-center mb-2">
               <span className="font-bold text-gray-800 text-sm lg:text-base">Custom Instructions</span>
@@ -695,7 +593,6 @@ const downloadImage = async (imageUrl, name) => {
             />
           </div>
 
-          {/* Generate Button */}
           <button
             onClick={handleGenerateClick}
             disabled={isGenerating}
@@ -717,7 +614,7 @@ const downloadImage = async (imageUrl, name) => {
             )}
           </button>
 
-          {/* Mobile Results Preview */}
+          {/* ✅ MOBILE RESULTS PREVIEW WITH EDIT TITLE */}
           <div className="lg:hidden mt-10">
             {designs.length > 0 && (
               <>
@@ -729,14 +626,34 @@ const downloadImage = async (imageUrl, name) => {
                   {designs.map(d => (
                     <div key={d.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
                       <img src={d.image} className="w-full h-48 object-cover" alt="Result" />
-                      <div className="p-4 flex justify-between items-center">
-                        <div>
-                          <h4 className="font-bold text-sm text-gray-800">{d.title}</h4>
-                          <span className="text-xs text-gray-400">{d.timestamp}</span>
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          
+                          {/* Title Edit Logic */}
+                          {editingId === d.id ? (
+                            <div className="flex items-center gap-2 w-full pr-2">
+                              <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} onPressEnter={() => saveTitle(d.id)} size="small" autoFocus />
+                              <CheckCircle2 size={20} className="text-green-500 cursor-pointer" onClick={() => saveTitle(d.id)} />
+                              <X size={20} className="text-red-500 cursor-pointer" onClick={() => setEditingId(null)} />
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 cursor-pointer group/title max-w-[80%]" onClick={() => { setEditingId(d.id); setEditTitle(d.title); }}>
+                              <h4 className="font-bold text-sm text-gray-800 truncate">{d.title}</h4>
+                              <Edit2 size={12} className="text-gray-400 opacity-0 group-hover/title:opacity-100 transition-opacity" />
+                            </div>
+                          )}
+
+                          {/* Details Button */}
+                          {editingId !== d.id && (
+                            <button onClick={() => {
+                              setCurrentResult({ url: d.image, desc: d.aiAnalysis, roomType: d.roomType, styles: d.styles || [], elements: d.elements || [], instruction: d.instruction || '' });
+                              setShowGeneratedModal(true);
+                            }} className="p-2 bg-gray-50 rounded-full shrink-0">
+                              <ArrowRight size={16} className="text-purple-600" />
+                            </button>
+                          )}
                         </div>
-                        <button onClick={() => { setCurrentResult({ url: d.image, desc: d.aiAnalysis }); setShowGeneratedModal(true); }} className="p-2 bg-gray-50 rounded-full">
-                          <ArrowRight size={16} className="text-purple-600" />
-                        </button>
+                        <span className="text-xs text-gray-400">{d.timestamp}</span>
                       </div>
                     </div>
                   ))}
@@ -750,30 +667,16 @@ const downloadImage = async (imageUrl, name) => {
         <div className="hidden lg:block flex-1 bg-[#F8F9FC] p-12 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
             <div className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-  
-  {/* Left Content */}
-  <div>
-    <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-2">
-      Your Masterpieces
-    </h1>
-    <p className="text-gray-500 font-medium text-base md:text-lg">
-      AI-generated interiors created by you.
-    </p>
-  </div>
-
-  {/* Right Button */}
-  <div className="flex md:justify-end">
-    <Button 
-      type="default" 
-      onClick={() => setShowLibraryModal(true)} 
-      className="h-10 px-5 rounded-xl font-bold text-purple-700 border border-purple-200 hover:bg-purple-50 transition"
-    >
-      View Library
-    </Button>
-  </div>
-
-</div>
-
+              <div>
+                <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-2">Your Masterpieces</h1>
+                <p className="text-gray-500 font-medium text-base md:text-lg">AI-generated interiors created by you.</p>
+              </div>
+              <div className="flex md:justify-end">
+                <Button type="default" onClick={() => setShowLibraryModal(true)} className="h-10 px-5 rounded-xl font-bold text-purple-700 border border-purple-200 hover:bg-purple-50 transition">
+                  View Library
+                </Button>
+              </div>
+            </div>
 
             {/* FETCHING SAVED DESIGNS LOGIC */}
             {loadingSaved ? (
@@ -794,22 +697,62 @@ const downloadImage = async (imageUrl, name) => {
                   <Card key={d.id} hoverable className="rounded-[32px] overflow-hidden border-none shadow-sm hover:shadow-2xl transition-all duration-300 group" bodyStyle={{ padding: 0 }}>
                     <div className="relative aspect-[4/3] overflow-hidden">
                       <img src={d.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Design" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-6 backdrop-blur-[3px]">
-                        <button onClick={() => downloadImage(d.image, 'design')} className="flex flex-col items-center gap-3 text-white hover:scale-110 transition-transform group/btn">
-                          <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover/btn:bg-white/30 border border-white/30">
-                            <Download size={24} />
-                          </div>
-                          <span className="text-xs font-bold tracking-widest uppercase">Download</span>
+                      
+                      {/* ✅ OVERLAY WITH HORIZONTAL PILL BUTTONS */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 backdrop-blur-[3px]">
+                        
+                        <button 
+                          onClick={() => { 
+                            setCurrentResult({ 
+                              url: d.image, desc: d.aiAnalysis, roomType: d.roomType,
+                              styles: d.styles || [], elements: d.elements || [], instruction: d.instruction || ''
+                            }); 
+                            setShowGeneratedModal(true); 
+                          }} 
+                          className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white px-5 py-2.5 rounded-full transition-all hover:scale-105 shadow-lg"
+                        >
+                          <span className="text-xs font-bold tracking-widest uppercase">View</span>
+                          <ArrowRight size={16} />
+                        </button>
+
+                        <button 
+                          onClick={() => downloadImage(d.image, 'design')} 
+                          className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white px-5 py-2.5 rounded-full transition-all hover:scale-105 shadow-lg"
+                        >
+                          <span className="text-xs font-bold tracking-widest uppercase">Save</span>
+                          <Download size={16} />
                         </button>
                       </div>
+
                       <div className="absolute top-5 left-5">
                         <Tag color="#5c039b" className="text-purple-700 font-bold border-none px-3 py-1.5 rounded-full shadow-lg">AI GENERATED</Tag>
                       </div>
                     </div>
-                    <div className="p-6">
-                      <h3 className="font-bold text-xl text-gray-900 mb-1">{d.title}</h3>
-                      <p className="text-gray-400 text-sm">{d.timestamp}</p>
+
+                    <div className="p-6 relative">
+                      {/* ✅ Edit Title Desktop Logic */}
+                      <div className="flex justify-between items-start mb-2">
+                        {editingId === d.id ? (
+                           <div className="flex items-center gap-2 w-full pr-4">
+                             <Input 
+                               value={editTitle} 
+                               onChange={(e) => setEditTitle(e.target.value)} 
+                               onPressEnter={() => saveTitle(d.id)} 
+                               size="small" autoFocus className="rounded-md"
+                             />
+                             <CheckCircle2 size={20} className="text-green-500 cursor-pointer shrink-0" onClick={() => saveTitle(d.id)} />
+                             <X size={20} className="text-red-500 cursor-pointer shrink-0" onClick={() => setEditingId(null)} />
+                           </div>
+                        ) : (
+                           <div className="flex items-center gap-2 cursor-pointer group/title max-w-[80%]" onClick={() => { setEditingId(d.id); setEditTitle(d.title); }}>
+                             <h3 className="font-bold text-xl text-gray-900 truncate">{d.title}</h3>
+                             <Edit2 size={14} className="text-gray-400 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0" />
+                           </div>
+                        )}
+                      </div>
+                      <p className="text-gray-400 text-sm mb-3">{d.timestamp}</p>
                     </div>
+
                   </Card>
                 ))}
               </div>
@@ -828,33 +771,6 @@ const downloadImage = async (imageUrl, name) => {
 
       {/* MODALS */}
       <LeadGenerationModal visible={showAuthModal} onCancel={() => setShowAuthModal(false)} onAuthSuccess={handleAuthSuccess} />
-
-      {/* --- UPGRADE MODAL (Commented for future use) --- */}
-      {/* <Modal
-        open={showUpgradeModal}
-        footer={null}
-        onCancel={() => setShowUpgradeModal(false)}
-        width={500}
-        centered
-        bodyStyle={{ padding: 0, borderRadius: '24px', overflow: 'hidden' }}
-      >
-        <div className="p-8 text-center bg-gradient-to-b from-white to-purple-50">
-            <div className="w-20 h-20 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md border border-yellow-200">
-                <Crown size={40} className="text-yellow-600" fill="currentColor" fillOpacity={0.2} />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">Unlock Limitless Creativity</h3>
-            <p className="text-gray-500 mb-8 leading-relaxed px-4">
-                {upgradeMessage || "You've reached your limit. Upgrade to Pro to continue designing."}
-            </p>
-            <div className="space-y-3">
-                <Link to="/subscription/plans">
-                    <Button type="primary" size="large" block className="h-12 text-base font-bold rounded-xl shadow-lg shadow-purple-200" style={{ background: 'linear-gradient(135deg, #5C039B 0%, #8E2DE2 100%)', border: 'none' }} onClick={() => setShowUpgradeModal(false)}>View Upgrade Plans</Button>
-                </Link>
-                <Button type="text" block className="text-gray-400" onClick={() => setShowUpgradeModal(false)}>Maybe Later</Button>
-            </div>
-        </div>
-      </Modal> 
-      */}
 
       <Modal open={showGeneratedModal} footer={null} onCancel={() => setShowGeneratedModal(false)} width={1000} centered bodyStyle={{ padding: 0, borderRadius: '24px', overflow: 'hidden' }} style={{ maxWidth: '95vw' }}>
         <div className="flex flex-col h-[80vh] lg:h-[500px] lg:flex-row">
@@ -1022,8 +938,6 @@ const downloadImage = async (imageUrl, name) => {
         </div>
       </Modal>
 
-
-
          <Modal
         open={showLibraryModal}
         footer={null}
@@ -1092,6 +1006,7 @@ const downloadImage = async (imageUrl, name) => {
           Browse Local Files
         </Button>
       </Modal>
+
     <Modal
       open={showRoomTypeModal}
       footer={null}
@@ -1147,7 +1062,6 @@ const downloadImage = async (imageUrl, name) => {
         <div className="fixed inset-0 z-[100] bg-white/90 lg:bg-white/80 backdrop-blur-xl flex flex-col items-center justify-center animate-in fade-in duration-500 p-4">
           <div className="relative mb-8 lg:mb-12 w-32 h-32 lg:w-48 lg:h-48 mx-auto flex items-center justify-center">
             <div className="absolute -inset-6 lg:-inset-8 bg-purple-500/20 blur-2xl rounded-full animate-pulse" />
-            {/* <img src={logoNew} alt="Logo" className="relative max-w-full max-h-full object-contain animate-bounce" /> */}
           </div>
           <div className="text-center mb-6 lg:mb-8 px-4">
             <h2 className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight leading-tight">
@@ -1195,28 +1109,28 @@ const downloadImage = async (imageUrl, name) => {
           </div>
 
          <div className="w-full max-w-xs lg:w-80">
-  <Progress
-    percent={progress}
-    strokeColor={{ "0%": "#8E2DE2", "100%": BRAND_PURPLE }}
-    status="active"
-    strokeWidth={10}
-    showInfo={false}
-  />
+          <Progress
+            percent={progress}
+            strokeColor={{ "0%": "#8E2DE2", "100%": BRAND_PURPLE }}
+            status="active"
+            strokeWidth={10}
+            showInfo={false}
+          />
 
-  <div className="mt-4 text-center">
-    <p className="text-xs lg:text-sm font-bold uppercase tracking-widest text-purple-400">
-      {title}
-    </p>
-    <p className="mt-1 text-[10px] lg:text-xs text-gray-400">
-      {subtitle}
-    </p>
-  </div>
+          <div className="mt-4 text-center">
+            <p className="text-xs lg:text-sm font-bold uppercase tracking-widest text-purple-400">
+              {title}
+            </p>
+            <p className="mt-1 text-[10px] lg:text-xs text-gray-400">
+              {subtitle}
+            </p>
+          </div>
 
-  <div className="flex justify-between mt-3 text-[10px] lg:text-xs font-bold text-gray-400 uppercase tracking-widest">
-    <span>Progress</span>
-    <span>{progress}%</span>
-  </div>
-</div>
+          <div className="flex justify-between mt-3 text-[10px] lg:text-xs font-bold text-gray-400 uppercase tracking-widest">
+            <span>Progress</span>
+            <span>{progress}%</span>
+          </div>
+        </div>
 
         </div>
       )}
