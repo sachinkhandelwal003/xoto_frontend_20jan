@@ -664,6 +664,7 @@ const InteriorPlanner = () => {
         </div>
 
         {/* RIGHT: RESULTS GALLERY (Desktop Only) */}
+        {/* add new logic */}
         <div className="hidden lg:block flex-1 bg-[#F8F9FC] p-12 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
             <div className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
