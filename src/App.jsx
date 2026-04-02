@@ -337,11 +337,12 @@ function App() {
               <Route
                 path="/dashboard/:roleSlug/*"
                 element={
-                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17"]}>
+                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17","18"]}>
                     <CmsApp />
                   </PrivateRoute>
                 }
               />
+             
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
