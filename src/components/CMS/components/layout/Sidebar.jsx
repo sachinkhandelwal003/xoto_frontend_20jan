@@ -405,6 +405,45 @@ const CUSTOM_ROLE_LINKS = {
 //   path: "/dashboard/{roleSlug}/assign-projects"
 // }
 
+],
+
+"18": [
+   {
+    title: "Agents",
+    icon: "fas fa-users",
+    path: "/dashboard/{roleSlug}/agents",
+  },
+  {
+    title: "Clients",
+    icon: "fas fa-user-tie",
+    path: "/dashboard/{roleSlug}/clients",
+  },
+  {
+    title: "Cases",
+    icon: "fas fa-folder-open",
+    path: "/dashboard/{roleSlug}/cases",
+    submenus: [
+      { title: "All Cases", path: "/dashboard/{roleSlug}/cases" },
+      { title: "In Progress", path: "/dashboard/{roleSlug}/cases/in-progress" },
+      { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+    ],
+  
+  },
+  {
+    title: "Commission",
+    icon: "fas fa-rupee-sign",
+    path: "/dashboard/{roleSlug}/commission",
+  },
+  {
+    title: "Bank Library",
+    icon: "fas fa-university",
+    path: "/dashboard/{roleSlug}/bank-library",
+  },
+  {
+    title: "Reports",
+    icon: "fas fa-chart-bar",
+    path: "/dashboard/{roleSlug}/reports",
+  },
 ]
 
 };
@@ -422,6 +461,7 @@ const roleSlugMap = {
     '15': "agency",        // Agency
   '16': "agent",         // Agent
   '17': "developer",
+  '18': "vault-admin" //vault
 
 
 };
@@ -437,7 +477,7 @@ const ROLE_MODULE_ORDER = {
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
 '16': ['Dashboard','AgentLead Management'],
 '15': ['Dashboard','Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
-
+'18 ': ['Dashboard','Agents','Clients','Cases','Commission','Bank Library','Reports'],
 };
 
 
