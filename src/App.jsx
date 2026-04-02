@@ -96,6 +96,7 @@ import ResetPassword from "./components/CMS/pages/reset-password";
 import CheckoutPage from "./components/ecommerce/B2C/products/CheckoutPage";
 import PaymentSuccess from "./components/ecommerce/B2C/products/PaymentSuccess";
 import PropertyRent from "./component/Rent/SearchSection";
+import PropertyListings from "./component/Rent/Propertylistings";
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -297,6 +298,8 @@ function App() {
 
                {/* ✅ Rent Search */}
          <Route path="/rent/search" element={<PropertyRent />} />
+         <Route path="/rent/listings" element={<PropertyListings />} />
+
 
               <Route path="/ecommerce/seller" element={<SellerPage />} />
               <Route path="/ecommerce/seller/b2b" element={<Sellerb2b />} />
