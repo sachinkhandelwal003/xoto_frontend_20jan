@@ -34,6 +34,10 @@ export default function HeroSection() {
   const [actionType, setActionType] = useState("Buy");
   const [loading, setLoading] = useState(false);
   
+  // ✅ NEW STATES: Dono Checkboxes ko track karne ke liye
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [marketingAccepted, setMarketingAccepted] = useState(false);
+
   const [api, contextHolder] = notification.useNotification();
 
   useEffect(() => {
@@ -210,7 +214,6 @@ if (!isPhoneValid) {
             
             // Location Data
             city: sellLocationData.city,
-            // (You can pass country/state in description or separate fields if backend supports)
             description: `${sellForm.description} \n\n[Location: ${sellLocationData.city}, ${sellLocationData.state}, ${sellLocationData.country}]`,
 
             area: sellForm.area,
@@ -232,6 +235,9 @@ if (!isPhoneValid) {
         } else {
           setSellForm({ first_name: "", last_name: "", email: "", country_code: "971", mobile: "", listing_type: "", location_country: null, state: null, city: null, area: "", project_name: "", bedroom_config: "", price: "", description: "", preferred_contact: "call" });
         }
+        // ✅ Dono Checkboxes Reset
+        setTermsAccepted(false); 
+        setMarketingAccepted(false);
       }
     } catch (err) {
       console.error("Lead submission error:", err);
@@ -257,20 +263,11 @@ if (!isPhoneValid) {
           </h1>
 
           <div className="flex items-center gap-3 flex-wrap justify-center">
-            {/* <button className="px-10 py-4 bg-[#5C039B] text-white font-extrabold rounded-lg shadow-md hover:bg-[#5C039B] hover:scale-105 transition-all">
-              {t("hero.buttons.rent")}
-            </button> */}
-<div className="relative inline-block">
-  {/* Coming Soon Tag */}
-  {/* <span className="absolute -top-3 -right-1 bg-red-100 text-black text-[10px] font-bold px-2 py-1 rounded-full z-10 shadow-sm uppercase tracking-tighter">
-    Coming Soon
-  </span> */}
-
-  {/* Your Button */}
-  <button onClick={() => handleOpenModal("Buy")}  className="px-10 py-4 bg-[#5C039B] text-white font-extrabold rounded-lg shadow-md hover:bg-[#5C039B] hover:scale-105 transition-all">
-    {t("hero.buttons.rent")}
-  </button>
-</div>
+            <div className="relative inline-block">
+              <button onClick={() => handleOpenModal("Buy")}  className="px-10 py-4 bg-[#5C039B] text-white font-extrabold rounded-lg shadow-md hover:bg-[#5C039B] hover:scale-105 transition-all">
+                {t("hero.buttons.rent")}
+              </button>
+            </div>
             <button onClick={() => handleOpenModal("Buy")} className="px-10 py-4 bg-transparent border-2 border-white text-white font-extrabold rounded-lg shadow-md hover:bg-[#5C039B] hover:border-[#5C039B] hover:scale-105 transition-all">
               {t("hero.buttons.find")}
             </button>
@@ -291,7 +288,7 @@ if (!isPhoneValid) {
 
       {/* PREMIUM MODAL */}
       {openModal && (
-<div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="bg-gradient-to-br from-white via-blue-50 to-purple-50 max-w-4xl w-full rounded-3xl shadow-2xl relative max-h-[95vh] overflow-y-auto  border border-white/20">
 
             <button onClick={() => setOpenModal(false)} className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-pink-500 text-white w-10 h-10 rounded-full text-2xl hover:scale-110 transition-all duration-300 flex items-center justify-center shadow-lg z-20">
@@ -326,8 +323,7 @@ if (!isPhoneValid) {
                         <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"><User size={20} /></div>
                     </div>
                     <div className="relative">
-                        <input name="last_name" value={actionType === "Buy" ? buyForm.last_name : sellForm.last_name} onChange={actionType === "Buy" ? handleBuyChange : handleSellChange} placeholder={`${t("form.lastName")} *`}
- required className="premium-input pl-12" />
+                        <input name="last_name" value={actionType === "Buy" ? buyForm.last_name : sellForm.last_name} onChange={actionType === "Buy" ? handleBuyChange : handleSellChange} placeholder={`${t("form.lastName")} *`} required className="premium-input pl-12" />
                         <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"><User size={20} /></div>
                     </div>
                     </div>
@@ -360,8 +356,7 @@ if (!isPhoneValid) {
                             </Select>
                         </div>
                         <div className="relative flex-1">
-                            <input name="mobile" type="text" inputMode="numeric" value={actionType === "Buy" ? buyForm.mobile : sellForm.mobile} onChange={actionType === "Buy" ? handleBuyChange : handleSellChange} placeholder={`${t("form.phone")} *`}
- required className="premium-input pl-12 h-[50px]" />
+                            <input name="mobile" type="text" inputMode="numeric" value={actionType === "Buy" ? buyForm.mobile : sellForm.mobile} onChange={actionType === "Buy" ? handleBuyChange : handleSellChange} placeholder={`${t("form.phone")} *`} required className="premium-input pl-12 h-[50px]" />
                             <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"><Phone size={20} /></div>
                         </div>
                     </div>
@@ -369,8 +364,7 @@ if (!isPhoneValid) {
                     {actionType === "Buy" ? (
                     <>
                         <div className="relative">
-                        <input name="desired_bedrooms" value={buyForm.desired_bedrooms} onChange={handleBuyChange} placeholder={`${t("form.bedrooms")} *`}
- required className="premium-input pl-12" />
+                        <input name="desired_bedrooms" value={buyForm.desired_bedrooms} onChange={handleBuyChange} placeholder={`${t("form.bedrooms")} *`} required className="premium-input pl-12" />
                         <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"><BedDouble size={20} /></div>
                         </div>
 
@@ -400,9 +394,8 @@ if (!isPhoneValid) {
                                 <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"><Home size={20} /></div>
                             </div>
 
-                            {/* --- LOCATION DROPDOWNS (REPLACING MANUAL CITY) --- */}
+                            {/* --- LOCATION DROPDOWNS --- */}
                             
-                            {/* Country Select */}
                             <div className="relative">
                                 <Select
                                     placeholder="Select Country"
@@ -419,7 +412,6 @@ if (!isPhoneValid) {
                                 </Select>
                             </div>
 
-                            {/* State Select */}
                             <div className="relative">
                                 <Select
                                     placeholder="Select State"
@@ -436,7 +428,6 @@ if (!isPhoneValid) {
                                 </Select>
                             </div>
 
-                            {/* City Select */}
                             <div className="relative">
                                 <Select
                                     placeholder={t("form.sell.city")}
@@ -468,19 +459,19 @@ if (!isPhoneValid) {
                                 <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"><BedDouble size={20} /></div>
                             </div>
                            <div className="relative">
-    <input 
-        type="number"  // Yahan change kiya hai
-        name="price" 
-        value={sellForm.price} 
-        onChange={handleSellChange} 
-        placeholder={t("form.sell.price")} 
-        className="premium-input pl-12" 
-        onWheel={(e) => e.target.blur()} // Mouse scroll se number change hona rokne ke liye
-    />
-    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600">
-        <Banknote size={20} />
-    </div>
-</div>
+                                <input 
+                                    type="number" 
+                                    name="price" 
+                                    value={sellForm.price} 
+                                    onChange={handleSellChange} 
+                                    placeholder={t("form.sell.price")} 
+                                    className="premium-input pl-12" 
+                                    onWheel={(e) => e.target.blur()} 
+                                />
+                                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600">
+                                    <Banknote size={20} />
+                                </div>
+                            </div>
                         </div>
                         <div className="relative">
                         <textarea name="description" value={sellForm.description} onChange={handleSellChange} placeholder={t("form.sell.description")} rows={4} className="premium-input pl-12 pt-4 resize-none" />
@@ -489,18 +480,35 @@ if (!isPhoneValid) {
                     </>
                     )}
 
+                    {/* ✅ Checkboxes */}
                     <div className="space-y-4 pt-4">
-                    <label className="flex items-start gap-3 text-gray-700 text-sm p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
-                        <input type="checkbox" className="mt-1" />
-                        <span>{t("checkbox.marketing")}</span>
-                    </label>
-                    <label className="flex items-start gap-3 text-gray-700 text-sm p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
-                        <input type="checkbox" required className="mt-1" />
-                        <span>{t("checkbox.terms")}</span>
-                    </label>
+                        <label className="flex items-start gap-3 text-gray-700 text-sm p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              className="mt-1 w-4 h-4 cursor-pointer" 
+                              checked={marketingAccepted}
+                              onChange={(e) => setMarketingAccepted(e.target.checked)} 
+                            />
+                            <span>{t("checkbox.marketing")}</span>
+                        </label>
+                        <label className="flex items-start gap-3 text-gray-700 text-sm p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              required 
+                              className="mt-1 w-4 h-4 cursor-pointer" 
+                              checked={termsAccepted}
+                              onChange={(e) => setTermsAccepted(e.target.checked)} 
+                            />
+                            <span>{t("checkbox.terms")}</span>
+                        </label>
                     </div>
 
-                    <button type="submit" disabled={loading} className="group w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-5 rounded-xl text-xl font-bold hover:shadow-xl hover:scale-[1.02] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3">
+                    {/* ✅ Disabled condition added here */}
+                    <button 
+                      type="submit" 
+                      disabled={loading || !termsAccepted || !marketingAccepted} 
+                      className="group w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-5 rounded-xl text-xl font-bold hover:shadow-xl hover:scale-[1.02] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                    >
                     {loading ? (<><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>{t("form.processing")}</>) : (<>{actionType === "Buy" ? t("form.submit.buy") : t("form.submit.sell")}<ArrowRight className="group-hover:translate-x-2 transition-transform" size={20} /></>)}
                     </button>
                 </form>

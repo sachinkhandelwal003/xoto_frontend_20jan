@@ -6,16 +6,15 @@ import {
   Home, LayoutDashboard, Compass,
   Image as ImageIcon, Sparkles, Upload,
   ChevronDown, X, ArrowRight, CheckCircle2,
-  Download, Coins, Crown, Loader2, Sun, Sprout, Info, ArrowLeft, Check
+  Download, Coins, Crown, Loader2, Sun, Sprout, Info, ArrowLeft, Check, Edit2
 } from 'lucide-react';
 import {
   Button, Modal, Progress, Card, Tag, Empty,
-  notification, Typography, Divider, Spin
+  notification, Typography, Divider, Spin, Input
 } from 'antd';
 import { useSelector } from 'react-redux';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
 import LeadGenerationModal from '../Signuupage';
-// import logoNew from "../../../assets/img/logonew2.png";
 
 const { Paragraph, Title, Text } = Typography;
 
@@ -81,6 +80,10 @@ const AIPlanner = () => {
   // Designs State (Holds both fetched history and new generations)
   const [designs, setDesigns] = useState([]);
 
+  // ✅ Edit Title State
+  const [editingId, setEditingId] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+
   // Loading States
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
@@ -89,15 +92,12 @@ const AIPlanner = () => {
   const { title, subtitle } = getProgressText(progress);
   const [pendingGeneration, setPendingGeneration] = useState(false);
 
-
   const [libraryDesigns, setLibraryDesigns] = useState([]);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
-  const [activeSidebarTab, setActiveSidebarTab] = useState('ai-landscaping'); // 'my-library' or 'ai-landscaping'
+  const [activeSidebarTab, setActiveSidebarTab] = useState('ai-landscaping');
+  
   // Modal state
   const [showLibraryModal, setShowLibraryModal] = useState(false);
-
-
-  // Modals
   const [showGeneratedModal, setShowGeneratedModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showStyleModal, setShowStyleModal] = useState(false);
@@ -108,7 +108,7 @@ const AIPlanner = () => {
   // UI & Results
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [upgradeMessage, setUpgradeMessage] = useState('');
-  const [currentResult, setCurrentResult] = useState({ url: '', desc: '' });
+  const [currentResult, setCurrentResult] = useState({ url: '', desc: '', styleName: '', elementsList: [], instruction: '' });
 
   // Mobile Tabs
   const [activeMobileTab, setActiveMobileTab] = useState('create');
@@ -123,29 +123,22 @@ const AIPlanner = () => {
 
     try {
       setLoadingSaved(true);
-      // API call to get history
       const res = await apiService.get("/ai/get-landscape-designs");
-
-      // Extract data array from response
       const apiDesigns = res?.data || [];
 
-      // Map API response to UI format
       const formatted = apiDesigns.map((item, index) => ({
         id: item._id,
-        image: item.imageUrl, // Mapping 'imageUrl' from API
-        title: `Design ${index + 1}`,
-        // Format date or use current time if missing
+        image: item.imageUrl,
+        title: item.title || `Design ${index + 1}`, // Handle custom titles
         timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-        
-      aiAnalysis: item.summary || "AI Generated Design",
-      styleName: item.styleName || null,
-      elements: item.elements || [],
-      description: item.description || null,
-      roomType: item.roomType || null,
-      fromApi: true,
+        aiAnalysis: item.summary || "AI Generated Design",
+        styleName: item.styleName || null,
+        elements: item.elements || [],
+        description: item.description || null,
+        roomType: item.roomType || null,
+        fromApi: true,
       }));
 
-      // Reverse to show newest first
       setDesigns(formatted.reverse());
     } catch (err) {
       console.error("Failed to load designs", err);
@@ -154,53 +147,21 @@ const AIPlanner = () => {
     }
   };
 
-  // Trigger fetch on mount/user change
   useEffect(() => {
     if (user) {
       fetchSavedDesigns();
     }
   }, [user]);
 
-  // const fetchLibraryDesigns = async () => {
-  //   if (!user) return;
-
-  //   try {
-  //     setLoadingLibrary(true);
-  //     const res = await apiService.get(`/ai/get-customer-liabrary?designType=landscaping`);
-  //     const designs = res?.data || [];
-  //     console.log(designs)
-
-  //     // Map to UI format
-  //     const formatted = designs.flatMap((d, index) =>
-  //       d.images.map((img, i) => ({
-  //         id: `${d._id}-${i}`,
-  //         image: img,
-  //         title: `Library Design ${index + 1}-${i + 1}`,
-  //         timestamp: new Date(d.createdAt).toLocaleDateString(),
-  //       }))
-  //     );
-
-  //     setLibraryDesigns(formatted.reverse());
-  //   } catch (err) {
-  //     console.error("Failed to load library", err);
-  //   } finally {
-  //     setLoadingLibrary(false);
-  //   }
-  // };
-
-  // Fetch library when modal opens
- const fetchLibraryDesigns = async () => {
+  const fetchLibraryDesigns = async () => {
     if (!user) return;
 
     try {
       setLoadingLibrary(true);
       const res = await apiService.get(`/ai/get-customer-liabrary?designType=landscaping`);
       const apiDesigns = res?.data || [];
-      console.log("Library Data: ", apiDesigns);
 
-      // ✅ FIX: Sahi mapping jo 'imageUrl' aur 'images' dono ko handle karegi
       const formatted = apiDesigns.flatMap((d, index) => {
-        // Agar array of images hai
         if (d.images && Array.isArray(d.images)) {
           return d.images.map((img, i) => ({
             id: `${d._id}-${i}`,
@@ -208,21 +169,17 @@ const AIPlanner = () => {
             title: `Library Design ${index + 1}-${i + 1}`,
             timestamp: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Just now',
           }));
-        } 
-        // Agar single imageUrl hai (jo aap upload me bhej rahe ho)
-        else {
+        } else {
           return [{
             id: d._id || index,
-            image: d.imageUrl || d.image, // Use imageUrl
+            image: d.imageUrl || d.image,
             title: `Library Design ${index + 1}`,
             timestamp: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Just now',
           }];
         }
       });
 
-      // Jin objects me image null hai unhe filter out kar do
       const validDesigns = formatted.filter(item => item.image);
-
       setLibraryDesigns(validDesigns.reverse());
     } catch (err) {
       console.error("Failed to load library", err);
@@ -230,51 +187,51 @@ const AIPlanner = () => {
       setLoadingLibrary(false);
     }
   };
-// ✅ FIX: Jab user load ho ya Library/Upload Modal khule, tab data fetch karo
+
   useEffect(() => {
     if (user && (showLibraryModal || showUploadModal)) {
       fetchLibraryDesigns();
     }
   }, [user, showLibraryModal, showUploadModal]);
 
+  // ✅ TITLE EDIT SAVE FUNCTION
+  const saveTitle = (id) => {
+    if (!editTitle.trim()) return;
+    setDesigns(prev => prev.map(d => d.id === id ? { ...d, title: editTitle } : d));
+    setEditingId(null);
+    notification.success({ message: "Design name updated!" });
+    // Note: If you have an API to update the title in backend, call it here.
+  };
 
+  const processUploadedFile = async (file) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { console.warn("Not an image"); return; }
+    try {
+      const formData = new FormData(); 
+      formData.append("file", file);
+      const uploadRes = await apiService.post("upload", formData);
+      const uploadedUrl = uploadRes?.file?.url;
 
+      if (isCustomerLoggedIn) {
+        await apiService.post("ai/post-customer-liabrary", {
+          designType: "landscaping",
+          imageUrl: uploadedUrl,
+        });
+      } else {
+        const existing = JSON.parse(localStorage.getItem("guestLibrary")) || [];
+        existing.push(uploadedUrl);
+        localStorage.setItem("guestLibrary", JSON.stringify(existing));
+      }
 
-  const processUploadedFile = async (file) =>
-     { console.log("processUploadedFile called with file:", file); if (!file)
-       { console.warn("No file provided!"); return; } if (!file.type.startsWith("image/"))
-         { console.warn("Selected file is not an image:", file.type); return; } 
-  try { console.log("Preparing FormData for upload...");
-     const formData = new FormData(); formData.append("file", file);
-      console.log("Uploading file to S3...");
-       const uploadRes = await apiService.post("upload", formData);
-        console.log("S3 upload response:", uploadRes);
-         const uploadedUrl = uploadRes?.file?.url; 
-         console.log("Uploaded URL:", uploadedUrl);
-          console.log("Sending image URL to AI library...");
-
-
-         if (isCustomerLoggedIn) {
-  await apiService.post("ai/post-customer-liabrary", {
-    designType: "landscaping",
-    imageUrl: uploadedUrl,
-  });
-} else {
-  // Save in localStorage
-  const existing = JSON.parse(localStorage.getItem("guestLibrary")) || [];
-  existing.push(uploadedUrl);
-  localStorage.setItem("guestLibrary", JSON.stringify(existing));
-}
-
-
-               console.log("Updating UI state..."); 
-               setUploadedFile(file);
-                setSelectedImage(uploadedUrl);
-                 setShowUploadModal(false);
-                  fetchLibraryDesigns();
-                   notification.success({ message: "File uploaded successfully", }); } catch (error) { console.error("Upload process failed:", error); notification.error({ message: "Upload Failed", description: error?.message || "Could not upload image to the server.", }); } };
-
-
+      setUploadedFile(file);
+      setSelectedImage(uploadedUrl);
+      setShowUploadModal(false);
+      fetchLibraryDesigns();
+      notification.success({ message: "File uploaded successfully" });
+    } catch (error) {
+      notification.error({ message: "Upload Failed" });
+    }
+  };
 
   const handleGenerateClick = async () => {
     if (!selectedImage) {
@@ -292,40 +249,30 @@ const AIPlanner = () => {
   };
 
   const handleAuthSuccess = async (userData) => {
-  setShowAuthModal(false);
+    setShowAuthModal(false);
+    const guestImages = JSON.parse(localStorage.getItem("guestLibrary")) || [];
 
-  // 🔥 Check localStorage guest images
-  const guestImages = JSON.parse(localStorage.getItem("guestLibrary")) || [];
-
-  if (guestImages.length > 0) {
-    try {
-      for (let img of guestImages) {
-        await apiService.post("ai/post-customer-liabrary", {
-          designType: "landscaping",
-          imageUrl: img,
-        });
+    if (guestImages.length > 0) {
+      try {
+        for (let img of guestImages) {
+          await apiService.post("ai/post-customer-liabrary", {
+            designType: "landscaping",
+            imageUrl: img,
+          });
+        }
+        localStorage.removeItem("guestLibrary");
+        notification.success({ message: "Your previous uploads added to library!" });
+        fetchLibraryDesigns();
+      } catch (err) {
+        console.error("Auto library migration failed", err);
       }
-
-      // Clear after upload
-      localStorage.removeItem("guestLibrary");
-
-      notification.success({
-        message: "Your previous uploads added to library!",
-      });
-
-      fetchLibraryDesigns();
-    } catch (err) {
-      console.error("Auto library migration failed", err);
     }
-  }
 
-  if (pendingGeneration) {
-    setPendingGeneration(false);
-    generateAIDesigns(userData);
-  }
-};
-
-
+    if (pendingGeneration) {
+      setPendingGeneration(false);
+      generateAIDesigns(userData);
+    }
+  };
 
   const generateAIDesigns = async (currentUser) => {
     setIsGenerating(true);
@@ -361,7 +308,6 @@ const AIPlanner = () => {
 
       const resData = response;
 
-      // Check for Premium Restriction
       if (resData.status === false && resData.aiImageGeneration === false) {
         setIsGenerating(false);
         setUpgradeMessage(resData.message || "Limit reached. Upgrade to continue.");
@@ -369,38 +315,34 @@ const AIPlanner = () => {
         return;
       }
 
-      // Success
       if (resData.imageUrl && resData.imageUrl !== "") {
         const aiUrl = resData.imageUrl;
         const aiDesc = resData.message || "Garden generated successfully";
 
+        const newDesign = {
+          id: Date.now(),
+          image: aiUrl,
+          title: `New Vision`,
+          timestamp: "Just now",
+          aiAnalysis: aiDesc,
+          styleName: gardenStyles.find(s => s.value === selectedStyles[0])?.label || null,
+          elements: selectedElements.map(e => gardenElements.find(el => el.value === e)?.label),
+          description: specificRequirement || null,
+          userInfo: currentUser
+        };
 
-       const newDesign = {
-  id: Date.now(),
-  image: aiUrl,
-  title: `New Vision`,
-  timestamp: "Just now",
-  aiAnalysis: aiDesc,
-  styleName: gardenStyles.find(s => s.value === selectedStyles[0])?.label || null,
-  elements: selectedElements.map(e => gardenElements.find(el => el.value === e)?.label),
-  description: specificRequirement || null,
-  userInfo: currentUser
-};
+        setDesigns(prev => [newDesign, ...prev]);
 
-setDesigns(prev => [newDesign, ...prev]);
-
-setCurrentResult({
-  url: aiUrl,
-  desc: aiDesc,
-  styles: [...selectedStyles],
-  elements: [...selectedElements],
-  instruction: specificRequirement
-});
+        setCurrentResult({
+          url: aiUrl,
+          desc: aiDesc,
+          styleName: newDesign.styleName,
+          elementsList: newDesign.elements,
+          instruction: specificRequirement
+        });
 
         fetchLibraryDesigns();
-
         setGenerationProgress(100);
-
         notification.success({ message: 'Design Generated!', duration: 2 });
 
         setTimeout(() => {
@@ -414,10 +356,7 @@ setCurrentResult({
 
       if (errRes?.error?.message === "Customer not found") {
         setIsGenerating(false);
-        notification.error({
-          message: 'Account Required',
-          description: errRes.error.message,
-        });
+        notification.error({ message: 'Account Required', description: errRes.error.message });
         setShowAuthModal(true);
         return;
       }
@@ -428,46 +367,31 @@ setCurrentResult({
         setShowUpgradeModal(true);
         return;
       }
-
       setIsGenerating(false);
     } finally {
       clearInterval(interval);
     }
   };
 
+  const downloadImage = async (imageUrl) => {
+    try {
+      const key = imageUrl.split(".amazonaws.com/")[1];
+      if (!key) {
+        notification.error({ message: "Invalid Image URL" });
+        return;
+      }
 
+      await apiService.download(
+        `/download-pdf?key=${encodeURIComponent(key)}`,
+        `XOTO_Landscape_${Date.now()}.pdf`
+      );
 
-const downloadImage = async (imageUrl) => {
-  try {
-    const key = imageUrl.split(".amazonaws.com/")[1];
-
-    if (!key) {
-      notification.error({
-        message: "Invalid Image URL"
-      });
-      return;
+    } catch (error) {
+      console.error("Download error:", error);
+      notification.error({ message: "Download Failed", description: "PDF could not be generated." });
     }
+  };
 
-    await apiService.download(
-      `/download-pdf?key=${encodeURIComponent(key)}`,
-      `XOTO_Landscape_${Date.now()}.pdf`
-    );
-
-  } catch (error) {
-    console.error("Download error:", error);
-    notification.error({
-      message: "Download Failed",
-      description: "PDF could not be generated."
-    });
-  }
-};
-
-
-
-
-
-
-  // --- Mobile Tab Item ---
   const MobileTabItem = ({ icon: Icon, label, id, onClick }) => (
     <button
       onClick={onClick}
@@ -480,15 +404,13 @@ const downloadImage = async (imageUrl) => {
 
   return (
     <div className="flex h-[100dvh] bg-[#F8F9FC] font-sans overflow-hidden">
-
-      {/* --- DESKTOP SIDEBAR (Hidden on Mobile) --- */}
+      {/* --- DESKTOP SIDEBAR --- */}
       <div
         className="hidden lg:block fixed top-0 left-0 h-full bg-white border-r border-gray-300 z-50 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] shadow-sm hover:shadow-2xl overflow-hidden"
         style={{ width: isSidebarHovered ? '280px' : '88px' }}
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
       >
-        {/* Logo */}
         <div className="h-24 flex items-center px-6 mb-4">
           <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 hover:scale-110">
             <div className="flex gap-1">
@@ -497,64 +419,32 @@ const downloadImage = async (imageUrl) => {
               <div className="w-1 h-4 bg-white rounded-full" />
             </div>
           </div>
-
-          {/* Logo Text */}
-          <span
-            className={`
-              ml-4 font-bold text-2xl tracking-tight
-              transition-all duration-300
-              ${isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'}
-            `}
-          >
+          <span className={`ml-4 font-bold text-2xl tracking-tight transition-all duration-300 ${isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'}`}>
             Xoto.AI
           </span>
         </div>
 
-        {/* Menu */}
         <div className="flex-1 flex flex-col gap-1">
-
-          {/* Home */}
-          <div
-            onClick={() => navigate('/')}
-            className="flex items-center px-6 py-3.5 cursor-pointer hover:bg-gray-50 group relative"
-          >
+          <div onClick={() => navigate('/')} className="flex items-center px-6 py-3.5 cursor-pointer hover:bg-gray-50 group relative">
             <div className="w-12 flex justify-center shrink-0">
               <Home size={26} className="text-gray-500 group-hover:text-gray-900" />
             </div>
-
-            <span
-              className={`
-                ml-2 text-base font-medium whitespace-nowrap
-                transition-all duration-300
-                ${isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'}
-              `}
-            >
+            <span className={`ml-2 text-base font-medium whitespace-nowrap transition-all duration-300 ${isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'}`}>
               Home
             </span>
           </div>
 
-          {/* Active Link */}
           <div className="flex items-center px-6 py-3.5 bg-purple-50 text-purple-700 cursor-pointer relative">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-700 rounded-r-full" />
             <div className="w-12 flex justify-center shrink-0">
               <Sparkles size={26} />
             </div>
-            <span
-              className={`
-                ml-2 text-base font-medium whitespace-nowrap
-                transition-all duration-300
-                ${isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'}
-              `}
-            >
+            <span className={`ml-2 text-base font-medium whitespace-nowrap transition-all duration-300 ${isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'}`}>
               AI Landscaping
             </span>
           </div>
-
-
-
         </div>
       </div>
-
 
       {/* --- MAIN CONTENT AREA --- */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative lg:ml-[88px] transition-all duration-300 w-full">
@@ -562,7 +452,6 @@ const downloadImage = async (imageUrl) => {
         {/* --- LEFT: CONFIGURATION PANEL --- */}
         <div className="w-full lg:w-[460px] bg-white h-full  overflow-y-auto p-4 lg:p-6 border-r border-gray-400 shrink-0 z-10 custom-scrollbar pb-24 lg:pb-6">
 
-          {/* Header Mobile Only */}
           <div className="lg:hidden flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <Link to="/"><ArrowLeft className="text-gray-600" /></Link>
@@ -571,14 +460,12 @@ const downloadImage = async (imageUrl) => {
             {isCustomerLoggedIn && <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">Pro</div>}
           </div>
 
-          {/* Desktop Header */}
           <div className="hidden lg:flex rounded-2xl p-4 mb-8 justify-between items-center shadow-sm" style={{ backgroundColor: BRAND_PURPLE }}>
             <div className="flex items-center gap-3">
               <span className="font-bold text-lg text-white">Landscaping</span>
             </div>
           </div>
 
-          {/* Upload Area */}
           <div className="bg-[#F3F4F6] rounded-[24px] lg:rounded-[32px] h-[280px] lg:h-[320px] mb-6 lg:mb-8 relative overflow-hidden group border border-gray-100 transition-colors hover:border-purple-100">
             {selectedImage ? (
               <>
@@ -610,7 +497,6 @@ const downloadImage = async (imageUrl) => {
             )}
           </div>
 
-          {/* Configuration Grid */}
           <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-6 lg:mb-8">
             <button onClick={() => setShowStyleModal(true)} className="bg-[#F3F4F6] hover:bg-gray-100 transition-colors rounded-[20px] lg:rounded-[24px] p-4 lg:p-6 flex flex-col items-center justify-center gap-3 lg:gap-4 aspect-square relative group">
               <div className="bg-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
@@ -635,7 +521,6 @@ const downloadImage = async (imageUrl) => {
             </button>
           </div>
 
-          {/* Specific Requirement Input */}
           <div className="bg-[#F3F4F6] rounded-2xl p-4 lg:p-5 mb-6 lg:mb-8 border border-transparent hover:border-gray-200">
             <div className="flex justify-between items-center mb-2">
               <span className="font-bold text-gray-800 text-sm lg:text-base">Custom Instructions</span>
@@ -649,7 +534,6 @@ const downloadImage = async (imageUrl) => {
             />
           </div>
 
-          {/* Generate Button */}
           <button
             onClick={handleGenerateClick}
             disabled={isGenerating}
@@ -683,14 +567,31 @@ const downloadImage = async (imageUrl) => {
                   {designs.map(d => (
                     <div key={d.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
                       <img src={d.image} className="w-full h-48 object-cover" alt="Result" />
-                      <div className="p-4 flex justify-between items-center">
-                        <div>
-                          <h4 className="font-bold text-sm text-gray-800">{d.title}</h4>
-                          <span className="text-xs text-gray-400">{d.timestamp}</span>
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          {/* ✅ Edit in Mobile */}
+                          {editingId === d.id ? (
+                            <div className="flex items-center gap-2 w-full pr-2">
+                              <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} onPressEnter={() => saveTitle(d.id)} size="small" autoFocus />
+                              <CheckCircle2 size={20} className="text-green-500 cursor-pointer" onClick={() => saveTitle(d.id)} />
+                              <X size={20} className="text-red-500 cursor-pointer" onClick={() => setEditingId(null)} />
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 cursor-pointer group/title max-w-[80%]" onClick={() => { setEditingId(d.id); setEditTitle(d.title); }}>
+                              <h4 className="font-bold text-sm text-gray-800 truncate">{d.title}</h4>
+                              <Edit2 size={12} className="text-gray-400 opacity-0 group-hover/title:opacity-100 transition-opacity" />
+                            </div>
+                          )}
+
+                          {/* ✅ View Arrow Mobile */}
+                          <button onClick={() => {
+                            setCurrentResult({ url: d.image, desc: d.aiAnalysis, styleName: d.styleName, elementsList: d.elements, instruction: d.description });
+                            setShowGeneratedModal(true);
+                          }} className="p-2 bg-gray-50 rounded-full shrink-0">
+                            <ArrowRight size={16} className="text-purple-600" />
+                          </button>
                         </div>
-                        <button onClick={() => { setCurrentResult({ url: d.image, desc: d.aiAnalysis }); setShowGeneratedModal(true); }} className="p-2 bg-gray-50 rounded-full">
-                          <ArrowRight size={16} className="text-purple-600" />
-                        </button>
+                        <span className="text-xs text-gray-400">{d.timestamp}</span>
                       </div>
                     </div>
                   ))}
@@ -747,26 +648,58 @@ const downloadImage = async (imageUrl) => {
                         <Tag color="#5c039b" className="text-purple-700 font-bold border-none px-3 py-1.5 rounded-full shadow-lg">AI GENERATED</Tag>
                       </div>
                     </div>
-                    <div className="p-6">
-                      <h3 className="font-bold text-xl text-gray-900 mb-1">{d.title}</h3>
-                      <p className="text-gray-400 text-sm">{d.timestamp}</p>
-                      {d.styleName && (
-    <span className="inline-block bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded-full mr-1">
-      {d.styleName}
-    </span>
-  )}
-  
-  {/* ✅ Elements badges */}
-  {d.elements?.slice(0, 2).map((el, i) => (
-    <span key={i} className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full mr-1">
-      {el}
-    </span>
-  ))}
+                    
+                    <div className="p-6 relative">
+                      {/* ✅ Edit Title & Open Modal Arrow Section */}
+                      <div className="flex justify-between items-start mb-2">
+                        {editingId === d.id ? (
+                           <div className="flex items-center gap-2 w-full pr-4">
+                             <Input 
+                               value={editTitle} 
+                               onChange={(e) => setEditTitle(e.target.value)} 
+                               onPressEnter={() => saveTitle(d.id)} 
+                               size="small" autoFocus className="rounded-md"
+                             />
+                             <CheckCircle2 size={20} className="text-green-500 cursor-pointer shrink-0" onClick={() => saveTitle(d.id)} />
+                             <X size={20} className="text-red-500 cursor-pointer shrink-0" onClick={() => setEditingId(null)} />
+                           </div>
+                        ) : (
+                           <div className="flex items-center gap-2 cursor-pointer group/title max-w-[80%]" onClick={() => { setEditingId(d.id); setEditTitle(d.title); }}>
+                             <h3 className="font-bold text-xl text-gray-900 truncate">{d.title}</h3>
+                             <Edit2 size={14} className="text-gray-400 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0" />
+                           </div>
+                        )}
 
-  {/* ✅ Summary/Description */}
-  {d.aiAnalysis && d.aiAnalysis !== "AI Generated Design" && (
-    <p className="text-gray-500 text-xs mt-2 line-clamp-2">{d.aiAnalysis}</p>
-  )}
+                        {/* ✅ View Details Arrow */}
+                        <button 
+                          onClick={() => {
+                            setCurrentResult({ url: d.image, desc: d.aiAnalysis, styleName: d.styleName, elementsList: d.elements, instruction: d.description });
+                            setShowGeneratedModal(true);
+                          }}
+                          className="p-2 bg-purple-50 text-purple-600 rounded-full hover:bg-purple-100 transition-colors shrink-0"
+                          title="View Details"
+                        >
+                          <ArrowRight size={18} />
+                        </button>
+                      </div>
+
+                      <p className="text-gray-400 text-sm mb-3">{d.timestamp}</p>
+                      
+                      {d.styleName && (
+                        <span className="inline-block bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded-full mr-1">
+                          {d.styleName}
+                        </span>
+                      )}
+                      
+                      {d.elements?.slice(0, 2).map((el, i) => (
+                        <span key={i} className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full mr-1">
+                          {el}
+                        </span>
+                      ))}
+
+                      {d.aiAnalysis && d.aiAnalysis !== "AI Generated Design" && (
+                        <p className="text-gray-500 text-xs mt-3 line-clamp-2">{d.aiAnalysis}</p>
+                      )}
                     </div>
                   </Card>
                 ))}
@@ -785,15 +718,12 @@ const downloadImage = async (imageUrl) => {
       </div>
 
       {/* --- MODALS --- */}
-
-      {/* 1. Auth Modal */}
       <LeadGenerationModal
         visible={showAuthModal}
         onCancel={() => setShowAuthModal(false)}
         onAuthSuccess={handleAuthSuccess}
       />
 
-      {/* 2. Upgrade / Premium Modal */}
       <Modal
         open={showUpgradeModal}
         footer={null}
@@ -819,7 +749,7 @@ const downloadImage = async (imageUrl) => {
         </div>
       </Modal>
 
-      {/* 3. Result Modal */}
+      {/* ✅ 3. Result Modal (Updated to show mapped preferences) */}
       <Modal
         open={showGeneratedModal}
         footer={null}
@@ -842,25 +772,26 @@ const downloadImage = async (imageUrl) => {
                 {currentResult.desc || "No description provided."}
               </Paragraph>
 
-              {/* User Preferences */}
+              {/* ✅ User Preferences showing correctly mapped data */}
               <div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
                 <h4 className="font-bold text-sm text-purple-700 mb-2">
                   Your Preferences
                 </h4>
 
-                {currentResult.styles?.length > 0 && (
+                {(currentResult.styleName || currentResult.styles?.length > 0) && (
                   <p className="text-xs text-gray-700 mb-1">
                     <strong>Style:</strong>{" "}
-                    {gardenStyles.find(s => s.value === currentResult.styles[0])?.label}
+                    {currentResult.styleName || gardenStyles.find(s => s.value === currentResult.styles[0])?.label}
                   </p>
                 )}
 
-                {currentResult.elements?.length > 0 && (
+                {(currentResult.elementsList?.length > 0 || currentResult.elements?.length > 0) && (
                   <p className="text-xs text-gray-700 mb-1">
                     <strong>Elements:</strong>{" "}
-                    {currentResult.elements
-                      .map(e => gardenElements.find(el => el.value === e)?.label)
-                      .join(", ")}
+                    {currentResult.elementsList?.length > 0 
+                      ? currentResult.elementsList.join(", ")
+                      : currentResult.elements?.map(e => gardenElements.find(el => el.value === e)?.label).join(", ")
+                    }
                   </p>
                 )}
 
@@ -890,7 +821,6 @@ const downloadImage = async (imageUrl) => {
         bodyStyle={{ padding: '1rem' }}
       >
         <div className="p-2">
-          {/* Library Designs */}
           {libraryDesigns.length > 0 && (
             <>
               <h4 className="text-sm font-semibold text-gray-500 mb-2">Your Library Designs</h4>
@@ -908,7 +838,6 @@ const downloadImage = async (imageUrl) => {
             </>
           )}
 
-          {/* Dummy Space Images */}
           <h4 className="text-sm font-semibold text-gray-500 mb-2">Suggested Designs</h4>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
             {dummySpaceImages.map(img => (
@@ -943,8 +872,6 @@ const downloadImage = async (imageUrl) => {
         </div>
       </Modal>
 
-
-      {/* 5. Style & Elements Modals */}
       <Modal open={showStyleModal} footer={null} onCancel={() => setShowStyleModal(false)} width={["95vw", "95vw", "95vw", 800]} centered title="Choose Landscape Style" bodyStyle={{ padding: '0.5rem' }}>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 p-2">
           {gardenStyles.map(s => (
@@ -1041,14 +968,11 @@ const downloadImage = async (imageUrl) => {
         </Button>
       </Modal>
 
-
-
       {/* --- GENERATION LOADING OVERLAY --- */}
       {isGenerating && (
         <div className="fixed inset-0 z-[100] bg-white/90 lg:bg-white/80 backdrop-blur-xl flex flex-col items-center justify-center animate-in fade-in duration-500 p-4">
           <div className="relative mb-8 lg:mb-12 w-32 h-32 lg:w-48 lg:h-48 mx-auto flex items-center justify-center">
             <div className="absolute -inset-6 lg:-inset-8 bg-purple-500/20 blur-2xl rounded-full animate-pulse" />
-            {/* <img src={logoNew} alt="Logo" className="relative max-w-full max-h-full object-contain animate-bounce" /> */}
           </div>
           <div className="text-center mb-6 lg:mb-8 px-4">
             <h2 className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight leading-tight">
@@ -1059,19 +983,16 @@ const downloadImage = async (imageUrl) => {
             </p>
           </div>
 
-          {/* User Selection Preview */}
           <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 mb-6 max-w-md w-full border border-purple-100 shadow-sm">
             <h4 className="font-bold text-gray-800 text-sm mb-3">
               Your Selections
             </h4>
-
             {selectedStyles.length > 0 && (
               <p className="text-xs text-gray-600 mb-1">
                 <strong>Style:</strong>{" "}
                 {gardenStyles.find(s => s.value === selectedStyles[0])?.label}
               </p>
             )}
-
             {selectedElements.length > 0 && (
               <p className="text-xs text-gray-600 mb-1">
                 <strong>Elements:</strong>{" "}
@@ -1080,15 +1001,12 @@ const downloadImage = async (imageUrl) => {
                   .join(", ")}
               </p>
             )}
-
             {specificRequirement && (
               <p className="text-xs text-gray-600">
                 <strong>Instruction:</strong> {specificRequirement}
               </p>
             )}
           </div>
-
-
 
           <div className="w-full max-w-xs lg:w-80">
             <Progress
@@ -1098,46 +1016,40 @@ const downloadImage = async (imageUrl) => {
               strokeWidth={10}
               showInfo={false}
             />
-
             <div className="flex justify-between mt-3 text-[10px] lg:text-xs font-bold uppercase tracking-widest text-gray-400">
               <span>{title}</span>
               <span>{progress}%</span>
             </div>
-
             <div className="mt-1 text-[10px] lg:text-xs text-gray-400 text-left">
               {subtitle}
             </div>
           </div>
-
         </div>
       )}
+      
+      {/* ⚠️ ADDED <style> DIRECTLY INSIDE THE RETURN ⚠️ */}
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: var(--color-primary);
+          border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          opacity: 0.9;
+        }
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: var(--color-primary) transparent;
+        }
+      `}</style>
+
     </div>
   );
 };
-
-<style jsx>{`
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: var(--color-primary);
-    border-radius: 9999px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    opacity: 0.9;
-  }
-
-  /* Firefox support */
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-primary) transparent;
-  }
-`}</style>
 
 export default AIPlanner;
