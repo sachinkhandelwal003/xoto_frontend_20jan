@@ -17,7 +17,7 @@
         { "label": "Buy", "path": "/Property" },
  
     { "label": "Sell", "path": "/Property" },
-    { "label": "Rentals", "path": "/Property" },
+    { "label": "Rent", "path": "/rent/search" },
     { "label": "Interiors", "path": "/services/interior" },
     { "label": "Landscaping", "path": "/landscaping" }
    

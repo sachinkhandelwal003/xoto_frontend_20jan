@@ -2,15 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
 import {
-  Typography, Avatar, Space, Tag, Spin, Image, Divider,
-  Button, Modal, Input, message, Row, Col, Card, Badge, Tooltip
+  Typography, Avatar, Space, Tag, Spin, Divider,
+  Button, Modal, Input, message, Row, Col, Card
 } from "antd";
 import {
   UserOutlined, ArrowLeftOutlined, MailOutlined, PhoneOutlined,
-  EnvironmentOutlined, GlobalOutlined, StarOutlined, FileProtectOutlined,
-  CrownOutlined, IdcardOutlined, CheckCircleOutlined, CloseCircleOutlined,
-  CalendarOutlined, BankOutlined, TrophyOutlined, TeamOutlined,
-  BarChartOutlined, SafetyCertificateOutlined, ExclamationCircleOutlined
+  EnvironmentOutlined, StarOutlined, FileProtectOutlined,
+  IdcardOutlined, CheckCircleOutlined, CloseCircleOutlined,
+  BankOutlined, TrophyOutlined, TeamOutlined,
+  BarChartOutlined, SafetyCertificateOutlined, ExclamationCircleOutlined,
+  EyeOutlined, FileTextOutlined
 } from "@ant-design/icons";
 
 const { Title, Text, Paragraph } = Typography;
@@ -39,6 +40,43 @@ const InfoRow = ({ icon, label, value }) => (
     </div>
   </div>
 );
+
+// ─── Beautiful Document View Component ─────────────────────────────────────
+const DocumentViewer = ({ title, url, emptyText }) => {
+  if (!url) {
+    return (
+      <div style={{ height: 90, background: "#f9fafb", border: "2px dashed #e5e7eb", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
+        {emptyText}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onClick={() => window.open(url, "_blank")}
+      style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "16px", background: "#f8f9fa", border: "1px solid #e5e7eb",
+        borderRadius: "10px", cursor: "pointer", transition: "all 0.2s ease"
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#5c039b"; e.currentTarget.style.background = "#f3e8ff"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#f8f9fa"; }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ width: 42, height: 42, borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+          <FileTextOutlined style={{ fontSize: 20, color: "#5c039b" }} />
+        </div>
+        <div>
+          <Text strong style={{ display: "block", color: "#111827", fontSize: 14 }}>{title}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>Click to view document</Text>
+        </div>
+      </div>
+      <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e5e7eb" }}>
+        <EyeOutlined style={{ fontSize: 16, color: "#6b7280" }} />
+      </div>
+    </div>
+  );
+};
 
 const statusConfig = {
   approved:  { color: "#059669", bg: "#d1fae5", label: "Approved" },
@@ -80,10 +118,7 @@ const AgentDetail = () => {
   const handleApprove = async () => {
     setActionLoading(true);
     try {
-      // 1. Approve Agent (without any reason)
       await apiService.put(`/agent/approve-agent/${agentId}`, { rejection_reason: "" });
-      
-      // 2. Automatically Verify Agent
       await apiService.post(`/agent/update-agent?id=${agentId}`, { isVerified: true });
 
       message.success("Agent approved and verified successfully!");
@@ -103,8 +138,6 @@ const AgentDetail = () => {
     setActionLoading(true);
     try {
       await apiService.put(`/agent/reject-agent/${agentId}`, { rejection_reason: reason.trim() });
-      
-      // Automatically Unverify if rejected
       await apiService.post(`/agent/update-agent?id=${agentId}`, { isVerified: false });
 
       message.success("Agent rejected.");
@@ -123,8 +156,6 @@ const AgentDetail = () => {
     setReasonError("");
     setRejectModalVisible(true);
   };
-
-  const formatDate = (d) => d ? new Date(d).toLocaleDateString("en-AE", { day: "2-digit", month: "short", year: "numeric" }) : "N/A";
 
   if (loading) return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}><Spin size="large" /></div>;
   if (!agent) return <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}><ExclamationCircleOutlined style={{ fontSize: 48, color: "#9ca3af" }} /><Text type="secondary">Agent not found</Text><Button onClick={() => navigate(-1)}>Go Back</Button></div>;
@@ -145,7 +176,7 @@ const AgentDetail = () => {
       </div>
 
       {/* Hero Card */}
-      <Card bordered={false} style={{ borderRadius: 16, marginBottom: 24, boxShadow: "0 2px 12px rgba(92,3,155,0.07)", overflow: "hidden" }} bodyStyle={{ padding: 0 }}>
+      <Card bordered={false} style={{ borderRadius: 16, marginBottom: 24, boxShadow: "0 2px 12px rgba(92,3,155,0.07)", overflow: "hidden" }} styles={{ body: { padding: 0 } }}>
         <div style={{ height: 90, background: "linear-gradient(135deg, #5c039b 0%, #7c3aed 60%, #a78bfa 100%)" }} />
         <div style={{ padding: "0 32px 28px 32px" }}>
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginTop: -40 }}>
@@ -157,7 +188,6 @@ const AgentDetail = () => {
                 <Title level={3} style={{ margin: 0, color: "#111827", textTransform: "capitalize" }}>{agent.first_name} {agent.last_name}</Title>
                 <Space size={6} wrap style={{ marginTop: 6 }}>
                   <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 12px", borderRadius: 20, background: sc.bg, color: sc.color, fontWeight: 700, fontSize: 12, textTransform: "uppercase" }}>{sc.label}</span>
-                  {/* Verified Tag - Depends entirely on agent.isVerified */}
                   {agent.isVerified && <Tag icon={<SafetyCertificateOutlined />} color="green" style={{ borderRadius: 20, fontWeight: 600 }}>Verified</Tag>}
                 </Space>
               </div>
@@ -165,7 +195,6 @@ const AgentDetail = () => {
 
             {/* ACTION BUTTONS */}
             <div style={{ display: "flex", gap: 10, paddingTop: 8, flexWrap: "wrap" }}>
-              {/* Added !isRejected here so Approve button won't show if rejected */}
               {!isApproved && !isRejected && (
                 <Button 
                   type="primary" 
@@ -219,7 +248,7 @@ const AgentDetail = () => {
         <Col xs={24} lg={14}>
           <Card bordered={false} style={{ borderRadius: 14, boxShadow: "0 1px 6px rgba(0,0,0,0.04)", height: "100%" }} title={<Text strong style={{ fontSize: 15, color: "#374151" }}>Personal & Professional Info</Text>}>
             <InfoRow icon={<MailOutlined />}        label="Email Address"   value={agent.email} />
-            <InfoRow icon={<PhoneOutlined />}       label="Phone Number"    value={`${agent.country_code} ${agent.phone_number}`} />
+            <InfoRow icon={<PhoneOutlined />}       label="Phone Number"    value={`${agent.country_code || ""} ${agent.phone_number || ""}`} />
             <InfoRow icon={<EnvironmentOutlined />} label="Operating City"  value={agent.operating_city} />
             <InfoRow icon={<StarOutlined />}        label="Specialization"  value={agent.specialization} />
             <InfoRow icon={<SafetyCertificateOutlined />} label="RERA Number" value={agent.rera_number || "Not provided"} />
@@ -227,33 +256,30 @@ const AgentDetail = () => {
           </Card>
         </Col>
 
+        {/* 🔥 Sleek Document Viewer Section */}
         <Col xs={24} lg={10}>
           <Card bordered={false} style={{ borderRadius: 14, boxShadow: "0 1px 6px rgba(0,0,0,0.04)", height: "100%" }} title={<Text strong style={{ fontSize: 15, color: "#374151" }}>Uploaded Documents</Text>}>
             
-            {/* ID Proof */}
             <div style={{ marginBottom: 20 }}>
               <Space style={{ marginBottom: 10 }}><IdcardOutlined style={{ color: "#5c039b" }} /><Text strong>Emirates ID / Passport</Text></Space>
-              {agent.id_proof ? (
-                <Button type="dashed" block style={{ height: 'auto', padding: 20 }} onClick={() => window.open(agent.id_proof, "_blank")}>
-                   View ID Document
-                </Button>
-              ) : (
-                <div style={{ height: 100, background: "#f9fafb", border: "2px dashed #e5e7eb", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>No ID uploaded</div>
-              )}
+              <DocumentViewer 
+                title="Emirates ID Document" 
+                url={agent.id_proof} 
+                emptyText="No ID uploaded" 
+              />
             </div>
+            
             <Divider style={{ margin: "16px 0" }} />
 
-            {/* RERA Cert */}
             <div>
               <Space style={{ marginBottom: 10 }}><FileProtectOutlined style={{ color: "#5c039b" }} /><Text strong>RERA Certificate</Text></Space>
-              {agent.rera_certificate ? (
-                <Button type="dashed" block style={{ height: 'auto', padding: 20 }} onClick={() => window.open(agent.rera_certificate, "_blank")}>
-                   View RERA Certificate
-                </Button>
-              ) : (
-                <div style={{ height: 100, background: "#f9fafb", border: "2px dashed #e5e7eb", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>No certificate uploaded</div>
-              )}
+              <DocumentViewer 
+                title="RERA Certificate" 
+                url={agent.rera_certificate} 
+                emptyText="No certificate uploaded" 
+              />
             </div>
+
           </Card>
         </Col>
       </Row>

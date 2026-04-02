@@ -2,46 +2,40 @@
   "heading": "Ce que disent nos clients",
   "items": [
     {
-      "title": "J’ai trouvé un endroit incroyable",
-      "text": "RentBro a rendu mon installation dans une nouvelle ville très simple.",
-      "name": "Shubham",
-      "location": "Pune, Maharashtra",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "Acheter mon premier appartement à Dubaï me semblait écrasant jusqu'à ce que je découvre XOTO. Leur équipe m'a aidé à comprendre ma capacité d'emprunt, à comparer les options hypothécaires et à conclure l'affaire en douceur. Tout était transparent et rapide.",
+      "name": "Ahmed R.",
+      "location": "Centre-ville de Dubaï",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859324353-ChatGPT%20Image%20Mar%2014%2C%202026%20at%2001_38_32%20PM%201.png"
     },
     {
-      "title": "Expérience fluide",
-      "text": "Le processus de location était clair et rapide.",
-      "name": "Shubham",
-      "location": "Pune, Maharashtra",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "XOTO a rendu le processus hypothécaire incroyablement simple. En quelques jours, j'avais plusieurs options bancaires et des conseils clairs sur les meilleurs taux disponibles. Les conseillers ont tout géré, des documents aux approbations.",
+      "name": "Sarah K.",
+      "location": "Dubai Marina",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859238209-Group%20309.png"
     },
     {
-      "title": "Excellent support",
-      "text": "Le service client était toujours disponible.",
-      "name": "Shubham",
-      "location": "Pune, Maharashtra",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "Ce que j'ai le plus apprécié chez XOTO, c'est d'avoir la recherche de propriété et le soutien hypothécaire au même endroit. Cela m'a économisé des semaines d'efforts et m'a donné confiance pour avancer avec la bonne propriété.",
+      "name": "Rohan Mehta",
+      "location": "Business Bay",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859119654-Group%20309%20%281%29.png"
     },
     {
-      "title": "Excellent rapport qualité-prix",
-      "text": "Des prix équitables et des annonces fiables.",
-      "name": "Shubham",
-      "location": "Pune, Maharashtra",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "En tant qu'investisseur immobilier à Dubaï, la rapidité et la clarté sont essentielles. La plateforme XOTO m'a aidé à évaluer rapidement les options de financement et à obtenir un prêt hypothécaire pour mon deuxième bien d'investissement.",
+      "name": "Khalid A.",
+      "location": "Jumeirah Village Circle",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859149102-Group%20309%20%282%29.png"
     },
     {
-      "title": "Déménagement sans stress",
-      "text": "Changer de ville a été très facile.",
-      "name": "Punit",
-      "location": "Pune, Maharashtra",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "XOTO a rendu le processus hypothécaire incroyablement simple. En quelques jours, j'avais plusieurs options bancaires et des conseils clairs sur les meilleurs taux.",
+      "name": "Sarah K.",
+      "location": "Dubai Marina",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859238209-Group%20309.png"
     },
     {
-      "title": "Quartier incroyable !",
-      "text": "Les recommandations de quartier étaient parfaites.",
-      "name": "Harsh",
-      "location": "HSR Layout, Bangalore",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "Ce que j'ai le plus apprécié chez XOTO, c'est d'avoir la recherche de propriété et le soutien hypothécaire au même endroit.",
+      "name": "Rohan Mehta",
+      "location": "Business Bay",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859119654-Group%20309%20%281%29.png"
     }
   ]
 }

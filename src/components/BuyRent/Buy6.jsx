@@ -44,7 +44,7 @@ export default function TestimonialsSection() {
                 className="flex-none w-64 sm:w-72 md:w-80 snap-center"
               >
                 <div
-                  className="h-full min-h-[520px] bg-white rounded-3xl shadow-xl p-8
+                  className="h-full  bg-white rounded-3xl shadow-xl p-8
                   flex flex-col items-center text-center
                   transition-transform duration-300 hover:scale-[1.03]"
                 >
@@ -56,12 +56,12 @@ export default function TestimonialsSection() {
                   />
 
                   {/* Title (Fixed Height) */}
-                  <h3 className="text-lg font-bold text-gray-900 mb-3 h-[48px] flex items-center justify-center">
+                  {/* <h3 className="text-lg font-bold text-gray-900 mb-3 h-[48px] flex items-center justify-center">
                     {t(item.title)}
-                  </h3>
+                  </h3> */}
 
                   {/* Description (Flexible Height) */}
-                  <p className="text-gray-700 text-sm leading-relaxed mb-6 flex-grow">
+                  <p className="text-gray-700 text-sm leading-relaxed mb-6 ">
                     {item.text}
                   </p>
 
