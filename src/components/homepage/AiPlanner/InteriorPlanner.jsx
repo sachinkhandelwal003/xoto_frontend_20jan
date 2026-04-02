@@ -1126,7 +1126,7 @@ const InteriorPlanner = () => {
               {subtitle}
             </p>
           </div>
-
+{/* interior */}
           <div className="flex justify-between mt-3 text-[10px] lg:text-xs font-bold text-gray-400 uppercase tracking-widest">
             <span>Progress</span>
             <span>{progress}%</span>
