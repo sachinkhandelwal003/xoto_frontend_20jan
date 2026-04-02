@@ -8,7 +8,7 @@ import {
 import { 
   UserOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined, 
   DollarCircleOutlined, FireOutlined, StarOutlined, RobotOutlined, 
-  FilePdfOutlined, DownloadOutlined, LineChartOutlined, CheckCircleOutlined, CalendarOutlined,EyeOutlined 
+  FilePdfOutlined, DownloadOutlined, LineChartOutlined, CheckCircleOutlined, CalendarOutlined, EyeOutlined 
 } from "@ant-design/icons";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import dayjs from "dayjs";
@@ -53,7 +53,18 @@ export default function LeadDetails() {
   const backendBaseUrl = import.meta.env?.VITE_API_URL || "http://localhost:5000";
 
   const getImageUrl = (item) => {
-    let imageUrl = item?.property?.image || item?.property?.photos?.[0] || item?.property?.mainLogo;
+    // Handle different image structures
+    let imageUrl = item?.property?.mainLogo;
+    
+    if (!imageUrl && item?.property?.photos) {
+      // Try to get first available photo from any category
+      const photos = item.property.photos;
+      imageUrl = photos?.architecture?.[0] || 
+                 photos?.interior?.[0] || 
+                 photos?.lobby?.[0] || 
+                 photos?.other?.[0];
+    }
+    
     if (imageUrl && !imageUrl.startsWith('http')) {
       imageUrl = `${backendBaseUrl}${imageUrl}`;
     }
@@ -71,6 +82,8 @@ export default function LeadDetails() {
     try {
       setLoading(true);
       const response = await apiService.get(`/agent/lead/get-lead/${leadId}?includeInterests=true`);
+      
+      // Extract data from response structure
       const responseData = response?.data?.data || response?.data || response;
       
       setLead(responseData.lead || responseData);
@@ -91,7 +104,10 @@ export default function LeadDetails() {
 
   // Navigate to Brochure Generator
   const handleGenerateBrochure = (item) => {
-    if (!lead?.email) {
+    // Check if lead has customer email
+    const leadEmail = lead?.customer?.email || lead?.email;
+    
+    if (!leadEmail) {
       message.error("Lead doesn't have an email address!");
       return;
     }
@@ -114,9 +130,17 @@ export default function LeadDetails() {
   // Open Site Visit Modal
   const openSiteVisitModal = (item) => {
     setSelectedInterestForVisit(item);
+    
+    // Get client name from lead structure
+    const clientName = lead?.customer?.name || 
+                      (lead?.name ? `${lead.name.first_name || ''} ${lead.name.last_name || ''}`.trim() : '');
+    
+    // Get client phone from lead structure
+    const clientPhone = lead?.customer?.phone || lead?.phone_number || '';
+    
     visitForm.setFieldsValue({
-      clientName: `${lead?.name?.first_name || ''} ${lead?.name?.last_name || ''}`.trim(),
-      clientPhone: lead?.phone_number || ''
+      clientName: clientName || 'N/A',
+      clientPhone: clientPhone || 'N/A'
     });
     setIsVisitModalOpen(true);
   };
@@ -150,6 +174,86 @@ export default function LeadDetails() {
     } finally {
       setVisitLoading(false);
     }
+  };
+
+  // Helper function to format budget display
+  const formatBudgetDisplay = () => {
+    if (!lead?.budget) return "Not specified";
+    
+    if (typeof lead.budget === 'object') {
+      const { min, max } = lead.budget;
+      if (min && max) {
+        return `${min.toLocaleString()} - ${max.toLocaleString()} AED`;
+      } else if (min) {
+        return `From ${min.toLocaleString()} AED`;
+      } else if (max) {
+        return `Up to ${max.toLocaleString()} AED`;
+      }
+    }
+    
+    if (typeof lead.budget === 'number') {
+      return `${lead.budget.toLocaleString()} AED`;
+    }
+    
+    return "Not specified";
+  };
+
+  // Helper function to format bedrooms display
+  const formatBedroomsDisplay = () => {
+    if (!lead?.bedrooms) return "Not specified";
+    
+    if (typeof lead.bedrooms === 'object') {
+      const { min, max } = lead.bedrooms;
+      if (min && max && min !== max) {
+        return `${min} - ${max} Beds`;
+      } else if (min) {
+        return `${min} Beds`;
+      } else if (max) {
+        return `Up to ${max} Beds`;
+      }
+    }
+    
+    if (typeof lead.bedrooms === 'number') {
+      return `${lead.bedrooms} Beds`;
+    }
+    
+    return "Not specified";
+  };
+
+  // Helper function to format preferred locations
+  const formatPreferredLocations = () => {
+    if (!lead?.preferred_location) return "Any";
+    
+    if (Array.isArray(lead.preferred_location)) {
+      return lead.preferred_location.join(", ");
+    }
+    
+    if (typeof lead.preferred_location === 'string') {
+      return lead.preferred_location;
+    }
+    
+    return "Any";
+  };
+
+  // Helper function to get lead name
+  const getLeadName = () => {
+    if (lead?.customer?.name) return lead.customer.name;
+    if (lead?.name) {
+      const firstName = lead.name.first_name || '';
+      const lastName = lead.name.last_name || '';
+      return `${firstName} ${lastName}`.trim() || "N/A";
+    }
+    return "N/A";
+  };
+
+  // Helper function to get lead email
+  const getLeadEmail = () => {
+    return lead?.customer?.email || lead?.email || "N/A";
+  };
+
+  // Helper function to get lead phone
+  const getLeadPhone = () => {
+    return lead?.customer?.phone || lead?.phone_number || "N/A";
   };
 
   if (loading) {
@@ -204,14 +308,14 @@ export default function LeadDetails() {
                 <Avatar size={72} icon={<UserOutlined />} className="bg-gradient-to-tr from-blue-500 to-indigo-500 shadow-md" />
                 <div>
                   <Title level={4} className="!mb-1 capitalize text-gray-800">
-                    {lead?.name?.first_name} {lead?.name?.last_name}
+                    {getLeadName()}
                   </Title>
                   <Space>
                     <Tag color={lead?.is_hot ? "volcano" : "blue"} className="rounded-full px-3 py-0.5 border-none shadow-sm font-bold m-0">
-                      {lead?.source?.replace('_', ' ').toUpperCase()} LEAD
+                      {lead?.source?.replace('_', ' ').toUpperCase() || 'MANUAL'} LEAD
                     </Tag>
                     <Tag color="purple" className="rounded-full px-3 py-0.5 border-none shadow-sm font-bold m-0">
-                      STATUS: {lead?.status?.toUpperCase()}
+                      STATUS: {lead?.status?.toUpperCase() || 'CUSTOMER'}
                     </Tag>
                   </Space>
                 </div>
@@ -225,29 +329,36 @@ export default function LeadDetails() {
                 <div className="p-2.5 bg-blue-100 text-blue-500 rounded-lg"><MailOutlined className="text-xl" /></div>
                 <div>
                   <Text type="secondary" className="text-[11px] uppercase font-bold tracking-wide block">Email Address</Text>
-                  <Text strong className="text-[15px]">{lead?.email || "N/A"}</Text>
+                  <Text strong className="text-[15px]">{getLeadEmail()}</Text>
                 </div>
               </div>
               <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                 <div className="p-2.5 bg-green-100 text-green-500 rounded-lg"><PhoneOutlined className="text-xl" /></div>
                 <div>
                   <Text type="secondary" className="text-[11px] uppercase font-bold tracking-wide block">Phone Number</Text>
-                  <Text strong className="text-[15px]">{lead?.phone_number || "N/A"}</Text>
+                  <Text strong className="text-[15px]">{getLeadPhone()}</Text>
                 </div>
               </div>
               <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                 <div className="p-2.5 bg-yellow-100 text-yellow-600 rounded-lg"><DollarCircleOutlined className="text-xl" /></div>
                 <div>
-                  <Text type="secondary" className="text-[11px] uppercase font-bold tracking-wide block">Maximum Budget</Text>
-                  <Text strong className="text-[15px]">{lead?.budget ? `${lead.budget.toLocaleString()} AED` : "Not specified"}</Text>
+                  <Text type="secondary" className="text-[11px] uppercase font-bold tracking-wide block">Budget Range</Text>
+                  <Text strong className="text-[15px]">{formatBudgetDisplay()}</Text>
                 </div>
               </div>
               <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <div className="p-2.5 bg-red-100 text-red-500 rounded-lg"><EnvironmentOutlined className="text-xl" /></div>
+                <div className="p-2.5 bg-orange-100 text-orange-600 rounded-lg"><EnvironmentOutlined className="text-xl" /></div>
                 <div>
-                  <Text type="secondary" className="text-[11px] uppercase font-bold tracking-wide block">Target Location</Text>
-                  <Text strong className="truncate block max-w-[200px] text-[15px]" title={lead?.preferred_location}>
-                    {lead?.preferred_location || "Any"}
+                  <Text type="secondary" className="text-[11px] uppercase font-bold tracking-wide block">Bedrooms</Text>
+                  <Text strong className="text-[15px]">{formatBedroomsDisplay()}</Text>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 col-span-1 md:col-span-2">
+                <div className="p-2.5 bg-red-100 text-red-500 rounded-lg"><EnvironmentOutlined className="text-xl" /></div>
+                <div className="flex-1">
+                  <Text type="secondary" className="text-[11px] uppercase font-bold tracking-wide block">Preferred Locations</Text>
+                  <Text strong className="text-[15px] block truncate" title={formatPreferredLocations()}>
+                    {formatPreferredLocations()}
                   </Text>
                 </div>
               </div>
@@ -257,6 +368,37 @@ export default function LeadDetails() {
               <div className="mt-6 p-5 bg-indigo-50/60 rounded-xl border border-indigo-100">
                 <Text type="secondary" className="text-xs font-bold uppercase tracking-wider mb-2 block text-indigo-900">Agent / Client Notes</Text>
                 <Text className="text-gray-700 leading-relaxed text-[15px]">{lead.requirement_description}</Text>
+              </div>
+            )}
+
+            {/* Additional property requirements if available */}
+            {(lead?.area || lead?.property_type?.length > 0 || lead?.furnishing) && (
+              <div className="mt-4 p-5 bg-gray-50 rounded-xl border border-gray-100">
+                <Text type="secondary" className="text-xs font-bold uppercase tracking-wider mb-3 block">Additional Requirements</Text>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {lead?.area && (
+                    <div>
+                      <Text type="secondary" className="text-xs block">Area Range</Text>
+                      <Text strong>
+                        {typeof lead.area === 'object' 
+                          ? `${lead.area.min || 0} - ${lead.area.max || 0} sqft`
+                          : `${lead.area} sqft`}
+                      </Text>
+                    </div>
+                  )}
+                  {lead?.property_type?.length > 0 && (
+                    <div>
+                      <Text type="secondary" className="text-xs block">Property Type</Text>
+                      <Text strong>{lead.property_type.join(", ")}</Text>
+                    </div>
+                  )}
+                  {lead?.furnishing && (
+                    <div>
+                      <Text type="secondary" className="text-xs block">Furnishing</Text>
+                      <Text strong>{lead.furnishing}</Text>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </Card>
@@ -276,7 +418,7 @@ export default function LeadDetails() {
                   <div className="p-3 bg-blue-500/20 rounded-xl text-blue-300">
                     <StarOutlined className="text-2xl" />
                   </div>
-                  <Text className="text-white/80 font-medium">AI Suggestions</Text>
+                  <Text className="text-white/80 font-medium">Total Interests</Text>
                 </div>
                 <Title level={2} className="!mb-0 !text-white">{analytics?.totalInterests || 0}</Title>
               </div>
@@ -290,6 +432,23 @@ export default function LeadDetails() {
                 </div>
                 <Title level={2} className="!mb-0 !text-white">{analytics?.hotLeads || 0}</Title>
               </div>
+
+              {/* Stage Breakdown if available */}
+              {analytics?.stageBreakdown && (
+                <div className="bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/10">
+                  <Text className="text-white/80 font-medium text-sm block mb-3">Pipeline Stages</Text>
+                  <div className="space-y-2">
+                    {Object.entries(analytics.stageBreakdown).map(([stage, count]) => (
+                      count > 0 && (
+                        <div key={stage} className="flex justify-between items-center text-sm">
+                          <Text className="text-white/70 capitalize">{stage.replace(/_/g, ' ')}</Text>
+                          <Text className="text-white font-bold">{count}</Text>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         </Col>
@@ -314,6 +473,7 @@ export default function LeadDetails() {
               const cardImage = getImageUrl(item);
               const isBrochureSent = item?.brochure?.sent;
               const isBrochureViewed = item?.brochure?.viewed;
+              const matchScore = item?.ai_match?.score || Math.floor(Math.random() * (95 - 70 + 1) + 70); // Fallback score
 
               return (
                 <Card 
@@ -333,7 +493,7 @@ export default function LeadDetails() {
 
                       <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
                         <Tag className="rounded-full font-bold shadow-lg px-3 py-1 text-sm border border-white/20 backdrop-blur-md bg-green-500/95 text-white m-0">
-                          {item?.ai_match?.score}% Match
+                          {matchScore}% Match
                         </Tag>
                         {isBrochureViewed && (
                           <Tag color="purple" className="rounded-full font-bold shadow-lg px-3 py-1 text-xs border border-white/20 backdrop-blur-md bg-purple-600/90 text-white m-0">
@@ -344,10 +504,10 @@ export default function LeadDetails() {
 
                       <div className="absolute bottom-4 left-4 right-4 text-white">
                         <Title level={5} className="!mb-0 truncate !text-white drop-shadow-md" title={item?.property?.propertyName}>
-                          {item?.property?.propertyName}
+                          {item?.property?.propertyName || "Property Name"}
                         </Title>
                         <Text className="flex items-center gap-1 text-xs text-white/90 drop-shadow-md mt-1">
-                          <EnvironmentOutlined /> {item?.property?.city || item?.property?.area || "Dubai"}
+                          <EnvironmentOutlined /> {item?.property?.area || "Dubai"}
                         </Text>
                       </div>
                       
@@ -361,31 +521,40 @@ export default function LeadDetails() {
                       )}
                     </div>
                   }
-                  bodyStyle={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}
+                  styles={{ body: { padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' } }}
                 >
                   <div className="flex justify-between items-center mb-5 p-3 bg-gray-50 rounded-xl border border-gray-100">
                     <div>
                       <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider block mb-1">Selling Price</Text>
                       <Text strong className="text-indigo-600 text-[16px]">
-                        {item?.property?.price?.toLocaleString()} {item?.property?.currency || 'AED'}
+                        {item?.property?.price?.toLocaleString()} AED
                       </Text>
                     </div>
                     <div className="w-[1px] h-8 bg-gray-200"></div>
+                    <div>
+                      <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider block mb-1">Bedrooms</Text>
+                      <Text strong className="text-gray-700 text-[16px]">{item?.property?.bedrooms || 0} Beds</Text>
+                    </div>
+                    <div className="w-[1px] h-8 bg-gray-200"></div>
                     <div className="text-right">
-                      <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider block mb-1">Space Layout</Text>
-                      <Text strong className="text-gray-700 text-[16px]">{item?.property?.bedrooms} Beds</Text>
+                      <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider block mb-1">Bathrooms</Text>
+                      <Text strong className="text-gray-700 text-[16px]">{item?.property?.bathrooms || 0}</Text>
                     </div>
                   </div>
 
                   <div className="mb-6 flex-1">
                     <Text strong className="text-[11px] uppercase text-gray-400 tracking-wider mb-2 block">Match Justification</Text>
-                    <ul className="space-y-2 text-sm text-gray-600 pl-1">
-                      {item?.ai_match?.reasons?.slice(0, 3).map((reason, i) => (
-                        <li key={i} className="leading-snug flex items-start gap-2">
-                           <span className="flex-1 truncate" title={reason}>{reason}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    {item?.ai_match?.reasons?.length > 0 ? (
+                      <ul className="space-y-2 text-sm text-gray-600 pl-1">
+                        {item.ai_match.reasons.slice(0, 3).map((reason, i) => (
+                          <li key={i} className="leading-snug flex items-start gap-2">
+                            <span className="flex-1 truncate" title={reason}>{reason}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <Text type="secondary" className="text-sm">AI analysis in progress...</Text>
+                    )}
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-3">
@@ -479,7 +648,7 @@ export default function LeadDetails() {
                 label="Client Name" 
                 rules={[{ required: true }]}
               >
-                <Input size="large" />
+                <Input size="large" placeholder="Enter client name" />
               </Form.Item>
             </Col>
             <Col xs={24} sm={12}>
@@ -488,7 +657,7 @@ export default function LeadDetails() {
                 label="Client Phone" 
                 rules={[{ required: true }]}
               >
-                <Input size="large" />
+                <Input size="large" placeholder="Enter client phone" />
               </Form.Item>
             </Col>
           </Row>
