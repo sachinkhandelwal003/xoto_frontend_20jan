@@ -123,12 +123,13 @@ import DealCommissionManager from "./pages/DealCommissionManager";
 import DeveloperAddProperty from "../ecommerce/B2C/DveloperAddProperty";
 import DeveloperPropertyEdit from "../ecommerce/B2C/DeveloperPropertyEdit";
 import BankProductManagement from "../homepage/BankProductManagement";
-
+// {Agency}------------------------------------------------------------
 import AgencyManageAgents from "../ecommerce/B2C/AgencyManageAgents";
 import AgencyPerformance from "../ecommerce/B2C/AgencyPerformance";
 import AgencyAgentDetails from "../ecommerce/B2C/AgencyAgentDetails";
 import AgencyCommission from "../ecommerce/B2C/AgencyCommission";
 import AgencyLeadManagement from "../ecommerce/B2C/AgencyLeadManagement";
+import AgencyAgentProperties from "./pages/Properties/AgencyAgentProperties";
 // import AgencyTargets from "../ecommerce/B2C/AgencyTargets";
 // import AgencyLeaderboard from "../ecommerce/B2C/AgencyLeaderboard"; 
 // import AgencyIncentives from "../ecommerce/B2C/AgencyIncentives";
@@ -163,8 +164,9 @@ import TrackBrochure from "../ecommerce/B2C/TrackBrochure";
 import WaitingApproval from "../ecommerce/B2C/WaitingApproval";
 import AgentDetail from "./pages/Properties/Agentdetail";
 import OnBoardingpage from "./pages/dashboardPages/OnBoardingpage";
-
-import CreateSecondaryPlans from "./pages/Properties/CreateSecondaryPlans"; 
+import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
+import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
+import CreateSecondaryProperty from "./pages/Properties/CreateSecondaryProperty"; 
 import SecondaryPlans from "./pages/Properties/SecondaryPlans";
 import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail";
  {/*Xoto Vault*/}
@@ -172,6 +174,9 @@ import VaultAdminDashboard from "../ecommerce/B2C/VaultAdminDashboard";
 import VaultAgents from "../ecommerce/B2C/VaultAgents";
 import VaultCases from "../ecommerce/B2C/VaultCases";
 import VaultClients from "../ecommerce/B2C/VaultClients";
+import PropertyDetailPage from "./pages/Propertydetailpage";
+// import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
+// import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 
 const roleSlugMap = {
   0: "superadmin",
@@ -363,10 +368,10 @@ const CmsRoutes = () => {
   {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
         
   {/* Projects */}
-  <Route path="projects" element={<AgentProjects />} />
+  <Route path="agent-projects" element={<AgentProjects />} />
   <Route 
      path="projects/:id" 
-     element={(user?.role?.code == 16 || user?.role?.code == 1) ? <AgentProjectDetails /> : <ViewProject />} 
+     element={ <AgentProjectDetails /> } 
   />
 
   {/* Deals */}
@@ -389,7 +394,8 @@ const CmsRoutes = () => {
   {/* Presentations */}
   <Route path="presentations" element={<AgentPresentations />} />
 
-  <Route path="create-secondary-plans" element={<CreateSecondaryPlans />} />
+ <Route path="create-secondary-plans" element={<CreateSecondaryProperty />} />
+<Route path="create-secondary-plans/:id" element={<CreateSecondaryProperty />} />
   <Route path="secondary-plans" element={<SecondaryPlans />} />
 
 <Route path="secondary/:id" element={<SecondaryPropertyDetail />} />
@@ -411,7 +417,10 @@ const CmsRoutes = () => {
       <Route path="/customers/list" element={<CustomerList />} />
       {/* <Route path="/agent-registration" element={<AgentRegistration />} /> */}
       <Route path="/developer-list" element={<DeveloperList />} />
-      <Route path="/onboarding" element={<OnBoardingpage />} />
+      <Route path="/onboarding/developer" element={<OnBoardingpage />} />
+      <Route path="/onboarding/agent" element={<OnBoardingAgent />} />
+      <Route path="/onboarding/agency" element={<OnBoardingAgency />} />
+    
       <Route path="/property-list" element={<AdminPropertyGrid />} />
       <Route path="/DealCommissionManager" element={<DealCommissionManager />} />
       <Route path="/lead-management" element={<LeadManagement />} />
@@ -427,6 +436,7 @@ const CmsRoutes = () => {
       <Route path="/properties" element={<AdminPropertyListings />} />
 <Route path="/properties/:id" element={<AdminPropertyDetail />} />
 <Route path="/properties/create-offplan" element={<AdminOffPlanCreate />} />
+<Route path="/property-list/property-detail/:id" element={<PropertyDetailPage />} />
 
       
 {/* Agency */}
@@ -444,8 +454,9 @@ const CmsRoutes = () => {
 {/* <Route path="advanced-analytics" element={<AgencyAdvancedAnalytics />} /> */}
 {/* <Route path="profit-engine" element={<AgencyProfitEngine />} /> */}
 <Route path="subscription" element={<AgencySubscription />} />
-<Route path="/agency/projects" element={<AgencyProjects />} />
+<Route path="/agency-projects" element={<AgencyProjects />} />
 <Route path="/agency/deals" element={<AgencyDeals />} />
+<Route path="/agency-agent-properties" element={<AgencyAgentProperties/>} />
 {/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
 {/* Developer */}
 <Route path="developer-projects" element={<DeveloperProjects/>}/>

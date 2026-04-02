@@ -1,879 +1,559 @@
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  Form,
-  Input,
-  Button,
-  Card,
-  Row,
-  Col,
-  Typography,
-  message,
-  Spin,
-  Modal,
-  Select,
-  notification,
-  Divider,
-  Progress,
-  Space,
-} from "antd";
-import {
-  CodeOutlined,
-  SafetyOutlined,
-  SafetyCertificateOutlined,
-  CheckCircleFilled,
-  BuildOutlined,
-  EnvironmentOutlined,
-  MailOutlined,
-  PhoneOutlined,
-  LockOutlined,
-  UserOutlined,
-  GlobalOutlined,
-  RocketOutlined,
-  StarOutlined,
-  TrophyOutlined,
-} from "@ant-design/icons";
+import { Form, Input, Button, Select, Spin, message, notification, ConfigProvider, Modal } from "antd";
+import { CheckCircleFilled, EnvironmentOutlined, PhoneOutlined, LockOutlined, UserOutlined, ArrowLeftOutlined, ArrowRightOutlined, MailOutlined } from "@ant-design/icons";
 import { useForm, Controller } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import { Country, City } from "country-state-city";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
-const { Title, Text } = Typography;
 const { Option } = Select;
+const PURPLE = "#5a0099";
 
-const DeveloperRegistration = () => {
-  const navigate = useNavigate();
+export default function DeveloperRegistration() {
   const [submitting, setSubmitting] = useState(false);
-
-  // Location States
+  const [currentStep, setCurrentStep] = useState(0);
   const [citiesList, setCitiesList] = useState([]);
-
-  // --- MOBILE OTP STATES ---
+  const [success, setSuccess] = useState(false);
+  
+  // Phone OTP
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
   const [enteredOtp, setEnteredOtp] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
-
-  // --- EMAIL OTP STATES ---
+  
+  // Email OTP
   const [emailOtpSent, setEmailOtpSent] = useState(false);
   const [emailOtpVerified, setEmailOtpVerified] = useState(false);
   const [enteredEmailOtp, setEnteredEmailOtp] = useState("");
   const [emailOtpLoading, setEmailOtpLoading] = useState(false);
 
-  const themeColor = "#5C029B";
-  const lightBg = "#F8F5FC";
-
-  const {
-    control,
-    handleSubmit,
-    watch,
-    setValue,
-    getValues,
-    formState: { errors },
-  } = useForm({
+  const { control, handleSubmit, watch, setValue, getValues, trigger, clearErrors, setError, formState: { errors } } = useForm({
     mode: "onChange",
     defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      phone_number: "",
-      country_code: "+971",
-      country: "AE",
-      city: "",
-      address: "",
+      name: "", email: "", password: "", confirmPassword: "",
+      phone_number: "", country_code: "971",
+      country: "AE", city: "", address: "",
     },
   });
 
   const selectedCountry = watch("country");
-  const watchedPhoneNumber = watch("phone_number");
-  const watchedEmail = watch("email");
-  const formValues = watch();
+  const watchedCountryCode = watch("country_code");
 
-  // Calculate form completion percentage
-  const calculateCompletion = () => {
-    const requiredFields = ["name", "email", "password", "phone_number", "country", "city", "address"];
-    const filledFields = requiredFields.filter(field => formValues[field] && formValues[field] !== "");
-    return Math.floor((filledFields.length / requiredFields.length) * 100);
-  };
+  const countryOptions = useMemo(() => {
+    const priority = ["AE", "IN", "SA", "US", "GB", "AU"];
+    return Country.getAllCountries()
+      .map(c => ({ name: c.name, code: c.phonecode, iso: c.isoCode }))
+      .sort((a, b) => {
+        const ap = priority.includes(a.iso), bp = priority.includes(b.iso);
+        if (ap && !bp) return -1;
+        if (!ap && bp) return 1;
+        return a.name.localeCompare(b.name);
+      });
+  }, []);
 
   useEffect(() => {
     if (selectedCountry) {
-      const updatedCities = City.getCitiesOfCountry(selectedCountry);
-      setCitiesList(updatedCities);
-    } else {
-      setCitiesList([]);
-    }
+      const obj = Country.getAllCountries().find(c => c.isoCode === selectedCountry);
+      setCitiesList(obj ? City.getCitiesOfCountry(obj.isoCode) : []);
+    } else setCitiesList([]);
   }, [selectedCountry]);
 
-  const countryPhoneData = useMemo(() => {
-    const allCountries = Country.getAllCountries();
-    return allCountries.map((c) => ({
-      iso: c.isoCode.toLowerCase(),
-      name: c.name,
-      phone: `+${c.phonecode}`,
-      value: `+${c.phonecode}`,
-      searchStr: `${c.name} ${c.phonecode}`,
-    }));
-  }, []);
-
-  const handleSendOtp = async () => {
-    const countryCode = getValues("country_code");
-    const number = getValues("phone_number");
-
-    if (!countryCode || !number) {
-      message.error("Please enter a valid phone number first.");
-      return;
+  const validateStep = async (step) => {
+    if (step === 0) {
+      const nameOk = await trigger("name");
+      const emailOk = await trigger("email");
+      const passOk = await trigger("password");
+      const confirmOk = await trigger("confirmPassword");
+      if (getValues("password") !== getValues("confirmPassword")) {
+        setError("confirmPassword", { type: "manual", message: "Passwords don't match" });
+        return false;
+      }
+      if (nameOk && emailOk && passOk && confirmOk && emailOtpVerified) return true;
+      if (!emailOtpVerified) message.warning("Verify your email first");
+      return false;
     }
+    if (step === 1) {
+      const phoneOk = await trigger("phone_number");
+      if (phoneOk && otpVerified) return true;
+      if (!otpVerified) message.warning("Verify your phone first");
+      return false;
+    }
+    if (step === 2) return trigger(["country", "city", "address"]);
+    return true;
+  };
 
+  const nextStep = async () => {
+    if (await validateStep(currentStep)) setCurrentStep(p => p + 1);
+  };
+  const prevStep = () => setCurrentStep(p => p - 1);
+
+  // Phone OTP handlers
+  const handleSendOtp = async () => {
+    if (!await trigger("phone_number")) return;
+    let cc = getValues("country_code");
+    if (!cc.startsWith("+")) cc = `+${cc}`;
     setOtpLoading(true);
     try {
-      await apiService.post("/otp/send-otp", {
-        country_code: countryCode,
-        phone_number: number,
-      });
-      message.success("OTP sent successfully!");
+      await apiService.post("/otp/send-otp", { country_code: cc, phone_number: getValues("phone_number") });
+      message.success("OTP sent!");
       setOtpSent(true);
       setOtpVerified(false);
-    } catch (error) {
-      notification.error({
-        message: "OTP Error",
-        description: error?.response?.data?.message || "Failed to send OTP",
-      });
+    } catch (err) {
+      const d = err.response?.data;
+      if (d?.errors?.length) d.errors.forEach(e => setError("phone_number", { type: "manual", message: e.message }));
+      else if (d?.message && /(mobile|number|phone)/i.test(d.message)) setError("phone_number", { type: "manual", message: d.message });
+      else notification.error({ message: "OTP Error", description: d?.message || "Failed to send OTP" });
     } finally {
       setOtpLoading(false);
     }
   };
 
   const handleVerifyOtp = async () => {
-    if (!enteredOtp) {
-      message.error("Please enter the OTP");
+    if (!enteredOtp || enteredOtp.length < 4) {
+      message.error("Enter valid OTP");
       return;
     }
+    let cc = getValues("country_code");
+    if (!cc.startsWith("+")) cc = `+${cc}`;
     setOtpLoading(true);
     try {
-      await apiService.post("/otp/verify-otp", {
-        country_code: getValues("country_code"),
-        phone_number: getValues("phone_number"),
-        otp: enteredOtp,
-      });
-      message.success("Phone Verified Successfully!");
+      await apiService.post("/otp/verify-otp", { country_code: cc, phone_number: getValues("phone_number"), otp: enteredOtp });
+      message.success("Phone verified!");
       setOtpVerified(true);
       setOtpSent(false);
-    } catch (error) {
-      notification.error({
-        message: "Verification Failed",
-        description: error?.response?.data?.message || "Invalid OTP",
-      });
+      setEnteredOtp("");
+    } catch (err) {
+      message.error(err?.response?.data?.message || "Invalid OTP");
     } finally {
       setOtpLoading(false);
     }
   };
 
-  const handleSendEmailOtp = async () => {
-    const email = getValues("email");
-    if (!email) {
-      message.error("Please enter a valid email first.");
-      return;
-    }
+  const handleChangeNumber = () => {
+    setOtpSent(false);
+    setOtpVerified(false);
+    setEnteredOtp("");
+  };
 
+  // Email OTP handlers
+  const handleSendEmailOtp = async () => {
+    if (!await trigger("email")) return;
     setEmailOtpLoading(true);
     try {
-      const payload = { email };
-      await apiService.post("/otp/email-otp/send", payload);
-      message.success("OTP sent successfully! Please check your mail.");
+      await apiService.post("/otp/email-otp/send", { email: getValues("email") });
+      message.success("OTP sent to email!");
       setEmailOtpSent(true);
       setEmailOtpVerified(false);
-    } catch (error) {
-      const errMsg = error?.response?.data?.message || "Failed to send OTP";
-      notification.error({ message: "OTP Error", description: errMsg });
+    } catch (err) {
+      const d = err.response?.data;
+      if (d?.errors?.length) d.errors.forEach(e => setError("email", { type: "manual", message: e.message }));
+      else if (d?.message && /email/i.test(d.message)) setError("email", { type: "manual", message: d.message });
+      else notification.error({ message: "OTP Error", description: d?.message || "Failed to send OTP" });
     } finally {
       setEmailOtpLoading(false);
     }
   };
 
   const handleVerifyEmailOtp = async () => {
-    if (!enteredEmailOtp) {
-      message.error("Please enter the OTP");
+    if (!enteredEmailOtp || enteredEmailOtp.length < 4) {
+      message.error("Enter valid OTP");
       return;
     }
     setEmailOtpLoading(true);
     try {
-      const payload = {
-        email: getValues("email"),
-        otp: enteredEmailOtp,
-      };
-      await apiService.post("/otp/email-otp/verify", payload);
-      message.success("Email Verified Successfully!");
+      await apiService.post("/otp/email-otp/verify", { email: getValues("email"), otp: enteredEmailOtp });
+      message.success("Email verified!");
       setEmailOtpVerified(true);
       setEmailOtpSent(false);
-    } catch (error) {
-      notification.error({
-        message: "Verification Failed",
-        description: error?.response?.data?.message || "Invalid OTP",
-      });
+      setEnteredEmailOtp("");
+    } catch (err) {
+      message.error(err?.response?.data?.message || "Invalid OTP");
     } finally {
       setEmailOtpLoading(false);
     }
   };
 
-  const showSuccessPopup = () => {
-    Modal.success({
-      centered: true,
-      title: (
-        <div style={{ fontSize: 20, fontWeight: 800, color: "#52c41a" }}>
-          <CheckCircleFilled style={{ marginRight: 8, fontSize: 24 }} />
-          Registration Submitted!
-        </div>
-      ),
-      content: (
-        <div style={{ marginTop: 12, fontSize: 15, lineHeight: 1.6 }}>
-          <div style={{ fontWeight: 500, marginBottom: 12 }}>Thank you for your submission!</div>
-          <div>We'll review it shortly and get back to you within 24-48 hours.</div>
-          <div style={{ marginTop: 12, background: "#f0f9ff", padding: "12px", borderRadius: 8, border: "1px solid #bae7ff" }}>
-            <MailOutlined style={{ marginRight: 8, color: "#52c41a", fontSize: 16 }} />
-            <span style={{ fontWeight: 500 }}>An email has been sent to your registered email address.</span>
-          </div>
-        </div>
-      ),
-      okText: "Go to Login",
-      okButtonProps: { style: { background: themeColor, borderColor: themeColor, fontWeight: 600 } },
-      onOk: () => navigate("/login"),
-    });
+  const handleChangeEmail = () => {
+    setEmailOtpSent(false);
+    setEmailOtpVerified(false);
+    setEnteredEmailOtp("");
   };
 
-  const showAlreadyRegisteredPopup = () => {
-    Modal.info({
-      centered: true,
-      title: <div style={{ fontSize: 20, fontWeight: 800 }}>Already Registered</div>,
-      content: (
-        <div style={{ marginTop: 12, fontSize: 15 }}>
-          <div style={{ marginBottom: 8 }}>This email or phone number is already registered with us.</div>
-          <div style={{ fontWeight: 500 }}>Please log in to continue with your account.</div>
-        </div>
-      ),
-      okText: "Go to Login",
-      okButtonProps: { style: { background: themeColor, borderColor: themeColor, fontWeight: 600 } },
-      onOk: () => navigate("/login"),
-    });
-  };
-
+  /* ── Submit ── */
   const onSubmit = async (data) => {
-    if (!otpVerified) {
-      message.error("Please verify your phone number to continue.");
-      return;
-    }
-    if (!emailOtpVerified) {
-      message.error("Please verify your email to continue.");
-      return;
-    }
-
+    if (!otpVerified) return message.error("Verify your phone number");
+    if (!emailOtpVerified) return message.error("Verify your email");
+    
     setSubmitting(true);
-
     try {
-      const countryObj = Country.getCountryByCode(data.country);
-
-      const registerPayload = {
+      const countryObj = Country.getAllCountries().find(c => c.isoCode === data.country);
+      let cc = data.country_code || "971";
+      if (!cc.startsWith("+")) cc = `+${cc}`;
+      
+      await apiService.post("/developer/create-developer", {
         name: data.name,
         email: data.email,
         password: data.password,
-        phone_number: `${data.country_code}${data.phone_number}`,
-        country_code: data.country_code,
+        phone_number: `${cc}${data.phone_number}`,
+        country_code: cc,
         country: countryObj ? countryObj.name : data.country,
         city: data.city,
         address: data.address,
-      };
-
-      await apiService.post("/developer/create-developer", registerPayload);
-      showSuccessPopup();
+      });
+      setSuccess(true);
     } catch (err) {
-      const status = err?.response?.status;
       const res = err?.response?.data;
-      const apiMsg = res?.message || res?.error || "Registration failed. Please try again.";
-
-      const isAlreadyRegistered = status === 409 ||
-        apiMsg.toLowerCase().includes("already") ||
-        apiMsg.toLowerCase().includes("exist") ||
-        apiMsg.toLowerCase().includes("duplicate");
-
-      if (isAlreadyRegistered) {
-        showAlreadyRegisteredPopup();
+      if (res?.errors?.length) {
+        let step0Err = false, step1Err = false;
+        res.errors.forEach(e => {
+          let f = e.field;
+          if (["mobile.number", "mobile", "phone_number"].includes(f)) f = "phone_number";
+          setError(f, { type: "server", message: e.message });
+          if (["email", "name", "password"].includes(f)) step0Err = true;
+          if (f === "phone_number") step1Err = true;
+        });
+        if (step0Err) setCurrentStep(0);
+        else if (step1Err) setCurrentStep(1);
+      } else if (res?.message) {
+        const m = res.message.toLowerCase();
+        if (m.includes("email")) {
+          setError("email", { type: "server", message: res.message });
+          setCurrentStep(0);
+        } else if (/(mobile|phone|number)/.test(m)) {
+          setError("phone_number", { type: "server", message: res.message });
+          setCurrentStep(1);
+        } else {
+          message.error(res.message);
+        }
       } else {
-        message.error(apiMsg);
+        message.error("Registration failed");
       }
     } finally {
       setSubmitting(false);
     }
   };
 
-  return (
-    <div style={{ minHeight: "100vh", display: "flex", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
-      <Row style={{ width: "100%", margin: 0, minHeight: "100vh" }}>
-        
-        {/* ================= LEFT SIDE (BRANDING) ================= */}
-        <Col
-          xs={24}
-          md={8}
-          style={{
-            background: `linear-gradient(135deg, ${themeColor} 0%, #3a0163 100%)`,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            padding: "48px 40px",
-            color: "#fff",
-            position: "relative",
-            overflow: "hidden",
-            boxShadow: "4px 0 20px rgba(0,0,0,0.1)",
-          }}
-        >
-          {/* Decorative Background Elements */}
-          <div style={{
-            position: "absolute",
-            top: "-20%",
-            right: "-10%",
-            width: "300px",
-            height: "300px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)",
-          }}></div>
-          <div style={{
-            position: "absolute",
-            bottom: "-10%",
-            left: "-10%",
-            width: "250px",
-            height: "250px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)",
-          }}></div>
-          
-          <div style={{ zIndex: 1 }}>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 70,
-                height: 70,
-                background: "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.1) 100%)",
-                borderRadius: "18px",
-                marginBottom: 32,
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255,255,255,0.3)",
-                boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
-              }}
-            >
-              <BuildOutlined style={{ fontSize: 36, color: "#fff" }} />
-            </div>
-
-            <Title level={1} style={{ color: "#fff", margin: 0, fontWeight: 800, fontSize: "2.5rem", lineHeight: 1.2, letterSpacing: "-0.02em" }}>
-              Developer <br/>Registration
-            </Title>
-            <div style={{ width: 70, height: 4, background: "#fff", marginTop: 20, marginBottom: 24, borderRadius: 2 }}></div>
-            
-            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, lineHeight: 1.6, display: "block", fontWeight: 500 }}>
-              Join our exclusive network of top-tier property developers. Register to showcase your premium projects to a global audience.
-            </Text>
-            
-            <div style={{ marginTop: 40, display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <CheckCircleFilled style={{ color: "#fff", fontSize: 16 }} />
-                </div>
-                <Text style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Admin Approval Required</Text>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <SafetyCertificateOutlined style={{ color: "#fff", fontSize: 16 }} />
-                </div>
-                <Text style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Secure Verification Process</Text>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <TrophyOutlined style={{ color: "#fff", fontSize: 16 }} />
-                </div>
-                <Text style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Premium Exposure & Benefits</Text>
-              </div>
-            </div>
-
-            <Divider style={{ background: "rgba(255,255,255,0.2)", margin: "32px 0 24px" }} />
-            
-            <div>
-              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, fontWeight: 500 }}>
-                Already have an account?{" "}
-                <Button 
-                  type="link" 
-                  onClick={() => navigate("/login")} 
-                  style={{ color: "#fff", fontWeight: 800, padding: 0, fontSize: 13 }}
-                >
-                  Sign In →
-                </Button>
-              </Text>
-            </div>
+  // Success Screen
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#5a0099] to-[#3d006b] flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl p-12 max-w-md w-full text-center shadow-2xl">
+          <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircleFilled className="text-5xl text-green-600" />
           </div>
-        </Col>
+          <h2 className="text-3xl font-extrabold text-[#3d006b] mb-3">Registration Successful!</h2>
+          <p className="text-gray-600 mb-8">Your developer account is under review. We'll notify you once approved.</p>
+          <button onClick={() => window.location.href = "/login"} className="w-full bg-[#5a0099] text-white py-3 rounded-xl font-bold hover:bg-[#3d006b] transition">
+            Go to Login →
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-        {/* ================= RIGHT SIDE (FORM) ================= */}
-        <Col
-          xs={24}
-          md={16}
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: "40px 24px",
-            background: "#fff",
-          }}
-        >
-          <div style={{ width: "100%", maxWidth: 620 }}>
-            <Card
-              bordered={false}
-              style={{
-                borderRadius: 20,
-                boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
-                background: "#fff",
-                transition: "all 0.3s ease",
-              }}
-              bodyStyle={{ padding: "36px 40px" }}
-            >
-              <div style={{ marginBottom: 28, textAlign: "center" }}>
-                <Title level={3} style={{ margin: 0, color: "#1a1a1a", fontWeight: 800, letterSpacing: "-0.5px" }}>
-                  Create Your Account
-                </Title>
-                <Text type="secondary" style={{ fontSize: 14, marginTop: 8, display: "block", fontWeight: 500 }}>
-                  Join us and start your journey
-                </Text>
-                <div style={{ marginTop: 16 }}>
-                  <Progress 
-                    percent={calculateCompletion()} 
-                    strokeColor={themeColor}
-                    showInfo={true}
-                    format={(percent) => `${percent}% Complete`}
-                    size="small"
-                    strokeWidth={6}
-                  />
-                </div>
+  const steps = [
+    { key: "personal", label: "Personal", icon: <UserOutlined /> },
+    { key: "contact", label: "Contact", icon: <PhoneOutlined /> },
+    { key: "location", label: "Location", icon: <EnvironmentOutlined /> },
+  ];
+
+  /* ════════════════════════
+     RENDER
+  ════════════════════════ */
+  return (
+    <ConfigProvider theme={{ token: { colorPrimary: PURPLE, borderRadius: 10 } }}>
+      <div className="min-h-screen bg-gradient-to-br from-[#5a0099] to-[#3d006b] py-12 px-4">
+        <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-white mb-2">Developer Registration</h1>
+            <p className="text-white/70">Join our developer ecosystem and start building</p>
+          </div>
+
+          {/* Main Card */}
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="p-8">
+              {/* Step Indicators */}
+              <div className="flex gap-3 mb-8 border-b pb-6">
+                {steps.map((step, i) => (
+                  <div
+                    key={step.key}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-full font-bold text-sm transition cursor-pointer ${
+                      i === currentStep
+                        ? "bg-[#5a0099] text-white shadow-lg"
+                        : i < currentStep
+                        ? "bg-gray-100 text-gray-700"
+                        : "bg-gray-50 text-gray-400"
+                    }`}
+                  >
+                    <span>{step.icon}</span>
+                    <span>{step.label}</span>
+                    {i < currentStep && <CheckCircleFilled className="text-green-500 text-xs" />}
+                  </div>
+                ))}
               </div>
 
-              <Form layout="vertical" onFinish={handleSubmit(onSubmit)} size="middle">
-                <Spin spinning={submitting}>
-                  {/* Company Info */}
-                  <Form.Item
-                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Company Name <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                    validateStatus={errors.name ? "error" : ""}
-                    help={errors.name?.message}
-                  >
-                    <Controller
-                      name="name"
-                      control={control}
-                      rules={{ required: "Company name is required" }}
-                      render={({ field }) => (
-                        <Input 
-                          placeholder="e.g., Emirates Hills Properties" 
-                          prefix={<UserOutlined style={{ color: themeColor, fontWeight: "bold" }} />}
-                          style={{ borderRadius: 10, padding: "8px 12px", fontWeight: 500 }}
-                          {...field} 
+              <Spin spinning={submitting}>
+                <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
+                  {/* Step 0 - Personal */}
+                  {currentStep === 0 && (
+                    <div className="space-y-5">
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Company Name *</label>
+                        <Controller
+                          name="name"
+                          control={control}
+                          rules={{ required: "Company name is required" }}
+                          render={({ field }) => (
+                            <Input {...field} size="large" placeholder="Acme Technologies" className="border-2 border-gray-200 rounded-xl h-11" />
+                          )}
                         />
-                      )}
-                    />
-                  </Form.Item>
+                        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+                      </div>
 
-                  {/* Email */}
-                  <Form.Item
-                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Email Address <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                    validateStatus={errors.email ? "error" : ""}
-                    help={errors.email?.message}
-                    style={{ marginBottom: emailOtpSent && !emailOtpVerified ? 0 : 16 }}
-                  >
-                    <Controller
-                      name="email"
-                      control={control}
-                      rules={{
-                        required: "Required",
-                        pattern: { value: /^\S+@\S+$/i, message: "Invalid email" },
-                      }}
-                      render={({ field }) => (
-                        <Input
-                          placeholder="info@company.com"
-                          prefix={<MailOutlined style={{ color: themeColor }} />}
-                          style={{ borderRadius: 10, padding: "8px 12px", fontWeight: 500 }}
-                          {...field}
-                          disabled={emailOtpVerified}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            if (emailOtpVerified) {
-                              setEmailOtpVerified(false);
-                              setEmailOtpSent(false);
-                            }
-                          }}
-                          suffix={
-                            !emailOtpVerified ? (
-                              <Button
-                                type="link"
-                                onClick={handleSendEmailOtp}
-                                loading={emailOtpLoading}
-                                disabled={!watchedEmail}
-                                style={{ color: themeColor, fontWeight: 700, padding: 0, fontSize: 13 }}
-                              >
-                                {emailOtpSent ? "Resend OTP" : "Send OTP"}
-                              </Button>
-                            ) : (
-                              <span style={{ color: "#52c41a", fontWeight: 700, fontSize: 13 }}>
-                                <CheckCircleFilled /> Verified
-                              </span>
-                            )
-                          }
-                        />
-                      )}
-                    />
-                  </Form.Item>
-
-                  {emailOtpSent && !emailOtpVerified && (
-                    <div style={{ marginTop: -12, marginBottom: 16 }}>
-                      <Input
-                        placeholder="Enter 6-digit OTP"
-                        prefix={<SafetyCertificateOutlined style={{ color: themeColor }} />}
-                        value={enteredEmailOtp}
-                        onChange={(e) => setEnteredEmailOtp(e.target.value.replace(/\D/g, ""))}
-                        maxLength={6}
-                        style={{ borderRadius: 10, fontWeight: 500 }}
-                        suffix={
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Email Address *</label>
+                        <div className="flex gap-3">
+                          <Controller
+                            name="email"
+                            control={control}
+                            rules={{ required: "Required", pattern: { value: /^\S+@\S+$/i, message: "Invalid email" } }}
+                            render={({ field }) => (
+                              <Input
+                                {...field}
+                                size="large"
+                                placeholder="info@company.com"
+                                prefix={<MailOutlined className="text-gray-400" />}
+                                disabled={emailOtpVerified || emailOtpSent}
+                                className="flex-1 border-2 border-gray-200 rounded-xl h-11"
+                              />
+                            )}
+                          />
                           <Button
-                            type="primary"
-                            size="small"
-                            onClick={handleVerifyEmailOtp}
+                            onClick={emailOtpVerified ? handleChangeEmail : handleSendEmailOtp}
                             loading={emailOtpLoading}
-                            style={{ background: themeColor, borderColor: themeColor, fontWeight: 700, borderRadius: 6 }}
+                            className={emailOtpVerified ? "border-2 border-gray-300" : "bg-[#5a0099] text-white"}
+                            style={emailOtpVerified ? { background: "white", color: "#5a0099" } : {}}
                           >
-                            Verify
+                            {emailOtpVerified ? "Change" : emailOtpSent ? "Resend" : "Send OTP"}
                           </Button>
-                        }
-                      />
+                        </div>
+                        {emailOtpSent && !emailOtpVerified && (
+                          <div className="flex gap-3 mt-3">
+                            <Input
+                              placeholder="Enter OTP"
+                              value={enteredEmailOtp}
+                              onChange={e => setEnteredEmailOtp(e.target.value)}
+                              maxLength={6}
+                              className="flex-1 border-2 border-gray-200 rounded-xl h-11"
+                            />
+                            <Button onClick={handleVerifyEmailOtp} loading={emailOtpLoading} className="bg-[#5a0099] text-white">
+                              Verify
+                            </Button>
+                          </div>
+                        )}
+                        {emailOtpVerified && (
+                          <div className="flex items-center gap-2 mt-2 text-green-600 text-sm font-semibold">
+                            <CheckCircleFilled /> Email verified
+                          </div>
+                        )}
+                        {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-1">Password *</label>
+                          <Controller
+                            name="password"
+                            control={control}
+                            rules={{ required: "Required", minLength: { value: 6, message: "Min 6 characters" } }}
+                            render={({ field }) => (
+                              <Input.Password {...field} size="large" placeholder="••••••••" prefix={<LockOutlined />} className="border-2 border-gray-200 rounded-xl h-11" />
+                            )}
+                          />
+                          {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-1">Confirm Password *</label>
+                          <Controller
+                            name="confirmPassword"
+                            control={control}
+                            rules={{ required: "Required" }}
+                            render={({ field }) => (
+                              <Input.Password {...field} size="large" placeholder="••••••••" prefix={<LockOutlined />} className="border-2 border-gray-200 rounded-xl h-11" />
+                            )}
+                          />
+                          {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
+                        </div>
+                      </div>
                     </div>
                   )}
 
-                  {/* Phone */}
-                  <Form.Item
-                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Phone Number <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                    validateStatus={errors.phone_number ? "error" : ""}
-                    help={errors.phone_number?.message}
-                    style={{ marginBottom: otpSent && !otpVerified ? 0 : 16 }}
-                  >
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <div style={{ width: "110px" }}>
+                  {/* Step 1 - Contact */}
+                  {currentStep === 1 && (
+                    <div className="space-y-5">
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Mobile Number *</label>
+                        <div className="flex gap-3">
+                          <div className="flex-1 flex border-2 border-gray-200 rounded-xl overflow-hidden">
+                            <Controller
+                              name="country_code"
+                              control={control}
+                              render={({ field }) => (
+                                <Select
+                                  {...field}
+                                  className="w-28"
+                                  dropdownMatchSelectWidth={250}
+                                  disabled={otpVerified || otpSent}
+                                  onChange={val => { field.onChange(val); trigger("phone_number"); }}
+                                >
+                                  {countryOptions.map(item => (
+                                    <Option key={item.iso} value={item.code}>+{item.code}</Option>
+                                  ))}
+                                </Select>
+                              )}
+                            />
+                            <Controller
+                              name="phone_number"
+                              control={control}
+                              rules={{
+                                required: "Mobile number required",
+                                validate: (value) => {
+                                  if (!value) return "Required";
+                                  let code = (getValues("country_code") || "971").replace("+", "");
+                                  if (code === "971") {
+                                    if (value.length !== 9) return "UAE numbers must be 9 digits";
+                                    if (!value.startsWith("5")) return "UAE numbers must start with 5";
+                                  }
+                                  const ph = parsePhoneNumberFromString(`+${code}${value}`);
+                                  return (ph && ph.isValid()) || "Invalid mobile format";
+                                }
+                              }}
+                              render={({ field }) => (
+                                <input
+                                  {...field}
+                                  className="flex-1 px-3 outline-none"
+                                  placeholder={watchedCountryCode === "971" ? "501234567" : "Mobile number"}
+                                  disabled={otpVerified || otpSent}
+                                  maxLength={watchedCountryCode === "971" ? 9 : 15}
+                                  onChange={e => { field.onChange(e.target.value.replace(/\D/g, "")); clearErrors("phone_number"); }}
+                                />
+                              )}
+                            />
+                          </div>
+                          <Button
+                            onClick={otpVerified ? handleChangeNumber : handleSendOtp}
+                            loading={otpLoading}
+                            className={otpVerified ? "border-2 border-gray-300" : "bg-[#5a0099] text-white"}
+                            style={otpVerified ? { background: "white", color: "#5a0099" } : {}}
+                          >
+                            {otpVerified ? "Change" : otpSent ? "Resend" : "Send OTP"}
+                          </Button>
+                        </div>
+                        {otpSent && !otpVerified && (
+                          <div className="flex gap-3 mt-3">
+                            <Input
+                              placeholder="Enter 6-digit OTP"
+                              maxLength={6}
+                              value={enteredOtp}
+                              onChange={e => setEnteredOtp(e.target.value.replace(/\D/g, ""))}
+                              className="flex-1 border-2 border-gray-200 rounded-xl h-11"
+                            />
+                            <Button onClick={handleVerifyOtp} loading={otpLoading} className="bg-[#5a0099] text-white">
+                              Verify
+                            </Button>
+                          </div>
+                        )}
+                        {otpVerified && (
+                          <div className="flex items-center gap-2 mt-2 text-green-600 text-sm font-semibold">
+                            <CheckCircleFilled /> Phone verified
+                          </div>
+                        )}
+                        {errors.phone_number && <p className="text-red-500 text-xs mt-1">{errors.phone_number.message}</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 2 - Location */}
+                  {currentStep === 2 && (
+                    <div className="space-y-5">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-1">Country *</label>
+                          <Controller
+                            name="country"
+                            control={control}
+                            rules={{ required: "Required" }}
+                            render={({ field }) => (
+                              <Select
+                                {...field}
+                                size="large"
+                                showSearch
+                                placeholder="Select Country"
+                                className="w-full border-2 border-gray-200 rounded-xl"
+                                onChange={val => { field.onChange(val); setValue("city", null); }}
+                              >
+                                {Country.getAllCountries().map(c => (
+                                  <Option key={c.isoCode} value={c.isoCode}>{c.name}</Option>
+                                ))}
+                              </Select>
+                            )}
+                          />
+                          {errors.country && <p className="text-red-500 text-xs mt-1">{errors.country.message}</p>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-1">City *</label>
+                          <Controller
+                            name="city"
+                            control={control}
+                            rules={{ required: "Required" }}
+                            render={({ field }) => (
+                              <Select {...field} size="large" showSearch placeholder="Select City" className="w-full border-2 border-gray-200 rounded-xl">
+                                {citiesList.map(c => <Option key={c.name} value={c.name}>{c.name}</Option>)}
+                              </Select>
+                            )}
+                          />
+                          {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Address *</label>
                         <Controller
-                          name="country_code"
+                          name="address"
                           control={control}
                           rules={{ required: "Required" }}
                           render={({ field }) => (
-                            <Select
-                              size="middle"
-                              showSearch
-                              disabled={otpVerified}
-                              style={{ borderRadius: 10, fontWeight: 500 }}
-                              {...field}
-                            >
-                              {countryPhoneData.slice(0, 50).map((country, index) => (
-                                <Option key={`${country.iso}-${index}`} value={country.value}>
-                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    <img
-                                      src={`https://flagcdn.com/w20/${country.iso}.png`}
-                                      width="20"
-                                      alt={country.name}
-                                    />
-                                    <span style={{ fontWeight: 500 }}>{country.phone}</span>
-                                  </div>
-                                </Option>
-                              ))}
-                            </Select>
+                            <Input.TextArea rows={3} placeholder="Building No, Street Name, Area..." {...field} className="border-2 border-gray-200 rounded-xl" />
                           )}
                         />
+                        {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address.message}</p>}
                       </div>
-
-                      <div style={{ flex: 1 }}>
-                        <Controller
-                          name="phone_number"
-                          control={control}
-                          rules={{
-                            required: "Phone number is required",
-                            validate: (value) => {
-                              const countryCode = getValues("country_code");
-                              if (!countryCode) return "Select code first";
-                              const fullNumber = `${countryCode}${value}`;
-                              const phoneNumber = parsePhoneNumberFromString(fullNumber);
-                              return (
-                                (phoneNumber && phoneNumber.isValid()) ||
-                                `Invalid number`
-                              );
-                            },
-                          }}
-                          render={({ field }) => (
-                            <Input
-                              placeholder="501234567"
-                              prefix={<PhoneOutlined style={{ color: themeColor }} />}
-                              maxLength={15}
-                              disabled={otpVerified}
-                              style={{ borderRadius: 10, fontWeight: 500 }}
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e.target.value.replace(/\D/g, ""));
-                                if (otpVerified) {
-                                  setOtpVerified(false);
-                                  setOtpSent(false);
-                                }
-                              }}
-                              suffix={
-                                !otpVerified ? (
-                                  <Button
-                                    type="link"
-                                    onClick={handleSendOtp}
-                                    loading={otpLoading}
-                                    disabled={!watchedPhoneNumber}
-                                    style={{ color: themeColor, fontWeight: 700, padding: 0, fontSize: 13 }}
-                                  >
-                                    {otpSent ? "Resend OTP" : "Send OTP"}
-                                  </Button>
-                                ) : (
-                                  <span style={{ color: "#52c41a", fontWeight: 700, fontSize: 13 }}>
-                                    <CheckCircleFilled /> Verified
-                                  </span>
-                                )
-                              }
-                            />
-                          )}
-                        />
-                      </div>
-                    </div>
-                  </Form.Item>
-
-                  {otpSent && !otpVerified && (
-                    <div style={{ marginTop: -12, marginBottom: 16 }}>
-                      <Input
-                        placeholder="Enter 6-digit OTP"
-                        prefix={<SafetyCertificateOutlined style={{ color: themeColor }} />}
-                        value={enteredOtp}
-                        onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ""))}
-                        maxLength={6}
-                        style={{ borderRadius: 10, fontWeight: 500 }}
-                        suffix={
-                          <Button
-                            type="primary"
-                            size="small"
-                            onClick={handleVerifyOtp}
-                            loading={otpLoading}
-                            style={{ background: themeColor, borderColor: themeColor, fontWeight: 700, borderRadius: 6 }}
-                          >
-                            Verify
-                          </Button>
-                        }
-                      />
                     </div>
                   )}
 
-                  {/* Password */}
-                  <Form.Item
-                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Password <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                    validateStatus={errors.password ? "error" : ""}
-                    help={errors.password?.message}
-                  >
-                    <Controller
-                      name="password"
-                      control={control}
-                      rules={{
-                        required: "Password is required",
-                        minLength: { value: 6, message: "Minimum 6 characters" },
-                      }}
-                      render={({ field }) => (
-                        <Input.Password
-                          placeholder="Create a strong password"
-                          prefix={<LockOutlined style={{ color: themeColor }} />}
-                          style={{ borderRadius: 10, fontWeight: 500 }}
-                          {...field}
-                        />
-                      )}
-                    />
-                  </Form.Item>
-
-                  <Divider style={{ margin: "20px 0" }} />
-
-                  {/* Location */}
-                  <div style={{ marginBottom: 16 }}>
-                    <Title level={5} style={{ marginBottom: 16, color: themeColor, fontWeight: 800 }}>
-                      <EnvironmentOutlined style={{ marginRight: 8 }} />
-                      Location Details
-                    </Title>
+                  {/* Navigation Buttons */}
+                  <div className="flex justify-between items-center mt-8 pt-6 border-t">
+                    {currentStep > 0 ? (
+                      <button type="button" onClick={prevStep} className="px-8 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-600 hover:border-[#5a0099] hover:text-[#5a0099] transition">
+                        <ArrowLeftOutlined /> Back
+                      </button>
+                    ) : <div />}
+                    {currentStep < 2 ? (
+                      <button type="button" onClick={nextStep} className="px-8 py-3 bg-[#5a0099] text-white rounded-xl font-bold shadow-lg hover:bg-[#3d006b] transition">
+                        Continue <ArrowRightOutlined />
+                      </button>
+                    ) : (
+                      <button type="submit" disabled={!otpVerified || !emailOtpVerified || submitting} className="px-8 py-3 bg-[#5a0099] text-white rounded-xl font-bold shadow-lg hover:bg-[#3d006b] transition disabled:opacity-50">
+                        {submitting ? "Submitting..." : "Submit Registration →"}
+                      </button>
+                    )}
                   </div>
-                  <Row gutter={16}>
-                    <Col xs={24} md={12}>
-                      <Form.Item
-                        label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Country <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                        validateStatus={errors.country ? "error" : ""}
-                        help={errors.country?.message}
-                      >
-                        <Controller
-                          name="country"
-                          control={control}
-                          rules={{ required: "Country is required" }}
-                          render={({ field }) => (
-                            <Select
-                              size="middle"
-                              showSearch
-                              placeholder="Select Country"
-                              optionFilterProp="children"
-                              style={{ borderRadius: 10, fontWeight: 500 }}
-                              onChange={(val) => {
-                                field.onChange(val);
-                                setValue("city", undefined);
-                              }}
-                              value={field.value}
-                            >
-                              {Country.getAllCountries().slice(0, 100).map((country) => (
-                                <Option key={country.isoCode} value={country.isoCode}>
-                                  {country.name}
-                                </Option>
-                              ))}
-                            </Select>
-                          )}
-                        />
-                      </Form.Item>
-                    </Col>
-
-                    <Col xs={24} md={12}>
-                      <Form.Item
-                        label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>City <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                        validateStatus={errors.city ? "error" : ""}
-                        help={errors.city?.message}
-                      >
-                        <Controller
-                          name="city"
-                          control={control}
-                          rules={{ required: "City is required" }}
-                          render={({ field }) =>
-                            citiesList.length > 0 ? (
-                              <Select
-                                size="middle"
-                                showSearch
-                                placeholder="Select City"
-                                style={{ borderRadius: 10, fontWeight: 500 }}
-                                {...field}
-                              >
-                                {citiesList.map((city) => (
-                                  <Option key={city.name} value={city.name}>
-                                    {city.name}
-                                  </Option>
-                                ))}
-                              </Select>
-                            ) : (
-                              <Input placeholder="Enter City" style={{ borderRadius: 10, fontWeight: 500 }} {...field} />
-                            )
-                          }
-                        />
-                      </Form.Item>
-                    </Col>
-                  </Row>
-
-                  <Form.Item
-                    label={<span style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Address <span style={{ color: "#ff4d4f" }}>*</span></span>}
-                    validateStatus={errors.address ? "error" : ""}
-                    help={errors.address?.message}
-                  >
-                    <Controller
-                      name="address"
-                      control={control}
-                      rules={{ required: "Address is required" }}
-                      render={({ field }) => (
-                        <Input.TextArea
-                          placeholder="Building No, Street Name, Area..."
-                          rows={2}
-                          style={{ borderRadius: 10, fontWeight: 500 }}
-                          {...field}
-                        />
-                      )}
-                    />
-                  </Form.Item>
-
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    block
-                    size="large"
-                    loading={submitting}
-                    disabled={!otpVerified || !emailOtpVerified}
-                    style={{
-                      height: 48,
-                      background: `linear-gradient(135deg, ${themeColor} 0%, #3a0163 100%)`,
-                      borderColor: themeColor,
-                      fontWeight: 800,
-                      fontSize: 16,
-                      borderRadius: 12,
-                      marginTop: 16,
-                      boxShadow: `0 4px 15px ${themeColor}60`,
-                      letterSpacing: "0.5px",
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
-                  >
-                    <RocketOutlined style={{ marginRight: 8 }} />
-                    Submit Registration
-                  </Button>
-
-                  <div style={{ marginTop: 20, textAlign: "center" }}>
-                    <Space split={<Divider type="vertical" />}>
-                      <Text style={{ fontSize: 12, fontWeight: 500 }}>
-                        <SafetyOutlined style={{ color: "#52c41a", marginRight: 4 }} />
-                        Secure Encryption
-                      </Text>
-                      <Text style={{ fontSize: 12, fontWeight: 500 }}>
-                        <CheckCircleFilled style={{ color: "#52c41a", marginRight: 4 }} />
-                        24/7 Support
-                      </Text>
-                    </Space>
-                  </div>
-                </Spin>
-              </Form>
-            </Card>
+                </Form>
+              </Spin>
+            </div>
           </div>
-        </Col>
-      </Row>
-
-      <style jsx global>{`
-        .ant-input-affix-wrapper, .ant-select-selector, .ant-input, .ant-input-password {
-          border-radius: 10px !important;
-          transition: all 0.3s ease !important;
-          border: 1px solid #e0e0e0 !important;
-        }
-        
-        .ant-input-affix-wrapper:hover, .ant-select-selector:hover, .ant-input:hover, .ant-input-password:hover {
-          border-color: ${themeColor} !important;
-          box-shadow: 0 0 0 2px ${themeColor}20 !important;
-        }
-        
-        .ant-input-affix-wrapper:focus, .ant-select-selector:focus, .ant-input:focus, .ant-input-password:focus {
-          border-color: ${themeColor} !important;
-          box-shadow: 0 0 0 3px ${themeColor}30 !important;
-        }
-        
-        .ant-btn-primary {
-          transition: all 0.3s ease !important;
-        }
-        
-        .ant-btn-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px ${themeColor}80 !important;
-        }
-        
-        .ant-form-item-label > label {
-          font-weight: 700 !important;
-        }
-        
-        .ant-progress-text {
-          font-weight: 600 !important;
-        }
-        
-        .ant-modal-content {
-          border-radius: 20px !important;
-        }
-      `}</style>
-    </div>
+        </div>
+      </div>
+    </ConfigProvider>
   );
-};
-
-export default DeveloperRegistration;
+}

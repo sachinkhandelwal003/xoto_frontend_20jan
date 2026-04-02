@@ -2,46 +2,40 @@
   "heading": "Lo que dicen nuestros clientes",
   "items": [
     {
-      "title": "Encontré un lugar increíble",
-      "text": "RentBro hizo que mudarme a una nueva ciudad fuera muy fácil, con precios justos y un vecindario excelente.",
-      "name": "Shubham",
-      "location": "Pune, Maharashtra",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "Comprar mi primer apartamento en Dubái me resultaba abrumador hasta que descubrí XOTO. Su equipo me ayudó a entender mi capacidad de endeudamiento, comparar opciones hipotecarias y cerrar el trato sin problemas. Todo fue transparente y rápido.",
+      "name": "Ahmed R.",
+      "location": "Centro de Dubái",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859324353-ChatGPT%20Image%20Mar%2014%2C%202026%20at%2001_38_32%20PM%201.png"
     },
     {
-      "title": "Experiencia fluida",
-      "text": "Todo el proceso de alquiler fue rápido y transparente.",
-      "name": "Shubham",
-      "location": "Pune, Maharashtra",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "XOTO hizo que el proceso hipotecario fuera increíblemente sencillo. En pocos días tuve varias opciones bancarias y orientación clara sobre las mejores tasas disponibles. Los asesores se encargaron de todo, desde el papeleo hasta las aprobaciones.",
+      "name": "Sarah K.",
+      "location": "Puerto de Dubái",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859238209-Group%20309.png"
     },
     {
-      "title": "Gran soporte",
-      "text": "El equipo de soporte fue muy útil durante todo el proceso.",
-      "name": "Shubham",
-      "location": "Pune, Maharashtra",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "Lo que más me gustó de XOTO fue tener la búsqueda de propiedades y el soporte hipotecario en un solo lugar. Me ahorró semanas de esfuerzo y me dio confianza para avanzar con la propiedad correcta.",
+      "name": "Rohan Mehta",
+      "location": "Business Bay",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859119654-Group%20309%20%281%29.png"
     },
     {
-      "title": "Vale la pena",
-      "text": "Precios justos y anuncios confiables.",
-      "name": "Shubham",
-      "location": "Pune, Maharashtra",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "Como inversor inmobiliario en Dubái, la velocidad y la claridad son fundamentales. La plataforma de XOTO me ayudó a evaluar rápidamente las opciones de financiamiento y a obtener una hipoteca para mi segunda propiedad de inversión.",
+      "name": "Khalid A.",
+      "location": "Jumeirah Village Circle",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859149102-Group%20309%20%282%29.png"
     },
     {
-      "title": "Mudanza sin estrés",
-      "text": "Mudarse a una nueva ciudad fue muy sencillo.",
-      "name": "Punit",
-      "location": "Pune, Maharashtra",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "XOTO hizo que el proceso hipotecario fuera increíblemente sencillo. En pocos días tuve varias opciones bancarias y orientación clara sobre las mejores tasas disponibles.",
+      "name": "Sarah K.",
+      "location": "Puerto de Dubái",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859238209-Group%20309.png"
     },
     {
-      "title": "¡Excelente vecindario!",
-      "text": "Las recomendaciones del área fueron perfectas.",
-      "name": "Harsh",
-      "location": "HSR Layout, Bangalore",
-      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face"
+      "text": "Lo que más me gustó de XOTO fue tener la búsqueda de propiedades y el soporte hipotecario en un solo lugar. Me ahorró semanas de esfuerzo.",
+      "name": "Rohan Mehta",
+      "location": "Business Bay",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859119654-Group%20309%20%281%29.png"
     }
   ]
 }

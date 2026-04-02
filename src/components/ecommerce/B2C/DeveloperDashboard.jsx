@@ -31,6 +31,9 @@ const DeveloperDashboard = () => {
   const { userProfile, loading: profileLoading, isOnboarded } = useContext(AuthContext);
   const prof = userProfile?.data || userProfile || {};
 
+  // 🔥 Foolproof check: Context wala flag OR Backend ka actual data
+  const checkIsOnboarded = isOnboarded || prof?.isVerified === true || prof?.onboarding_status === "approved";
+
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
   const [inventoryStatus, setInventoryStatus] = useState([]);
@@ -73,6 +76,7 @@ const DeveloperDashboard = () => {
     return "Developer";
   };
 
+  // Agar profile ya dashboard load ho raha hai
   if (loading || profileLoading) {
     return (
       <div className="flex justify-center items-center h-[60vh]">
@@ -81,13 +85,13 @@ const DeveloperDashboard = () => {
     );
   }
 
-  if (!isOnboarded) {
+  // 🔥 Ab yahan naya variable use kiya hai
+  if (!checkIsOnboarded) {
     return <ActionRequiredModal isOpen />;
   }
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-
       {/* HEADER */}
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -200,7 +204,6 @@ const DeveloperDashboard = () => {
           </Card>
         </Col>
       </Row>
-
     </div>
   );
 };

@@ -63,7 +63,7 @@ const Role = () => {
     currentPage: 1,
     totalPages: 1,
     totalResults: 0,
-    itemsPerPage: 10,
+    itemsPerPage: 20,
   });
   const [platformPagination, setPlatformPagination] = useState({
     currentPage: 1,
@@ -92,7 +92,7 @@ const Role = () => {
   }, [token]);
 
   // Fetch roles
-  const fetchRoles = async (page = 1, itemsPerPage = 10, filters = {}) => {
+  const fetchRoles = async (page = 1, itemsPerPage = 20, filters = {}) => {
     setLoading((prev) => ({ ...prev, roles: true }));
     try {
       const params = { page, limit: itemsPerPage };
@@ -105,7 +105,7 @@ const Role = () => {
         currentPage: response.pagination.currentPage || 1,
         totalPages: response.pagination.totalPages || 1,
         totalResults: response.pagination.totalRecords || 0,
-        itemsPerPage: response.pagination.perPage || 10,
+        itemsPerPage: response.pagination.perPage || 20,
       });
     } catch (error) {
       console.error('Fetch roles error:', error);

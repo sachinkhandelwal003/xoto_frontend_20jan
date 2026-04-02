@@ -65,18 +65,14 @@ const extractPhotoUrl = (fileItem) => {
   );
 };
 
-// Custom upload request (same as before)
 const customUploadRequest = async ({ file, onSuccess, onError }) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
-
     const res = await fetch(UPLOAD_API, { method: "POST", body: formData });
     const data = await res.json();
-
     if (!res.ok || data.success === false)
       throw new Error(data.message || "Upload failed");
-
     onSuccess(data, file);
   } catch (err) {
     console.error("Upload error:", err);
@@ -90,17 +86,16 @@ export default function DeveloperAddProperty() {
   const developerId = user?.id || user?._id || null;
 
   const [form] = Form.useForm();
+  // ✅ Watch hasView from the SINGLE form instance
   const hasView = Form.useWatch("hasView", form);
   const [formLoading, setFormLoading] = useState(false);
 
-  // File lists for different media types
   const [mainLogoFileList, setMainLogoFileList] = useState([]);
   const [photosArchitecture, setPhotosArchitecture] = useState([]);
   const [photosInterior, setPhotosInterior] = useState([]);
   const [photosLobby, setPhotosLobby] = useState([]);
   const [photosOther, setPhotosOther] = useState([]);
   const [brochureFileList, setBrochureFileList] = useState([]);
-
   const [photoError, setPhotoError] = useState("");
 
   useEffect(() => {
@@ -109,15 +104,28 @@ export default function DeveloperAddProperty() {
       navigate("/dashboard/developer");
     }
   }, [developerId, navigate]);
+useEffect(() => {
+  if (user) {
+    form.setFieldsValue({
+      developerName: 
+        user?.username ||
+        user?.companyName || 
+        user?.company_name ||
+        user?.name ||
+        user?.fullName ||
+        user?.full_name ||
+        user?.email ||   // fallback
+        "",
+    });
+  }
+}, [user, form]);
 
-  // Common validation for image size
   const validateImageSize = (file) => {
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) showToast("error", "Image must be smaller than 2MB!");
     return isLt2M || Upload.LIST_IGNORE;
   };
 
-  // Helper to check if any upload is still in progress
   const isAnyUploading = () => {
     const lists = [
       mainLogoFileList,
@@ -130,23 +138,18 @@ export default function DeveloperAddProperty() {
     return lists.some((list) => list.some((f) => f.status === "uploading"));
   };
 
-  // Helper to collect uploaded URLs from a file list
-  const collectUrls = (fileList) => {
-    return fileList
+  const collectUrls = (fileList) =>
+    fileList
       .filter((f) => f.status === "done")
       .map((f) => extractPhotoUrl(f))
       .filter(Boolean);
-  };
 
-  // Handle form submission
   const handleSave = async (values) => {
-    // Wait for all uploads to finish
     if (isAnyUploading()) {
       showToast("error", "Please wait for all photos to finish uploading.");
       return;
     }
 
-    // Check for failed uploads
     const allLists = [
       mainLogoFileList,
       photosArchitecture,
@@ -161,14 +164,12 @@ export default function DeveloperAddProperty() {
       return;
     }
 
-    // Ensure main logo is uploaded
     const mainLogoUrls = collectUrls(mainLogoFileList);
     if (mainLogoUrls.length === 0) {
       setPhotoError("Please upload a main logo image.");
       return;
     }
 
-    // Build photos object
     const photos = {
       architecture: collectUrls(photosArchitecture),
       interior: collectUrls(photosInterior),
@@ -176,126 +177,108 @@ export default function DeveloperAddProperty() {
       other: collectUrls(photosOther),
     };
 
-    // Handle brochure (optional)
     let brochureUrl = "";
     if (brochureFileList.length > 0 && brochureFileList[0].status === "done") {
       brochureUrl = extractPhotoUrl(brochureFileList[0]) || "";
     }
 
-    // Build the full payload according to schema
-    const payload = {
-      // Creator info
-      developer: developerId,
-      agent: null,
-      agency: null,
+ const payload = {
+  developer: developerId,
+  agent: null,
+  agency: null,
+  propertySubType: "off_plan",
+  transactionType: values.transactionType || "sell",
+  projectOption: "new",
+  propertyName: values.propertyName?.trim(),
+  developerName: user?.name || "",
+  description: values.description?.trim(),
 
-      // Property type
-      propertySubType: "off_plan",
-      transactionType: "sell",
-      projectOption: values.projectType, // "new" or "existing"
+  location: {
+    area: values.area?.trim(),
+    city: values.city?.trim() || "Dubai",
+    country: values.country?.trim() || "UAE",
+    coordinates: {
+      lat: values.latitude || null,
+      lng: values.longitude || null,
+    },
+    proximity: {
+      airport: values.airportProximity || "",
+      metro: values.metroProximity || "",
+      mall: values.mallProximity || "",
+      school: values.schoolProximity || "",
+    },
+  },
 
-      // Project info
-      propertyName: values.propertyName,
-      developerName: values.developerName,
+  unitNumber: values.unitNumber || "",
+  floorNumber: values.floorNumber || 0,
+  unitType: values.unitType || "apartment",
+  bedroomType: values.bedroomType || "1bed",
+  bedrooms: values.bedrooms || 0,
+  bathrooms: values.bathrooms || 0,
+  builtUpArea_min: values.builtUpArea_min || 0,
+  builtUpArea_max: values.builtUpArea_max || 0,
+  builtUpAreaUnit: values.builtUpAreaUnit || "sqft",
+  price_min: values.price_min || 0,
+  price_max: values.price_max || 0,
+  currency: values.currency || "AED",
 
-      // Unit details (off-plan may omit unitNumber/floorNumber)
-      unitNumber: values.unitNumber || "",
-      floorNumber: values.floorNumber || 0,
-      unitType: values.unitType,
-      bedroomType: values.bedroomType,
-      bedrooms: values.bedrooms,
-      bathrooms: values.bathrooms,
+  mainLogo: mainLogoUrls[0],
+  photos,
+  videoUrl: values.videoUrl || "",
+  brochure: brochureUrl,
 
-      // Dimensions
-      builtUpArea_min: values.builtUpArea_min,
-      builtUpArea_max: values.builtUpArea_max,
-      builtUpAreaUnit: values.builtUpAreaUnit,
+  amenities: values.amenities || [],
+  facilities: {
+    swimmingPool: values.swimmingPool || false,
+    gym: values.gym || false,
+    parking: values.parking || false,
+    childrenPlayArea: values.childrenPlayArea || false,
+    gardens: values.gardens || false,
+    security: values.security || false,
+    concierge: values.concierge || false,
+  },
 
-      // Price
-      price_min: values.price_min,
-      price_max: values.price_max,
-      currency: values.currency || "AED",
+  hasView: values.hasView || false,
+  viewType: values.viewType || [],
+  parkingSpaces: values.parkingSpaces || 0,
+  furnishing: values.furnishing || "unfurnished",
+  ownershipType: values.ownershipType || "freehold",
+  availableFrom: values.availableFrom
+    ? values.availableFrom.format("YYYY-MM-DD")
+    : null,
 
-      // Location
-      area: values.area,
-      city: values.city,
-      country: values.country,
-      coordinates: {
-        lat: values.latitude,
-        lng: values.longitude,
-      },
-      proximity: {
-        airport: values.airportProximity,
-        metro: values.metroProximity,
-        mall: values.mallProximity,
-        school: values.schoolProximity,
-      },
+  totalUnits: values.totalUnits || 0,
+  floors: values.floors || 0,
+  completionDate: {
+    quarter: values.completionQuarter || null,
+    year: values.completionYear || null,
+    fullDate: values.completionFullDate
+      ? values.completionFullDate.format("YYYY-MM-DD")
+      : null,
+  },
+  projectStatus: values.projectStatus || "presale",
+  serviceChargeInfo: values.serviceChargeInfo || "",
+  readinessProgress: values.readinessProgress || "0%",
 
-      // Media
-      mainLogo: mainLogoUrls[0],
-      photos,
-      videoUrl: values.videoUrl || "",
-      brochure: brochureUrl,
+  paymentPlan: values.paymentPlan || [],
+  eoiAmount: values.eoiAmount || 0,
+  resaleConditions: values.resaleConditions || "",
 
-      // Description
-      description: values.description,
+  commission: values.commission || 0,
+  shareCommission: values.shareCommission || false,
+  shareCommissionPercentage: values.shareCommissionPercentage || 0,
+  isFeatured: values.isFeatured || false,
+  showContactOnlyVerified: values.showContactOnlyVerified || false,
+};
 
-      // Amenities & Facilities
-      amenities: values.amenities || [],
-      facilities: {
-        swimmingPool: values.swimmingPool || false,
-        gym: values.gym || false,
-        parking: values.parking || false,
-        childrenPlayArea: values.childrenPlayArea || false,
-        gardens: values.gardens || false,
-        security: values.security || false,
-        concierge: values.concierge || false,
-      },
+Object.keys(payload).forEach((key) => {
+  if (payload[key] === undefined) delete payload[key];
+});
 
-      // Additional features
-      hasView: values.hasView || false,
-      viewType: values.viewType || [],
-      parkingSpaces: values.parkingSpaces || 0,
-      furnishing: values.furnishing,
-      ownershipType: values.ownershipType,
-      availableFrom: values.availableFrom ? values.availableFrom.format("YYYY-MM-DD") : null,
-
-      // Off-plan specific
-      totalUnits: values.totalUnits,
-      completionDate: {
-        quarter: values.completionQuarter,
-        year: values.completionYear,
-        fullDate: values.completionFullDate ? values.completionFullDate.format("YYYY-MM-DD") : null,
-      },
-      projectStatus: values.projectStatus,
-      floors: values.floors,
-      serviceChargeInfo: values.serviceChargeInfo,
-      readinessProgress: values.readinessProgress,
-      paymentPlan: values.paymentPlan || [],
-      eoiAmount: values.eoiAmount,
-      resaleConditions: values.resaleConditions,
-
-      // Commission
-      commission: values.commission || 0,
-      shareCommission: values.shareCommission || false,
-      shareCommissionPercentage: values.shareCommissionPercentage || 0,
-
-      // Status
-      isFeatured: values.isFeatured || false,
-      showContactOnlyVerified: values.showContactOnlyVerified || false,
-    };
-
-    // Remove empty optional fields
-    Object.keys(payload).forEach((key) => {
-      if (payload[key] === undefined || payload[key] === null) delete payload[key];
-    });
-
-    // Clear any previous error
     setPhotoError("");
 
     try {
       setFormLoading(true);
-      // Update this endpoint to match your backend route
       const res = await apiService.post("/properties/developer/property/create-offplan", payload);
       if (res) {
         showToast("success", "Property submitted. Waiting for admin approval.");
@@ -304,22 +287,18 @@ export default function DeveloperAddProperty() {
         showToast("error", "Failed to save property.");
       }
     } catch (error) {
-      console.error("Save error:", error);
-      const backendMsg = error?.response?.data?.message || "Something went wrong.";
-      showToast("error", backendMsg);
-    } finally {
-      setFormLoading(false);
-    }
+  console.error("Save error:", error);
+} finally {
+  setFormLoading(false);
+}
   };
 
-  const handleFinishFailed = ({ errorFields }) => {
-    showToast(
-      "error",
-      errorFields?.[0]?.errors?.[0] || "Please fill in all required fields."
-    );
-  };
+ const handleFinishFailed = ({ errorFields }) => {
+  if (errorFields?.length > 0) {
+    showToast("error", errorFields[0]?.errors?.[0] || "Please fill in all required fields.");
+  }
+};
 
-  // Helper for dynamic payment plan fields
   const renderPaymentPlanFields = () => (
     <Form.List name="paymentPlan">
       {(fields, { add, remove }) => (
@@ -429,12 +408,14 @@ export default function DeveloperAddProperty() {
       </Row>
 
       <Card className="shadow-sm rounded-xl">
+        {/* ✅ SINGLE Form — no nested <Form> anywhere below */}
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSave}
           onFinishFailed={handleFinishFailed}
           initialValues={{
+            projectType: "new",
             currency: "AED",
             builtUpAreaUnit: "sqft",
             unitType: "apartment",
@@ -453,24 +434,17 @@ export default function DeveloperAddProperty() {
             shareCommissionPercentage: 0,
           }}
         >
-          {/* Basic Information */}
+          {/* ── Basic Information ── */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>
             Basic Information
           </Divider>
           <Row gutter={16}>
-            <Col xs={12} md={6}>
-              <Form.Item
-                name="projectType"
-                label="Project Type"
-                rules={[{ required: true, message: "Select project type" }]}
-              >
-                <Select>
-                  <Option value="new">New</Option>
-                  <Option value="existing">Existing</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={18}>
+            
+              <Form.Item name="projectType" hidden initialValue="new">
+  <Input />
+</Form.Item>
+           
+            <Col xs={24} md={12}>
               <Form.Item
                 name="propertyName"
                 label="Property Name"
@@ -479,9 +453,19 @@ export default function DeveloperAddProperty() {
                 <Input placeholder="e.g., Luxury Tower Downtown" />
               </Form.Item>
             </Col>
-          </Row>
-          <Row gutter={16}>
-            
+            {/* ✅ developerName field was missing — added here */}
+            <Col xs={24} md={6}>
+<Form.Item name="developerName" label="Developer Name">
+  <Input
+    readOnly
+    style={{
+      backgroundColor: "#f5f5f5",
+      cursor: "not-allowed",
+      color: "#555",
+    }}
+  />
+</Form.Item>
+            </Col>
           </Row>
           <Form.Item
             name="description"
@@ -491,7 +475,7 @@ export default function DeveloperAddProperty() {
             <TextArea rows={4} placeholder="Describe the property..." />
           </Form.Item>
 
-          {/* Property Details */}
+          {/* ── Property Details ── */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>
             Property Details
           </Divider>
@@ -549,20 +533,12 @@ export default function DeveloperAddProperty() {
           </Row>
           <Row gutter={16}>
             <Col xs={12} md={6}>
-              <Form.Item
-                name="builtUpArea_min"
-                label="Min Built-up Area"
-                rules={[{ required: true }]}
-              >
+              <Form.Item name="builtUpArea_min" label="Min Built-up Area" rules={[{ required: true }]}>
                 <InputNumber style={{ width: "100%" }} />
               </Form.Item>
             </Col>
             <Col xs={12} md={6}>
-              <Form.Item
-                name="builtUpArea_max"
-                label="Max Built-up Area"
-                rules={[{ required: true }]}
-              >
+              <Form.Item name="builtUpArea_max" label="Max Built-up Area" rules={[{ required: true }]}>
                 <InputNumber style={{ width: "100%" }} />
               </Form.Item>
             </Col>
@@ -577,20 +553,12 @@ export default function DeveloperAddProperty() {
           </Row>
           <Row gutter={16}>
             <Col xs={12} md={6}>
-              <Form.Item
-                name="price_min"
-                label="Min Price"
-                rules={[{ required: true }]}
-              >
+              <Form.Item name="price_min" label="Min Price" rules={[{ required: true }]}>
                 <InputNumber style={{ width: "100%" }} />
               </Form.Item>
             </Col>
             <Col xs={12} md={6}>
-              <Form.Item
-                name="price_max"
-                label="Max Price"
-                rules={[{ required: true }]}
-              >
+              <Form.Item name="price_max" label="Max Price" rules={[{ required: true }]}>
                 <InputNumber style={{ width: "100%" }} />
               </Form.Item>
             </Col>
@@ -604,17 +572,13 @@ export default function DeveloperAddProperty() {
             </Col>
           </Row>
 
-          {/* Location & Proximity */}
+          {/* ── Location & Proximity ── */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>
             Location & Proximity
           </Divider>
           <Row gutter={16}>
             <Col xs={24} md={8}>
-              <Form.Item
-                name="area"
-                label="Area"
-                rules={[{ required: true, message: "Enter area name" }]}
-              >
+              <Form.Item name="area" label="Area" rules={[{ required: true, message: "Enter area name" }]}>
                 <Input placeholder="e.g., Downtown Dubai" />
               </Form.Item>
             </Col>
@@ -664,7 +628,7 @@ export default function DeveloperAddProperty() {
             </Col>
           </Row>
 
-          {/* Media */}
+          {/* ── Media ── */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>
             Media
           </Divider>
@@ -679,75 +643,28 @@ export default function DeveloperAddProperty() {
               maxCount={1}
             >
               {mainLogoFileList.length === 0 && (
-                <div>
-                  <PlusOutlined />
-                  <div style={{ marginTop: 8 }}>Upload Logo</div>
-                </div>
+                <div><PlusOutlined /><div style={{ marginTop: 8 }}>Upload Logo</div></div>
               )}
             </Upload>
           </Form.Item>
           <Form.Item label="Architecture Photos">
-            <Upload
-              listType="picture-card"
-              fileList={photosArchitecture}
-              customRequest={customUploadRequest}
-              beforeUpload={validateImageSize}
-              accept="image/*"
-              onChange={({ fileList }) => setPhotosArchitecture(fileList)}
-              multiple
-            >
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Add Photos</div>
-              </div>
+            <Upload listType="picture-card" fileList={photosArchitecture} customRequest={customUploadRequest} beforeUpload={validateImageSize} accept="image/*" onChange={({ fileList }) => setPhotosArchitecture(fileList)} multiple>
+              <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
             </Upload>
           </Form.Item>
           <Form.Item label="Interior Photos">
-            <Upload
-              listType="picture-card"
-              fileList={photosInterior}
-              customRequest={customUploadRequest}
-              beforeUpload={validateImageSize}
-              accept="image/*"
-              onChange={({ fileList }) => setPhotosInterior(fileList)}
-              multiple
-            >
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Add Photos</div>
-              </div>
+            <Upload listType="picture-card" fileList={photosInterior} customRequest={customUploadRequest} beforeUpload={validateImageSize} accept="image/*" onChange={({ fileList }) => setPhotosInterior(fileList)} multiple>
+              <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
             </Upload>
           </Form.Item>
           <Form.Item label="Lobby Photos">
-            <Upload
-              listType="picture-card"
-              fileList={photosLobby}
-              customRequest={customUploadRequest}
-              beforeUpload={validateImageSize}
-              accept="image/*"
-              onChange={({ fileList }) => setPhotosLobby(fileList)}
-              multiple
-            >
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Add Photos</div>
-              </div>
+            <Upload listType="picture-card" fileList={photosLobby} customRequest={customUploadRequest} beforeUpload={validateImageSize} accept="image/*" onChange={({ fileList }) => setPhotosLobby(fileList)} multiple>
+              <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
             </Upload>
           </Form.Item>
           <Form.Item label="Other Photos">
-            <Upload
-              listType="picture-card"
-              fileList={photosOther}
-              customRequest={customUploadRequest}
-              beforeUpload={validateImageSize}
-              accept="image/*"
-              onChange={({ fileList }) => setPhotosOther(fileList)}
-              multiple
-            >
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Add Photos</div>
-              </div>
+            <Upload listType="picture-card" fileList={photosOther} customRequest={customUploadRequest} beforeUpload={validateImageSize} accept="image/*" onChange={({ fileList }) => setPhotosOther(fileList)} multiple>
+              <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
             </Upload>
           </Form.Item>
           <Form.Item name="videoUrl" label="Video URL">
@@ -770,7 +687,7 @@ export default function DeveloperAddProperty() {
             </Upload>
           </Form.Item>
 
-          {/* Amenities & Facilities */}
+          {/* ── Amenities & Facilities ── */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>
             Amenities & Facilities
           </Divider>
@@ -778,111 +695,83 @@ export default function DeveloperAddProperty() {
             <Select mode="tags" placeholder="Type and press Enter" style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item label="Facilities">
-            <Row gutter={[16, 0]}>
-              <Col span={8}>
-                <Form.Item name="swimmingPool" valuePropName="checked" noStyle>
-                  <Checkbox>Swimming Pool</Checkbox>
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item name="gym" valuePropName="checked" noStyle>
-                  <Checkbox>Gym</Checkbox>
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item name="parking" valuePropName="checked" noStyle>
-                  <Checkbox>Parking</Checkbox>
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item name="childrenPlayArea" valuePropName="checked" noStyle>
-                  <Checkbox>Children Play Area</Checkbox>
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item name="gardens" valuePropName="checked" noStyle>
-                  <Checkbox>Gardens</Checkbox>
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item name="security" valuePropName="checked" noStyle>
-                  <Checkbox>Security</Checkbox>
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item name="concierge" valuePropName="checked" noStyle>
-                  <Checkbox>Concierge</Checkbox>
-                </Form.Item>
-              </Col>
+            <Row gutter={[16, 8]}>
+              {[
+                ["swimmingPool", "Swimming Pool"],
+                ["gym", "Gym"],
+                ["parking", "Parking"],
+                ["childrenPlayArea", "Children Play Area"],
+                ["gardens", "Gardens"],
+                ["security", "Security"],
+                ["concierge", "Concierge"],
+              ].map(([name, label]) => (
+                <Col span={8} key={name}>
+                  <Form.Item name={name} valuePropName="checked" noStyle>
+                    <Checkbox>{label}</Checkbox>
+                  </Form.Item>
+                </Col>
+              ))}
             </Row>
           </Form.Item>
 
-          {/* Additional Features */}
+          {/* ── Additional Features ── */}
+          {/* ✅ NO nested <Form> tag here — using the outer form's context */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>
             Additional Features
           </Divider>
-        <Form form={form} layout="vertical">
+          <Row gutter={16}>
+            <Col xs={12} md={6}>
+              <Form.Item name="hasView" valuePropName="checked" label="Has View">
+                <Switch />
+              </Form.Item>
+            </Col>
 
-  <Row gutter={16}>
-    
-    <Col xs={12} md={6}>
-      <Form.Item name="hasView" valuePropName="checked" label="Has View">
-        <Switch />
-      </Form.Item>
-    </Col>
+            {/* ✅ Conditional view type — works because hasView is watched on the correct form */}
+            {hasView && (
+              <Col xs={12} md={6}>
+                <Form.Item name="viewType" label="View Type">
+                  <Select mode="multiple" placeholder="Select views">
+                    <Option value="city">City View</Option>
+                    <Option value="sea">Sea View</Option>
+                    <Option value="garden">Garden View</Option>
+                    <Option value="landmark">Landmark View</Option>
+                    <Option value="pool">Pool View</Option>
+                    <Option value="park">Park View</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+            )}
 
-    {/* 👇 CONDITIONAL VIEW TYPE */}
-    {hasView && (
-      <Col xs={12} md={6}>
-        <Form.Item name="viewType" label="View Type">
-          <Select mode="multiple" placeholder="Select views">
-            <Select.Option value="city">City View</Select.Option>
-            <Select.Option value="sea">Sea View</Select.Option>
-            <Select.Option value="garden">Garden View</Select.Option>
-            <Select.Option value="landmark">Landmark View</Select.Option>
-            <Select.Option value="pool">Pool View</Select.Option>
-            <Select.Option value="park">Park View</Select.Option>
-          </Select>
-        </Form.Item>
-      </Col>
-    )}
+            <Col xs={12} md={6}>
+              <Form.Item name="parkingSpaces" label="Parking Spaces">
+                <InputNumber min={0} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+            <Col xs={12} md={6}>
+              <Form.Item name="furnishing" label="Furnishing">
+                <Select>
+                  <Option value="unfurnished">Unfurnished</Option>
+                  <Option value="furnished">Furnished</Option>
+                  <Option value="semi_furnished">Semi-furnished</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={12} md={6}>
+              <Form.Item name="ownershipType" label="Ownership Type">
+                <Select>
+                  <Option value="freehold">Freehold</Option>
+                  <Option value="leasehold">Leasehold</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={12} md={6}>
+              <Form.Item name="availableFrom" label="Available From">
+                <DatePicker style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+          </Row>
 
-    <Col xs={12} md={6}>
-      <Form.Item name="parkingSpaces" label="Parking Spaces">
-        <InputNumber min={0} style={{ width: "100%" }} />
-      </Form.Item>
-    </Col>
-
-    <Col xs={12} md={6}>
-      <Form.Item name="furnishing" label="Furnishing">
-        <Select>
-          <Select.Option value="unfurnished">Unfurnished</Select.Option>
-          <Select.Option value="furnished">Furnished</Select.Option>
-          <Select.Option value="semi_furnished">Semi-furnished</Select.Option>
-        </Select>
-      </Form.Item>
-    </Col>
-
-    <Col xs={12} md={6}>
-      <Form.Item name="ownershipType" label="Ownership Type">
-        <Select>
-          <Select.Option value="freehold">Freehold</Select.Option>
-          <Select.Option value="leasehold">Leasehold</Select.Option>
-        </Select>
-      </Form.Item>
-    </Col>
-
-    <Col xs={12} md={6}>
-      <Form.Item name="availableFrom" label="Available From">
-        <DatePicker style={{ width: "100%" }} />
-      </Form.Item>
-    </Col>
-
-  </Row>
-
-</Form>
-
-          {/* Project Details */}
+          {/* ── Project Details ── */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>
             Project Details
           </Divider>
@@ -949,13 +838,13 @@ export default function DeveloperAddProperty() {
             </Col>
           </Row>
 
-          {/* Payment Plan */}
+          {/* ── Payment Plan ── */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>
             Payment Plan
           </Divider>
           {renderPaymentPlanFields()}
 
-          {/* Financial & Legal */}
+          {/* ── Financial & Legal ── */}
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>
             Financial & Legal
           </Divider>
@@ -995,7 +884,7 @@ export default function DeveloperAddProperty() {
             <TextArea rows={2} placeholder="e.g., Resale allowed after 30% payment. Transfer fee of 2% applies." />
           </Form.Item>
 
-          {/* Submit Buttons */}
+          {/* ── Submit ── */}
           <div
             style={{
               display: "flex",

@@ -95,10 +95,7 @@ import ForgotPassword from "./components/CMS/pages/forgot-password";
 import ResetPassword from "./components/CMS/pages/reset-password";
 import CheckoutPage from "./components/ecommerce/B2C/products/CheckoutPage";
 import PaymentSuccess from "./components/ecommerce/B2C/products/PaymentSuccess";
-
-
-
-
+import PropertyRent from "./component/Rent/SearchSection";
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -298,7 +295,8 @@ function App() {
               {/* ✅ Agent Registration Route */}
                 <Route path="/agent/registration" element={<AgentRegistration />} />
 
-
+               {/* ✅ Rent Search */}
+         <Route path="/rent/search" element={<PropertyRent />} />
 
               <Route path="/ecommerce/seller" element={<SellerPage />} />
               <Route path="/ecommerce/seller/b2b" element={<Sellerb2b />} />

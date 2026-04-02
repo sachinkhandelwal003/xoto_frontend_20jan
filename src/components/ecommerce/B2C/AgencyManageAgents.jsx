@@ -1,732 +1,648 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  Card, Button, Modal, Form, Input, Tag, Typography, Row, Col, Avatar,
-  Upload, Select, InputNumber, Tooltip, Divider, Space, Badge, Statistic,
-  Spin, Empty, Table, Steps, Alert, Popconfirm, Drawer, Progress
+  Button, Modal, Form, Input, Tag, Typography, Row, Col,
+  Upload, Select, InputNumber, Tooltip, Space, Spin, Empty,
+  Steps, Alert, Popconfirm, Drawer,
 } from "antd";
 import {
-  PlusOutlined, DeleteOutlined, UserOutlined, SearchOutlined,
-  CheckCircleFilled, IdcardOutlined, FileDoneOutlined,
-  EyeOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined,
-  TrophyOutlined, CalendarOutlined, UploadOutlined, CloseCircleOutlined,
-  FilterOutlined, TeamOutlined, StarFilled, GlobalOutlined,
-  SafetyCertificateOutlined, FileTextOutlined, ArrowRightOutlined,
-  BankOutlined, CloseOutlined
+  PlusOutlined, DeleteOutlined, UserOutlined, CheckCircleFilled,
+  FileDoneOutlined, EyeOutlined, MailOutlined, PhoneOutlined,
+  EnvironmentOutlined, TrophyOutlined, UploadOutlined, TeamOutlined,
+  ArrowLeftOutlined, ArrowRightOutlined, CheckOutlined, EditOutlined, FilterOutlined,
 } from "@ant-design/icons";
 import { useSelector } from "react-redux";
-import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import { toast } from "react-toastify";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
+import CustomTable from "../../CMS/pages/custom/CustomTable"; // ← apna sahi path lagao
 
-const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 
-/* ─────────────────────────── Upload Field ─────────────────────────── */
-const UploadField = ({ type, label, icon, accept, urls, uploadFiles, uploading, onUpload, onRemove }) => {
-  const handleFile = (file) => { onUpload(file, type); return false; };
-  const remove = () => onRemove(type);
+const AVATAR_COLORS = [
+  "#5f0f9c","#0891B2","#059669","#D97706",
+  "#DC2626","#7C3AED","#DB2777","#EA580C","#65A30D","#0284C7",
+];
+const SPECIALIZATIONS = ["Luxury","Residential","Commercial","Off-Plan","Rental","Investment"];
+const COUNTRY_CODES = [
+  { code:"+971", label:"AE +971" }, { code:"+91",  label:"IN +91"  },
+  { code:"+1",   label:"US +1"   }, { code:"+44",  label:"GB +44"  },
+  { code:"+966", label:"SA +966" }, { code:"+974", label:"QA +974" },
+];
+const STORAGE_KEY = "rm_agency_agents_v3";
 
-  return (
-    <div style={{ textAlign: "center" }}>
-      {urls[type] ? (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-          {type === "profile" ? (
-            <div style={{ position: "relative", display: "inline-block" }}>
-              <Avatar src={urls[type]} size={72} style={{ border: "3px solid #fff", boxShadow: "0 4px 12px rgba(99,102,241,0.25)" }} />
-              <Button
-                type="text" icon={<CloseCircleOutlined />} onClick={remove}
-                size="small" danger
-                style={{ position: "absolute", top: -8, right: -8, background: "#fff", borderRadius: "50%", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", minWidth: 22, width: 22, height: 22, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
-              />
-            </div>
-          ) : (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg,#f0f4ff,#e8edff)", padding: "10px 14px", borderRadius: 10, width: "100%", border: "1px solid #c7d2fe" }}>
-              <Text style={{ fontSize: 12, color: "#4338ca", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {uploadFiles[type]?.name || label}
-              </Text>
-              <Button type="text" icon={<DeleteOutlined />} onClick={remove} size="small" danger style={{ flexShrink: 0 }} />
-            </div>
-          )}
-          <Text style={{ fontSize: 11, color: "#10b981", fontWeight: 600 }}>✓ Uploaded</Text>
-        </div>
-      ) : (
-        <Upload showUploadList={false} beforeUpload={handleFile} accept={accept}>
-          <Button
-            loading={uploading[type]} icon={icon}
-            style={{ width: "100%", borderRadius: 10, borderStyle: "dashed", borderColor: "#c7d2fe", color: "#6366f1", background: "linear-gradient(135deg,#fafbff,#f0f4ff)", height: 44, fontWeight: 500 }}
-          >
-            {label}
-          </Button>
-        </Upload>
-      )}
-    </div>
-  );
+const getInitials = (name="") => name.split(" ").map((w)=>w[0]||"").join("").toUpperCase().slice(0,2);
+const getAvatarColor = (name="") => {
+  const h = name.split("").reduce((a,c)=>a+c.charCodeAt(0),0);
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+};
+const loadFromStorage = () => { try { const r=localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):[]; } catch{return[];} };
+const saveToStorage = (d) => { try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}catch{} };
+
+/* ── useIsMobile ── */
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return isMobile;
 };
 
-/* ─────────────────────────── Info Row ─────────────────────────── */
-const InfoRow = ({ icon, label, value, last }) => (
-  <>
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", gap: 12 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ color: "#6366f1", fontSize: 14, flexShrink: 0 }}>{icon}</span>
-        <Text style={{ color: "#94a3b8", fontSize: 13 }}>{label}</Text>
-      </div>
-      <div style={{ textAlign: "right" }}>{value}</div>
-    </div>
-    {!last && <div style={{ height: 1, background: "linear-gradient(90deg,transparent,#e2e8f0,transparent)" }} />}
-  </>
-);
-
-/* ─────────────────────────── Stat Pill ─────────────────────────── */
-const StatPill = ({ label, value,  }) => (
-  <div style={{ textAlign: "center", background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", borderRadius: 12, padding: "10px 20px", border: "1px solid rgba(255,255,255,0.25)" }}>
-    <div style={{ color: "#fff", fontWeight: 700, fontSize: 18, lineHeight: 1 }}>{value}</div>
-    <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11, marginTop: 3 }}>{label}</div>
+/* ── AgentAvatar ── */
+const AgentAvatar = ({ name="", src, size=40, showDot=false, active=true }) => (
+  <div style={{ position:"relative", display:"inline-block", flexShrink:0 }}>
+    {src
+      ? <img src={src} alt={name} style={{ width:size, height:size, borderRadius:"50%", objectFit:"cover", border:"3px solid #fff", boxShadow:"0 4px 12px rgba(95,15,156,.2)" }} />
+      : <div style={{ width:size, height:size, borderRadius:"50%", background:getAvatarColor(name), color:"#fff", fontWeight:700, fontSize:size*.35, display:"flex", alignItems:"center", justifyContent:"center", border:"3px solid #fff", boxShadow:"0 4px 12px rgba(95,15,156,.2)", letterSpacing:"-.5px" }}>{getInitials(name)}</div>
+    }
+    {showDot && <span style={{ position:"absolute", bottom:0, right:0, width:12, height:12, borderRadius:"50%", border:"3px solid #fff", background:active?"#22c55e":"#9CA3AF", boxShadow:`0 0 0 2px ${active?"#bbf7d0":"#e5e7eb"}` }} />}
   </div>
 );
 
-/* ═══════════════════════════════════════════════════════════════════ */
-/*                       MAIN COMPONENT                               */
-/* ═══════════════════════════════════════════════════════════════════ */
+/* ── StatCard ── */
+const StatCard = ({ title, value, icon, accent, bg }) => (
+  <div style={{ background:"#fff", border:"1px solid #E5E7EB", borderRadius:16, padding:"16px 18px", display:"flex", alignItems:"center", gap:14, boxShadow:"0 2px 8px rgba(0,0,0,.06)", transition:"all .25s", cursor:"default" }}
+    onMouseEnter={(e)=>{ e.currentTarget.style.boxShadow="0 12px 28px rgba(95,15,156,.12)"; e.currentTarget.style.transform="translateY(-3px)"; e.currentTarget.style.borderColor="#5f0f9c"; }}
+    onMouseLeave={(e)=>{ e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,.06)"; e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.borderColor="#E5E7EB"; }}
+  >
+    <div style={{ width:46, height:46, borderRadius:14, background:bg, color:accent, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>{icon}</div>
+    <div>
+      <div style={{ fontSize:11, color:"#6B7280", fontWeight:600, marginBottom:2 }}>{title}</div>
+      <div style={{ fontSize:26, fontWeight:800, color:"#111827", lineHeight:1 }}>{value}</div>
+    </div>
+  </div>
+);
+
+/* ── UploadField ── */
+const UploadField = ({ type, label, accept, fileObj, uploading, onUpload, onRemove }) => (
+  <div>
+    <div style={{ fontSize:12, fontWeight:600, color:"#374151", marginBottom:6 }}>{label}</div>
+    {fileObj ? (
+      <div style={{ border:"2px solid #5f0f9c", borderRadius:14, padding:"12px 14px", background:"linear-gradient(135deg,#faf5ff,#f3e8ff)", display:"flex", alignItems:"center", gap:10 }}>
+        <CheckOutlined style={{ color:"#5f0f9c", fontSize:16 }} />
+        <span style={{ flex:1, fontSize:12, color:"#5f0f9c", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontWeight:700 }} title={fileObj.name||label}>{fileObj.name||label}</span>
+        <button onClick={()=>onRemove(type)} style={{ border:"none", background:"none", cursor:"pointer", color:"#9CA3AF", fontSize:20, lineHeight:1, padding:"0 8px" }} type="button">×</button>
+      </div>
+    ) : (
+      <Upload showUploadList={false} beforeUpload={(f)=>{onUpload(f,type);return false;}} accept={accept}>
+        <div style={{ border:"2px dashed #5f0f9c", borderRadius:14, padding:"20px 16px", textAlign:"center", cursor:"pointer", background:"linear-gradient(135deg,#faf5ff,#f3e8ff)", transition:"all .2s" }}
+          onMouseEnter={(e)=>{ e.currentTarget.style.borderColor="#7c3aed"; e.currentTarget.style.transform="scale(1.01)"; }}
+          onMouseLeave={(e)=>{ e.currentTarget.style.borderColor="#5f0f9c"; e.currentTarget.style.transform="scale(1)"; }}
+        >
+          {uploading ? <Spin size="small" /> : <>
+            <UploadOutlined style={{ fontSize:22, color:"#5f0f9c", display:"block", marginBottom:6 }} />
+            <div style={{ fontSize:12, fontWeight:700, color:"#5f0f9c" }}>Click to upload</div>
+            <div style={{ fontSize:11, color:"#7c3aed", marginTop:2 }}>{type==="profile"?"PNG, JPG up to 2MB":"PDF or image"}</div>
+          </>}
+        </div>
+      </Upload>
+    )}
+  </div>
+);
+
+/* ── StatusPill ── */
+const StatusPill = ({ active }) => (
+  <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"5px 12px", borderRadius:999, fontSize:11, fontWeight:700, border:"1px solid", background:active?"linear-gradient(135deg,#f0fdf4,#dcfce7)":"#f9fafb", borderColor:active?"#86efac":"#e5e7eb", color:active?"#15803d":"#6b7280" }}>
+    <span style={{ width:7, height:7, borderRadius:"50%", background:active?"#22c55e":"#9ca3af", boxShadow:active?"0 0 0 3px rgba(34,197,94,.2)":"none" }} />
+    {active ? "Active" : "Inactive"}
+  </span>
+);
+
+const specColor = (s="") => ({ Luxury:"purple",Residential:"blue",Commercial:"gold","Off-Plan":"geekblue",Rental:"green",Investment:"magenta" })[s] || "default";
+
+/* ── Mobile AgentCard ── */
+const AgentCard = ({ agent, onView, onDelete, delay=0 }) => (
+  <div style={{ background:"#fff", borderRadius:18, padding:"18px 16px", border:"1px solid #f0e6ff", marginBottom:12, boxShadow:"0 4px 16px rgba(95,15,156,.07)", animation:`rowFadeIn .25s ease ${delay}s both`, transition:"all .2s" }}
+    onMouseEnter={(e)=>{ e.currentTarget.style.boxShadow="0 8px 28px rgba(95,15,156,.15)"; e.currentTarget.style.transform="translateY(-2px)"; }}
+    onMouseLeave={(e)=>{ e.currentTarget.style.boxShadow="0 4px 16px rgba(95,15,156,.07)"; e.currentTarget.style.transform="translateY(0)"; }}
+  >
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+        <AgentAvatar name={agent.name} src={agent.avatar} size={48} showDot active={agent.status} />
+        <div>
+          <div style={{ fontSize:15, fontWeight:800, color:"#111827" }}>{agent.name}</div>
+          <div style={{ fontSize:11, color:"#9CA3AF", fontWeight:600, marginTop:2 }}>{agent.role||"Agent"}</div>
+        </div>
+      </div>
+      <StatusPill active={!!agent.status} />
+    </div>
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+      {[["Email",agent.email],["Phone",agent.phone],["City",agent.city],["Experience",agent.experience!=null?`${agent.experience} yr`:null]].map(([label,value])=>(
+        <div key={label} style={{ background:"#faf5ff", borderRadius:10, padding:"10px 12px" }}>
+          <div style={{ fontSize:10, color:"#7c3aed", fontWeight:700, marginBottom:4, textTransform:"uppercase", letterSpacing:".5px" }}>{label}</div>
+          <div style={{ fontSize:12, color:"#374151", fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{value||"--"}</div>
+        </div>
+      ))}
+    </div>
+    {agent.specialization && <div style={{ marginBottom:14 }}><Tag style={{ borderRadius:999, border:"none", fontWeight:700, fontSize:11, padding:"4px 12px", margin:0, background:"linear-gradient(135deg,#faf5ff,#f3e8ff)", color:"#5f0f9c" }}>{agent.specialization}</Tag></div>}
+    <div style={{ display:"flex", gap:10 }}>
+      <Button onClick={()=>onView(agent)} style={{ flex:1, height:40, borderRadius:12, fontWeight:700, fontSize:13, border:"1px solid #e9d5ff", color:"#5f0f9c", background:"#faf5ff" }} icon={<EyeOutlined />}>View</Button>
+      <Popconfirm title="Remove Agent" description="Remove this agent?" onConfirm={()=>onDelete(agent.id)} okText="Remove" okType="danger" cancelText="Cancel" placement="topRight">
+        <Button danger style={{ flex:1, height:40, borderRadius:12, fontWeight:700, fontSize:13, border:"1px solid #fca5a5", background:"#fff2f2" }} icon={<DeleteOutlined />}>Remove</Button>
+      </Popconfirm>
+    </div>
+  </div>
+);
+
+/* ── ViewAgentModal ── */
+const ViewAgentModal = ({ open, onClose, agent }) => {
+  const isMobile = useIsMobile();
+  if (!agent) return null;
+  const isActive = agent.status === true;
+
+  const content = (
+    <>
+      <style>{`
+        @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.3)}}
+        .vaBanner{background:linear-gradient(135deg,#5f0f9c,#7c3aed 50%,#a855f7);padding:28px 20px 60px;position:relative;overflow:hidden}
+        .vaBanner::before{content:'';position:absolute;top:-60%;right:-15%;width:280px;height:280px;background:rgba(255,255,255,.08);border-radius:50%}
+        .vaBanner::after{content:'';position:absolute;bottom:-40%;left:-15%;width:220px;height:220px;background:rgba(255,255,255,.06);border-radius:50%}
+        .vaBadge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:700;backdrop-filter:blur(10px)}
+        .vaBadge.active{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3)}
+        .vaBadge.inactive{background:rgba(0,0,0,.2);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2)}
+        .vaStatsGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:-44px;padding:0 16px 16px;position:relative;z-index:1}
+        .vaMiniStat{background:#fff;border-radius:16px;padding:14px 10px;text-align:center;box-shadow:0 8px 24px rgba(95,15,156,.12);border:1px solid rgba(95,15,156,.08);transition:all .25s}
+        .vaMiniStat:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(95,15,156,.18)}
+        .vaMiniStatIcon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:18px}
+        .vaMiniStatValue{font-size:17px;font-weight:800;color:#0f172a;line-height:1;margin-bottom:4px}
+        .vaMiniStatLabel{font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+        .vaSection{background:#fff;border-radius:16px;margin:0 14px 12px;padding:16px 18px;box-shadow:0 2px 12px rgba(0,0,0,.04);border:1px solid #f1f5f9}
+        .vaSectionTitle{font-size:10px;font-weight:800;color:#5f0f9c;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+        .vaSectionTitle::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,#e9d5ff,transparent);border-radius:2px}
+        .vaInfoRow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed #f1f5f9}
+        .vaInfoRow:last-child{border-bottom:none;padding-bottom:0}
+        .vaInfoLabel{font-size:12px;color:#64748b;font-weight:500;display:flex;align-items:center;gap:8px}
+        .vaInfoLabelIcon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+        .vaInfoValue{font-size:13px;font-weight:700;color:#0f172a;text-align:right;max-width:55%;overflow:hidden;text-overflow:ellipsis}
+        .vaInfoValue.empty{color:#cbd5e1;font-weight:500}
+        .vaDocCard{display:flex;align-items:center;gap:12px;padding:12px 14px;background:linear-gradient(135deg,#faf5ff,#f3e8ff);border-radius:12px;border:1px solid #e9d5ff;margin-bottom:10px;transition:all .2s}
+        .vaDocCard:last-child{margin-bottom:0}
+        .vaDocCard:hover{transform:translateX(4px);border-color:#5f0f9c}
+        .vaDocIcon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;background:#fff}
+        .vaDocInfo{flex:1;min-width:0}
+        .vaDocName{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px}
+        .vaDocMeta{font-size:11px;color:#7c3aed}
+        .vaDocLink{padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;background:linear-gradient(135deg,#5f0f9c,#7c3aed);color:#fff;border:none;cursor:pointer;text-decoration:none;box-shadow:0 4px 12px rgba(95,15,156,.3);white-space:nowrap}
+        .vaDocLink:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(95,15,156,.4)}
+        .vaFooter{padding:12px 14px 20px;display:flex;gap:10px}
+        .vaVerified{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;font-size:10px;font-weight:700;background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:#16a34a;margin-left:6px}
+      `}</style>
+
+      <div className="vaBanner">
+        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", position:"relative", zIndex:1 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+            <div style={{ position:"relative" }}>
+              <AgentAvatar name={agent.name} src={agent.avatar} size={68} />
+              <div style={{ position:"absolute", bottom:2, right:2, width:16, height:16, borderRadius:"50%", background:isActive?"#22c55e":"#94a3b8", border:"3px solid #fff" }} />
+            </div>
+            <div>
+              <h2 style={{ fontSize:20, fontWeight:800, color:"#fff", margin:"0 0 8px", letterSpacing:"-.5px" }}>{agent.name}</h2>
+              <div className={`vaBadge ${isActive?"active":"inactive"}`}>
+                {isActive && <span style={{ width:7, height:7, borderRadius:"50%", background:"#4ade80", animation:"pulse 2s infinite" }} />}
+                {isActive?"Active Now":"Offline"}
+              </div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ width:32, height:32, borderRadius:"50%", border:"1px solid rgba(255,255,255,.3)", background:"rgba(255,255,255,.15)", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, position:"relative", zIndex:2 }}>✕</button>
+        </div>
+      </div>
+
+      <div className="vaStatsGrid">
+        {[
+          { icon:<TrophyOutlined/>, bg:"linear-gradient(135deg,#fef3c7,#fde68a)", color:"#d97706", value: agent.experience??0, label:"Years Exp." },
+          { icon:<EnvironmentOutlined/>, bg:"linear-gradient(135deg,#dbeafe,#bfdbfe)", color:"#2563eb", value: agent.city||"—", label:"Location", small:true },
+          { icon:<FileDoneOutlined/>, bg: agent.specialization?"linear-gradient(135deg,#faf5ff,#f3e8ff)":"#f1f5f9", color: agent.specialization?"#5f0f9c":"#94a3b8", value: agent.specialization||"—", label:"Specialization", small:true },
+        ].map(({icon,bg,color,value,label,small})=>(
+          <div key={label} className="vaMiniStat">
+            <div className="vaMiniStatIcon" style={{ background:bg, color }}>{icon}</div>
+            <div className="vaMiniStatValue" style={{ fontSize:small?13:17 }}>{value}</div>
+            <div className="vaMiniStatLabel">{label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="vaSection">
+        <div className="vaSectionTitle">📞 Contact Information</div>
+        {[
+          { icon:<MailOutlined/>, bg:"linear-gradient(135deg,#fef3c7,#fde68a)", color:"#d97706", label:"Email", value:agent.email },
+          { icon:<PhoneOutlined/>, bg:"linear-gradient(135deg,#dbeafe,#bfdbfe)", color:"#2563eb", label:"Phone", value:agent.phone },
+          { icon:<EnvironmentOutlined/>, bg:"linear-gradient(135deg,#fce7f3,#fbcfe8)", color:"#db2777", label:"Location", value:[agent.city,agent.country].filter(Boolean).join(", ")||null },
+        ].map(({icon,bg,color,label,value})=>(
+          <div key={label} className="vaInfoRow">
+            <div className="vaInfoLabel"><div className="vaInfoLabelIcon" style={{ background:bg, color }}>{icon}</div>{label}</div>
+            <div className={`vaInfoValue ${!value?"empty":""}`}>{value||"Not provided"}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="vaSection">
+        <div className="vaSectionTitle">💼 Professional Details</div>
+        <div className="vaInfoRow">
+          <div className="vaInfoLabel"><div className="vaInfoLabelIcon" style={{ background:"linear-gradient(135deg,#fef3c7,#fde68a)", color:"#d97706" }}><TrophyOutlined/></div>Experience</div>
+          <div className="vaInfoValue">{agent.experience!=null?`${agent.experience} Years`:"—"}</div>
+        </div>
+        <div className="vaInfoRow">
+          <div className="vaInfoLabel"><div className="vaInfoLabelIcon" style={{ background:"linear-gradient(135deg,#dcfce7,#bbf7d0)", color:"#16a34a" }}><FileDoneOutlined/></div>RERA No.</div>
+          <div className={`vaInfoValue ${!agent.reraNumber?"empty":""}`}>{agent.reraNumber?<>{agent.reraNumber}<span className="vaVerified">✓</span></>:"Not registered"}</div>
+        </div>
+        <div className="vaInfoRow">
+          <div className="vaInfoLabel"><div className="vaInfoLabelIcon" style={{ background:"linear-gradient(135deg,#faf5ff,#f3e8ff)", color:"#5f0f9c" }}><CheckCircleFilled/></div>Specialization</div>
+          <div className="vaInfoValue">{agent.specialization||"—"}</div>
+        </div>
+      </div>
+
+      {(agent.idProof||agent.reraCertificate) && (
+        <div className="vaSection">
+          <div className="vaSectionTitle">📄 Documents</div>
+          {agent.idProof && <div className="vaDocCard"><div className="vaDocIcon">🪪</div><div className="vaDocInfo"><div className="vaDocName">ID Proof</div><div className="vaDocMeta">Government issued ID</div></div><a href={agent.idProof} target="_blank" rel="noopener noreferrer" className="vaDocLink">View</a></div>}
+          {agent.reraCertificate && <div className="vaDocCard"><div className="vaDocIcon">📜</div><div className="vaDocInfo"><div className="vaDocName">RERA Certificate</div><div className="vaDocMeta">Real Estate Regulatory Agency</div></div><a href={agent.reraCertificate} target="_blank" rel="noopener noreferrer" className="vaDocLink">View</a></div>}
+        </div>
+      )}
+
+      <div className="vaFooter">
+        <Button type="primary" icon={<EditOutlined/>} size="large" style={{ flex:1, height:46, borderRadius:12, fontWeight:700, fontSize:14, background:"linear-gradient(135deg,#5f0f9c,#7c3aed)", border:"none", boxShadow:"0 8px 20px rgba(95,15,156,.35)" }}>Edit Profile</Button>
+        <Button size="large" onClick={onClose} style={{ flex:1, height:46, borderRadius:12, fontWeight:700, fontSize:14, background:"#f8fafc", border:"1px solid #e2e8f0", color:"#475569" }}>Close</Button>
+      </div>
+    </>
+  );
+
+  if (isMobile) return <Drawer open={open} onClose={onClose} placement="bottom" height="92vh" styles={{ body:{padding:0,overflowY:"auto"}, header:{display:"none"} }} style={{ borderRadius:"20px 20px 0 0" }}>{content}</Drawer>;
+  return <Modal open={open} onCancel={onClose} closable={false}    width={720} centered footer={null} styles={{ content:{borderRadius:24,padding:0,overflow:"hidden",boxShadow:"0 25px 60px -12px rgba(95,15,156,.3)"} }}>{content}</Modal>;
+};
+
+/* ============================================================
+   MAIN COMPONENT
+   ============================================================ */
 const AgencyManageAgents = () => {
   const { user } = useSelector((s) => s.auth);
   const agencyId = user?._id || user?.id;
+  const isMobile = useIsMobile();
 
   const [agents, setAgents] = useState([]);
-  const [filteredAgents, setFilteredAgents] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState(null);
-  const [form] = Form.useForm();
-  const [urls, setUrls] = useState({ profile: "", idProof: "", rera: "" });
-  const [uploading, setUploading] = useState({ profile: false, idProof: false, rera: false });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [loading, setLoading] = useState(false);
-  const [uploadFiles, setUploadFiles] = useState({ profile: null, idProof: null, rera: null });
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [tableFilters, setTableFilters] = useState({});
+
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [form] = Form.useForm();
+
+  const [urls, setUrls] = useState({ profile:"", idProof:"", rera:"" });
+  const [uploadFiles, setUploadFiles] = useState({ profile:null, idProof:null, rera:null });
+  const [uploading, setUploading] = useState({ profile:false, idProof:false, rera:false });
+
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState(null);
 
   /* ── Fetch ── */
-  const fetchAgents = async () => {
+  const fetchAgents = useCallback(async () => {
     setLoading(true);
     try {
       const res = await apiService.get("/agent/get-all-agents/agency");
-      let agentsData = res?.data;
-      if (!Array.isArray(agentsData)) return;
-      const formatted = agentsData.map((agent) => ({
-        key: agent._id, id: agent._id,
-        name: `${agent.first_name} ${agent.last_name}`,
-        email: agent.email,
-        phone: `${agent.country_code || ""} ${agent.phone_number || ""}`,
-        role: agent.role || "Agent",
-        status: agent.status ?? true,
-        avatar: agent.profile_photo,
-        city: agent.operating_city,
-        country: agent.country,
-        specialization: agent.specialization,
-        experience: agent.experience_years,
-        reraNumber: agent.rera_number,
-        idProof: agent.id_proof,
-        reraCertificate: agent.rera_certificate,
+      const data = res?.data;
+      if (!Array.isArray(data)) { setAgents(loadFromStorage()); return; }
+      const formatted = data.map((a) => ({
+        id: a._id, _id: a._id,
+        name: `${a.first_name||""} ${a.last_name||""}`.trim(),
+        email: a.email || "",
+        phone: `${a.country_code||""} ${a.phone_number||""}`.trim(),
+        role: a.role || "Agent",
+        status: a.is_active ?? a.status ?? true,
+        avatar: a.profile_photo || null,
+        city: a.operating_city || "",
+        country: a.country || "",
+        specialization: a.specialization || "",
+        experience_years: Number(v.experience_years) || 0,
+        reraNumber: a.rera_number || "",
+        idProof: a.id_proof || null,
+        reraCertificate: a.rera_certificate || null,
       }));
       setAgents(formatted);
-      setFilteredAgents(formatted);
-    } catch { toast.error("Failed to load agents"); }
+      saveToStorage(formatted);
+    } catch { setAgents(loadFromStorage()); }
     finally { setLoading(false); }
-  };
-  useEffect(() => { fetchAgents(); }, []);
+  }, []);
 
-  /* ── Filter ── */
-  useEffect(() => {
-    let f = agents;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      f = f.filter((a) =>
-        a.name.toLowerCase().includes(q) || a.email.toLowerCase().includes(q) ||
-        a.phone.toLowerCase().includes(q) || a.city?.toLowerCase().includes(q)
-      );
-    }
-    if (statusFilter !== "all") f = f.filter((a) => statusFilter === "active" ? a.status : !a.status);
-    setFilteredAgents(f);
-  }, [searchQuery, statusFilter, agents]);
+  useEffect(() => { fetchAgents(); }, [fetchAgents]);
 
   /* ── Upload ── */
-  const handleInstantUpload = async (file, type) => {
-    const allowed = type === "profile" ? ["image/jpeg","image/png","image/jpg"] : ["application/pdf","image/jpeg","image/png","image/jpg"];
+  const handleUpload = async (file, type) => {
+    const allowed = type==="profile" ? ["image/jpeg","image/png","image/jpg","image/webp"] : ["application/pdf","image/jpeg","image/png","image/jpg"];
     if (!allowed.includes(file.type)) { toast.error("Invalid file type"); return false; }
-    const fd = new FormData(); fd.append("file", file);
-    setUploading((p) => ({ ...p, [type]: true }));
+    setUploading((p)=>({...p,[type]:true}));
     try {
+      const fd = new FormData(); fd.append("file", file);
       const res = await apiService.upload("upload", fd);
-      const url = res?.file?.url || res?.url;
-      if (url) { setUrls((p) => ({ ...p, [type]: url })); setUploadFiles((p) => ({ ...p, [type]: file })); toast.success("Uploaded!"); }
-    } catch { toast.error("Upload failed"); }
-    setUploading((p) => ({ ...p, [type]: false })); return false;
+      const uploadedUrl = res?.file?.url || res?.url;
+      if (uploadedUrl) { setUrls((p)=>({...p,[type]:uploadedUrl})); setUploadFiles((p)=>({...p,[type]:file})); toast.success(`${type==="profile"?"Photo":type.toUpperCase()} uploaded`); }
+    } catch { setUrls((p)=>({...p,[type]:URL.createObjectURL(file)})); setUploadFiles((p)=>({...p,[type]:file})); }
+    finally { setUploading((p)=>({...p,[type]:false})); }
+    return false;
   };
-  const removeFile = (type) => { setUrls((p) => ({ ...p, [type]: "" })); setUploadFiles((p) => ({ ...p, [type]: null })); };
+  const removeFile = (type) => { setUrls((p)=>({...p,[type]:""})); setUploadFiles((p)=>({...p,[type]:null})); };
+  const resetModal = () => { form.resetFields(); setUrls({profile:"",idProof:"",rera:""}); setUploadFiles({profile:null,idProof:null,rera:null}); setCurrentStep(0); };
+  const closeAddModal = () => { setAddModalOpen(false); resetModal(); };
 
-  /* ── Add Agent ── */
-  const handleAddAgent = async (values) => {
+  const STEP0_FIELDS = ["first_name","last_name","email","password","phone_number"];
+  const STEP1_FIELDS = ["operating_city"];
+  const handleNext = async () => {
     try {
-      await apiService.post("/agent/agent-signup", {
-        first_name: values.first_name, last_name: values.last_name,
-        email: values.email, password: values.password,
-        phone_number: values.phone_number, country_code: values.country_code,
-        operating_city: values.operating_city, specialization: values.specialization,
-        country: values.country, experience_years: Number(values.experience_years),
-        rera_number: values.rera_number, profile_photo: urls.profile,
-        id_proof: urls.idProof, rera_certificate: urls.rera, agency_id: agencyId,
-      });
-      toast.success("Agent created successfully");
-      fetchAgents(); closeModal();
-    } catch (e) { toast.error(e?.response?.data?.message || "Failed to create agent"); }
+      if (currentStep===0) await form.validateFields(STEP0_FIELDS);
+      if (currentStep===1) await form.validateFields(STEP1_FIELDS);
+      setCurrentStep((s)=>s+1);
+    } catch {}
   };
 
-  /* ── Delete ── */
+  /* ── Submit ── */
+  const handleAddAgent = async () => {
+    try { await form.validateFields([...STEP0_FIELDS,...STEP1_FIELDS]); }
+    catch { toast.error("Please complete all required fields"); return; }
+    const v = form.getFieldsValue(true);
+    const payload = {
+      first_name:(v.first_name||"").trim(), last_name:(v.last_name||"").trim(),
+      email:(v.email||"").trim(), password:v.password||"",
+      phone_number:(v.phone_number||"").trim(), country_code:v.country_code||"+971",
+      operating_city:(v.operating_city||"").trim(), specialization:v.specialization||"",
+      country:(v.country||"UAE").trim(), experience_years:Number(v.experience_years)??0,
+      rera_number:(v.rera_number||"").trim(),
+      profile_photo:urls.profile||null, id_proof:urls.idProof||null, rera_certificate:urls.rera||null,
+      agency_id:agencyId,
+    };
+    const tempId = Date.now().toString();
+    const localAgent = {
+      id:tempId, _id:tempId,
+      name:`${payload.first_name} ${payload.last_name}`.trim(),
+      email:payload.email, phone:`${payload.country_code} ${payload.phone_number}`.trim(),
+      city:payload.operating_city, country:payload.country, specialization:payload.specialization,
+      experience:payload.experience_years??null, reraNumber:payload.rera_number,
+      status:true, avatar:urls.profile||null, idProof:urls.idProof||null, reraCertificate:urls.rera||null, role:"Agent",
+    };
+    try { await apiService.post("/agent/agent-signup", payload); toast.success("Agent created successfully!"); }
+    catch (err) { toast.error(err?.response?.data?.message || "API error — saved locally"); }
+    const updated = [...agents, localAgent];
+    setAgents(updated); saveToStorage(updated); closeAddModal();
+  };
+
   const handleDelete = async (id) => {
-    try {
-      await apiService.delete(`agent/delete-agent/${id}`);
-      toast.success("Agent removed");
-      fetchAgents();
-      if (drawerOpen) setDrawerOpen(false);
-    } catch { toast.error("Failed to remove agent"); }
+    try { await apiService.delete(`agent/delete-agent/${id}`); } catch {}
+    const updated = agents.filter((a)=>a.id!==id);
+    setAgents(updated); saveToStorage(updated); toast.success("Agent removed");
   };
 
-  const handleViewAgent = (agent) => { setSelectedAgent(agent); setDrawerOpen(true); };
-  const closeModal = () => {
-    setIsModalOpen(false); form.resetFields();
-    setUrls({ profile: "", idProof: "", rera: "" });
-    setUploadFiles({ profile: null, idProof: null, rera: null });
-    setCurrentStep(0);
-  };
-
-  /* ── Stats ── */
   const total = agents.length;
-  const active = agents.filter((a) => a.status).length;
-  const inactive = agents.filter((a) => !a.status).length;
-  const activeRate = total ? Math.round((active / total) * 100) : 0;
+  const active = agents.filter((a)=>a.status).length;
+  const inactive = total - active;
 
-  /* ── Columns ── */
-  const columns = [
+  /* ─────────────────────────────────────────────────────────
+     CUSTOM TABLE COLUMNS
+  ───────────────────────────────────────────────────────── */
+  const tableColumns = [
     {
-      title: "Agent", dataIndex: "name", key: "name", fixed: "left", width: 260,
-      render: (_, r) => (
-        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 0" }}>
-          <div style={{ position: "relative" }}>
-            <Avatar src={r.avatar} icon={<UserOutlined />} size={44}
-              style={{ border: "2px solid #e0e7ff", boxShadow: "0 2px 8px rgba(99,102,241,0.2)" }} />
-            <span style={{
-              position: "absolute", bottom: 0, right: 0, width: 11, height: 11,
-              borderRadius: "50%", background: r.status ? "#10b981" : "#f43f5e",
-              border: "2px solid #fff"
-            }} />
-          </div>
+      key: "name", title: "Agent", sortable: true,
+      render: (_, agent) => (
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <AgentAvatar name={agent.name} src={agent.avatar} size={38} showDot active={agent.status} />
           <div>
-            <Text strong style={{ color: "#1e293b", fontSize: 14, display: "block" }}>{r.name}</Text>
-            <Text style={{ color: "#94a3b8", fontSize: 12 }}>{r.email}</Text>
+            <div style={{ fontSize:13, fontWeight:800, color:"#111827", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{agent.name}</div>
+            <div style={{ fontSize:11, color:"#9CA3AF", display:"flex", alignItems:"center", gap:4, marginTop:2, fontWeight:600 }}>
+              <MailOutlined style={{ fontSize:10, color:"#5f0f9c" }} />
+              <span style={{ maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{agent.email||"--"}</span>
+            </div>
           </div>
         </div>
       ),
     },
     {
-      title: "Phone", key: "phone", width: 155,
-      render: (_, r) => (
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <PhoneOutlined style={{ color: "#6366f1", fontSize: 12 }} />
-          <Text style={{ color: "#475569", fontSize: 13 }}>{r.phone || "—"}</Text>
+      key: "phone", title: "Contact",
+      render: (_, agent) => (
+        <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+          <div style={{ fontSize:12, color:"#374151", display:"flex", alignItems:"center", gap:5, fontWeight:600 }}>
+            <PhoneOutlined style={{ color:"#5f0f9c", fontSize:11 }} />
+            {agent.phone ? <a href={`tel:${agent.phone}`} style={{ color:"inherit", textDecoration:"none" }}>{agent.phone}</a> : "--"}
+          </div>
+          <span style={{ fontSize:10, color:"#9CA3AF", fontWeight:700, padding:"2px 7px", background:"linear-gradient(135deg,#faf5ff,#f3e8ff)", borderRadius:5, width:"fit-content" }}>{agent.role||"Agent"}</span>
         </div>
       ),
     },
     {
-      title: "Location", key: "city", width: 150,
-      render: (_, r) => (
+      key: "city", title: "City", sortable: true,
+      render: (_, agent) => (
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <EnvironmentOutlined style={{ color: "#3b82f6", fontSize: 12 }} />
-            <Text style={{ color: "#1e293b", fontSize: 13, fontWeight: 500 }}>{r.city || "—"}</Text>
+          <div style={{ fontSize:12, color:"#374151", display:"flex", alignItems:"center", gap:5, fontWeight:600 }}>
+            <EnvironmentOutlined style={{ color:"#0891B2", fontSize:11 }} />{agent.city||"--"}
           </div>
-          {r.country && <Text style={{ color: "#94a3b8", fontSize: 11, paddingLeft: 17 }}>{r.country}</Text>}
+          {agent.country && <div style={{ fontSize:10, color:"#9CA3AF", marginTop:2, paddingLeft:16 }}>{agent.country}</div>}
         </div>
       ),
     },
     {
-      title: "Specialization", key: "specialization", width: 150,
-      render: (_, r) => r.specialization ? (
-        <span style={{
-          display: "inline-block", padding: "3px 12px", borderRadius: 20,
-          background: "linear-gradient(135deg,#ede9fe,#ddd6fe)", color: "#5b21b6",
-          fontSize: 12, fontWeight: 600, border: "1px solid #c4b5fd"
-        }}>{r.specialization}</span>
-      ) : <Text style={{ color: "#cbd5e1" }}>—</Text>,
+      key: "specialization", title: "Specialization", sortable: true,
+      filterable: true, filterKey: "specialization",
+      filterOptions: SPECIALIZATIONS.map((s)=>({ label:s, value:s })),
+      render: (val) => val
+        ? <Tag style={{ borderRadius:999, border:"none", fontWeight:700, fontSize:11, padding:"3px 10px", margin:0, background:"linear-gradient(135deg,#faf5ff,#f3e8ff)", color:"#5f0f9c" }}>{val}</Tag>
+        : <span style={{ color:"#D1D5DB", fontSize:12 }}>--</span>,
     },
     {
-      title: "Exp.", key: "experience", width: 90, align: "center",
-      render: (_, r) => r.experience ? (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-          <TrophyOutlined style={{ color: "#f59e0b", fontSize: 13 }} />
-          <Text strong style={{ fontSize: 13 }}>{r.experience}y</Text>
-        </div>
-      ) : <Text style={{ color: "#cbd5e1" }}>—</Text>,
+      key: "experience", title: "Exp.", sortable: true,
+      render: (val) => val!=null
+        ? <div style={{ display:"flex", alignItems:"center", gap:5 }}><TrophyOutlined style={{ color:"#D97706", fontSize:13 }} /><span style={{ fontWeight:800, fontSize:13, color:"#374151" }}>{val}yr</span></div>
+        : <span style={{ color:"#D1D5DB", fontSize:12 }}>--</span>,
     },
     {
-      title: "Role", key: "role", width: 110,
-      render: (_, r) => (
-        <span style={{
-          display: "inline-block", padding: "3px 10px", borderRadius: 20,
-          background: "#f0fdf4", color: "#166534", fontSize: 12, fontWeight: 600, border: "1px solid #bbf7d0"
-        }}>{r.role}</span>
-      ),
+      key: "status", title: "Status",
+      filterable: true, filterKey: "status",
+      filterOptions: [{ label:"Active", value:"true" }, { label:"Inactive", value:"false" }],
+      render: (_, agent) => <StatusPill active={!!agent.status} />,
     },
     {
-      title: "Status", key: "status", width: 100, align: "center",
-      render: (_, r) => (
-        <span style={{
-          display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px",
-          borderRadius: 20, fontSize: 12, fontWeight: 600,
-          background: r.status ? "#f0fdf4" : "#fff1f2",
-          color: r.status ? "#15803d" : "#be123c",
-          border: `1px solid ${r.status ? "#bbf7d0" : "#fecdd3"}`
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: r.status ? "#22c55e" : "#f43f5e" }} />
-          {r.status ? "Active" : "Inactive"}
-        </span>
-      ),
-    },
-    {
-      title: "Actions", key: "actions", fixed: "right", width: 100, align: "center",
-      render: (_, r) => (
-        <Space size={4}>
+      key: "actions", title: "Actions",
+      render: (_, agent) => (
+        <div style={{ display:"flex", gap:8 }}>
           <Tooltip title="View Details">
-            <Button type="text" icon={<EyeOutlined />} onClick={() => handleViewAgent(r)}
-              style={{ borderRadius: 8, color: "#6366f1", background: "transparent" }}
-              onMouseEnter={(e) => e.currentTarget.style.background = "#ede9fe"}
-              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+            <Button type="text" size="small" icon={<EyeOutlined />}
+              onClick={()=>{ setSelectedAgent(agent); setViewModalOpen(true); }}
+              style={{ width:34, height:34, borderRadius:10, border:"1px solid #e5e7eb", color:"#5f0f9c", background:"#fff" }}
             />
           </Tooltip>
-          <Popconfirm title="Remove Agent" description="Sure to remove?" onConfirm={() => handleDelete(r.key)} okText="Yes" cancelText="No" placement="topRight">
+          <Popconfirm title="Remove Agent" description="Remove this agent from your team?"
+            onConfirm={()=>handleDelete(agent.id)} okText="Remove" okType="danger" cancelText="Cancel" placement="topRight"
+          >
             <Tooltip title="Remove">
-              <Button type="text" danger icon={<DeleteOutlined />}
-                style={{ borderRadius: 8, background: "transparent" }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "#fff1f2"}
-                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+              <Button type="text" danger size="small" icon={<DeleteOutlined />}
+                style={{ width:34, height:34, borderRadius:10, border:"1px solid #fca5a5", background:"#fff" }}
               />
             </Tooltip>
           </Popconfirm>
-        </Space>
+        </div>
       ),
     },
   ];
 
-  /* ════════════════════════════════════════════════════════ */
-  return (
-    <div style={{ padding: "32px 32px", background: "#f8faff", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1600, margin: "0 auto" }}>
+  // Apply status dropdown filter from CustomTable
+  const tableData = agents.filter((a) => {
+    if (tableFilters.status === "true")  return a.status === true;
+    if (tableFilters.status === "false") return a.status === false;
+    return true;
+  });
 
-        {/* ── Header ── */}
-        <div style={{ marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
+  /* ── Add Agent content ── */
+  const addAgentContent = (
+    <>
+      <div style={{ padding:"20px 22px 18px", background:"linear-gradient(135deg,#5f0f9c,#7c3aed)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,.2)", display:"flex", alignItems:"center", justifyContent:"center" }}><UserOutlined style={{ color:"#fff", fontSize:18 }} /></div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: 12,
-                background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 4px 14px rgba(99,102,241,0.4)"
-              }}>
-                <TeamOutlined style={{ color: "#fff", fontSize: 20 }} />
-              </div>
-              <Title level={2} style={{ margin: 0, color: "#1e293b", fontWeight: 700 }}>Team Management</Title>
-            </div>
-            <Text style={{ color: "#64748b", fontSize: 14 }}>Manage and monitor your agency's real estate agents</Text>
+            <div style={{ fontSize:18, fontWeight:800, color:"#fff" }}>Register New Agent</div>
+            <div style={{ fontSize:12, color:"rgba(255,255,255,.8)" }}>Step {currentStep+1} of 3</div>
           </div>
-          <Button
-            type="primary" size="large" icon={<PlusOutlined />}
-            onClick={() => setIsModalOpen(true)}
-            style={{
-              borderRadius: 12, paddingInline: 24, height: 46, fontWeight: 600, fontSize: 15,
-              background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-              border: "none", boxShadow: "0 4px 14px rgba(99,102,241,0.4)"
-            }}
-          >
-            Add New Agent
+        </div>
+        <button onClick={closeAddModal} style={{ width:32, height:32, borderRadius:"50%", border:"1px solid rgba(255,255,255,.3)", background:"rgba(255,255,255,.15)", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>✕</button>
+      </div>
+      <div style={{ padding:"18px 22px 0" }}>
+        <Steps current={currentStep} size="small" style={{ marginBottom:20 }} items={[
+          { title:isMobile?"":"Personal",     icon:<UserOutlined/>     },
+          { title:isMobile?"":"Professional", icon:<TrophyOutlined/>   },
+          { title:isMobile?"":"Documents",    icon:<FileDoneOutlined/> },
+        ]} />
+      </div>
+      <Form form={form} layout="vertical" preserve style={{ padding:"0 22px 12px" }}>
+        {/* Step 0 */}
+        <div style={{ display:currentStep===0?"block":"none" }}>
+          <Alert message="Personal Information" description="Basic details for the agent's account." type="info" showIcon style={{ borderRadius:12, marginBottom:18, border:"none", background:"linear-gradient(135deg,#faf5ff,#f3e8ff)" }} />
+          <Row gutter={14}>
+            <Col xs={24} md={12}><Form.Item name="first_name" label="First Name" rules={[{required:true,message:"Required"}]}><Input size="large" placeholder="e.g. Sarah" style={{ borderRadius:12 }} /></Form.Item></Col>
+            <Col xs={24} md={12}><Form.Item name="last_name" label="Last Name" rules={[{required:true,message:"Required"}]}><Input size="large" placeholder="e.g. Ahmed" style={{ borderRadius:12 }} /></Form.Item></Col>
+            <Col xs={24} md={12}><Form.Item name="email" label="Email Address" rules={[{required:true,type:"email",message:"Valid email required"}]}><Input size="large" placeholder="agent@realestate.com" prefix={<MailOutlined style={{ color:"#5f0f9c" }} />} style={{ borderRadius:12 }} /></Form.Item></Col>
+            <Col xs={24} md={12}><Form.Item name="password" label="Temporary Password" rules={[{required:true,min:6,message:"Min 6 chars"}]}><Input.Password size="large" placeholder="Create a password" style={{ borderRadius:12 }} /></Form.Item></Col>
+            <Col xs={24} sm={8}><Form.Item name="country_code" label="Code" initialValue="+971"><Select size="large">{COUNTRY_CODES.map((c)=><Option key={c.code} value={c.code}>{c.label}</Option>)}</Select></Form.Item></Col>
+            <Col xs={24} sm={16}><Form.Item name="phone_number" label="Phone Number" rules={[{required:true,message:"Required"}]}><Input size="large" placeholder="50 123 4567" prefix={<PhoneOutlined style={{ color:"#5f0f9c" }} />} style={{ borderRadius:12 }} /></Form.Item></Col>
+          </Row>
+        </div>
+        {/* Step 1 */}
+        <div style={{ display:currentStep===1?"block":"none" }}>
+          <Alert message="Professional Details" description="Expertise, location and qualifications." type="info" showIcon style={{ borderRadius:12, marginBottom:18, border:"none", background:"linear-gradient(135deg,#faf5ff,#f3e8ff)" }} />
+          <Row gutter={14}>
+            <Col xs={24} sm={8}><Form.Item name="country" label="Country" initialValue="UAE"><Input size="large" placeholder="UAE" prefix={<EnvironmentOutlined style={{ color:"#5f0f9c" }} />} style={{ borderRadius:12 }} /></Form.Item></Col>
+            <Col xs={24} sm={8}><Form.Item name="operating_city" label="City" rules={[{required:true,message:"Required"}]}><Input size="large" placeholder="Dubai" prefix={<EnvironmentOutlined style={{ color:"#0891B2" }} />} style={{ borderRadius:12 }} /></Form.Item></Col>
+            <Col xs={24} sm={8}><Form.Item name="experience_years" label="Experience (Yrs)"><InputNumber size="large" min={0} max={50} placeholder="0" style={{ width:"100%", borderRadius:12 }} /></Form.Item></Col>
+            <Col xs={24} md={12}><Form.Item name="specialization" label="Specialization"><Select size="large" placeholder="Select..." allowClear>{SPECIALIZATIONS.map((s)=><Option key={s} value={s}>{s}</Option>)}</Select></Form.Item></Col>
+            <Col xs={24} md={12}><Form.Item name="rera_number" label="RERA Number"><Input size="large" placeholder="RERA-2024-001" prefix={<FileDoneOutlined style={{ color:"#5f0f9c" }} />} style={{ borderRadius:12 }} /></Form.Item></Col>
+          </Row>
+        </div>
+        {/* Step 2 */}
+        <div style={{ display:currentStep===2?"block":"none" }}>
+          <Alert message="Documents & Media" description="Upload verification documents." type="info" showIcon style={{ borderRadius:12, marginBottom:18, border:"none", background:"linear-gradient(135deg,#faf5ff,#f3e8ff)" }} />
+          <Row gutter={14}>
+            <Col xs={24} sm={8}><UploadField type="profile" label="Profile Photo" accept="image/*" fileObj={uploadFiles.profile} uploading={uploading.profile} onUpload={handleUpload} onRemove={removeFile} /></Col>
+            <Col xs={24} sm={8} style={{ marginTop:isMobile?14:0 }}><UploadField type="idProof" label="ID Proof" accept=".pdf,image/*" fileObj={uploadFiles.idProof} uploading={uploading.idProof} onUpload={handleUpload} onRemove={removeFile} /></Col>
+            <Col xs={24} sm={8} style={{ marginTop:isMobile?14:0 }}><UploadField type="rera" label="RERA Certificate" accept=".pdf,image/*" fileObj={uploadFiles.rera} uploading={uploading.rera} onUpload={handleUpload} onRemove={removeFile} /></Col>
+          </Row>
+        </div>
+        {/* Footer */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:24, paddingTop:18, borderTop:"1px solid #f3f4f6" }}>
+          {currentStep>0 ? <Button size="large" icon={<ArrowLeftOutlined/>} onClick={()=>setCurrentStep((s)=>s-1)} style={{ borderRadius:12, fontWeight:700 }}>Back</Button> : <div/>}
+          <Space>
+            <Button size="large" onClick={closeAddModal} style={{ borderRadius:12, fontWeight:700, borderColor:"#e9d5ff" }}>Cancel</Button>
+            {currentStep<2
+              ? <Button size="large" type="primary" onClick={handleNext} icon={<ArrowRightOutlined/>} style={{ borderRadius:12, paddingInline:22, fontWeight:700, fontSize:14, background:"linear-gradient(135deg,#5f0f9c,#7c3aed)", border:"none" }}>Next</Button>
+              : <Button size="large" type="primary" onClick={handleAddAgent} icon={<CheckOutlined/>} style={{ borderRadius:12, paddingInline:22, fontWeight:700, fontSize:14, background:"linear-gradient(135deg,#16a34a,#15803d)", border:"none" }}>Create Agent</Button>
+            }
+          </Space>
+        </div>
+      </Form>
+    </>
+  );
+
+  return (
+    <div style={{ padding:isMobile?"16px 14px":"28px 24px", background:"linear-gradient(135deg,#faf5ff 0%,#f3e8ff 50%,#ede9fe 100%)", minHeight:"100vh", fontFamily:"'DM Sans',-apple-system,sans-serif" }}>
+      <style>{`
+        @keyframes rowFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+        .flt-btn{padding:7px 14px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;font-size:12px;font-weight:700;color:#6b7280;cursor:pointer;transition:all .2s}
+        .flt-btn.flt-active{background:linear-gradient(135deg,#5f0f9c,#7c3aed);color:#fff;border-color:#5f0f9c;box-shadow:0 6px 20px rgba(95,15,156,.3)}
+        .flt-btn:hover:not(.flt-active){border-color:#5f0f9c;color:#5f0f9c}
+      `}</style>
+
+      <div style={{ maxWidth:1300, margin:"0 auto" }}>
+        {/* Header */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20, gap:10, flexWrap:"wrap", animation:"fadeUp .3s ease" }}>
+          <div>
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
+              <div style={{ width:38, height:38, borderRadius:12, background:"linear-gradient(135deg,#5f0f9c,#7c3aed)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 6px 16px rgba(95,15,156,.3)" }}><TeamOutlined style={{ color:"#fff", fontSize:18 }} /></div>
+              <h1 style={{ fontSize:isMobile?20:24, fontWeight:800, color:"#1e1b4b", margin:0 }}>Team Management</h1>
+            </div>
+            {!isMobile && <p style={{ fontSize:13, color:"#7c3aed", margin:0, marginLeft:48, fontWeight:500 }}>Manage and monitor your agency's real estate agents</p>}
+          </div>
+          <Button type="primary" icon={<PlusOutlined/>} size={isMobile?"middle":"large"} onClick={()=>setAddModalOpen(true)}
+            style={{ borderRadius:12, paddingInline:isMobile?16:22, fontWeight:700, height:isMobile?40:46, fontSize:isMobile?13:14, background:"linear-gradient(135deg,#5f0f9c,#7c3aed)", border:"none", boxShadow:"0 8px 24px rgba(95,15,156,.35)" }}>
+            {isMobile?"Add Agent":"Add New Agent"}
           </Button>
         </div>
 
-        {/* ── Stats ── */}
-        <Row gutter={[20, 20]} style={{ marginBottom: 28 }}>
-          {[
-            { label: "Total Agents", value: total, icon: <TeamOutlined />, grad: "linear-gradient(135deg,#6366f1,#8b5cf6)", shadow: "rgba(99,102,241,0.35)" },
-            { label: "Active Agents", value: active, icon: <CheckCircleFilled />, grad: "linear-gradient(135deg,#10b981,#059669)", shadow: "rgba(16,185,129,0.35)" },
-            { label: "Inactive Agents", value: inactive, icon: <UserOutlined />, grad: "linear-gradient(135deg,#f43f5e,#e11d48)", shadow: "rgba(244,63,94,0.35)" },
-            { label: "Activity Rate", value: `${activeRate}%`, icon: <StarFilled />, grad: "linear-gradient(135deg,#f59e0b,#d97706)", shadow: "rgba(245,158,11,0.35)" },
-          ].map((s, i) => (
-            <Col xs={12} sm={12} lg={6} key={i}>
-              <div style={{
-                background: "#fff", borderRadius: 16, padding: "20px 22px",
-                border: "1px solid #e2e8f0", boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
-                display: "flex", alignItems: "center", gap: 16,
-                transition: "transform 0.2s, box-shadow 0.2s",
-              }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${s.shadow}`; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.05)"; }}
-              >
-                <div style={{
-                  width: 50, height: 50, borderRadius: 14, background: s.grad,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: `0 4px 12px ${s.shadow}`, flexShrink: 0
-                }}>
-                  <span style={{ color: "#fff", fontSize: 22 }}>{s.icon}</span>
-                </div>
-                <div>
-                  <div style={{ color: "#64748b", fontSize: 12, fontWeight: 500, marginBottom: 2 }}>{s.label}</div>
-                  <div style={{ color: "#1e293b", fontSize: 26, fontWeight: 700, lineHeight: 1 }}>{s.value}</div>
-                </div>
-              </div>
-            </Col>
-          ))}
-        </Row>
-
-        {/* ── Filters ── */}
-        <div style={{
-          background: "#fff", borderRadius: 14, padding: "16px 20px",
-          border: "1px solid #e2e8f0", marginBottom: 20,
-          display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center"
-        }}>
-          <Input
-            size="large" placeholder="Search name, email, phone, city…"
-            prefix={<SearchOutlined style={{ color: "#94a3b8" }} />}
-            value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-            allowClear
-            style={{ flex: 1, minWidth: 220, borderRadius: 10, borderColor: "#e2e8f0" }}
-          />
-          <Select
-            size="large" value={statusFilter} onChange={setStatusFilter}
-            style={{ width: 180, borderRadius: 10 }}
-            options={[{ label: "All Agents", value: "all" }, { label: "Active Only", value: "active" }, { label: "Inactive Only", value: "inactive" }]}
-          />
-          <div style={{ color: "#94a3b8", fontSize: 13 }}>{filteredAgents.length} agent{filteredAgents.length !== 1 ? "s" : ""}</div>
+        {/* Stats */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:isMobile?10:16, marginBottom:18, animation:"fadeUp .35s ease" }}>
+          <StatCard title="Total"    value={total}    accent="#5f0f9c" bg="linear-gradient(135deg,#faf5ff,#f3e8ff)" icon={<TeamOutlined/>}       />
+          <StatCard title="Active"   value={active}   accent="#16a34a" bg="linear-gradient(135deg,#f0fdf4,#dcfce7)" icon={<CheckCircleFilled/>}   />
+          <StatCard title="Inactive" value={inactive} accent="#dc2626" bg="linear-gradient(135deg,#fef2f2,#fee2e2)" icon={<UserOutlined/>}        />
         </div>
 
-        {/* ── Table ── */}
-        <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-          {loading ? (
-            <div style={{ padding: 64, textAlign: "center" }}><Spin size="large" /></div>
-          ) : filteredAgents.length === 0 ? (
-            <Empty description={<><Text style={{ color: "#94a3b8" }}>No agents found</Text><br /><Button type="primary" onClick={() => setIsModalOpen(true)} icon={<PlusOutlined />} style={{ marginTop: 12, borderRadius: 8, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none" }}>Add first agent</Button></>} style={{ padding: 64 }} />
-          ) : (
-            <Table
-              columns={columns} dataSource={filteredAgents}
-              scroll={{ x: "max-content" }}
-              pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (t) => `Total ${t} agents`, position: ["bottomCenter"] }}
-              rowClassName="agent-row"
-              onRow={() => ({
-                style: { cursor: "pointer" },
-                onMouseEnter: (e) => e.currentTarget.style.background = "#fafbff",
-                onMouseLeave: (e) => e.currentTarget.style.background = "",
-              })}
-            />
-          )}
-        </div>
-
-        {/* ════════════ ADD AGENT MODAL ════════════ */}
-        <Modal
-          title={
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <UserOutlined style={{ color: "#fff", fontSize: 16 }} />
-              </div>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}>Register New Agent</span>
+        {/* Mobile: Cards | Desktop: CustomTable */}
+        {isMobile ? (
+          <>
+            <div style={{ background:"rgba(255,255,255,.9)", border:"1px solid #e9d5ff", borderRadius:14, padding:"12px 14px", marginBottom:14, display:"flex", gap:10, alignItems:"center" }}>
+              <Input size="middle" allowClear placeholder="Search agents..." prefix={<MailOutlined style={{ color:"#5f0f9c" }} />}
+                style={{ flex:1, borderRadius:12, borderColor:"#e9d5ff" }} />
+              <button onClick={()=>setFilterDrawerOpen(true)} style={{ width:40, height:40, borderRadius:10, border:"1px solid #e9d5ff", background:statusFilter!=="all"?"linear-gradient(135deg,#5f0f9c,#7c3aed)":"#fff", color:statusFilter!=="all"?"#fff":"#5f0f9c", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:16, flexShrink:0 }}>
+                <FilterOutlined />
+              </button>
             </div>
-          }
-          open={isModalOpen} onCancel={closeModal} footer={null}
-          width={860} centered
-          styles={{ content: { borderRadius: 20, overflow: "hidden" }, header: { padding: "20px 28px 0", borderBottom: "none" }, body: { padding: "20px 28px 28px" } }}
-        >
-          <Steps current={currentStep} onChange={setCurrentStep} style={{ marginBottom: 28 }}
-            items={[
-              { title: "Personal", icon: <UserOutlined /> },
-              { title: "Professional", icon: <TrophyOutlined /> },
-              { title: "Documents", icon: <FileDoneOutlined /> },
-            ]}
-          />
-          <Form form={form} layout="vertical" onFinish={handleAddAgent}>
-            {/* Step 0 */}
-            {currentStep === 0 && (
-              <>
-                <Alert message="Personal Information" description="Provide the agent's basic contact details." type="info" showIcon className="mb-6" style={{ borderRadius: 10, marginBottom: 20 }} />
-                <Row gutter={20}>
-                  <Col xs={24} md={12}><Form.Item name="first_name" label="First Name" rules={[{ required: true }]}><Input size="large" placeholder="e.g. John" style={{ borderRadius: 10 }} /></Form.Item></Col>
-                  <Col xs={24} md={12}><Form.Item name="last_name" label="Last Name" rules={[{ required: true }]}><Input size="large" placeholder="e.g. Doe" style={{ borderRadius: 10 }} /></Form.Item></Col>
-                  <Col xs={24} md={12}><Form.Item name="email" label="Email" rules={[{ required: true, type: "email" }]}><Input size="large" placeholder="agent@agency.com" prefix={<MailOutlined style={{ color: "#94a3b8" }} />} style={{ borderRadius: 10 }} /></Form.Item></Col>
-                  <Col xs={24} md={12}><Form.Item name="password" label="Temporary Password" rules={[{ required: true }]}><Input.Password size="large" placeholder="Secure password" style={{ borderRadius: 10 }} /></Form.Item></Col>
-                  <Col xs={8}><Form.Item name="country_code" label="Code" initialValue="+971"><Select size="large" style={{ borderRadius: 10 }}><Option value="+971">🇦🇪 +971</Option><Option value="+91">🇮🇳 +91</Option><Option value="+1">🇺🇸 +1</Option><Option value="+44">🇬🇧 +44</Option></Select></Form.Item></Col>
-                  <Col xs={16}><Form.Item name="phone_number" label="Phone Number" rules={[{ required: true }]}><Input size="large" placeholder="50 123 4567" prefix={<PhoneOutlined style={{ color: "#94a3b8" }} />} style={{ borderRadius: 10 }} /></Form.Item></Col>
-                </Row>
-              </>
-            )}
-            {/* Step 1 */}
-            {currentStep === 1 && (
-              <>
-                <Alert message="Professional Details" description="Add expertise and qualification information." type="info" showIcon style={{ borderRadius: 10, marginBottom: 20 }} />
-                <Row gutter={20}>
-                  <Col xs={24} md={8}><Form.Item name="country" label="Country" initialValue="UAE"><Input size="large" prefix={<GlobalOutlined style={{ color: "#94a3b8" }} />} style={{ borderRadius: 10 }} /></Form.Item></Col>
-                  <Col xs={24} md={8}><Form.Item name="operating_city" label="Operating City" rules={[{ required: true }]}><Input size="large" placeholder="e.g. Dubai" prefix={<EnvironmentOutlined style={{ color: "#94a3b8" }} />} style={{ borderRadius: 10 }} /></Form.Item></Col>
-                  <Col xs={24} md={8}><Form.Item name="experience_years" label="Experience (Years)"><InputNumber size="large" style={{ width: "100%", borderRadius: 10 }} min={0} placeholder="0" /></Form.Item></Col>
-                  <Col xs={24} md={12}><Form.Item name="specialization" label="Specialization"><Select size="large" placeholder="Select specialization" style={{ borderRadius: 10 }}>{["Luxury","Residential","Commercial","Off-Plan","Rental","Investment"].map((s) => <Option key={s} value={s}>{s}</Option>)}</Select></Form.Item></Col>
-                  <Col xs={24} md={12}><Form.Item name="rera_number" label="RERA Number"><Input size="large" placeholder="RERA Registration No." prefix={<SafetyCertificateOutlined style={{ color: "#94a3b8" }} />} style={{ borderRadius: 10 }} /></Form.Item></Col>
-                </Row>
-              </>
-            )}
-            {/* Step 2 */}
-            {currentStep === 2 && (
-              <>
-                <Alert message="Documents & Media" description="Upload verification documents." type="info" showIcon style={{ borderRadius: 10, marginBottom: 20 }} />
-                <Row gutter={[20, 20]}>
-                  {[
-                    { type: "profile", label: "Profile Photo", icon: <UserOutlined />, accept: "image/*" },
-                    { type: "idProof", label: "ID Proof", icon: <IdcardOutlined />, accept: ".pdf,image/*" },
-                    { type: "rera", label: "RERA Certificate", icon: <SafetyCertificateOutlined />, accept: ".pdf,image/*" },
-                  ].map((f) => (
-                    <Col xs={24} md={8} key={f.type}>
-                      <div style={{ background: "linear-gradient(135deg,#fafbff,#f0f4ff)", borderRadius: 14, padding: 20, border: "1px dashed #c7d2fe", textAlign: "center" }}>
-                        <div style={{ fontSize: 28, color: "#6366f1", marginBottom: 10 }}>{f.icon}</div>
-                        <Text style={{ fontWeight: 600, color: "#1e293b", display: "block", marginBottom: 12 }}>{f.label}</Text>
-                        <UploadField type={f.type} label={`Upload ${f.label}`} icon={<UploadOutlined />} accept={f.accept} urls={urls} uploadFiles={uploadFiles} uploading={uploading} onUpload={handleInstantUpload} onRemove={removeFile} />
-                      </div>
-                    </Col>
-                  ))}
-                </Row>
-              </>
-            )}
-            {/* Footer Buttons */}
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 28, paddingTop: 20, borderTop: "1px solid #f1f5f9" }}>
-              {currentStep > 0 ? (
-                <Button size="large" onClick={() => setCurrentStep(currentStep - 1)} style={{ borderRadius: 10, paddingInline: 24 }}>Back</Button>
-              ) : <span />}
-              <div style={{ display: "flex", gap: 10 }}>
-                <Button size="large" onClick={closeModal} style={{ borderRadius: 10, paddingInline: 20 }}>Cancel</Button>
-                {currentStep < 2 ? (
-                  <Button size="large" type="primary" onClick={() => setCurrentStep(currentStep + 1)}
-                    style={{ borderRadius: 10, paddingInline: 28, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", fontWeight: 600 }}>
-                    Next <ArrowRightOutlined />
-                  </Button>
-                ) : (
-                  <Button size="large" type="primary" htmlType="submit"
-                    style={{ borderRadius: 10, paddingInline: 28, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", fontWeight: 600 }}>
-                    Create Agent
-                  </Button>
-                )}
-              </div>
-            </div>
-          </Form>
-        </Modal>
 
-        {/* ════════════ AGENT DETAIL DRAWER ════════════ */}
-        <Drawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          placement="right"
-          width={420}
-          closable={false}
-          destroyOnClose
-          styles={{ body: { padding: 0, background: "#f8faff" }, wrapper: { boxShadow: "-8px 0 40px rgba(99,102,241,0.12)" } }}
-        >
-          {selectedAgent && (
-            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-
-              {/* ── Hero Banner ── */}
-              <div style={{
-                background: "linear-gradient(145deg,#4f46e5 0%,#7c3aed 60%,#9333ea 100%)",
-                padding: "32px 24px 28px",
-                position: "relative",
-                overflow: "hidden"
-              }}>
-                {/* Decorative circles */}
-                <div style={{ position: "absolute", top: -30, right: -30, width: 130, height: 130, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }} />
-                <div style={{ position: "absolute", bottom: -20, left: -20, width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
-
-                {/* Close btn */}
-                <button
-                  onClick={() => setDrawerOpen(false)}
-                  style={{
-                    position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.2)",
-                    border: "none", borderRadius: 8, width: 32, height: 32, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 16
-                  }}
-                >
-                  <CloseOutlined />
-                </button>
-
-                {/* Avatar */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
-                  <div style={{ position: "relative", marginBottom: 14 }}>
-                    <Avatar
-                      src={selectedAgent.avatar} icon={<UserOutlined />} size={86}
-                      style={{ border: "4px solid rgba(255,255,255,0.85)", boxShadow: "0 8px 24px rgba(0,0,0,0.25)" }}
-                    />
-                    <span style={{
-                      position: "absolute", bottom: 4, right: 4, width: 16, height: 16,
-                      borderRadius: "50%", background: selectedAgent.status ? "#10b981" : "#f43f5e",
-                      border: "2px solid #fff", boxShadow: "0 0 0 2px rgba(255,255,255,0.4)"
-                    }} />
-                  </div>
-                  <Text style={{ color: "#fff", fontSize: 20, fontWeight: 700, lineHeight: 1.2 }}>{selectedAgent.name}</Text>
-                  <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
-                    <span style={{ background: "rgba(255,255,255,0.2)", color: "#fff", borderRadius: 20, padding: "3px 12px", fontSize: 12, fontWeight: 600, border: "1px solid rgba(255,255,255,0.3)" }}>
-                      {selectedAgent.role}
-                    </span>
-                    {selectedAgent.specialization && (
-                      <span style={{ background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.9)", borderRadius: 20, padding: "3px 12px", fontSize: 12, border: "1px solid rgba(255,255,255,0.2)" }}>
-                        {selectedAgent.specialization}
-                      </span>
-                    )}
-                  </div>
-                  {/* Mini stats */}
-                  <div style={{ display: "flex", gap: 12, marginTop: 20, width: "100%" }}>
-                    <StatPill label="Experience" value={selectedAgent.experience ? `${selectedAgent.experience}y` : "—"} />
-                    <StatPill label="Status" value={selectedAgent.status ? "Active" : "Inactive"} />
-                  </div>
-                </div>
-              </div>
-
-              {/* ── Scrollable Body ── */}
-              <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 24px" }}>
-
-                {/* Contact Card */}
-                <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "16px 18px", marginBottom: 14, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#ede9fe,#ddd6fe)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <MailOutlined style={{ color: "#6366f1", fontSize: 13 }} />
-                    </div>
-                    <Text style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>Contact Information</Text>
-                  </div>
-                  <InfoRow icon={<MailOutlined />} label="Email"
-                    value={<Text style={{ fontSize: 13, color: "#1e293b", fontWeight: 500, wordBreak: "break-all" }}>{selectedAgent.email}</Text>} />
-                  <InfoRow icon={<PhoneOutlined />} label="Phone"
-                    value={<Text style={{ fontSize: 13, color: "#1e293b", fontWeight: 500 }}>{selectedAgent.phone || "—"}</Text>} last />
-                </div>
-
-                {/* Location Card */}
-                <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "16px 18px", marginBottom: 14, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#dbeafe,#bfdbfe)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <EnvironmentOutlined style={{ color: "#3b82f6", fontSize: 13 }} />
-                    </div>
-                    <Text style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>Location</Text>
-                  </div>
-                  <InfoRow icon={<EnvironmentOutlined />} label="City"
-                    value={<Text style={{ fontSize: 13, color: "#1e293b", fontWeight: 500 }}>{selectedAgent.city || "—"}</Text>} />
-                  <InfoRow icon={<GlobalOutlined />} label="Country"
-                    value={<Text style={{ fontSize: 13, color: "#1e293b", fontWeight: 500 }}>{selectedAgent.country || "—"}</Text>} last />
-                </div>
-
-                {/* Professional Card */}
-                <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "16px 18px", marginBottom: 14, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#fef3c7,#fde68a)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <TrophyOutlined style={{ color: "#d97706", fontSize: 13 }} />
-                    </div>
-                    <Text style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>Professional Details</Text>
-                  </div>
-                  <InfoRow icon={<SafetyCertificateOutlined />} label="RERA No."
-                    value={<Text style={{ fontSize: 13, color: "#1e293b", fontWeight: 500 }}>{selectedAgent.reraNumber || "—"}</Text>} />
-                  <InfoRow icon={<TrophyOutlined />} label="Specialization"
-                    value={selectedAgent.specialization
-                      ? <span style={{ background: "#ede9fe", color: "#5b21b6", borderRadius: 20, padding: "2px 10px", fontSize: 12, fontWeight: 600 }}>{selectedAgent.specialization}</span>
-                      : <Text style={{ color: "#94a3b8" }}>—</Text>} />
-                  <InfoRow icon={<CalendarOutlined />} label="Experience"
-                    value={<Text style={{ fontSize: 13, color: "#1e293b", fontWeight: 500 }}>{selectedAgent.experience ? `${selectedAgent.experience} years` : "—"}</Text>} />
-                  <InfoRow icon={<BankOutlined />} label="Role"
-                    value={<span style={{ background: "#f0fdf4", color: "#166534", borderRadius: 20, padding: "2px 10px", fontSize: 12, fontWeight: 600 }}>{selectedAgent.role}</span>} />
-                  <InfoRow icon={<CheckCircleFilled />} label="Status"
-                    value={
-                      <span style={{
-                        display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px",
-                        borderRadius: 20, fontSize: 12, fontWeight: 600,
-                        background: selectedAgent.status ? "#f0fdf4" : "#fff1f2",
-                        color: selectedAgent.status ? "#15803d" : "#be123c",
-                      }}>
-                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: selectedAgent.status ? "#22c55e" : "#f43f5e" }} />
-                        {selectedAgent.status ? "Active" : "Inactive"}
-                      </span>
-                    } last />
-                </div>
-
-                {/* Documents Card */}
-                {(selectedAgent.idProof || selectedAgent.reraCertificate) && (
-                  <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "16px 18px", marginBottom: 14, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#dcfce7,#bbf7d0)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <FileTextOutlined style={{ color: "#16a34a", fontSize: 13 }} />
-                      </div>
-                      <Text style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>Documents</Text>
-                    </div>
-                    {[
-                      { label: "ID Proof", url: selectedAgent.idProof },
-                      { label: "RERA Certificate", url: selectedAgent.reraCertificate },
-                    ].filter((d) => d.url).map((doc, i, arr) => (
-                      <div key={doc.label}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <SafetyCertificateOutlined style={{ color: "#6366f1", fontSize: 14 }} />
-                            <Text style={{ color: "#64748b", fontSize: 13 }}>{doc.label}</Text>
-                          </div>
-                          <a href={doc.url} target="_blank" rel="noreferrer"
-                            style={{ color: "#6366f1", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, textDecoration: "none" }}>
-                            View ↗
-                          </a>
-                        </div>
-                        {i < arr.length - 1 && <div style={{ height: 1, background: "#f1f5f9" }} />}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Remove Button */}
-                <Popconfirm
-                  title="Remove Agent"
-                  description="Are you sure you want to remove this agent from your team?"
-                  onConfirm={() => handleDelete(selectedAgent.id)}
-                  okText="Yes, Remove" cancelText="Cancel"
-                  placement="top" okButtonProps={{ danger: true }}
-                >
-                  <button style={{
-                    width: "100%", padding: "13px", borderRadius: 12, marginTop: 4,
-                    background: "linear-gradient(135deg,#fff1f2,#ffe4e6)",
-                    border: "1px solid #fecdd3", color: "#be123c",
-                    fontWeight: 600, fontSize: 14, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    transition: "all 0.2s"
-                  }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "linear-gradient(135deg,#ffe4e6,#fecdd3)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(244,63,94,0.2)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "linear-gradient(135deg,#fff1f2,#ffe4e6)"; e.currentTarget.style.boxShadow = "none"; }}
-                  >
-                    <DeleteOutlined /> Remove Agent
+            <Drawer open={filterDrawerOpen} onClose={()=>setFilterDrawerOpen(false)} placement="bottom" height="auto" title="Filter Agents" styles={{ body:{padding:"16px 20px 28px"} }} style={{ borderRadius:"20px 20px 0 0" }}>
+              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                {["all","active","inactive"].map((f)=>(
+                  <button key={f} onClick={()=>{ setStatusFilter(f); setFilterDrawerOpen(false); }}
+                    style={{ width:"100%", padding:"14px 18px", borderRadius:12, fontWeight:700, fontSize:14, border:"1px solid", cursor:"pointer", textAlign:"left", background:statusFilter===f?"linear-gradient(135deg,#5f0f9c,#7c3aed)":"#faf5ff", color:statusFilter===f?"#fff":"#374151", borderColor:statusFilter===f?"#5f0f9c":"#e9d5ff" }}>
+                    {f==="all"?"All Agents":f==="active"?"Active Only":"Inactive Only"}
                   </button>
-                </Popconfirm>
-
+                ))}
               </div>
-            </div>
-          )}
-        </Drawer>
+            </Drawer>
 
+            <div style={{ animation:"fadeUp .45s ease" }}>
+              {loading
+                ? <div style={{ padding:60, textAlign:"center" }}><Spin size="large" /></div>
+                : agents.filter((a)=>statusFilter==="all"?true:statusFilter==="active"?a.status:!a.status).length===0
+                  ? <Empty description={<div style={{ color:"#7c3aed" }}><p style={{ marginBottom:12, fontWeight:600 }}>No agents found</p><Button type="primary" icon={<PlusOutlined/>} onClick={()=>setAddModalOpen(true)} style={{ borderRadius:12, background:"linear-gradient(135deg,#5f0f9c,#7c3aed)", border:"none" }}>Add first agent</Button></div>} style={{ padding:"60px 20px" }} />
+                  : agents.filter((a)=>statusFilter==="all"?true:statusFilter==="active"?a.status:!a.status)
+                      .map((agent,i)=><AgentCard key={agent.id} agent={agent} delay={i*.03} onView={(a)=>{ setSelectedAgent(a); setViewModalOpen(true); }} onDelete={handleDelete} />)
+              }
+            </div>
+          </>
+        ) : (
+          /* ─── CustomTable (Desktop) ─── */
+          <div style={{ animation:"fadeUp .45s ease" }}>
+            <CustomTable
+              columns={tableColumns}
+              data={tableData}
+              loading={loading}
+              itemsPerPage={10}
+              showSearch={true}
+              onFilter={(filters) => setTableFilters(filters)}
+            />
+          </div>
+        )}
       </div>
 
-      <style>{`
-        .ant-table-thead > tr > th {
-          background: #f8faff !important;
-          font-weight: 700 !important;
-          font-size: 12px !important;
-          color: #64748b !important;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          border-bottom: 2px solid #e2e8f0 !important;
-        }
-        .agent-row td { transition: background 0.15s; }
-        .ant-pagination { padding: 16px 0 !important; }
-        .ant-steps-item-process .ant-steps-item-icon { background: linear-gradient(135deg,#6366f1,#8b5cf6) !important; border-color: #6366f1 !important; }
-        .ant-steps-item-finish .ant-steps-item-icon { border-color: #6366f1 !important; }
-        .ant-steps-item-finish .ant-steps-item-icon .ant-steps-icon { color: #6366f1 !important; }
-        .ant-drawer-content { border-radius: 0; }
-      `}</style>
+      {/* ADD AGENT */}
+      {isMobile
+        ? <Drawer open={addModalOpen} onClose={closeAddModal} placement="bottom" height="95vh" styles={{ body:{padding:0,overflowY:"auto"}, header:{display:"none"} }} style={{ borderRadius:"20px 20px 0 0" }}>{addAgentContent}</Drawer>
+        : <Modal open={addModalOpen} onCancel={closeAddModal} closable={false}    width={720} centered footer={null} destroyOnClose={false} styles={{ content:{borderRadius:24,padding:0,overflow:"hidden",boxShadow:"0 25px 60px -12px rgba(95,15,156,.3)"} }}>{addAgentContent}</Modal>
+      }
+
+      {/* VIEW AGENT */}
+      <ViewAgentModal open={viewModalOpen} onClose={()=>setViewModalOpen(false)} agent={selectedAgent} />
     </div>
   );
 };
