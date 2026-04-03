@@ -1,39 +1,37 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { FaBars, FaTimes, FaTachometerAlt } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
 import logoNew from "../../assets/img/logonew2.png";
 import { ChevronDown, LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useContext } from "react";
 import { AuthContext } from "../../context/ProfileContext";
-// REDUX IMPORTS
 import { useDispatch, useSelector } from "react-redux";
-// Adjust this path if needed
 import { logoutUser } from "../../manageApi/store/authSlice";
 
 /* ------------------- LANGUAGE DATA ------------------- */
-  export const languages = [
-    { code: "en", name: "EN", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#012169" /></svg>) },
-    { code: "hi", name: "HI", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#FF9933" /><rect y="5" width="20" height="5" fill="#FFF" /><rect y="10" width="20" height="5" fill="#138808" /></svg>) },
-    { code: "ar", name: "AR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#007A3D" /></svg>) },
-    { code: "ru", name: "RU", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#FFF" /><rect y="5" width="20" height="5" fill="#0039A6" /><rect y="10" width="20" height="5" fill="#D52B1E" /></svg>) },
-    { code: "zh", name: "ZH", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#EE1C25" /></svg>) },
-    { code: "fa", name: "FA", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#239F40" /><rect y="5" width="20" height="5" fill="#FFF" /><rect y="10" width="20" height="5" fill="#DA0000" /></svg>) },
-    { code: "tr", name: "TR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#E30A17" /></svg>) },
-    { code: "es", name: "ES", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#AA151B" /></svg>) },
-    { code: "pa", name: "PA", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#FF9933" /><rect y="5" width="20" height="5" fill="#FFF" /><rect y="10" width="20" height="5" fill="#138808" /></svg>) },
-    { code: "fr", name: "FR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="6.67" height="15" fill="#002395" /><rect x="6.67" width="6.66" height="15" fill="#FFF" /><rect x="13.33" width="6.67" height="15" fill="#ED2939" /></svg>) },
-    { code: "de", name: "DE", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#000" /><rect y="5" width="20" height="5" fill="#DD0000" /><rect y="10" width="20" height="5" fill="#FFCE00" /></svg>) },
-    { code: "tl", name: "TL", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="7.5" fill="#0038A8" /><rect y="7.5" width="20" height="7.5" fill="#CE1126" /></svg>) },
-    { code: "ur", name: "UR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#01411C" /></svg>) },
-  ];
+export const languages = [
+  { code: "en", name: "EN", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#012169" /></svg>) },
+  { code: "hi", name: "HI", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#FF9933" /><rect y="5" width="20" height="5" fill="#FFF" /><rect y="10" width="20" height="5" fill="#138808" /></svg>) },
+  { code: "ar", name: "AR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#007A3D" /></svg>) },
+  { code: "ru", name: "RU", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#FFF" /><rect y="5" width="20" height="5" fill="#0039A6" /><rect y="10" width="20" height="5" fill="#D52B1E" /></svg>) },
+  { code: "zh", name: "ZH", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#EE1C25" /></svg>) },
+  { code: "fa", name: "FA", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#239F40" /><rect y="5" width="20" height="5" fill="#FFF" /><rect y="10" width="20" height="5" fill="#DA0000" /></svg>) },
+  { code: "tr", name: "TR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#E30A17" /></svg>) },
+  { code: "es", name: "ES", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#AA151B" /></svg>) },
+  { code: "pa", name: "PA", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#FF9933" /><rect y="5" width="20" height="5" fill="#FFF" /><rect y="10" width="20" height="5" fill="#138808" /></svg>) },
+  { code: "fr", name: "FR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="6.67" height="15" fill="#002395" /><rect x="6.67" width="6.66" height="15" fill="#FFF" /><rect x="13.33" width="6.67" height="15" fill="#ED2939" /></svg>) },
+  { code: "de", name: "DE", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="5" fill="#000" /><rect y="5" width="20" height="5" fill="#DD0000" /><rect y="10" width="20" height="5" fill="#FFCE00" /></svg>) },
+  { code: "tl", name: "TL", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="7.5" fill="#0038A8" /><rect y="7.5" width="20" height="7.5" fill="#CE1126" /></svg>) },
+  { code: "ur", name: "UR", Flag: () => (<svg viewBox="0 0 20 15"><rect width="20" height="15" fill="#01411C" /></svg>) },
+];
 
 /* ------------------- NAV ITEMS ------------------- */
 const navItems = [
   { key: "home", path: "/" },
   { key: "mortgages", path: "/mortgage/services" },
+  { key: "rental", path: "/rent/search" },
   { key: "properties", path: "/Property" },
   {
     key: "homeUpgrade",
@@ -43,16 +41,16 @@ const navItems = [
       { key: "store", path: "/ecommerce/b2c" },
     ],
   },
+  { key: "ecosystem", path: "/ecosystem" },
   {
     key: "knowledgeHub",
     children: [
       { key: "blogs", path: "/explore" },
       { key: "caseStudies", path: "/case-studies" },
       { key: "training", path: "/training" },
+      { key: "about", path: "/about" },
     ],
   },
-  { key: "ecosystem", path: "/ecosystem" },
-  { key: "about", path: "/about" },
 ];
 
 const roleSlugMap = {
@@ -75,10 +73,7 @@ const Navbar = () => {
 
   const { fetchProfile, userProfile } = useContext(AuthContext);
 
-  console.log(userProfile)
-
-  // GET USER FROM REDUX
-  const { user, token } = useSelector((s) => s.auth);
+  const { user } = useSelector((s) => s.auth);
 
   useEffect(() => {
     if (!user) {
@@ -95,7 +90,6 @@ const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [loginMenuOpen, setLoginMenuOpen] = useState(false);
   const [mobileLoginOpen, setMobileLoginOpen] = useState(false);
-
   const [openDropdown, setOpenDropdown] = useState(null);
   const [selectedLang, setSelectedLang] = useState(languages[0]);
 
@@ -103,33 +97,23 @@ const Navbar = () => {
   const userMenuRef = useRef(null);
   const loginMenuRef = useRef(null);
 
-  const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
-
-  // --- ✅ FIXED: LOGIC MOVED INSIDE COMPONENT ---
   const getDashboardLink = () => {
     if (!user) return "/login";
-
     const roleName = user.role?.name?.toLowerCase();
-
     if (roleName === "agent") return "/dashboard/agent";
     if (roleName === "agency") return "/dashboard/agency";
     if (roleName === "developer") return "/dashboard/developer";
     if (roleName === "customer") return "/dashboard/customer";
-    if (roleName === "superadmin" || roleName === "admin")
-      return "/dashboard/superadmin";
-
-    return "/dashboard/developer"; // fallback
+    if (roleName === "superadmin" || roleName === "admin") return "/dashboard/superadmin";
+    return "/dashboard/developer";
   };
-
-
 
   const dashboardNavigate = () => {
     const path = getDashboardLink();
     navigate(path);
-    setUserMenuOpen(false); // Close menu after click
-    setMobileOpen(false);   // Close mobile menu if open
+    setUserMenuOpen(false);
+    setMobileOpen(false);
   };
-  // ---------------------------------------------
 
   const handleLogout = () => {
     dispatch(logoutUser());
@@ -143,18 +127,11 @@ const Navbar = () => {
     if (current) setSelectedLang(current);
   }, [i18n.language]);
 
-  // Click outside handler
   useEffect(() => {
     const close = e => {
-      if (langRef.current && !langRef.current.contains(e.target)) {
-        setLangOpen(false);
-      }
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
-        setUserMenuOpen(false);
-      }
-      if (loginMenuRef.current && !loginMenuRef.current.contains(e.target)) {
-        setLoginMenuOpen(false);
-      }
+      if (langRef.current && !langRef.current.contains(e.target)) setLangOpen(false);
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);
+      if (loginMenuRef.current && !loginMenuRef.current.contains(e.target)) setLoginMenuOpen(false);
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
@@ -163,17 +140,14 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 bg-white shadow">
       <div className="max-w-[1440px] mx-auto px-6 py-1">
-
-        {/* TOP BAR */}
         <div className="flex items-center justify-between h-20">
-
-          {/* LOGO */}
+          
           <Link to="/" className="flex flex-col">
             <img src={logoNew} alt="Logo" className="h-15" />
           </Link>
 
           {/* DESKTOP NAV */}
-          <div className="hidden xl:flex items-center gap-1 text-sm">
+          <div className="hidden xl:flex items-center gap-1 text-sm h-full">
             {navItems.map(item =>
               item.children ? (
                 <div key={item.key} className="relative group h-full flex items-center">
@@ -182,32 +156,46 @@ const Navbar = () => {
                     <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-300" />
                   </button>
 
-                  {/* Dropdown with invisible buffer */}
                   <div className="absolute top-full left-0 pt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 z-50">
                     <div className="bg-white shadow-xl rounded-lg border border-gray-100 overflow-hidden">
                       {item.children.map(child => (
-                        <Link
+                        <NavLink
                           key={child.key}
                           to={child.path}
-                          className="block px-4 py-3 hover:bg-purple-50 text-gray-600 hover:text-[#5C039B] transition-colors border-b border-gray-50 last:border-none"
+                          className={({ isActive }) =>
+                            `block px-4 py-3 transition-colors border-b border-gray-50 last:border-none ${
+                              isActive 
+                              ? "bg-purple-50 text-[#5C039B] font-bold" 
+                              : "text-gray-600 hover:bg-purple-50 hover:text-[#5C039B]"
+                            }`
+                          }
                         >
                           {t(`nav.${child.key}`)}
-                        </Link>
+                        </NavLink>
                       ))}
                     </div>
                   </div>
                 </div>
               ) : (
-                <Link key={item.key} to={item.path} className="px-3 py-2 font-medium text-gray-700 hover:text-[#5C039B] transition-colors">
+                <NavLink
+                  key={item.key}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `px-3 py-2 font-medium transition-all relative h-full flex items-center ${
+                      isActive 
+                      ? "text-[#5C039B]" // ❌ Underline classes removed here
+                      : "text-gray-700 hover:text-[#5C039B]"
+                    }`
+                  }
+                >
                   {t(`nav.${item.key}`)}
-                </Link>
+                </NavLink>
               )
             )}
           </div>
 
           {/* RIGHT SIDE */}
           <div className="flex items-center gap-3">
-
             {/* LANGUAGE SELECTOR */}
             <div ref={langRef} className="relative">
               <button
@@ -222,7 +210,7 @@ const Navbar = () => {
               </button>
 
               {langOpen && (
-                <div className="absolute right-0 mt-2 bg-white shadow-lg rounded border border-gray-100 z-50 w-40 overflow-y-auto">
+                <div className="absolute right-0 mt-2 bg-white shadow-lg rounded border border-gray-100 z-50 w-40 max-h-60 overflow-y-auto">
                   {languages.map(lang => (
                     <button
                       key={lang.code}
@@ -242,7 +230,6 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* CONTACT BUTTON */}
             <Link to="/contact" className="hidden lg:block">
               <button className="px-4 py-2 bg-[#5C039B] text-white rounded-lg hover:bg-[#4a027c] transition-colors font-medium">
                 {t("nav.contact")}
@@ -274,7 +261,6 @@ const Navbar = () => {
                         <p className="text-xs text-gray-500">{user.email}</p>
                       </div>
 
-                      {/* ✅ CLICKABLE DASHBOARD LINK */}
                       <div
                         onClick={(e) => {
                           e.preventDefault();
@@ -286,8 +272,6 @@ const Navbar = () => {
                         <span>Dashboard</span>
                       </div>
 
-                      <div className="border-t border-gray-100 my-1"></div>
-
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left transition-colors cursor-pointer"
@@ -298,7 +282,6 @@ const Navbar = () => {
                   )}
                 </div>
               ) : (
-                /* LOGIN DROPDOWN (Desktop) */
                 <div ref={loginMenuRef} className="relative">
                   <button
                     onClick={() => setLoginMenuOpen(!loginMenuOpen)}
@@ -309,28 +292,15 @@ const Navbar = () => {
                   </button>
 
                   {loginMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-40 bg-white shadow-xl rounded-xl border border-gray-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-200">
-                      <Link
-                        to="/user/login"
-                        onClick={() => setLoginMenuOpen(false)}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-[#5C039B] transition-colors"
-                      >
-                        Customer
-                      </Link>
-                      <Link
-                        to="/login"
-                        onClick={() => setLoginMenuOpen(false)}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-[#5C039B] transition-colors"
-                      >
-                        Partners
-                      </Link>
+                    <div className="absolute right-0 mt-2 w-40 bg-white shadow-xl rounded-xl border border-gray-100 py-2 z-50">
+                      <Link to="/user/login" onClick={() => setLoginMenuOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-[#5C039B]">Customer</Link>
+                      <Link to="/login" onClick={() => setLoginMenuOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-[#5C039B]">Partners</Link>
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* MOBILE TOGGLE (HAMBURGER) */}
             <button
               className="xl:hidden text-gray-700 p-2 hover:bg-gray-100 rounded-lg transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
@@ -357,31 +327,38 @@ const Navbar = () => {
                   <div className={`overflow-hidden transition-all duration-300 ${openDropdown === item.key ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="pl-4 space-y-1 border-l-2 border-purple-100 ml-2 mt-1 py-1">
                       {item.children.map(child => (
-                        <Link
+                        <NavLink
                           key={child.key}
                           to={child.path}
                           onClick={() => setMobileOpen(false)}
-                          className="block py-2 px-2 text-sm text-gray-600 hover:text-[#5C039B] transition-colors"
+                          className={({ isActive }) =>
+                            `block py-2 px-2 text-sm transition-colors ${
+                              isActive ? "text-[#5C039B] font-bold" : "text-gray-600"
+                            }`
+                          }
                         >
                           {t(`nav.${child.key}`)}
-                        </Link>
+                        </NavLink>
                       ))}
                     </div>
                   </div>
                 </div>
               ) : (
-                <Link
+                <NavLink
                   key={item.key}
                   to={item.path}
                   onClick={() => setMobileOpen(false)}
-                  className="block py-2 px-2 text-gray-700 font-medium hover:bg-gray-50 rounded transition-colors"
+                  className={({ isActive }) =>
+                    `block py-2 px-2 font-medium rounded transition-colors ${
+                      isActive ? "bg-purple-50 text-[#5C039B]" : "text-gray-700 hover:bg-gray-50"
+                    }`
+                  }
                 >
                   {t(`nav.${item.key}`)}
-                </Link>
+                </NavLink>
               )
             )}
 
-            {/* MOBILE AUTH & CONTACT */}
             <div className="pt-5 border-t space-y-3">
               {user ? (
                 <>
@@ -394,62 +371,24 @@ const Navbar = () => {
                       <p className="text-xs text-gray-500 capitalize">{user.role?.name}</p>
                     </div>
                   </div>
-
-                  {/* Mobile Dashboard Link calling getDashboardLink() */}
-                  <div
-                    onClick={() => {
-                      setMobileOpen(false);
-                      dashboardNavigate();
-                    }}
-                    className="block cursor-pointer"
-                  >
-                    <button className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                      <FaTachometerAlt /> Dashboard
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors"
-                  >
-                    <LogOut size={16} /> Logout
-                  </button>
+                  <button onClick={dashboardNavigate} className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg"><FaTachometerAlt /> Dashboard</button>
+                  <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg"><LogOut size={16} /> Logout</button>
                 </>
               ) : (
-                /* LOGIN DROPDOWN (Mobile) */
                 <div className="w-full">
-                  <button
-                    onClick={() => setMobileLoginOpen(!mobileLoginOpen)}
-                    className="w-full px-4 py-2 border border-[#5C039B] text-[#5C039B] rounded-lg font-bold hover:bg-[#5C039B] hover:text-white transition-all flex justify-center items-center gap-2"
-                  >
-                    {t("nav.login")}
-                    <ChevronDown size={14} className={`transition-transform duration-200 ${mobileLoginOpen ? "rotate-180" : ""}`} />
+                  <button onClick={() => setMobileLoginOpen(!mobileLoginOpen)} className="w-full px-4 py-2 border border-[#5C039B] text-[#5C039B] rounded-lg font-bold flex justify-center items-center gap-2">
+                    {t("nav.login")} <ChevronDown size={14} className={mobileLoginOpen ? "rotate-180" : ""} />
                   </button>
-
-                  {/* Expandable Mobile Menu for Login */}
                   {mobileLoginOpen && (
-                    <div className="mt-2 space-y-2 pl-4 border-l-2 border-purple-100 ml-4 animate-in fade-in slide-in-from-top-1 duration-200">
-                      <Link
-                        to="/user/login"
-                        onClick={() => setMobileOpen(false)}
-                        className="block py-2 text-gray-600 hover:text-[#5C039B] font-medium"
-                      >
-                        Customer
-                      </Link>
-                      <Link
-                        to="/login"
-                        onClick={() => setMobileOpen(false)}
-                        className="block py-2 text-gray-600 hover:text-[#5C039B] font-medium"
-                      >
-                        Partners
-                      </Link>
+                    <div className="mt-2 space-y-2 pl-4 border-l-2 border-purple-100 ml-4">
+                      <Link to="/user/login" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600">Customer</Link>
+                      <Link to="/login" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600">Partners</Link>
                     </div>
                   )}
                 </div>
               )}
-
               <Link to="/contact" className="block" onClick={() => setMobileOpen(false)}>
-                <button className="w-full px-4 py-2 bg-[#5C039B] text-white rounded-lg font-bold hover:bg-[#4a027c] transition-colors">
+                <button className="w-full px-4 py-2 bg-[#5C039B] text-white rounded-lg font-bold">
                   {t("nav.contact")}
                 </button>
               </Link>

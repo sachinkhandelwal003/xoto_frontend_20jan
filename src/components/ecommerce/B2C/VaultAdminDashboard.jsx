@@ -93,10 +93,10 @@ const VaultAdminDashboard = () => {
 
       {/* Top 4 Stat Cards */}
       <div style={{ display: "flex", gap: "24px", marginBottom: "24px", flexWrap: "wrap" }}>
-        <StatCard title="Total Agents" value="45" icon="📄" color={PURPLE} bgColor={LIGHT_PURPLE} />
-        <StatCard title="Total Clients" value="120" icon="👥" color="#0ea5e9" bgColor="#e0f2fe" />
-        <StatCard title="Total Cases" value="85" icon="🏠" color={GREEN} bgColor={LIGHT_GREEN} />
-        <StatCard title="Disbursed" value="32" icon="✅" color="#f59e0b" bgColor="#fef3c7" />
+        <StatCard title="Total Agents" value="45"  color={PURPLE}  />
+        <StatCard title="Total Clients" value="120"  color="#0ea5e9"  />
+        <StatCard title="Total Cases" value="85"  color={GREEN} />
+        <StatCard title="Disbursed" value="32"  color="#f59e0b"  />
       </div>
 
       {/* Middle Section: Timeline & Category (2 Columns) */}
