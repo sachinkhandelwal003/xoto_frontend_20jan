@@ -82,6 +82,7 @@ import DeveloperRegistration from "./components/ecommerce/B2C/developerregistrat
 import RegistrationAgency from "./components/ecommerce/B2C/registrationagency";
 import Checker from "./Checker";
 import AgentRegistration from "./components/ecommerce/B2C/AgentRegistration";
+import VaultRegister from "./components/ecommerce/B2C/VaultRegister";
 import AgentLayout from "./components/ecommerce/B2C/AgentLayout";
 import AgentDashboard from "./components/ecommerce/B2C/AgentDashboard";
 import AgentList from "./components/CMS/pages/Properties/AgentList";
@@ -266,7 +267,7 @@ function App() {
                             <Route path="/ecommerce/cart" element={<CartPage />} />
                             <Route path="/ecommerce/checkout" element={<CheckoutPage />} />
                             <Route path="/ecommerce/payment/success" element={<PaymentSuccess />} />
-
+<Route path="/vault/vault-register" element={<VaultRegister />} />
               
 
               <Route
