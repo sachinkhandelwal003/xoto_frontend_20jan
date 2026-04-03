@@ -178,6 +178,10 @@ import PropertyDetailPage from "./pages/Propertydetailpage";
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 
+import CreateRentalProperty from "../../component/Rent/Createrentalproperty";
+import RentalPropertyList from "../../component/Rent/Rentalpropertylist";
+import AdminLeadList from "../../component/Rent/Adminleadlist";
+
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -480,6 +484,14 @@ const CmsRoutes = () => {
 <Route path="/developer/view/:id" element={<DeveloperDetail />} />
   {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
   {/* <Route path="team" element={<DeveloperTeam/>}/> */}
+
+
+
+
+
+  <Route path="/rental/properties" element={< CreateRentalProperty />} />
+  <Route path="/rental/propertieslist" element={< RentalPropertyList />} />
+  <Route path="/rental/leadlist" element={< AdminLeadList />} />
 
       
     </Routes>

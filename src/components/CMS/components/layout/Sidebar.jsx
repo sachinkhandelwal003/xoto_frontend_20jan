@@ -45,6 +45,16 @@ const CUSTOM_ROLE_LINKS = {
         { title: "All Customers", path: "/dashboard/superadmin/customers/list" },
       ]
     },
+            {
+      title: "Rental Projects", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/rental/properties",
+      submenus: [
+        { title: "Create Rental Properties", path: "/dashboard/{roleSlug}/rental/properties" },
+        { title: "Rental Proprties", path: "/dashboard/{roleSlug}/rental/propertieslist" },
+        { title: "Rental Lead List", path: "/dashboard/{roleSlug}/rental/leadlist" },
+
+
+      ],
+    },
     // {
     //   title: "Setting",
     //   icon: "fas fa-cog",
@@ -186,7 +196,8 @@ const CUSTOM_ROLE_LINKS = {
 
 
 
-    }
+    },
+
   ],
   "12": [
     {
