@@ -59,35 +59,42 @@ const HeroSection = ({ step }) => {
 };
 
 // --- PROGRESS BAR ---
-const ProgressBar = ({ currentStep, percentages }) => {
-    const renderBar = (stepIndex) => {
-        let width = 0;
-        if (currentStep > stepIndex) width = 100;
-        else if (currentStep === stepIndex) width = percentages[stepIndex] || 0;
-        
-        return (
-            <div className="h-1.5 flex-1 rounded-full bg-gray-200 overflow-hidden">
-                <div className="h-full bg-black transition-all duration-500 ease-out" style={{ width: `${width}%` }}></div>
-            </div>
-        );
-    };
+const Stepper = ({ step }) => {
 
-    return (
-        <div className="flex space-x-3 mb-8 w-full max-w-3xl">
-            {renderBar(1)}
-            {renderBar(2)}
-            {renderBar(3)}
-        </div>
-    );
-};
+const steps = [1,2,3]
 
+return (
+
+<div className="flex items-center justify-between w-full mb-12 relative">
+
+{/* background line */}
+<div className="absolute top-1/2 left-0 w-full h-[3px] bg-gray-300 -translate-y-1/2"></div>
+
+{steps.map((s)=>(
+<div key={s} className="relative z-10 flex flex-col items-center">
+
+<div
+className={`w-14 h-14 flex items-center justify-center rounded-full text-lg font-bold
+${step >= s ? "bg-[#5c039b] text-white" : "bg-gray-200 text-gray-600"}
+`}
+>
+{s}
+</div>
+
+</div>
+))}
+
+</div>
+
+)
+}
 // --- INPUT COMPONENTS ---
 const RadioCard = ({ label, name, value, checked, onChange, width = "w-full" }) => (
     <label className={`cursor-pointer border rounded-md px-4 py-3.5 flex items-center justify-between transition-all bg-white hover:border-gray-400 ${checked ? 'border-black ring-1 ring-black' : 'border-gray-300'} ${width}`}>
       <span className="text-base text-gray-800 font-normal">{label}</span>
       <input type="radio" name={name} className="hidden" checked={checked} onChange={() => onChange(value)} />
       <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${checked ? 'border-black' : 'border-gray-300'}`}>
-        {checked && <div className="w-2.5 h-2.5 bg-black rounded-full"></div>}
+        {checked && <div className="w-2.5 h-2.5 bg-[#5c039b] rounded-full"></div>}
       </div>
     </label>
 );
@@ -520,10 +527,26 @@ const MortgageWizard = () => {
     <div className="flex min-h-screen bg-white font-sans text-[#1a1a1a]">
       {toast && <Toast message={toast.message} type={toast.type} onClose={closeToast} />}
       {step === 4 && <SuccessModal email={formData.email} navigate={navigate} />}
-      <HeroSection step={step} />
+      {/* <HeroSection step={step} /> */}
       <div className="flex-1 flex flex-col">
+      
+      <div className="w-full max-w-3xl mx-auto pt-16 px-8 lg:px-0 text-center">
+
+<h1 className="text-4xl font-extrabold tracking-tight text-[#5c039b] mb-3">
+
+{step === 1 && "The right mortgage for your property!"}
+{step === 2 && "Let's get to know you!"}
+{step === 3 && "You are almost done!"}
+
+</h1>
+<p className="text-gray-500 text-lg mb-5">
+Answer a few questions to find the best mortgage for you
+</p>
+</div>
+
+      
         <div className="w-full max-w-3xl mx-auto pt-16 px-8 lg:px-0">
-            <ProgressBar currentStep={step} percentages={percentages} />
+           <Stepper step={step} />
         </div>
         <div className="w-full max-w-3xl mx-auto flex-1 px-8 lg:px-0 pb-16 flex flex-col">
           <div className="mt-2 flex-1">

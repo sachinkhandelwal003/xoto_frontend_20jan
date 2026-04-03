@@ -96,7 +96,7 @@ const Card = ({ title, subTitle, children, onEdit, isEditing, isSaving, onUpload
     </div>
 );
 
-// --- PRODUCT OFFER COMPONENT ---
+
 const ProductOffer = ({ productData, isSelected, onSelect, isDetailsOpen, onToggleDetails }) => {
   const { _id, bankInfo, offerSummary, costBreakdown, loanDetails, insurance } = productData;
   const fmt = (val) => val !== undefined && val !== null ? Number(val).toLocaleString() + ` ${offerSummary?.currency || 'AED'}` : '0 AED';
