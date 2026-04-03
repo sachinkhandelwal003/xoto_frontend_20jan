@@ -7,14 +7,6 @@ import { TbTrees, TbSwimming, TbBarbell, TbParking, TbMountain } from "react-ico
 import { RiHome4Line, RiGovernmentLine } from "react-icons/ri";
 import { PiBuildingsBold, PiStar } from "react-icons/pi";
 
-
-
-useEffect(() => {
-  if (!location.state) {
-    navigate("/");
-  }
-}, []);
-
 const EMIRATES = ["Dubai", "Abu Dhabi", "Sharjah", "Ajman", "RAK", "Fujairah", "UAQ"];
 const POPULAR_AREAS = {
   Dubai: ["Dubai Marina", "Downtown Dubai", "JBR", "Palm Jumeirah", "Business Bay", "DIFC", "JVC", "Al Barsha"],
