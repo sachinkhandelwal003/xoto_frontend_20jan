@@ -19,18 +19,18 @@ const PROPERTY_TYPES = ["Apartment", "Villa", "Studio", "Penthouse", "Townhouse"
 const BEDROOMS = ["Studio", "1 BR", "2 BR", "3 BR", "4 BR", "5+ BR"];
 
 const AMENITY_CHIPS = [
-  { label: "Chiller Free", icon: "❄️" },
-  { label: "DEWA Included", icon: "⚡" },
-  { label: "Furnished", icon: "🛋️" },
-  { label: "Pet Friendly", icon: "🐾" },
-  { label: "Pool", icon: "🏊" },
-  { label: "Gym", icon: "🏋️" },
-  { label: "Parking", icon: "🚗" },
-  { label: "Sea View", icon: "🌊" },
-  { label: "Balcony", icon: "🌇" },
-  { label: "Maid's Room", icon: "🏠" },
-  { label: "Near Metro", icon: "🚇" },
-  { label: "Kids Play Area", icon: "🎠" },
+  { label: "Chiller Free", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5l-5 5-5-5M17 19l-5-5-5 5"/></svg> },
+  { label: "DEWA Included", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> },
+  { label: "Furnished", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 9V7a2 2 0 00-2-2H6a2 2 0 00-2 2v2m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2V9m16 0H4"/></svg> },
+  { label: "Pet Friendly", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-5 1c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-5 6c-3 0-5.5 1.5-6.5 4-.3.8-.5 1.7-.5 2.5 0 1.4 1.1 2.5 2.5 2.5h9c1.4 0 2.5-1.1 2.5-2.5 0-.8-.2-1.7-.5-2.5-1-2.5-3.5-4-6.5-4z"/></svg> },
+  { label: "Pool", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12h20M2 16h20M2 8h20"/></svg> },
+  { label: "Gym", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 5v14M18 5v14M2 9h4M18 9h4M2 15h4M18 15h4M6 12h12"/></svg> },
+  { label: "Parking", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 8h4a2 2 0 010 4H9v4"/></svg> },
+  { label: "Sea View", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12h20M2 18h20M7 6a5 5 0 0110 0"/></svg> },
+  { label: "Balcony", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 10h18v10a2 2 0 01-2 2H5a2 2 0 01-2-2V10zm0 0l4-8h10l4 8M10 10v12M14 10v12"/></svg> },
+  { label: "Maid's Room", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10"/></svg> },
+  { label: "Near Metro", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 15h.01M16 15h.01M4 8h16"/></svg> },
+  { label: "Kids Play Area", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg> },
 ];
 
 const BUDGET_RANGES = [
@@ -553,17 +553,19 @@ function HeroSearch({ onSearch }) {
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        .pj { font-family:'Plus Jakarta Sans',sans-serif; }
-        .syne { font-family:'Syne',sans-serif; }
-        .msrow:focus-within { border-color:#5c039c!important; box-shadow:0 0 0 3px rgba(92,3,156,0.1); }
-        .chip-active { background:#5c039c!important; color:white!important; border-color:#5c039c!important; }
-        .chip-btn:hover { border-color:#9b5cf6; color:#5c039c; background:#f5edff; }
-        .type-active { border-color:#5c039c!important; background:#f5edff!important; color:#5c039c!important; }
-        .sugg-item:hover { background:#f5f3ff; }
-        select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%235c039c' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; padding-right:26px!important; }
-      `}</style>
+<style>{`
+  /* DM Sans ko URL me add kiya gaya hai */
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+  
+  .pj { font-family:'Plus Jakarta Sans',sans-serif; }
+  .syne { font-family:'Syne',sans-serif; }
+  .msrow:focus-within { border-color:#5c039c!important; box-shadow:0 0 0 3px rgba(92,3,156,0.1); }
+  .chip-active { background:#5c039c!important; color:white!important; border-color:#5c039c!important; }
+  .chip-btn:hover { border-color:#9b5cf6; color:#5c039c; background:#f5edff; }
+  .type-active { border-color:#5c039c!important; background:#f5edff!important; color:#5c039c!important; }
+  .sugg-item:hover { background:#f5f3ff; }
+  select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%235c039c' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; padding-right:26px!important; }
+`}</style>
 
       <div className="pj relative overflow-hidden" style={{ background: "linear-gradient(160deg, #0f0c29 0%, #1c77c7 55%, #ffffff 100%)" }}>
         {/* decorative circles */}
@@ -612,14 +614,24 @@ function HeroSearch({ onSearch }) {
           </div>
 
           {/* RIGHT: SEARCH PANEL */}
-          <div style={{ background: "white", borderRadius: "20px 20px 0 0", padding: "22px 24px", boxShadow: "0 24px 80px rgba(15,12,41,0.35)" }}>
-
-            <div style={{ marginBottom: 18 }}>
-              <h2 style={{ fontSize: 28, fontWeight: 800, color: "#1e1b4b", lineHeight: 1.2, margin: 0 }}>
-                Search <span style={{ borderBottom: "3px solid #c084fc", paddingBottom: 2, color: "#7c3aed" }}>Rental Properties</span>
-              </h2>
-              <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 6, fontWeight: 400 }}>Verified homes · Zero brokerage · Ejari ready</p>
-            </div>
+<div style={{ 
+  background: "white", 
+  borderRadius: "20px 20px 0 0", 
+  padding: "26px 28px", 
+  boxShadow: "0 24px 80px rgba(15,12,41,0.35)",
+  fontFamily: "'DM Sans', sans-serif", // DM Sans Font Apply Kiya
+  letterSpacing: "0.025em",            // Fonts ko thoda relax kiya
+  lineHeight: "1.65"                   // Saans lene ki jagah (Breathing room)
+}}>
+  
+  <div style={{ marginBottom: 20 }}>
+    <h2 style={{ fontSize: 26, fontWeight: 700, color: "#1e1b4b", lineHeight: 1.3, margin: 0, letterSpacing: "0.01em" }}>
+      Search <span style={{ borderBottom: "3px solid #c084fc", paddingBottom: 2, color: "#7c3aed" }}>Rental Properties</span>
+    </h2>
+    <p style={{ fontSize: 13, color: "#6b7280", marginTop: 8, fontWeight: 400, letterSpacing: "0.03em" }}>
+      Verified homes · Zero brokerage · Ejari ready
+    </p>
+  </div>
 
             {/* MAIN SEARCH BAR */}
             <div className="msrow" style={{ display: "flex", alignItems: "center", border: "2px solid #e9d5ff", borderRadius: 14, overflow: "hidden", marginBottom: 12, background: "#faf8ff", transition: "all 0.2s", position: "relative" }}>
