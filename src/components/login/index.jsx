@@ -193,8 +193,8 @@ const Login = () => {
       label: "Agent",
       desc: "For Real Estate Agents",
       icon: <IdcardOutlined style={{ fontSize: "28px" }} />,
-      color: "#E11D48", // Rose/Red
-      gradient: "linear-gradient(135deg, #E11D48, #BE123C)",
+      color: "#10B981", // Rose/Red
+      gradient: "linear-gradient(135deg, #10B981, #059669)",
     },
     {
       value: "agency",
