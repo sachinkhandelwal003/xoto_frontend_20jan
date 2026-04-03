@@ -40,14 +40,16 @@ const HeroSection = () => {
         <div className="w-full space-y-6">
           
           {/* Heading - Responsive wrapping (Mobile par wrap, Desktop par exactly 2 lines) */}
-          <h1 className="heading-light w-full max-w-full mx-auto leading-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl px-2">
-            <span className="block whitespace-normal md:whitespace-nowrap">
-              {t("hero.title1")}
-            </span>
-            <span className="block whitespace-normal md:whitespace-nowrap">
-              {t("hero.title2")}
-            </span>
-          </h1>
+         <h1 className="heading-light w-full mx-auto leading-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl px-2">
+  <div className="w-fit mx-auto   ">
+    <span className="block whitespace-normal md:whitespace-nowrap">
+      {t("hero.title1")}
+    </span>
+    <span className="block whitespace-normal md:whitespace-nowrap">
+      {t("hero.title2")}
+    </span>
+  </div>
+</h1>
 
           {/* Description */}
           <p className="paragraph-light-1 text-lg max-w-3xl mx-auto">
