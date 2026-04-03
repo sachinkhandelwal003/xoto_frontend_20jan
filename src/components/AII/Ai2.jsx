@@ -21,7 +21,7 @@ const Ai2 = () => {
   }, [selectedBlogId]);
 
   return (
-    <div className="w-full bg-white py-12 px-4 flex justify-center">
+    <div className="w-full bg-[var(--color-body)] py-12 px-4 flex justify-center">
       {/* 1. max-w-[1200px]: Width control ke liye
          2. h-[300px] sm:h-[400px] md:h-[500px]: Ye hai FIXED HEIGHT logic
       */}
