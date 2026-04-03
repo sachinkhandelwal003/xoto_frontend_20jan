@@ -163,13 +163,17 @@ import BrochureGenerator from "../ecommerce/B2C/BrochureGenerator";
 import TrackBrochure from "../ecommerce/B2C/TrackBrochure";
 import WaitingApproval from "../ecommerce/B2C/WaitingApproval";
 import AgentDetail from "./pages/Properties/Agentdetail";
-
 import OnBoardingpage from "./pages/dashboardPages/OnBoardingpage";
 import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 import CreateSecondaryProperty from "./pages/Properties/CreateSecondaryProperty"; 
 import SecondaryPlans from "./pages/Properties/SecondaryPlans";
 import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail";
+ {/*Xoto Vault*/}
+import VaultAdminDashboard from "../ecommerce/B2C/VaultAdminDashboard";
+import VaultAgents from "../ecommerce/B2C/VaultAgents";
+import VaultCases from "../ecommerce/B2C/VaultCases";
+import VaultClients from "../ecommerce/B2C/VaultClients";
 import PropertyDetailPage from "./pages/Propertydetailpage";
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
@@ -186,6 +190,7 @@ const roleSlugMap = {
      15: "agency",        // Agency
   16: "agent",         // Agent
   17: "developer",
+  18: "vault-admin",
 
 };
 
@@ -200,7 +205,8 @@ const dashboardMap = {
     12: <SupervisorDashboard />,
     16:<AgentDashboard/>,
     17:<DeveloperDashboard/>,
-    15:<AgencyDashboard/>
+    15:<AgencyDashboard/>,
+    18:<VaultAdminDashboard/>
 
 
 };
@@ -396,9 +402,11 @@ const CmsRoutes = () => {
   {/* <Route path="waiting-approval" element={<WaitingApproval />} /> */}
  <Route path="agents/:agentId" element={<AgentDetail />} />
 
-
- 
-
+{/* Xoto Vault */}
+<Route path="/" element={user?.role?.code == 18 ? <VaultAdminDashboard /> : (dashboardMap[user.role.code] ?? <Dashboard />)} />
+<Route path="agents"   element={<VaultAgents />} />
+<Route path="clients"  element={<VaultClients />} />
+<Route path="cases"    element={<VaultCases />} />
 
 
 

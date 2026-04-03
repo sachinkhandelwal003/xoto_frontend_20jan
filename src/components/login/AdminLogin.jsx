@@ -77,7 +77,7 @@ const TestCredBox = styled.div`
 // --- Logic ---
 
 const getDashboardPath = (roleCode) => {
-  const map = { '0': '/superadmin', '1': '/admin' };
+  const map = { '0': '/superadmin', '1': '/admin' , '18':'/vault-admin'};
   return `/dashboard${map[roleCode] || ''}`;
 };
 
