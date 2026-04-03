@@ -1,15 +1,44 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import {
+  Card,
+  Typography,
+  Avatar,
+  Space,
+  Tag,
+  Input,
+  Drawer,
+  Divider,
+  Dropdown,
+  Segmented,
+  Button
+} from "antd";
+import {
+  UserOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  CheckCircleOutlined,
+  StopOutlined,
+  MoreOutlined,
+  BankOutlined,
+  TrophyOutlined,
+  CalendarOutlined
+} from "@ant-design/icons";
+import { FiEye, FiSearch, FiRefreshCw } from "react-icons/fi";
 
-const PURPLE = "#5C039B";
-const PURPLE_LIGHT = "#7B2FBE";
-const GREEN = "#22C55E";
-const CYAN = "#06B6D4";
-const RED = "#EF4444";
-const AMBER = "#F59E0B";
-const MUTED = "#6B7280";
-const DTEXT = "#0F172A";
-const BG = "#F8F7FF";
+// Custom components
+import CustomTable from '../../../components/CMS/pages/custom/CustomTable';
 
+const { Title, Text } = Typography;
+
+const THEME = {
+  primary: "#5c039b",
+  success: "#10b981",
+  error: "#ef4444",
+  warning: "#d97706",
+  blue: "#0ea5e9"
+};
+
+// Mock Data
 const mockAgents = [
   { _id: "1", name: { first_name: "Ahmed", last_name: "Al Mansoori" }, phone: { number: "501234567" }, email: "ahmed@example.com", agentType: "FreelanceAgent", partnerId: null, totalLeads: 12, createdAt: "2025-01-15T10:00:00Z", isActive: true },
   { _id: "2", name: { first_name: "Fatima", last_name: "Hassan" }, phone: { number: "559876543" }, email: "fatima@example.com", agentType: "PartnerAffiliatedAgent", partnerId: { companyName: "Dubai Properties" }, totalLeads: 8, createdAt: "2025-02-20T14:30:00Z", isActive: true },
@@ -18,263 +47,325 @@ const mockAgents = [
   { _id: "5", name: { first_name: "Khalid", last_name: "Al Suwaidi" }, phone: { number: "521112222" }, email: "khalid@example.com", agentType: "FreelanceAgent", partnerId: null, totalLeads: 22, createdAt: "2024-12-01T08:00:00Z", isActive: true },
 ];
 
-const fullName = (a) => `${a.name?.first_name || ""} ${a.name?.last_name || ""}`.trim() || "—";
-const initials = (a) => `${(a.name?.first_name || "?")[0]}${(a.name?.last_name || "")[0] || ""}`.toUpperCase();
+const getFullName = (a) => `${a.name?.first_name || ""} ${a.name?.last_name || ""}`.trim() || "Unknown";
 
-const avatarGradients = [
-  "linear-gradient(135deg,#5C039B,#06B6D4)",
-  "linear-gradient(135deg,#7B2FBE,#22C55E)",
-  "linear-gradient(135deg,#06B6D4,#5C039B)",
-  "linear-gradient(135deg,#F59E0B,#EF4444)",
-  "linear-gradient(135deg,#22C55E,#06B6D4)",
-];
+const VaultAgents = () => {
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("all"); // 'all', 'freelance', 'affiliated'
+  
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState(null);
 
-export default function VaultAgents() {
-  const [search, setSearch]     = useState("");
-  const [typeFilter, setType]   = useState("All");
-  const [viewMode, setViewMode] = useState("table"); // "table" | "card"
-  const agents = mockAgents;
-
-  const filtered = agents.filter(a => {
-    const name = fullName(a).toLowerCase();
-    const matchSearch = name.includes(search.toLowerCase()) ||
-      (a.phone?.number || "").includes(search) ||
-      (a.email || "").toLowerCase().includes(search.toLowerCase());
-    const matchType = typeFilter === "All" || a.agentType === typeFilter;
-    return matchSearch && matchType;
+  // Pagination state (simulated for mock data)
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    itemsPerPage: 10,
   });
 
-  const total     = agents.length;
-  const active    = agents.filter(a => a.isActive).length;
-  const suspended = agents.filter(a => !a.isActive).length;
-  const freelance = agents.filter(a => a.agentType === "FreelanceAgent").length;
+  // Filter Data
+  const filteredAgents = useMemo(() => {
+    return mockAgents.filter(a => {
+      const nameMatch = getFullName(a).toLowerCase().includes(search.toLowerCase());
+      const emailMatch = (a.email || "").toLowerCase().includes(search.toLowerCase());
+      const phoneMatch = (a.phone?.number || "").includes(search);
+      
+      const tabMatch = 
+        activeTab === "all" ? true :
+        activeTab === "freelance" ? a.agentType === "FreelanceAgent" :
+        a.agentType === "PartnerAffiliatedAgent";
+
+      return (nameMatch || emailMatch || phoneMatch) && tabMatch;
+    }).map((a, i) => ({ ...a, key: a._id, sno: i + 1 }));
+  }, [search, activeTab]);
+
+  const handleSearch = (e) => setSearch(e.target.value);
+  const handleClearSearch = () => setSearch("");
+
+  const openViewDrawer = (record) => {
+    setSelectedAgent(record);
+    setDrawerOpen(true);
+  };
+
+  const getDropdownItems = (record) => [
+    {
+      key: 'view',
+      icon: <FiEye style={{ color: THEME.primary, fontSize: 16 }} />,
+      label: 'View Details',
+      onClick: () => openViewDrawer(record),
+    }
+  ];
+
+  // TABLE COLUMNS
+  const columns = [
+    {
+      title: "Agent Name",
+      width: 250,
+      render: (_, r) => (
+        <div className="flex items-center gap-3">
+          <Avatar
+            size={45}
+            icon={<UserOutlined />}
+            style={{ background: `${THEME.primary}20`, color: THEME.primary, fontWeight: 'bold' }}
+          >
+            {r.name?.first_name?.charAt(0)?.toUpperCase()}
+          </Avatar>
+          <div>
+            <div className="font-bold text-gray-800" style={{ fontSize: "14px" }}>
+              {getFullName(r)}
+            </div>
+            <div className="text-xs text-gray-400">
+              <MailOutlined /> {r.email || "—"}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "Contact",
+      width: 150,
+      render: (_, r) => (
+        <div className="text-sm text-gray-600">
+          <PhoneOutlined /> +971 {r.phone?.number || "—"}
+        </div>
+      ),
+    },
+    {
+      title: "Type",
+      width: 140,
+      render: (_, r) => (
+        r.agentType === "FreelanceAgent" 
+          ? <Tag color="blue">Freelance</Tag> 
+          : <Tag color="purple">Affiliated</Tag>
+      ),
+    },
+    {
+      title: "Partner",
+      width: 180,
+      render: (_, r) => (
+        <div className="text-sm text-gray-600">
+          {r.partnerId?.companyName || "—"}
+        </div>
+      ),
+    },
+    {
+      title: "Leads",
+      width: 100,
+      render: (_, r) => (
+        <span className="font-semibold" style={{ color: THEME.primary }}>
+          {r.totalLeads || 0}
+        </span>
+      ),
+    },
+    {
+      title: "Status",
+      width: 120,
+      render: (_, r) => (
+        r.isActive 
+          ? <Tag color="success" icon={<CheckCircleOutlined />}>Active</Tag> 
+          : <Tag color="error" icon={<StopOutlined />}>Suspended</Tag>
+      ),
+    },
+    {
+      title: "Actions",
+      fixed: "right",
+      width: 80,
+      align: 'center',
+      render: (_, r) => (
+        <Dropdown menu={{ items: getDropdownItems(r) }} trigger={['click']} placement="bottomRight">
+          <Button type="text" icon={<MoreOutlined style={{ fontSize: '20px' }} />} />
+        </Dropdown>
+      ),
+    },
+  ];
 
   return (
-    <div style={{ padding: "2rem", background: BG, minHeight: "100vh", fontFamily: "'DM Sans', sans-serif" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap');
-        .agent-row { transition: background 0.15s, transform 0.15s; }
-        .agent-row:hover { background: #faf8ff !important; }
-        .agent-card-item { transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1); }
-        .agent-card-item:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(92,3,155,0.12) !important; }
-        .filter-btn { transition: all 0.15s; cursor: pointer; }
-        .filter-btn:hover { opacity: 0.85; }
-        .view-btn { transition: all 0.15s; cursor: pointer; border: none; }
-        .view-btn:hover { opacity: 0.8; }
-        input:focus { border-color: #5C039B !important; box-shadow: 0 0 0 3px rgba(92,3,155,0.08); }
-      `}</style>
-
-      {/* ── Header ── */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "2rem", flexWrap: "wrap", gap: 12 }}>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      
+      {/* HEADER */}
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 10, background: `linear-gradient(135deg,${PURPLE},${CYAN})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="18" height="18" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </div>
-            <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 800, color: DTEXT, margin: 0, letterSpacing: "-0.5px" }}>Agents</h1>
-          </div>
-          <p style={{ color: MUTED, fontSize: 13, margin: 0 }}>Manage freelance and affiliated agents on the Vault platform</p>
-        </div>
-
-        {/* View toggle */}
-        <div style={{ display: "flex", gap: 6, background: "#fff", padding: 4, borderRadius: 10, border: "1px solid #E5E7EB" }}>
-          {[["table","☰"],["card","⊞"]].map(([mode, icon]) => (
-            <button key={mode} className="view-btn" onClick={() => setViewMode(mode)} style={{
-              padding: "6px 14px", borderRadius: 7, fontSize: 14,
-              background: viewMode === mode ? PURPLE : "transparent",
-              color: viewMode === mode ? "#fff" : MUTED,
-              fontWeight: viewMode === mode ? 700 : 400,
-            }}>{icon} {mode === "table" ? "Table" : "Cards"}</button>
-          ))}
+          <Title level={3} style={{ margin: 0 }}>Agent Management</Title>
+          <Text type="secondary">Manage freelance and affiliated agents on the Vault platform.</Text>
         </div>
       </div>
 
-      {/* ── Stat Cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: "1.75rem" }}>
-        {[
-          { label: "Total Agents",  value: total,     accent: PURPLE, icon: "👥", bg: "#F3E8FF" },
-          { label: "Active",        value: active,    accent: GREEN,  icon: "✅", bg: "#DCFCE7" },
-          { label: "Suspended",     value: suspended, accent: RED,    icon: "⛔", bg: "#FEE2E2" },
-          { label: "Freelancers",   value: freelance, accent: CYAN,   icon: "🆓", bg: "#CFFAFE" },
-        ].map((s, i) => (
-          <div key={i} style={{ background: "#fff", borderRadius: 16, padding: "18px 20px", border: "1px solid #F1F0FF", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{s.icon}</div>
-            <div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: s.accent, lineHeight: 1, fontFamily: "'Syne',sans-serif" }}>{s.value}</div>
-              <div style={{ fontSize: 12, color: MUTED, marginTop: 3, fontWeight: 500 }}>{s.label}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* TABLE CARD */}
+      <Card bordered={false} className="shadow-sm rounded-xl overflow-hidden" bodyStyle={{ padding: 0 }}>
+        
+        {/* SEGMENTED TABS & SEARCH */}
+        <div className="flex flex-wrap items-center justify-between px-4 py-4 border-b border-gray-100 gap-4">
+          <Segmented
+            options={[
+              { label: 'All Agents', value: 'all' },
+              { label: 'Freelance', value: 'freelance' },
+              { label: 'Affiliated', value: 'affiliated' },
+            ]}
+            value={activeTab}
+            onChange={(val) => {
+              setActiveTab(val);
+              setPagination(prev => ({ ...prev, currentPage: 1 }));
+            }}
+            className="custom-segmented-theme"
+            size="large"
+          />
 
-      {/* ── Filters ── */}
-      <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #F1F0FF", padding: "14px 18px", marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        {/* Search */}
-        <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
-          <svg width="14" height="14" fill="none" stroke={MUTED} strokeWidth="2" viewBox="0 0 24 24" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input placeholder="Search by name, phone or email..." value={search} onChange={e => setSearch(e.target.value)}
-            style={{ width: "100%", paddingLeft: 34, paddingRight: 14, paddingTop: 9, paddingBottom: 9, border: "1px solid #E5E7EB", borderRadius: 10, fontSize: 13, outline: "none", boxSizing: "border-box", transition: "all 0.15s", fontFamily: "'DM Sans',sans-serif" }}
+          <div className="flex gap-3">
+            <Input
+              placeholder="Search by name, email or phone..."
+              prefix={<FiSearch className="text-gray-400" />}
+              value={search}
+              onChange={handleSearch}
+              allowClear
+              onClear={handleClearSearch}
+              style={{ width: 300, borderRadius: 8 }}
+            />
+            <Button icon={<FiRefreshCw />} onClick={() => setSearch("")}>
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        {/* CUSTOM TABLE */}
+        <div className="bg-white">
+          <CustomTable
+            columns={columns}
+            data={filteredAgents}
+            loading={false}
+            totalItems={filteredAgents.length}
+            currentPage={pagination.currentPage}
+            onPageChange={(page, limit) => setPagination({ currentPage: page, itemsPerPage: limit })}
+            scroll={{ x: 1000 }}
+            showSearch={false}
           />
         </div>
+      </Card>
 
-        {/* Type filter pills */}
-        <div style={{ display: "flex", gap: 6 }}>
-          {["All", "FreelanceAgent", "PartnerAffiliatedAgent"].map(t => (
-            <button key={t} className="filter-btn" onClick={() => setType(t)} style={{
-              padding: "7px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, border: "1.5px solid",
-              borderColor: typeFilter === t ? PURPLE : "#E5E7EB",
-              background: typeFilter === t ? PURPLE : "#fff",
-              color: typeFilter === t ? "#fff" : MUTED,
-              fontFamily: "'DM Sans',sans-serif",
+      {/* RICH DRAWER VIEW */}
+      <Drawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        width={420}
+        title={null}
+        styles={{ body: { padding: 0 } }}
+      >
+        {selectedAgent && (
+          <div>
+            {/* Purple banner */}
+            <div style={{
+              background: `linear-gradient(135deg, ${THEME.primary}, #9b59b6)`,
+              padding: "32px 24px 60px",
             }}>
-              {t === "All" ? "All Types" : t === "FreelanceAgent" ? "Freelance" : "Partner Affiliated"}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ marginLeft: "auto", fontSize: 12, color: MUTED, fontWeight: 500 }}>
-          {filtered.length} of {total} agents
-        </div>
-      </div>
-
-      {/* ── TABLE VIEW ── */}
-      {viewMode === "table" && (
-        <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #F1F0FF", overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: "linear-gradient(90deg,#faf8ff,#f8f7ff)", borderBottom: "2px solid #F1F0FF" }}>
-                {["Agent","Contact","Type","Partner","Leads","Joined","Status",""].map((h,i) => (
-                  <th key={i} style={{ padding: "13px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && (
-                <tr><td colSpan={8} style={{ padding: "3rem", textAlign: "center", color: MUTED }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
-                  <div style={{ fontWeight: 600 }}>No agents found</div>
-                  <div style={{ fontSize: 12, marginTop: 4 }}>Try adjusting your search or filters</div>
-                </td></tr>
-              )}
-              {filtered.map((a, idx) => (
-                <tr key={a._id} className="agent-row" style={{ borderBottom: "1px solid #F8F7FF" }}>
-                  {/* Agent */}
-                  <td style={{ padding: "13px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 10, background: avatarGradients[idx % 5], display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: "#fff", flexShrink: 0, letterSpacing: 0.5 }}>
-                        {initials(a)}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 700, color: DTEXT }}>{fullName(a)}</div>
-                        <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>{a.email || "—"}</div>
-                      </div>
-                    </div>
-                  </td>
-                  {/* Contact */}
-                  <td style={{ padding: "13px 16px", color: MUTED, fontSize: 12 }}>+971 {a.phone?.number || "—"}</td>
-                  {/* Type */}
-                  <td style={{ padding: "13px 16px" }}>
-                    <span style={{
-                      background: a.agentType === "FreelanceAgent" ? "#EFF6FF" : "#F3E8FF",
-                      color: a.agentType === "FreelanceAgent" ? "#3B82F6" : PURPLE,
-                      border: `1px solid ${a.agentType === "FreelanceAgent" ? "#BFDBFE" : "#DDD6FE"}`,
-                      borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 600,
-                    }}>
-                      {a.agentType === "FreelanceAgent" ? "Freelance" : "Partner Affiliated"}
-                    </span>
-                  </td>
-                  {/* Partner */}
-                  <td style={{ padding: "13px 16px", color: MUTED, fontSize: 12 }}>{a.partnerId?.companyName || "—"}</td>
-                  {/* Leads */}
-                  <td style={{ padding: "13px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: 8, background: `${CYAN}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: CYAN }}>{a.totalLeads || 0}</div>
-                    </div>
-                  </td>
-                  {/* Joined */}
-                  <td style={{ padding: "13px 16px", color: MUTED, fontSize: 11 }}>
-                    {a.createdAt ? new Date(a.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
-                  </td>
-                  {/* Status */}
-                  <td style={{ padding: "13px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <div style={{ width: 7, height: 7, borderRadius: "50%", background: a.isActive ? GREEN : RED, boxShadow: `0 0 6px ${a.isActive ? GREEN : RED}` }} />
-                      <span style={{ fontSize: 12, fontWeight: 600, color: a.isActive ? GREEN : RED }}>{a.isActive ? "Active" : "Suspended"}</span>
-                    </div>
-                  </td>
-                  {/* Action */}
-                  <td style={{ padding: "13px 16px" }}>
-                    <button style={{ padding: "5px 12px", borderRadius: 8, border: `1px solid #E5E7EB`, background: "#fff", fontSize: 11, fontWeight: 600, color: MUTED, cursor: "pointer" }}>
-                      View →
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── CARD VIEW ── */}
-      {viewMode === "card" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 16 }}>
-          {filtered.length === 0 && (
-            <div style={{ gridColumn: "1/-1", padding: "3rem", textAlign: "center", color: MUTED, background: "#fff", borderRadius: 16, border: "1px solid #F1F0FF" }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
-              <div style={{ fontWeight: 600 }}>No agents found</div>
-            </div>
-          )}
-          {filtered.map((a, idx) => (
-            <div key={a._id} className="agent-card-item" style={{ background: "#fff", borderRadius: 18, border: "1px solid #F1F0FF", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-              {/* Card top accent */}
-              <div style={{ height: 5, background: avatarGradients[idx % 5] }} />
-              <div style={{ padding: "18px 20px" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 46, height: 46, borderRadius: 14, background: avatarGradients[idx % 5], display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#fff" }}>
-                      {initials(a)}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 700, color: DTEXT, fontSize: 14 }}>{fullName(a)}</div>
-                      <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{a.email || "—"}</div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: a.isActive ? GREEN : RED, boxShadow: `0 0 6px ${a.isActive ? GREEN : RED}` }} />
-                    <span style={{ fontSize: 11, fontWeight: 600, color: a.isActive ? GREEN : RED }}>{a.isActive ? "Active" : "Suspended"}</span>
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-                  {[
-                    { label: "Phone", value: `+971 ${a.phone?.number || "—"}` },
-                    { label: "Leads", value: a.totalLeads || 0 },
-                    { label: "Type", value: a.agentType === "FreelanceAgent" ? "Freelance" : "Affiliated" },
-                    { label: "Joined", value: a.createdAt ? new Date(a.createdAt).toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : "—" },
-                  ].map((item, i) => (
-                    <div key={i} style={{ background: "#FAFAFA", borderRadius: 8, padding: "8px 10px" }}>
-                      <div style={{ fontSize: 10, color: MUTED, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{item.label}</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: DTEXT }}>{item.value}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {a.partnerId && (
-                  <div style={{ background: "#F3E8FF", borderRadius: 8, padding: "7px 10px", marginBottom: 12, fontSize: 12, color: PURPLE, fontWeight: 600 }}>
-                    🏢 {a.partnerId.companyName}
-                  </div>
-                )}
-
-                <button style={{ width: "100%", padding: "9px", borderRadius: 10, border: `1.5px solid ${PURPLE}`, background: "transparent", color: PURPLE, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s" }}
-                  onMouseEnter={e => { e.target.style.background = PURPLE; e.target.style.color = "#fff"; }}
-                  onMouseLeave={e => { e.target.style.background = "transparent"; e.target.style.color = PURPLE; }}>
-                  View Profile →
-                </button>
+              <div className="flex flex-col items-center">
+                <Avatar
+                  size={80}
+                  icon={<UserOutlined />}
+                  style={{ border: "3px solid white", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", color: THEME.primary, background: "#fff", fontSize: "30px", fontWeight: "bold" }}
+                >
+                  {selectedAgent.name?.first_name?.charAt(0)?.toUpperCase()}
+                </Avatar>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            {/* Floating name card */}
+            <div style={{ padding: "0 24px", marginTop: -30 }}>
+              <Card
+                bordered={false}
+                styles={{ body: { padding: "16px 20px", textAlign: "center" } }}
+                style={{ borderRadius: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}
+              >
+                <Title level={4} style={{ margin: 0 }}>{getFullName(selectedAgent)}</Title>
+                <Text type="secondary" style={{ fontSize: 13 }}>{selectedAgent.email}</Text>
+                
+                <div className="mt-3 flex justify-center gap-2">
+                  <Tag color={selectedAgent.agentType === "FreelanceAgent" ? "blue" : "purple"}>
+                    {selectedAgent.agentType === "FreelanceAgent" ? "Freelance" : "Partner Affiliated"}
+                  </Tag>
+                  {selectedAgent.isActive 
+                    ? <Tag color="success" icon={<CheckCircleOutlined />}>Active</Tag>
+                    : <Tag color="error" icon={<StopOutlined />}>Suspended</Tag>
+                  }
+                </div>
+              </Card>
+            </div>
+
+            {/* Detail rows */}
+            <div style={{ padding: "20px 24px" }}>
+              <Text className="text-xs uppercase tracking-widest text-gray-400 font-semibold">
+                Agent Details
+              </Text>
+              
+              <div className="mt-4 space-y-4">
+                {[
+                  { icon: <MailOutlined />, label: "Email Address", value: selectedAgent.email || "—" },
+                  { icon: <PhoneOutlined />, label: "Phone Number", value: `+971 ${selectedAgent.phone?.number || ''}` },
+                  { icon: <BankOutlined />, label: "Associated Partner", value: selectedAgent.partnerId?.companyName || "Independent (None)" },
+                  { icon: <TrophyOutlined />, label: "Total Leads", value: selectedAgent.totalLeads || 0 },
+                  { icon: <CalendarOutlined />, label: "Joined Date", value: new Date(selectedAgent.createdAt).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' }) },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-3 mb-4">
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 8,
+                      background: `${THEME.primary}12`, color: THEME.primary,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0, fontSize: 16,
+                    }}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-400">{item.label}</div>
+                      <div className="text-sm font-medium text-gray-800 mt-0.5">{item.value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Divider style={{ margin: '24px 0' }} />
+
+              {/* Action Buttons */}
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Button
+                  block
+                  danger={selectedAgent.isActive}
+                  type={selectedAgent.isActive ? "default" : "primary"}
+                  size="large"
+                  style={!selectedAgent.isActive ? { background: THEME.primary, borderRadius: 10, fontWeight: 600 } : { borderRadius: 10, fontWeight: 600 }}
+                  icon={selectedAgent.isActive ? <StopOutlined /> : <CheckCircleOutlined />}
+                >
+                  {selectedAgent.isActive ? "Suspend Agent Access" : "Activate Agent Access"}
+                </Button>
+              </Space>
+
+            </div>
+          </div>
+        )}
+      </Drawer>
+
+      {/* CUSTOM CSS FOR SEGMENTED THEME & UTILITIES */}
+      <style>
+{`
+.custom-segmented-theme {
+  background: #f3f4f6;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.custom-segmented-theme .ant-segmented-item-selected {
+  background-color: #5c039b !important;
+  color: #fff !important;
+}
+
+.custom-segmented-theme .ant-segmented-item-selected:hover {
+  background-color: #5c039b !important;
+}
+
+.custom-segmented-theme .ant-segmented-item {
+  border-radius: 8px;
+  font-weight: 500;
+}
+`}
+      </style>
     </div>
   );
-}
+};
+
+export default VaultAgents;

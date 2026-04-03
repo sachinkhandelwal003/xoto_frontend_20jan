@@ -155,7 +155,7 @@ const InteriorPlanner = () => {
       const formatted = apiDesigns.map((item, index) => ({
         id: item._id,
         image: item.imageUrl,
-        title: item.title || `Design ${index + 1}`, // ✅ Fallback title handle
+        title: item.title || `Design ${index + 1}`, // Fallback title
         timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
         aiAnalysis: "AI Generated Interior",
         styles: [], 
@@ -664,6 +664,7 @@ const InteriorPlanner = () => {
         </div>
 
         {/* RIGHT: RESULTS GALLERY (Desktop Only) */}
+        {/* add new logic */}
         <div className="hidden lg:block flex-1 bg-[#F8F9FC] p-12 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
             <div className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
@@ -698,29 +699,13 @@ const InteriorPlanner = () => {
                     <div className="relative aspect-[4/3] overflow-hidden">
                       <img src={d.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Design" />
                       
-                      {/* ✅ OVERLAY WITH HORIZONTAL PILL BUTTONS */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 backdrop-blur-[3px]">
-                        
-                        <button 
-                          onClick={() => { 
-                            setCurrentResult({ 
-                              url: d.image, desc: d.aiAnalysis, roomType: d.roomType,
-                              styles: d.styles || [], elements: d.elements || [], instruction: d.instruction || ''
-                            }); 
-                            setShowGeneratedModal(true); 
-                          }} 
-                          className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white px-5 py-2.5 rounded-full transition-all hover:scale-105 shadow-lg"
-                        >
-                          <span className="text-xs font-bold tracking-widest uppercase">View</span>
-                          <ArrowRight size={16} />
-                        </button>
-
-                        <button 
-                          onClick={() => downloadImage(d.image, 'design')} 
-                          className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white px-5 py-2.5 rounded-full transition-all hover:scale-105 shadow-lg"
-                        >
-                          <span className="text-xs font-bold tracking-widest uppercase">Save</span>
-                          <Download size={16} />
+                      {/* ✅ OVERLAY - Upar Sirf Download Button */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[3px]">
+                        <button onClick={() => downloadImage(d.image, 'design')} className="flex flex-col items-center gap-3 text-white hover:scale-110 transition-transform group/btn">
+                          <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover/btn:bg-white/30 border border-white/30">
+                            <Download size={24} />
+                          </div>
+                          <span className="text-xs font-bold tracking-widest uppercase">Download</span>
                         </button>
                       </div>
 
@@ -729,28 +714,45 @@ const InteriorPlanner = () => {
                       </div>
                     </div>
 
-                    <div className="p-6 relative">
-                      {/* ✅ Edit Title Desktop Logic */}
-                      <div className="flex justify-between items-start mb-2">
-                        {editingId === d.id ? (
-                           <div className="flex items-center gap-2 w-full pr-4">
-                             <Input 
-                               value={editTitle} 
-                               onChange={(e) => setEditTitle(e.target.value)} 
-                               onPressEnter={() => saveTitle(d.id)} 
-                               size="small" autoFocus className="rounded-md"
-                             />
-                             <CheckCircle2 size={20} className="text-green-500 cursor-pointer shrink-0" onClick={() => saveTitle(d.id)} />
-                             <X size={20} className="text-red-500 cursor-pointer shrink-0" onClick={() => setEditingId(null)} />
-                           </div>
-                        ) : (
-                           <div className="flex items-center gap-2 cursor-pointer group/title max-w-[80%]" onClick={() => { setEditingId(d.id); setEditTitle(d.title); }}>
-                             <h3 className="font-bold text-xl text-gray-900 truncate">{d.title}</h3>
-                             <Edit2 size={14} className="text-gray-400 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0" />
-                           </div>
-                        )}
+                    {/* ✅ BOTTOM SECTION - Left me Text, Right me View Button */}
+                    <div className="p-6 flex justify-between items-center relative">
+                      <div className="w-[80%]">
+                        {/* Title Edit Logic */}
+                        <div className="flex items-center gap-2 mb-1">
+                          {editingId === d.id ? (
+                             <div className="flex items-center gap-2 w-full pr-4">
+                               <Input 
+                                 value={editTitle} 
+                                 onChange={(e) => setEditTitle(e.target.value)} 
+                                 onPressEnter={() => saveTitle(d.id)} 
+                                 size="small" autoFocus className="rounded-md"
+                               />
+                               <CheckCircle2 size={20} className="text-green-500 cursor-pointer shrink-0" onClick={() => saveTitle(d.id)} />
+                               <X size={20} className="text-red-500 cursor-pointer shrink-0" onClick={() => setEditingId(null)} />
+                             </div>
+                          ) : (
+                             <div className="flex items-center gap-2 cursor-pointer group/title w-full" onClick={() => { setEditingId(d.id); setEditTitle(d.title); }}>
+                               <h3 className="font-bold text-xl text-gray-900 truncate">{d.title}</h3>
+                               <Edit2 size={14} className="text-gray-400 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0" />
+                             </div>
+                          )}
+                        </div>
+                        <p className="text-gray-400 text-sm">{d.timestamp}</p>
                       </div>
-                      <p className="text-gray-400 text-sm mb-3">{d.timestamp}</p>
+
+                      {/* ✅ View Arrow Button in Bottom Right */}
+                      {editingId !== d.id && (
+                        <button 
+                          onClick={() => {
+                            setCurrentResult({ url: d.image, desc: d.aiAnalysis, roomType: d.roomType, styles: d.styles || [], elements: d.elements || [], instruction: d.instruction || '' });
+                            setShowGeneratedModal(true);
+                          }} 
+                          className="p-3 bg-purple-50 text-purple-600 rounded-full hover:bg-purple-100 hover:scale-110 transition-all shrink-0"
+                          title="View Details"
+                        >
+                          <ArrowRight size={20} />
+                        </button>
+                      )}
                     </div>
 
                   </Card>
@@ -1125,7 +1127,7 @@ const InteriorPlanner = () => {
               {subtitle}
             </p>
           </div>
-
+{/* interior */}
           <div className="flex justify-between mt-3 text-[10px] lg:text-xs font-bold text-gray-400 uppercase tracking-widest">
             <span>Progress</span>
             <span>{progress}%</span>
