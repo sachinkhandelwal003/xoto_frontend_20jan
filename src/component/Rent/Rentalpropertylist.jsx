@@ -298,7 +298,7 @@ const RentalPropertyList = () => {
             Manage all rental listings
           </p>
         </div>
-        <Button
+        {/* <Button
           type="primary"
           icon={<PlusOutlined />}
           size="large"
@@ -306,7 +306,7 @@ const RentalPropertyList = () => {
           onClick={() => navigate('/admin/rental/property/create')}
         >
           Add Rental Property
-        </Button>
+        </Button> */}
       </div>
 
       {/* TABLE */}
