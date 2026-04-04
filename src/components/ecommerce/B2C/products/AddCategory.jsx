@@ -205,9 +205,14 @@ const AddCategory = () => {
       title: 'Category Name',
       dataIndex: 'name',
       key: 'name',
-      render: (text) => (
+      render: (text, record) => (
         <Space>
-          <Avatar size="small" icon={<AppstoreOutlined />} style={{ backgroundColor: THEME.primary }} />
+          <Avatar 
+            size="small" 
+            src={record.icon} 
+            icon={!record.icon && <AppstoreOutlined />} 
+            style={{ backgroundColor: 'transparent', color: THEME.primary }}
+          />
           <Text strong>{text}</Text>
         </Space>
       ),
