@@ -85,11 +85,11 @@ export default function HeroBuy() {
           </h1>
 
           <p style={{ fontSize: 15, color: "rgba(255,255,255,0.7)", lineHeight: 1.7, marginBottom: 36, maxWidth: 380 }}>
-            Invest in Dubai, Abu Dhabi &amp; beyond.<br />No commission. Direct developer connect. DLD-approved.
+            Invest in Dubai, Abu Dhabi &amp; beyond.<br /> Direct developer connect. DLD-approved.
           </p>
 
           <div style={{ display: "flex", gap: 32, alignItems: "center", marginBottom: 40 }}>
-            {[["18,200+", "Listings"], ["0%", "Commission"], ["54K+", "Investors"]].map(([n, l], i) => (
+            {[["18,200+", "Listings"], ["54K+", "Investors"]].map(([n, l], i) => (
               <div key={l} style={{ display: "flex", alignItems: "center", gap: 32 }}>
                 <div>
                   <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 800, color: "#c084fc" }}>{n}</div>
@@ -116,7 +116,7 @@ export default function HeroBuy() {
             <h2 style={{ fontSize: 28, fontWeight: 800, color: "#1e1b4b", lineHeight: 1.3, marginBottom: 8, letterSpacing: "-0.5px" }}>
               Search <span style={{ borderBottom: "4px solid #c084fc", paddingBottom: 2, color: "#7c3aed" }}>Properties</span>
             </h2>
-            <p style={{ fontSize: 14, color: "#64748b", fontWeight: 500 }}>Verified listings · Zero commission · Mortgage assistance</p>
+            <p style={{ fontSize: 14, color: "#64748b", fontWeight: 500 }}>Verified listings · Mortgage assistance</p>
           </div>
 
           {/* Search Bar */}
