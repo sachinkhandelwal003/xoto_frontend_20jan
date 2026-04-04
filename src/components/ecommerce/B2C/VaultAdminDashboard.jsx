@@ -1,19 +1,15 @@
 import React from "react";
-import { 
-  AreaChart, Area, PieChart, Pie, Cell, 
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer 
+import {
+  AreaChart, Area, PieChart, Pie, Cell,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
+import {
+  Users, UserCheck, FolderOpen, Banknote,
+  TrendingUp, Clock, Handshake, Building2,
+  ArrowUpRight
+} from "lucide-react";
 
-// Brand Colors
-const PURPLE = "#5C039B";
-const LIGHT_PURPLE = "#F4E8FF";
-const GREEN = "#10B981";
-const LIGHT_GREEN = "#D1FAE5";
-const TEXT_MAIN = "#1F2937";
-const TEXT_MUTED = "#6B7280";
-const BORDER_COLOR = "#F3F4F6";
-
-// Dummy Data
+// ── Data ──────────────────────────────────────────────────────────────
 const timelineData = [
   { name: "Mar 25", cases: 4 },
   { name: "Mar 26", cases: 8 },
@@ -25,199 +21,216 @@ const timelineData = [
 ];
 
 const categoryData = [
-  { name: "Mortgage", value: 40, color: "#00C49F" },
-  { name: "Partner", value: 20, color: "#FFBB28" },
-  { name: "Sell", value: 15, color: "#FF8042" },
-  { name: "Consultation", value: 25, color: PURPLE },
+  { name: "Mortgage",     value: 40, color: "#00C49F" },
+  { name: "Partner",      value: 20, color: "#FFBB28" },
+  { name: "Sell",         value: 15, color: "#FF8042" },
+  { name: "Consultation", value: 25, color: "#5C039B" },
 ];
 
 const distributionData = [
-  { name: "Mortgage", value: 120 },
-  { name: "Consultation", value: 45 },
-  { name: "Buy", value: 55 },
-  { name: "Schedule Visit", value: 65 },
-  { name: "AI Enquiry", value: 180 },
+  { name: "Mortgage",       value: 120 },
+  { name: "Consultation",   value: 45  },
+  { name: "Buy",            value: 55  },
+  { name: "Schedule Visit", value: 65  },
+  { name: "AI Enquiry",     value: 180 },
 ];
 
-// Helper Component for Top Cards
-const StatCard = ({ title, value, icon, color, bgColor }) => (
-  <div style={{
-    background: "#fff",
-    padding: "20px",
-    borderRadius: "12px",
-    flex: 1,
-    minWidth: "220px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
-    border: `1px solid ${BORDER_COLOR}`,
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px"
-  }}>
-    <div style={{ color: TEXT_MUTED, fontSize: "14px", fontWeight: 500 }}>{title}</div>
-    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-      <div style={{
-        width: "48px", height: "48px", borderRadius: "10px", 
-        background: bgColor, color: color,
-        display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px"
-      }}>
-        {icon}
+// ── Stat Card ─────────────────────────────────────────────────────────
+const StatCard = ({ title, value, icon: Icon, iconColor, iconBg, growth }) => (
+  <div className="bg-white rounded-xl border border-gray-100 p-5 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow">
+    <div className="flex items-center justify-between">
+      <span className="text-sm font-medium text-gray-500">{title}</span>
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${iconBg}`}>
+        <Icon size={18} className={iconColor} />
       </div>
-      <div style={{ fontSize: "28px", fontWeight: "bold", color: TEXT_MAIN }}>{value}</div>
     </div>
-    <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
-      <span style={{ 
-        background: LIGHT_GREEN, color: GREEN, padding: "2px 8px", 
-        borderRadius: "4px", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px"
-      }}>
-        ↑ 12%
-      </span>
-      <span style={{ color: TEXT_MUTED }}>Growth</span>
+    <div className="flex items-end justify-between">
+      <span className="text-3xl font-bold text-gray-900">{value}</span>
+      <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
+        <ArrowUpRight size={12} />
+        {growth}
+      </div>
+    </div>
+    <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+      <div className={`h-full rounded-full ${iconBg.replace("bg-", "bg-").replace("50", "400")}`} style={{ width: "60%" }} />
     </div>
   </div>
 );
 
+// ── Custom Tooltip ────────────────────────────────────────────────────
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload?.length) {
+    return (
+      <div className="bg-white border border-gray-100 rounded-lg shadow-lg px-3 py-2 text-sm">
+        <p className="font-semibold text-gray-700">{label}</p>
+        <p className="text-purple-700 font-bold">{payload[0].value} cases</p>
+      </div>
+    );
+  }
+  return null;
+};
+
+// ── Main ──────────────────────────────────────────────────────────────
 const VaultAdminDashboard = () => {
   return (
-    <div style={{ padding: "32px", background: "#F8FAFC", minHeight: "100vh", fontFamily: "'Inter', sans-serif" }}>
-      
-      {/* Header Section */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
-        <div>
-          <h1 style={{ margin: 0, color: TEXT_MAIN, fontSize: "28px", fontWeight: 700 }}>Dashboard View</h1>
-          <p style={{ margin: "4px 0 0 0", color: TEXT_MUTED, fontSize: "14px" }}>
-            Real-time overview of agents, clients, and cases.
-          </p>
-        </div>
-        
+    <div className="min-h-screen bg-gray-50 p-6 md:p-8 font-sans">
+
+      {/* Header */}
+      <div className="mb-7">
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-sm text-gray-500 mt-1">Real-time overview of agents, clients, and cases.</p>
       </div>
 
-      {/* Top 4 Stat Cards */}
-      <div style={{ display: "flex", gap: "24px", marginBottom: "24px", flexWrap: "wrap" }}>
-        <StatCard title="Total Agents" value="45"  color={PURPLE}  />
-        <StatCard title="Total Clients" value="120"  color="#0ea5e9"  />
-        <StatCard title="Total Cases" value="85"  color={GREEN} />
-        <StatCard title="Disbursed" value="32"  color="#f59e0b"  />
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+        <StatCard title="Total Agents"   value="45"  icon={Users}      iconColor="text-purple-700" iconBg="bg-purple-50"  growth="12%" />
+        <StatCard title="Total Clients"  value="120" icon={UserCheck}   iconColor="text-sky-600"    iconBg="bg-sky-50"     growth="8%"  />
+        <StatCard title="Total Cases"    value="85"  icon={FolderOpen}  iconColor="text-emerald-600" iconBg="bg-emerald-50" growth="15%" />
+        <StatCard title="Disbursed"      value="32"  icon={Banknote}    iconColor="text-amber-600"  iconBg="bg-amber-50"   growth="5%"  />
       </div>
 
-      {/* Middle Section: Timeline & Category (2 Columns) */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "24px", marginBottom: "24px" }}>
-        
-        {/* Timeline Chart */}
-        <div style={{ background: "#fff", borderRadius: "12px", border: `1px solid ${BORDER_COLOR}`, padding: "24px", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-          <h3 style={{ margin: "0 0 24px 0", fontSize: "16px", color: TEXT_MAIN }}>Case Generation Timeline</h3>
-          <div style={{ width: "100%", height: 300 }}>
-            <ResponsiveContainer>
-              <AreaChart data={timelineData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorCases" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={PURPLE} stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor={PURPLE} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: TEXT_MUTED, fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: TEXT_MUTED, fontSize: 12}} />
-                <Tooltip contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }} />
-                <Area type="monotone" dataKey="cases" stroke={PURPLE} strokeWidth={3} fillOpacity={1} fill="url(#colorCases)" />
-              </AreaChart>
-            </ResponsiveContainer>
+      {/* Row 2: Area Chart + Donut */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+
+        {/* Area Chart — 2/3 */}
+        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-base font-bold text-gray-800">Case Generation Timeline</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Last 7 days</p>
+            </div>
+            <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-3 py-1 rounded-full">Weekly</span>
           </div>
+          <ResponsiveContainer width="100%" height={260}>
+            <AreaChart data={timelineData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor="#5C039B" stopOpacity={0.18} />
+                  <stop offset="100%" stopColor="#5C039B" stopOpacity={0}    />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" axisLine={false} tickLine={false}
+                tick={{ fill: "#9CA3AF", fontSize: 11 }} dy={8} />
+              <YAxis axisLine={false} tickLine={false}
+                tick={{ fill: "#9CA3AF", fontSize: 11 }} />
+              <Tooltip content={<CustomTooltip />} />
+              <Area type="monotone" dataKey="cases"
+                stroke="#5C039B" strokeWidth={2.5}
+                fill="url(#grad)" dot={false}
+                activeDot={{ r: 5, fill: "#5C039B", strokeWidth: 0 }} />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Donut Chart */}
-        <div style={{ background: "#fff", borderRadius: "12px", border: `1px solid ${BORDER_COLOR}`, padding: "24px", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-          <h3 style={{ margin: "0 0 24px 0", fontSize: "16px", color: TEXT_MAIN }}>Cases by Category</h3>
-          <div style={{ width: "100%", height: 300, display: "flex", justifyContent: "center", alignItems: "center" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={categoryData} innerRadius={80} outerRadius={110} paddingAngle={5} dataKey="value">
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+        {/* Donut — 1/3 */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+          <div className="mb-5">
+            <h3 className="text-base font-bold text-gray-800">Cases by Category</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Distribution breakdown</p>
           </div>
-        </div>
-
-      </div>
-
-      {/* Bottom Section: 3 Columns */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
-        
-        {/* User Overview */}
-        <div style={{ background: "#fff", borderRadius: "12px", border: `1px solid ${BORDER_COLOR}`, padding: "24px", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-          <h3 style={{ margin: "0 0 24px 0", fontSize: "16px", color: TEXT_MAIN }}>Agent Overview</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${BORDER_COLOR}`, paddingBottom: "12px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#e0f2fe", color: "#0ea5e9", display: "flex", alignItems: "center", justifyContent: "center" }}>👥</div>
-                <span style={{ color: TEXT_MAIN, fontWeight: 500 }}>Active Agents</span>
+          <ResponsiveContainer width="100%" height={170}>
+            <PieChart>
+              <Pie data={categoryData} innerRadius={55} outerRadius={80}
+                paddingAngle={4} dataKey="value" strokeWidth={0}>
+                {categoryData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{ borderRadius: 8, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,.08)", fontSize: 12 }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+          {/* Legend */}
+          <div className="mt-4 flex flex-col gap-2">
+            {categoryData.map((item, i) => (
+              <div key={i} className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: item.color }} />
+                  <span className="text-gray-600 font-medium">{item.name}</span>
+                </div>
+                <span className="font-bold text-gray-800">{item.value}%</span>
               </div>
-              <span style={{ fontWeight: "bold" }}>45</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${BORDER_COLOR}`, paddingBottom: "12px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#fef3c7", color: "#f59e0b", display: "flex", alignItems: "center", justifyContent: "center" }}>🕒</div>
-                <span style={{ color: TEXT_MAIN, fontWeight: 500 }}>Pending Approvals</span>
-              </div>
-              <span style={{ fontWeight: "bold", color: "#f59e0b" }}>12</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: LIGHT_PURPLE, color: PURPLE, display: "flex", alignItems: "center", justifyContent: "center" }}>🤝</div>
-                <span style={{ color: TEXT_MAIN, fontWeight: 500 }}>External Partners</span>
-              </div>
-              <span style={{ fontWeight: "bold" }}>8</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Lead Type Distribution (Horizontal Bar) */}
-        <div style={{ background: "#fff", borderRadius: "12px", border: `1px solid ${BORDER_COLOR}`, padding: "24px", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-          <h3 style={{ margin: "0 0 24px 0", fontSize: "16px", color: TEXT_MAIN }}>Case Type Distribution</h3>
-          <div style={{ width: "100%", height: 250 }}>
-            <ResponsiveContainer>
-              <BarChart data={distributionData} layout="vertical" margin={{ top: 0, right: 20, left: 20, bottom: 0 }}>
-                <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: TEXT_MUTED, fontSize: 12}} width={100} />
-                <Tooltip cursor={{fill: 'transparent'}} />
-                <Bar dataKey="value" fill={PURPLE} radius={[0, 4, 4, 0]} barSize={12} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Property Inventory (Grid of 4) */}
-        <div style={{ background: "#fff", borderRadius: "12px", border: `1px solid ${BORDER_COLOR}`, padding: "24px", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-          <h3 style={{ margin: "0 0 24px 0", fontSize: "16px", color: TEXT_MAIN }}>Bank Connects</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-            
-            <div style={{ border: `1px solid ${BORDER_COLOR}`, borderRadius: "8px", padding: "16px", textAlign: "center" }}>
-              <div style={{ color: TEXT_MUTED, fontSize: "13px", marginBottom: "8px" }}>Available</div>
-              <div style={{ color: GREEN, fontSize: "20px", fontWeight: "bold" }}>112</div>
-            </div>
-            
-            <div style={{ border: `1px solid ${BORDER_COLOR}`, borderRadius: "8px", padding: "16px", textAlign: "center" }}>
-              <div style={{ color: TEXT_MUTED, fontSize: "13px", marginBottom: "8px" }}>Featured</div>
-              <div style={{ color: "#0ea5e9", fontSize: "20px", fontWeight: "bold" }}>56</div>
-            </div>
-            
-            <div style={{ border: `1px solid ${BORDER_COLOR}`, borderRadius: "8px", padding: "16px", textAlign: "center" }}>
-              <div style={{ color: TEXT_MUTED, fontSize: "13px", marginBottom: "8px" }}>Pending</div>
-              <div style={{ color: "#ef4444", fontSize: "20px", fontWeight: "bold" }}>26</div>
-            </div>
-            
-            <div style={{ border: `1px solid ${BORDER_COLOR}`, borderRadius: "8px", padding: "16px", textAlign: "center" }}>
-              <div style={{ color: TEXT_MUTED, fontSize: "13px", marginBottom: "8px" }}>Verified</div>
-              <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: "bold" }}>23</div>
-            </div>
-
+            ))}
           </div>
         </div>
 
       </div>
 
+      {/* Row 3: Agent Overview + Bar Chart + Bank Connects */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+        {/* Agent Overview */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+          <div className="mb-5">
+            <h3 className="text-base font-bold text-gray-800">Agent Overview</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Current agent status</p>
+          </div>
+          <div className="flex flex-col gap-3">
+            {[
+              { label: "Active Agents",     value: "45", icon: Users,     iconBg: "bg-sky-50",    iconColor: "text-sky-500",    valueCls: "text-gray-800" },
+              { label: "Pending Approvals", value: "12", icon: Clock,     iconBg: "bg-amber-50",  iconColor: "text-amber-500",  valueCls: "text-amber-500" },
+              { label: "External Partners", value: "8",  icon: Handshake, iconBg: "bg-purple-50", iconColor: "text-purple-700", valueCls: "text-gray-800" },
+            ].map(({ label, value, icon: Icon, iconBg, iconColor, valueCls }) => (
+              <div key={label} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${iconBg}`}>
+                    <Icon size={15} className={iconColor} />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">{label}</span>
+                </div>
+                <span className={`text-base font-bold ${valueCls}`}>{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Horizontal Bar Chart */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+          <div className="mb-5">
+            <h3 className="text-base font-bold text-gray-800">Case Type Distribution</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Volume by lead type</p>
+          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={distributionData} layout="vertical"
+              margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+              <XAxis type="number" hide />
+              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false}
+                tick={{ fill: "#6B7280", fontSize: 11 }} width={95} />
+              <Tooltip
+                cursor={{ fill: "#F9FAFB" }}
+                contentStyle={{ borderRadius: 8, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,.08)", fontSize: 12 }}
+              />
+              <Bar dataKey="value" fill="#5C039B" radius={[0, 5, 5, 0]} barSize={10} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Bank Connects */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+          <div className="mb-5">
+            <h3 className="text-base font-bold text-gray-800">Bank Connects</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Connected bank status</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: "Available", value: "112", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
+              { label: "Featured",  value: "56",  color: "text-sky-600",     bg: "bg-sky-50",     border: "border-sky-100"     },
+              { label: "Pending",   value: "26",  color: "text-red-500",     bg: "bg-red-50",     border: "border-red-100"     },
+              { label: "Verified",  value: "23",  color: "text-amber-500",   bg: "bg-amber-50",   border: "border-amber-100"   },
+            ].map(({ label, value, color, bg, border }) => (
+              <div key={label} className={`rounded-xl p-4 text-center border ${bg} ${border}`}>
+                <div className="flex items-center justify-center mb-2">
+                  <Building2 size={15} className={color} />
+                </div>
+                <div className={`text-2xl font-bold ${color}`}>{value}</div>
+                <div className="text-xs text-gray-500 font-medium mt-1">{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 };
