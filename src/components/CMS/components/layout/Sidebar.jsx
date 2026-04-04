@@ -360,10 +360,14 @@ const CUSTOM_ROLE_LINKS = {
 
 "18": [
    {
-    title: "Agents",
-    icon: "fas fa-users",
-    path: "/dashboard/{roleSlug}/agents",
-  },
+  title: "Agents",
+  icon: "fas fa-users",
+  path: "/dashboard/{roleSlug}/agents",
+  submenus: [
+    { title: "Onboard Agent", path: "/dashboard/{roleSlug}/agent-onboard" },
+    { title: "All Agents",    path: "/dashboard/{roleSlug}/agent-list" },
+  ],
+},
   {
     title: "Clients",
     icon: "fas fa-user-tie",
@@ -380,6 +384,16 @@ const CUSTOM_ROLE_LINKS = {
     ],
   
   },
+  {
+    title: "Vault Partners",
+    icon: "fas fa-handshake", 
+    path: "/dashboard/{roleSlug}/partners",
+     submenus: [
+       { title: "Onboard Partner", path: "/dashboard/{roleSlug}/partners" }, // handle query param in component
+      { title: "All Partners", path: "/dashboard/{roleSlug}/partner-list" }
+    ]
+  },
+
   {
     title: "Commission",
     icon: "fas fa-rupee-sign",
@@ -428,7 +442,7 @@ const ROLE_MODULE_ORDER = {
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
 '16': ['Dashboard','AgentLead Management'],
 '15': ['Dashboard','Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
-'18': ['Dashboard','Agents','Clients','Cases','Commission','Bank Library','Reports'],
+'18': ['Dashboard','Agents','Clients','Cases','Commission','Bank Library','Reports','Partners'],
 };
 
 

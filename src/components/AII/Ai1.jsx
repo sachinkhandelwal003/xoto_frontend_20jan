@@ -52,11 +52,11 @@ const Ai1 = () => {
         style={{ backgroundImage: `url(${Picture})` }}
       >
         {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="absolute inset-0 bg-black/30"></div>
 
-        {/* Bottom Clipped Bars */}
-        <div className="hidden lg:block absolute bottom-0 left-0 w-56 lg:w-64 h-10 lg:h-12 bg-[var(--color-body)] z-[5] clip-left-shape"></div>
-        <div className="hidden lg:block absolute bottom-0 right-0 w-56 lg:w-64 h-10 lg:h-12 bg-[var(--color-body)] z-[5] clip-right-shape"></div>
+        {/* ✅ FIXED: Bottom Clipped Bars - Removed 'hidden lg:block' and made sizes responsive */}
+        <div className="absolute bottom-0 left-0 w-24 sm:w-40 md:w-56 lg:w-64 h-6 sm:h-8 md:h-10 lg:h-12 bg-[var(--color-body)] z-[5] clip-left-shape"></div>
+        <div className="absolute bottom-0 right-0 w-24 sm:w-40 md:w-56 lg:w-64 h-6 sm:h-8 md:h-10 lg:h-12 bg-[var(--color-body)] z-[5] clip-right-shape"></div>
 
         <style>{`
           .clip-left-shape {

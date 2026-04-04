@@ -41,7 +41,7 @@ const Ai3 = () => {
   if (!blog) return <div className="text-center py-10">Loading Content...</div>;
 
   return (
-    <div className="relative w-full bg-white px-4 py-16 overflow-hidden z-0">
+    <div className="relative w-full bg-[var(--color-body)] px-4 py-16 overflow-hidden z-0">
       
       {/* BACKGROUND WAVE */}
       <img

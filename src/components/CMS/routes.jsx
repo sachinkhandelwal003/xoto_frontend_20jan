@@ -174,6 +174,12 @@ import VaultAdminDashboard from "../ecommerce/B2C/VaultAdminDashboard";
 import VaultAgents from "../ecommerce/B2C/VaultAgents";
 import VaultCases from "../ecommerce/B2C/VaultCases";
 import VaultClients from "../ecommerce/B2C/VaultClients";
+import VaultPartners from "../ecommerce/B2C/VaultPartners";
+import PartnerList from "../ecommerce/B2C/PartnerList";
+import PartnerDetail from "../ecommerce/B2C/PartnerDetails";
+import VaultAgentonboard from "../ecommerce/B2C/VaultAgentonboard";
+import VaultAgentlist from "../ecommerce/B2C/VaultAgentlist";
+import VaultAgentdetail from "../ecommerce/B2C/VaultAgentdetails";
 import PropertyDetailPage from "./pages/Propertydetailpage";
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
@@ -411,6 +417,14 @@ const CmsRoutes = () => {
 <Route path="agents"   element={<VaultAgents />} />
 <Route path="clients"  element={<VaultClients />} />
 <Route path="cases"    element={<VaultCases />} />
+<Route path="partners" element={<VaultPartners/>}/>
+<Route path="partner-list" element={<PartnerList/>}/>
+<Route path="partner-details/:id" element={<PartnerDetail/>}/>
+<Route path="agent-onboard" element={<VaultAgentonboard/>} />
+<Route path="agent-list" element={<VaultAgentlist/>} />
+<Route path="agent-details/:id" element={<VaultAgentdetail/>} />
+
+
 
 
 
