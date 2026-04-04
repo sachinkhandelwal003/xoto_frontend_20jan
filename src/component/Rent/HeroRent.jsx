@@ -114,11 +114,11 @@ const handleSearch = () => {
 
           <p style={{ fontSize: 15, color: "rgba(255,255,255,0.7)", lineHeight: 1.7, marginBottom: 36, maxWidth: 380 }}>
             Premium rentals across Dubai, Abu Dhabi &amp; beyond.<br />
-            No brokerage. Direct owner connect. Ejari-ready.
+           Direct owner connect. Ejari-ready.
           </p>
 
           <div style={{ display: "flex", gap: 32, alignItems: "center", marginBottom: 40 }}>
-            {[["12,400+", "Listings"], ["0%", "Brokerage"], ["98K+", "Tenants"]].map(([n, l], i) => (
+            {[["12,400+", "Listings"], ["98K+", "Tenants"]].map(([n, l], i) => (
               <div key={l} style={{ display: "flex", alignItems: "center", gap: 32 }}>
                 <div>
                   <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 800, color: "#c084fc" }}>{n}</div>
@@ -145,7 +145,7 @@ const handleSearch = () => {
             <h2 style={{ fontSize: 28, fontWeight: 800, color: "#1e1b4b", lineHeight: 1.3, marginBottom: 8, letterSpacing: "-0.5px" }}>
               Search <span style={{ borderBottom: "4px solid #c084fc", paddingBottom: 2, color: "#7c3aed" }}>Properties</span>
             </h2>
-            <p style={{ fontSize: 14, color: "#64748b", fontWeight: 500 }}>Verified homes · Zero brokerage · Immediate move-in</p>
+            <p style={{ fontSize: 14, color: "#64748b", fontWeight: 500 }}>Verified homes · Immediate move-in</p>
           </div>
 
 {/* 🔥 PERFECTED SEARCH INPUT BAR 🔥 */}

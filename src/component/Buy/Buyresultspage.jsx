@@ -606,7 +606,7 @@ export default function BuyResultsPage() {
             <div style={{ fontSize: 28, marginBottom: 8 }}>🏦</div>
             <div style={{ fontSize: 14, fontWeight: 800, color: "#1e1b4b", marginBottom: 8 }}>Mortgage Calculator</div>
             <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 16 }}>Find out your monthly payments &amp; eligibility in seconds.</div>
-            <button onClick={() => navigate("/mortgage-calculator")}
+            <button onClick={() => navigate("/mortgages")}
               style={{ width: "100%", background: "#6d28d9", color: "white", border: "none", borderRadius: 10, padding: "11px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
               Calculate Now
             </button>
