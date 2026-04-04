@@ -1,316 +1,282 @@
+// src/components/Vault/VaultClients.jsx
 import React, { useState } from "react";
-
-const PURPLE = "#5C039B";
-const GREEN  = "#22C55E";
-const CYAN   = "#06B6D4";
-const RED    = "#EF4444";
-const AMBER  = "#F59E0B";
-const VIOLET = "#8B5CF6";
-const MUTED  = "#6B7280";
-const DTEXT  = "#0F172A";
-const BG     = "#F8F7FF";
+import {
+  Users, User, Phone, Briefcase, Banknote, Calendar,
+  Search, SlidersHorizontal, ArrowRight, X,
+  CheckCircle2, TrendingUp
+} from "lucide-react";
+import CustomTable from "../../CMS/pages/custom/CustomTable";
 
 const mockClients = [
-  { _id:"1", name:"Ahmed Al Mansoori",   phone:"+971 50 123 4567", agentId:{ first_name:"John",   last_name:"Doe"   }, referralType:"Referral Only",    status:"qualified",     createdAt:"2025-03-15T10:00:00Z", loanAmount:2500000  },
-  { _id:"2", name:"Fatima Hassan",       phone:"+971 55 987 6543", agentId:{ first_name:"Jane",   last_name:"Smith" }, referralType:"Referral + Docs",  status:"new",           createdAt:"2025-03-20T14:30:00Z", loanAmount:1200000  },
-  { _id:"3", name:"Mohammed Al Rashidi", phone:"+971 56 222 3333", agentId:null,                                       referralType:"Referral Only",    status:"disbursed",     createdAt:"2025-02-10T09:15:00Z", loanAmount:7500000  },
-  { _id:"4", name:"Layla Mahmoud",       phone:"+971 50 444 5555", agentId:{ first_name:"Ahmed",  last_name:"Ali"   }, referralType:"Referral + Docs",  status:"lost",          createdAt:"2025-03-01T11:20:00Z", loanAmount:3200000  },
-  { _id:"5", name:"Tariq Al Balushi",    phone:"+971 52 666 7777", agentId:{ first_name:"Sara",   last_name:"Khan"  }, referralType:"Referral Only",    status:"pre_approved",  createdAt:"2025-01-22T13:00:00Z", loanAmount:4800000  },
-  { _id:"6", name:"Noura Al Zaabi",      phone:"+971 58 888 9999", agentId:{ first_name:"Khalid", last_name:"Naser" }, referralType:"Referral + Docs",  status:"documentation", createdAt:"2025-02-28T16:45:00Z", loanAmount:900000   },
+  { _id:"1", name:"Ahmed Al Mansoori",   phone:"+971 50 123 4567", agentId:{ first_name:"John",   last_name:"Doe"   }, referralType:"Referral Only",   status:"qualified",     createdAt:"2025-03-15T10:00:00Z", loanAmount:2500000 },
+  { _id:"2", name:"Fatima Hassan",       phone:"+971 55 987 6543", agentId:{ first_name:"Jane",   last_name:"Smith" }, referralType:"Referral + Docs", status:"new",           createdAt:"2025-03-20T14:30:00Z", loanAmount:1200000 },
+  { _id:"3", name:"Mohammed Al Rashidi", phone:"+971 56 222 3333", agentId:null,                                       referralType:"Referral Only",   status:"disbursed",     createdAt:"2025-02-10T09:15:00Z", loanAmount:7500000 },
+  { _id:"4", name:"Layla Mahmoud",       phone:"+971 50 444 5555", agentId:{ first_name:"Ahmed",  last_name:"Ali"   }, referralType:"Referral + Docs", status:"lost",          createdAt:"2025-03-01T11:20:00Z", loanAmount:3200000 },
+  { _id:"5", name:"Tariq Al Balushi",    phone:"+971 52 666 7777", agentId:{ first_name:"Sara",   last_name:"Khan"  }, referralType:"Referral Only",   status:"pre_approved",  createdAt:"2025-01-22T13:00:00Z", loanAmount:4800000 },
+  { _id:"6", name:"Noura Al Zaabi",      phone:"+971 58 888 9999", agentId:{ first_name:"Khalid", last_name:"Naser" }, referralType:"Referral + Docs", status:"documentation", createdAt:"2025-02-28T16:45:00Z", loanAmount:900000  },
 ];
 
 const CLIENT_STATUSES = ["new","contacted","qualified","documentation","bank","pre_approved","valuation","fol_issued","disbursed","lost"];
 
-const statusLabel = s => s?.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase()) || "New";
-
 const statusConfig = {
-  new:           { color: CYAN,   bg: "#CFFAFE", label: "New"          },
-  contacted:     { color: "#0EA5E9", bg: "#E0F2FE", label: "Contacted"  },
-  qualified:     { color: GREEN,  bg: "#DCFCE7", label: "Qualified"     },
-  documentation: { color: AMBER,  bg: "#FEF3C7", label: "Documentation" },
-  bank:          { color: VIOLET, bg: "#EDE9FE", label: "Bank"          },
-  pre_approved:  { color: GREEN,  bg: "#DCFCE7", label: "Pre Approved"  },
-  valuation:     { color: VIOLET, bg: "#EDE9FE", label: "Valuation"     },
-  fol_issued:    { color: CYAN,   bg: "#CFFAFE", label: "FOL Issued"    },
-  disbursed:     { color: "#16A34A", bg: "#DCFCE7", label: "Disbursed"  },
-  lost:          { color: RED,    bg: "#FEE2E2", label: "Lost"          },
+  new:           { label:"New",           pill:"bg-cyan-50 text-cyan-600 border-cyan-200"          },
+  contacted:     { label:"Contacted",     pill:"bg-sky-50 text-sky-600 border-sky-200"              },
+  qualified:     { label:"Qualified",     pill:"bg-green-50 text-green-600 border-green-200"        },
+  documentation: { label:"Documentation", pill:"bg-amber-50 text-amber-600 border-amber-200"        },
+  bank:          { label:"Bank",          pill:"bg-violet-50 text-violet-600 border-violet-200"     },
+  pre_approved:  { label:"Pre Approved",  pill:"bg-emerald-50 text-emerald-600 border-emerald-200"  },
+  valuation:     { label:"Valuation",     pill:"bg-purple-50 text-purple-600 border-purple-200"     },
+  fol_issued:    { label:"FOL Issued",    pill:"bg-teal-50 text-teal-600 border-teal-200"           },
+  disbursed:     { label:"Disbursed",     pill:"bg-green-100 text-green-700 border-green-300"       },
+  lost:          { label:"Lost",          pill:"bg-red-50 text-red-500 border-red-200"              },
 };
 
-const cfg = s => statusConfig[s] || { color: MUTED, bg: "#F3F4F6", label: statusLabel(s) };
+const dotColor = {
+  new:"bg-cyan-500", contacted:"bg-sky-500", qualified:"bg-green-500",
+  documentation:"bg-amber-500", bank:"bg-violet-500", pre_approved:"bg-emerald-500",
+  valuation:"bg-purple-500", fol_issued:"bg-teal-500", disbursed:"bg-green-600", lost:"bg-red-500",
+};
 
-const formatAED = n => n ? `AED ${(n/1000000).toFixed(1)}M` : "—";
-
+const cfg     = s  => statusConfig[s] || { label: s, pill: "bg-gray-100 text-gray-500 border-gray-200" };
+const dot     = s  => dotColor[s] || "bg-gray-400";
+const fmtAED  = n  => n ? `AED ${(n / 1000000).toFixed(1)}M` : "—";
+const fmtDate = dt => dt ? new Date(dt).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "—";
 const agentName = a => a ? `${a.first_name || ""} ${a.last_name || ""}`.trim() : "Direct";
 
-// Pipeline step component
 const PipelineBar = ({ status }) => {
   const idx = CLIENT_STATUSES.indexOf(status);
-  const progress = status === "lost" ? 100 : Math.round(((idx + 1) / (CLIENT_STATUSES.length - 1)) * 100);
+  const pct = status === "lost" ? 100 : Math.round(((idx + 1) / (CLIENT_STATUSES.length - 1)) * 100);
+  const bar = status === "lost" ? "bg-red-400" : status === "disbursed" ? "bg-green-500" : "bg-purple-600";
   return (
-    <div style={{ width: "100%", height: 4, background: "#F1F0FF", borderRadius: 2, overflow: "hidden" }}>
-      <div style={{ width: `${progress}%`, height: "100%", background: status === "lost" ? RED : status === "disbursed" ? GREEN : `linear-gradient(90deg,${PURPLE},${CYAN})`, borderRadius: 2, transition: "width 0.3s" }} />
+    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className={`h-full rounded-full ${bar} transition-all`} style={{ width: `${pct}%` }} />
     </div>
   );
 };
 
+const StatusBadge = ({ status }) => {
+  const c = cfg(status);
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${c.pill}`}>
+      {c.label}
+    </span>
+  );
+};
+
+const StatCard = ({ label, value, icon: Icon, colorCls, bgCls }) => (
+  <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-4 shadow-sm">
+    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${bgCls}`}>
+      <Icon size={18} className={colorCls} />
+    </div>
+    <div>
+      <div className={`text-2xl font-bold leading-none ${colorCls}`}>{value}</div>
+      <div className="text-xs text-gray-400 font-medium mt-1">{label}</div>
+    </div>
+  </div>
+);
+
 export default function VaultClients() {
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [activeView,   setActiveView]   = useState("table");
   const [statusModal,  setStatusModal]  = useState(null);
 
   const clients = mockClients;
 
   const filtered = clients.filter(c =>
     (statusFilter === "All" || c.status === statusFilter) &&
-    ((c.name || "").toLowerCase().includes(search.toLowerCase()) ||
+    ((c.name  || "").toLowerCase().includes(search.toLowerCase()) ||
      (c.phone || "").includes(search))
   );
 
   const stats = {
-    total:      clients.length,
-    new:        clients.filter(c => c.status === "new").length,
-    qualified:  clients.filter(c => c.status === "qualified").length,
-    disbursed:  clients.filter(c => c.status === "disbursed").length,
-    lost:       clients.filter(c => c.status === "lost").length,
+    total:     clients.length,
+    new:       clients.filter(c => c.status === "new").length,
+    qualified: clients.filter(c => c.status === "qualified").length,
+    disbursed: clients.filter(c => c.status === "disbursed").length,
+    lost:      clients.filter(c => c.status === "lost").length,
   };
 
+  const columns = [
+    {
+      key: "name",
+      title: "Client",
+      sortable: true,
+      render: (_, row) => (
+        <div className="flex items-center gap-3 py-1">
+          <div className="w-9 h-9 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center flex-shrink-0">
+            <span className="text-sm font-bold text-purple-700">{(row.name || "?")[0].toUpperCase()}</span>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-800">{row.name || "—"}</p>
+            <p className="text-xs text-gray-400 flex items-center gap-1">
+              <Phone size={10} />{row.phone || "—"}
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "agent",
+      title: "Agent",
+      render: (_, row) => (
+        <div className="flex items-center gap-2">
+          <Briefcase size={13} className="text-gray-400 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-gray-700">{agentName(row.agentId)}</p>
+            {row.agentId && <p className="text-xs text-gray-400">Agent</p>}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "loanAmount",
+      title: "Loan Value",
+      sortable: true,
+      render: (_, row) => (
+        <div className="flex items-center gap-1.5">
+          <Banknote size={13} className="text-purple-500 flex-shrink-0" />
+          <span className="text-sm font-bold text-purple-700">{fmtAED(row.loanAmount)}</span>
+        </div>
+      ),
+    },
+    {
+      key: "pipeline",
+      title: "Pipeline",
+      render: (_, row) => (
+        <div className="min-w-[100px]">
+          <PipelineBar status={row.status} />
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      title: "Status",
+      render: (_, row) => <StatusBadge status={row.status} />,
+    },
+    {
+      key: "createdAt",
+      title: "Created",
+      sortable: true,
+      render: (_, row) => (
+        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+          <Calendar size={12} className="flex-shrink-0" />
+          {fmtDate(row.createdAt)}
+        </div>
+      ),
+    },
+    {
+      key: "actions",
+      title: "Action",
+      render: (_, row) => (
+        <button
+          onClick={() => setStatusModal(row)}
+          className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold border border-purple-200 text-purple-700 bg-purple-50 rounded-lg hover:bg-purple-700 hover:text-white hover:border-purple-700 transition"
+        >
+          Update <ArrowRight size={11} />
+        </button>
+      ),
+    },
+  ];
+
   return (
-    <div style={{ padding: "2rem", background: BG, minHeight: "100vh", fontFamily: "'DM Sans',sans-serif" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap');
-        .client-row { transition: background 0.15s; }
-        .client-row:hover { background: #faf8ff !important; }
-        .client-card { transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1); }
-        .client-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(92,3,155,0.1) !important; }
-        .pill-btn { transition: all 0.15s; cursor: pointer; border: none; outline: none; }
-        .pill-btn:hover { opacity: 0.85; }
-        .status-option { transition: all 0.12s; cursor: pointer; }
-        .status-option:hover { transform: translateX(4px); }
-        input:focus { border-color: ${PURPLE} !important; box-shadow: 0 0 0 3px rgba(92,3,155,0.08); }
-      `}</style>
+    <div className="min-h-screen bg-gray-50 p-6 md:p-8">
 
-      {/* ── Header ── */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "2rem", flexWrap: "wrap", gap: 12 }}>
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-9 h-9 rounded-lg bg-purple-700 flex items-center justify-center">
+          <Users size={17} className="text-white" />
+        </div>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 10, background: `linear-gradient(135deg,${CYAN},${PURPLE})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="18" height="18" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </div>
-            <h1 style={{ fontFamily: "'Syne',sans-serif", fontSize: 26, fontWeight: 800, color: DTEXT, margin: 0, letterSpacing: "-0.5px" }}>Clients</h1>
-          </div>
-          <p style={{ color: MUTED, fontSize: 13, margin: 0 }}>Track mortgage clients through the entire pipeline</p>
-        </div>
-
-        {/* View toggle */}
-        <div style={{ display: "flex", gap: 6, background: "#fff", padding: 4, borderRadius: 10, border: "1px solid #E5E7EB" }}>
-          {[["table","☰","Table"],["card","⊞","Cards"]].map(([mode,icon,label]) => (
-            <button key={mode} className="pill-btn" onClick={() => setActiveView(mode)} style={{
-              padding: "6px 14px", borderRadius: 7, fontSize: 13, fontWeight: activeView === mode ? 700 : 400,
-              background: activeView === mode ? PURPLE : "transparent",
-              color: activeView === mode ? "#fff" : MUTED,
-            }}>{icon} {label}</button>
-          ))}
+          <h1 className="text-xl font-bold text-gray-900">Clients</h1>
+          <p className="text-sm text-gray-500">Track mortgage clients through the entire pipeline</p>
         </div>
       </div>
 
-      {/* ── Stats ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: "1.75rem" }}>
-        {[
-          { label:"Total",     value:stats.total,     accent:PURPLE,    bg:"#F3E8FF", icon:"📋" },
-          { label:"New",       value:stats.new,       accent:CYAN,      bg:"#CFFAFE", icon:"🆕" },
-          { label:"Qualified", value:stats.qualified, accent:GREEN,     bg:"#DCFCE7", icon:"✅" },
-          { label:"Disbursed", value:stats.disbursed, accent:"#16A34A", bg:"#DCFCE7", icon:"💰" },
-          { label:"Lost",      value:stats.lost,      accent:RED,       bg:"#FEE2E2", icon:"❌" },
-        ].map((s,i) => (
-          <div key={i} style={{ background:"#fff", borderRadius:16, padding:"16px 18px", border:"1px solid #F1F0FF", boxShadow:"0 1px 4px rgba(0,0,0,0.04)", display:"flex", alignItems:"center", gap:12 }}>
-            <div style={{ width:40, height:40, borderRadius:12, background:s.bg, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>{s.icon}</div>
-            <div>
-              <div style={{ fontSize:24, fontWeight:800, color:s.accent, lineHeight:1, fontFamily:"'Syne',sans-serif" }}>{s.value}</div>
-              <div style={{ fontSize:11, color:MUTED, marginTop:2, fontWeight:500 }}>{s.label}</div>
-            </div>
-          </div>
-        ))}
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+        <StatCard label="Total"     value={stats.total}     icon={Users}        colorCls="text-purple-700"  bgCls="bg-purple-50"  />
+        <StatCard label="New"       value={stats.new}       icon={User}         colorCls="text-sky-600"     bgCls="bg-sky-50"     />
+        <StatCard label="Qualified" value={stats.qualified} icon={CheckCircle2} colorCls="text-green-600"   bgCls="bg-green-50"   />
+        <StatCard label="Disbursed" value={stats.disbursed} icon={TrendingUp}   colorCls="text-emerald-600" bgCls="bg-emerald-50" />
+        <StatCard label="Lost"      value={stats.lost}      icon={X}            colorCls="text-red-500"     bgCls="bg-red-50"     />
       </div>
 
-      {/* ── Filters ── */}
-      <div style={{ background:"#fff", borderRadius:16, border:"1px solid #F1F0FF", padding:"14px 18px", marginBottom:"1.25rem", display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
-        <div style={{ position:"relative", minWidth:240, flex:1 }}>
-          <svg width="14" height="14" fill="none" stroke={MUTED} strokeWidth="2" viewBox="0 0 24 24" style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input placeholder="Search client name or phone..." value={search} onChange={e=>setSearch(e.target.value)}
-            style={{ width:"100%", paddingLeft:34, paddingRight:14, paddingTop:9, paddingBottom:9, border:"1px solid #E5E7EB", borderRadius:10, fontSize:13, outline:"none", boxSizing:"border-box", fontFamily:"'DM Sans',sans-serif" }}/>
+      {/* Filters */}
+      <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 mb-4 flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            placeholder="Search by name or phone..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full pl-8 pr-4 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition"
+          />
         </div>
-
-        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}
-          style={{ border:"1px solid #E5E7EB", borderRadius:10, padding:"9px 12px", fontSize:13, outline:"none", color:DTEXT, fontFamily:"'DM Sans',sans-serif", background:"#fff" }}>
-          <option value="All">All Statuses</option>
-          {CLIENT_STATUSES.map(s=><option key={s} value={s}>{statusLabel(s)}</option>)}
-        </select>
-
-        <div style={{ marginLeft:"auto", fontSize:12, color:MUTED, fontWeight:500 }}>{filtered.length} of {clients.length} clients</div>
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal size={14} className="text-gray-400 flex-shrink-0" />
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            className="text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-purple-500 bg-white text-gray-700 cursor-pointer">
+            <option value="All">All Statuses</option>
+            {CLIENT_STATUSES.map(s => <option key={s} value={s}>{cfg(s).label}</option>)}
+          </select>
+        </div>
+        <span className="ml-auto text-xs text-gray-400 font-medium">
+          {filtered.length} of {clients.length} clients
+        </span>
       </div>
 
-      {/* ── TABLE VIEW ── */}
-      {activeView === "table" && (
-        <div style={{ background:"#fff", borderRadius:16, border:"1px solid #F1F0FF", overflow:"hidden" }}>
-          <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
-            <thead>
-              <tr style={{ background:"linear-gradient(90deg,#faf8ff,#f8f7ff)", borderBottom:"2px solid #F1F0FF" }}>
-                {["Client","Phone","Agent","Loan Value","Pipeline","Status","Created","Action"].map((h,i)=>(
-                  <th key={i} style={{ padding:"13px 16px", textAlign:"left", fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:"0.06em", whiteSpace:"nowrap" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && (
-                <tr><td colSpan={8} style={{ padding:"3rem", textAlign:"center", color:MUTED }}>
-                  <div style={{ fontSize:32, marginBottom:8 }}>🔍</div>
-                  <div style={{ fontWeight:600 }}>No clients match your filters</div>
-                </td></tr>
-              )}
-              {filtered.map((c,idx)=>{
-                const sc = cfg(c.status);
-                return (
-                  <tr key={c._id} className="client-row" style={{ borderBottom:"1px solid #F8F7FF" }}>
-                    {/* Client */}
-                    <td style={{ padding:"13px 16px" }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                        <div style={{ width:36, height:36, borderRadius:10, background:`linear-gradient(135deg,${sc.color}30,${sc.color}60)`, border:`1.5px solid ${sc.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, color:sc.color, flexShrink:0 }}>
-                          {(c.name||"?")[0].toUpperCase()}
-                        </div>
-                        <div style={{ fontWeight:700, color:DTEXT }}>{c.name||"—"}</div>
-                      </div>
-                    </td>
-                    {/* Phone */}
-                    <td style={{ padding:"13px 16px", color:MUTED, fontSize:12 }}>{c.phone||"—"}</td>
-                    {/* Agent */}
-                    <td style={{ padding:"13px 16px" }}>
-                      <div style={{ fontSize:12, color:DTEXT, fontWeight:500 }}>{agentName(c.agentId)}</div>
-                      {c.agentId && <div style={{ fontSize:10, color:MUTED, marginTop:1 }}>Agent</div>}
-                    </td>
-                    {/* Loan */}
-                    <td style={{ padding:"13px 16px" }}>
-                      <span style={{ fontWeight:700, color:PURPLE, fontSize:13 }}>{formatAED(c.loanAmount)}</span>
-                    </td>
-                    {/* Pipeline */}
-                    <td style={{ padding:"13px 16px", minWidth:100 }}>
-                      <PipelineBar status={c.status}/>
-                    </td>
-                    {/* Status */}
-                    <td style={{ padding:"13px 16px" }}>
-                      <span style={{ background:sc.bg, color:sc.color, border:`1px solid ${sc.color}30`, borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:700, whiteSpace:"nowrap" }}>
-                        {sc.label}
-                      </span>
-                    </td>
-                    {/* Date */}
-                    <td style={{ padding:"13px 16px", color:MUTED, fontSize:11 }}>
-                      {c.createdAt ? new Date(c.createdAt).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) : "—"}
-                    </td>
-                    {/* Action */}
-                    <td style={{ padding:"13px 16px" }}>
-                      <button onClick={()=>setStatusModal(c)} style={{ padding:"5px 12px", borderRadius:8, border:`1.5px solid ${PURPLE}`, background:"transparent", fontSize:11, fontWeight:700, color:PURPLE, cursor:"pointer" }}>
-                        Update →
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* Table */}
+      <CustomTable
+        columns={columns}
+        data={filtered}
+        showSearch={false}
+      />
 
-      {/* ── CARD VIEW ── */}
-      {activeView === "card" && (
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:16 }}>
-          {filtered.length === 0 && (
-            <div style={{ gridColumn:"1/-1", padding:"3rem", textAlign:"center", color:MUTED, background:"#fff", borderRadius:16 }}>
-              <div style={{ fontSize:32, marginBottom:8 }}>🔍</div>
-              <div style={{ fontWeight:600 }}>No clients found</div>
-            </div>
-          )}
-          {filtered.map((c)=>{
-            const sc = cfg(c.status);
-            return (
-              <div key={c._id} className="client-card" style={{ background:"#fff", borderRadius:18, border:"1px solid #F1F0FF", overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
-                <div style={{ height:4, background:`linear-gradient(90deg,${sc.color},${PURPLE})` }}/>
-                <div style={{ padding:"18px 20px" }}>
-                  <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:12 }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                      <div style={{ width:42, height:42, borderRadius:12, background:`linear-gradient(135deg,${sc.color}30,${sc.color}60)`, border:`1.5px solid ${sc.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, fontWeight:800, color:sc.color }}>
-                        {(c.name||"?")[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight:700, color:DTEXT, fontSize:14 }}>{c.name||"—"}</div>
-                        <div style={{ fontSize:11, color:MUTED, marginTop:2 }}>{c.phone||"—"}</div>
-                      </div>
-                    </div>
-                    <span style={{ background:sc.bg, color:sc.color, border:`1px solid ${sc.color}30`, borderRadius:20, padding:"3px 9px", fontSize:10, fontWeight:700 }}>{sc.label}</span>
-                  </div>
-
-                  {/* Pipeline bar */}
-                  <div style={{ marginBottom:12 }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", fontSize:10, color:MUTED, marginBottom:5 }}>
-                      <span>Pipeline Progress</span>
-                      <span style={{ fontWeight:600, color:sc.color }}>{sc.label}</span>
-                    </div>
-                    <PipelineBar status={c.status}/>
-                  </div>
-
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:14 }}>
-                    {[
-                      { label:"Agent",      value:agentName(c.agentId) },
-                      { label:"Loan Value", value:formatAED(c.loanAmount) },
-                      { label:"Referral",   value:c.referralType||"—" },
-                      { label:"Created",    value:c.createdAt ? new Date(c.createdAt).toLocaleDateString("en-GB",{month:"short",year:"numeric"}) : "—" },
-                    ].map((item,i)=>(
-                      <div key={i} style={{ background:"#FAFAFA", borderRadius:8, padding:"8px 10px" }}>
-                        <div style={{ fontSize:10, color:MUTED, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:2 }}>{item.label}</div>
-                        <div style={{ fontSize:12, fontWeight:700, color:DTEXT }}>{item.value}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button onClick={()=>setStatusModal(c)} style={{ width:"100%", padding:"9px", borderRadius:10, border:`1.5px solid ${PURPLE}`, background:"transparent", color:PURPLE, fontSize:13, fontWeight:700, cursor:"pointer", transition:"all 0.15s" }}
-                    onMouseEnter={e=>{e.target.style.background=PURPLE;e.target.style.color="#fff";}}
-                    onMouseLeave={e=>{e.target.style.background="transparent";e.target.style.color=PURPLE;}}>
-                    Update Status →
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── STATUS MODAL ── */}
+      {/* Status Modal */}
       {statusModal && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, backdropFilter:"blur(4px)" }}>
-          <div style={{ background:"#fff", borderRadius:20, padding:"1.75rem", width:400, maxWidth:"90vw", boxShadow:"0 32px 80px rgba(0,0,0,0.25)" }}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl">
+            <div className="flex items-start justify-between p-5 border-b border-gray-100">
               <div>
-                <div style={{ fontWeight:800, fontSize:16, color:DTEXT, fontFamily:"'Syne',sans-serif" }}>Update Status</div>
-                <div style={{ fontSize:12, color:MUTED, marginTop:2 }}>{statusModal.name} · {statusModal.phone}</div>
+                <h3 className="text-base font-bold text-gray-800">Update Status</h3>
+                <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                  <User size={11} />{statusModal.name} · {statusModal.phone}
+                </p>
               </div>
-              <span style={{ ...{ background:cfg(statusModal.status).bg, color:cfg(statusModal.status).color, borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:700 } }}>{cfg(statusModal.status).label}</span>
+              <div className="flex items-center gap-2">
+                <StatusBadge status={statusModal.status} />
+                <button onClick={() => setStatusModal(null)} className="p-1 rounded-lg hover:bg-gray-100 transition">
+                  <X size={16} className="text-gray-400" />
+                </button>
+              </div>
             </div>
-            <div style={{ display:"flex", flexDirection:"column", gap:5, maxHeight:320, overflowY:"auto", paddingRight:4 }}>
-              {CLIENT_STATUSES.map(s=>{
-                const sc = cfg(s);
+
+            <div className="p-4 flex flex-col gap-1.5 max-h-72 overflow-y-auto">
+              {CLIENT_STATUSES.map(s => {
                 const isCurrent = s === statusModal.status;
                 return (
-                  <div key={s} className="status-option" onClick={()=>setStatusModal(null)}
-                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", borderRadius:10, border:`1.5px solid ${isCurrent ? sc.color : "#F1F0FF"}`, background:isCurrent ? sc.bg : "#fff", cursor:"pointer" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                      <div style={{ width:8, height:8, borderRadius:"50%", background:sc.color }}/>
-                      <span style={{ fontSize:13, fontWeight:isCurrent?700:500, color:isCurrent?sc.color:DTEXT }}>{sc.label}</span>
+                  <button key={s} onClick={() => setStatusModal(null)}
+                    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg border text-left transition hover:translate-x-1
+                      ${isCurrent ? "border-purple-200 bg-purple-50" : "border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50"}`}>
+                    <div className="flex items-center gap-2.5">
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot(s)}`} />
+                      <span className={`text-sm ${isCurrent ? "font-700 font-bold text-purple-700" : "font-medium text-gray-700"}`}>
+                        {cfg(s).label}
+                      </span>
                     </div>
-                    {isCurrent && <span style={{ fontSize:10, fontWeight:700, color:sc.color }}>CURRENT</span>}
-                  </div>
+                    {isCurrent && (
+                      <span className="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Current</span>
+                    )}
+                  </button>
                 );
               })}
             </div>
-            <button onClick={()=>setStatusModal(null)} style={{ marginTop:14, width:"100%", padding:10, borderRadius:10, border:"1px solid #E5E7EB", background:"#fff", color:MUTED, cursor:"pointer", fontSize:13, fontWeight:500 }}>Cancel</button>
+
+            <div className="p-4 pt-0">
+              <button onClick={() => setStatusModal(null)}
+                className="w-full py-2.5 text-sm font-semibold border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 transition">
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
