@@ -192,32 +192,35 @@ export default function VaultAgentOnboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-5 md:p-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+      <div className="max-w-5xl mx-auto">
 
         {/* Page Header */}
-        <div className="mb-6">
+        <div className="mb-8">
           <h1 className="text-xl font-bold text-gray-900">Onboard New Agent</h1>
           <p className="text-sm text-gray-500 mt-1">Fill in all required details to register a new freelance agent.</p>
         </div>
 
         {/* Step Progress Bar */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-5 overflow-x-auto">
-          <div className="flex items-center min-w-max">
+        <div className="bg-white rounded-xl border border-gray-200 px-6 py-5 mb-5">
+          <div className="flex items-center w-full">
             {STEPS.map((s, i) => (
-              <div key={i} className="flex items-center">
-                <div className="flex items-center gap-2">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all
+              <div key={i} className="flex items-center flex-1 last:flex-none">
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all
                     ${i < step ? "bg-purple-700 text-white" : i === step ? "bg-purple-700 text-white" : "bg-gray-100 text-gray-400"}`}>
-                    {i < step ? <Check size={13} /> : i + 1}
+                    {i < step ? <Check size={14} /> : i + 1}
                   </div>
-                  <span className={`text-xs font-semibold whitespace-nowrap transition-colors
-                    ${i === step ? "text-purple-700" : i < step ? "text-gray-600" : "text-gray-400"}`}>
-                    {s}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className={`text-xs text-gray-400 font-medium`}>Step {i + 1}</span>
+                    <span className={`text-sm font-semibold whitespace-nowrap transition-colors
+                      ${i === step ? "text-purple-700" : i < step ? "text-gray-700" : "text-gray-400"}`}>
+                      {s}
+                    </span>
+                  </div>
                 </div>
                 {i < STEPS.length - 1 && (
-                  <div className={`w-12 h-0.5 mx-3 rounded-full flex-shrink-0 transition-colors
+                  <div className={`flex-1 h-0.5 mx-4 rounded-full transition-colors
                     ${i < step ? "bg-purple-700" : "bg-gray-200"}`} />
                 )}
               </div>
@@ -233,13 +236,13 @@ export default function VaultAgentOnboard() {
         )}
 
         {/* Form Card */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-8">
 
           {/* ── STEP 0: Personal Info ── */}
           {step === 0 && (
             <div>
               <SectionTitle icon={User} title="Personal Information" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <Field label="First Name" icon={User} error={errors.first_name}>
                   <Input error={errors.first_name} placeholder="Ahmed" value={form.first_name} onChange={e => set("first_name", e.target.value)} />
                 </Field>
@@ -346,7 +349,7 @@ export default function VaultAgentOnboard() {
 
               <div className="border-t border-gray-100 pt-6">
                 <SectionTitle icon={ShieldCheck} title="Emergency Contact" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <Field label="Contact Name" error={errors["emergencyContact.name"]}>
                     <Input error={errors["emergencyContact.name"]} placeholder="Khalid Al Mansoori" value={form.emergencyContact.name} onChange={e => setNested("emergencyContact", "name", e.target.value)} />
                   </Field>
@@ -366,7 +369,7 @@ export default function VaultAgentOnboard() {
             <div className="space-y-6">
               <div>
                 <SectionTitle icon={CreditCard} title="Emirates ID" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <Field label="Emirates ID Number" error={errors.emiratesIdNumber}>
                     <Input error={errors.emiratesIdNumber} placeholder="784-1990-1234567-8" value={form.emiratesIdNumber} onChange={e => set("emiratesIdNumber", e.target.value)} />
                   </Field>
@@ -384,7 +387,7 @@ export default function VaultAgentOnboard() {
 
               <div className="border-t border-gray-100 pt-5">
                 <SectionTitle icon={FileText} title="Passport" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <Field label="Passport Number">
                     <Input placeholder="A12345678" value={form.passportNumber} onChange={e => set("passportNumber", e.target.value)} />
                   </Field>
@@ -399,7 +402,7 @@ export default function VaultAgentOnboard() {
 
               <div className="border-t border-gray-100 pt-5">
                 <SectionTitle icon={Globe} title="Visa" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <Field label="Visa Number">
                     <Input placeholder="VISA-987654" value={form.visaNumber} onChange={e => set("visaNumber", e.target.value)} />
                   </Field>
@@ -418,7 +421,7 @@ export default function VaultAgentOnboard() {
           {step === 3 && (
             <div>
               <SectionTitle icon={Banknote} title="Bank Details" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <Field label="Beneficiary Name" error={errors.beneficiaryName}>
                   <Input error={errors.beneficiaryName} placeholder="Ahmed Al Mansoori" value={form.beneficiaryName} onChange={e => set("beneficiaryName", e.target.value)} />
                 </Field>
