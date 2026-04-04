@@ -6,14 +6,15 @@ import { BiFridge } from "react-icons/bi";
 import { TbTrees, TbSwimming, TbBarbell, TbParking, TbMountain } from "react-icons/tb";
 import { RiHome4Line, RiGovernmentLine } from "react-icons/ri";
 import { PiBuildingsBold, PiStar } from "react-icons/pi";
+import { message } from "antd";
 
 
 
-useEffect(() => {
-  if (!location.state) {
-    navigate("/");
-  }
-}, []);
+// useEffect(() => {
+//   if (!location.state) {
+//     navigate("/");
+//   }
+// }, []);
 
 const EMIRATES = ["Dubai", "Abu Dhabi", "Sharjah", "Ajman", "RAK", "Fujairah", "UAQ"];
 const POPULAR_AREAS = {
@@ -70,16 +71,23 @@ export default function HeroRent() {
   const toggleChip = (c) => setChips(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
 
 const handleSearch = () => {
-  // ❌ only location based block
-  if (tags.length === 0 && !emirate) {
-    alert("Please select location first");
+  let finalTags = [...tags];
+
+  // auto add typed value
+  if (locVal.trim() && finalTags.length < 3) {
+    finalTags.push(locVal.trim());
+  }
+
+  // strict validation
+  if (finalTags.length === 0) {
+    message.warning("Please enter or select location");
     return;
   }
 
   navigate("/results", {
     state: {
       emirate,
-      tags,
+      tags: finalTags,
       activeType,
       beds,
       budget,
@@ -91,15 +99,12 @@ const handleSearch = () => {
 };
 
   return (
-    <div style={{ background: "linear-gradient(160deg, #0f0c29 0%, #1c77c7 58%, #e8f4fd 100%)", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ background: "linear-gradient(160deg, #0f0c29 0%, #1c77c7 58%, #e8f4fd 100%)", minHeight: "110vh", fontFamily: "'DM Sans', sans-serif" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "52px 32px 0", display: "grid", gridTemplateColumns: "1fr 1.1fr", gap: 56, alignItems: "start" }}>
 
         {/* LEFT HERO COPY */}
         <div style={{ paddingBottom: 60 }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 999, padding: "6px 16px", marginBottom: 24 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#a78bfa" }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.9)", letterSpacing: "0.2em", textTransform: "uppercase" }}>Zero Brokerage · UAE</span>
-          </div>
+
 
           <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 62, fontWeight: 800, color: "white", lineHeight: 1.1, marginBottom: 20 }}>
             Find Your<br />
@@ -134,7 +139,7 @@ const handleSearch = () => {
         </div>
 
         {/* RIGHT SEARCH PANEL - IMPROVED DESIGN */}
-        <div style={{ background: "white", borderRadius: "24px 24px 0 0", padding: "36px", boxShadow: "0 32px 100px rgba(15,12,41,0.4)", height:"91vh" }}>
+        <div style={{ background: "white", borderRadius: "24px 24px 24px 24px", padding: "36px", boxShadow: "0 32px 100px rgba(15,12,41,0.4)", height:"95vh" }}>
           
           <div style={{ marginBottom: 28 }}>
             <h2 style={{ fontSize: 28, fontWeight: 800, color: "#1e1b4b", lineHeight: 1.3, marginBottom: 8, letterSpacing: "-0.5px" }}>

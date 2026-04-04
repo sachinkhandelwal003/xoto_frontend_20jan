@@ -99,6 +99,11 @@ import PaymentSuccess from "./components/ecommerce/B2C/products/PaymentSuccess";
 // import PropertyListings from "./component/Rent/Propertylistings";
 import HeroRent from "./component/Rent/HeroRent";
 import ResultsPage from "./component/Rent/ResultsPage";
+import HeroBuy from "./component/Buy/Herobuy";
+import BuyResultsPage from "./component/Buy/Buyresultspage";
+
+
+
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -303,6 +308,8 @@ function App() {
          <Route path="/rent/listings" element={<PropertyListings />} /> */}
          <Route path="/rent/search" element={<HeroRent />} />
          <Route path="/results" element={<ResultsPage />} />
+         <Route path="/search/buy" element={<HeroBuy />} />
+         <Route path="/buy-results" element={<BuyResultsPage />} />
 
 
               <Route path="/ecommerce/seller" element={<SellerPage />} />
