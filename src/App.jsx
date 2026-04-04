@@ -82,6 +82,7 @@ import DeveloperRegistration from "./components/ecommerce/B2C/developerregistrat
 import RegistrationAgency from "./components/ecommerce/B2C/registrationagency";
 import Checker from "./Checker";
 import AgentRegistration from "./components/ecommerce/B2C/AgentRegistration";
+import VaultRegister from "./components/ecommerce/B2C/VaultRegister";
 import AgentLayout from "./components/ecommerce/B2C/AgentLayout";
 import AgentDashboard from "./components/ecommerce/B2C/AgentDashboard";
 import AgentList from "./components/CMS/pages/Properties/AgentList";
@@ -95,7 +96,15 @@ import ForgotPassword from "./components/CMS/pages/forgot-password";
 import ResetPassword from "./components/CMS/pages/reset-password";
 import CheckoutPage from "./components/ecommerce/B2C/products/CheckoutPage";
 import PaymentSuccess from "./components/ecommerce/B2C/products/PaymentSuccess";
-import PropertyRent from "./component/Rent/SearchSection";
+// import PropertyRent from "./component/Rent/SearchSection";
+// import PropertyListings from "./component/Rent/Propertylistings";
+import HeroRent from "./component/Rent/HeroRent";
+import ResultsPage from "./component/Rent/ResultsPage";
+import HeroBuy from "./component/Buy/Herobuy";
+import BuyResultsPage from "./component/Buy/Buyresultspage";
+
+
+
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -263,7 +272,7 @@ function App() {
                             <Route path="/ecommerce/cart" element={<CartPage />} />
                             <Route path="/ecommerce/checkout" element={<CheckoutPage />} />
                             <Route path="/ecommerce/payment/success" element={<PaymentSuccess />} />
-
+<Route path="/vault/vault-register" element={<VaultRegister />} />
               
 
               <Route
@@ -296,7 +305,13 @@ function App() {
                 <Route path="/agent/registration" element={<AgentRegistration />} />
 
                {/* ✅ Rent Search */}
-         <Route path="/rent/search" element={<PropertyRent />} />
+         {/* <Route path="/rent/search" element={<PropertyRent />} />
+         <Route path="/rent/listings" element={<PropertyListings />} /> */}
+         <Route path="/rent/search" element={<HeroRent />} />
+         <Route path="/results" element={<ResultsPage />} />
+         <Route path="/search/buy" element={<HeroBuy />} />
+         <Route path="/buy-results" element={<BuyResultsPage />} />
+
 
               <Route path="/ecommerce/seller" element={<SellerPage />} />
               <Route path="/ecommerce/seller/b2b" element={<Sellerb2b />} />
