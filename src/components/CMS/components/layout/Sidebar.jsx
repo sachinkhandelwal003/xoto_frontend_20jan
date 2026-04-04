@@ -360,10 +360,14 @@ const CUSTOM_ROLE_LINKS = {
 
 "18": [
    {
-    title: "Agents",
-    icon: "fas fa-users",
-    path: "/dashboard/{roleSlug}/agents",
-  },
+  title: "Agents",
+  icon: "fas fa-users",
+  path: "/dashboard/{roleSlug}/agents",
+  submenus: [
+    { title: "Onboard Agent", path: "/dashboard/{roleSlug}/agent-onboard" },
+    { title: "All Agents",    path: "/dashboard/{roleSlug}/agent-list" },
+  ],
+},
   {
     title: "Clients",
     icon: "fas fa-user-tie",
