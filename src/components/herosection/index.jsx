@@ -35,20 +35,23 @@ const HeroSection = () => {
       </video>
 
       {/* Content — fully centered */}
-      <div className="relative z-[2] w-full max-w-5xl mx-auto px-4 lg:px-12 flex flex-col items-center text-center gap-10">
+      <div className="relative z-[2] w-full  max-w-6xl mx-auto  lg:px-12 flex flex-col items-center text-center gap-10">
         
         <div className="w-full space-y-6">
           
           {/* Heading - Responsive wrapping (Mobile par wrap, Desktop par exactly 2 lines) */}
-         <h1 className="heading-light w-full mx-auto leading-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl px-2">
-  <div className="w-fit mx-auto   ">
-    <span className="block whitespace-normal md:whitespace-nowrap">
-      {t("hero.title1")}
-    </span>
-    <span className="block whitespace-normal md:whitespace-nowrap">
-      {t("hero.title2")}
-    </span>
-  </div>
+      <h1 className="heading-light w-full text-center leading-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl px-2 flex flex-col items-center">
+  
+  {/* First Line */}
+  <span className="block">
+    {t("hero.title1")}
+  </span>
+
+  {/* Second Line */}
+  <span className="block">
+    {t("hero.title2")}
+  </span>
+
 </h1>
 
           {/* Description */}
