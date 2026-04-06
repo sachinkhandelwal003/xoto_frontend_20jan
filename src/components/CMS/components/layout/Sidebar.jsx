@@ -46,7 +46,7 @@ const CUSTOM_ROLE_LINKS = {
       ]
     },
             {
-      title: "Rental Projects", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/rental/properties",
+      title: "Rental Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/rental/properties",
       submenus: [
         { title: "Create Rental Properties", path: "/dashboard/{roleSlug}/rental/properties" },
         { title: "Rental Proprties", path: "/dashboard/{roleSlug}/rental/propertieslist" },
