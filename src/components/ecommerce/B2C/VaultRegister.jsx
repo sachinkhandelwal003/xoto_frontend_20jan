@@ -99,7 +99,7 @@ export default function VaultRegister() {
           <p style={{ fontSize: 13.5, color: "#888", lineHeight: 1.7, margin: "0 0 28px" }}>
             Your account has been created. You can now log in to <strong>Xoto Vault</strong>.
           </p>
-          <button style={s.btnPrimary} onClick={() => navigate("/vault/login")}>
+          <button style={s.btnPrimary} onClick={() => navigate("/login")}>
             Go to Login
           </button>
         </div>

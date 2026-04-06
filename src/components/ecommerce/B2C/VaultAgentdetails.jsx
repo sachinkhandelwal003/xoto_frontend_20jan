@@ -21,7 +21,7 @@ export default function VaultAgentdetail() {
     const fetchAgent = async () => {
       setLoading(true);
       try {
-        const response = await apiService.get(`/vault/agent/${id}`);
+        const response = await apiService.get(`/vault/agent/get/${id}`);
         const data = response?.data || response;
         setAgent(data?.agent || data);
       } catch (err) {
