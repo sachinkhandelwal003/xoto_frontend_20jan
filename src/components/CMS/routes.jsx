@@ -39,6 +39,7 @@ import ProductProfile from "../ecommerce/B2C/products/ProductProfile";
 import VendorProfile from "./pages/dashboardPages/managevendor/VendorProfile";
 import UsersRoleList from "./pages/dashboardPages/users/UsersRoleList";
 import LeadsList from "./pages/dashboardPages/leads/LeadsList";
+
 import SupervisorDashboard from "./pages/SupervisorDashboard";
 import AssignedLeadsList from "./pages/dashboardPages/leads/AssignedLeadsList";
 import QuatationLeadsList from "./pages/dashboardPages/leads/QuatationLeadsList";
@@ -84,6 +85,7 @@ import AgentList from "./pages/Properties/AgentList";
 import AgencyList from "./pages/Properties/AgencyList";
 import DeveloperDashboard from "../ecommerce/B2C/DeveloperDashboard";
 import AgentDashboard from "../ecommerce/B2C/AgentDashboard";
+import VaultpartnerDashboard from "../../components/CMS/pages/VaultPartnerDashboard";
 import AgentLayout from "../ecommerce/B2C/AgentLayout";
 import Addleaddetails from "../ecommerce/B2C/AgentLeadDetails"
 import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";
@@ -182,6 +184,8 @@ import VaultAgentlist from "../ecommerce/B2C/VaultAgentlist";
 import VaultAgentdetail from "../ecommerce/B2C/VaultAgentdetails";
 import PropertyDetailPage from "./pages/Propertydetailpage";
 import VaultAgentDashboard from "../ecommerce/B2C/VaultAgentDashBoard";
+import OnboardPartner from "./pages/OnboardPartner";
+import AgentVaultListing from "./pages/AgentVaultListing";
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 
@@ -202,8 +206,9 @@ const roleSlugMap = {
   16: "agent",         // Agent
   17: "developer",
   18: "vault-admin",
-  22: "vaultagent" 
+  22: "vaultagent" ,
 
+21:"xotovaultpartner"
 };
 
 const dashboardMap = {
@@ -222,6 +227,13 @@ const dashboardMap = {
   22: <VaultAgentDashboard />,
 
 
+    12: <SupervisorDashboard />,
+    16:<AgentDashboard/>,
+    17:<DeveloperDashboard/>,
+    15:<AgencyDashboard/>,
+    18:<VaultAdminDashboard/>,
+// 21:<VaultPartnerDashboard/>
+21:<VaultpartnerDashboard/>
 };
 
 const componentMap = {
@@ -428,6 +440,20 @@ const CmsRoutes = () => {
       <Route path="agent-details/:id" element={<VaultAgentdetail />} />
 
       <Route path="dashboard/vaultagent" element={<VaultAgentDashboard />} />
+{/* Xoto Vault */}
+<Route path="/" element={user?.role?.code == 18 ? <VaultAdminDashboard /> : (dashboardMap[user.role.code] ?? <Dashboard />)} />
+<Route path="agents"   element={<VaultAgents />} />
+<Route path="clients"  element={<VaultClients />} />
+<Route path="cases"    element={<VaultCases />} />
+<Route path="partners" element={<VaultPartners/>}/>
+<Route path="partner-list" element={<PartnerList/>}/>
+<Route path="partner-details/:id" element={<PartnerDetail/>}/>
+<Route path="agent-onboard" element={<VaultAgentonboard/>} />
+<Route path="/vault/agent-list" element={<VaultAgentlist/>} />
+<Route path="agent-details/:id" element={<VaultAgentdetail/>} />
+<Route path="xotovaultpartner" element={<VaultpartnerDashboard />} />
+<Route path="onboard-partner" element={<OnboardPartner />} />
+<Route path="AgentVaultlisting" element={<AgentVaultListing />} />
 
 
 

@@ -45,7 +45,7 @@ const CUSTOM_ROLE_LINKS = {
         { title: "All Customers", path: "/dashboard/superadmin/customers/list" },
       ]
     },
-            {
+    {
       title: "Rental Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/rental/properties",
       submenus: [
         { title: "Create Rental Properties", path: "/dashboard/{roleSlug}/rental/properties" },
@@ -272,11 +272,11 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-map-marker-alt",
       path: "/dashboard/{roleSlug}/visits",
     },
-// ,    {
-//       title: "My-Chats",
-//       icon: "fas fa-comment-dots",
-//       path: "/dashboard/{roleSlug}/My-Chats",
-//     }
+    // ,    {
+    //       title: "My-Chats",
+    //       icon: "fas fa-comment-dots",
+    //       path: "/dashboard/{roleSlug}/My-Chats",
+    //     }
     {
       title: "Deals",
       icon: "fas fa-handshake",
@@ -356,60 +356,60 @@ const CUSTOM_ROLE_LINKS = {
       ],
     },
 
-],
-
-"18": [
-   {
-  title: "Agents",
-  icon: "fas fa-users",
-  path: "/dashboard/{roleSlug}/agents",
-  submenus: [
-    { title: "Onboard Agent", path: "/dashboard/{roleSlug}/agent-onboard" },
-    { title: "All Agents",    path: "/dashboard/{roleSlug}/agent-list" },
   ],
-},
-  {
-    title: "Clients",
-    icon: "fas fa-user-tie",
-    path: "/dashboard/{roleSlug}/clients",
-  },
-  {
-    title: "Cases",
-    icon: "fas fa-folder-open",
-    path: "/dashboard/{roleSlug}/cases",
-    submenus: [
-      { title: "All Cases", path: "/dashboard/{roleSlug}/cases" },
-      { title: "In Progress", path: "/dashboard/{roleSlug}/cases/in-progress" },
-      { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
-    ],
-  
-  },
-  {
-    title: "Vault Partners",
-    icon: "fas fa-handshake", 
-    path: "/dashboard/{roleSlug}/partners",
-     submenus: [
-       { title: "Onboard Partner", path: "/dashboard/{roleSlug}/partners" }, // handle query param in component
-      { title: "All Partners", path: "/dashboard/{roleSlug}/partner-list" }
-    ]
-  },
 
-  {
-    title: "Commission",
-    icon: "fas fa-rupee-sign",
-    path: "/dashboard/{roleSlug}/commission",
-  },
-  {
-    title: "Bank Library",
-    icon: "fas fa-university",
-    path: "/dashboard/{roleSlug}/bank-library",
-  },
-  {
-    title: "Reports",
-    icon: "fas fa-chart-bar",
-    path: "/dashboard/{roleSlug}/reports",
-  },
-],
+  "18": [
+    {
+      title: "Agents",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/agents",
+      submenus: [
+        { title: "Onboard Agent", path: "/dashboard/{roleSlug}/agent-onboard" },
+        { title: "All Agents", path: "/dashboard/{roleSlug}/vault/agent-list" },
+      ],
+    },
+    {
+      title: "Clients",
+      icon: "fas fa-user-tie",
+      path: "/dashboard/{roleSlug}/clients",
+    },
+    {
+      title: "Cases",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "All Cases", path: "/dashboard/{roleSlug}/cases" },
+        { title: "In Progress", path: "/dashboard/{roleSlug}/cases/in-progress" },
+        { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+    {
+      title: "Vault Partners",
+      icon: "fas fa-handshake",
+      path: "/dashboard/{roleSlug}/partners",
+      submenus: [
+        { title: "Onboard Partner", path: "/dashboard/{roleSlug}/partners" }, // handle query param in component
+        { title: "All Partners", path: "/dashboard/{roleSlug}/partner-list" }
+      ]
+    },
+
+    {
+      title: "Commission",
+      icon: "fas fa-rupee-sign",
+      path: "/dashboard/{roleSlug}/commission",
+    },
+    {
+      title: "Bank Library",
+      icon: "fas fa-university",
+      path: "/dashboard/{roleSlug}/bank-library",
+    },
+    {
+      title: "Reports",
+      icon: "fas fa-chart-bar",
+      path: "/dashboard/{roleSlug}/reports",
+    },
+  ],
   "22": [
     { title: "Clients", icon: "fas fa-user-tie", path: "/dashboard/{roleSlug}/clients" },
     {
@@ -422,6 +422,18 @@ const CUSTOM_ROLE_LINKS = {
     { title: "Commission", icon: "fas fa-rupee-sign", path: "/dashboard/{roleSlug}/commission" },
     { title: "Calculator", icon: "fas fa-calculator", path: "/dashboard/{roleSlug}/calculator" },
     { title: "Leaderboard", icon: "fas fa-trophy", path: "/dashboard/{roleSlug}/leaderboard" },
+  ],
+  "21": [
+    {
+      title: "Agents",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/vaultpartner",
+      submenus: [
+        { title: "Onboard Agent", path: "/dashboard/{roleSlug}/onboard-partner" },
+        { title: "All Agents", path: "/dashboard/{roleSlug}/AgentVaultlisting" },
+      ],
+    },
+
   ],
 
 
@@ -441,7 +453,8 @@ const roleSlugMap = {
   '16': "agent",         // Agent
   '17': "developer",
   '18': "vault-admin", //vault
-  '22': "vaultagent" 
+  '22': "vaultagent",
+  '21': "vaultpartner",
 
 
 };
@@ -455,11 +468,12 @@ const ROLE_MODULE_ORDER = {
   '17': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
   '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
-'16': ['Dashboard','AgentLead Management'],
-'15': ['Dashboard','Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
-  '18': ['Dashboard','Clients','Cases','Commission','Bank Library','Reports','Partners'],
-   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard'],
-  };
+  '16': ['Dashboard', 'AgentLead Management'],
+  '15': ['Dashboard', 'Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
+  '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners'],
+  '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard'],
+  '21': ['Dashboard', 'Vault Partners']
+};
 
 
 const Sidebar = () => {

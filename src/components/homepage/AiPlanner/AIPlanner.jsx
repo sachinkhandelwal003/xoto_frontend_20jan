@@ -274,7 +274,105 @@ const AIPlanner = () => {
     }
   };
 
-  const generateAIDesigns = async (currentUser) => {
+  // const generateAIDesigns = async (currentUser) => {
+  //   setIsGenerating(true);
+  //   setGenerationProgress(0);
+
+  //   const formData = new FormData();
+  //   if (uploadedFile) {
+  //     formData.append('gardenImage', uploadedFile);
+  //   } else {
+  //     try {
+  //       const response = await fetch(selectedImage);
+  //       const blob = await response.blob();
+  //       const file = new File([blob], "input_image.jpg", { type: "image/jpeg" });
+  //       formData.append('gardenImage', file);
+  //     } catch (err) {
+  //       console.error("Blob failed", err);
+  //     }
+  //   }
+
+  //   formData.append('styleName', selectedStyles.length > 0 ? gardenStyles.find(s => s.value === selectedStyles[0])?.label : 'Modern Garden');
+  //   formData.append('elements', selectedElements.map(e => gardenElements.find(el => el.value === e)?.label).join(', ') || 'Natural Landscaping');
+  //   formData.append('description', specificRequirement || 'A professional landscaping design');
+
+  //   const interval = setInterval(() => {
+  //     setGenerationProgress(prev => (prev < 95 ? prev + (95 - prev) * 0.1 : 95));
+  //   }, 500);
+
+  //   try {
+  //     const response = await apiService.post('ai/generate-garden', formData, {
+  //       headers: { 'Content-Type': 'multipart/form-data' },
+  //       timeout: 120000
+  //     });
+
+  //     const resData = response;
+
+  //     if (resData.status === false && resData.aiImageGeneration === false) {
+  //       setIsGenerating(false);
+  //       setUpgradeMessage(resData.message || "Limit reached. Upgrade to continue.");
+  //       setShowUpgradeModal(true);
+  //       return;
+  //     }
+
+  //     if (resData.imageUrl && resData.imageUrl !== "") {
+  //       const aiUrl = resData.imageUrl;
+  //       const aiDesc = resData.message || "Garden generated successfully";
+
+  //       const newDesign = {
+  //         id: Date.now(),
+  //         image: aiUrl,
+  //         title: `New Vision`,
+  //         timestamp: "Just now",
+  //         aiAnalysis: aiDesc,
+  //         styleName: gardenStyles.find(s => s.value === selectedStyles[0])?.label || null,
+  //         elements: selectedElements.map(e => gardenElements.find(el => el.value === e)?.label),
+  //         description: specificRequirement || null,
+  //         userInfo: currentUser
+  //       };
+
+  //       setDesigns(prev => [newDesign, ...prev]);
+
+  //       setCurrentResult({
+  //         url: aiUrl,
+  //         desc: aiDesc,
+  //         styleName: newDesign.styleName,
+  //         elementsList: newDesign.elements,
+  //         instruction: specificRequirement
+  //       });
+
+  //       fetchLibraryDesigns();
+  //       setGenerationProgress(100);
+  //       notification.success({ message: 'Design Generated!', duration: 2 });
+
+  //       setTimeout(() => {
+  //         setIsGenerating(false);
+  //         setShowGeneratedModal(true);
+  //       }, 500);
+  //     }
+  //   } catch (error) {
+  //     console.error('❌ Generation failed:', error);
+  //     const errRes = error.response?.data;
+
+  //     if (errRes?.error?.message === "Customer not found") {
+  //       setIsGenerating(false);
+  //       notification.error({ message: 'Account Required', description: errRes.error.message });
+  //       setShowAuthModal(true);
+  //       return;
+  //     }
+
+  //     if (errRes && (errRes.aiImageGeneration === false || errRes.status === false)) {
+  //       setIsGenerating(false);
+  //       setUpgradeMessage(errRes.message || "Please upgrade to generate more images.");
+  //       setShowUpgradeModal(true);
+  //       return;
+  //     }
+  //     setIsGenerating(false);
+  //   } finally {
+  //     clearInterval(interval);
+  //   }
+  // };
+const generateAIDesigns = async (currentUser) => {
     setIsGenerating(true);
     setGenerationProgress(0);
 
@@ -296,14 +394,16 @@ const AIPlanner = () => {
     formData.append('elements', selectedElements.map(e => gardenElements.find(el => el.value === e)?.label).join(', ') || 'Natural Landscaping');
     formData.append('description', specificRequirement || 'A professional landscaping design');
 
+    // Progress bar ko thoda slow kiya hai taaki timeout se pehle 100 na ho jaye
     const interval = setInterval(() => {
-      setGenerationProgress(prev => (prev < 95 ? prev + (95 - prev) * 0.1 : 95));
-    }, 500);
+      setGenerationProgress(prev => (prev < 95 ? prev + (95 - prev) * 0.05 : 95));
+    }, 1000);
 
     try {
+      // 🔥 YAHAN TIMEOUT BADHAYA HAI (180 Seconds)
       const response = await apiService.post('ai/generate-garden', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 120000
+        timeout: 180000 
       });
 
       const resData = response;
@@ -332,7 +432,6 @@ const AIPlanner = () => {
         };
 
         setDesigns(prev => [newDesign, ...prev]);
-
         setCurrentResult({
           url: aiUrl,
           desc: aiDesc,
@@ -341,38 +440,35 @@ const AIPlanner = () => {
           instruction: specificRequirement
         });
 
-        fetchLibraryDesigns();
         setGenerationProgress(100);
         notification.success({ message: 'Design Generated!', duration: 2 });
 
         setTimeout(() => {
           setIsGenerating(false);
           setShowGeneratedModal(true);
-        }, 500);
+        }, 800);
       }
     } catch (error) {
       console.error('❌ Generation failed:', error);
-      const errRes = error.response?.data;
-
-      if (errRes?.error?.message === "Customer not found") {
-        setIsGenerating(false);
-        notification.error({ message: 'Account Required', description: errRes.error.message });
-        setShowAuthModal(true);
-        return;
-      }
-
-      if (errRes && (errRes.aiImageGeneration === false || errRes.status === false)) {
-        setIsGenerating(false);
-        setUpgradeMessage(errRes.message || "Please upgrade to generate more images.");
-        setShowUpgradeModal(true);
-        return;
-      }
       setIsGenerating(false);
+      
+      // 🔥 504 ERROR HANDLE KIYA HAI
+      if (error.code === 'ECONNABORTED' || error.response?.status === 504) {
+        notification.error({
+          message: 'Server is Busy',
+          description: 'AI is taking longer than usual. Please refresh and check your "Masterpieces" after 1 minute.',
+          duration: 10
+        });
+      } else {
+        notification.error({ 
+          message: 'Generation Failed', 
+          description: error.response?.data?.error || "Something went wrong" 
+        });
+      }
     } finally {
       clearInterval(interval);
     }
   };
-
   const downloadImage = async (imageUrl) => {
     try {
       const key = imageUrl.split(".amazonaws.com/")[1];

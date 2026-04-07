@@ -169,7 +169,8 @@ const Topbar = () => {
     "7": "freelancer",
     "11": "accountant",
     "12": "supervisor",
-    "16": "agent"
+    "16": "agent",
+    "21":"vaultpartner",
   }[roleCode] ?? "dashboard";
 
   const handleLogout = async () => {

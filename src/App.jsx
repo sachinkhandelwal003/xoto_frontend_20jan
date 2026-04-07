@@ -33,6 +33,7 @@ import AITool from "./components/AI/Tool/AITool";
 const NotFound = lazy(() => import("./components/NotFound"));
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import VaultPartner from "./components/CMS/pages/VaultPartnerDashboard";
 import Login from "./components/login";
 import Profile from "./components/CMS/components/Profile/Profile";
 import Employeedashboard from "./components/CMS/pages/Employeedashboard";
@@ -274,7 +275,7 @@ function App() {
                             <Route path="/ecommerce/payment/success" element={<PaymentSuccess />} />
 <Route path="/vault/vault-register" element={<VaultRegister />} />
               
-
+{/* <Route path="/vaultpartner" element={<VaultPartner />} /> */}
               <Route
                 path="/designs/Tool"
                 element={
@@ -352,7 +353,7 @@ function App() {
               <Route
                 path="/dashboard/:roleSlug/*"
                 element={
-                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17","18", "22"]}>
+                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17","18","21", "22"]}>
                     <CmsApp />
                   </PrivateRoute>
                 }
