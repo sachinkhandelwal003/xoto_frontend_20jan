@@ -409,7 +409,20 @@ const CUSTOM_ROLE_LINKS = {
     icon: "fas fa-chart-bar",
     path: "/dashboard/{roleSlug}/reports",
   },
-]
+],
+"21": [
+   {
+  title: "Agents",
+  icon: "fas fa-users",
+  path: "/dashboard/{roleSlug}/vaultpartner",
+  submenus: [
+    { title: "Onboard Agent", path: "/dashboard/{roleSlug}/onboard-partner" },
+    { title: "All Agents",    path: "/dashboard/{roleSlug}/AgentVaultlisting" },
+  ],
+},
+ 
+],
+
 
 };
 
@@ -426,7 +439,8 @@ const roleSlugMap = {
   '15': "agency",        // Agency
   '16': "agent",         // Agent
   '17': "developer",
-  '18': "vault-admin" //vault
+  '18': "vault-admin", //vault
+  '21':"vaultpartner",
 
 
 };
@@ -443,6 +457,7 @@ const ROLE_MODULE_ORDER = {
 '16': ['Dashboard','AgentLead Management'],
 '15': ['Dashboard','Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
 '18': ['Dashboard','Agents','Clients','Cases','Commission','Bank Library','Reports','Partners'],
+'21':['Dashboard','Vault Partners']
 };
 
 
