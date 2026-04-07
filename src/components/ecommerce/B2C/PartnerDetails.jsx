@@ -21,19 +21,26 @@ export default function PartnerDetail() {
     fetchPartner();
   }, [id]);
 
-  const fetchPartner = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const res = await apiService.get(`/vault/partner/get/${id}`);
-      const data = res?.data || res;
-      setPartner(data);
-    } catch (err) {
-      setError(err?.response?.data?.message || err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchPartner = async () => {
+  try {
+    setLoading(true);
+    setError("");
+
+    const res = await apiService.get(`/vault/partner/all?page=1&limit=1000`);
+    const data = res?.data || res;
+    const list = data.data || data;
+
+    const found = list.find((p) => p._id === id || p.id === id);
+    if (!found) throw new Error("Partner not found");
+
+    setPartner(found);
+
+  } catch (err) {
+    setError(err?.response?.data?.message || err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const copyToClipboard = (text, field) => {
     navigator.clipboard.writeText(text);
@@ -261,17 +268,7 @@ export default function PartnerDetail() {
         </div>
 
         {/* Credentials */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
-            <KeyRound size={18} className="text-purple-600" />
-            <h2 className="font-bold text-gray-800">Login Credentials</h2>
-          </div>
-          <div className="p-6 space-y-3">
-            <DetailRow label="Username" value={partner.username} copy />
-            <DetailRow label="Password" value="••••••••" copy={false} />
-            <DetailRow label="Account Created" value={new Date(partner.createdAt).toLocaleDateString()} />
-          </div>
-        </div>
+       
       </div>
     </div>
   );
