@@ -409,7 +409,21 @@ const CUSTOM_ROLE_LINKS = {
     icon: "fas fa-chart-bar",
     path: "/dashboard/{roleSlug}/reports",
   },
-]
+],
+  "22": [
+    { title: "Clients", icon: "fas fa-user-tie", path: "/dashboard/{roleSlug}/clients" },
+    {
+      title: "Referrals", icon: "fas fa-file-alt", path: "/dashboard/{roleSlug}/referrals",
+      submenus: [
+        { title: "New Referral", path: "/dashboard/{roleSlug}/referrals/new" },
+        { title: "My Referrals", path: "/dashboard/{roleSlug}/referrals" },
+      ],
+    },
+    { title: "Commission", icon: "fas fa-rupee-sign", path: "/dashboard/{roleSlug}/commission" },
+    { title: "Calculator", icon: "fas fa-calculator", path: "/dashboard/{roleSlug}/calculator" },
+    { title: "Leaderboard", icon: "fas fa-trophy", path: "/dashboard/{roleSlug}/leaderboard" },
+  ],
+
 
 };
 
@@ -426,7 +440,8 @@ const roleSlugMap = {
   '15': "agency",        // Agency
   '16': "agent",         // Agent
   '17': "developer",
-  '18': "vault-admin" //vault
+  '18': "vault-admin", //vault
+  '22': "vaultagent" 
 
 
 };
@@ -442,8 +457,9 @@ const ROLE_MODULE_ORDER = {
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
 '16': ['Dashboard','AgentLead Management'],
 '15': ['Dashboard','Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
-'18': ['Dashboard','Agents','Clients','Cases','Commission','Bank Library','Reports','Partners'],
-};
+  '18': ['Dashboard','Clients','Cases','Commission','Bank Library','Reports','Partners'],
+   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard'],
+  };
 
 
 const Sidebar = () => {
