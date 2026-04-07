@@ -421,7 +421,7 @@ const CmsRoutes = () => {
 <Route path="partner-list" element={<PartnerList/>}/>
 <Route path="partner-details/:id" element={<PartnerDetail/>}/>
 <Route path="agent-onboard" element={<VaultAgentonboard/>} />
-<Route path="agent-list" element={<VaultAgentlist/>} />
+<Route path="/vault/agent-list" element={<VaultAgentlist/>} />
 <Route path="agent-details/:id" element={<VaultAgentdetail/>} />
 
 

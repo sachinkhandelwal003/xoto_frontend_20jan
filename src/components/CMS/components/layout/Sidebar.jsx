@@ -365,7 +365,7 @@ const CUSTOM_ROLE_LINKS = {
   path: "/dashboard/{roleSlug}/agents",
   submenus: [
     { title: "Onboard Agent", path: "/dashboard/{roleSlug}/agent-onboard" },
-    { title: "All Agents",    path: "/dashboard/{roleSlug}/agent-list" },
+    { title: "All Agents",    path: "/dashboard/{roleSlug}/vault/agent-list" },
   ],
 },
   {
