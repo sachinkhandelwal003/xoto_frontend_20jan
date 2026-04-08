@@ -103,6 +103,7 @@ import HeroRent from "./component/Rent/HeroRent";
 import ResultsPage from "./component/Rent/ResultsPage";
 import HeroBuy from "./component/Buy/Herobuy";
 import BuyResultsPage from "./component/Buy/Buyresultspage";
+import MortgageCalculator from "./components/homepage/MortgageCalculator";
 
 
 
@@ -238,6 +239,8 @@ function App() {
               <Route path="/aiPlanner" element={<AITools />} />
               <Route path="/aiPlanner/demo" element={<AIPlannerDemoPage />} />
               <Route path="/mortgages" element={<Mortgage />} />
+                            <Route path="/mortgages/calculator" element={<MortgageCalculator/>} />
+
               <Route path="/mortgages-product" element={<MortgagesProduct />} />
               <Route path="/mortgages-product-upload-document" element={<UploadDocuments />} />
               <Route path="/product-requirements-edit" element={<ProductRequirementsEdit />} />
@@ -353,7 +356,7 @@ function App() {
               <Route
                 path="/dashboard/:roleSlug/*"
                 element={
-                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17","18","21"]}>
+                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17","18","21", "22"]}>
                     <CmsApp />
                   </PrivateRoute>
                 }

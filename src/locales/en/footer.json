@@ -14,7 +14,7 @@
 
   "offerings": [
      { "label": "Mortgages", "path": "/mortgage/services" },
-        { "label": "Buy", "path": "/search/buy" },
+        { "label": "Buy", "path": "/search/buy0" },
  
     { "label": "Sell", "path": "/Property" },
     { "label": "Rent", "path": "/rent/search" },

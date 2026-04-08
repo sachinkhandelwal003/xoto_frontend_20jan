@@ -64,6 +64,7 @@ const roleSlugMap = {
   '12': 'supervisor',
   '8': 'developer',
   '9': 'agent',
+  '22': 'vaultagent',
   '21': 'xotovaultpartner'
 };
 
@@ -100,7 +101,10 @@ const Navbar = () => {
 
   const getDashboardLink = () => {
     if (!user) return "/login";
+
     const roleName = user.role?.name?.toLowerCase();
+
+    if (roleName === "vaultagent") return "/dashboard/vaultagent";
     if (roleName === "agent") return "/dashboard/agent";
     if (roleName === "agency") return "/dashboard/agency";
     if (roleName === "developer") return "/dashboard/developer";

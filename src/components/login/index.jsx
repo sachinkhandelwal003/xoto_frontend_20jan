@@ -208,6 +208,14 @@ const Login = () => {
       color: "#5C039B",
       gradient: "linear-gradient(135deg, #5C039B, #03A4F4)",
     },
+    {
+    value: "vaultagent",
+    label: "Xoto Vault Agent",
+    desc: "Mortgage Platform - Agent",
+    icon: <BankOutlined style={{ fontSize: "28px" }} />,
+    color: "#5C039B",
+    gradient: "linear-gradient(135deg, #5C039B, #03A4F4)",
+  },
     // ────────────────────────────────────────────────────────────────────
   ];
 
@@ -252,6 +260,15 @@ const Login = () => {
         }, 1500);
         return;
       }
+
+      if (selectedPartnerType === "vaultagent") {
+        toast.success("Welcome to Xoto Vault!");
+        setTimeout(() => {
+          navigate("/dashboard/vaultagent", { replace: true });
+        }, 1500);
+        return;
+      }
+
       // ───────────────────────────────────────────────────────────────────
 
       
@@ -266,6 +283,7 @@ const Login = () => {
         "16": "/dashboard/agent",
         "17": "/dashboard/developer",
         "18": "/dashboard/vault-admin",   // ── VAULT ROLE CODE ADDED
+        "22": "/dashboard/vaultagent",   
         "21": "/dashboard/vaultpartner", // ── VAULT PARTNER ROLE CODE ADDED
       };
 
@@ -322,6 +340,8 @@ const Login = () => {
         } else if (selectedPartnerType === "vault-admin") {
             setView(parentMenu || "main");
             setSelectedPartnerType(null);
+        }  else if (selectedPartnerType === "agent") {
+            // ── agent login back → agent-select
         } else if (selectedPartnerType === "agent") {
             setView("agent-select");
             setSelectedPartnerType(null);
@@ -354,6 +374,9 @@ const Login = () => {
       else if (selectedPartnerType === "developer") endpoint = "/developer/login-developer"; 
       else if (selectedPartnerType === "agent") endpoint = "/agent/login-agent";
       else if (selectedPartnerType === "agency") endpoint = "/agency/agency-login";
+      // ── VAULT ENDPOINT ADDED ────────────────────────────────────────────
+      else if (selectedPartnerType === "vault-admin") endpoint = "/vault/agent/login";
+      else if (selectedPartnerType === "vaultagent") endpoint = "/vault/agent/login"; 
       // ── YOUR VAULT PARTNER API ENDPOINT ─────────────────────────────────
       else if (selectedPartnerType === "vault-admin") endpoint = "/vault/partner/login"; 
       //  else if (selectedPartnerType === "xotovaultpartner") endpoint = "/vault/vaultpartner"; 
@@ -400,6 +423,7 @@ const Login = () => {
     else if (selectedPartnerType === "agent") navigate("/agent/registration"); 
     else if (selectedPartnerType === "agency") navigate("/agency/registration"); 
     else if (selectedPartnerType === "vault-admin") navigate("/vault/vault-register");
+    else if (selectedPartnerType === "vaultagent") navigate("/vault/vault-register");
   };
 
   // --- RENDER CONTENT ---
@@ -516,7 +540,7 @@ const Login = () => {
           <SelectionCard
             $active={false}
             $color="#5C039B"
-            onClick={() => handleSubSelect("vault-admin")}
+            onClick={() => handleSubSelect("vaultagent")}
           >
             <div
               style={{
@@ -912,6 +936,8 @@ const Login = () => {
               : selectedPartnerType === "agency"
               ? "#4F46E5"
               : selectedPartnerType === "vault-admin" 
+              ? "#5C039B"
+              : selectedPartnerType === "vaultagent"  
               ? "#5C039B"
               : "#5C039B",
           borderRadius: 8,
