@@ -9,41 +9,80 @@ const Ai3 = () => {
   const { selectedBlogId, setSelectedBlogId } = useBlogContext(); 
   const [blog, setBlog] = useState(null);
   const [recentBlogs, setRecentBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!selectedBlogId) return;
+    // 🔹 LocalStorage trick
+    let activeId = selectedBlogId;
+
+    if (activeId) {
+      localStorage.setItem("savedBlogId", activeId);
+    } else {
+      activeId = localStorage.getItem("savedBlogId");
+    }
+
+    if (!activeId) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
 
     // 1. Current Blog Fetch
     apiService
-      .get("blogs/get-blog-by-id", { id: selectedBlogId }) 
-      .then((res) => setBlog(res.data || res.blog || res))
-      .catch((err) => console.error(err));
-      
-    // 2. All Blogs Fetch
-    apiService
-      .get("blogs/get-all-blogs", { limit: 10 }) 
+      .get("blogs/get-blog-by-id", { id: activeId }) 
       .then((res) => {
-        // API response me array "data" key ke andar hai
-        const allBlogs = res?.data?.data || res?.data || [];
-        
-        // Filter: Current blog hatao + Sirf 'Published' blogs rakho
-        const filteredBlogs = Array.isArray(allBlogs) 
-          ? allBlogs.filter((b) => b._id !== selectedBlogId && b.isPublished === true) 
-          : [];
-          
-        setRecentBlogs(filteredBlogs.slice(0, 3)); 
+        setBlog(res.data || res.blog || res);
       })
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error("Error fetching current blog:", err);
+      })
+      .finally(() => setLoading(false));
+      
+    // 2. All Blogs Fetch (For Sidebar - EXACT API PARAMS ADDED)
+    apiService
+      .get("blogs/get-all-blogs", { 
+        isPublished: true, 
+        page: 1, 
+        limit: 8, 
+        search: "" 
+      }) 
+      .then((res) => {
+        // Flexible data extraction
+        let allBlogs = [];
+        if (Array.isArray(res)) allBlogs = res;
+        else if (res?.data && Array.isArray(res.data)) allBlogs = res.data;
+        else if (res?.data?.data && Array.isArray(res.data.data)) allBlogs = res.data.data;
+        else if (res?.blogs && Array.isArray(res.blogs)) allBlogs = res.blogs;
+        else if (res?.data?.blogs && Array.isArray(res.data.blogs)) allBlogs = res.data.blogs;
+
+        // Backend is already sending only published ones, so we just remove the currently open blog
+        const filteredBlogs = allBlogs.filter(
+          (b) => String(b._id || b.id) !== String(activeId)
+        );
+          
+        setRecentBlogs(filteredBlogs.slice(0, 3)); // Taking top 3 for sidebar
+      })
+      .catch((err) => console.error("Error fetching recent blogs:", err));
       
   }, [selectedBlogId]);
 
-  if (!blog) return <div className="text-center py-10">Loading Content...</div>;
+  if (loading) {
+    return <div className="text-center py-10 text-xl font-medium">Loading Content...</div>;
+  }
+
+  if (!blog) {
+    return (
+      <div className="text-center py-16">
+        <h2 className="text-2xl font-bold mb-2">No Blog Selected</h2>
+        <p className="text-gray-500">Please go back and select a blog to read.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full bg-[var(--color-body)] px-4 py-16 overflow-hidden z-0">
       
-   
-
       {/* Main Content Container */}
       <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-10 relative z-10">
         
@@ -69,10 +108,14 @@ const Ai3 = () => {
           {/* TAGS */}
           <section>
              <h3 className="text-2xl font-bold mb-4">Tags</h3>
-             <ul className="list-disc pl-5 text-gray-500">
+             <ul className="flex flex-wrap gap-2 text-gray-500">
                 {blog.tags?.length > 0
-                  ? blog.tags.map((t, i) => <li key={i}>{t}</li>)
-                  : <li>General</li>}
+                  ? blog.tags.map((t, i) => (
+                      <li key={i} className="bg-white border px-3 py-1 rounded-full text-sm">
+                        {t}
+                      </li>
+                    ))
+                  : <li className="bg-white border px-3 py-1 rounded-full text-sm">General</li>}
              </ul>
           </section>
         </div>
@@ -84,13 +127,13 @@ const Ai3 = () => {
           <div className="bg-white shadow-lg rounded-xl p-6 relative z-10">
             <h3 className="text-xl font-bold mb-4">Share</h3>
             <div className="flex flex-col gap-3">
-              <button className="flex items-center gap-2 bg-[#526FA3] text-white p-3 rounded-md hover:opacity-90 transition">
+              <button className="flex items-center justify-center gap-2 bg-[#526FA3] text-white p-3 rounded-md hover:opacity-90 transition">
                 <FaFacebookF /> Facebook
               </button>
-              <button className="flex items-center gap-2 bg-[#46C4FF] text-white p-3 rounded-md hover:opacity-90 transition">
+              <button className="flex items-center justify-center gap-2 bg-[#46C4FF] text-white p-3 rounded-md hover:opacity-90 transition">
                 <FaTwitter /> Twitter
               </button>
-              <button className="flex items-center gap-2 bg-[#3C86AD] text-white p-3 rounded-md hover:opacity-90 transition">
+              <button className="flex items-center justify-center gap-2 bg-[#3C86AD] text-white p-3 rounded-md hover:opacity-90 transition">
                 <FaLinkedinIn /> Linkedin
               </button>
             </div>
@@ -117,27 +160,25 @@ const Ai3 = () => {
               {recentBlogs.length > 0 ? (
                 recentBlogs.map((item) => (
                   <div 
-                    key={item._id} 
+                    key={item._id || item.id} 
                     className="flex items-center gap-3 cursor-pointer group"
                     onClick={() => {
                       if (setSelectedBlogId) {
-                        setSelectedBlogId(item._id);
+                        const clickedId = item._id || item.id;
+                        setSelectedBlogId(clickedId);
+                        localStorage.setItem("savedBlogId", clickedId);
                         window.scrollTo({ top: 0, behavior: "smooth" }); 
                       }
                     }}
                   >
                     <div className="w-16 h-16 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
-                      
-                      {/* ✅ YAHAN UPDATE KIYA HAI: coverImage ya featuredImage uthayega */}
                       <img 
                         src={item.coverImage || item.featuredImage || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"} 
                         alt={item.title} 
                         className="w-full h-full object-cover group-hover:scale-110 transition duration-300" 
                       />
-                      
                     </div>
                     <div>
-                      {/* ✅ TITLE BHI UPDATE KIYA HAI */}
                       <h4 className="font-semibold text-sm text-gray-800 line-clamp-2 group-hover:text-[#5C039B] transition">
                         {item.title || "Untitled Blog"}
                       </h4>

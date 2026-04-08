@@ -1,16 +1,23 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom"; // 🚀 Import Navigate
 import HouseChart from "../../assets/img/new 1.png";
 import waveBg from "../../assets/img/wave/wave2.png";
 import GetPreApprovedModal from "../homepage/GetPreApprovedModal";
 
 const Second = () => {
   const { t, i18n } = useTranslation("mort2");
+  const navigate = useNavigate(); // 🚀 Hook initialize kiya
   const [active, setActive] = useState("borrow");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isRTL = i18n.language === "fa";
   const dmSans = { fontFamily: "'DM Sans', sans-serif" };
+
+  // 🚀 Navigation function
+  const handleCalculatorRedirect = () => {
+    navigate("/mortgages/calculator");
+  };
 
   return (
     <>
@@ -29,7 +36,7 @@ const Second = () => {
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
           
-          {/* 1. MODE BUTTONS - (Restored exactly to your original design) */}
+          {/* 1. MODE BUTTONS */}
           <div className="flex justify-center mb-12">
             <div
               className="
@@ -71,10 +78,9 @@ const Second = () => {
             </div>
           </div>
 
-          {/* 2. MAIN CONTENT ROW (Responsive Fixes Applied) */}
+          {/* 2. MAIN CONTENT ROW */}
           <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16 mb-16">
             
-            {/* LEFT SIDE: Text */}
             <div className={`w-full lg:w-3/5 text-center ${isRTL ? "lg:text-right" : "lg:text-left"}`}>
               <h2
                 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-6"
@@ -90,31 +96,33 @@ const Second = () => {
               </p>
             </div>
 
-            {/* RIGHT SIDE: House Image */}
             <div className="w-full lg:w-2/5 flex justify-center lg:justify-end">
               <div className="relative w-full max-w-[320px] sm:max-w-[420px] lg:max-w-none">
                 <img
                   src={HouseChart}
                   alt={t("imageAlt")}
-                  className="w-full h-auto drop-shadow-2xl animate-float transition-transform duration-500 hover:scale-105"
+                  className="w-full h-auto drop-shadow-2xl animate-float transition-transform duration-500 hover:scale-105 cursor-pointer"
+                  onClick={handleCalculatorRedirect} // 🚀 Image par click karne se bhi calculator par jaye
                 />
               </div>
             </div>
           </div>
 
-          {/* 3. BOTTOM CTA SECTION (Responsive Fixes Applied) */}
+          {/* 3. BOTTOM CTA SECTION */}
           <div className="flex flex-col items-center space-y-6">
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={handleCalculatorRedirect} // 🚀 Ye button ab sidha calculator page par bhejega
               className="w-full max-w-[500px] py-4 sm:py-5 bg-[#5C039B] text-white text-xl sm:text-2xl font-bold rounded-2xl shadow-[0_10px_25px_-5px_rgba(92,3,155,0.4)] hover:bg-[#4a027d] hover:-translate-y-1 active:scale-[0.98] transition-all duration-300"
               style={dmSans}
             >
               {t("cta")}
             </button>
             
+            {/* Modal open karne ke liye ek alag chhota link de sakte ho ya is disclaimer ko clickeable bana sakte ho */}
             <p
-              className="text-base sm:text-lg text-[#5C039B] font-medium italic text-center max-w-lg"
+              className="text-base sm:text-lg text-[#5C039B] font-medium italic text-center max-w-lg cursor-pointer hover:underline"
               style={dmSans}
+              onClick={() => setIsModalOpen(true)} // 🚀 Pre-approved modal ab yahan se open hoga
             >
               {t("disclaimer")}
             </p>
@@ -128,7 +136,6 @@ const Second = () => {
         onClose={() => setIsModalOpen(false)}
       />
 
-      {/* Adding a small floating animation for the house */}
       <style jsx>{`
         @keyframes float {
           0% { transform: translateY(0px); }

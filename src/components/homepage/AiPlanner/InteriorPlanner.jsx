@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef  } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import img1 from "../../../assets/img/interior/interior1.jpg"
 import img2 from "../../../assets/img/interior/interior2.jpg"
@@ -17,6 +17,7 @@ import {
 import { useSelector } from 'react-redux';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
 import LeadGenerationModal from '../Signuupage';
+
 
 const { Paragraph } = Typography;
 
@@ -95,6 +96,12 @@ const getProgressText = (progress) => {
 };
 
 const InteriorPlanner = () => {
+
+
+  
+const pollingRef = useRef(null);
+const lastDesignCountRef = useRef(0);
+
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
 
@@ -134,7 +141,7 @@ const InteriorPlanner = () => {
 
   // UI & Results
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const [currentResult, setCurrentResult] = useState({ url: '', desc: '', roomType: null, styles: [], elements: [], instruction: '' });
+  const [currentResult, setCurrentResult] = useState({ url: '', desc: '', roomType: null, styleName: null, elementsList: [], instruction: '' });
 
   // Mobile Tabs
   const [activeMobileTab, setActiveMobileTab] = useState('create');
@@ -143,33 +150,102 @@ const InteriorPlanner = () => {
     return user && (user.role?.name === 'Customer' || user.role?.name === 'SuperAdmin');
   }, [user]);
 
-  // --- API: Fetch Saved Designs ---
-  const fetchSavedDesigns = async () => {
-    if (!user) return;
 
+  const stopPolling = () => {
+  if (pollingRef.current) {
+    clearInterval(pollingRef.current);
+    pollingRef.current = null;
+  }
+};
+
+const startPolling = () => {
+  pollingRef.current = setInterval(async () => {
     try {
-      setLoadingSaved(true);
       const res = await apiService.get("/ai/get-interior-designs");
       const apiDesigns = res?.data || [];
 
-      const formatted = apiDesigns.map((item, index) => ({
-        id: item._id,
-        image: item.imageUrl,
-        title: item.title || `Design ${index + 1}`, // Fallback title
-        timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-        aiAnalysis: "AI Generated Interior",
-        styles: [], 
-        elements: [],
-        fromApi: true,
-      }));
+      if (apiDesigns.length > lastDesignCountRef.current) {
+        const latest = apiDesigns[0];
 
-      setDesigns(formatted.reverse());
+        if (latest?.imageUrl) {
+          stopPolling();
+
+          if (window.generationInterval) {
+            clearInterval(window.generationInterval);
+            window.generationInterval = null;
+          }
+
+          setGenerationProgress(100);
+setCurrentResult({
+  url: latest.imageUrl,
+  desc: latest.aiMessage || "AI Generated Interior",
+  roomType: latest.roomType || null,
+  styleName: latest.styleName || null,        // direct string
+  elementsList: latest.elements || [],         // direct array
+  instruction: latest.description || ''
+});
+          setIsGenerating(false);
+          setShowGeneratedModal(true);
+
+          const formatted = apiDesigns.map((item, index) => ({
+            id: item._id,
+            image: item.imageUrl,
+            title: item.title || `Design ${index + 1}`,
+            timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+            aiAnalysis: item.aiMessage || "AI Generated Interior",
+            roomType: item.roomType || null,
+            styles: item.styleName ? [item.styleName] : [],
+            elements: item.elements || [],
+            description: item.description || null,
+            fromApi: true,
+          }));
+
+          setDesigns(formatted);
+          lastDesignCountRef.current = apiDesigns.length;
+          notification.success({ message: "✅ Design Ready!" });
+        }
+      }
     } catch (err) {
-      console.error("Failed to load designs", err);
-    } finally {
-      setLoadingSaved(false);
+      console.error("Polling error:", err);
     }
-  };
+  }, 3000);
+};
+
+// Unmount pe polling band karo
+useEffect(() => {
+  return () => stopPolling();
+}, []);
+
+  // --- API: Fetch Saved Designs ---
+const fetchSavedDesigns = async () => {
+  if (!user) return;
+  try {
+    setLoadingSaved(true);
+    const res = await apiService.get("/ai/get-interior-designs");
+    const apiDesigns = res?.data || [];
+
+    lastDesignCountRef.current = apiDesigns.length;
+
+    const formatted = apiDesigns.map((item, index) => ({
+      id: item._id,
+      image: item.imageUrl,
+      title: item.title || `Design ${index + 1}`,
+      timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+      aiAnalysis: item.aiMessage || "AI Generated Interior",
+      roomType: item.roomType || null,
+      styles: item.styleName ? [item.styleName] : [],   // ✅ styleName store karo
+      elements: item.elements || [],                      // ✅ elements store karo
+      description: item.description || null,              // ✅ description store karo
+      fromApi: true,
+    }));
+
+    setDesigns(formatted);
+  } catch (err) {
+    console.error("Failed to load designs", err);
+  } finally {
+    setLoadingSaved(false);
+  }
+};
 
   useEffect(() => {
     if (user) {
@@ -321,107 +397,46 @@ const InteriorPlanner = () => {
     }
   };
 
-  const generateAIDesigns = async (currentUser) => {
-    setIsGenerating(true);
-    setGenerationProgress(0);
+const generateAIDesigns = async (currentUser) => {
+  setIsGenerating(true);
+  setGenerationProgress(5);
 
-    const formData = new FormData();
+  const progressInterval = setInterval(() => {
+    setGenerationProgress(prev => Math.min(prev + Math.random() * 3 + 1.5, 92));
+  }, 550);
+  window.generationInterval = progressInterval;
 
-    if (uploadedFile) {
-      formData.append('image', uploadedFile);
-    } else {
-      try {
-        const response = await fetch(selectedImage);
-        const blob = await response.blob();
-        const file = new File([blob], 'input_image.jpg', { type: 'image/jpeg' });
-        formData.append('image', file);
-      } catch (err) {
-        console.error('Image processing failed', err);
-      }
-    }
+  const formData = new FormData();
 
-    formData.append(
-      'styleName',
-      selectedStyles.length > 0 ? interStyles.find(s => s.value === selectedStyles[0])?.label : 'Modern'
-    );
-
-    formData.append(
-      'elements',
-      selectedElements.length > 0 ? selectedElements.map(e => interElements.find(el => el.value === e)?.label).join(', ') : 'Sofa, Coffee Table'
-    );
-
-    formData.append('description', specificRequirement || 'A professional interior design');
-
-    formData.append(
-      'roomType',
-      selectedRoomType ? roomTypes.find(r => r.value === selectedRoomType)?.label : 'Living Room'
-    );
-
-    formData.append('userId', currentUser?._id);
-
-    const interval = setInterval(() => {
-      setGenerationProgress(prev => prev < 95 ? prev + (95 - prev) * 0.1 : 95);
-    }, 500);
-
+  if (uploadedFile) {
+    formData.append('image', uploadedFile);
+  } else if (selectedImage?.startsWith('http')) {
     try {
-      const response = await apiService.post('/ai/generate-interior', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 120000,
-      });
-
-      const resData = response;
-
-      if (resData?.imageUrl) {
-        const newDesign = {
-          id: Date.now(),
-          image: resData.imageUrl,
-          title: `New Vision`,
-          styles: [...selectedStyles],
-          elements: [...selectedElements],
-          timestamp: "Just now",
-          aiAnalysis: resData.message || 'Interior generated successfully',
-          userInfo: currentUser,
-        };
-
-        setDesigns(prev => [newDesign, ...prev]);
-        setCurrentResult({
-          url: resData.imageUrl,
-          desc: resData.message,
-          roomType: selectedRoomType,
-          styles: [...selectedStyles],
-          elements: [...selectedElements],
-          instruction: specificRequirement
-        });
-
-        setGenerationProgress(100);
-        notification.success({ message: 'Design Generated!' });
-
-        setTimeout(() => {
-          setIsGenerating(false);
-          setShowGeneratedModal(true);
-        }, 500);
-      } else {
-        setIsGenerating(false);
-        notification.error({ message: 'Generation Failed', description: resData.message || 'Could not generate image.' });
-      }
-    } catch (error) {
-      console.error('Generation failed:', error);
-      const errRes = error.response?.data;
-
-      if (errRes?.error?.message === "Customer not found") {
-        setIsGenerating(false); 
-        notification.error({ message: 'Account Required', description: errRes.error.message });
-        setShowAuthModal(true);
-        return;
-      }
-
-      setIsGenerating(false);
-      notification.error({ message: 'Generation Error', description: errRes?.message || error.message || "Something went wrong." });
-      
-    } finally {
-      clearInterval(interval);
+      const response = await fetch(selectedImage);
+      const blob = await response.blob();
+      formData.append('image', new File([blob], 'input_image.jpg', { type: blob.type || 'image/jpeg' }));
+    } catch (err) {
+      console.error('Image processing failed', err);
     }
-  };
+  }
+
+  formData.append('styleName', selectedStyles.length > 0 ? interStyles.find(s => s.value === selectedStyles[0])?.label : 'Modern');
+  formData.append('elements', selectedElements.length > 0 ? selectedElements.map(e => interElements.find(el => el.value === e)?.label).join(', ') : 'Sofa, Coffee Table');
+  formData.append('description', specificRequirement || 'A professional interior design');
+  formData.append('roomType', selectedRoomType ? roomTypes.find(r => r.value === selectedRoomType)?.label : 'Living Room');
+
+  try {
+    await apiService.post('/ai/generate-interior', formData);
+    console.log("✅ Interior generation started — polling shuru...");
+    startPolling(); // ✅ Polling start
+  } catch (error) {
+    console.error('Generation failed:', error);
+    notification.error({ message: 'Generation Error' });
+    setIsGenerating(false);
+    clearInterval(progressInterval);
+    stopPolling();
+  }
+};
 
   const downloadImage = async (imageUrl, name) => {
     try {
@@ -743,10 +758,21 @@ const InteriorPlanner = () => {
                       {/* ✅ View Arrow Button in Bottom Right */}
                       {editingId !== d.id && (
                         <button 
-                          onClick={() => {
-                            setCurrentResult({ url: d.image, desc: d.aiAnalysis, roomType: d.roomType, styles: d.styles || [], elements: d.elements || [], instruction: d.instruction || '' });
-                            setShowGeneratedModal(true);
-                          }} 
+                          // Desktop card
+// ✅ NAYA — mobile card button
+onClick={() => {
+  setCurrentResult({ 
+    url: d.image, 
+    desc: d.aiAnalysis, 
+    roomType: d.roomType, 
+    styleName: d.styles?.[0] || null,   // ✅ same as desktop
+    elementsList: d.elements || [],      // ✅ same as desktop
+    instruction: d.description || ''    // ✅ description use karo
+  });
+  setShowGeneratedModal(true);
+}}
+
+// Mobile card — same changes
                           className="p-3 bg-purple-50 text-purple-600 rounded-full hover:bg-purple-100 hover:scale-110 transition-all shrink-0"
                           title="View Details"
                         >
@@ -795,34 +821,30 @@ const InteriorPlanner = () => {
                   Your Preferences
                 </h4>
 
-                {currentResult.roomType && (
-                  <p className="text-xs text-gray-700 mb-1">
-                    <strong>Room Type:</strong>{" "}
-                    {roomTypes.find(r => r.value === currentResult.roomType)?.label}
-                  </p>
-                )}
+{/* Your Preferences block */}
+{currentResult.roomType && (
+  <p className="text-xs text-gray-700 mb-1">
+    <strong>Room Type:</strong> {currentResult.roomType}
+  </p>
+)}
 
-                {currentResult.styles?.length > 0 && (
-                  <p className="text-xs text-gray-700 mb-1">
-                    <strong>Style:</strong>{" "}
-                    {interStyles.find(s => s.value === currentResult.styles[0])?.label}
-                  </p>
-                )}
+{currentResult.styleName && (
+  <p className="text-xs text-gray-700 mb-1">
+    <strong>Style:</strong> {currentResult.styleName}
+  </p>
+)}
 
-                {currentResult.elements?.length > 0 && (
-                  <p className="text-xs text-gray-700 mb-1">
-                    <strong>Elements:</strong>{" "}
-                    {currentResult.elements
-                      .map(e => interElements.find(el => el.value === e)?.label)
-                      .join(", ")}
-                  </p>
-                )}
+{currentResult.elementsList?.length > 0 && (
+  <p className="text-xs text-gray-700 mb-1">
+    <strong>Elements:</strong> {currentResult.elementsList.join(", ")}
+  </p>
+)}
 
-                {currentResult.instruction && (
-                  <p className="text-xs text-gray-700">
-                    <strong>Instruction:</strong> {currentResult.instruction}
-                  </p>
-                )}
+{currentResult.instruction && (
+  <p className="text-xs text-gray-700">
+    <strong>Instruction:</strong> {currentResult.instruction}
+  </p>
+)}
               </div>
 
             </div>
