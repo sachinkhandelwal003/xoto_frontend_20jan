@@ -136,7 +136,6 @@ export default function VaultPartners() {
         designation: form.primaryDesignation,
         email: form.primaryEmail,
         phone: form.primaryPhone,
-        
         alternativePhone: form.primaryAltPhone,
         whatsappNumber: form.primaryWhatsapp,
         emiratesId: form.primaryEmiratesId,
