@@ -1,23 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { Card, Typography, Row, Col, Spin, Empty, Select, notification } from "antd"; // ✅ notification added
+import { Card, Typography, Row, Col, Spin, Empty, Select, notification, Modal, Button } from "antd"; 
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
-import { Download } from "lucide-react"; // ✅ Download icon added
+import { Download, Eye, Sparkles } from "lucide-react"; 
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
+
+const BRAND_PURPLE = "#5C039B"; // Ensure we have the same brand color
 
 const ViewLibrary = () => {
   const [displayData, setDisplayData] = useState([]); 
   const [loading, setLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("Landscaping"); // Default value
+  const [selectedCategory, setSelectedCategory] = useState("Landscaping"); 
 
-  // Category ke hisaab se API fetch karne ka function
+  // ✅ New Modal States
+  const [showGeneratedModal, setShowGeneratedModal] = useState(false);
+  const [currentResult, setCurrentResult] = useState({ 
+    url: '', desc: '', styleName: '', elementsList: [], instruction: '' 
+  });
+
   const fetchLibrary = async (category) => {
     try {
       setLoading(true);
       let endpoint = "";
 
-      // 1. EXACT Endpoints mapped from your app.js routes
       if (category === "Landscaping") {
         endpoint = "/ai/get-landscape-designs";
       } 
@@ -40,50 +46,54 @@ const ViewLibrary = () => {
       }
 
       console.log(`Fetching from: ${endpoint}`);
-
-      // 2. Data fetch karna
       const res = await apiService.get(endpoint);
       console.log(`Raw API Response for ${category}:`, res);
 
-      // 3. BULLETPROOF Data Extraction (Backend se format chahe jo ho, data nikal aayega)
       let rawData = [];
       if (Array.isArray(res)) {
-        rawData = res; // Direct array (Landscaping/Interior)
+        rawData = res; 
       } else if (res?.data && Array.isArray(res.data)) {
-        rawData = res.data; // res.data (Virtual Staging)
+        rawData = res.data; 
       } else if (res?.data?.data && Array.isArray(res.data.data)) {
-        rawData = res.data.data; // res.data.data (Sky API mostly uses this)
+        rawData = res.data.data; 
       } else if (res?.data?.images && Array.isArray(res.data.images)) {
         rawData = res.data.images; 
       }
 
       console.log(`Extracted Data Array for ${category}:`, rawData);
 
-      // 4. ULTRA BULLETPROOF Data Mapping
       let formatted = [];
 
       rawData.forEach((item, index) => {
-        // Case 1: Agar backend direct string (URL) bhej raha hai
         if (typeof item === "string") {
           formatted.push({ id: index, image: item, category });
         } 
-        // Case 2: Agar image 'images' array ke andar hai (Jaise Image Enhancer me hota hai)
         else if (item.images && Array.isArray(item.images)) {
           item.images.forEach((imgUrl, i) => {
             formatted.push({
               id: item._id ? `${item._id}-${i}` : `${index}-${i}`,
               image: imgUrl,
-              category
+              category,
+              // Fallback params if present
+              styleName: item.styleName || null,
+              elements: item.elements || [],
+              description: item.description || item.summary || null
             });
           });
         } 
-        // Case 3: Agar normal object hai to saari possible keys check kar lo
         else {
-          // 🔥 YAHAN PAR SABHI KEYS HAIN INCL. stagedImage?.url 🔥
           const imgUrl = item.imageUrl || item.image || item.url || item.enhancedImage || item.enhancedUrl || item.output || item.stagedImage?.url;
           
           if (imgUrl) {
-            formatted.push({ id: item._id || index, image: imgUrl, category });
+            formatted.push({ 
+              id: item._id || index, 
+              image: imgUrl, 
+              category,
+              // ✅ Caputuring Preferences data for the Modal
+              styleName: item.styleName || item.roomType || null, // roomType is for interior
+              elements: item.elements || [],
+              description: item.description || item.summary || null
+            });
           }
         }
       });
@@ -93,13 +103,12 @@ const ViewLibrary = () => {
 
     } catch (error) {
       console.error(`❌ ${category} fetch failed:`, error);
-      setDisplayData([]); // Error aane par page empty dikhega, phatega nahi
+      setDisplayData([]); 
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ 100% WORKING PDF DOWNLOAD LOGIC
   const downloadImage = async (imageUrl, categoryName) => {
     try {
       const key = imageUrl.split(".amazonaws.com/")[1];
@@ -109,7 +118,6 @@ const ViewLibrary = () => {
         return;
       }
 
-      // PDF API Hit karega seedha
       await apiService.download(
         `/download-pdf?key=${encodeURIComponent(key)}`,
         `XOTO_${categoryName}_${Date.now()}.pdf`
@@ -124,13 +132,11 @@ const ViewLibrary = () => {
     }
   };
 
-  // Dropdown change hone par naya data fetch karne ka function
   const handleCategoryChange = (value) => {
     setSelectedCategory(value);
     fetchLibrary(value); 
   };
 
-  // Page load hote hi default (Landscaping) ka data layega
   useEffect(() => {
     fetchLibrary(selectedCategory);
   }, []);
@@ -139,7 +145,7 @@ const ViewLibrary = () => {
     <div style={{ padding: "40px", background: "#f8f9fa", minHeight: "100vh" }}>
 
       {/* Header */}
-      <div style={{ marginBottom: "40px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
+      <div style={{ marginBottom: "40px", display: "flex", justifycontent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
         <div>
           <Title level={1} style={{ margin: 0, fontWeight: 600, fontSize: "36px" }}>
             View Library
@@ -200,20 +206,52 @@ const ViewLibrary = () => {
                       }}
                       className="card-img"
                     />
-                    {/* ✅ DOWNLOAD HOVER OVERLAY ADDED */}
+                    
+                    {/* ✅ DOWNLOAD & VIEW HOVER OVERLAY */}
                     <div className="overlay">
-                      <button 
-                        className="download-btn"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Card click event ko rokne ke liye
-                          downloadImage(item.image, selectedCategory.replace(/\s+/g, ''));
-                        }}
-                      >
-                        <Download size={24} />
-                      </button>
-                      <span style={{ color: "white", fontSize: "12px", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase" }}>
-                        Download
-                      </span>
+                      <div style={{ display: 'flex', gap: '20px' }}>
+                        
+                        {/* VIEW BUTTON */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                          <button 
+                            className="action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Populate Modal with data
+                              setCurrentResult({ 
+                                url: item.image, 
+                                desc: item.description || "Analysis details available in history.", 
+                                styleName: item.styleName, 
+                                elementsList: item.elements, 
+                                instruction: item.description 
+                              });
+                              setShowGeneratedModal(true);
+                            }}
+                          >
+                            <Eye size={24} />
+                          </button>
+                          <span style={{ color: "white", fontSize: "11px", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase" }}>
+                            View
+                          </span>
+                        </div>
+
+                        {/* DOWNLOAD BUTTON */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                          <button 
+                            className="action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              downloadImage(item.image, selectedCategory.replace(/\s+/g, ''));
+                            }}
+                          >
+                            <Download size={24} />
+                          </button>
+                          <span style={{ color: "white", fontSize: "11px", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase" }}>
+                            Download
+                          </span>
+                        </div>
+
+                      </div>
                     </div>
                   </div>
                 }
@@ -222,6 +260,77 @@ const ViewLibrary = () => {
           ))}
         </Row>
       )}
+
+      {/* ✅ SAME MODAL ADDED FROM AIPLANNER */}
+      <Modal
+        open={showGeneratedModal}
+        footer={null}
+        onCancel={() => setShowGeneratedModal(false)}
+        width={["90vw", "90vw", "90vw", 1000]}
+        centered
+        bodyStyle={{ padding: 0, borderRadius: '24px', overflow: 'hidden' }}
+      >
+        <div style={{ display: 'flex', height: '500px' }} className="flex-col lg:flex-row">
+          
+          {/* IMAGE SIDE */}
+          <div className="w-full lg:w-3/5 h-[50vh] lg:h-full flex-shrink-0" style={{ height: '100%', flex: '1.5' }}>
+            <img src={currentResult.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Final Design" />
+          </div>
+          
+          {/* PREFERENCES SIDE */}
+          <div className="w-full lg:w-2/5 flex flex-col justify-between" style={{ padding: '30px', flex: '1', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflowY: 'auto' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: BRAND_PURPLE, fontWeight: 'bold', marginBottom: '16px' }}>
+                <Sparkles size={18} />
+                <span>AI SCENE ANALYSIS</span>
+              </div>
+              
+              <Paragraph style={{ color: '#4b5563', lineHeight: '1.6' }}>
+                {currentResult.desc || "Visual enhancement applied."}
+              </Paragraph>
+
+              {/* Preferences Box */}
+              {(currentResult.styleName || currentResult.elementsList?.length > 0 || currentResult.instruction) && (
+                <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#fdf4ff', borderRadius: '12px', border: '1px solid #f3e8ff' }}>
+                  <h4 style={{ fontWeight: 'bold', fontSize: '14px', color: BRAND_PURPLE, marginBottom: '8px', margin: 0 }}>
+                    Your Preferences
+                  </h4>
+
+                  {currentResult.styleName && (
+                    <p style={{ fontSize: '12px', color: '#374151', margin: '4px 0' }}>
+                      <strong>Style:</strong> {currentResult.styleName}
+                    </p>
+                  )}
+
+                  {currentResult.elementsList?.length > 0 && (
+                    <p style={{ fontSize: '12px', color: '#374151', margin: '4px 0' }}>
+                      <strong>Elements:</strong> {Array.isArray(currentResult.elementsList) ? currentResult.elementsList.join(", ") : currentResult.elementsList}
+                    </p>
+                  )}
+
+                  {currentResult.instruction && (
+                    <p style={{ fontSize: '12px', color: '#374151', margin: '4px 0' }}>
+                      <strong>Instruction:</strong> {currentResult.instruction}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+              <Button 
+                type="primary" 
+                block 
+                size="large" 
+                style={{ height: '48px', borderRadius: '16px', fontWeight: 'bold', background: BRAND_PURPLE }} 
+                onClick={() => downloadImage(currentResult.url, selectedCategory.replace(/\s+/g, ''))}
+              >
+                Download Render
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       {/* ✅ CSS STYLES FOR OVERLAY AND HOVER EFFECT */}
       <style>
@@ -250,7 +359,7 @@ const ViewLibrary = () => {
           opacity: 1;
         }
 
-        .download-btn {
+        .action-btn {
           background: rgba(255, 255, 255, 0.2);
           backdrop-filter: blur(8px);
           border: 1px solid rgba(255, 255, 255, 0.3);
@@ -265,7 +374,7 @@ const ViewLibrary = () => {
           transition: 0.3s;
         }
 
-        .download-btn:hover {
+        .action-btn:hover {
           background: rgba(255, 255, 255, 0.3);
           transform: scale(1.1);
         }

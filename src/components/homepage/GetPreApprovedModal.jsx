@@ -81,7 +81,7 @@ export default function GetPreApprovedModal({ open, onClose }) {
   };
 
   // Location Cascade Handlers
-  const handleLocationCountryChange = (isoCode) => {
+  const handleLocationCountryChange = (isoCode) => {  
     const updatedStates = State.getStatesOfCountry(isoCode);
     setStatesList(updatedStates);
     setCitiesList([]);
