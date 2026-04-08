@@ -145,16 +145,18 @@ export default function VaultAgentlist() {
         </div>
       ),
     },
-    {
-      key: "phone",
-      title: "Phone",
-      render: (_, row) => (
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#374151" }}>
-          <Phone size={13} color="#9CA3AF" />
-          <span>{row.country_code || row.countryCode || ""} {row.phone_number || row.phoneNumber || "N/A"}</span>
-        </div>
-      ),
-    },
+   {
+  key: "phone",
+  title: "Phone",
+  render: (_, row) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#374151" }}>
+      <Phone size={13} color="#9CA3AF" />
+      <span>
+        {row.phone?.country_code || ""} {row.phone?.number || "N/A"}
+      </span>
+    </div>
+  ),
+},
     {
       key: "location",
       title: "Location",

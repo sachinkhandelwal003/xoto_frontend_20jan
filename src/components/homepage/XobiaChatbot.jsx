@@ -63,33 +63,20 @@ function XobiaChatbot() {
     }
   };
 
-  const handleCloseChat = () => {
-    stopAllAudio();
-    setIsOpen(false);
-    setShowVoiceMode(false); // Reset voice mode on close
-  };
+const handleCloseChat = async () => {
+  stopAllAudio();
+  setIsOpen(false);
+  setShowVoiceMode(false);
+  setMessages([]);
+  
+  try {
+    const session_id = getChatSessionId();
+    await fetch(`${API}/api/ai/chat/clear?session_id=${session_id}`, { 
+      method: "DELETE" 
+    });
+  } catch(e) {}
+};
 
-  // --- FETCH MESSAGES ---
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const session_id = getChatSessionId();
-        const res = await fetch(`${API}/api/ai/chat/get-all-messages?session_id=${session_id}`);
-        const data = await res.json();
-        const formatted = data.map((msg) => ({
-          id: msg._id,
-          role: msg.sender === "user" ? "user" : "bot",
-          text: msg.text || "",
-          audioUrl: msg.audioUrl || null,
-          type: msg.audioUrl ? "audio" : "text",
-          autoPlay: false,
-          timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        }));
-        setMessages(formatted);
-      } catch (err) { console.error("Failed to load messages", err); }
-    };
-    if (isOpen) fetchMessages();
-  }, [isOpen]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
