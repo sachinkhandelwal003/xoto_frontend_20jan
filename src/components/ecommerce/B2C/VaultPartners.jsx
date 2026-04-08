@@ -1,5 +1,6 @@
 // src/components/Vault/VaultPartners.jsx
 import { useState } from "react";
+import PhoneInput from "react-phone-number-input";
 import {
   Building2, User, Users, MapPin, CreditCard,
   Percent, FileText, KeyRound, ChevronRight, ChevronLeft,
@@ -27,11 +28,11 @@ const INIT = {
   yearEstablished: "", numberOfBranches: "", role: "",
 
   primaryName: "", primaryDesignation: "", primaryEmail: "",
-  primaryCountryCode: "+971", primaryPhone: "", primaryAltPhone: "",
+  primaryPhone: "", primaryAltPhone: "",
   primaryWhatsapp: "", primaryEmiratesId: "",
 
   secondaryName: "", secondaryDesignation: "", secondaryEmail: "",
-  secondaryCountryCode: "+971", secondaryPhone: "",
+   secondaryPhone: "",
   secondaryWhatsapp: "", secondaryEmiratesId: "",
 
   billBuilding: "", billFloor: "", billArea: "", billCity: "Dubai",
@@ -134,7 +135,7 @@ export default function VaultPartners() {
         name: form.primaryName,
         designation: form.primaryDesignation,
         email: form.primaryEmail,
-        countryCode: form.primaryCountryCode,
+        phone: form.primaryPhone,
         phone: form.primaryPhone,
         alternativePhone: form.primaryAltPhone,
         whatsappNumber: form.primaryWhatsapp,
@@ -269,20 +270,27 @@ export default function VaultPartners() {
     </div>
   );
 
-  const phoneRow = (codeKey, phoneKey, label, req = false) => (
-    <div>
-      <label style={s.label}>{label}{req && <span style={{ color: "#5C039B" }}> *</span>}</label>
-      <div style={{ display: "flex", gap: 8 }}>
-        <select value={form[codeKey]} onChange={e => set(codeKey, e.target.value)} style={{ ...s.input, width: 90, flexShrink: 0 }}>
-          {["+971","+966","+1","+44","+91","+20","+973","+968"].map(c => <option key={c}>{c}</option>)}
-        </select>
-        <div style={{ flex: 1 }}>
-          {inp(phoneKey, "50 123 4567", "text", { style: errors[phoneKey] ? s.inputErr : {} })}
-        </div>
-      </div>
-      {errors[phoneKey] && <p style={s.errMsg}>{errors[phoneKey]}</p>}
-    </div>
-  );
+  const phoneInput = (key, label, req = false) => (
+  <div>
+    <label style={s.label}>
+      {label}{req && <span style={{ color: "#5C039B" }}> *</span>}
+    </label>
+
+    <PhoneInput
+      international
+      defaultCountry="AE" // ya "IN" agar India default chahiye
+      value={form[key]}
+      onChange={(value) => set(key, value)}
+      style={{
+        ...s.input,
+        padding: "6px 10px",
+        ...(errors[key] ? s.inputErr : {})
+      }}
+    />
+
+    {errors[key] && <p style={s.errMsg}>{errors[key]}</p>}
+  </div>
+);
 
   // ─── Step content for onboarding ─────────────────────────────────────────
   const stepContent = {
@@ -311,8 +319,8 @@ export default function VaultPartners() {
         {grp("primaryDesignation", "Designation",        inp("primaryDesignation", "Managing Director"), true)}
         {grp("primaryEmail",       "Email Address",      inp("primaryEmail",       "mohammed@company.ae", "email"), true)}
         {grp("primaryEmiratesId",  "Emirates ID",        inp("primaryEmiratesId",  "784-1980-1234567-8"), true)}
-        {phoneRow("primaryCountryCode","primaryPhone",   "Phone Number", true)}
-        {phoneRow("primaryCountryCode","primaryAltPhone","Alternative Phone")}
+        {phoneInput("primaryPhone", "Phone Number", true)}
+{phoneInput("primaryAltPhone", "Alternative Phone")}
         {grp("primaryWhatsapp",    "WhatsApp Number",    inp("primaryWhatsapp",    "50 123 4567"))}
       </div>
     ),
@@ -328,7 +336,7 @@ export default function VaultPartners() {
           {grp("secondaryDesignation", "Designation",   inp("secondaryDesignation", "Operations Manager"))}
           {grp("secondaryEmail",       "Email Address", inp("secondaryEmail",       "fatima@company.ae", "email"))}
           {grp("secondaryEmiratesId",  "Emirates ID",   inp("secondaryEmiratesId",  "784-1985-8765432-1"))}
-          {phoneRow("secondaryCountryCode","secondaryPhone",    "Phone Number")}
+          {phoneInput("secondaryPhone", "Phone Number")}
           {grp("secondaryWhatsapp",    "WhatsApp Number",inp("secondaryWhatsapp",   "50 123 4567"))}
         </div>
       </>

@@ -368,35 +368,49 @@ const PropertyManagement = () => {
             <Col xs={12} md={4}><Form.Item name="postalCode" label="Zip Code"><Input /></Form.Item></Col>
           </Row>
 
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Media & Assets</Divider>
-          <Row gutter={16}>
-            <Col xs={24} md={6}>
-              <Form.Item label="Main Logo">
-                <Upload listType="picture-card" fileList={logoList} action={UPLOAD_API} maxCount={1} beforeUpload={validateImageSize} onChange={({ fileList }) => setLogoList(fileList)}>
-                  {logoList.length >= 1 ? null : <div><PlusOutlined /><div style={{ marginTop: 8 }}>Logo</div></div>}
-                </Upload>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item label="Property Photos">
-                <Upload listType="picture-card" fileList={photoList} action={UPLOAD_API} multiple beforeUpload={validateImageSize} onChange={({ fileList }) => setPhotoList(fileList)}>
-                  <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
-                </Upload>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}>
-              <Form.Item label="Brochure (PDF)">
-                <Upload action={UPLOAD_API} name="file" maxCount={1} onChange={(info) => {
-                  if (info.file.status === 'done') {
-                    setBrochureUrl(info.file.response?.file?.url || info.file.response?.url);
-                    message.success("Brochure linked!");
-                  }
-                }}>
-                  <Button icon={<UploadOutlined />}>Upload PDF</Button>
-                </Upload>
-              </Form.Item>
-            </Col>
-          </Row>
+        <Divider orientation="left" style={{ borderColor: THEME.primary }}>Media & Assets</Divider>
+<Row gutter={16}>
+  <Col xs={24} md={6}>
+    <Form.Item label="Main Logo">
+      <Upload listType="picture-card" fileList={logoList} action={UPLOAD_API} maxCount={1} beforeUpload={validateImageSize} onChange={({ fileList }) => setLogoList(fileList)}>
+        {logoList.length >= 1 ? null : <div><PlusOutlined /><div style={{ marginTop: 8 }}>Logo</div></div>}
+      </Upload>
+      <div style={{ marginTop: 6, padding: '6px 10px', background: '#e6f4ff', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontSize: 13 }}>ℹ️</span>
+        <Text style={{ fontSize: 12, color: '#1677ff' }}>Recommended: 400×400px JPG/PNG</Text>
+      </div>
+    </Form.Item>
+  </Col>
+
+  <Col xs={24} md={12}>
+    <Form.Item label="Property Photos">
+      <Upload listType="picture-card" fileList={photoList} action={UPLOAD_API} multiple beforeUpload={validateImageSize} onChange={({ fileList }) => setPhotoList(fileList)}>
+        <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
+      </Upload>
+      <div style={{ marginTop: 6, padding: '6px 10px', background: '#e6f4ff', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontSize: 13 }}>ℹ️</span>
+        <Text style={{ fontSize: 12, color: '#1677ff' }}>Recommended: 1200×800px JPG/PNG</Text>
+      </div>
+    </Form.Item>
+  </Col>
+
+  <Col xs={24} md={6}>
+    <Form.Item label="Brochure (PDF)">
+      <Upload action={UPLOAD_API} name="file" maxCount={1} onChange={(info) => {
+        if (info.file.status === 'done') {
+          setBrochureUrl(info.file.response?.file?.url || info.file.response?.url);
+          message.success("Brochure linked!");
+        }
+      }}>
+        <Button icon={<UploadOutlined />}>Upload PDF</Button>
+      </Upload>
+      <div style={{ marginTop: 6, padding: '6px 10px', background: '#e6f4ff', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontSize: 13 }}>ℹ️</span>
+        <Text style={{ fontSize: 12, color: '#1677ff' }}>PDF format only, max 20MB</Text>
+      </div>
+    </Form.Item>
+  </Col>
+</Row>
 
           <Divider orientation="left" style={{ borderColor: THEME.primary }}>Additional Details</Divider>
           <Form.Item name="amenities" label="Amenities"><Select mode="tags" /></Form.Item>

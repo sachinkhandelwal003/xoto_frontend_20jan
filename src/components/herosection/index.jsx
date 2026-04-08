@@ -18,12 +18,12 @@ const HeroSection = () => {
     <section className="relative w-full min-h-[80vh] overflow-hidden flex items-center justify-center text-white pt-24 pb-16 md:pt-28 md:pb-20 xl:pt-32 xl:pb-24">
       
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/60 z-[1]" />
+      <div className="absolute inset-0 bg-black/40 z-[1]" />
 
       {/* Background Video */}
       <video
         autoPlay
-        loop
+        loop 
         muted
         playsInline
         className="absolute inset-0 w-full h-full object-cover z-0"
