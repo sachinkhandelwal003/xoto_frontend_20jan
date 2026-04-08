@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef  } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import img1 from "../../../assets/img/interior/interior1.jpg"
 import img2 from "../../../assets/img/interior/interior2.jpg"
@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import {
   Button, Modal, Progress, Card, Tag,
-  notification, Typography, Divider, Spin, Empty, Input 
+  notification, Typography, Divider, Spin, Empty, Input
 } from 'antd';
 import { useSelector } from 'react-redux';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
@@ -50,11 +50,11 @@ const interElements = [
 ];
 
 const roomTypes = [
-  { value: 'living', label: 'Living Room', img: 'https://gstatic.ideal.house/interior/Home/Living_Room.webp'    },
+  { value: 'living', label: 'Living Room', img: 'https://gstatic.ideal.house/interior/Home/Living_Room.webp' },
   { value: 'bedroom', label: 'Bedroom', img: 'https://gstatic.ideal.house/interior/Home/Bed_Room.webp' },
   { value: 'kitchen', label: 'Kitchen', img: 'https://gstatic.ideal.house/interior/Home/Kitchen.webp' },
   { value: 'bathroom', label: 'Bathroom', img: 'https://gstatic.ideal.house/interior/Home/Bath_Room.webp' },
-  { value: 'dining', label: 'Dining Room', img: 'https://gstatic.ideal.house/interior/Home/Dining_Room.webp' }, 
+  { value: 'dining', label: 'Dining Room', img: 'https://gstatic.ideal.house/interior/Home/Dining_Room.webp' },
   { value: 'office', label: 'Home Office', img: 'https://gstatic.ideal.house/interior/Home/Home_Office.webp' },
 ];
 
@@ -98,9 +98,9 @@ const getProgressText = (progress) => {
 const InteriorPlanner = () => {
 
 
-  
-const pollingRef = useRef(null);
-const lastDesignCountRef = useRef(0);
+
+  const pollingRef = useRef(null);
+  const lastDesignCountRef = useRef(0);
 
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
@@ -152,100 +152,100 @@ const lastDesignCountRef = useRef(0);
 
 
   const stopPolling = () => {
-  if (pollingRef.current) {
-    clearInterval(pollingRef.current);
-    pollingRef.current = null;
-  }
-};
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  };
 
-const startPolling = () => {
-  pollingRef.current = setInterval(async () => {
+  const startPolling = () => {
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await apiService.get("/ai/get-interior-designs");
+        const apiDesigns = res?.data || [];
+
+        if (apiDesigns.length > lastDesignCountRef.current) {
+          const latest = apiDesigns[0];
+
+          if (latest?.imageUrl) {
+            stopPolling();
+
+            if (window.generationInterval) {
+              clearInterval(window.generationInterval);
+              window.generationInterval = null;
+            }
+
+            setGenerationProgress(100);
+            setCurrentResult({
+              url: latest.imageUrl,
+              desc: latest.aiMessage || "AI Generated Interior",
+              roomType: latest.roomType || null,
+              styleName: latest.styleName || null,        // direct string
+              elementsList: latest.elements || [],         // direct array
+              instruction: latest.description || ''
+            });
+            setIsGenerating(false);
+            setShowGeneratedModal(true);
+
+            const formatted = apiDesigns.map((item, index) => ({
+              id: item._id,
+              image: item.imageUrl,
+              title: item.title || `Design ${index + 1}`,
+              timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+              aiAnalysis: item.aiMessage || "AI Generated Interior",
+              roomType: item.roomType || null,
+              styles: item.styleName ? [item.styleName] : [],
+              elements: item.elements || [],
+              description: item.description || null,
+              fromApi: true,
+            }));
+
+            setDesigns(formatted);
+            lastDesignCountRef.current = apiDesigns.length;
+            notification.success({ message: "✅ Design Ready!" });
+          }
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    }, 3000);
+  };
+
+  // Unmount pe polling band karo
+  useEffect(() => {
+    return () => stopPolling();
+  }, []);
+
+  // --- API: Fetch Saved Designs ---
+  const fetchSavedDesigns = async () => {
+    if (!user) return;
     try {
+      setLoadingSaved(true);
       const res = await apiService.get("/ai/get-interior-designs");
       const apiDesigns = res?.data || [];
 
-      if (apiDesigns.length > lastDesignCountRef.current) {
-        const latest = apiDesigns[0];
+      lastDesignCountRef.current = apiDesigns.length;
 
-        if (latest?.imageUrl) {
-          stopPolling();
+      const formatted = apiDesigns.map((item, index) => ({
+        id: item._id,
+        image: item.imageUrl,
+        title: item.title || `Design ${index + 1}`,
+        timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+        aiAnalysis: item.aiMessage || "AI Generated Interior",
+        roomType: item.roomType || null,
+        styles: item.styleName ? [item.styleName] : [],   // ✅ styleName store karo
+        elements: item.elements || [],                      // ✅ elements store karo
+        description: item.description || null,              // ✅ description store karo
+        fromApi: true,
+      }));
 
-          if (window.generationInterval) {
-            clearInterval(window.generationInterval);
-            window.generationInterval = null;
-          }
-
-          setGenerationProgress(100);
-setCurrentResult({
-  url: latest.imageUrl,
-  desc: latest.aiMessage || "AI Generated Interior",
-  roomType: latest.roomType || null,
-  styleName: latest.styleName || null,        // direct string
-  elementsList: latest.elements || [],         // direct array
-  instruction: latest.description || ''
-});
-          setIsGenerating(false);
-          setShowGeneratedModal(true);
-
-          const formatted = apiDesigns.map((item, index) => ({
-            id: item._id,
-            image: item.imageUrl,
-            title: item.title || `Design ${index + 1}`,
-            timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-            aiAnalysis: item.aiMessage || "AI Generated Interior",
-            roomType: item.roomType || null,
-            styles: item.styleName ? [item.styleName] : [],
-            elements: item.elements || [],
-            description: item.description || null,
-            fromApi: true,
-          }));
-
-          setDesigns(formatted);
-          lastDesignCountRef.current = apiDesigns.length;
-          notification.success({ message: "✅ Design Ready!" });
-        }
-      }
+      setDesigns(formatted);
     } catch (err) {
-      console.error("Polling error:", err);
+      console.error("Failed to load designs", err);
+    } finally {
+      setLoadingSaved(false);
     }
-  }, 3000);
-};
-
-// Unmount pe polling band karo
-useEffect(() => {
-  return () => stopPolling();
-}, []);
-
-  // --- API: Fetch Saved Designs ---
-const fetchSavedDesigns = async () => {
-  if (!user) return;
-  try {
-    setLoadingSaved(true);
-    const res = await apiService.get("/ai/get-interior-designs");
-    const apiDesigns = res?.data || [];
-
-    lastDesignCountRef.current = apiDesigns.length;
-
-    const formatted = apiDesigns.map((item, index) => ({
-      id: item._id,
-      image: item.imageUrl,
-      title: item.title || `Design ${index + 1}`,
-      timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-      aiAnalysis: item.aiMessage || "AI Generated Interior",
-      roomType: item.roomType || null,
-      styles: item.styleName ? [item.styleName] : [],   // ✅ styleName store karo
-      elements: item.elements || [],                      // ✅ elements store karo
-      description: item.description || null,              // ✅ description store karo
-      fromApi: true,
-    }));
-
-    setDesigns(formatted);
-  } catch (err) {
-    console.error("Failed to load designs", err);
-  } finally {
-    setLoadingSaved(false);
-  }
-};
+  };
 
   useEffect(() => {
     if (user) {
@@ -256,12 +256,12 @@ const fetchSavedDesigns = async () => {
 
   const fetchLibraryDesigns = async () => {
     if (!user) return;
-  
+
     try {
       setLoadingLibrary(true);
       const res = await apiService.get(`/ai/get-customer-liabrary?designType=interior`);
       const apiDesigns = res?.data || [];
-  
+
       const formatted = apiDesigns.flatMap((d, index) => {
         if (d.images && Array.isArray(d.images)) {
           return d.images.map((img, i) => ({
@@ -270,7 +270,7 @@ const fetchSavedDesigns = async () => {
             title: `Library Design ${index + 1}-${i + 1}`,
             timestamp: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Just now',
           }));
-        } 
+        }
         else {
           return [{
             id: d._id || index,
@@ -280,7 +280,7 @@ const fetchSavedDesigns = async () => {
           }];
         }
       });
-  
+
       const validDesigns = formatted.filter(item => item.image);
       setLibraryDesigns(validDesigns.reverse());
     } catch (err) {
@@ -289,7 +289,7 @@ const fetchSavedDesigns = async () => {
       setLoadingLibrary(false);
     }
   };
-  
+
   useEffect(() => {
     if (user && (showLibraryModal || showUploadModal)) {
       fetchLibraryDesigns();
@@ -337,7 +337,7 @@ const fetchSavedDesigns = async () => {
           imageUrl: uploadedUrl,
         });
         fetchLibraryDesigns();
-      } 
+      }
       else {
         const existing = JSON.parse(localStorage.getItem("guestLibrary_interior")) || [];
         existing.push(uploadedUrl);
@@ -362,7 +362,7 @@ const fetchSavedDesigns = async () => {
     }
 
     if (!isCustomerLoggedIn) {
-      setPendingGeneration(true); 
+      setPendingGeneration(true);
       setShowAuthModal(true);
       return;
     }
@@ -397,46 +397,46 @@ const fetchSavedDesigns = async () => {
     }
   };
 
-const generateAIDesigns = async (currentUser) => {
-  setIsGenerating(true);
-  setGenerationProgress(5);
+  const generateAIDesigns = async (currentUser) => {
+    setIsGenerating(true);
+    setGenerationProgress(5);
 
-  const progressInterval = setInterval(() => {
-    setGenerationProgress(prev => Math.min(prev + Math.random() * 3 + 1.5, 92));
-  }, 550);
-  window.generationInterval = progressInterval;
+    const progressInterval = setInterval(() => {
+      setGenerationProgress(prev => Math.min(prev + Math.random() * 3 + 1.5, 92));
+    }, 550);
+    window.generationInterval = progressInterval;
 
-  const formData = new FormData();
+    const formData = new FormData();
 
-  if (uploadedFile) {
-    formData.append('image', uploadedFile);
-  } else if (selectedImage?.startsWith('http')) {
-    try {
-      const response = await fetch(selectedImage);
-      const blob = await response.blob();
-      formData.append('image', new File([blob], 'input_image.jpg', { type: blob.type || 'image/jpeg' }));
-    } catch (err) {
-      console.error('Image processing failed', err);
+    if (uploadedFile) {
+      formData.append('image', uploadedFile);
+    } else if (selectedImage?.startsWith('http')) {
+      try {
+        const response = await fetch(selectedImage);
+        const blob = await response.blob();
+        formData.append('image', new File([blob], 'input_image.jpg', { type: blob.type || 'image/jpeg' }));
+      } catch (err) {
+        console.error('Image processing failed', err);
+      }
     }
-  }
 
-  formData.append('styleName', selectedStyles.length > 0 ? interStyles.find(s => s.value === selectedStyles[0])?.label : 'Modern');
-  formData.append('elements', selectedElements.length > 0 ? selectedElements.map(e => interElements.find(el => el.value === e)?.label).join(', ') : 'Sofa, Coffee Table');
-  formData.append('description', specificRequirement || 'A professional interior design');
-  formData.append('roomType', selectedRoomType ? roomTypes.find(r => r.value === selectedRoomType)?.label : 'Living Room');
+    formData.append('styleName', selectedStyles.length > 0 ? interStyles.find(s => s.value === selectedStyles[0])?.label : 'Modern');
+    formData.append('elements', selectedElements.length > 0 ? selectedElements.map(e => interElements.find(el => el.value === e)?.label).join(', ') : 'Sofa, Coffee Table');
+    formData.append('description', specificRequirement || 'A professional interior design');
+    formData.append('roomType', selectedRoomType ? roomTypes.find(r => r.value === selectedRoomType)?.label : 'Living Room');
 
-  try {
-    await apiService.post('/ai/generate-interior', formData);
-    console.log("✅ Interior generation started — polling shuru...");
-    startPolling(); // ✅ Polling start
-  } catch (error) {
-    console.error('Generation failed:', error);
-    notification.error({ message: 'Generation Error' });
-    setIsGenerating(false);
-    clearInterval(progressInterval);
-    stopPolling();
-  }
-};
+    try {
+      await apiService.post('/ai/generate-interior', formData);
+      console.log("✅ Interior generation started — polling shuru...");
+      startPolling(); // ✅ Polling start
+    } catch (error) {
+      console.error('Generation failed:', error);
+      notification.error({ message: 'Generation Error' });
+      setIsGenerating(false);
+      clearInterval(progressInterval);
+      stopPolling();
+    }
+  };
 
   const downloadImage = async (imageUrl, name) => {
     try {
@@ -511,7 +511,7 @@ const generateAIDesigns = async (currentUser) => {
 
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative lg:ml-[88px] transition-all duration-300 w-full">
-        
+
         {/* LEFT PANEL */}
         <div className="w-full lg:w-[460px] bg-white h-full overflow-y-auto p-4 lg:p-6 border-r border-gray-400 shrink-0 z-10 custom-scrollbar pb-24 lg:pb-6">
           <div className="lg:hidden flex items-center justify-between mb-6">
@@ -643,7 +643,7 @@ const generateAIDesigns = async (currentUser) => {
                       <img src={d.image} className="w-full h-48 object-cover" alt="Result" />
                       <div className="p-4">
                         <div className="flex justify-between items-start mb-2">
-                          
+
                           {/* Title Edit Logic */}
                           {editingId === d.id ? (
                             <div className="flex items-center gap-2 w-full pr-2">
@@ -696,9 +696,9 @@ const generateAIDesigns = async (currentUser) => {
 
             {/* FETCHING SAVED DESIGNS LOGIC */}
             {loadingSaved ? (
-                <div className="flex flex-col items-center justify-center h-[50vh]">
-                   <Spin size="large" tip="Loading your designs..." />
-                </div>
+              <div className="flex flex-col items-center justify-center h-[50vh]">
+                <Spin size="large" tip="Loading your designs..." />
+              </div>
             ) : designs.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-gray-200 rounded-[32px] bg-white/50">
                 <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
@@ -713,7 +713,7 @@ const generateAIDesigns = async (currentUser) => {
                   <Card key={d.id} hoverable className="rounded-[32px] overflow-hidden border-none shadow-sm hover:shadow-2xl transition-all duration-300 group" bodyStyle={{ padding: 0 }}>
                     <div className="relative aspect-[4/3] overflow-hidden">
                       <img src={d.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Design" />
-                      
+
                       {/* ✅ OVERLAY - Upar Sirf Download Button */}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[3px]">
                         <button onClick={() => downloadImage(d.image, 'design')} className="flex flex-col items-center gap-3 text-white hover:scale-110 transition-transform group/btn">
@@ -735,21 +735,21 @@ const generateAIDesigns = async (currentUser) => {
                         {/* Title Edit Logic */}
                         <div className="flex items-center gap-2 mb-1">
                           {editingId === d.id ? (
-                             <div className="flex items-center gap-2 w-full pr-4">
-                               <Input 
-                                 value={editTitle} 
-                                 onChange={(e) => setEditTitle(e.target.value)} 
-                                 onPressEnter={() => saveTitle(d.id)} 
-                                 size="small" autoFocus className="rounded-md"
-                               />
-                               <CheckCircle2 size={20} className="text-green-500 cursor-pointer shrink-0" onClick={() => saveTitle(d.id)} />
-                               <X size={20} className="text-red-500 cursor-pointer shrink-0" onClick={() => setEditingId(null)} />
-                             </div>
+                            <div className="flex items-center gap-2 w-full pr-4">
+                              <Input
+                                value={editTitle}
+                                onChange={(e) => setEditTitle(e.target.value)}
+                                onPressEnter={() => saveTitle(d.id)}
+                                size="small" autoFocus className="rounded-md"
+                              />
+                              <CheckCircle2 size={20} className="text-green-500 cursor-pointer shrink-0" onClick={() => saveTitle(d.id)} />
+                              <X size={20} className="text-red-500 cursor-pointer shrink-0" onClick={() => setEditingId(null)} />
+                            </div>
                           ) : (
-                             <div className="flex items-center gap-2 cursor-pointer group/title w-full" onClick={() => { setEditingId(d.id); setEditTitle(d.title); }}>
-                               <h3 className="font-bold text-xl text-gray-900 truncate">{d.title}</h3>
-                               <Edit2 size={14} className="text-gray-400 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0" />
-                             </div>
+                            <div className="flex items-center gap-2 cursor-pointer group/title w-full" onClick={() => { setEditingId(d.id); setEditTitle(d.title); }}>
+                              <h3 className="font-bold text-xl text-gray-900 truncate">{d.title}</h3>
+                              <Edit2 size={14} className="text-gray-400 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0" />
+                            </div>
                           )}
                         </div>
                         <p className="text-gray-400 text-sm">{d.timestamp}</p>
@@ -757,22 +757,22 @@ const generateAIDesigns = async (currentUser) => {
 
                       {/* ✅ View Arrow Button in Bottom Right */}
                       {editingId !== d.id && (
-                        <button 
+                        <button
                           // Desktop card
-// ✅ NAYA — mobile card button
-onClick={() => {
-  setCurrentResult({ 
-    url: d.image, 
-    desc: d.aiAnalysis, 
-    roomType: d.roomType, 
-    styleName: d.styles?.[0] || null,   // ✅ same as desktop
-    elementsList: d.elements || [],      // ✅ same as desktop
-    instruction: d.description || ''    // ✅ description use karo
-  });
-  setShowGeneratedModal(true);
-}}
+                          // ✅ NAYA — mobile card button
+                          onClick={() => {
+                            setCurrentResult({
+                              url: d.image,
+                              desc: d.aiAnalysis,
+                              roomType: d.roomType,
+                              styleName: d.styles?.[0] || null,   // ✅ same as desktop
+                              elementsList: d.elements || [],      // ✅ same as desktop
+                              instruction: d.description || ''    // ✅ description use karo
+                            });
+                            setShowGeneratedModal(true);
+                          }}
 
-// Mobile card — same changes
+                          // Mobile card — same changes
                           className="p-3 bg-purple-50 text-purple-600 rounded-full hover:bg-purple-100 hover:scale-110 transition-all shrink-0"
                           title="View Details"
                         >
@@ -794,7 +794,7 @@ onClick={() => {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex justify-around py-2 pb-safe-area">
         <MobileTabItem icon={Home} label="Home" id="home" onClick={() => navigate('/')} />
         <MobileTabItem icon={Sparkles} label="Create" id="create" onClick={() => setActiveMobileTab('create')} />
-        <MobileTabItem icon={Compass} label="Explore" id="explore" onClick={() => {}} />
+        <MobileTabItem icon={Compass} label="Explore" id="explore" onClick={() => { }} />
       </div>
 
       {/* MODALS */}
@@ -814,37 +814,37 @@ onClick={() => {
               <Paragraph className="text-gray-600 leading-relaxed text-sm lg:text-base">
                 {currentResult.desc || "No description provided."}
               </Paragraph>
-              
+
               {/* User Preferences Block */}
               <div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
                 <h4 className="font-bold text-sm text-purple-700 mb-2">
                   Your Preferences
                 </h4>
 
-{/* Your Preferences block */}
-{currentResult.roomType && (
-  <p className="text-xs text-gray-700 mb-1">
-    <strong>Room Type:</strong> {currentResult.roomType}
-  </p>
-)}
+                {/* Your Preferences block */}
+                {currentResult.roomType && (
+                  <p className="text-xs text-gray-700 mb-1">
+                    <strong>Room Type:</strong> {currentResult.roomType}
+                  </p>
+                )}
 
-{currentResult.styleName && (
-  <p className="text-xs text-gray-700 mb-1">
-    <strong>Style:</strong> {currentResult.styleName}
-  </p>
-)}
+                {currentResult.styleName && (
+                  <p className="text-xs text-gray-700 mb-1">
+                    <strong>Style:</strong> {currentResult.styleName}
+                  </p>
+                )}
 
-{currentResult.elementsList?.length > 0 && (
-  <p className="text-xs text-gray-700 mb-1">
-    <strong>Elements:</strong> {currentResult.elementsList.join(", ")}
-  </p>
-)}
+                {currentResult.elementsList?.length > 0 && (
+                  <p className="text-xs text-gray-700 mb-1">
+                    <strong>Elements:</strong> {currentResult.elementsList.join(", ")}
+                  </p>
+                )}
 
-{currentResult.instruction && (
-  <p className="text-xs text-gray-700">
-    <strong>Instruction:</strong> {currentResult.instruction}
-  </p>
-)}
+                {currentResult.instruction && (
+                  <p className="text-xs text-gray-700">
+                    <strong>Instruction:</strong> {currentResult.instruction}
+                  </p>
+                )}
               </div>
 
             </div>
@@ -857,7 +857,7 @@ onClick={() => {
         </div>
       </Modal>
 
-        <Modal
+      <Modal
         open={showUploadModal}
         footer={null}
         onCancel={() => setShowUploadModal(false)}
@@ -884,7 +884,7 @@ onClick={() => {
               </div>
             </>
           )}
-      
+
           {/* Dummy Space Images */}
           <h4 className="text-sm font-semibold text-gray-500 mb-2">Suggested Designs</h4>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
@@ -898,9 +898,9 @@ onClick={() => {
               </div>
             ))}
           </div>
-      
+
           <Divider>OR UPLOAD YOUR OWN</Divider>
-      
+
           <input
             type="file"
             id="file-up"
@@ -908,7 +908,7 @@ onClick={() => {
             accept="image/*"
             onChange={(e) => processUploadedFile(e.target.files[0])}
           />
-      
+
           <Button
             block
             icon={<Upload size={16} />}
@@ -919,7 +919,7 @@ onClick={() => {
           </Button>
         </div>
       </Modal>
-      
+
 
       <Modal open={showStyleModal} footer={null} onCancel={() => setShowStyleModal(false)} width={800} centered title="Choose Interior Style" bodyStyle={{ padding: '0.5rem' }} style={{ maxWidth: '95vw' }}>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 p-2">
@@ -962,7 +962,7 @@ onClick={() => {
         </div>
       </Modal>
 
-         <Modal
+      <Modal
         open={showLibraryModal}
         footer={null}
         onCancel={() => setShowLibraryModal(false)}
@@ -1010,9 +1010,9 @@ onClick={() => {
             ))}
           </div>
         )}
-      
+
         <Divider>OR Upload Your Own</Divider>
-      
+
         <input
           type="file"
           id="library-file-up"
@@ -1020,7 +1020,7 @@ onClick={() => {
           accept="image/*"
           onChange={(e) => processUploadedFile(e.target.files[0])}
         />
-      
+
         <Button
           block
           icon={<Upload size={16} />}
@@ -1031,55 +1031,54 @@ onClick={() => {
         </Button>
       </Modal>
 
-    <Modal
-      open={showRoomTypeModal}
-      footer={null}
-      onCancel={() => setShowRoomTypeModal(false)}
-      width={800}
-      centered
-      title="Choose Room Type"
-      bodyStyle={{ padding: '0.5rem' }}
-      style={{ maxWidth: '95vw' }}
-    >
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 p-2">
-        {roomTypes.map((room) => (
-          <div
-            key={room.value}
-            onClick={() => {
-              setSelectedRoomType(room.value);
-              setShowRoomTypeModal(false);
-            }}
-            className={`relative cursor-pointer rounded-2xl overflow-hidden group border-4 transition-all
-              ${
-                selectedRoomType === room.value
+      <Modal
+        open={showRoomTypeModal}
+        footer={null}
+        onCancel={() => setShowRoomTypeModal(false)}
+        width={800}
+        centered
+        title="Choose Room Type"
+        bodyStyle={{ padding: '0.5rem' }}
+        style={{ maxWidth: '95vw' }}
+      >
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 p-2">
+          {roomTypes.map((room) => (
+            <div
+              key={room.value}
+              onClick={() => {
+                setSelectedRoomType(room.value);
+                setShowRoomTypeModal(false);
+              }}
+              className={`relative cursor-pointer rounded-2xl overflow-hidden group border-4 transition-all
+              ${selectedRoomType === room.value
                   ? 'border-purple-600 shadow-lg'
                   : 'border-transparent hover:border-purple-100 hover:shadow-md'
-              }`}
-          >
-            {/* IMAGE */}
-            <img
-              src={room.img}
-              alt={room.label}
-              className="h-32 lg:h-40 w-full object-cover transition-transform duration-500 group-hover:scale-110"
-            />
+                }`}
+            >
+              {/* IMAGE */}
+              <img
+                src={room.img}
+                alt={room.label}
+                className="h-32 lg:h-40 w-full object-cover transition-transform duration-500 group-hover:scale-110"
+              />
 
-            {/* LABEL OVERLAY */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-3 lg:p-4">
-              <p className="text-white font-bold text-sm lg:text-base m-0 truncate">
-                {room.label}
-              </p>
-            </div>
-
-            {/* CHECK ICON */}
-            {selectedRoomType === room.value && (
-              <div className="absolute top-2 right-2 bg-purple-600 text-white p-1.5 rounded-full shadow-lg">
-                <CheckCircle2 size={14} />
+              {/* LABEL OVERLAY */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-3 lg:p-4">
+                <p className="text-white font-bold text-sm lg:text-base m-0 truncate">
+                  {room.label}
+                </p>
               </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </Modal>
+
+              {/* CHECK ICON */}
+              {selectedRoomType === room.value && (
+                <div className="absolute top-2 right-2 bg-purple-600 text-white p-1.5 rounded-full shadow-lg">
+                  <CheckCircle2 size={14} />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </Modal>
 
       {/* GENERATION LOADING OVERLAY */}
       {isGenerating && (
@@ -1132,29 +1131,29 @@ onClick={() => {
             )}
           </div>
 
-         <div className="w-full max-w-xs lg:w-80">
-          <Progress
-            percent={progress}
-            strokeColor={{ "0%": "#8E2DE2", "100%": BRAND_PURPLE }}
-            status="active"
-            strokeWidth={10}
-            showInfo={false}
-          />
+          <div className="w-full max-w-xs lg:w-80">
+            <Progress
+              percent={progress}
+              strokeColor={{ "0%": "#8E2DE2", "100%": BRAND_PURPLE }}
+              status="active"
+              strokeWidth={10}
+              showInfo={false}
+            />
 
-          <div className="mt-4 text-center">
-            <p className="text-xs lg:text-sm font-bold uppercase tracking-widest text-purple-400">
-              {title}
-            </p>
-            <p className="mt-1 text-[10px] lg:text-xs text-gray-400">
-              {subtitle}
-            </p>
+            <div className="mt-4 text-center">
+              <p className="text-xs lg:text-sm font-bold uppercase tracking-widest text-purple-400">
+                {title}
+              </p>
+              <p className="mt-1 text-[10px] lg:text-xs text-gray-400">
+                {subtitle}
+              </p>
+            </div>
+            {/* interior */}
+            <div className="flex justify-between mt-3 text-[10px] lg:text-xs font-bold text-gray-400 uppercase tracking-widest">
+              <span>Progress</span>
+              <span>{progress}%</span>
+            </div>
           </div>
-{/* interior */}
-          <div className="flex justify-between mt-3 text-[10px] lg:text-xs font-bold text-gray-400 uppercase tracking-widest">
-            <span>Progress</span>
-            <span>{progress}%</span>
-          </div>
-        </div>
 
         </div>
       )}
