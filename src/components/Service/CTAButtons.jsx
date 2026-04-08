@@ -40,7 +40,7 @@ const [openPreApproved, setOpenPreApproved] = useState(false);
 
       {/* OUTLINE BUTTON */}
       <button
-        onClick={() => navigate("/mortgages")}
+        onClick={() => navigate("/mortgages/calculator")}
         className="
           flex-1 sm:flex-none
           px-3 sm:px-8
