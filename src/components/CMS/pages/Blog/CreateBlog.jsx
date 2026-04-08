@@ -1,8 +1,6 @@
-// BlogManagement.jsx - COMPLETE VERSION with Auto-Fill from Paste + Beautiful Preview
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import JoditEditor from 'jodit-react';
 import DOMPurify from 'dompurify';
 import moment from 'moment';
 
@@ -10,19 +8,18 @@ import {
   Button, Modal, Form, Input, Popconfirm, Card, Table,
   Typography, Avatar, Row, Col, Statistic, Space, Divider,
   message, notification, Tooltip, Grid, Tag, Select, Badge,
-  Upload, Tabs, Alert, Switch, Dropdown, Menu, Spin
+  Upload, Tabs, Alert, Switch, Dropdown, Menu
 } from 'antd';
 import {
-  PlusOutlined, FileTextOutlined, ReadOutlined, DeleteOutlined,
+  PlusOutlined, FileTextOutlined, DeleteOutlined,
   EditOutlined, SearchOutlined, CheckCircleOutlined, SyncOutlined,
-  GlobalOutlined, UserOutlined, TagsOutlined,
-  PictureOutlined, EyeOutlined, ClockCircleOutlined,
+  UserOutlined, PictureOutlined, EyeOutlined, ClockCircleOutlined,
   CopyOutlined, SaveOutlined, UndoOutlined,
   MoreOutlined, TagOutlined, BookOutlined, LinkOutlined,
-  CalendarOutlined, StarOutlined
+  CalendarOutlined
 } from '@ant-design/icons';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 const { Option } = Select;
 const { useBreakpoint } = Grid;
 const { TextArea } = Input;
@@ -37,11 +34,12 @@ const THEME = {
 };
 
 // ─────────────────────────────────────────────
-//  PASTE CLEANER  (Word / PDF / HTML → clean HTML)
+//  PASTE CLEANER & SMART AUTO-FILL
 // ─────────────────────────────────────────────
 const cleanWordHtml = (html) => {
   if (!html) return '';
   let c = html;
+  // 🚨 FIXED REGEX ERROR HERE 🚨
   c = c.replace(/<!--\[if !supportLists\]-->.*?<!\[endif\]-->/gs, '');
   c = c.replace(/<!--\[if gte mso.*?\]-->/gs, '');
   c = c.replace(/<o:p>.*?<\/o:p>/gs, '');
@@ -49,46 +47,9 @@ const cleanWordHtml = (html) => {
   c = c.replace(/<meta[^>]*>/gs, '');
   c = c.replace(/<\?xml[^?]*\?>/gs, '');
   c = c.replace(/mso-[^;:"']+;?/g, '');
-  c = c.replace(/font-family:[^;]+;/g, '');
-  c = c.replace(/font-size:[^;]+;/g, '');
-  c = c.replace(/color:#000000;?/g, '');
-
-  // Bullet points
-  c = c.replace(/<p[^>]*>\s*<span[^>]*>·\s*<\/span>(.*?)<\/p>/gi, '<li>$1</li>');
-  c = c.replace(/<p[^>]*>\s*•\s*(.*?)<\/p>/gi, '<li>$1</li>');
-  c = c.replace(/<p[^>]*>\s*●\s*(.*?)<\/p>/gi, '<li>$1</li>');
-  c = c.replace(/<p[^>]*>\s*-\s+(.*?)<\/p>/gi, '<li>$1</li>');
-  c = c.replace(/<p[^>]*>\s*\d+\.\s+(.*?)<\/p>/gi, '<li>$1</li>');
-  c = c.replace(/(<li>.*?<\/li>)+/gs, '<ul>$&</ul>');
-
-  // Headings
-  c = c.replace(/<p[^>]*><strong>(.*?)<\/strong><\/p>/gi, '<h2>$1</h2>');
-  c = c.replace(/<p[^>]*><b>(.*?)<\/b><\/p>/gi, '<h3>$1</h3>');
-
-  // Markdown-style headings in plain text
-  c = c.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-  c = c.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-  c = c.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-
-  // Bold / italic markdown
-  c = c.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  c = c.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-  // Links
-  c = c.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-
-  // Empty tags
-  c = c.replace(/<p[^>]*>\s*<\/p>/gi, '');
-  c = c.replace(/<p[^>]*><br[^>]*><\/p>/gi, '');
-  c = c.replace(/<strong><\/strong>/gi, '');
-
-  c = c.replace(/\s+/g, ' ').trim();
   return c;
 };
 
-// ─────────────────────────────────────────────
-//  SMART AUTO-FILL  — extract meta from content
-// ─────────────────────────────────────────────
 const CATEGORY_KEYWORDS = {
   'AI': ['artificial intelligence', 'machine learning', 'deep learning', 'neural network', 'chatgpt', 'llm', 'ai ', ' ai,', 'automation', 'nlp', 'generative'],
   'Real Estate': ['property', 'real estate', 'housing', 'apartment', 'villa', 'rent', 'lease', 'mortgage', 'broker', 'land', 'plot', 'realty'],
@@ -107,7 +68,6 @@ const smartExtract = (html) => {
   if (!html) return {};
   const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
 
-  // Category detection
   let detectedCategory = 'Other';
   let maxMatches = 0;
   for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
@@ -115,10 +75,8 @@ const smartExtract = (html) => {
     if (matches > maxMatches) { maxMatches = matches; detectedCategory = cat; }
   }
 
-  // Tags detection
   const detectedTags = COMMON_TAGS.filter(tag => text.includes(tag.toLowerCase())).slice(0, 6);
 
-  // Extract headings
   const headings = [];
   const headingRegex = /<h([1-6])[^>]*>(.*?)<\/h\1>/gi;
   let match;
@@ -126,21 +84,18 @@ const smartExtract = (html) => {
     headings.push({ level: parseInt(match[1]), text: match[2].replace(/<[^>]*>/g, '').trim() });
   }
 
-  // Extract first paragraph as subHeading/excerpt
   const paraMatch = html.match(/<p[^>]*>(.*?)<\/p>/i);
   let excerpt = '';
   if (paraMatch) {
     excerpt = paraMatch[1].replace(/<[^>]*>/g, '').trim().substring(0, 160);
   }
 
-  // Extract all links
   const links = [];
   const linkRegex = /<a[^>]+href="([^"]+)"[^>]*>(.*?)<\/a>/gi;
   while ((match = linkRegex.exec(html)) !== null) {
     links.push({ href: match[1], text: match[2].replace(/<[^>]*>/g, '').trim() });
   }
 
-  // Word count & reading time
   const wordCount = text.split(/\s+/).length;
   const readingTime = Math.ceil(wordCount / 200);
 
@@ -165,30 +120,21 @@ const extractExcerpt = (html, maxLength = 160) => {
 };
 
 // ─────────────────────────────────────────────
-//  QUILL CONFIG
+//  JODIT EDITOR CONFIG
 // ─────────────────────────────────────────────
-const quillModules = {
-  toolbar: {
-    container: [
-      [{ header: [1, 2, 3, 4, 5, 6, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      ['blockquote', 'code-block'],
-      [{ list: 'ordered' }, { list: 'bullet' }, { list: 'check' }],
-      [{ indent: '-1' }, { indent: '+1' }],
-      [{ align: [] }],
-      ['link', 'image'],
-      ['clean'],
-      [{ color: [] }, { background: [] }],
-    ],
+const editorConfig = {
+  readonly: false,
+  placeholder: 'Write here, or paste from Word/PDF. Formatting will be preserved automatically...',
+  height: 400,
+  enableDragAndDropFileToEditor: true,
+  uploader: {
+    insertImageAsBase64URI: true
   },
-  clipboard: { matchVisual: true },
+  toolbarSticky: false,
+  askBeforePasteHTML: false,
+  askBeforePasteFromWord: false,
+  defaultActionOnPaste: 'insert_as_html',
 };
-
-const quillFormats = [
-  'header', 'bold', 'italic', 'underline', 'strike',
-  'blockquote', 'code-block', 'list', 'bullet', 'indent',
-  'align', 'link', 'image', 'color', 'background',
-];
 
 // ─────────────────────────────────────────────
 //  IMAGE HELPERS
@@ -215,14 +161,12 @@ const BlogPreview = ({ data }) => {
 
   return (
     <div style={{ fontFamily: "'Georgia', serif", color: '#1a1a2e', background: '#fff' }}>
-      {/* Cover Image */}
       {coverImage && (
         <div style={{ width: '100%', height: 280, overflow: 'hidden', borderRadius: 12, marginBottom: 28, background: '#f0f0f0' }}>
           <img src={coverImage} alt="cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
       )}
 
-      {/* Category + Tags */}
       <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
         {category && (
           <Tag color="purple" style={{ fontSize: 12, padding: '2px 10px', borderRadius: 20 }}>
@@ -234,19 +178,16 @@ const BlogPreview = ({ data }) => {
         ))}
       </div>
 
-      {/* Title */}
       <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.25, color: '#0f0f23', marginBottom: 12, fontFamily: "'Georgia', serif" }}>
         {title || 'Untitled Post'}
       </h1>
 
-      {/* Subheading */}
       {subHeading && (
         <p style={{ fontSize: 18, color: '#555', lineHeight: 1.6, marginBottom: 20, fontStyle: 'italic', borderLeft: '4px solid #7c3aed', paddingLeft: 16 }}>
           {subHeading}
         </p>
       )}
 
-      {/* Author + Meta Row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0', borderTop: '1px solid #eee', borderBottom: '1px solid #eee', marginBottom: 24 }}>
         <Avatar size={42} src={authorImage} icon={<UserOutlined />} style={{ backgroundColor: '#7c3aed' }} />
         <div>
@@ -258,14 +199,12 @@ const BlogPreview = ({ data }) => {
         </div>
       </div>
 
-      {/* Featured Image (inline if no cover) */}
       {!coverImage && featuredImage && (
         <div style={{ marginBottom: 24, borderRadius: 10, overflow: 'hidden' }}>
           <img src={featuredImage} alt="featured" style={{ width: '100%', maxHeight: 400, objectFit: 'cover' }} />
         </div>
       )}
 
-      {/* Table of Contents */}
       {headings && headings.length > 2 && (
         <div style={{ background: '#f8f4ff', border: '1px solid #e0d0ff', borderRadius: 10, padding: '16px 20px', marginBottom: 28 }}>
           <div style={{ fontWeight: 700, fontSize: 14, color: '#7c3aed', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -281,14 +220,9 @@ const BlogPreview = ({ data }) => {
         </div>
       )}
 
-      {/* Blog Content */}
       <div
         className="blog-preview-content"
-        style={{
-          lineHeight: 1.85,
-          fontSize: 16,
-          color: '#1f1f1f',
-        }}
+        style={{ lineHeight: 1.85, fontSize: 16, color: '#1f1f1f' }}
         dangerouslySetInnerHTML={{
           __html: DOMPurify.sanitize(content || '', {
             ADD_TAGS: ['iframe'],
@@ -297,7 +231,6 @@ const BlogPreview = ({ data }) => {
         }}
       />
 
-      {/* Tags footer */}
       {tags?.length > 0 && (
         <div style={{ marginTop: 36, paddingTop: 20, borderTop: '1px solid #eee' }}>
           <Text style={{ fontSize: 13, color: '#888', marginRight: 8 }}><TagOutlined /> Tags:</Text>
@@ -333,7 +266,6 @@ const BlogManagement = () => {
   const screens = useBreakpoint();
   const quillRef = useRef(null);
 
-  // Core state
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -344,7 +276,6 @@ const BlogManagement = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
 
-  // Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [previewModalVisible, setPreviewModalVisible] = useState(false);
   const [previewBlogData, setPreviewBlogData] = useState(null);
@@ -355,11 +286,9 @@ const BlogManagement = () => {
   const [lastSaved, setLastSaved] = useState(null);
   const [headings, setHeadings] = useState([]);
 
-  // Smart-fill state
   const [smartFillApplied, setSmartFillApplied] = useState(false);
   const [detectedLinks, setDetectedLinks] = useState([]);
 
-  // Image lists
   const [featuredImageList, setFeaturedImageList] = useState([]);
   const [coverImageList, setCoverImageList] = useState([]);
   const [authorImageList, setAuthorImageList] = useState([]);
@@ -368,85 +297,42 @@ const BlogManagement = () => {
 
   const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, views: 0 });
 
-  // ─── PASTE HANDLER — auto-fill fields after paste ───
-  const handlePaste = useCallback((event) => {
-    event.preventDefault();
-    event.stopPropagation();
-
+  const handleSmartPaste = useCallback((event) => {
     const clipboardData = event.clipboardData;
     const pastedHtml = clipboardData.getData('text/html');
     const pastedText = clipboardData.getData('text/plain');
 
-    const quill = quillRef.current?.getEditor();
-    if (!quill) return;
+    const finalHtml = pastedHtml || pastedText;
 
-    const range = quill.getSelection();
-    const idx = range ? range.index : quill.getLength();
-
-    let finalHtml = '';
-    if (pastedHtml) {
-      finalHtml = cleanWordHtml(pastedHtml);
-      const delta = quill.clipboard.convert(finalHtml);
-      quill.updateContents(delta, idx);
-      message.success('Content pasted with formatting!');
-    } else if (pastedText) {
-      quill.insertText(idx, pastedText);
-      finalHtml = `<p>${pastedText.replace(/\n/g, '</p><p>')}</p>`;
-      message.success('Text pasted!');
-    }
-
-    // Smart-fill from pasted content
     if (finalHtml) {
-      const extracted = smartExtract(finalHtml);
+      const extracted = smartExtract(cleanWordHtml(finalHtml));
       const currentValues = form.getFieldsValue();
-
       const updates = {};
 
-      // Only fill empty fields
-      if (!currentValues.subHeading && extracted.excerpt) {
-        updates.subHeading = extracted.excerpt;
-      }
-      if ((!currentValues.category || currentValues.category === 'Other') && extracted.detectedCategory !== 'Other') {
-        updates.category = extracted.detectedCategory;
-      }
-      if ((!currentValues.tags || currentValues.tags.length === 0) && extracted.detectedTags.length > 0) {
-        updates.tags = extracted.detectedTags;
-      }
+      if (!currentValues.subHeading && extracted.excerpt) updates.subHeading = extracted.excerpt;
+      if ((!currentValues.category || currentValues.category === 'Other') && extracted.detectedCategory !== 'Other') updates.category = extracted.detectedCategory;
+      if ((!currentValues.tags || currentValues.tags.length === 0) && extracted.detectedTags.length > 0) updates.tags = extracted.detectedTags;
 
       if (Object.keys(updates).length > 0) {
         form.setFieldsValue(updates);
         setSmartFillApplied(true);
         notification.info({
           message: '✨ Smart Fill Applied',
-          description: `Auto-filled: ${Object.keys(updates).join(', ')}. You can edit these anytime.`,
+          description: `Auto-filled: ${Object.keys(updates).join(', ')}.`,
           placement: 'topRight',
           duration: 4
         });
       }
 
-      if (extracted.links.length > 0) setDetectedLinks(extracted.links);
+      if (extracted.links && extracted.links.length > 0) setDetectedLinks(extracted.links);
     }
   }, [form]);
 
-  // Attach paste handler to quill editor
-  useEffect(() => {
-    if (!modalVisible) return;
-    const timer = setTimeout(() => {
-      const editor = quillRef.current?.getEditor();
-      if (editor?.root) {
-        editor.root.addEventListener('paste', handlePaste);
-        return () => editor.root.removeEventListener('paste', handlePaste);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [modalVisible, handlePaste]);
 
-  // Handle editor change
   const handleEditorChange = (value) => {
     setContentValue(value);
     setHeadings(extractHeadings(value));
 
-    // Auto-extract subHeading if empty
     const sub = form.getFieldValue('subHeading');
     if (!sub && value && value !== '<p><br></p>') {
       const exc = extractExcerpt(value, 160);
@@ -454,7 +340,6 @@ const BlogManagement = () => {
     }
   };
 
-  // Auto-save
   useEffect(() => {
     let t;
     if (autoSave && contentValue && modalVisible) {
@@ -482,7 +367,7 @@ const BlogManagement = () => {
         title: 'Draft Found',
         content: `Restore draft saved at ${moment(d.timestamp).format('HH:mm, MMM DD')}?`,
         onOk: () => {
-          form.setFieldsValue({ title: d.title, subHeading: d.subHeading, slug: d.slug, tags: d.tags, category: d.category, status: d.status, authorName: d.authorName, seoTitle: d.seoTitle, seoDescription: d.seoDescription });
+          form.setFieldsValue({ title: d.title, subHeading: d.subHeading, tags: d.tags, category: d.category, status: d.status, authorName: d.authorName });
           setContentValue(d.content || '');
           setHeadings(d.headings || []);
           message.success('Draft restored');
@@ -491,7 +376,6 @@ const BlogManagement = () => {
     } catch (_) {}
   };
 
-  // ─── FETCH ───
   const fetchBlogs = useCallback(async () => {
     setLoading(true);
     try {
@@ -523,7 +407,6 @@ const BlogManagement = () => {
     return () => clearTimeout(t);
   }, [fetchBlogs]);
 
-  // ─── FETCH SINGLE ───
   const fetchBlogById = async (id) => {
     setLoading(true);
     try {
@@ -536,13 +419,10 @@ const BlogManagement = () => {
         form.setFieldsValue({
           title: blog.title || '',
           subHeading: blog.subHeading || '',
-          slug: blog.slug || '',
           tags: blog.tags || [],
           category: blog.category || 'Other',
           status: blog.isPublished ? 'published' : 'draft',
           authorName: blog.authorName || 'Admin',
-          seoTitle: blog.seoTitle || '',
-          seoDescription: blog.seoDescription || '',
         });
 
         setContentValue(finalContent);
@@ -563,7 +443,6 @@ const BlogManagement = () => {
     }
   };
 
-  // ─── UPLOAD ───
   const uploadFile = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -579,7 +458,6 @@ const BlogManagement = () => {
     return '';
   };
 
-  // ─── SAVE ───
   const handleSave = async (values) => {
     if (!contentValue || contentValue === '<p><br></p>') {
       message.error('Please add content to your blog');
@@ -593,15 +471,9 @@ const BlogManagement = () => {
         processImage(authorImageList),
       ]);
 
-      let slug = values.slug;
-      if (!slug && values.title) {
-        slug = values.title.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '-').substring(0, 100);
-      }
-
       const payload = {
         title: values.title,
         subHeading: values.subHeading || extractExcerpt(contentValue, 160),
-        slug,
         content: contentValue,
         authorName: values.authorName || 'Admin',
         authorImage: authorImgUrl,
@@ -610,8 +482,6 @@ const BlogManagement = () => {
         category: values.category || 'Other',
         featuredImage: featuredUrl,
         coverImage: coverUrl,
-        seoTitle: values.seoTitle || values.title,
-        seoDescription: values.seoDescription || extractExcerpt(contentValue, 160),
       };
 
       if (values.status === 'published') payload.publishedAt = new Date().toISOString();
@@ -640,7 +510,6 @@ const BlogManagement = () => {
     }
   };
 
-  // ─── DELETE ───
   const deleteBlog = async (id) => {
     try {
       const r = await apiService.delete(`/blogs/delete-blog-by-id?id=${id}`);
@@ -649,17 +518,15 @@ const BlogManagement = () => {
     } catch { message.error('Deletion failed'); }
   };
 
-  // ─── DUPLICATE ───
   const duplicateBlog = async (blog) => {
     try {
-      const payload = { ...blog, title: `${blog.title} (Copy)`, slug: `${blog.slug}-copy-${Date.now()}`, isPublished: false, viewCount: 0 };
-      delete payload._id; delete payload.createdAt; delete payload.updatedAt;
+      const payload = { ...blog, title: `${blog.title} (Copy)`, isPublished: false, viewCount: 0 };
+      delete payload._id; delete payload.createdAt; delete payload.updatedAt; delete payload.slug;
       const r = await apiService.post('/blogs/create-blog', payload);
       if (r.success) { message.success('Blog duplicated'); fetchBlogs(); }
     } catch { message.error('Failed to duplicate'); }
   };
 
-  // ─── EXPORT ───
   const exportBlog = (blog) => {
     const uri = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(blog, null, 2));
     const a = document.createElement('a');
@@ -669,9 +536,7 @@ const BlogManagement = () => {
     message.success('Exported');
   };
 
-  // ─── SHOW PREVIEW ───
   const showPreview = (blog) => {
-    // Build preview data from either a full blog record or current editor state
     const formVals = form.getFieldsValue();
     const data = blog._id
       ? {
@@ -711,7 +576,6 @@ const BlogManagement = () => {
     setPreviewOpen(true);
   };
 
-  // ─── COLUMNS ───
   const columns = [
     {
       title: 'Blog Details', dataIndex: 'title', key: 'title', width: 320,
@@ -791,15 +655,13 @@ const BlogManagement = () => {
     },
   ];
 
-  // ─── RENDER ───
   return (
     <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
       <div className="mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
           <div>
             <Title level={3} style={{ margin: 0 }}>📝 Blog Management</Title>
-            <Text type="secondary">Create, manage, and publish content — paste from Word/PDF to auto-fill fields</Text>
+            <Text type="secondary">Create, manage, and publish content</Text>
           </div>
           <Button
             type="primary" size="large" icon={<PlusOutlined />}
@@ -817,7 +679,6 @@ const BlogManagement = () => {
           </Button>
         </div>
 
-        {/* Stats */}
         <Row gutter={[16, 16]}>
           {[
             { title: 'Total Posts', value: stats.total, icon: <FileTextOutlined style={{ color: THEME.primary }} /> },
@@ -834,7 +695,6 @@ const BlogManagement = () => {
         </Row>
       </div>
 
-      {/* Filters */}
       <Card className="shadow-sm mb-4">
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={8}>
@@ -861,14 +721,12 @@ const BlogManagement = () => {
         </Row>
       </Card>
 
-      {/* Table */}
       <Card className="shadow-sm" bodyStyle={{ padding: 0 }}>
         <Table columns={columns} dataSource={blogs} loading={loading} rowKey="_id" scroll={{ x: 1200 }}
           pagination={{ current: currentPage, pageSize, total, showSizeChanger: true, showTotal: t => `Total ${t} posts`, onChange: (p, s) => { setCurrentPage(p); setPageSize(s); } }}
         />
       </Card>
 
-      {/* ── CREATE / EDIT MODAL ── */}
       <Modal
         title={
           <div style={{ fontWeight: 700, fontSize: 16 }}>
@@ -886,7 +744,6 @@ const BlogManagement = () => {
       >
         <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ status: 'draft', category: 'Other', authorName: 'Admin' }}>
           <Tabs defaultActiveKey="content">
-            {/* ── CONTENT TAB ── */}
             <TabPane tab={<span><EditOutlined /> Content</span>} key="content">
               <Row gutter={16}>
                 <Col span={16}>
@@ -908,77 +765,55 @@ const BlogManagement = () => {
                 <TextArea rows={2} placeholder="Auto-filled from content — or write your own (max 160 chars)" maxLength={160} showCount />
               </Form.Item>
 
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="tags" label="Tags (auto-detected from paste, editable)">
+                    <Select mode="tags" size="large" placeholder="Add tags" tokenSeparators={[',']}>
+                      {['AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Marketing', 'UAE', 'Dubai'].map(tag => <Option key={tag} value={tag}>{tag}</Option>)}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="category" label="Category (auto-detected from paste, editable)">
+                    <Select size="large" placeholder="Select category">
+                      <Option value="AI">🤖 Artificial Intelligence</Option>
+                      <Option value="Real Estate">🏠 Real Estate</Option>
+                      <Option value="PropTech">📱 Property Technology</Option>
+                      <Option value="Technology">💻 Technology</Option>
+                      <Option value="Business">💼 Business</Option>
+                      <Option value="Other">📄 Other</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+
               <Form.Item label="Blog Content" required>
-                <Alert
-                  message="📋 Paste from Word, PDF, Google Docs — headings, tags & category will auto-fill!"
-                  type="info" showIcon className="mb-3"
-                />
+                <Alert message="📋 Paste from Word, PDF, Google Docs — formatting is preserved & tags auto-fill!" type="info" showIcon className="mb-3" />
+                {smartFillApplied && <Alert message="✨ Smart Fill Active — fields auto-detected" type="success" showIcon closable onClose={() => setSmartFillApplied(false)} className="mb-3" />}
 
-                {smartFillApplied && (
-                  <Alert
-                    message="✨ Smart Fill Active — fields were auto-detected from your content"
-                    type="success" showIcon closable onClose={() => setSmartFillApplied(false)} className="mb-3"
-                  />
-                )}
-
-                <div className="border rounded-lg">
-                  <ReactQuill
+                <div className="border rounded-lg" onPaste={handleSmartPaste}>
+                  <JoditEditor
                     ref={quillRef}
-                    theme="snow"
                     value={contentValue}
+                    config={editorConfig}
                     onChange={handleEditorChange}
-                    modules={quillModules}
-                    formats={quillFormats}
-                    placeholder="Write here, or paste from Word/PDF to auto-fill fields..."
-                    style={{ height: '400px', marginBottom: '50px' }}
                   />
                 </div>
 
-                {/* Live preview button inside editor area */}
                 <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button icon={<EyeOutlined />} onClick={() => showPreview({})} disabled={!contentValue || contentValue === '<p><br></p>'}>
-                    Live Preview
-                  </Button>
+                  <Button icon={<EyeOutlined />} onClick={() => showPreview({})} disabled={!contentValue || contentValue === '<p><br></p>'}>Live Preview</Button>
                 </div>
               </Form.Item>
 
-              {/* TOC */}
               {headings.length > 0 && (
                 <Alert
                   message="📚 Table of Contents Detected"
-                  description={
-                    <ul style={{ marginBottom: 0 }}>
-                      {headings.map((h, i) => (
-                        <li key={i} style={{ marginLeft: `${(h.level - 1) * 20}px` }}>
-                          <Tag color="purple">H{h.level}</Tag> {h.text}
-                        </li>
-                      ))}
-                    </ul>
-                  }
+                  description={<ul style={{ marginBottom: 0 }}>{headings.map((h, i) => <li key={i} style={{ marginLeft: `${(h.level - 1) * 20}px` }}><Tag color="purple">H{h.level}</Tag> {h.text}</li>)}</ul>}
                   type="success" showIcon className="mt-2"
-                />
-              )}
-
-              {/* Detected Links */}
-              {detectedLinks.length > 0 && (
-                <Alert
-                  message={`🔗 ${detectedLinks.length} link(s) detected in pasted content`}
-                  description={
-                    <Space wrap>
-                      {detectedLinks.slice(0, 5).map((l, i) => (
-                        <Tag key={i} icon={<LinkOutlined />} color="geekblue">
-                          <a href={l.href} target="_blank" rel="noopener noreferrer">{l.text || l.href}</a>
-                        </Tag>
-                      ))}
-                      {detectedLinks.length > 5 && <Tag>+{detectedLinks.length - 5} more</Tag>}
-                    </Space>
-                  }
-                  type="info" showIcon className="mt-2"
                 />
               )}
             </TabPane>
 
-            {/* ── MEDIA TAB ── */}
             <TabPane tab={<span><PictureOutlined /> Media</span>} key="media">
               <Row gutter={16}>
                 <Col span={12}>
@@ -986,7 +821,6 @@ const BlogManagement = () => {
                     <Upload listType="picture-card" fileList={featuredImageList} onPreview={handlePreview} onChange={({ fileList }) => setFeaturedImageList(fileList)} beforeUpload={f => validateImage(f, 0.1, 5)} maxCount={1}>
                       {featuredImageList.length < 1 && <div><PlusOutlined /><div style={{ marginTop: 8 }}>Upload</div></div>}
                     </Upload>
-                    <Alert message="Recommended: 800×600px JPG/PNG" type="info" showIcon className="mt-2" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
@@ -994,54 +828,11 @@ const BlogManagement = () => {
                     <Upload listType="picture-card" fileList={coverImageList} onPreview={handlePreview} onChange={({ fileList }) => setCoverImageList(fileList)} beforeUpload={f => validateImage(f, 0.1, 5)} maxCount={1}>
                       {coverImageList.length < 1 && <div><PlusOutlined /><div style={{ marginTop: 8 }}>Upload</div></div>}
                     </Upload>
-                    <Alert message="Recommended: 1200×400px hero section" type="info" showIcon className="mt-2" />
                   </Form.Item>
                 </Col>
               </Row>
             </TabPane>
 
-            {/* ── SEO TAB ── */}
-            <TabPane tab={<span><GlobalOutlined /> SEO</span>} key="seo">
-              <Form.Item name="slug" label="URL Slug">
-                <Input
-                  placeholder="auto-generated-from-title"
-                  addonAfter={
-                    <Tooltip title="Auto-generate from title">
-                      <Button type="text" size="small" onClick={() => {
-                        const t = form.getFieldValue('title');
-                        if (t) form.setFieldsValue({ slug: t.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '-') });
-                      }}>Generate</Button>
-                    </Tooltip>
-                  }
-                />
-              </Form.Item>
-              <Form.Item name="seoTitle" label="SEO Title">
-                <Input placeholder="Defaults to post title" />
-              </Form.Item>
-              <Form.Item name="seoDescription" label="Meta Description">
-                <TextArea rows={3} placeholder="150–160 characters for best results" maxLength={160} showCount />
-              </Form.Item>
-              <Form.Item name="tags" label="Tags (auto-detected from paste, editable)">
-                <Select mode="tags" size="large" placeholder="Add tags or let Smart Fill detect them" tokenSeparators={[',']}>
-                  {['AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Marketing',
-                    'UAE', 'Dubai', 'Sustainability', 'Innovation', 'Digital', 'Cloud',
-                    'Investment', 'Architecture', 'Design', 'Smart Home', 'Automation'
-                  ].map(tag => <Option key={tag} value={tag}>{tag}</Option>)}
-                </Select>
-              </Form.Item>
-              <Form.Item name="category" label="Category (auto-detected from paste, editable)">
-                <Select size="large" placeholder="Select or let Smart Fill detect it">
-                  <Option value="AI">🤖 Artificial Intelligence</Option>
-                  <Option value="Real Estate">🏠 Real Estate</Option>
-                  <Option value="PropTech">📱 Property Technology</Option>
-                  <Option value="Technology">💻 Technology</Option>
-                  <Option value="Business">💼 Business</Option>
-                  <Option value="Other">📄 Other</Option>
-                </Select>
-              </Form.Item>
-            </TabPane>
-
-            {/* ── AUTHOR TAB ── */}
             <TabPane tab={<span><UserOutlined /> Author</span>} key="author">
               <Row gutter={16}>
                 <Col span={16}>
@@ -1070,8 +861,7 @@ const BlogManagement = () => {
             <Space>
               <Button size="large" icon={<EyeOutlined />} onClick={() => showPreview({})}>Preview</Button>
               <Button size="large" onClick={closeModal}>Cancel</Button>
-              <Button type="primary" htmlType="submit" loading={saving} size="large" icon={<SaveOutlined />}
-                style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}>
+              <Button type="primary" htmlType="submit" loading={saving} size="large" icon={<SaveOutlined />} style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}>
                 {editingId ? 'Update Blog' : 'Publish Blog'}
               </Button>
             </Space>
@@ -1079,29 +869,17 @@ const BlogManagement = () => {
         </Form>
       </Modal>
 
-      {/* ── FULL PREVIEW MODAL ── */}
       <Modal
         title={
           <Space>
             <EyeOutlined style={{ color: THEME.primary }} />
             <span style={{ fontWeight: 700 }}>Blog Preview</span>
-            {previewBlogData?.isPublished !== undefined && (
-              <Badge status={previewBlogData.isPublished ? 'success' : 'warning'} text={previewBlogData.isPublished ? 'Published' : 'Draft'} />
-            )}
           </Space>
         }
         open={previewModalVisible}
         onCancel={() => setPreviewModalVisible(false)}
         footer={[
-          <Button key="close" onClick={() => setPreviewModalVisible(false)}>Close</Button>,
-          <Button key="edit" type="primary" style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}
-            onClick={() => {
-              setPreviewModalVisible(false);
-              if (previewBlogData?._id) fetchBlogById(previewBlogData._id);
-              else setModalVisible(true);
-            }}>
-            <EditOutlined /> Edit Post
-          </Button>
+          <Button key="close" onClick={() => setPreviewModalVisible(false)}>Close</Button>
         ]}
         width={screens.xs ? '95%' : 860}
         bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: '24px 32px' }}
@@ -1110,7 +888,6 @@ const BlogManagement = () => {
         <BlogPreview data={previewBlogData} />
       </Modal>
 
-      {/* Image Preview */}
       <Modal open={previewOpen} title="Image Preview" footer={null} onCancel={() => setPreviewOpen(false)}>
         <img alt="preview" style={{ width: '100%' }} src={previewImage} />
       </Modal>

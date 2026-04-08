@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { apiService } from "../../manageApi/utils/custom.apiservice"; // ✅ API SERVICE
+import { apiService } from "../../manageApi/utils/custom.apiservice"; 
 import { useBlogContext } from "../../context/BlogContext";
 
 // Images
-import Picture from "../../assets/img/Ai.png"; // Fixed background image
+import Picture from "../../assets/img/Ai.png"; 
 import AvatarImage from "../../assets/img/img.png";
 
 const Ai1 = () => {
@@ -13,12 +13,23 @@ const Ai1 = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!selectedBlogId) return;
+    let activeId = selectedBlogId;
+
+    if (activeId) {
+      localStorage.setItem("savedBlogId", activeId);
+    } else {
+      activeId = localStorage.getItem("savedBlogId");
+    }
+
+    if (!activeId) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
 
     apiService
-      .get("blogs/get-blog-by-id", { id: selectedBlogId }) // ✅ UPDATED
+      .get("blogs/get-blog-by-id", { id: activeId }) 
       .then((res) => {
         setBlog(res.data || res.blog || res);
         setLoading(false);
@@ -37,27 +48,38 @@ const Ai1 = () => {
     );
   }
 
-  if (!blog) return null;
+  if (!blog) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-white bg-gray-900">
+        <p>No Blog Selected or Found.</p>
+        <p className="text-sm opacity-70 mt-2">Please select a blog from the main list.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="text-gray-900 w-full">
+    <div className="text-gray-900 w-full bg-[var(--color-body)]"> 
       <section
         className="
           relative
+          w-full
           bg-cover bg-center bg-no-repeat
           min-h-[55vh] sm:min-h-[65vh] md:min-h-[70vh] lg:min-h-[75vh]
           flex items-center
           text-white
+          overflow-hidden
         "
         style={{ backgroundImage: `url(${Picture})` }}
       >
         {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="absolute inset-0 bg-black/40"></div>
 
-        {/* ✅ FIXED: Bottom Clipped Bars - Removed 'hidden lg:block' and made sizes responsive */}
-        <div className="absolute bottom-0 left-0 w-24 sm:w-40 md:w-56 lg:w-64 h-6 sm:h-8 md:h-10 lg:h-12 bg-[var(--color-body)] z-[5] clip-left-shape"></div>
-        <div className="absolute bottom-0 right-0 w-24 sm:w-40 md:w-56 lg:w-64 h-6 sm:h-8 md:h-10 lg:h-12 bg-[var(--color-body)] z-[5] clip-right-shape"></div>
+        {/* 🚀 WAVE KA ORIGINAL SIZE WAPAS LAGA DIYA */}
+        {/* Bas bottom-[-1px] rakha hai taaki wo kaali line wapas na aaye */}
+        <div className="absolute bottom-[-1px] left-0 w-24 sm:w-40 md:w-56 lg:w-64 h-6 sm:h-8 md:h-10 lg:h-12 bg-[var(--color-body)] z-10 clip-left-shape"></div>
+        <div className="absolute bottom-[-1px] right-0 w-24 sm:w-40 md:w-56 lg:w-64 h-6 sm:h-8 md:h-10 lg:h-12 bg-[var(--color-body)] z-10 clip-right-shape"></div>
 
+        {/* 🚀 Original Polygon logic wapas */}
         <style>{`
           .clip-left-shape {
             clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
@@ -70,44 +92,43 @@ const Ai1 = () => {
         {/* MAIN CONTENT */}
         <div
           className="
-            relative z-10
+            relative z-20
             w-full max-w-7xl mx-auto
             px-4 sm:px-6 lg:px-8
-            py-12 sm:py-16 md:py-20
+            py-16 sm:py-20 md:py-24
             flex flex-col gap-6 sm:gap-8
           "
         >
           {/* DATE */}
-          <div className="text-white text-xs sm:text-sm md:text-base font-normal tracking-wide flex items-center gap-2">
+          <div className="text-white/80 text-xs sm:text-sm md:text-base font-medium tracking-wide flex items-center gap-2 mb-2">
             <span>{new Date(blog.createdAt).toDateString()}</span>
-            <span className="opacity-60">|</span>
-            <span className="opacity-90"></span>
+            <span>|</span>
           </div>
 
           {/* TITLE + AUTHOR SECTION */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 lg:gap-16">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 lg:gap-16">
             {/* TITLE */}
-            <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl leading-tight max-w-4xl">
+            <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl leading-tight max-w-4xl text-white shadow-sm drop-shadow-md">
               {blog.title}
             </h1>
 
             {/* AUTHOR */}
-            <div className="flex items-center gap-4 sm:gap-5">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 p-[2px] flex-shrink-0">
-                <div className="w-full h-full rounded-full overflow-hidden bg-gray-300">
+            <div className="flex items-center gap-4 sm:gap-5 pb-2">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 p-[3px] flex-shrink-0 shadow-lg">
+                <div className="w-full h-full rounded-full overflow-hidden bg-gray-800 border-2 border-transparent">
                   <img
                     src={blog.authorImage || AvatarImage}
-                    alt={blog.authorName}
+                    alt={blog.authorName || "Author"}
                     className="w-full h-full object-cover"
                   />
                 </div>
               </div>
 
               <div>
-                <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-semibold">
-                  {blog.authorName || "Silicaman"}
+                <p className="text-base sm:text-lg md:text-xl font-bold text-white drop-shadow-md">
+                  {blog.authorName || "Author Name"}
                 </p>
-                <p className="text-xs sm:text-sm md:text-base text-white/70">
+                <p className="text-xs sm:text-sm text-white/80 font-medium tracking-wide">
                   Author
                 </p>
               </div>
