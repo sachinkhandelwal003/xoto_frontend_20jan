@@ -224,21 +224,22 @@ const fetchSavedDesigns = async () => {
     const res = await apiService.get("/ai/get-interior-designs");
     const apiDesigns = res?.data || [];
 
-    lastDesignCountRef.current = apiDesigns.length; // ✅ yeh line add karo
+    lastDesignCountRef.current = apiDesigns.length;
 
     const formatted = apiDesigns.map((item, index) => ({
       id: item._id,
       image: item.imageUrl,
       title: item.title || `Design ${index + 1}`,
       timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-      aiAnalysis: "AI Generated Interior",
+      aiAnalysis: item.aiMessage || "AI Generated Interior",
       roomType: item.roomType || null,
-      styles: [],
-      elements: [],
+      styles: item.styleName ? [item.styleName] : [],   // ✅ styleName store karo
+      elements: item.elements || [],                      // ✅ elements store karo
+      description: item.description || null,              // ✅ description store karo
       fromApi: true,
     }));
 
-    setDesigns(formatted); // .reverse() mat karo — backend desc sort karta hai
+    setDesigns(formatted);
   } catch (err) {
     console.error("Failed to load designs", err);
   } finally {
@@ -758,14 +759,15 @@ const generateAIDesigns = async (currentUser) => {
                       {editingId !== d.id && (
                         <button 
                           // Desktop card
+// ✅ NAYA — mobile card button
 onClick={() => {
   setCurrentResult({ 
     url: d.image, 
     desc: d.aiAnalysis, 
     roomType: d.roomType, 
-    styleName: d.styles?.[0] || null,     // ✅
-    elementsList: d.elements || [],        // ✅
-    instruction: d.description || '' 
+    styleName: d.styles?.[0] || null,   // ✅ same as desktop
+    elementsList: d.elements || [],      // ✅ same as desktop
+    instruction: d.description || ''    // ✅ description use karo
   });
   setShowGeneratedModal(true);
 }}
