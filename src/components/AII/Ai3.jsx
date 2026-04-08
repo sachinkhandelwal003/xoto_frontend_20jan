@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
 import { useBlogContext } from "../../context/BlogContext";
 import { FaFacebookF, FaTwitter, FaLinkedinIn } from "react-icons/fa";
-import waveBottom from "../../assets/img/waveAi.png"; 
 
 const Ai3 = () => {
   const navigate = useNavigate();
@@ -43,17 +42,7 @@ const Ai3 = () => {
   return (
     <div className="relative w-full bg-[var(--color-body)] px-4 py-16 overflow-hidden z-0">
       
-      {/* BACKGROUND WAVE */}
-      <img
-        src={waveBottom}
-        alt="Wave"
-        className="
-          absolute left-1/2 -translate-x-1/2 -z-10 
-          bottom-0 sm:-bottom-22 md:-bottom-60 lg:-bottom-140
-          w-[220%] sm:w-[170%] md:w-[150%] lg:w-[140%]
-          pointer-events-none select-none opacity-95
-        "
-      />
+   
 
       {/* Main Content Container */}
       <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-10 relative z-10">

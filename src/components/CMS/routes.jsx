@@ -39,6 +39,7 @@ import ProductProfile from "../ecommerce/B2C/products/ProductProfile";
 import VendorProfile from "./pages/dashboardPages/managevendor/VendorProfile";
 import UsersRoleList from "./pages/dashboardPages/users/UsersRoleList";
 import LeadsList from "./pages/dashboardPages/leads/LeadsList";
+
 import SupervisorDashboard from "./pages/SupervisorDashboard";
 import AssignedLeadsList from "./pages/dashboardPages/leads/AssignedLeadsList";
 import QuatationLeadsList from "./pages/dashboardPages/leads/QuatationLeadsList";
@@ -84,9 +85,10 @@ import AgentList from "./pages/Properties/AgentList";
 import AgencyList from "./pages/Properties/AgencyList";
 import DeveloperDashboard from "../ecommerce/B2C/DeveloperDashboard";
 import AgentDashboard from "../ecommerce/B2C/AgentDashboard";
+import VaultpartnerDashboard from "../../components/CMS/pages/VaultPartnerDashboard";
 import AgentLayout from "../ecommerce/B2C/AgentLayout";
 import Addleaddetails from "../ecommerce/B2C/AgentLeadDetails"
-import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";   
+import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";
 import AgentSubscription from "../ecommerce/B2C/AgentSubscription";
 import AgentProjects from "../ecommerce/B2C/AgentProjects";
 import AgentProjectDetails from "../ecommerce/B2C/AgentProjectDetails";
@@ -117,7 +119,7 @@ import DeveloperBookings from "../ecommerce/B2C/DeveloperBookings";
 import DeveloperBookingDetails from "../ecommerce/B2C/DeveloperBookingDetails";
 import DeveloperList from "./pages/DeveloperList";
 import DeveloperAnalytics from "../ecommerce/B2C/DeveloperAnalytics";
-import DeveloperCommissionScheme from "../ecommerce/B2C/DeveloperCommisionScheme"; 
+import DeveloperCommissionScheme from "../ecommerce/B2C/DeveloperCommisionScheme";
 import DeveloperDetail from "./pages/Developerdetail";
 import DealCommissionManager from "./pages/DealCommissionManager";
 import DeveloperAddProperty from "../ecommerce/B2C/DveloperAddProperty";
@@ -166,10 +168,10 @@ import AgentDetail from "./pages/Properties/Agentdetail";
 import OnBoardingpage from "./pages/dashboardPages/OnBoardingpage";
 import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
-import CreateSecondaryProperty from "./pages/Properties/CreateSecondaryProperty"; 
+import CreateSecondaryProperty from "./pages/Properties/CreateSecondaryProperty";
 import SecondaryPlans from "./pages/Properties/SecondaryPlans";
 import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail";
- {/*Xoto Vault*/}
+{/*Xoto Vault*/ }
 import VaultAdminDashboard from "../ecommerce/B2C/VaultAdminDashboard";
 import VaultAgents from "../ecommerce/B2C/VaultAgents";
 import VaultCases from "../ecommerce/B2C/VaultCases";
@@ -181,6 +183,9 @@ import VaultAgentonboard from "../ecommerce/B2C/VaultAgentonboard";
 import VaultAgentlist from "../ecommerce/B2C/VaultAgentlist";
 import VaultAgentdetail from "../ecommerce/B2C/VaultAgentdetails";
 import PropertyDetailPage from "./pages/Propertydetailpage";
+import VaultAgentDashboard from "../ecommerce/B2C/VaultAgentDashBoard";
+import OnboardPartner from "./pages/OnboardPartner";
+import AgentVaultListing from "./pages/AgentVaultListing";
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 
@@ -191,34 +196,44 @@ import AdminLeadList from "../../component/Rent/Adminleadlist";
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
-    2: "customer",          
+  2: "customer",
   5: "vendor-b2c",
   6: "vendor-b2b",
   7: "freelancer",
   11: "accountant",
-    12: "supervisor",
-     15: "agency",        // Agency
+  12: "supervisor",
+  15: "agency",        // Agency
   16: "agent",         // Agent
   17: "developer",
   18: "vault-admin",
+  22: "vaultagent" ,
 
+21:"xotovaultpartner"
 };
 
 const dashboardMap = {
   0: <Dashboard />,
   1: <AdminDashboard />,
-  2:<Customerdashboard/>,
+  2: <Customerdashboard />,
   5: <VendorDashboard />,
   6: <VendorDashboard />,
   7: <Freelancerdashboard />,
   11: <AccountantDashboard />,
+  12: <SupervisorDashboard />,
+  16: <AgentDashboard />,
+  17: <DeveloperDashboard />,
+  15: <AgencyDashboard />,
+  18: <VaultAdminDashboard />,
+  22: <VaultAgentDashboard />,
+
+
     12: <SupervisorDashboard />,
     16:<AgentDashboard/>,
     17:<DeveloperDashboard/>,
     15:<AgencyDashboard/>,
-    18:<VaultAdminDashboard/>
-
-
+    18:<VaultAdminDashboard/>,
+// 21:<VaultPartnerDashboard/>
+21:<VaultpartnerDashboard/>
 };
 
 const componentMap = {
@@ -234,7 +249,7 @@ const componentMap = {
   projects: <Projects />,
   myProjects: <MyProjects />,
   accountant: <Accountant />,
-    users: <UsersRoleList />,
+  users: <UsersRoleList />,
 
   addProjects: <AddProjects />,
   categories: <AddCategory />,
@@ -244,26 +259,26 @@ const componentMap = {
   brands: <AddBrand />,
   "products/my": <VendorProducts />,
   "products/add": <AddProducts />,
-  "leads/requested":<LeadsList/>,
-  "leads/assigned":<AssignedLeadsList/>,
-    "request/quatation":<QuatationLeadsList/>,
-  "estimates/my":<Myestimates/>,
-  "estimate/master/categories":<MasterCategory/>,
-    "master/types/gallery":<TypesGallery/>,
-    "estimate/questions":<Questions/>,
+  "leads/requested": <LeadsList />,
+  "leads/assigned": <AssignedLeadsList />,
+  "request/quatation": <QuatationLeadsList />,
+  "estimates/my": <Myestimates />,
+  "estimate/master/categories": <MasterCategory />,
+  "master/types/gallery": <TypesGallery />,
+  "estimate/questions": <Questions />,
   deals: <Leads />,
-bookings:<Bookings/>,
-warehouse:<ManageWarehouses/>,
+  bookings: <Bookings />,
+  warehouse: <ManageWarehouses />,
 
-  "property/leads":<PropertyLeads/>,
-"meta/leads":<Meta/>,
-enquiries:<Enquiry/>,
-packages:<Packages/>,
-"developer/create":<CreateDeveloper/>,
-"developer/property":<Propertymanagement/>
-,"create":<Blog/>,
-"products/brands":<AddBrand/>,
-"create-mortgages":<BankProductManagement />
+  "property/leads": <PropertyLeads />,
+  "meta/leads": <Meta />,
+  enquiries: <Enquiry />,
+  packages: <Packages />,
+  "developer/create": <CreateDeveloper />,
+  "developer/property": <Propertymanagement />
+  , "create": <Blog />,
+  "products/brands": <AddBrand />,
+  "create-mortgages": <BankProductManagement />
 };
 
 
@@ -336,82 +351,95 @@ const CmsRoutes = () => {
       <Route path="projects/manage" element={<ManageProjectsSupervisor />} />
       <Route path="projects/manage/:projectId" element={<ManageProjectFreelancer />} />
       <Route path="projects/ongoing" element={<CustomerProjects />} />
-        <Route path="ViewLibrary" element={<ViewwProject />} />
+      <Route path="ViewLibrary" element={<ViewwProject />} />
       <Route path="myprofile" element={<Profile />} />
-            <Route path="products" element={<ProductReview />} />
+      <Route path="products" element={<ProductReview />} />
       <Route path="attributes/add" element={<AddAttributes />} />
       <Route path="tags/add" element={<AddTags />} />
- {/* <Route path="/create" element={<Blog />} /> */}
+      {/* <Route path="/create" element={<Blog />} /> */}
       <Route path="products/view" element={<ProductProfile />} />
-             <Route path="products/edit/:id" element={<UpdateProduct />} />
-             <Route path="products/edit/:id" element={<UpdateProduct />} />
+      <Route path="products/edit/:id" element={<UpdateProduct />} />
+      <Route path="products/edit/:id" element={<UpdateProduct />} />
 
-       <Route path="product/inventory/:id" element={<Inventory />} />
-       
+      <Route path="product/inventory/:id" element={<Inventory />} />
+
       <Route path="seller/:id" element={<VendorB2CProfile />} />
       <Route path="inventory" element={<VendorInventory />} />
 
-            {/* <Route path="projects/:id" element={<ViewProject/>} /> */}
-            <Route path="quotation/received" element={<ReceivedQuotation />} />
-            <Route path="estimate/submitted" element={<CustomerSubmittedQuotation />} />
-            <Route path="quotation/response" element={<Myestimates />} />
-            <Route path="setting/email" element={<EmailSetting />} />
-            <Route path="projects/milestone/bills" element={<CustomerBillsview />} />
-            <Route path="projects/invoices" element={<CustomerInvoicesview />} />
+      {/* <Route path="projects/:id" element={<ViewProject/>} /> */}
+      <Route path="quotation/received" element={<ReceivedQuotation />} />
+      <Route path="estimate/submitted" element={<CustomerSubmittedQuotation />} />
+      <Route path="quotation/response" element={<Myestimates />} />
+      <Route path="setting/email" element={<EmailSetting />} />
+      <Route path="projects/milestone/bills" element={<CustomerBillsview />} />
+      <Route path="projects/invoices" element={<CustomerInvoicesview />} />
 
-            <Route path="seller/product/:id" element={<ProductRequestB2C />} />
-<Route path="freelancer/view" element={<FreelancerProfile />} />
-<Route path="notifications/view" element={<Notifications />} />
+      <Route path="seller/product/:id" element={<ProductRequestB2C />} />
+      <Route path="freelancer/view" element={<FreelancerProfile />} />
+      <Route path="notifications/view" element={<Notifications />} />
       <Route path="freelancer/myprofile" element={<MyprofileFreelancer />} />
       <Route path="/update" element={<UpdateProfilePage />} />
-{/* Agents */}
-{/* <Route index element={<AgentDashboard />} /> */}
+      {/* Agents */}
+      {/* <Route index element={<AgentDashboard />} /> */}
 
-  {/* Leads */}
-  <Route path="agent-leads" element={<AgentLeadDashboard />} />
-    <Route path="agent-leads/add" element={<AgentLeadSuggestionCreate />} />
-<Route path="lead-details/:id" element={<LeadDetails />} />
-<Route path="lead-details/brocure" element={<BrochureGenerator />} />
-<Route path="track-brochures" element={<TrackBrochure />} />
+      {/* Leads */}
+      <Route path="agent-leads" element={<AgentLeadDashboard />} />
+      <Route path="agent-leads/add" element={<AgentLeadSuggestionCreate />} />
+      <Route path="lead-details/:id" element={<LeadDetails />} />
+      <Route path="lead-details/brocure" element={<BrochureGenerator />} />
+      <Route path="track-brochures" element={<TrackBrochure />} />
 
-  <Route path="agent-lead/:id" element={<Addleaddetails/>} />
-  {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
-        
-  {/* Projects */}
-  <Route path="agent-projects" element={<AgentProjects />} />
-  <Route 
-     path="projects/:id" 
-     element={ <AgentProjectDetails /> } 
-  />
+      <Route path="agent-lead/:id" element={<Addleaddetails />} />
+      {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
 
-  {/* Deals */}
-  <Route path="deals" element={<AgentDeals />} />
-  <Route path="deals/create" element={<AgentCreateDeal />} />
-  <Route path="deals/:id" element={<AgentDealDetails />} />
+      {/* Projects */}
+      <Route path="agent-projects" element={<AgentProjects />} />
+      <Route
+        path="projects/:id"
+        element={<AgentProjectDetails />}
+      />
 
-  {/* Site Visits */}
-  <Route path="visits" element={<AgentSiteVisits />} />
-  <Route path="visits/create" element={<AgentCreateVisit />} />
-  <Route path="site-visits/:id" element={<AgentSiteVisitDetails />} />
+      {/* Deals */}
+      <Route path="deals" element={<AgentDeals />} />
+      <Route path="deals/create" element={<AgentCreateDeal />} />
+      <Route path="deals/:id" element={<AgentDealDetails />} />
 
-  {/* Commission */}
-  <Route path="commission" element={<AgentCommission />} />
-  <Route path="commission/:id" element={<AgentCommissionDetails />} />
+      {/* Site Visits */}
+      <Route path="visits" element={<AgentSiteVisits />} />
+      <Route path="visits/create" element={<AgentCreateVisit />} />
+      <Route path="site-visits/:id" element={<AgentSiteVisitDetails />} />
 
-  {/* Subscription */}
-  <Route path="subscription" element={<AgentSubscription />} />
+      {/* Commission */}
+      <Route path="commission" element={<AgentCommission />} />
+      <Route path="commission/:id" element={<AgentCommissionDetails />} />
 
-  {/* Presentations */}
-  <Route path="presentations" element={<AgentPresentations />} />
+      {/* Subscription */}
+      <Route path="subscription" element={<AgentSubscription />} />
 
- <Route path="create-secondary-plans" element={<CreateSecondaryProperty />} />
-<Route path="create-secondary-plans/:id" element={<CreateSecondaryProperty />} />
-  <Route path="secondary-plans" element={<SecondaryPlans />} />
+      {/* Presentations */}
+      <Route path="presentations" element={<AgentPresentations />} />
 
-<Route path="secondary/:id" element={<SecondaryPropertyDetail />} />
-  {/* <Route path="waiting-approval" element={<WaitingApproval />} /> */}
- <Route path="agents/:agentId" element={<AgentDetail />} />
+      <Route path="create-secondary-plans" element={<CreateSecondaryProperty />} />
+      <Route path="create-secondary-plans/:id" element={<CreateSecondaryProperty />} />
+      <Route path="secondary-plans" element={<SecondaryPlans />} />
 
+      <Route path="secondary/:id" element={<SecondaryPropertyDetail />} />
+      {/* <Route path="waiting-approval" element={<WaitingApproval />} /> */}
+      <Route path="agents/:agentId" element={<AgentDetail />} />
+
+      {/* Xoto Vault */}
+      <Route path="/" element={user?.role?.code == 18 ? <VaultAdminDashboard /> : (dashboardMap[user.role.code] ?? <Dashboard />)} />
+      <Route path="agents" element={<VaultAgents />} />
+      <Route path="clients" element={<VaultClients />} />
+      <Route path="cases" element={<VaultCases />} />
+      <Route path="partners" element={<VaultPartners />} />
+      <Route path="partner-list" element={<PartnerList />} />
+      <Route path="partner-details/:id" element={<PartnerDetail />} />
+      <Route path="agent-onboard" element={<VaultAgentonboard />} />
+      <Route path="vault/agent-list" element={<VaultAgentlist />} />
+      <Route path="agent-details/:id" element={<VaultAgentdetail />} />
+
+      <Route path="dashboard/vaultagent" element={<VaultAgentDashboard />} />
 {/* Xoto Vault */}
 <Route path="/" element={user?.role?.code == 18 ? <VaultAdminDashboard /> : (dashboardMap[user.role.code] ?? <Dashboard />)} />
 <Route path="agents"   element={<VaultAgents />} />
@@ -421,8 +449,11 @@ const CmsRoutes = () => {
 <Route path="partner-list" element={<PartnerList/>}/>
 <Route path="partner-details/:id" element={<PartnerDetail/>}/>
 <Route path="agent-onboard" element={<VaultAgentonboard/>} />
-<Route path="agent-list" element={<VaultAgentlist/>} />
+<Route path="/vault/agent-list" element={<VaultAgentlist/>} />
 <Route path="agent-details/:id" element={<VaultAgentdetail/>} />
+<Route path="xotovaultpartner" element={<VaultpartnerDashboard />} />
+<Route path="onboard-partner" element={<OnboardPartner />} />
+<Route path="AgentVaultlisting" element={<AgentVaultListing />} />
 
 
 
@@ -431,14 +462,14 @@ const CmsRoutes = () => {
 
       {/* admin */}
       <Route path="/agent-list" element={<AgentList />} />
-      <Route path="/agency-list" element={<AgencyList />} />    
+      <Route path="/agency-list" element={<AgencyList />} />
       <Route path="/customers/list" element={<CustomerList />} />
       {/* <Route path="/agent-registration" element={<AgentRegistration />} /> */}
       <Route path="/developer-list" element={<DeveloperList />} />
       <Route path="/onboarding/developer" element={<OnBoardingpage />} />
       <Route path="/onboarding/agent" element={<OnBoardingAgent />} />
       <Route path="/onboarding/agency" element={<OnBoardingAgency />} />
-    
+
       <Route path="/property-list" element={<AdminPropertyGrid />} />
       <Route path="/DealCommissionManager" element={<DealCommissionManager />} />
       <Route path="/lead-management" element={<LeadManagement />} />
@@ -448,66 +479,66 @@ const CmsRoutes = () => {
       <Route path="/global-settings" element={<GlobalSettings />} />
       <Route path="/marketing-hub" element={<XotoBlitzCampaigns />} />
       {/* <Route path="/admin-chat-requests" element={<AdminChatRequests />} /> */}
-"
+      "
       <Route path="/admin-chat-requests" element={<AdminChatRequests />} />
       <Route path="/my-listings" element={<MyListings />} />\
       <Route path="/properties" element={<AdminPropertyListings />} />
-<Route path="/properties/:id" element={<AdminPropertyDetail />} />
-<Route path="/properties/create-offplan" element={<AdminOffPlanCreate />} />
-<Route path="/property-list/property-detail/:id" element={<PropertyDetailPage />} />
-
-      
-{/* Agency */}
-<Route path="manage-agents" element={<AgencyManageAgents />} />
-<Route path="manage-agents/:id" element={<AgencyAgentDetails />} />
-<Route path="performance" element={<AgencyPerformance />} />
-<Route path="commission" element={<AgencyCommission />} />
-<Route path="lead-management" element={<AgencyLeadManagement />} />
-<Route path="add-property" element={<AddProperty />} />
-{/* <Route path="targets" element={<AgencyTargets />} /> */}
-{/* <Route path="leaderboard" element={<AgencyLeaderboard />} /> */}
-{/* <Route path="incentives" element={<AgencyIncentives />} /> */}
-{/* <Route path="branches" element={<AgencyBranches />} /> */}
-{/* <Route path="internal-roles" element={<AgencyRoles />} /> */}
-{/* <Route path="advanced-analytics" element={<AgencyAdvancedAnalytics />} /> */}
-{/* <Route path="profit-engine" element={<AgencyProfitEngine />} /> */}
-<Route path="subscription" element={<AgencySubscription />} />
-<Route path="/agency-projects" element={<AgencyProjects />} />
-<Route path="/agency/deals" element={<AgencyDeals />} />
-<Route path="/agency-agent-properties" element={<AgencyAgentProperties/>} />
-{/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
-{/* Developer */}
-<Route path="developer-projects" element={<DeveloperProjects/>}/>
- <Route path="developer-projects/add" element={<DeveloperAddProperty />} /> 
-<Route path="developer-projects/add" element={<DeveloperAddProject/>}/>
-<Route path="developer-projects/:id" element={<DeveloperProjectDetails/>}/>
-<Route path="edit-property/:id" element={<DeveloperPropertyEdit />} />
-<Route path="developerinventory" element={<DeveloperInventory/>}/>
-<Route path="/inventory/add" element={<DeveloperAddUnit/>}/>
-<Route path="/inventory/:id" element={<DeveloperUnitDetails/>}/>
-<Route path="/inventory/:id/edit" element={<DeveloperEditUnit/>}/>
-<Route path="developer-leads" element={<DeveloperLeads />} />
-<Route path="leads/:id" element={<DeveloperLeadDetails />} />
-<Route path="/leads/:id/booking" element={<DeveloperCreateBooking/>}/>
-<Route path="/bookings" element={<DeveloperBookings/>}/>
-<Route path="/bookings/:id" element={<DeveloperBookingDetails/>}/>
-<Route path="revenue" element={<DeveloperRevenue/>}/>
-<Route path="analytics" element={<DeveloperAnalytics/>}/>
-<Route path="commission-scheme" element={<DeveloperCommissionScheme />} />
-<Route path="commission-scheme/:id" element={<DeveloperCommissionScheme />} />
-<Route path="/developer/view/:id" element={<DeveloperDetail />} />
-  {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
-  {/* <Route path="team" element={<DeveloperTeam/>}/> */}
+      <Route path="/properties/:id" element={<AdminPropertyDetail />} />
+      <Route path="/properties/create-offplan" element={<AdminOffPlanCreate />} />
+      <Route path="/property-list/property-detail/:id" element={<PropertyDetailPage />} />
 
 
+      {/* Agency */}
+      <Route path="manage-agents" element={<AgencyManageAgents />} />
+      <Route path="manage-agents/:id" element={<AgencyAgentDetails />} />
+      <Route path="performance" element={<AgencyPerformance />} />
+      <Route path="commission" element={<AgencyCommission />} />
+      <Route path="lead-management" element={<AgencyLeadManagement />} />
+      <Route path="add-property" element={<AddProperty />} />
+      {/* <Route path="targets" element={<AgencyTargets />} /> */}
+      {/* <Route path="leaderboard" element={<AgencyLeaderboard />} /> */}
+      {/* <Route path="incentives" element={<AgencyIncentives />} /> */}
+      {/* <Route path="branches" element={<AgencyBranches />} /> */}
+      {/* <Route path="internal-roles" element={<AgencyRoles />} /> */}
+      {/* <Route path="advanced-analytics" element={<AgencyAdvancedAnalytics />} /> */}
+      {/* <Route path="profit-engine" element={<AgencyProfitEngine />} /> */}
+      <Route path="subscription" element={<AgencySubscription />} />
+      <Route path="/agency-projects" element={<AgencyProjects />} />
+      <Route path="/agency/deals" element={<AgencyDeals />} />
+      <Route path="/agency-agent-properties" element={<AgencyAgentProperties />} />
+      {/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
+      {/* Developer */}
+      <Route path="developer-projects" element={<DeveloperProjects />} />
+      <Route path="developer-projects/add" element={<DeveloperAddProperty />} />
+      <Route path="developer-projects/add" element={<DeveloperAddProject />} />
+      <Route path="developer-projects/:id" element={<DeveloperProjectDetails />} />
+      <Route path="edit-property/:id" element={<DeveloperPropertyEdit />} />
+      <Route path="developerinventory" element={<DeveloperInventory />} />
+      <Route path="/inventory/add" element={<DeveloperAddUnit />} />
+      <Route path="/inventory/:id" element={<DeveloperUnitDetails />} />
+      <Route path="/inventory/:id/edit" element={<DeveloperEditUnit />} />
+      <Route path="developer-leads" element={<DeveloperLeads />} />
+      <Route path="leads/:id" element={<DeveloperLeadDetails />} />
+      <Route path="/leads/:id/booking" element={<DeveloperCreateBooking />} />
+      <Route path="/bookings" element={<DeveloperBookings />} />
+      <Route path="/bookings/:id" element={<DeveloperBookingDetails />} />
+      <Route path="revenue" element={<DeveloperRevenue />} />
+      <Route path="analytics" element={<DeveloperAnalytics />} />
+      <Route path="commission-scheme" element={<DeveloperCommissionScheme />} />
+      <Route path="commission-scheme/:id" element={<DeveloperCommissionScheme />} />
+      <Route path="/developer/view/:id" element={<DeveloperDetail />} />
+      {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
+      {/* <Route path="team" element={<DeveloperTeam/>}/> */}
 
 
 
-  <Route path="/rental/properties" element={< CreateRentalProperty />} />
-  <Route path="/rental/propertieslist" element={< RentalPropertyList />} />
-  <Route path="/rental/leadlist" element={< AdminLeadList />} />
 
-      
+
+      <Route path="/rental/properties" element={< CreateRentalProperty />} />
+      <Route path="/rental/propertieslist" element={< RentalPropertyList />} />
+      <Route path="/rental/leadlist" element={< AdminLeadList />} />
+
+
     </Routes>
   );
 };
