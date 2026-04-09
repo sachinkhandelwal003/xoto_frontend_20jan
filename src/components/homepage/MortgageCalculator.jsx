@@ -162,9 +162,10 @@ const PreApprovalModal = ({ isOpen, onClose, calculatorData }) => {
   const [step, setStep] = useState('form');
   const [loading, setLoading] = useState(false);
   
-  // 🚀 Updated State to handle Country Code separately
+  // 🚀 Split First Name and Last Name
   const [formData, setFormData] = useState({ 
-    name: '', 
+    firstName: '',
+    lastName: '', 
     phone: '', 
     selectedCountry: COUNTRIES[0], // Defaults to UAE
     email: '', 
@@ -186,18 +187,14 @@ const PreApprovalModal = ({ isOpen, onClose, calculatorData }) => {
     const toastId = toast.loading('Submitting your application...');
 
     try {
-      const nameParts = formData.name.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
       const payload = {
         type: "mortgage",
         lead_sub_type: "pre_approval",
+        // 🚀 Sending clean names
         name: {
-          first_name: firstName,
-          last_name: lastName
+          first_name: formData.firstName.trim(),
+          last_name: formData.lastName.trim()
         },
-        // 🚀 Dynamic Country Code mapping
         mobile: {
           country_code: formData.selectedCountry.dialCode,
           number: formData.phone
@@ -240,7 +237,6 @@ const PreApprovalModal = ({ isOpen, onClose, calculatorData }) => {
   };
 
   const handlePhoneChange = (e) => {
-    // 🚀 Block letters, only allow numbers up to max length
     const value = e.target.value.replace(/\D/g, ''); 
     if (value.length <= formData.selectedCountry.maxLength) {
       setFormData({ ...formData, phone: value });
@@ -249,7 +245,7 @@ const PreApprovalModal = ({ isOpen, onClose, calculatorData }) => {
 
   const handleCountryChange = (e) => {
     const country = COUNTRIES.find(c => c.code === e.target.value);
-    setFormData({ ...formData, selectedCountry: country, phone: '' }); // Clear phone on country change
+    setFormData({ ...formData, selectedCountry: country, phone: '' }); 
   };
 
   if (step === 'success') {
@@ -270,41 +266,49 @@ const PreApprovalModal = ({ isOpen, onClose, calculatorData }) => {
   return (
     <ModalWrapper isOpen={isOpen} onClose={onClose} title="Get Pre-Approved" subtitle="Start your property journey today.">
       <form onSubmit={handleSubmit} className="space-y-4">
+        
+        {/* 🚀 First Name and Last Name Grid */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1 ml-1 uppercase tracking-wide">Name *</label>
-            <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Full name" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none transition font-medium" />
+            <label className="block text-xs font-semibold text-slate-500 mb-1 ml-1 uppercase tracking-wide">First Name *</label>
+            <input required type="text" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} placeholder="e.g. Rahul" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none transition font-medium" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1 ml-1 uppercase tracking-wide">Phone *</label>
-            {/* 🚀 Dynamic Country Selector & Phone Input */}
-            <div className="flex border border-slate-200 rounded-xl bg-slate-50 focus-within:ring-2 focus-within:ring-purple-500 transition overflow-hidden">
-              <div className="flex items-center pl-3 pr-2 bg-slate-100/80 border-r border-slate-200">
-                <img 
-                  src={`https://flagcdn.com/w20/${formData.selectedCountry.code.toLowerCase()}.png`} 
-                  alt={formData.selectedCountry.code} 
-                  className="w-5 h-auto mr-1.5 rounded-[2px]"
-                />
-                <select 
-                  value={formData.selectedCountry.code} 
-                  onChange={handleCountryChange}
-                  className="bg-transparent font-semibold text-slate-700 outline-none text-sm cursor-pointer w-[54px]"
-                >
-                  {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.dialCode}</option>)}
-                </select>
-              </div>
-              <input 
-                required 
-                type="tel" 
-                value={formData.phone} 
-                onChange={handlePhoneChange} 
-                placeholder={`XX XXX XXXX`} 
-                className="w-full p-4 bg-transparent outline-none font-medium" 
-              />
-            </div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1 ml-1 uppercase tracking-wide">Last Name *</label>
+            <input required type="text" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} placeholder="e.g. Sharma" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none transition font-medium" />
           </div>
         </div>
         
+        {/* 🚀 Phone */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 mb-1 ml-1 uppercase tracking-wide">Phone *</label>
+          <div className="flex border border-slate-200 rounded-xl bg-slate-50 focus-within:ring-2 focus-within:ring-purple-500 transition overflow-hidden">
+            <div className="flex items-center pl-3 pr-2 bg-slate-100/80 border-r border-slate-200">
+              <img 
+                src={`https://flagcdn.com/w20/${formData.selectedCountry.code.toLowerCase()}.png`} 
+                alt={formData.selectedCountry.code} 
+                className="w-5 h-auto mr-1.5 rounded-[2px]"
+              />
+              <select 
+                value={formData.selectedCountry.code} 
+                onChange={handleCountryChange}
+                className="bg-transparent font-semibold text-slate-700 outline-none text-sm cursor-pointer w-[54px]"
+              >
+                {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.dialCode}</option>)}
+              </select>
+            </div>
+            <input 
+              required 
+              type="tel" 
+              value={formData.phone} 
+              onChange={handlePhoneChange} 
+              placeholder={`XX XXX XXXX`} 
+              className="w-full p-4 bg-transparent outline-none font-medium" 
+            />
+          </div>
+        </div>
+        
+        {/* 🚀 Email */}
         <div>
           <label className="block text-xs font-semibold text-slate-500 mb-1 ml-1 uppercase tracking-wide">Email *</label>
           <input required type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="you@example.com" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none transition font-medium" />
@@ -350,7 +354,9 @@ const ContactModal = ({ isOpen, onClose }) => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   
-  // 🚀 Dynamic Phone State for Contact Modal too
+  // 🚀 Split First and Last Name here too for consistency
+  const [contactFirstName, setContactFirstName] = useState('');
+  const [contactLastName, setContactLastName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
 
@@ -399,13 +405,20 @@ const ContactModal = ({ isOpen, onClose }) => {
           }
           setStep('success'); 
         }} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1 ml-1 uppercase tracking-wide">Name</label>
-            <input required type="text" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-medium" />
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1 ml-1 uppercase tracking-wide">First Name</label>
+              <input required type="text" value={contactFirstName} onChange={(e) => setContactFirstName(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-medium" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1 ml-1 uppercase tracking-wide">Last Name</label>
+              <input required type="text" value={contactLastName} onChange={(e) => setContactLastName(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-medium" />
+            </div>
           </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-500 mb-1 ml-1 uppercase tracking-wide">Phone</label>
-            {/* 🚀 Dynamic Country Selector & Phone Input */}
             <div className="flex border border-slate-200 rounded-xl bg-slate-50 focus-within:ring-2 focus-within:ring-purple-500 transition overflow-hidden">
               <div className="flex items-center pl-3 pr-2 bg-slate-100/80 border-r border-slate-200">
                 <img 
@@ -663,16 +676,10 @@ export default function PerfectMortgageCalculator() {
               </button>
               
               <div className="grid grid-cols-2 gap-4">
-                {/* <button onClick={() => openModal('contact')} className="flex items-center justify-center gap-2 bg-slate-50 hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-slate-200 hover:border-purple-200 py-3.5 rounded-xl font-semibold transition">
-                  <FaPhoneAlt size={14} /> Call Me
-                </button>
-                <button onClick={() => openModal('contact')} className="flex items-center justify-center gap-2 bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-600 border border-slate-200 hover:border-emerald-200 py-3.5 rounded-xl font-semibold transition">
-                  <FaWhatsapp size={16} /> WhatsApp
-                </button> */}
+                {/* Extra buttons can go here if needed later */}
               </div>
             </div>
             
-          
           </div>
         </div>
       </div>
