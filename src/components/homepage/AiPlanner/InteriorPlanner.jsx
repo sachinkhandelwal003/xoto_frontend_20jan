@@ -398,6 +398,10 @@ const fetchSavedDesigns = async () => {
   };
 
 const generateAIDesigns = async (currentUser) => {
+  if (!uploadedFile && !selectedImage) {
+    notification.warning({ message: 'Please select or upload an image first' });
+    return;
+  }
   setIsGenerating(true);
   setGenerationProgress(5);
 
@@ -408,17 +412,26 @@ const generateAIDesigns = async (currentUser) => {
 
   const formData = new FormData();
 
-  if (uploadedFile) {
-    formData.append('image', uploadedFile);
-  } else if (selectedImage?.startsWith('http')) {
-    try {
-      const response = await fetch(selectedImage);
-      const blob = await response.blob();
-      formData.append('image', new File([blob], 'input_image.jpg', { type: blob.type || 'image/jpeg' }));
-    } catch (err) {
-      console.error('Image processing failed', err);
+ if (uploadedFile) {
+  formData.append('image', uploadedFile);
+} else if (selectedImage) {
+  try {
+    const response = await fetch(selectedImage);
+    if (!response.ok) throw new Error('Fetch failed');
+    const blob = await response.blob();
+    formData.append('image', new File([blob], 'input_image.jpg', { type: blob.type || 'image/jpeg' }));
+  } catch (err) {
+    if (selectedImage.startsWith('http')) {
+      // S3/CDN URL — backend se fetch karega
+      formData.append('imageUrl', selectedImage);
+    } else {
+      notification.error({ message: 'Image load failed. Please re-upload.' });
+      setIsGenerating(false);
+      clearInterval(progressInterval);
+      return;
     }
   }
+}
 
   formData.append('styleName', selectedStyles.length > 0 ? interStyles.find(s => s.value === selectedStyles[0])?.label : 'Modern');
   formData.append('elements', selectedElements.length > 0 ? selectedElements.map(e => interElements.find(el => el.value === e)?.label).join(', ') : 'Sofa, Coffee Table');
