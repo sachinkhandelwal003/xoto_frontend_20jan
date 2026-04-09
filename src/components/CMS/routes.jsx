@@ -186,6 +186,9 @@ import PropertyDetailPage from "./pages/Propertydetailpage";
 import VaultAgentDashboard from "../ecommerce/B2C/VaultAgentDashBoard";
 import OnboardPartner from "./pages/OnboardPartner";
 import AgentVaultListing from "./pages/AgentVaultListing";
+import VaultAgentLeadList from "../ecommerce/B2C/VaultAgentLeadList";
+import VaultAgentLeadDetail from "../ecommerce/B2C/VaultAgentLeadDetail";
+import VaultLeadDocumentUpload from "../ecommerce/B2C/VaultLeadDocumentUpload";
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 
@@ -455,9 +458,12 @@ const CmsRoutes = () => {
 <Route path="onboard-partner" element={<OnboardPartner />} />
 <Route path="AgentVaultlisting" element={<AgentVaultListing />} />
 
-
-
-
+<Route path="vault/agent-leads" element={<VaultAgentLeadList />} />
+<Route path="vault/lead/:id" element={<VaultAgentLeadDetail />} />
+<Route 
+  path="vault/lead/documents/:leadId" 
+  element={<VaultLeadDocumentUpload />} 
+/>
 
 
       {/* admin */}
