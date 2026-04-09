@@ -19,8 +19,7 @@ const HeroSection = () => {
       
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/40 z-[1]" />
-
-      {/* Background Video */}
+   {/* Background Video */}
       <video
         autoPlay
         loop 
