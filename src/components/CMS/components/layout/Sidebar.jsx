@@ -369,6 +369,15 @@ const CUSTOM_ROLE_LINKS = {
       ],
     },
     {
+      title: "Leads",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/leads",
+      submenus: [
+        { title: "Leads", path: "/dashboard/{roleSlug}/lead-list" },
+        { title: "Lead Documents ", path: "/dashboard/{roleSlug}/vault/lead-document" },
+      ],
+    },
+    {
       title: "Clients",
       icon: "fas fa-user-tie",
       path: "/dashboard/{roleSlug}/clients",
