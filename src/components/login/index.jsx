@@ -133,7 +133,7 @@ const Login = () => {
     }
   }, [location.pathname]);
 
-  // --- Configuration ---
+  // --- Configuration --- (ALL ORIGINAL, UNCHANGED)
   const mainCategories = [
     {
       id: "freelancer",
@@ -153,26 +153,24 @@ const Login = () => {
       gradient: "linear-gradient(135deg, #03A4F4, #0077b6)",
       type: "direct",
     },
-    // {
-    //   id: "agent",
-    //   label: "Agents",
-    //   desc: "For Agents",
-    //   icon: <IdcardOutlined style={{ fontSize: "28px" }} />,
-    //   color: "#10B981",
-    //   gradient: "linear-gradient(135deg, #10B981, #059669)",
-    //   type: "direct",
-    // },
-    // ── DEVELOPER COMMENTED OUT ──────────────────────────────────────────
-    // {
-    //   id: "developer",
-    //   label: "Developers",
-    //   desc: "For Developers",
-    //   icon: <CodeOutlined style={{ fontSize: "28px" }} />,
-    //   color: "#F97316",
-    //   gradient: "linear-gradient(135deg, #10B981, #059669)",
-    //   type: "direct",
-    // },
-    // ─────────────────────────────────────────────────────────────────────
+    {
+      id: "agent",
+      label: "Agents",
+      desc: "For Agents",
+      icon: <IdcardOutlined style={{ fontSize: "28px" }} />,
+      color: "#10B981",
+      gradient: "linear-gradient(135deg, #10B981, #059669)",
+      type: "direct",
+    },
+    {
+      id: "developer",
+      label: "Developers",
+      desc: "For Developers",
+       icon: <CodeOutlined style={{ fontSize: "28px" }} />,
+      color: "#F97316",
+      gradient: "linear-gradient(135deg, #10B981, #059669)",
+      type: "direct",
+    },
   ];
 
   const partnerTypes = [
@@ -201,6 +199,7 @@ const Login = () => {
       color: "#4F46E5",
       gradient: "linear-gradient(135deg, #4F46E5, #4338ca)",
     },
+    // ── VAULT PARTNER TYPE ADDED ─────────────────────────────────────────
     {
       value: "vault-admin",
       label: "Vault Partner",
@@ -210,13 +209,14 @@ const Login = () => {
       gradient: "linear-gradient(135deg, #5C039B, #03A4F4)",
     },
     {
-      value: "vaultagent",
-      label: "Xoto Vault Agent",
-      desc: "Mortgage Platform - Agent",
-      icon: <BankOutlined style={{ fontSize: "28px" }} />,
-      color: "#5C039B",
-      gradient: "linear-gradient(135deg, #5C039B, #03A4F4)",
-    },
+    value: "vaultagent",
+    label: "Xoto Vault Agent",
+    desc: "Mortgage Platform - Agent",
+    icon: <BankOutlined style={{ fontSize: "28px" }} />,
+    color: "#5C039B",
+    gradient: "linear-gradient(135deg, #5C039B, #03A4F4)",
+  },
+    // ────────────────────────────────────────────────────────────────────
   ];
 
   const getSelectedPartner = () =>
@@ -252,6 +252,7 @@ const Login = () => {
          return;
       }
 
+      // ── VAULT REDIRECT ────────────────────────────────────────────
       if (selectedPartnerType === "vault-admin") {
         toast.success("Welcome to Xoto Vault!");
         setTimeout(() => {
@@ -268,6 +269,9 @@ const Login = () => {
         return;
       }
 
+      // ───────────────────────────────────────────────────────────────────
+
+      
       const rolePathMap = {
         "0": "/dashboard/superadmin",
         "1": "/dashboard/admin",
@@ -278,9 +282,9 @@ const Login = () => {
         "15": "/dashboard/agency",
         "16": "/dashboard/agent",
         "17": "/dashboard/developer",
-        "18": "/dashboard/vault-admin",
+        "18": "/dashboard/vault-admin",   // ── VAULT ROLE CODE ADDED
         "22": "/dashboard/vaultagent",   
-        "21": "/dashboard/vaultpartner",
+        "21": "/dashboard/vaultpartner", // ── VAULT PARTNER ROLE CODE ADDED
       };
 
       const path = rolePathMap[roleCode] || "/dashboard";
@@ -300,12 +304,9 @@ const Login = () => {
   
   const handleMainSelect = (category) => {
     if (category.id === "agent") {
-      // Vault Agent commented out hai, isliye seedha login pe le jao
-      setSelectedPartnerType("agent");
-      setView("login");
-      setParentMenu("main");
+      setView("agent-select"); 
+      setParentMenu("agent-select");
       setGeneralError("");
-      form.resetFields();
       return;
     }
     if (category.id === "vendor-b2c") {
@@ -339,6 +340,8 @@ const Login = () => {
         } else if (selectedPartnerType === "vault-admin") {
             setView(parentMenu || "main");
             setSelectedPartnerType(null);
+        }  else if (selectedPartnerType === "agent") {
+            // ── agent login back → agent-select
         } else if (selectedPartnerType === "agent") {
             setView("agent-select");
             setSelectedPartnerType(null);
@@ -358,7 +361,7 @@ const Login = () => {
     }
   };
 
-  // ✅ MAIN LOGIN SUBMIT
+  // ✅ MAIN LOGIN SUBMIT (YEAHI WOH JAGEH HAI JAHAN API LAGA DI HAI)
   const onFinish = async (values) => {
     setLoading(true);
     setGeneralError("");
@@ -371,8 +374,13 @@ const Login = () => {
       else if (selectedPartnerType === "developer") endpoint = "/developer/login-developer"; 
       else if (selectedPartnerType === "agent") endpoint = "/agent/login-agent";
       else if (selectedPartnerType === "agency") endpoint = "/agency/agency-login";
+      // ── VAULT ENDPOINT ADDED ────────────────────────────────────────────
       else if (selectedPartnerType === "vault-admin") endpoint = "/vault/agent/login";
       else if (selectedPartnerType === "vaultagent") endpoint = "/vault/agent/login"; 
+      // ── YOUR VAULT PARTNER API ENDPOINT ─────────────────────────────────
+      else if (selectedPartnerType === "vault-admin") endpoint = "/vault/partner/login"; 
+      //  else if (selectedPartnerType === "xotovaultpartner") endpoint = "/vault/vaultpartner"; 
+      // ───────────────────────────────────────────────────────────────────
       
       await login(endpoint, {
         email: values.email,
@@ -474,7 +482,7 @@ const Login = () => {
     </motion.div>
   );
 
-  // ── Agent Sub-Selection Screen ───────────────────────────────────────────────
+  // ── ORIGINAL: Agent Sub-Selection Screen (BINA TOUCH KIYE WAPAS RAKH DIYA) ───
   const renderAgentSelection = () => (
     <motion.div
       key="agent-selection"
@@ -527,8 +535,8 @@ const Login = () => {
           </SelectionCard>
         </Col>
 
-        {/* ── VAULT AGENT COMMENTED OUT ────────────────────────────────────── */}
-        {/* <Col xs={24} sm={12}>
+        {/* Vault Agent (Original form me jo tha) */}
+        <Col xs={24} sm={12}>
           <SelectionCard
             $active={false}
             $color="#5C039B"
@@ -554,13 +562,12 @@ const Login = () => {
               </div>
             </div>
           </SelectionCard>
-        </Col> */}
-        {/* ─────────────────────────────────────────────────────────────────── */}
+        </Col>
       </Row>
     </motion.div>
   );
 
-  // ── Strategic Alliances Sub-Selection Screen ──────────────────────────────
+  // ── NEW: Strategic Alliances Sub-Selection Screen ──────────────────────────
   const renderAllianceSelection = () => (
     <motion.div
       key="alliance-selection"
@@ -613,8 +620,8 @@ const Login = () => {
           </SelectionCard>
         </Col>
 
-        {/* ── VAULT PARTNER COMMENTED OUT ──────────────────────────────────── */}
-        {/* <Col xs={24} sm={12}>
+        {/* Vault Partner */}
+        <Col xs={24} sm={12}>
           <SelectionCard
             $active={false}
             $color="#5C039B"
@@ -640,8 +647,7 @@ const Login = () => {
               </div>
             </div>
           </SelectionCard>
-        </Col> */}
-        {/* ─────────────────────────────────────────────────────────────────── */}
+        </Col>
       </Row>
     </motion.div>
   );
@@ -829,6 +835,7 @@ const Login = () => {
               style={{ borderRadius: 12, height: 48 }}
             />
           </Form.Item>
+          
 
           <Form.Item
             name="password"
