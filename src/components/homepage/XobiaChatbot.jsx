@@ -8,7 +8,7 @@ import { getChatSessionId } from "../../utils/createSessionID";
 // ✅ 1. Import the New Voice Interface
 import VoiceAIInterface from "./VoiceAIInterface"; 
 
-const API = "https://xoto.ae";
+const API = "https://xoto.ae"; // Change this to your actual backend URL
 
 function XobiaChatbot() {
   const [messages, setMessages] = useState([]);
