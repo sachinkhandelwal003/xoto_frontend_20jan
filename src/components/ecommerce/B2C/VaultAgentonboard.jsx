@@ -1,5 +1,6 @@
 // src/components/Vault/AgentOnboard.jsx
 import { useState } from "react";
+import PhoneInput from "react-phone-number-input";
 import { useNavigate } from "react-router-dom";
 import {
   User, Mail, Phone, Lock, MapPin, AlertCircle, ChevronRight,
@@ -10,11 +11,9 @@ import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 const STEPS = ["Personal Info", "Address & Emergency", "Identity Documents", "Bank Details"];
 
-const countryCodes = ["+971", "+91", "+1", "+44", "+966", "+974", "+973", "+965", "+968"];
-
 const initialForm = {
   first_name: "", last_name: "", email: "", phone_number: "",
-  country_code: "+971", password: "", maritalStatus: "", numberOfDependents: 0,
+  password: "", maritalStatus: "", numberOfDependents: 0,
   nationality: "", dateOfBirth: "", gender: "",
   dependents: [],
   address: { building: "", apartment: "", area: "", city: "", country: "" },
@@ -255,17 +254,15 @@ export default function VaultAgentOnboard() {
                 <Field label="Password" icon={Lock} error={errors.password}>
                   <Input error={errors.password} type="password" placeholder="Min 6 characters" value={form.password} onChange={e => set("password", e.target.value)} />
                 </Field>
-                <Field label="Phone Number" icon={Phone} error={errors.phone_number}>
-                  <div className="flex gap-2">
-                    <select
-                      className="px-2 py-2.5 text-sm border border-gray-200 rounded-lg bg-white outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 flex-shrink-0"
-                      value={form.country_code} onChange={e => set("country_code", e.target.value)}
-                    >
-                      {countryCodes.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    <Input error={errors.phone_number} placeholder="501234567" value={form.phone_number} onChange={e => set("phone_number", e.target.value)} />
-                  </div>
-                </Field>
+               <Field label="Phone Number" icon={Phone} error={errors.phone_number}>
+  <PhoneInput
+    international
+    defaultCountry="AE" // ya "IN" agar India chahiye
+    value={form.phone_number}
+    onChange={(value) => set("phone_number", value)}
+    className="react-phone-input"
+  />
+</Field>
                 <Field label="Gender" icon={User} error={errors.gender}>
                   <Select error={errors.gender} value={form.gender} onChange={e => set("gender", e.target.value)}>
                     <option value="">Select gender</option>
@@ -357,7 +354,12 @@ export default function VaultAgentOnboard() {
                     <Input error={errors["emergencyContact.relationship"]} placeholder="Father" value={form.emergencyContact.relationship} onChange={e => setNested("emergencyContact", "relationship", e.target.value)} />
                   </Field>
                   <Field label="Phone" error={errors["emergencyContact.phone"]}>
-                    <Input error={errors["emergencyContact.phone"]} placeholder="+971503334455" value={form.emergencyContact.phone} onChange={e => setNested("emergencyContact", "phone", e.target.value)} />
+                   <PhoneInput
+  international
+  defaultCountry="AE"
+  value={form.emergencyContact.phone}
+  onChange={(value) => setNested("emergencyContact", "phone", value)}
+/>
                   </Field>
                 </div>
               </div>
