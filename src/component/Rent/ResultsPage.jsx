@@ -40,6 +40,7 @@ function Lightbox({ images, startIndex, onClose }) {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+
   return (
     <div onClick={onClose} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999,flexDirection:"column",gap:16 }}>
       <button onClick={onClose} style={{ position:"absolute",top:20,right:24,background:"rgba(255,255,255,0.12)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:8,color:"white",width:40,height:40,cursor:"pointer",fontSize:20,display:"flex",alignItems:"center",justifyContent:"center" }}><FiX size={16} /></button>
@@ -347,6 +348,14 @@ function ListingCard({ listing, saved, onSave, onContact, leadCreating }) {
 
 // ─── MAIN RESULTS PAGE ────────────────────────────────────────────────────────
 export default function ResultsPage() {
+   const [maxPrice,       setMaxPrice]       = useState(300000);
+
+    useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedPrice(maxPrice);
+  }, 500); // ✅ 500ms baad API call
+  return () => clearTimeout(timer);
+}, [maxPrice]);
   const location = useLocation();
   const navigate  = useNavigate();
 
@@ -360,7 +369,8 @@ export default function ResultsPage() {
   const [savedIds,       setSavedIds]       = useState([]);
   const [filterBeds,     setFilterBeds]     = useState("Any");
   const [filterType,     setFilterType]     = useState("All");
-  const [maxPrice,       setMaxPrice]       = useState(300000);
+ 
+  const [debouncedPrice, setDebouncedPrice] = useState(300000);
   const [amenityFilters, setAmenityFilters] = useState([]);
   const [verifiedOnly,   setVerifiedOnly]   = useState(false);
   const [immediateOnly,  setImmediateOnly]  = useState(false);
@@ -372,7 +382,9 @@ export default function ResultsPage() {
 
   const heroState = location.state || {};
 
-  useEffect(() => { fetchListings(); }, [page, sort, filterBeds, filterType, maxPrice, verifiedOnly, immediateOnly, amenityFilters]);
+  useEffect(() => { 
+  fetchListings(); 
+}, [page, sort, filterBeds, filterType, debouncedPrice, verifiedOnly, immediateOnly, amenityFilters]);
 
   const fetchListings = async () => {
     try {
@@ -383,7 +395,8 @@ export default function ResultsPage() {
       if (heroState.tags?.length) params.set("area", heroState.tags[0]);
       if (filterType !== "All") params.set("type", filterType);
       if (filterBeds !== "Any") params.set("bhk", filterBeds);
-      if (maxPrice < 300000) params.set("maxPrice", maxPrice);
+      // if (maxPrice < 300000) params.set("maxPrice", maxPrice);
+      if (debouncedPrice < 300000) params.set("maxPrice", debouncedPrice); // ✅
       if (verifiedOnly) params.set("verified", "true");
       if (immediateOnly) params.set("isImmediate", "true");
 
@@ -525,7 +538,7 @@ export default function ResultsPage() {
         <div style={{ background:"white",border:"1.5px solid #f0f0f0",borderRadius:18,padding:20,maxHeight:"calc(100vh - 96px)",position:"sticky",top:82,overflowY:"auto" }}>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20 }}>
             <span style={{ fontSize:15,fontWeight:900,color:"#1e1b4b" }}>Filters</span>
-            <span onClick={()=>{setFilterBeds("Any");setFilterType("All");setMaxPrice(300000);setAmenityFilters([]);setVerifiedOnly(false);setImmediateOnly(false);setPage(1);}} style={{ fontSize:12,fontWeight:700,color:"#ef4444",cursor:"pointer" }}>Reset all</span>
+            <span onClick={()=>{setFilterBeds("Any");setFilterType("All");setMaxPrice(300000); setDebouncedPrice(300000);setAmenityFilters([]);setVerifiedOnly(false);setImmediateOnly(false);setPage(1);}} style={{ fontSize:12,fontWeight:700,color:"#ef4444",cursor:"pointer" }}>Reset all</span>
           </div>
 
           <div style={{ marginBottom:22 }}>
@@ -538,7 +551,7 @@ export default function ResultsPage() {
           <div style={{ marginBottom:22 }}>
             <div style={{ fontSize:11,fontWeight:800,color:"#1e1b4b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6 }}>Max Annual Rent</div>
             <div style={{ fontSize:17,fontWeight:900,color:"#6d28d9",marginBottom:10 }}>AED {maxPrice.toLocaleString()}</div>
-            <input type="range" min={30000} max={300000} step={5000} value={maxPrice} onChange={(e)=>{setMaxPrice(Number(e.target.value));setPage(1);}} />
+            <input type="range" min={30000} max={300000} step={5000} value={maxPrice} onChange={(e) => { setMaxPrice(Number(e.target.value)); }} />
             <div style={{ display:"flex",justifyContent:"space-between",fontSize:10,color:"#94a3b8",fontWeight:600,marginTop:4 }}>
               <span>AED 30K</span><span>AED 300K</span>
             </div>

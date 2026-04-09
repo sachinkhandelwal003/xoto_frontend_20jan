@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Tag, Tooltip, Modal, message, Image } from 'antd';
+import { useSelector } from 'react-redux';
 import {
   PlusOutlined,
   EditOutlined,
@@ -28,6 +29,13 @@ const TYPE_COLORS = {
 };
 
 const RentalPropertyList = () => {
+const { user } = useSelector((s) => s.auth);
+const roleSlugMap = {
+  0: "superadmin", 1: "admin", 2: "customer",
+  15: "agency", 16: "agent", 17: "developer", 18: "vault-admin"
+};
+const roleSlug = roleSlugMap[user?.role?.code] ?? "superadmin";
+
   const navigate = useNavigate();
 
   const [data, setData] = useState([]);
@@ -270,7 +278,8 @@ const RentalPropertyList = () => {
               icon={<EditOutlined />}
               size="small"
               style={{ color: THEME.primary }}
-              onClick={() => navigate(`/admin/rental/property/edit/${record._id}`)}
+              onClick={() => navigate(`/dashboard/${roleSlug}/rental/properties/edit/${record._id}`)}
+
             />
           </Tooltip>
           <Tooltip title="Delete">
