@@ -34,24 +34,21 @@ const HeroSection = () => {
       </video>
 
       {/* Content — fully centered */}
-      <div className="relative z-[2] w-full  max-w-6xl mx-auto  lg:px-12 flex flex-col items-center text-center gap-10">
+      <div className="relative z-[2] w-full max-w-6xl mx-auto lg:px-12 flex flex-col items-center text-center gap-10">
         
         <div className="w-full space-y-6">
           
           {/* Heading - Responsive wrapping (Mobile par wrap, Desktop par exactly 2 lines) */}
-      <h1 className="heading-light w-full text-center leading-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl px-2 flex flex-col items-center">
-  
-  {/* First Line */}
-  <span className="block">
-    {t("hero.title1")}
-  </span>
-
-  {/* Second Line */}
-  <span className="block">
-    {t("hero.title2")}
-  </span>
-
-</h1>
+          <h1 className="heading-light w-full text-center leading-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl px-2 flex flex-col items-center">
+            {/* First Line */}
+            <span className="block">
+              {t("hero.title1")}
+            </span>
+            {/* Second Line */}
+            <span className="block">
+              {t("hero.title2")}
+            </span>
+          </h1>
 
           {/* Description */}
           <p className="paragraph-light-1 text-lg max-w-3xl mx-auto">
@@ -87,6 +84,23 @@ const HeroSection = () => {
               </Link>
 
             </div>
+          </div>
+
+          {/* ✅ EXCLUSIVE DEAL BUTTON (Attractive Flickering/Pulsing Effect) */}
+          <div className="w-full flex justify-center pt-2"> 
+            <Link 
+              to="/properties"
+              className="relative inline-flex items-center justify-center px-8 py-3 overflow-hidden font-semibold tracking-widest text-white uppercase bg-transparent border border-[#5C039B] rounded-full group cursor-pointer transition-all duration-300 hover:bg-[#5C039B]/40 hover:scale-105"
+            >
+              {/* Flashing glow on hover */}
+              <span className="absolute inset-0 w-full h-full bg-[#5C039B] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+
+              <span className="relative flex items-center gap-3 text-sm sm:text-base drop-shadow-lg">
+                <span className="animate-pulse">✨</span>
+                Xoto Exclusive Deal
+                <span className="animate-pulse">✨</span>
+              </span>
+            </Link>
           </div>
 
           {/* Features — centered grid */}

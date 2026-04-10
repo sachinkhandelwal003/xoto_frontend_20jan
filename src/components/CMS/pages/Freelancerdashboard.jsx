@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom'; // ✅ Added useNavigate
 import dayjs from 'dayjs';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -10,11 +11,12 @@ import {
   ClockCircleOutlined,
   ProjectOutlined,
   ArrowUpOutlined,
-  CalendarOutlined
+  CalendarOutlined,
+  SyncOutlined
 } from '@ant-design/icons';
 import {
   Card, Row, Col, Typography, Tag, Statistic,
-  Spin, Alert, Progress, Table, Empty
+  Spin, Alert, Progress, Table, Empty, Button
 } from 'antd';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
 
@@ -29,12 +31,26 @@ const PURPLE_THEME = {
   error: '#f5222d'
 };
 
+// ✅ Role map added to get the correct slug
+const roleSlugMap = {
+  0: "superadmin",
+  1: "admin",
+  5: "vendor-b2c",
+  6: "vendor-b2b",
+  7: "freelancer",
+  11: "accountant",
+};
+
 const Freelancerdashboard = () => {
+  const navigate = useNavigate(); // ✅ Initialize navigate
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
 
   const user = useSelector((state) => state.auth?.user);
+  
+  // ✅ Extract roleSlug from user
+  const roleSlug = roleSlugMap[user?.role?.code] ?? "freelancer";
 
   const fromDate = dayjs().subtract(1, 'year').format('DD-MM-YYYY');
   const toDate = dayjs().add(1, 'day').format('DD-MM-YYYY');
@@ -112,19 +128,33 @@ const Freelancerdashboard = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
 
       {/* HEADER */}
-       <div className="flex justify-between items-center mb-8"> 
-      <div className="mb-8">
-        <Title level={2} style={{ margin: 0 }}>Freelancer Dashboard</Title>
-        <Text type="secondary">Performance overview & project tracking</Text>
-        
-      </div>
-       <div className="flex gap-3 bg-primary text-white cursor-pointer p-2 rounded-lg shadow-sm"> 
-        <button className='cursor-pointer' onClick={() => window.location.href = '/'}>Go To Home</button>
-        </div>
+      <div className="flex justify-between items-center mb-8"> 
+        <div>
+          <Title level={2} style={{ margin: 0 }}>Freelancer Dashboard</Title>
+          <Text type="secondary">Performance overview & project tracking</Text>
         </div>
 
+        {/* ✅ Updated Button Section with Navigation */}
+        <div className="flex gap-3"> 
+          <Button 
+            type="primary" 
+            style={{ backgroundColor: PURPLE_THEME.primary, borderColor: PURPLE_THEME.primary }}
+            icon={<SyncOutlined />}
+            onClick={() => navigate(`/dashboard/${roleSlug}/update`)} // ✅ Navigates to /roleSlug/update
+          >
+            Update
+          </Button>
+
+          <Button 
+            onClick={() => navigate('/')} // ✅ Cleaner navigation for React
+            style={{ borderColor: PURPLE_THEME.primary, color: PURPLE_THEME.primary }}
+          >
+            Go To Home
+          </Button>
+        </div>
+      </div>
+
       {/* STATS */}
-      
       <Row gutter={[16, 16]} className="mb-8">
         {statsCards.map((s, i) => (
           <Col xs={24} sm={12} lg={6} key={i}>

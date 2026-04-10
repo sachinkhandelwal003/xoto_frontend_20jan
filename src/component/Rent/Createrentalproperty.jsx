@@ -270,7 +270,7 @@ const CreateRentalProperty = () => {
       };
 
       const response = isEditMode
-        ? await apiService.put(`/rental/property/${id}`, payload)
+        ? await apiService.post(`/rental/property/update-property/${id}`, payload)
         : await apiService.post('/rental/property/create', payload);
 
       if (response) {

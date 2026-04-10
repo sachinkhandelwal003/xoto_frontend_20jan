@@ -79,7 +79,7 @@ const VaultAgentDashboard = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <Title level={2} className="text-gray-900 mb-1">Welcome back, Agent</Title>
+          <Title level={2} className="text-gray-900 mb-1">Welcome back</Title>
           <Text className="text-gray-500 text-lg">Xoto Vault • Mortgage Referral Dashboard</Text>
         </div>
         <Button type="primary" icon={<RiUserAddLine />} size="large" className="bg-[#5C039B] hover:bg-[#4a027c]">

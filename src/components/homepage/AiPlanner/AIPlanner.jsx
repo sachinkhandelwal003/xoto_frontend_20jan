@@ -103,9 +103,9 @@ const AIPlanner = () => {
     }
   };
 
-  const startPolling = () => {
+const startPolling = () => {
+  stopPolling(); 
   console.log("🔄 Polling started...");
-
   pollingRef.current = setInterval(async () => {
     try {
       const res = await apiService.get("/ai/get-landscape-designs");
@@ -300,6 +300,7 @@ const fetchSavedDesigns = async () => {
 
   // ✅ Generate + Polling start
   const generateAIDesigns = async () => {
+    if (isGenerating) return;
     if (!selectedImage) {
       notification.warning({ message: 'Please upload a photo first' });
       return;

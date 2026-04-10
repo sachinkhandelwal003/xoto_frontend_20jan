@@ -67,7 +67,7 @@ export default function Footer() {
         {/* Mobile Social Icons */}
       <div className="flex justify-center gap-7 mt-4 py-5">
   {/* Facebook */}
-  <a href="https://www.facebook.com/profile.php?id=61573697300861" target="_blank" rel="noopener noreferrer">
+  <a href="https://www.facebook.com/xotouae1" target="_blank" rel="noopener noreferrer">
     <img 
       src={facebookIcon} 
       alt="Facebook" 
@@ -76,7 +76,7 @@ export default function Footer() {
   </a>
 
   {/* Instagram */}
-  <a href="https://www.instagram.com/xotohome/" target="_blank" rel="noopener noreferrer">
+  <a href=" https://www.instagram.com/xotoproptech/" target="_blank" rel="noopener noreferrer">
     <img 
       src={instagramIcon} 
       alt="Instagram" 
@@ -107,7 +107,7 @@ export default function Footer() {
        <div className="absolute right-2 top-12 flex flex-col gap-[14px]">
   {/* --- WhatsApp Button --- */}
   <div
-    onClick={() => window.open("https://wa.me/+971509180967", "_blank")}
+    onClick={() => window.open("https://wa.me/", "_blank")}
     className="w-[53px] h-[53px] rounded-full bg-[#03A4F4] flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
   >
     <img src={whatsappIcon} alt="WhatsApp" className="w-[32px] h-[32px]" />
@@ -300,10 +300,10 @@ export default function Footer() {
           </p>
 
           <div className="flex gap-10">
-            <a href="https://www.facebook.com/profile.php?id=61573697300861" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.facebook.com/xotouae" target="_blank" rel="noopener noreferrer">
               <img src={facebookIcon} className="w-[24px]" />
             </a>
-            <a href="https://www.instagram.com/xotohome/" target="_blank" rel="noopener noreferrer">
+            <a href=" https://www.instagram.com/xotoproptech/" target="_blank" rel="noopener noreferrer">
               <img src={instagramIcon} className="w-[24px]" />
             </a>
             <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
