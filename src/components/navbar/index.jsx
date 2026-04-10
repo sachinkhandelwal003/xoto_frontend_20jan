@@ -110,7 +110,7 @@ const Navbar = () => {
     if (roleName === "developer") return "/dashboard/developer";
     if (roleName === "customer") return "/dashboard/customer";
     if (roleName === "superadmin" || roleName === "admin") return "/dashboard/superadmin";
-    if (roleName === "vaultparnter" || roleName === "xotovaultpartnerr") return "/dashboard/vault/xotovaultpartner";
+    // if (roleName === "vaultparnter" || roleName === "xotovaultpartnerr") return "/dashboard/vault/xotovaultpartner";
     return "/dashboard/developer";
   };
 
