@@ -133,7 +133,7 @@ const VaultAgentLeadDetail = () => {
   const fetchLead = async () => {
     try {
       setLoading(true);
-      const res = await apiService.get(`/vault/lead/admin/${id}`);
+      const res = await apiService.get(`/vault/lead/${id}`);
       setLead(res?.data?.data || res?.data || null);
     } catch { message.error('Failed to load lead details.'); }
     finally { setLoading(false); }
@@ -178,7 +178,7 @@ const VaultAgentLeadDetail = () => {
     if (!docId) { message.warning('Document ID not found'); return; }
     try {
       setVerifying(true);
-      await apiService.post(`/vault/lead/documents/admin/${docId}/verify`, { qualityScore });
+      await apiService.post(`/vault/lead/documents/${docId}/verify`, { qualityScore });
       message.success('Document verified!');
       await fetchDocs();
       closeModal();
@@ -193,7 +193,7 @@ const VaultAgentLeadDetail = () => {
     if (!docId) { message.warning('Document ID not found'); return; }
     try {
       setRejecting(true);
-      await apiService.post(`/vault/lead/documents/admin/${docId}/reject`, { reason: rejectReason });
+      await apiService.post(`/vault/lead/documents/${docId}/reject`, { reason: rejectReason });
       message.success('Document rejected.');
       await fetchDocs();
       closeModal();
