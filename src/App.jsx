@@ -30,6 +30,7 @@ import HomeB2C from "./components/ecommerce/B2C/Home";
 import CartPage from "./components/ecommerce/B2C/products/CartPage.jsx";
 import CmsApp from "./components/CMS/CmsApp";
 import AITool from "./components/AI/Tool/AITool";
+import PrivacyPolicy from "./components/homepage/PrivacyPolicy";
 const NotFound = lazy(() => import("./components/NotFound"));
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -274,6 +275,7 @@ function App() {
               <Route path="/accountant/login" element={<AccountantLogin />} />
               <Route path="/consultation" element={<Consult />} />
               <Route path="/designs" element={<Designs />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                             <Route path="/ecommerce/cart" element={<CartPage />} />
                             <Route path="/ecommerce/checkout" element={<CheckoutPage />} />
                             <Route path="/ecommerce/payment/success" element={<PaymentSuccess />} />

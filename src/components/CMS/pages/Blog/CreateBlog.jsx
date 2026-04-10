@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
-import { showToast } from '../../../../manageApi/utils/toast'; // Added toast support
+import { showToast } from '../../../../manageApi/utils/toast'; 
 import JoditEditor from 'jodit-react';
 import DOMPurify from 'dompurify';
 import moment from 'moment';
@@ -41,7 +41,6 @@ const cleanWordHtml = (html) => {
   let c = html;
 
   c = c.replace(/.*?<!\[endif\]-->/gs, '');
-  // ❌ removed broken line
   c = c.replace(/<o:p>.*?<\/o:p>/gs, '');
   c = c.replace(/<style[^>]*>.*?<\/style>/gs, '');
   c = c.replace(/<meta[^>]*>/gs, '');
@@ -242,14 +241,13 @@ const BlogManagement = () => {
   const screens = useBreakpoint();
   const quillRef = useRef(null);
   
-  // ✅ Added search debounce ref mirroring your CustomerList
   const searchTimeout = useRef(null);
 
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [targetStatus, setTargetStatus] = useState('draft'); 
   
-  // ✅ Unified pagination state
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -343,7 +341,7 @@ const BlogManagement = () => {
         title: 'Draft Found',
         content: `Restore draft saved at ${moment(d.timestamp).format('HH:mm, MMM DD')}?`,
         onOk: () => {
-          form.setFieldsValue({ title: d.title, subHeading: d.subHeading, tags: d.tags, category: d.category, status: d.status, authorName: d.authorName });
+          form.setFieldsValue({ title: d.title, subHeading: d.subHeading, tags: d.tags, category: d.category, authorName: d.authorName });
           setContentValue(d.content || '');
           setHeadings(d.headings || []);
           message.success('Draft restored');
@@ -352,7 +350,6 @@ const BlogManagement = () => {
     } catch (_) {}
   };
 
-  // ✅ Updated fetch logic to handle parameters cleanly, similar to CustomerList
   const fetchBlogs = useCallback(async (page = 1, limit = 10, searchVal = "", category = "", status = "") => {
     setLoading(true);
     try {
@@ -365,7 +362,6 @@ const BlogManagement = () => {
       if (response.success) {
         setBlogs(response.data || []);
         
-        // Update pagination mimicking CustomerList logic
         setPagination({
           currentPage: response.pagination?.page || page,
           totalPages: response.pagination?.totalPages || 1,
@@ -392,7 +388,6 @@ const BlogManagement = () => {
     fetchBlogs(1, 10, "", "", "");
   }, [fetchBlogs]);
 
-  // ✅ Debounced Search handler
   const handleSearch = (e) => {
     const val = e.target.value;
     setSearchText(val);
@@ -433,7 +428,6 @@ const BlogManagement = () => {
           subHeading: blog.subHeading || '',
           tags: blog.tags || [],
           category: blog.category || 'Other',
-          status: blog.isPublished ? 'published' : 'draft',
           authorName: blog.authorName || 'Admin',
         });
 
@@ -475,6 +469,26 @@ const BlogManagement = () => {
       message.error('Please add content to your blog');
       return;
     }
+
+    if (targetStatus === 'published') {
+      if (featuredImageList.length === 0) {
+        message.error('Featured Image is mandatory for publishing.');
+        return;
+      }
+      if (coverImageList.length === 0) {
+        message.error('Cover Image is mandatory for publishing.');
+        return;
+      }
+      if (authorImageList.length === 0) {
+        message.error('Author Image is mandatory for publishing.');
+        return;
+      }
+      if (!values.authorName) {
+        message.error('Author Name is mandatory for publishing.');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([
@@ -489,14 +503,14 @@ const BlogManagement = () => {
         content: contentValue,
         authorName: values.authorName || 'Admin',
         authorImage: authorImgUrl,
-        isPublished: values.status === 'published',
+        isPublished: targetStatus === 'published',
         tags: values.tags || [],
         category: values.category || 'Other',
         featuredImage: featuredUrl,
         coverImage: coverUrl,
       };
 
-      if (values.status === 'published') payload.publishedAt = new Date().toISOString();
+      if (targetStatus === 'published') payload.publishedAt = new Date().toISOString();
 
       const response = editingId
         ? await apiService.put(`/blogs/edit-blog-by-id?id=${editingId}`, payload)
@@ -528,36 +542,53 @@ const BlogManagement = () => {
     } catch { message.error('Deletion failed'); }
   };
 
-  const duplicateBlog = async (blog) => {
+  // ✅ 1. NAYA CARD PREVIEW LOGIC
+  const handleCardPreview = async (record) => {
+    const hide = message.loading('Loading preview...', 0);
     try {
-      const payload = { ...blog, title: `${blog.title} (Copy)`, isPublished: false, viewCount: 0 };
-      delete payload._id; delete payload.createdAt; delete payload.updatedAt; delete payload.slug;
-      const r = await apiService.post('/blogs/create-blog', payload);
-      if (r.success) { 
-        message.success('Blog duplicated'); 
-        fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus); 
+      // API fetch karke real data layenge pehle
+      const response = await apiService.get(`/blogs/get-blog-by-id?id=${record._id}`);
+      if (response.success && response.data) {
+        showPreview(response.data, false); // false = Ye Live Form Preview nahi hai
+      } else {
+        showPreview(record, false); 
       }
-    } catch { message.error('Failed to duplicate'); }
+    } catch (err) {
+      showPreview(record, false);
+    } finally {
+      hide();
+    }
   };
 
-  const showPreview = (blog) => {
-    const formVals = form.getFieldsValue();
-    const data = blog._id
-      ? { ...blog, headings: extractHeadings(blog.content), readingTime: Math.ceil((blog.content || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200) }
-      : {
-          title: formVals.title || 'Untitled',
-          subHeading: formVals.subHeading,
-          content: contentValue,
-          authorName: formVals.authorName,
-          tags: formVals.tags,
-          category: formVals.category,
-          featuredImage: featuredImageList[0]?.url || featuredImageList[0]?.preview,
-          coverImage: coverImageList[0]?.url || coverImageList[0]?.preview,
-          headings,
-          createdAt: new Date(),
-          readingTime: Math.ceil(contentValue.replace(/<[^>]*>/g, '').split(/\s+/).length / 200),
-        };
-    setPreviewBlogData(data);
+  // ✅ 2. SHOW PREVIEW FUNCTION (Differentiate Form Data vs API Data)
+  const showPreview = (blogData = {}, isLiveFormPreview = false) => {
+    if (isLiveFormPreview) {
+      // Jab editor k andar wale "Live Preview" pe click hoga (Form Data)
+      const formVals = form.getFieldsValue();
+      const data = {
+        title: formVals.title || 'Untitled',
+        subHeading: formVals.subHeading,
+        content: contentValue,
+        authorName: formVals.authorName,
+        tags: formVals.tags,
+        category: formVals.category,
+        featuredImage: featuredImageList[0]?.url || featuredImageList[0]?.preview,
+        coverImage: coverImageList[0]?.url || coverImageList[0]?.preview,
+        authorImage: authorImageList[0]?.url || authorImageList[0]?.preview,
+        headings,
+        createdAt: new Date(),
+        readingTime: Math.ceil((contentValue || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200),
+      };
+      setPreviewBlogData(data);
+    } else {
+      // Jab Card pe click hoga (API Data)
+      const data = {
+        ...blogData,
+        headings: extractHeadings(blogData?.content || ''),
+        readingTime: Math.ceil((blogData?.content || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200)
+      };
+      setPreviewBlogData(data);
+    }
     setPreviewModalVisible(true);
   };
 
@@ -641,9 +672,6 @@ const BlogManagement = () => {
         </Row>
       </Card>
 
-      {/* ───────────────────────────────────────────── */}
-      {/* PERFECT CARDS LAYOUT                          */}
-      {/* ───────────────────────────────────────────── */}
       <div className="blog-list-container">
         {loading ? (
           <div style={{ marginTop: '30px' }}>
@@ -665,7 +693,6 @@ const BlogManagement = () => {
                 style={{ marginBottom: '24px' }}
               >
                 <Row>
-                  {/* Left Side: BIG IMAGE */}
                   <Col xs={24} sm={24} md={8} lg={7} xl={6}>
                     <div style={{ width: '100%', height: '100%', minHeight: '260px', backgroundColor: '#f9f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {record.featuredImage ? (
@@ -676,10 +703,8 @@ const BlogManagement = () => {
                     </div>
                   </Col>
 
-                  {/* Right Side: CONTENT */}
                   <Col xs={24} sm={24} md={16} lg={17} xl={18} style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <div>
-                      {/* Top Header Row (Tags + Status + Actions) */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                         <Space wrap>
                           <Tag color="purple" style={{ padding: '4px 12px', fontSize: '13px', borderRadius: '20px' }}>
@@ -691,21 +716,14 @@ const BlogManagement = () => {
                           />
                         </Space>
 
-                        {/* Card Actions */}
                         <Space size="middle">
                           <Tooltip title="Edit Post">
                             <Button shape="circle" icon={<EditOutlined />} onClick={() => fetchBlogById(record._id)} />
                           </Tooltip>
                           <Tooltip title="Preview Post">
-                            <Button shape="circle" icon={<EyeOutlined />} onClick={() => showPreview(record)} />
+                            {/* ✅ Updated onClick handler to fetch details first */}
+                            <Button shape="circle" icon={<EyeOutlined />} onClick={() => handleCardPreview(record)} />
                           </Tooltip>
-                          {/* <Dropdown overlay={
-                            <Menu>
-                              <Menu.Item key="dup" icon={<CopyOutlined />} onClick={() => duplicateBlog(record)}>Duplicate</Menu.Item>
-                            </Menu>
-                          }>
-                            <Button shape="circle" icon={<MoreOutlined />} />
-                          </Dropdown> */}
                           <Popconfirm title="Are you sure you want to delete this post?" onConfirm={() => deleteBlog(record._id)}>
                             <Tooltip title="Delete">
                               <Button shape="circle" danger icon={<DeleteOutlined />} />
@@ -714,7 +732,6 @@ const BlogManagement = () => {
                         </Space>
                       </div>
 
-                      {/* Title & Excerpt */}
                       <Title level={3} style={{ marginTop: 0, marginBottom: '8px', color: '#1a1a2e', fontWeight: 700 }}>
                         {record.title || 'Untitled Post'}
                       </Title>
@@ -722,14 +739,12 @@ const BlogManagement = () => {
                         {record.subHeading ? record.subHeading : 'No excerpt available...'}
                       </Text>
 
-                      {/* Hashtags */}
                       <div style={{ marginBottom: '20px' }}>
                         {record.tags?.slice(0, 5).map(t => <Tag key={t} color="blue" style={{ borderRadius: '4px' }}>#{t}</Tag>)}
                         {record.tags?.length > 5 && <Tag style={{ borderRadius: '4px' }}>+{record.tags.length - 5} more</Tag>}
                       </div>
                     </div>
 
-                    {/* Bottom Footer Row (Author & Stats) */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: '16px', flexWrap: 'wrap', gap: '12px' }}>
                       <Space size="large">
                         <Space>
@@ -758,92 +773,64 @@ const BlogManagement = () => {
               </Card>
             ))}
 
-            {/* Pagination Component mapped to state */}
           <div className="flex flex-col md:flex-row justify-between items-center mt-8 gap-4">
+            <div className="text-sm text-gray-600">
+              Showing {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}
+              {' '}to{' '}
+              {Math.min(
+                pagination.currentPage * pagination.itemsPerPage,
+                pagination.totalResults
+              )}
+              {' '}of {pagination.totalResults}
+            </div>
 
-  {/* LEFT TEXT */}
-  <div className="text-sm text-gray-600">
-    Showing {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}
-    {' '}to{' '}
-    {Math.min(
-      pagination.currentPage * pagination.itemsPerPage,
-      pagination.totalResults
-    )}
-    {' '}of {pagination.totalResults}
-  </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() =>
+                  fetchBlogs(pagination.currentPage - 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)
+                }
+                disabled={pagination.currentPage === 1}
+                className="px-3 py-1 border rounded-md text-gray-600 disabled:opacity-50"
+              >
+                ←
+              </button>
 
-  {/* RIGHT BUTTONS */}
-  <div className="flex items-center gap-2">
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                .slice(
+                  Math.max(0, pagination.currentPage - 3),
+                  pagination.currentPage + 2
+                )
+                .map((page) => (
+                  <button
+                    key={page}
+                    onClick={() =>
+                      fetchBlogs(page, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)
+                    }
+                    className={`px-4 py-1 rounded-md border ${
+                      pagination.currentPage === page
+                        ? 'bg-purple-700 text-white border-purple-700'
+                        : 'text-gray-700 border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
 
-    {/* PREVIOUS */}
-    <button
-      onClick={() =>
-        fetchBlogs(
-          pagination.currentPage - 1,
-          pagination.itemsPerPage,
-          searchText,
-          selectedCategory,
-          selectedStatus
-        )
-      }
-      disabled={pagination.currentPage === 1}
-      className="px-3 py-1 border rounded-md text-gray-600 disabled:opacity-50"
-    >
-      ←
-    </button>
-
-    {/* PAGE NUMBERS */}
-    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-      .slice(
-        Math.max(0, pagination.currentPage - 3),
-        pagination.currentPage + 2
-      )
-      .map((page) => (
-        <button
-          key={page}
-          onClick={() =>
-            fetchBlogs(
-              page,
-              pagination.itemsPerPage,
-              searchText,
-              selectedCategory,
-              selectedStatus
-            )
-          }
-          className={`px-4 py-1 rounded-md border ${
-            pagination.currentPage === page
-              ? 'bg-purple-700 text-white border-purple-700'
-              : 'text-gray-700 border-gray-300 hover:bg-gray-100'
-          }`}
-        >
-          {page}
-        </button>
-      ))}
-
-    {/* NEXT */}
-    <button
-      onClick={() =>
-        fetchBlogs(
-          pagination.currentPage + 1,
-          pagination.itemsPerPage,
-          searchText,
-          selectedCategory,
-          selectedStatus
-        )
-      }
-      disabled={pagination.currentPage === pagination.totalPages}
-      className="px-3 py-1 border rounded-md text-gray-600 disabled:opacity-50"
-    >
-      →
-    </button>
-
-  </div>
-</div>
+              <button
+                onClick={() =>
+                  fetchBlogs(pagination.currentPage + 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)
+                }
+                disabled={pagination.currentPage === pagination.totalPages}
+                className="px-3 py-1 border rounded-md text-gray-600 disabled:opacity-50"
+              >
+                →
+              </button>
+            </div>
+          </div>
           </>
         )}
       </div>
 
-      {/* Editor Modal */}
       <Modal
         title={
           <div style={{ fontWeight: 700, fontSize: 16 }}>
@@ -859,21 +846,13 @@ const BlogManagement = () => {
         width={screens.xs ? '95%' : 1050}
         bodyStyle={{ maxHeight: '82vh', overflowY: 'auto' }}
       >
-        <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ status: 'draft', category: 'Other', authorName: 'Admin' }}>
+        <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ category: 'Other', authorName: 'Admin' }}>
           <Tabs defaultActiveKey="content">
             <TabPane tab={<span><EditOutlined /> Content</span>} key="content">
               <Row gutter={16}>
-                <Col span={16}>
+                <Col span={24}>
                   <Form.Item name="title" label="Post Title" rules={[{ required: true, message: 'Title is required' }]}>
                     <Input placeholder="Enter an engaging title" size="large" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="status" label="Status">
-                    <Select size="large">
-                      <Option value="draft">📝 Draft</Option>
-                      <Option value="published">🚀 Publish Now</Option>
-                    </Select>
                   </Form.Item>
                 </Col>
               </Row>
@@ -916,9 +895,11 @@ const BlogManagement = () => {
                     onChange={handleEditorChange}
                   />
                 </div>
-
+                
+                {/* Internal Live Preview inside Modal */}
                 <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button icon={<EyeOutlined />} onClick={() => showPreview({})} disabled={!contentValue || contentValue === '<p><br></p>'}>Live Preview</Button>
+                  {/* ✅ Yahan `true` pass kiya hai taaki form ka content le */}
+                  <Button icon={<EyeOutlined />} onClick={() => showPreview({}, true)} disabled={!contentValue || contentValue === '<p><br></p>'}>Live Preview</Button>
                 </div>
               </Form.Item>
             </TabPane>
@@ -926,14 +907,14 @@ const BlogManagement = () => {
             <TabPane tab={<span><PictureOutlined /> Media</span>} key="media">
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item label="Featured Image (Thumbnail)">
+                  <Form.Item label="Featured Image (Thumbnail)" extra="Recommended: 1200 x 800px (Max: 5MB)">
                     <Upload listType="picture-card" fileList={featuredImageList} onPreview={handlePreview} onChange={({ fileList }) => setFeaturedImageList(fileList)} beforeUpload={f => validateImage(f, 0.1, 5)} maxCount={1}>
                       {featuredImageList.length < 1 && <div><PlusOutlined /><div style={{ marginTop: 8 }}>Upload</div></div>}
                     </Upload>
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item label="Cover Image (Hero Banner)">
+                  <Form.Item label="Cover Image (Hero Banner)" extra="Recommended: 1920 x 1080px (Max: 5MB)">
                     <Upload listType="picture-card" fileList={coverImageList} onPreview={handlePreview} onChange={({ fileList }) => setCoverImageList(fileList)} beforeUpload={f => validateImage(f, 0.1, 5)} maxCount={1}>
                       {coverImageList.length < 1 && <div><PlusOutlined /><div style={{ marginTop: 8 }}>Upload</div></div>}
                     </Upload>
@@ -950,7 +931,7 @@ const BlogManagement = () => {
                   </Form.Item>
                 </Col>
                 <Col span={8}>
-                  <Form.Item label="Author Avatar">
+                  <Form.Item label="Author Avatar" extra="Recommended: 400 x 400px (Max: 2MB)">
                     <Upload listType="picture-card" fileList={authorImageList} onPreview={handlePreview} onChange={({ fileList }) => setAuthorImageList(fileList)} beforeUpload={f => validateImage(f, 0.05, 2)} maxCount={1}>
                       {authorImageList.length < 1 && <UserOutlined />}
                     </Upload>
@@ -968,10 +949,11 @@ const BlogManagement = () => {
               <Text type="secondary">Auto-save (30s)</Text>
             </Space>
             <Space>
-              <Button size="large" icon={<EyeOutlined />} onClick={() => showPreview({})}>Preview</Button>
-              <Button size="large" onClick={closeModal}>Cancel</Button>
-              <Button type="primary" htmlType="submit" loading={saving} size="large" icon={<SaveOutlined />} style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}>
-                {editingId ? 'Update Blog' : 'Publish Blog'}
+              <Button size="large" onClick={() => { setTargetStatus('draft'); form.submit(); }} loading={saving}>
+                Save as Draft
+              </Button>
+              <Button type="primary" onClick={() => { setTargetStatus('published'); form.submit(); }} loading={saving} size="large" icon={editingId ? <CheckCircleOutlined /> : <PlusOutlined />} style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}>
+                {editingId ? 'Update & Publish' : 'Publish Blog'}
               </Button>
             </Space>
           </div>

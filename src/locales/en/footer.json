@@ -40,7 +40,7 @@
   
     { "label": "Submit Your Feedback", "path": "" },
     { "label": "Contact Us", "path": "/contact" },
-    { "label": "Privacy Policy", "path": "" },
+    { "label": "Privacy Policy", "path": "/privacy-policy" },
     { "label": "Terms Of Use", "path": "" }
   ],
 
