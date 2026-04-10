@@ -425,7 +425,7 @@ const CUSTOM_ROLE_LINKS = {
   ],
   "21": [
     {
-      title: "Agents",
+      title: "Vault Partners",
       icon: "fas fa-users",
       path: "/dashboard/{roleSlug}/vaultpartner",
       submenus: [

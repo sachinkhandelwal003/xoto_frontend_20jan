@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Button, Modal, Form, Input, Popconfirm, Card, Table,
+  Button, Modal, Form, Input, Popconfirm, Card,
   Typography, Row, Col, Statistic, Space, Divider,
   message, notification, Upload, Switch, Tag
 } from 'antd';
@@ -12,6 +12,8 @@ import {
 } from '@ant-design/icons';
 
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
+// 👇 Aapki custom table import kar li hai
+import CustomTable from '../../../../components/CMS/pages/custom/CustomTable';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -310,12 +312,14 @@ const CreateBrand = () => {
     </div>
   );
 
-  // ================= TABLE =================
+  // ================= TABLE COLUMNS =================
+  // CustomTable "key" property par depend karti hai values map karne ke liye, 
+  // isliye har object mein `key` add kar diya gaya hai.
   const columns = [
-
     {
       title: "Logo",
       dataIndex: "photo",
+      key: "photo", 
       render: (photo) => (
         <div style={{ width: 60, height: 60 }}>
           {photo ? (
@@ -329,10 +333,11 @@ const CreateBrand = () => {
         </div>
       )
     },
-
     {
       title: "Brand",
       dataIndex: "brandName",
+      key: "brandName",
+      sortable: true,
       render: (text, record) => (
         <>
           <Text strong>{text}</Text>
@@ -344,49 +349,48 @@ const CreateBrand = () => {
         </>
       )
     },
-
     {
       title: "Status",
       dataIndex: "isActive",
+      key: "isActive",
       render: (isActive) => (
         <Tag color={isActive ? "success" : "error"}>
           {isActive ? "Active" : "Inactive"}
         </Tag>
       )
     },
-
     {
       title: "Website",
       dataIndex: "websiteUrl",
+      key: "websiteUrl",
       render: (url) =>
         url ? (
-          <a href={url} target="_blank">
+          <a href={url} target="_blank" rel="noreferrer">
             <LinkOutlined /> Visit
           </a>
         ) : (
           "-"
         )
     },
-
     {
       title: "Action",
+      key: "actions",
       render: (_, record) => (
         <Space>
           <Button
             type="text"
             icon={<EditOutlined />}
-            onClick={() => fetchBrandById(record._id)}
+            onClick={() => fetchBrandById(record._id || record.id)}
           />
           <Popconfirm
             title="Delete?"
-            onConfirm={() => deleteBrand(record._id)}
+            onConfirm={() => deleteBrand(record._id || record.id)}
           >
             <Button danger type="text" icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
       )
     }
-
   ];
 
   return (
@@ -395,7 +399,7 @@ const CreateBrand = () => {
 
       <div className="flex justify-between mb-6">
 
-        <Title level={3}>Brand Management</Title>
+        <Title level={3} style={{ margin: 0 }}>Brand Management</Title>
 
         <Button
           type="primary"
@@ -413,35 +417,23 @@ const CreateBrand = () => {
 
       </div>
 
-      <Card>
-
-        <Input
-          prefix={<SearchOutlined />}
-          placeholder="Search brand..."
-          onChange={(e) => {
-            setSearchText(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-
-        <Table
-          className="mt-4"
-          columns={columns}
-          dataSource={brands}
-          loading={loading}
-          rowKey="_id"
-          pagination={{
-            current: currentPage,
-            pageSize,
-            total,
-            onChange: (p, s) => {
-              setCurrentPage(p);
-              setPageSize(s);
-            }
-          }}
-        />
-
-      </Card>
+      {/* 👇 Yahan par AntD Table aur Search ki jagah CustomTable daal di hai */}
+      <CustomTable 
+        columns={columns}
+        data={brands}
+        loading={loading}
+        totalItems={total}
+        currentPage={currentPage}
+        itemsPerPage={pageSize}
+        onPageChange={(page, size) => {
+          setCurrentPage(page);
+          setPageSize(size);
+        }}
+        onFilter={(filters) => {
+          setSearchText(filters.search || '');
+          setCurrentPage(1); // Jab bhi search karega toh page 1 par wapas aayega
+        }}
+      />
 
       <Modal
         title={editingId ? "Edit Brand" : "Create Brand"}
@@ -521,7 +513,7 @@ const CreateBrand = () => {
         title={previewTitle}
         onCancel={() => setPreviewOpen(false)}
       >
-        <img src={previewImage} style={{ width: "100%" }} />
+        <img src={previewImage} style={{ width: "100%" }} alt="preview" />
       </Modal>
 
     </div>
