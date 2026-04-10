@@ -460,10 +460,7 @@ const CmsRoutes = () => {
 
 <Route path="vault/agent-leads" element={<VaultAgentLeadList />} />
 <Route path="vault/lead/:id" element={<VaultAgentLeadDetail />} />
-<Route 
-  path="vault/lead/documents/:leadId" 
-  element={<VaultLeadDocumentUpload />} 
-/>
+<Route path="vault/lead/documents/:leadId" element={<VaultLeadDocumentUpload />} />
 
 
       {/* admin */}
