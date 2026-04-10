@@ -190,6 +190,9 @@ import VaultCreateLeads from "../ecommerce/B2C/VaultCreateLeads";
 import VaultLeads from "../ecommerce/B2C/VaultLeads";
 import VaultLeadDetails from "../ecommerce/B2C/VaultLeadDetails";
 import VaultLeadDocuments from "../ecommerce/B2C/VaultLeadDocuments";
+import VaultAgentLeadList from "../ecommerce/B2C/VaultAgentLeadList";
+import VaultAgentLeadDetail from "../ecommerce/B2C/VaultAgentLeadDetail";
+import VaultLeadDocumentUpload from "../ecommerce/B2C/VaultLeadDocumentUpload";
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 
@@ -465,6 +468,10 @@ const CmsRoutes = () => {
 
 
 
+
+<Route path="vault/agent-leads" element={<VaultAgentLeadList />} />
+<Route path="vault/lead/:id" element={<VaultAgentLeadDetail />} />
+<Route path="vault/lead/documents/:leadId" element={<VaultLeadDocumentUpload />} />
 
 
       {/* admin */}
