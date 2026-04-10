@@ -133,7 +133,7 @@ const VaultAgentLeadDetail = () => {
   const fetchLead = async () => {
     try {
       setLoading(true);
-      const res = await apiService.get(`/vault/lead/${id}`);
+      const res = await apiService.get(`/vault/lead/admin/${id}`);
       setLead(res?.data?.data || res?.data || null);
     } catch { message.error('Failed to load lead details.'); }
     finally { setLoading(false); }
@@ -173,36 +173,34 @@ const VaultAgentLeadDetail = () => {
     setRejectReason('');
   };
 
-const handleVerify = async () => {
-  const docId = selectedDoc?._id || selectedDoc?.id;
-  if (!docId) { message.warning('Document ID not found'); return; }
-  try {
-    setVerifying(true);
-    await apiService.post(`/vault/lead/documents/${docId}/verify`, { qualityScore });
-    message.success('Document verified!');
-    await fetchDocs(); // fetchDocs ke baad selectedDocLive auto-update ho jayega
-    // closeModal() hata diya — modal khula rahega, status badge dikhega
-  } catch (err) {
-    message.error(err?.response?.data?.message || 'Verification failed');
-  } finally { setVerifying(false); }
-};
+  const handleVerify = async () => {
+    const docId = selectedDoc?._id || selectedDoc?.id;
+    if (!docId) { message.warning('Document ID not found'); return; }
+    try {
+      setVerifying(true);
+      await apiService.post(`/vault/lead/documents/admin/${docId}/verify`, { qualityScore });
+      message.success('Document verified!');
+      await fetchDocs();
+      closeModal();
+    } catch (err) {
+      message.error(err?.response?.data?.message || 'Verification failed');
+    } finally { setVerifying(false); }
+  };
 
-const handleReject = async () => {
-  if (!rejectReason.trim()) { message.warning('Please enter a rejection reason'); return; }
-  const docId = selectedDoc?._id || selectedDoc?.id;
-  if (!docId) { message.warning('Document ID not found'); return; }
-  try {
-    setRejecting(true);
-    await apiService.post(`/vault/lead/documents/${docId}/reject`, { reason: rejectReason });
-    message.success('Document rejected.');
-    await fetchDocs(); // live update
-    setShowRejectInput(false);
-    setRejectReason('');
-    // closeModal() hata diya
-  } catch (err) {
-    message.error(err?.response?.data?.message || 'Rejection failed');
-  } finally { setRejecting(false); }
-};
+  const handleReject = async () => {
+    if (!rejectReason.trim()) { message.warning('Please enter a rejection reason'); return; }
+    const docId = selectedDoc?._id || selectedDoc?.id;
+    if (!docId) { message.warning('Document ID not found'); return; }
+    try {
+      setRejecting(true);
+      await apiService.post(`/vault/lead/documents/admin/${docId}/reject`, { reason: rejectReason });
+      message.success('Document rejected.');
+      await fetchDocs();
+      closeModal();
+    } catch (err) {
+      message.error(err?.response?.data?.message || 'Rejection failed');
+    } finally { setRejecting(false); }
+  };
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb' }}>
@@ -222,9 +220,7 @@ const handleReject = async () => {
   const dc = lead.documentCollection || {};
   const propertyAddress = [pd.propertyAddress?.building, pd.propertyAddress?.area, pd.propertyAddress?.city].filter(Boolean).join(', ');
 
-  const selectedDocLive = documents.find(d => (d._id || d.id) === (selectedDoc?._id || selectedDoc?.id));
-const docStatus = selectedDocLive?.status || selectedDocLive?.verification_status 
-                  || selectedDoc?.status || selectedDoc?.verification_status;
+  const docStatus = selectedDoc?.status || selectedDoc?.verification_status;
 
   return (
     <>
@@ -357,93 +353,81 @@ const docStatus = selectedDocLive?.status || selectedDocLive?.verification_statu
         </div>
 
         {/* ── Action bar ── */}
-        {/* Replace the entire action bar section with this */}
-<div style={{ marginTop: 16, padding: '16px 0 4px', borderTop: '1px solid #f3f4f6' }}>
-  {docStatus === 'Verified' && (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <span style={{
-        fontSize: 13, fontWeight: 700, color: '#10b981',
-        background: '#ecfdf5', padding: '6px 16px', borderRadius: 20,
-        border: '1px solid #6ee7b7', display: 'flex', alignItems: 'center', gap: 6
-      }}>
-        <CheckCircleOutlined /> Verified
-      </span>
-    </div>
-  )}
+        <div style={{ marginTop: 16, padding: '16px 0 4px', borderTop: '1px solid #f3f4f6' }}>
+          {docStatus === 'Verified' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#10b981', fontWeight: 600 }}>
+              <CheckCircleOutlined /> Document is already Verified
+            </div>
+          )}
 
-  {docStatus === 'Rejected' && (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <span style={{
-        fontSize: 13, fontWeight: 700, color: '#ef4444',
-        background: '#fef2f2', padding: '6px 16px', borderRadius: 20,
-        border: '1px solid #fca5a5', display: 'inline-flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start'
-      }}>
-        <CloseCircleOutlined /> Rejected
-      </span>
-      {selectedDoc?.rejectionReason && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#dc2626' }}>
-          <strong>Reason:</strong> {selectedDoc.rejectionReason}
+          {docStatus === 'Rejected' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444', fontWeight: 600 }}>
+              <CloseCircleOutlined /> Document is Rejected
+              {selectedDoc?.rejectionReason && <span style={{ fontWeight: 400, color: '#6b7280', fontSize: 13 }}>— {selectedDoc.rejectionReason}</span>}
+            </div>
+          )}
+
+          {docStatus !== 'Verified' && docStatus !== 'Rejected' && !showRejectInput && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              {/* Quality Score */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 14px' }}>
+                <span style={{ fontSize: 13, color: '#374151', fontWeight: 500, whiteSpace: 'nowrap' }}>Quality Score</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={qualityScore}
+                  onChange={e => setQualityScore(Math.min(100, Math.max(0, Number(e.target.value))))}
+                  style={{ width: 60, padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, fontWeight: 700, color: PRIMARY, textAlign: 'center', outline: 'none' }}
+                />
+                <span style={{ fontSize: 12, color: '#6b7280' }}>/100</span>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+                <button
+                  onClick={() => setShowRejectInput(true)}
+                  style={{ padding: '9px 20px', borderRadius: 8, border: '1.5px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <StopOutlined /> Reject
+                </button>
+                <button
+                  onClick={handleVerify}
+                  disabled={verifying}
+                  style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: verifying ? '#e5e7eb' : '#10b981', color: verifying ? '#9ca3af' : '#fff', fontWeight: 700, fontSize: 13, cursor: verifying ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  {verifying ? <Spin size="small" /> : <><CheckOutlined /> Verify</>}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Reject input */}
+          {showRejectInput && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <Input
+                placeholder="Enter rejection reason..."
+                value={rejectReason}
+                onChange={e => setRejectReason(e.target.value)}
+                onPressEnter={handleReject}
+                style={{ flex: 1 }}
+                autoFocus
+              />
+              <button
+                onClick={handleReject}
+                disabled={rejecting || !rejectReason.trim()}
+                style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: rejecting || !rejectReason.trim() ? '#e5e7eb' : '#ef4444', color: rejecting || !rejectReason.trim() ? '#9ca3af' : '#fff', fontWeight: 700, fontSize: 13, cursor: rejecting || !rejectReason.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+              >
+                {rejecting ? <Spin size="small" /> : 'Confirm Reject'}
+              </button>
+              <button
+                onClick={() => { setShowRejectInput(false); setRejectReason(''); }}
+                style={{ padding: '9px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
-      )}
-    </div>
-  )}
-
-  {docStatus !== 'Verified' && docStatus !== 'Rejected' && !showRejectInput && (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-      {/* Quality Score */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 14px' }}>
-        <span style={{ fontSize: 13, color: '#374151', fontWeight: 500, whiteSpace: 'nowrap' }}>Quality Score</span>
-        <input
-          type="number" min={0} max={100} value={qualityScore}
-          onChange={e => setQualityScore(Math.min(100, Math.max(0, Number(e.target.value))))}
-          style={{ width: 60, padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, fontWeight: 700, color: PRIMARY, textAlign: 'center', outline: 'none' }}
-        />
-        <span style={{ fontSize: 12, color: '#6b7280' }}>/100</span>
-      </div>
-      <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-        <button
-          onClick={() => setShowRejectInput(true)}
-          style={{ padding: '9px 20px', borderRadius: 8, border: '1.5px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-        >
-          <StopOutlined /> Reject
-        </button>
-        <button
-          onClick={handleVerify}
-          disabled={verifying}
-          style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: verifying ? '#e5e7eb' : '#10b981', color: verifying ? '#9ca3af' : '#fff', fontWeight: 700, fontSize: 13, cursor: verifying ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-        >
-          {verifying ? <Spin size="small" /> : <><CheckOutlined /> Verify</>}
-        </button>
-      </div>
-    </div>
-  )}
-
-  {showRejectInput && (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-      <Input
-        placeholder="Enter rejection reason..."
-        value={rejectReason}
-        onChange={e => setRejectReason(e.target.value)}
-        onPressEnter={handleReject}
-        style={{ flex: 1 }}
-        autoFocus
-      />
-      <button
-        onClick={handleReject}
-        disabled={rejecting || !rejectReason.trim()}
-        style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: rejecting || !rejectReason.trim() ? '#e5e7eb' : '#ef4444', color: rejecting || !rejectReason.trim() ? '#9ca3af' : '#fff', fontWeight: 700, fontSize: 13, cursor: rejecting || !rejectReason.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
-      >
-        {rejecting ? <Spin size="small" /> : 'Confirm Reject'}
-      </button>
-      <button
-        onClick={() => { setShowRejectInput(false); setRejectReason(''); }}
-        style={{ padding: '9px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
-      >
-        Cancel
-      </button>
-    </div>
-  )}
-</div>
       </Modal>
     </>
   );
