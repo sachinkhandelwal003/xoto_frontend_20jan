@@ -153,15 +153,15 @@ const Login = () => {
       gradient: "linear-gradient(135deg, #03A4F4, #0077b6)",
       type: "direct",
     },
-    // {
-    //   id: "agent",
-    //   label: "Agents",
-    //   desc: "For Agents",
-    //   icon: <IdcardOutlined style={{ fontSize: "28px" }} />,
-    //   color: "#10B981",
-    //   gradient: "linear-gradient(135deg, #10B981, #059669)",
-    //   type: "direct",
-    // },
+    {
+      id: "agent",
+      label: "Agents",
+      desc: "For Agents",
+      icon: <IdcardOutlined style={{ fontSize: "28px" }} />,
+      color: "#10B981",
+      gradient: "linear-gradient(135deg, #10B981, #059669)",
+      type: "direct",
+    },
     // ── DEVELOPER COMMENTED OUT ──────────────────────────────────────────
     // {
     //   id: "developer",
@@ -528,7 +528,7 @@ const Login = () => {
         </Col>
 
         {/* ── VAULT AGENT COMMENTED OUT ────────────────────────────────────── */}
-        {/* <Col xs={24} sm={12}>
+        <Col xs={24} sm={12}>
           <SelectionCard
             $active={false}
             $color="#5C039B"
@@ -554,7 +554,7 @@ const Login = () => {
               </div>
             </div>
           </SelectionCard>
-        </Col> */}
+        </Col>
         {/* ─────────────────────────────────────────────────────────────────── */}
       </Row>
     </motion.div>
@@ -614,7 +614,7 @@ const Login = () => {
         </Col>
 
         {/* ── VAULT PARTNER COMMENTED OUT ──────────────────────────────────── */}
-        {/* <Col xs={24} sm={12}>
+        <Col xs={24} sm={12}>
           <SelectionCard
             $active={false}
             $color="#5C039B"
@@ -640,7 +640,7 @@ const Login = () => {
               </div>
             </div>
           </SelectionCard>
-        </Col> */}
+        </Col>
         {/* ─────────────────────────────────────────────────────────────────── */}
       </Row>
     </motion.div>

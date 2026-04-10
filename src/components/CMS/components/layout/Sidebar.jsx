@@ -413,6 +413,21 @@ const CUSTOM_ROLE_LINKS = {
   "22": [
     { title: "Clients", icon: "fas fa-user-tie", path: "/dashboard/{roleSlug}/clients" },
     {
+    title: "Leads",   
+    icon: "fas fa-users",
+    path: "/dashboard/{roleSlug}/leads",
+    submenus: [
+      {
+        title: "Create Leads",
+        path: "/dashboard/{roleSlug}/leads/create"
+      },
+      {
+  title: "All Leads",
+  path: "/dashboard/{roleSlug}/leads" 
+}
+    ]
+  },
+    {
       title: "Referrals", icon: "fas fa-file-alt", path: "/dashboard/{roleSlug}/referrals",
       submenus: [
         { title: "New Referral", path: "/dashboard/{roleSlug}/referrals/new" },
@@ -433,7 +448,7 @@ const CUSTOM_ROLE_LINKS = {
         { title: "All Agents", path: "/dashboard/{roleSlug}/AgentVaultlisting" },
       ],
     },
-
+   
   ],
 
 
@@ -471,7 +486,7 @@ const ROLE_MODULE_ORDER = {
   '16': ['Dashboard', 'AgentLead Management'],
   '15': ['Dashboard', 'Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
   '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners'],
-  '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard'],
+  '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
   '21': ['Dashboard', 'Vault Partners']
 };
 
