@@ -187,9 +187,8 @@ const PreApprovalModal = ({ isOpen, onClose, calculatorData }) => {
     const toastId = toast.loading('Submitting your application...');
 
     try {
-      const nameParts = formData.name.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
+    const firstName = formData.firstName?.trim() || '';
+const lastName = formData.lastName?.trim() || '';
 
      // This payload perfectly matches the Mongoose Schema you created!
 const payload = {
