@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 // import ADIB from "../../assets/xoto_partners/xoto_logo1.png";
 import Ajman from "../../assets/xoto_partners/xoto_logo2.png";
 import DIB from "../../assets/xoto_partners/xoto_logo3.png";
-import FAB from "../../assets/xoto_partners/xoto_logo4.png";
+// import FAB from "../../assets/xoto_partners/xoto_logo4.png";
 import HSBC from "../../assets/xoto_partners/xoto_logo5.png";
 import Mashreq from "../../assets/xoto_partners/xoto_logo6.png";
 import NBF from "../../assets/xoto_partners/xoto_logo7.png";
@@ -35,7 +35,7 @@ const logos = [
   // { icon: ADIB, name: "ADIB" },
   { icon: Ajman, name: "Ajman Bank" },
   { icon: DIB, name: "DIB" },
-  { icon: FAB, name: "FAB" },
+  // { icon: FAB, name: "FAB" },
   { icon: HSBC, name: "HSBC" },
   { icon: Mashreq, name: "Mashreq Bank" },
   { icon: NBF, name: "NBF Bank" },

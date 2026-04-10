@@ -27,7 +27,7 @@
     { "label": "Instituciones financieras", "path": "/" }
   ],
   "knowledge": [
-    { "label": "Centro de Conocimiento", "path": "/explore" },
+    { "label": "Centro de Conocimiento", "path": "/Blogs" },
     { "label": "Nuestra sostenibilidad Enfoque", "path": "/about" },
     
     { "label": "Enviar comentarios", "path": "/about" },

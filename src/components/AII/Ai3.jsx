@@ -195,7 +195,7 @@ const Ai3 = () => {
             </div>
             
             <button 
-              onClick={() => navigate('/explore')} 
+              onClick={() => navigate('/Blogs')} 
               className="w-full mt-5 text-[#5C039B] font-semibold text-sm hover:underline"
             >
               View All Articles →

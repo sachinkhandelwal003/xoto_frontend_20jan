@@ -27,7 +27,7 @@
     { "label": "مالیاتی ادارے", "path": "/" }
   ],
   "knowledge": [
-    { "label": "علمی مرکز", "path": "/explore" },
+    { "label": "علمی مرکز", "path": "/Blogs" },
     { "label": "ہماری پائیداری", "path": "/about" },
     { "label": "فوکس", "path": "/about" },
     { "label": "اپنی رائے دیں", "path": "/about" },

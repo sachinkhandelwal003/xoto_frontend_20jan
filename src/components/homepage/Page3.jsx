@@ -80,7 +80,7 @@ const Page3 = () => {
 
   const handleReadMore = (id) => {
     setSelectedBlogId(id);
-    navigate("/ai");
+    navigate("/Blog");
   };
 
   const categories = [
