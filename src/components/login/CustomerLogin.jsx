@@ -28,7 +28,7 @@ import { apiService } from '../../manageApi/utils/custom.apiservice.js';
 
 // Assets
 import loginimage from '../../assets/img/one.png';
-import logoNew from '../../assets/img/logoNew.png';
+import logoNew from '../../assets/img/xotothelogo.png';
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
@@ -172,20 +172,13 @@ const CustomerLogin = () => {
     }
   };
 
-  // Memoized Country Data
+  // ✅ Memoized Country Data (Strict A-Z Sorting, Priority Removed)
   const countryOptions = useMemo(() => {
-    const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"];
     return Country.getAllCountries().map((country) => ({
       name: country.name,
       code: country.phonecode,
       iso: country.isoCode,
-    })).sort((a, b) => {
-      const aPriority = priorityIsoCodes.includes(a.iso);
-      const bPriority = priorityIsoCodes.includes(b.iso);
-      if (aPriority && !bPriority) return -1;
-      if (!aPriority && bPriority) return 1;
-      return a.name.localeCompare(b.name);
-    });
+    })).sort((a, b) => a.name.localeCompare(b.name));
   }, []);
 
   /* ---------------- AUTH SUCCESS EFFECT ---------------- */
@@ -249,13 +242,13 @@ const CustomerLogin = () => {
 
             {/* LEFT SECTION */}
             <Col xs={24} lg={12} style={{ padding: 40 }}>
-              <img src={logoNew} alt="Logo" style={{ width: 150 }} />
+              <img src={logoNew} alt="Logo" style={{ width: 250 }} />
               <Title style={{ color: '#fff', marginTop: 24 }}>
                 Customer <span style={{ color: '#03A4F4' }}>Login</span>
               </Title>
-              <Text style={{ color: '#fff' }}>
+              {/* <Text style={{ color: '#fff' }}>
                 Login using your mobile number
-              </Text>
+              </Text> */}
             </Col>
 
             {/* RIGHT SECTION */}
@@ -298,7 +291,7 @@ const CustomerLogin = () => {
                     <UserOutlined />
                   </div>
 
-                  <Title level={3}>Welcome Back</Title>
+                  <Title level={3}>Welcome</Title>
                   <Text type="secondary">Login using your mobile number</Text>
                 </div>
 

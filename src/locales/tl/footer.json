@@ -26,7 +26,7 @@
     { "label": "Mga Institusyong Pinansyal", "path": "/" }
   ],
   "knowledge": [
-    { "label": "Sentro ng Kaalaman", "path": "/explore" },
+    { "label": "Sentro ng Kaalaman", "path": "/Blogs" },
     { "label": "Aming Pokus sa Sustainability", "path": "/about" },
     { "label": "Magpadala ng Feedback", "path": "/about" },
     { "label": "Makipag-ugnayan", "path": "/contact" },

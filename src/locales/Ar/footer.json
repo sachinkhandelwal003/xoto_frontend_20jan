@@ -27,7 +27,7 @@
     { "label": "المؤسسات المالية", "path": "/" }
   ],
   "knowledge": [
-    { "label": "مركز المعرفة", "path": "/explore" },
+    { "label": "مركز المعرفة", "path": "/Blogs" },
     { "label": "التركيز على الاستدامة", "path": "/about" },
     { "label": "التركي", "path": "/about" },
     { "label": "أرسل ملاحظاتك", "path": "/about" },
