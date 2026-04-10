@@ -348,7 +348,19 @@ function ListingCard({ listing, saved, onSave, onContact, leadCreating }) {
 
 // ─── MAIN RESULTS PAGE ────────────────────────────────────────────────────────
 export default function ResultsPage() {
-   const [maxPrice,       setMaxPrice]       = useState(300000);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const heroState = location.state || {};
+   const [maxPrice, setMaxPrice] = useState(() => {
+  const b = heroState.budget;
+  if (!b || b === "Any Budget") return 300000;
+  if (b === "Below AED 3,000/mo")         return 36000;
+  if (b === "AED 3,000 – 6,000/mo")       return 72000;
+  if (b === "AED 6,000 – 10,000/mo")      return 120000;
+  if (b === "AED 10,000 – 20,000/mo")     return 240000;
+  if (b === "Above AED 20,000/mo")        return 300000;
+  return 300000;
+});
 
     useEffect(() => {
   const timer = setTimeout(() => {
@@ -356,8 +368,8 @@ export default function ResultsPage() {
   }, 500); // ✅ 500ms baad API call
   return () => clearTimeout(timer);
 }, [maxPrice]);
-  const location = useLocation();
-  const navigate  = useNavigate();
+  // const location = useLocation();
+  // const navigate  = useNavigate();
 
   const [listings,       setListings]       = useState([]);
   const [loading,        setLoading]        = useState(true);
@@ -367,11 +379,18 @@ export default function ResultsPage() {
 
   const [sort,           setSort]           = useState("Recommended");
   const [savedIds,       setSavedIds]       = useState([]);
-  const [filterBeds,     setFilterBeds]     = useState("Any");
-  const [filterType,     setFilterType]     = useState("All");
+  const [filterBeds, setFilterBeds] = useState(() => {
+  const b = heroState.beds;
+  if (!b || b === "Any") return "Any";
+  return BEDROOMS.includes(b) ? b : "Any";
+});
+  const [filterType, setFilterType] = useState(() => {
+  const t = heroState.activeType;
+  return t && PROP_TYPES.includes(t) ? t : "All";
+});
  
   const [debouncedPrice, setDebouncedPrice] = useState(300000);
-  const [amenityFilters, setAmenityFilters] = useState([]);
+  const [amenityFilters, setAmenityFilters] = useState(() => heroState.amenities || []);
   const [verifiedOnly,   setVerifiedOnly]   = useState(false);
   const [immediateOnly,  setImmediateOnly]  = useState(false);
 
@@ -380,7 +399,8 @@ export default function ResultsPage() {
   const [leadSubmitting, setLeadSubmitting] = useState(false);
   const [leadDoneIds,    setLeadDoneIds]    = useState([]);
 
-  const heroState = location.state || {};
+  // const heroState = location.state || {};
+  
 
   useEffect(() => { 
   fetchListings(); 
@@ -392,7 +412,8 @@ export default function ResultsPage() {
       const params = new URLSearchParams({ page, limit: LIMIT });
 
       if (heroState.emirate) params.set("emirate", heroState.emirate);
-      if (heroState.tags?.length) params.set("area", heroState.tags[0]);
+      if (heroState.tags?.length) params.set("area", heroState.tags.join(","));
+
       if (filterType !== "All") params.set("type", filterType);
       if (filterBeds !== "Any") params.set("bhk", filterBeds);
       // if (maxPrice < 300000) params.set("maxPrice", maxPrice);
@@ -606,16 +627,17 @@ export default function ResultsPage() {
               <div style={{ fontSize:14 }}>Try adjusting your budget or filter criteria.</div>
             </div>
           ) : (
-            listings.map((l)=>(
-              <ListingCard
-                key={l._id} listing={l}
-                saved={savedIds.includes(l._id)} onSave={toggleSave}
-                // ✅ Pass full listing object to open modal
-                onContact={(listing)=>setLeadModal(listing)}
-                leadCreating={leadSubmitting&&leadModal?._id===l._id?l._id:null}
-                contacted={leadDoneIds.includes(l._id)}
-              />
-            ))
+listings.map((l) => (
+  <ListingCard
+    key={l._id}
+    listing={l}
+    saved={savedIds.includes(l._id)}
+    onSave={toggleSave}
+    onContact={(listing) => setLeadModal(listing)}
+    leadCreating={leadSubmitting && leadModal?._id === l._id ? l._id : null}
+    contacted={leadDoneIds.includes(l._id)}
+  />
+))
           )}
 
           {total>LIMIT&&(
