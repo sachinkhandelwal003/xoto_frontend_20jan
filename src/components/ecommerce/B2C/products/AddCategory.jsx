@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-  Button, Modal, Form, Input, Popconfirm, Card, Table,
+  Button, Modal, Form, Input, Popconfirm, Card,
   Typography, Avatar, Row, Col, Statistic, Space, Divider, message, notification, Tooltip, Switch, Tag, Upload
 } from 'antd';
 import {
   PlusOutlined,
-  DeleteOutlined, EditOutlined, SearchOutlined, AppstoreOutlined, LoadingOutlined, EyeOutlined
+  DeleteOutlined, EditOutlined, AppstoreOutlined, LoadingOutlined, EyeOutlined
 } from '@ant-design/icons';
+// 👇 Aapki custom table import kar li hai
+import CustomTable from '../../../../components/CMS/pages/custom/CustomTable'; 
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -20,7 +22,6 @@ const THEME = {
 };
 
 const AddCategory = () => {
- 
   // Base URL
   const BASE_URL = "https://xoto.ae/api/products"; 
   const UPLOAD_URL = "https://xoto.ae/api/upload";
@@ -83,7 +84,6 @@ const AddCategory = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      // ✅ S3 Response Fix: Mapping to response.data.file.url
       const uploadedUrl = response.data?.file?.url;
       
       if (uploadedUrl) {
@@ -191,7 +191,6 @@ const AddCategory = () => {
       title: 'Icon',
       dataIndex: 'icon',
       key: 'icon',
-      width: 80,
       render: (url) => (
         <Avatar 
           shape="square" 
@@ -205,6 +204,7 @@ const AddCategory = () => {
       title: 'Category Name',
       dataIndex: 'name',
       key: 'name',
+      sortable: true, // CustomTable supports this
       render: (text, record) => (
         <Space>
           <Avatar 
@@ -221,7 +221,6 @@ const AddCategory = () => {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
-      ellipsis: true, 
       render: (text) => (
         <Text type="secondary" title={text}>
              {text || "No description"}
@@ -241,7 +240,6 @@ const AddCategory = () => {
     {
       title: 'Action',
       key: 'actions',
-      align: 'center',
       render: (_, record) => (
         <Space size="middle">
           <Tooltip title="Edit">
@@ -302,38 +300,23 @@ const AddCategory = () => {
         </Col>
       </Row>
 
-      <Card bordered={false} className="shadow-md" bodyStyle={{ padding: 0 }}>
-        <div className="p-4 border-b bg-white rounded-t-lg">
-          <Input 
-            prefix={<SearchOutlined className="text-gray-400" />} 
-            placeholder="Search categories..." 
-            style={{ maxWidth: 400 }}
-            onChange={(e) => {
-                setSearchText(e.target.value);
-                setCurrentPage(1);
-            }}
-            allowClear
-            size="large"
-          />
-        </div>
-
-        <Table 
-          columns={columns} 
-          dataSource={categories} 
-          loading={loading}
-          rowKey={(record) => record._id || record.id}
-          pagination={{
-            current: currentPage,
-            pageSize: pageSize,
-            total: total,
-            showSizeChanger: true,
-            onChange: (page, size) => {
-              setCurrentPage(page);
-              setPageSize(size);
-            },
-          }}
-        />
-      </Card>
+      {/* 👇 Yahan AntD Table hata kar CustomTable lagayi hai */}
+      <CustomTable 
+        columns={columns}
+        data={categories}
+        loading={loading}
+        totalItems={total}
+        currentPage={currentPage}
+        itemsPerPage={pageSize}
+        onPageChange={(page, size) => {
+          setCurrentPage(page);
+          setPageSize(size);
+        }}
+        onFilter={(filters) => {
+          setSearchText(filters.search || '');
+          setCurrentPage(1); // Jab bhi kuch search ho, page 1 par reset karo
+        }}
+      />
 
       <Modal
         title={<div className="font-bold text-lg">{editingId ? <EditOutlined /> : <PlusOutlined />} {editingId ? 'Edit Category' : 'Create Category'}</div>}
