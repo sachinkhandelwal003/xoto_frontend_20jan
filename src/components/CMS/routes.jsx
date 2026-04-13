@@ -186,6 +186,17 @@ import PropertyDetailPage from "./pages/Propertydetailpage";
 import VaultAgentDashboard from "../ecommerce/B2C/VaultAgentDashBoard";
 import OnboardPartner from "./pages/OnboardPartner";
 import AgentVaultListing from "./pages/AgentVaultListing";
+import VaultCreateLeads from "../ecommerce/B2C/VaultCreateLeads";
+import VaultLeads from "../ecommerce/B2C/VaultLeads";
+import VaultLeadDetails from "../ecommerce/B2C/VaultLeadDetails";
+import VaultLeadDocuments from "../ecommerce/B2C/VaultLeadDocuments";
+import VaultAgentLeadList from "../ecommerce/B2C/VaultAgentLeadList";
+import VaultAgentLeadDetail from "../ecommerce/B2C/VaultAgentLeadDetail";
+import VaultLeadDocumentUpload from "../ecommerce/B2C/VaultLeadDocumentUpload";
+import PartnerAgentleads from "../ecommerce/B2C/PartnerAgentleadlist";
+// import VaultAgentDocuments from "../ecommerce/B2C/VaultAgentDocuments";
+import VaultAgentDocument from "../ecommerce/B2C/VaultAgentDocument";
+import PartnerLeadDetails from "../ecommerce/B2C/PartnerLeadDetails";
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 
@@ -454,10 +465,19 @@ const CmsRoutes = () => {
 <Route path="xotovaultpartner" element={<VaultpartnerDashboard />} />
 <Route path="onboard-partner" element={<OnboardPartner />} />
 <Route path="AgentVaultlisting" element={<AgentVaultListing />} />
+<Route path="leads/create" element={<VaultCreateLeads />} />
+<Route path="leads" element={<VaultLeads />} />
+<Route path="leads/:leadId" element={<VaultLeadDetails />} />
+<Route path="leads/:leadId/documents" element={<VaultLeadDocuments />} />
+<Route path="/lead-documents/:leadId"element={<VaultAgentDocument/>} />
+<Route path="partner-leads" element={<PartnerAgentleads />} />
+<Route path="partner/lead/:id"element={<PartnerLeadDetails />}/>
 
 
 
-
+<Route path="vault/agent-leads" element={<VaultAgentLeadList />} />
+<Route path="vault/lead/:id" element={<VaultAgentLeadDetail />} />
+<Route path="vault/lead/documents/:leadId" element={<VaultLeadDocumentUpload />} />
 
 
       {/* admin */}

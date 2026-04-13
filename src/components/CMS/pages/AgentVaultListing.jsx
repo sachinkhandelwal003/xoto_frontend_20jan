@@ -25,8 +25,8 @@ export default function VaultAgentlist() {
   const fetchAgents = async (page = 1, limit = 10) => {
     setLoading(true);
     try {
-      // ✅ FIXED: Use the correct admin endpoint from backend routes
-      const response = await apiService.get(`/vault/agent/admin/all-agents?page=${page}&limit=${limit}`);
+
+      const response = await apiService.get(`/vault/agent/partner/agents?page=${page}&limit=${limit}`);
       const data = response?.data || response;
 
       let list = [];

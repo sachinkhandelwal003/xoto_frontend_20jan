@@ -373,7 +373,7 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-users",
       path: "/dashboard/{roleSlug}/leads",
       submenus: [
-        { title: "Leads", path: "/dashboard/{roleSlug}/lead-list" },
+        { title: "Leads", path: "/dashboard/{roleSlug}/vault/agent-leads" },
         { title: "Lead Documents ", path: "/dashboard/{roleSlug}/vault/lead-document" },
       ],
     },
@@ -422,6 +422,21 @@ const CUSTOM_ROLE_LINKS = {
   "22": [
     { title: "Clients", icon: "fas fa-user-tie", path: "/dashboard/{roleSlug}/clients" },
     {
+    title: "Leads",   
+    icon: "fas fa-users",
+    path: "/dashboard/{roleSlug}/leads",
+    submenus: [
+      {
+        title: "Create Leads",
+        path: "/dashboard/{roleSlug}/leads/create"
+      },
+      {
+  title: "All Leads",
+  path: "/dashboard/{roleSlug}/leads" 
+}
+    ]
+  },
+    {
       title: "Referrals", icon: "fas fa-file-alt", path: "/dashboard/{roleSlug}/referrals",
       submenus: [
         { title: "New Referral", path: "/dashboard/{roleSlug}/referrals/new" },
@@ -432,19 +447,22 @@ const CUSTOM_ROLE_LINKS = {
     { title: "Calculator", icon: "fas fa-calculator", path: "/dashboard/{roleSlug}/calculator" },
     { title: "Leaderboard", icon: "fas fa-trophy", path: "/dashboard/{roleSlug}/leaderboard" },
   ],
-  "21": [
-    {
-      title: "Vault Partners",
-      icon: "fas fa-users",
-      path: "/dashboard/{roleSlug}/vaultpartner",
-      submenus: [
-        { title: "Onboard Agent", path: "/dashboard/{roleSlug}/onboard-partner" },
-        { title: "All Agents", path: "/dashboard/{roleSlug}/AgentVaultlisting" },
-      ],
-    },
-
-  ],
-
+"21": [
+  {
+    title: "Vault Partners",
+    icon: "fas fa-users",
+    path: "/dashboard/{roleSlug}/vaultpartner",
+    submenus: [
+      { title: "Onboard Agent", path: "/dashboard/{roleSlug}/onboard-partner" },
+      { title: "All Agents", path: "/dashboard/{roleSlug}/AgentVaultlisting" },
+    ],
+  },
+  {
+    title: "All Leads",
+    icon: "fas fa-file-alt",
+    path: "/dashboard/{roleSlug}/partner-leads",
+  },
+],
 
 };
 
@@ -463,7 +481,7 @@ const roleSlugMap = {
   '17': "developer",
   '18': "vault-admin", //vault
   '22': "vaultagent",
-  '21': "vaultpartner",
+  '21': "xotovaultpartner",
 
 
 };
@@ -480,8 +498,8 @@ const ROLE_MODULE_ORDER = {
   '16': ['Dashboard', 'AgentLead Management'],
   '15': ['Dashboard', 'Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
   '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners'],
-  '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard'],
-  '21': ['Dashboard', 'Vault Partners']
+  '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
+  '21': ['Dashboard', 'Vault Partners', 'All Leads',],
 };
 
 
