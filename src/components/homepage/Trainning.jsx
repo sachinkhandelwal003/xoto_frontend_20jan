@@ -1,34 +1,39 @@
-import image from "../../assets/img/trainning.jpg";
+import React from "react";
 import { useNavigate } from "react-router-dom";
+import image from "../../assets/img/trainning.jpg";
 
 export default function ComingSoon() {
   const navigate = useNavigate();
 
   return (
-    <div
-      className="relative min-h-screen bg-cover bg-center flex items-center justify-center"
-      style={{ backgroundImage: `url(${image})` }}
-    >
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/60"></div>
+    <div className="min-h-screen w-full">
+      {/* Banner */}
+      <div
+        className="relative flex items-center justify-center min-h-screen bg-cover bg-center"
+        style={{ backgroundImage: `url(${image})` }}
+      >
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black/50"></div>
 
-      {/* Content */}
-      <div className="relative z-10 text-center text-white max-w-2xl px-6 ">
-        <h1 className="text-4xl md:text-5xl  mb-4 heading-light">
-          Building Skills  <br /> Coming Soon
-                  </h1>
+        {/* Content */}
+        <div className="relative z-10 text-center px-4 heading-light">
+          <h1 className="text-4xl md:text-6xl text-white mb-6">
+            Building Skills.
+            <span className="block mt-2 heading-light">Coming soon.</span>
+          </h1>
 
-        <p className="text-lg md:text-xl text-gray-200 mb-8 font-semibold">
-          We're preparing focused training content exclusively for Business
-          Associates & Execution Partners
-        </p>
+          <p className="text-gray-200 text-lg md:text-xl mb-8 max-w-2xl mx-auto font-medium">
+            We're preparing focused training content exclusively for Business
+            Associates & Execution Partners.
+          </p>
 
-        <button
-          onClick={() => navigate("/ecosystem")}
-          className="bg-white text-black px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition"
-        >
-          Take me back to Partner Page
-        </button>
+          <button
+            onClick={() => navigate("/ecosystem")}
+            className="mt-4 inline-block rounded-full bg-white px-8 py-3 text-lg text-black transition hover:bg-gray-200"
+          >
+            Take me back to Partner Page
+          </button>
+        </div>
       </div>
     </div>
   );

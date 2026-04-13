@@ -61,7 +61,7 @@ export default function VaultAgentdetail() {
   const handleVerify = async () => {
     setActionLoading(true);
     try {
-      await apiService.post(`/vault/agent/admin/verify/${id}`, {
+      await apiService.post(`/vault/agent/partner/verify/${id}`, {
         status: "verified",
       });
       setVerifyMessage({ type: "success", text: "Agent successfully verified!" });
@@ -87,7 +87,7 @@ export default function VaultAgentdetail() {
     }
     setActionLoading(true);
     try {
-      await apiService.post(`/vault/agent/admin/verify/${id}`, {
+      await apiService.post(`/vault/agent/partner/verify/${id}`, {
         status: "rejected",
         rejectionReason: rejectionReason.trim(),
       });

@@ -44,6 +44,7 @@
     "@types/gsap": "^1.20.2",
     "@vapi-ai/web": "^2.5.2",
     "antd": "^5.29.3",
+    "antd-img-crop": "^4.30.0",
     "antd-style": "^3.7.1",
     "aos": "^2.3.4",
     "axios": "^1.13.5",

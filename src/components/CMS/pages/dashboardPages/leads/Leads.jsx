@@ -80,7 +80,7 @@ const PURPLE_THEME = {
 const Leads = () => {
   // --- STATE ---
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('accepted');
+  const [activeTab, setActiveTab] = useState('deals');
   
   // Data States
   const [acceptedLeads, setAcceptedLeads] = useState([]);
@@ -588,6 +588,15 @@ const Leads = () => {
             size="large"
             tabBarStyle={{ margin: 0, background: '#fff' }}
         >
+           <TabPane 
+                tab={
+                   <span className="px-4">
+                      <RocketOutlined style={{color: '#722ed1'}} /> Active Deals
+                      <Badge count={dealsPagination.totalItems} style={{ backgroundColor: '#722ed1', marginLeft: 8 }} />
+                   </span>
+                } 
+                key="deals" 
+            />
             <TabPane 
                 tab={
                    <span className="px-4">
@@ -606,15 +615,7 @@ const Leads = () => {
                 } 
                 key="rejected" 
             />
-            <TabPane 
-                tab={
-                   <span className="px-4">
-                      <RocketOutlined style={{color: '#722ed1'}} /> Active Deals
-                      <Badge count={dealsPagination.totalItems} style={{ backgroundColor: '#722ed1', marginLeft: 8 }} />
-                   </span>
-                } 
-                key="deals" 
-            />
+           
         </Tabs>
       </Card>
 

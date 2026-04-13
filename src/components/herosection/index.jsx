@@ -19,8 +19,7 @@ const HeroSection = () => {
       
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/40 z-[1]" />
-
-      {/* Background Video */}
+   {/* Background Video */}
       <video
         autoPlay
         loop 
@@ -88,13 +87,13 @@ const HeroSection = () => {
           </div>
 
           {/* ✅ EXCLUSIVE DEAL BUTTON (Attractive Flickering/Pulsing Effect) */}
-          <div className="w-full flex justify-center pt-2"> 
+          {/* <div className="w-full flex justify-center pt-2"> 
             <Link 
               to="/properties"
               className="relative inline-flex items-center justify-center px-8 py-3 overflow-hidden font-semibold tracking-widest text-white uppercase bg-transparent border border-[#5C039B] rounded-full group cursor-pointer transition-all duration-300 hover:bg-[#5C039B]/40 hover:scale-105"
             >
               {/* Flashing glow on hover */}
-              <span className="absolute inset-0 w-full h-full bg-[#5C039B] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+              {/* <span className="absolute inset-0 w-full h-full bg-[#5C039B] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
 
               <span className="relative flex items-center gap-3 text-sm sm:text-base drop-shadow-lg">
                 <span className="animate-pulse">✨</span>
@@ -102,7 +101,7 @@ const HeroSection = () => {
                 <span className="animate-pulse">✨</span>
               </span>
             </Link>
-          </div>
+          </div> */} 
 
           {/* Features — centered grid */}
           <div className="mt-8 mx-auto grid grid-cols-2 gap-8 w-fit">

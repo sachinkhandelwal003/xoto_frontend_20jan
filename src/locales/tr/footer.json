@@ -27,7 +27,7 @@
     { "label": "Finansal Kurumlar", "path": "/" }
   ],
   "knowledge": [
-    { "label": "Bilgi Merkezi", "path": "/explore" },
+    { "label": "Bilgi Merkezi", "path": "/Blogs" },
     { "label": "Sürdürülebilirliğimiz Odak", "path": "/about" },
     
     { "label": "Geri Bildirim Gönder", "path": "/about" },
