@@ -7,13 +7,23 @@ import {
   UserOutlined, HomeOutlined, DollarOutlined, FileTextOutlined,
   EyeOutlined, PhoneOutlined, MailOutlined, WhatsAppOutlined,
   FilePdfOutlined, FileImageOutlined, EnvironmentOutlined,
-  CheckOutlined, StopOutlined,
+  CheckOutlined, StopOutlined, EditOutlined,
 } from '@ant-design/icons';
 
 const fmt     = (n) => (n ? Number(n).toLocaleString('en-AE') : '—');
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const isPdf   = (url) => url?.toLowerCase()?.includes('.pdf');
 const PRIMARY = '#5c039c';
+
+const STATUS_OPTIONS = ['New', 'Contacted', 'Qualified', 'Collecting Documentation', 'Disbursed'];
+
+const STATUS_CONFIG = {
+  'New':                    { color: '#6b7280', bg: '#f3f4f6', border: '#d1d5db' },
+  'Contacted':              { color: '#3b82f6', bg: '#eff6ff', border: '#93c5fd' },
+  'Qualified':              { color: '#8b5cf6', bg: '#f5f3ff', border: '#c4b5fd' },
+  'Collecting Documentation': { color: '#f59e0b', bg: '#fffbeb', border: '#fcd34d' },
+  'Disbursed':              { color: '#10b981', bg: '#ecfdf5', border: '#6ee7b7' },
+};
 
 /* ── SectionCard ── */
 const SectionCard = ({ icon, title, children, extra }) => (
@@ -46,14 +56,13 @@ const StatBox = ({ label, value, color }) => (
   </div>
 );
 
-/* ── DocCard — sirf View button, no verify/reject ── */
+/* ── DocCard ── */
 const DocCard = ({ doc, onView }) => {
   const fileUrl    = doc.fileUrl || doc.url || doc.documentUrl || doc.file_url;
   const fileName   = doc.fileName || doc.file_name || doc.name || 'Unnamed Document';
   const docType    = doc.documentType || doc.document_type || doc.type;
   const status     = doc.status || doc.verification_status;
   const uploadedAt = doc.uploadedAt || doc.created_at || doc.createdAt;
-
   const statusColor = status === 'Verified' ? '#10b981' : status === 'Rejected' ? '#ef4444' : '#f59e0b';
 
   return (
@@ -72,7 +81,6 @@ const DocCard = ({ doc, onView }) => {
           {docType && <div style={{ fontSize: 12, color: PRIMARY, marginTop: 4 }}>{docType}</div>}
         </div>
       </div>
-
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         {status && (
           <span style={{ fontSize: 12, fontWeight: 600, color: statusColor, background: statusColor === '#10b981' ? '#ecfdf5' : statusColor === '#ef4444' ? '#fef2f2' : '#fffbeb', padding: '3px 10px', borderRadius: 20 }}>
@@ -81,15 +89,11 @@ const DocCard = ({ doc, onView }) => {
         )}
         {uploadedAt && <span style={{ fontSize: 12, color: '#6b7280' }}>{fmtDate(uploadedAt)}</span>}
       </div>
-
-      {/* Rejection reason */}
       {status === 'Rejected' && doc.rejectionReason && (
         <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#dc2626' }}>
           <strong>Reason:</strong> {doc.rejectionReason}
         </div>
       )}
-
-      {/* View button only */}
       <button
         onClick={() => onView(doc)}
         disabled={!fileUrl}
@@ -118,6 +122,11 @@ const VaultAgentLeadDetail = () => {
   const [loading, setLoading]     = useState(true);
   const [docsLoading, setDocsLoading] = useState(false);
 
+  // Status update
+  const [leadStatus, setLeadStatus]       = useState('');
+  const [statusNote, setStatusNote]       = useState('');
+  const [statusUpdating, setStatusUpdating] = useState(false);
+
   // Preview modal
   const [selectedDoc, setSelectedDoc]   = useState(null);
   const [modalOpen, setModalOpen]       = useState(false);
@@ -130,11 +139,18 @@ const VaultAgentLeadDetail = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [qualityScore, setQualityScore] = useState(95);
 
+  const [docStatusOverrides, setDocStatusOverrides] = useState({});
+
   const fetchLead = async () => {
     try {
       setLoading(true);
-      const res = await apiService.get(`/vault/lead/${id}`);
-      setLead(res?.data?.data || res?.data || null);
+      const res = await apiService.get(`/vault/lead/admin/${id}`);
+      const data = res?.data?.data || res?.data || null;
+      setLead(data);
+          const status = data?.currentStatus || data?.status;
+
+      // Lead ka current status set karo
+      if (data?.status) setLeadStatus(data.status);
     } catch { message.error('Failed to load lead details.'); }
     finally { setLoading(false); }
   };
@@ -149,22 +165,65 @@ const VaultAgentLeadDetail = () => {
         : Array.isArray(raw?.documents) ? raw.documents
         : Array.isArray(raw?.data?.documents) ? raw.data.documents : [];
       setDocuments(docs);
+      setSelectedDoc(prev => {
+  if (!prev) return prev;
+  const docId = prev._id || prev.id;
+  const updated = docs.find(d => (d._id || d.id) === docId);
+  if (!updated) return prev;
+  
+  // ✅ Agar prev mein already Verified/Rejected hai toh server se overwrite mat karo
+  const prevStatus = prev.status || prev.verification_status;
+  const serverStatus = updated.status || updated.verification_status;
+  const finalStatus = (prevStatus === 'Verified' || prevStatus === 'Rejected') 
+    ? prevStatus 
+    : serverStatus;
+
+  return { 
+    ...updated, 
+    fileUrl: prev.fileUrl,
+    status: finalStatus,
+    verification_status: finalStatus,
+  };
+});
     } catch (err) { console.error(err); }
     finally { setDocsLoading(false); }
   };
 
   useEffect(() => { if (id) { fetchLead(); fetchDocs(); } }, [id]);
 
-  const openModal = (doc) => {
-    const fileUrl = doc.fileUrl || doc.url || doc.documentUrl || doc.file_url;
-    if (!fileUrl) { message.warning('File URL not available'); return; }
-    setSelectedDoc({ ...doc, fileUrl });
-    setModalOpen(true);
-    setModalLoading(true);
-    setShowRejectInput(false);
-    setRejectReason('');
-    setQualityScore(95);
+  // ── Status Update Handler ──
+  const handleStatusUpdate = async () => {
+    if (!leadStatus) { message.warning('Please select a status'); return; }
+    try {
+      setStatusUpdating(true);
+      await apiService.put(`/vault/lead/admin/${id}/status`, {
+        status: leadStatus,
+        notes: statusNote.trim() || undefined,
+      });
+      message.success(`Status updated to "${leadStatus}"`);
+      setStatusNote('');
+      await fetchLead();
+    } catch (err) {
+      message.error(err?.response?.data?.message || 'Status update failed');
+    } finally { setStatusUpdating(false); }
   };
+
+const openModal = (doc) => {
+  const fileUrl = doc.fileUrl || doc.url || doc.documentUrl || doc.file_url;
+  if (!fileUrl) { message.warning('File URL not available'); return; }
+  const docId = doc._id || doc.id;
+  const freshDoc = documents.find(d => (d._id || d.id) === docId) || doc;
+  
+  // ✅ Agar pehle verify/reject hua hai toh override lagao
+  const override = docStatusOverrides[docId];
+  setSelectedDoc({ ...freshDoc, fileUrl, ...(override || {}) });
+  
+  setModalOpen(true);
+  setModalLoading(true);
+  setShowRejectInput(false);
+  setRejectReason('');
+  setQualityScore(95);
+}; 
 
   const closeModal = () => {
     setModalOpen(false);
@@ -173,34 +232,39 @@ const VaultAgentLeadDetail = () => {
     setRejectReason('');
   };
 
-  const handleVerify = async () => {
-    const docId = selectedDoc?._id || selectedDoc?.id;
-    if (!docId) { message.warning('Document ID not found'); return; }
-    try {
-      setVerifying(true);
-      await apiService.post(`/vault/lead/documents/${docId}/verify`, { qualityScore });
-      message.success('Document verified!');
-      await fetchDocs();
-      closeModal();
-    } catch (err) {
-      message.error(err?.response?.data?.message || 'Verification failed');
-    } finally { setVerifying(false); }
-  };
+ const handleVerify = async () => {
+  const docId = selectedDoc?._id || selectedDoc?.id;
+  if (!docId) { message.warning('Document ID not found'); return; }
+  try {
+    setVerifying(true);
+    await apiService.post(`/vault/lead/documents/${docId}/verify`, { qualityScore });
+    message.success('Document verified!');
+    // ✅ Override save karo
+    setDocStatusOverrides(prev => ({ ...prev, [docId]: { status: 'Verified', verification_status: 'Verified' } }));
+    setSelectedDoc(prev => ({ ...prev, status: 'Verified', verification_status: 'Verified' }));
+    await fetchDocs();
+  } catch (err) {
+    message.error(err?.response?.data?.message || 'Verification failed');
+  } finally { setVerifying(false); }
+};
 
-  const handleReject = async () => {
-    if (!rejectReason.trim()) { message.warning('Please enter a rejection reason'); return; }
-    const docId = selectedDoc?._id || selectedDoc?.id;
-    if (!docId) { message.warning('Document ID not found'); return; }
-    try {
-      setRejecting(true);
-      await apiService.post(`/vault/lead/documents/${docId}/reject`, { reason: rejectReason });
-      message.success('Document rejected.');
-      await fetchDocs();
-      closeModal();
-    } catch (err) {
-      message.error(err?.response?.data?.message || 'Rejection failed');
-    } finally { setRejecting(false); }
-  };
+const handleReject = async () => {
+  if (!rejectReason.trim()) { message.warning('Please enter a rejection reason'); return; }
+  const docId = selectedDoc?._id || selectedDoc?.id;
+  if (!docId) { message.warning('Document ID not found'); return; }
+  try {
+    setRejecting(true);
+    await apiService.post(`/vault/lead/documents/${docId}/reject`, { reason: rejectReason });
+    message.success('Document rejected.');
+    // ✅ Override save karo
+    setDocStatusOverrides(prev => ({ ...prev, [docId]: { status: 'Rejected', verification_status: 'Rejected', rejectionReason: rejectReason } }));
+    setSelectedDoc(prev => ({ ...prev, status: 'Rejected', verification_status: 'Rejected', rejectionReason: rejectReason }));
+    setShowRejectInput(false);
+    await fetchDocs();
+  } catch (err) {
+    message.error(err?.response?.data?.message || 'Rejection failed');
+  } finally { setRejecting(false); }
+};
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb' }}>
@@ -219,8 +283,11 @@ const VaultAgentLeadDetail = () => {
   const pd = lead.propertyDetails || {};
   const dc = lead.documentCollection || {};
   const propertyAddress = [pd.propertyAddress?.building, pd.propertyAddress?.area, pd.propertyAddress?.city].filter(Boolean).join(', ');
-
   const docStatus = selectedDoc?.status || selectedDoc?.verification_status;
+  const savedStatus    = lead?.currentStatus || lead?.status;
+const savedStatusCfg = STATUS_CONFIG[savedStatus] || STATUS_CONFIG['New'];
+
+
 
   return (
     <>
@@ -250,6 +317,88 @@ const VaultAgentLeadDetail = () => {
               <InfoRow label="Loan Amount"    value={`AED ${fmt(pd.loanAmountRequired || lead.loanAmount)}`} />
               <InfoRow label="Property Value" value={`AED ${fmt(pd.propertyValue)}`} />
               <InfoRow label="Down Payment"   value={`AED ${fmt(pd.downPaymentAmount)}`} />
+            </SectionCard>
+          </div>
+
+          {/* ── Lead Status Update ── */}
+          <div style={{ marginBottom: 24 }}>
+            <SectionCard
+              icon={<EditOutlined />}
+              title="Lead Status"
+              extra={
+                <span style={{
+                  fontSize: 12, fontWeight: 700,
+                  color: savedStatusCfg .color,
+                  background: savedStatusCfg.bg,
+                  border: `1px solid ${savedStatusCfg.border}`,
+                  padding: '4px 12px', borderRadius: 20,
+                }}>
+                  {leadStatus || 'Not Set'}
+                </span>
+              }
+            >
+              {/* Status buttons */}
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+                {STATUS_OPTIONS.map(opt => {
+                  const cfg = STATUS_CONFIG[opt];
+                  const isActive = leadStatus === opt;
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => setLeadStatus(opt)}
+                      style={{
+                        padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                        border: `1.5px solid ${isActive ? cfg.color : '#e5e7eb'}`,
+                        background: isActive ? cfg.bg : '#fff',
+                        color: isActive ? cfg.color : '#6b7280',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+{savedStatus && (
+  <div style={{
+    display: 'flex', alignItems: 'center', gap: 10,
+    padding: '10px 14px', borderRadius: 8,
+    background: savedStatusCfg.bg,
+    border: `1px solid ${savedStatusCfg.border}`,
+    marginBottom: 16,
+  }}>
+    <div style={{ width: 10, height: 10, borderRadius: '50%', background: savedStatusCfg.color, flexShrink: 0 }} />
+    <span style={{ fontSize: 13, color: '#6b7280' }}>Current Status:</span>
+    <span style={{ fontSize: 13, fontWeight: 700, color: savedStatusCfg.color }}>
+      {savedStatus}
+    </span>
+  </div>
+)}
+
+            {/* Notes + Update button — stacked */}
+<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+  <Input.TextArea
+    placeholder="Add a note (optional)..."
+    value={statusNote}
+    onChange={e => setStatusNote(e.target.value)}
+    rows={2}
+    style={{ width: '100%', resize: 'none', fontSize: 14 }}
+  />
+  <button
+    onClick={handleStatusUpdate}
+    disabled={statusUpdating || !leadStatus}
+    style={{
+      width: '100%', padding: '10px 0', borderRadius: 8, border: 'none',
+      fontWeight: 700, fontSize: 14,
+      background: statusUpdating || !leadStatus ? '#e5e7eb' : PRIMARY,
+      color: statusUpdating || !leadStatus ? '#9ca3af' : '#fff',
+      cursor: statusUpdating || !leadStatus ? 'not-allowed' : 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+    }}
+  >
+    {statusUpdating ? <Spin size="small" /> : 'Update Status'}
+  </button>
+</div>
             </SectionCard>
           </div>
 
@@ -342,7 +491,6 @@ const VaultAgentLeadDetail = () => {
           </div>
         }
       >
-        {/* File preview */}
         <div style={{ minHeight: 560, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
           {modalLoading && <Spin size="large" style={{ position: 'absolute', zIndex: 2 }} />}
           {selectedDoc && (
@@ -352,77 +500,46 @@ const VaultAgentLeadDetail = () => {
           )}
         </div>
 
-        {/* ── Action bar ── */}
         <div style={{ marginTop: 16, padding: '16px 0 4px', borderTop: '1px solid #f3f4f6' }}>
           {docStatus === 'Verified' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#10b981', fontWeight: 600 }}>
               <CheckCircleOutlined /> Document is already Verified
             </div>
           )}
-
           {docStatus === 'Rejected' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444', fontWeight: 600 }}>
               <CloseCircleOutlined /> Document is Rejected
               {selectedDoc?.rejectionReason && <span style={{ fontWeight: 400, color: '#6b7280', fontSize: 13 }}>— {selectedDoc.rejectionReason}</span>}
             </div>
           )}
-
           {docStatus !== 'Verified' && docStatus !== 'Rejected' && !showRejectInput && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              {/* Quality Score */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 14px' }}>
                 <span style={{ fontSize: 13, color: '#374151', fontWeight: 500, whiteSpace: 'nowrap' }}>Quality Score</span>
                 <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={qualityScore}
+                  type="number" min={0} max={100} value={qualityScore}
                   onChange={e => setQualityScore(Math.min(100, Math.max(0, Number(e.target.value))))}
                   style={{ width: 60, padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, fontWeight: 700, color: PRIMARY, textAlign: 'center', outline: 'none' }}
                 />
                 <span style={{ fontSize: 12, color: '#6b7280' }}>/100</span>
               </div>
-
               <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-                <button
-                  onClick={() => setShowRejectInput(true)}
-                  style={{ padding: '9px 20px', borderRadius: 8, border: '1.5px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-                >
+                <button onClick={() => setShowRejectInput(true)} style={{ padding: '9px 20px', borderRadius: 8, border: '1.5px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <StopOutlined /> Reject
                 </button>
-                <button
-                  onClick={handleVerify}
-                  disabled={verifying}
-                  style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: verifying ? '#e5e7eb' : '#10b981', color: verifying ? '#9ca3af' : '#fff', fontWeight: 700, fontSize: 13, cursor: verifying ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-                >
+                <button onClick={handleVerify} disabled={verifying} style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: verifying ? '#e5e7eb' : '#10b981', color: verifying ? '#9ca3af' : '#fff', fontWeight: 700, fontSize: 13, cursor: verifying ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
                   {verifying ? <Spin size="small" /> : <><CheckOutlined /> Verify</>}
                 </button>
               </div>
             </div>
           )}
-
-          {/* Reject input */}
           {showRejectInput && (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <Input
-                placeholder="Enter rejection reason..."
-                value={rejectReason}
-                onChange={e => setRejectReason(e.target.value)}
-                onPressEnter={handleReject}
-                style={{ flex: 1 }}
-                autoFocus
-              />
-              <button
-                onClick={handleReject}
-                disabled={rejecting || !rejectReason.trim()}
-                style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: rejecting || !rejectReason.trim() ? '#e5e7eb' : '#ef4444', color: rejecting || !rejectReason.trim() ? '#9ca3af' : '#fff', fontWeight: 700, fontSize: 13, cursor: rejecting || !rejectReason.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
-              >
+              <Input placeholder="Enter rejection reason..." value={rejectReason} onChange={e => setRejectReason(e.target.value)} onPressEnter={handleReject} style={{ flex: 1 }} autoFocus />
+              <button onClick={handleReject} disabled={rejecting || !rejectReason.trim()} style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: rejecting || !rejectReason.trim() ? '#e5e7eb' : '#ef4444', color: rejecting || !rejectReason.trim() ? '#9ca3af' : '#fff', fontWeight: 700, fontSize: 13, cursor: rejecting || !rejectReason.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
                 {rejecting ? <Spin size="small" /> : 'Confirm Reject'}
               </button>
-              <button
-                onClick={() => { setShowRejectInput(false); setRejectReason(''); }}
-                style={{ padding: '9px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
-              >
+              <button onClick={() => { setShowRejectInput(false); setRejectReason(''); }} style={{ padding: '9px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
                 Cancel
               </button>
             </div>
