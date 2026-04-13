@@ -27,7 +27,7 @@
     { "label": "वित्तीय संस्थान", "path": "/" }
   ],
   "knowledge": [
-    { "label": "ज्ञान केंद्र", "path": "/explore" },
+    { "label": "ज्ञान केंद्र", "path": "/Blogs" },
     { "label": "हमारी सस्टेनेबिलिटी फोकस", "path": "/about" },
     
     { "label": "फीडबैक दें", "path": "/about" },

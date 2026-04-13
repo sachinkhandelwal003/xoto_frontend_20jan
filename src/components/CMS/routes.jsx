@@ -555,7 +555,6 @@ const CmsRoutes = () => {
 
 
       <Route path="/rental/properties" element={< CreateRentalProperty />} />
-      <Route path="/rental/properties/edit/:id" element={<CreateRentalProperty />} />
       <Route path="/rental/propertieslist" element={< RentalPropertyList />} />
       <Route path="/rental/leadlist" element={< AdminLeadList />} />
 

@@ -129,12 +129,7 @@ const CustomerList = () => {
 
   // ── Table columns ────────────────────────────────────────────────
   const columns = [
-    {
-      title: "S.No",
-      dataIndex: "sno",
-      width: 70,
-      render: (v) => <Text type="secondary">{v}</Text>,
-    },
+
     {
       title: "Customer",
       width: 280,
@@ -162,15 +157,7 @@ const CustomerList = () => {
         <div className="text-sm"><PhoneOutlined /> {r.mobile_str}</div>
       ),
     },
-    {
-      title: "Location",
-      width: 160,
-      render: (_, r) => (
-        <Text type="secondary" className="text-xs">
-          <EnvironmentOutlined /> {getLocation(r)}
-        </Text>
-      ),
-    },
+   
     {
       title: "Joined",
       width: 130,

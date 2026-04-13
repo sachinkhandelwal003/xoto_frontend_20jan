@@ -1,22 +1,22 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
+import { showToast } from '../../../../manageApi/utils/toast'; 
 import JoditEditor from 'jodit-react';
 import DOMPurify from 'dompurify';
 import moment from 'moment';
 
 import {
-  Button, Modal, Form, Input, Popconfirm, Card, Table,
+  Button, Modal, Form, Input, Popconfirm, Card,
   Typography, Avatar, Row, Col, Statistic, Space, Divider,
   message, notification, Tooltip, Grid, Tag, Select, Badge,
-  Upload, Tabs, Alert, Switch, Dropdown, Menu
+  Upload, Tabs, Alert, Switch, Dropdown, Menu, Pagination, Skeleton, Empty
 } from 'antd';
 import {
   PlusOutlined, FileTextOutlined, DeleteOutlined,
   EditOutlined, SearchOutlined, CheckCircleOutlined, SyncOutlined,
   UserOutlined, PictureOutlined, EyeOutlined, ClockCircleOutlined,
   CopyOutlined, SaveOutlined, UndoOutlined,
-  MoreOutlined, TagOutlined, BookOutlined, LinkOutlined,
-  CalendarOutlined
+  MoreOutlined, TagOutlined, BookOutlined, CalendarOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -39,14 +39,14 @@ const THEME = {
 const cleanWordHtml = (html) => {
   if (!html) return '';
   let c = html;
-  // 🚨 FIXED REGEX ERROR HERE 🚨
-  c = c.replace(/<!--\[if !supportLists\]-->.*?<!\[endif\]-->/gs, '');
-  c = c.replace(/<!--\[if gte mso.*?\]-->/gs, '');
+
+  c = c.replace(/.*?<!\[endif\]-->/gs, '');
   c = c.replace(/<o:p>.*?<\/o:p>/gs, '');
   c = c.replace(/<style[^>]*>.*?<\/style>/gs, '');
   c = c.replace(/<meta[^>]*>/gs, '');
   c = c.replace(/<\?xml[^?]*\?>/gs, '');
   c = c.replace(/mso-[^;:"']+;?/g, '');
+
   return c;
 };
 
@@ -230,31 +230,6 @@ const BlogPreview = ({ data }) => {
           }),
         }}
       />
-
-      {tags?.length > 0 && (
-        <div style={{ marginTop: 36, paddingTop: 20, borderTop: '1px solid #eee' }}>
-          <Text style={{ fontSize: 13, color: '#888', marginRight: 8 }}><TagOutlined /> Tags:</Text>
-          {tags.map(tag => <Tag key={tag} color="geekblue" style={{ borderRadius: 20 }}>#{tag}</Tag>)}
-        </div>
-      )}
-
-      <style>{`
-        .blog-preview-content h1 { font-size: 28px; font-weight: 800; margin: 28px 0 12px; color: #0f0f23; }
-        .blog-preview-content h2 { font-size: 22px; font-weight: 700; margin: 24px 0 10px; color: #1a1a2e; border-bottom: 2px solid #e0d0ff; padding-bottom: 6px; }
-        .blog-preview-content h3 { font-size: 18px; font-weight: 600; margin: 20px 0 8px; color: #3d2c8d; }
-        .blog-preview-content p { margin: 0 0 16px; }
-        .blog-preview-content ul, .blog-preview-content ol { padding-left: 24px; margin: 0 0 16px; }
-        .blog-preview-content li { margin-bottom: 6px; }
-        .blog-preview-content blockquote { border-left: 4px solid #7c3aed; margin: 20px 0; padding: 10px 20px; background: #faf5ff; border-radius: 0 8px 8px 0; color: #555; font-style: italic; }
-        .blog-preview-content a { color: #7c3aed; text-decoration: underline; }
-        .blog-preview-content img { max-width: 100%; border-radius: 8px; margin: 16px 0; }
-        .blog-preview-content pre, .blog-preview-content code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 14px; font-family: monospace; }
-        .blog-preview-content pre { padding: 16px; overflow-x: auto; margin: 16px 0; }
-        .blog-preview-content strong { color: #0f0f23; }
-        .blog-preview-content table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-        .blog-preview-content th, .blog-preview-content td { border: 1px solid #e0d0ff; padding: 10px 14px; text-align: left; }
-        .blog-preview-content th { background: #f8f4ff; font-weight: 600; }
-      `}</style>
     </div>
   );
 };
@@ -265,13 +240,21 @@ const BlogPreview = ({ data }) => {
 const BlogManagement = () => {
   const screens = useBreakpoint();
   const quillRef = useRef(null);
+  
+  const searchTimeout = useRef(null);
 
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [total, setTotal] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [targetStatus, setTargetStatus] = useState('draft'); 
+  
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalResults: 0,
+    itemsPerPage: 10,
+  });
+
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -287,7 +270,6 @@ const BlogManagement = () => {
   const [headings, setHeadings] = useState([]);
 
   const [smartFillApplied, setSmartFillApplied] = useState(false);
-  const [detectedLinks, setDetectedLinks] = useState([]);
 
   const [featuredImageList, setFeaturedImageList] = useState([]);
   const [coverImageList, setCoverImageList] = useState([]);
@@ -316,18 +298,10 @@ const BlogManagement = () => {
       if (Object.keys(updates).length > 0) {
         form.setFieldsValue(updates);
         setSmartFillApplied(true);
-        notification.info({
-          message: '✨ Smart Fill Applied',
-          description: `Auto-filled: ${Object.keys(updates).join(', ')}.`,
-          placement: 'topRight',
-          duration: 4
-        });
+        notification.info({ message: '✨ Smart Fill Applied', description: `Auto-filled detected fields.`, placement: 'topRight', duration: 4 });
       }
-
-      if (extracted.links && extracted.links.length > 0) setDetectedLinks(extracted.links);
     }
   }, [form]);
-
 
   const handleEditorChange = (value) => {
     setContentValue(value);
@@ -367,7 +341,7 @@ const BlogManagement = () => {
         title: 'Draft Found',
         content: `Restore draft saved at ${moment(d.timestamp).format('HH:mm, MMM DD')}?`,
         onOk: () => {
-          form.setFieldsValue({ title: d.title, subHeading: d.subHeading, tags: d.tags, category: d.category, status: d.status, authorName: d.authorName });
+          form.setFieldsValue({ title: d.title, subHeading: d.subHeading, tags: d.tags, category: d.category, authorName: d.authorName });
           setContentValue(d.content || '');
           setHeadings(d.headings || []);
           message.success('Draft restored');
@@ -376,36 +350,69 @@ const BlogManagement = () => {
     } catch (_) {}
   };
 
-  const fetchBlogs = useCallback(async () => {
+  const fetchBlogs = useCallback(async (page = 1, limit = 10, searchVal = "", category = "", status = "") => {
     setLoading(true);
     try {
-      let url = `/blogs/get-all-blogs?page=${currentPage}&limit=${pageSize}`;
-      if (searchText) url += `&search=${encodeURIComponent(searchText)}`;
-      if (selectedCategory) url += `&category=${selectedCategory}`;
-      if (selectedStatus) url += `&isPublished=${selectedStatus === 'published'}`;
+      let url = `/blogs/get-all-blogs?page=${page}&limit=${limit}`;
+      if (searchVal?.trim()) url += `&search=${encodeURIComponent(searchVal.trim())}`;
+      if (category) url += `&category=${encodeURIComponent(category)}`;
+      if (status) url += `&isPublished=${status === 'published'}`;
 
       const response = await apiService.get(url);
       if (response.success) {
-        setBlogs(response.data);
-        setTotal(response.pagination.total);
+        setBlogs(response.data || []);
+        
+        setPagination({
+          currentPage: response.pagination?.page || page,
+          totalPages: response.pagination?.totalPages || 1,
+          totalResults: response.pagination?.total || response.data?.length || 0,
+          itemsPerPage: response.pagination?.limit || limit,
+        });
+
         setStats({
-          total: response.pagination.total,
+          total: response.pagination?.total || 0,
           published: response.data.filter(b => b.isPublished).length,
           drafts: response.data.filter(b => !b.isPublished).length,
           views: response.data.reduce((s, b) => s + (b.viewCount || 0), 0),
         });
       }
     } catch (e) {
-      message.error('Failed to load blogs');
+      if(showToast) showToast('Failed to load blogs', 'error');
+      else message.error('Failed to load blogs');
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, searchText, selectedCategory, selectedStatus]);
+  }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => fetchBlogs(), 400);
-    return () => clearTimeout(t);
+    fetchBlogs(1, 10, "", "", "");
   }, [fetchBlogs]);
+
+  const handleSearch = (e) => {
+    const val = e.target.value;
+    setSearchText(val);
+    clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      fetchBlogs(1, pagination.itemsPerPage, val, selectedCategory, selectedStatus);
+    }, 500);
+  };
+
+  const handleFilterChange = (type, val) => {
+    if (type === 'category') {
+      setSelectedCategory(val);
+      fetchBlogs(1, pagination.itemsPerPage, searchText, val, selectedStatus);
+    } else if (type === 'status') {
+      setSelectedStatus(val);
+      fetchBlogs(1, pagination.itemsPerPage, searchText, selectedCategory, val);
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSearchText('');
+    setSelectedCategory('');
+    setSelectedStatus('');
+    fetchBlogs(1, pagination.itemsPerPage, "", "", "");
+  };
 
   const fetchBlogById = async (id) => {
     setLoading(true);
@@ -421,7 +428,6 @@ const BlogManagement = () => {
           subHeading: blog.subHeading || '',
           tags: blog.tags || [],
           category: blog.category || 'Other',
-          status: blog.isPublished ? 'published' : 'draft',
           authorName: blog.authorName || 'Admin',
         });
 
@@ -463,6 +469,26 @@ const BlogManagement = () => {
       message.error('Please add content to your blog');
       return;
     }
+
+    if (targetStatus === 'published') {
+      if (featuredImageList.length === 0) {
+        message.error('Featured Image is mandatory for publishing.');
+        return;
+      }
+      if (coverImageList.length === 0) {
+        message.error('Cover Image is mandatory for publishing.');
+        return;
+      }
+      if (authorImageList.length === 0) {
+        message.error('Author Image is mandatory for publishing.');
+        return;
+      }
+      if (!values.authorName) {
+        message.error('Author Name is mandatory for publishing.');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([
@@ -477,29 +503,24 @@ const BlogManagement = () => {
         content: contentValue,
         authorName: values.authorName || 'Admin',
         authorImage: authorImgUrl,
-        isPublished: values.status === 'published',
+        isPublished: targetStatus === 'published',
         tags: values.tags || [],
         category: values.category || 'Other',
         featuredImage: featuredUrl,
         coverImage: coverUrl,
       };
 
-      if (values.status === 'published') payload.publishedAt = new Date().toISOString();
+      if (targetStatus === 'published') payload.publishedAt = new Date().toISOString();
 
       const response = editingId
         ? await apiService.put(`/blogs/edit-blog-by-id?id=${editingId}`, payload)
         : await apiService.post('/blogs/create-blog', payload);
 
       if (response.success) {
-        notification.success({
-          message: editingId ? 'Blog Updated' : 'Blog Created',
-          description: `"${values.title}" ${editingId ? 'updated' : 'created'} successfully`,
-          placement: 'topRight',
-          duration: 3,
-        });
+        notification.success({ message: editingId ? 'Blog Updated' : 'Blog Created', description: `"${values.title}" saved successfully`, placement: 'topRight' });
         localStorage.removeItem(`blog_draft_${editingId || 'new'}`);
         closeModal();
-        fetchBlogs();
+        fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus);
       } else {
         message.error(response.message || 'Operation failed');
       }
@@ -513,51 +534,61 @@ const BlogManagement = () => {
   const deleteBlog = async (id) => {
     try {
       const r = await apiService.delete(`/blogs/delete-blog-by-id?id=${id}`);
-      if (r.success) { message.success('Deleted successfully'); fetchBlogs(); }
+      if (r.success) { 
+        message.success('Deleted successfully'); 
+        fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus); 
+      }
       else message.error('Delete failed');
     } catch { message.error('Deletion failed'); }
   };
 
-  const duplicateBlog = async (blog) => {
+  // ✅ 1. NAYA CARD PREVIEW LOGIC
+  const handleCardPreview = async (record) => {
+    const hide = message.loading('Loading preview...', 0);
     try {
-      const payload = { ...blog, title: `${blog.title} (Copy)`, isPublished: false, viewCount: 0 };
-      delete payload._id; delete payload.createdAt; delete payload.updatedAt; delete payload.slug;
-      const r = await apiService.post('/blogs/create-blog', payload);
-      if (r.success) { message.success('Blog duplicated'); fetchBlogs(); }
-    } catch { message.error('Failed to duplicate'); }
+      // API fetch karke real data layenge pehle
+      const response = await apiService.get(`/blogs/get-blog-by-id?id=${record._id}`);
+      if (response.success && response.data) {
+        showPreview(response.data, false); // false = Ye Live Form Preview nahi hai
+      } else {
+        showPreview(record, false); 
+      }
+    } catch (err) {
+      showPreview(record, false);
+    } finally {
+      hide();
+    }
   };
 
-  const exportBlog = (blog) => {
-    const uri = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(blog, null, 2));
-    const a = document.createElement('a');
-    a.setAttribute('href', uri);
-    a.setAttribute('download', `${blog.slug || blog.title}.json`);
-    a.click();
-    message.success('Exported');
-  };
-
-  const showPreview = (blog) => {
-    const formVals = form.getFieldsValue();
-    const data = blog._id
-      ? {
-          ...blog,
-          headings: extractHeadings(blog.content),
-          readingTime: Math.ceil((blog.content || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200),
-        }
-      : {
-          title: formVals.title || 'Untitled',
-          subHeading: formVals.subHeading,
-          content: contentValue,
-          authorName: formVals.authorName,
-          tags: formVals.tags,
-          category: formVals.category,
-          featuredImage: featuredImageList[0]?.url || featuredImageList[0]?.preview,
-          coverImage: coverImageList[0]?.url || coverImageList[0]?.preview,
-          headings,
-          createdAt: new Date(),
-          readingTime: Math.ceil(contentValue.replace(/<[^>]*>/g, '').split(/\s+/).length / 200),
-        };
-    setPreviewBlogData(data);
+  // ✅ 2. SHOW PREVIEW FUNCTION (Differentiate Form Data vs API Data)
+  const showPreview = (blogData = {}, isLiveFormPreview = false) => {
+    if (isLiveFormPreview) {
+      // Jab editor k andar wale "Live Preview" pe click hoga (Form Data)
+      const formVals = form.getFieldsValue();
+      const data = {
+        title: formVals.title || 'Untitled',
+        subHeading: formVals.subHeading,
+        content: contentValue,
+        authorName: formVals.authorName,
+        tags: formVals.tags,
+        category: formVals.category,
+        featuredImage: featuredImageList[0]?.url || featuredImageList[0]?.preview,
+        coverImage: coverImageList[0]?.url || coverImageList[0]?.preview,
+        authorImage: authorImageList[0]?.url || authorImageList[0]?.preview,
+        headings,
+        createdAt: new Date(),
+        readingTime: Math.ceil((contentValue || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200),
+      };
+      setPreviewBlogData(data);
+    } else {
+      // Jab Card pe click hoga (API Data)
+      const data = {
+        ...blogData,
+        headings: extractHeadings(blogData?.content || ''),
+        readingTime: Math.ceil((blogData?.content || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200)
+      };
+      setPreviewBlogData(data);
+    }
     setPreviewModalVisible(true);
   };
 
@@ -565,7 +596,7 @@ const BlogManagement = () => {
     setModalVisible(false);
     setEditingId(null);
     setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
-    setContentValue(''); setHeadings([]); setDetectedLinks([]);
+    setContentValue(''); setHeadings([]);
     setSmartFillApplied(false); setLastSaved(null);
     form.resetFields();
   };
@@ -575,85 +606,6 @@ const BlogManagement = () => {
     setPreviewImage(file.url || file.preview);
     setPreviewOpen(true);
   };
-
-  const columns = [
-    {
-      title: 'Blog Details', dataIndex: 'title', key: 'title', width: 320,
-      render: (text, record) => (
-        <Space direction="vertical" size={2}>
-          <Space>
-            {record.featuredImage
-              ? <Avatar shape="square" size={48} src={record.featuredImage} />
-              : <Avatar shape="square" size={48} icon={<FileTextOutlined />} style={{ backgroundColor: THEME.primary }} />}
-            <div>
-              <Text strong style={{ fontSize: 14 }}>{text || 'Untitled'}</Text>
-              {record.subHeading && <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>{record.subHeading.substring(0, 60)}...</Text>}
-              <Space size={8}>
-                <Text type="secondary" style={{ fontSize: 11 }}><ClockCircleOutlined /> {record.readingTime || 2} min</Text>
-                <Text type="secondary" style={{ fontSize: 11 }}><EyeOutlined /> {record.viewCount || 0}</Text>
-              </Space>
-            </div>
-          </Space>
-        </Space>
-      )
-    },
-    {
-      title: 'Category', dataIndex: 'category', key: 'category', width: 120,
-      render: (c) => <Tag color="purple">{c || 'Uncategorized'}</Tag>
-    },
-    {
-      title: 'Tags', dataIndex: 'tags', key: 'tags', width: 180,
-      render: (tags) => (
-        <Space wrap size={[0, 4]}>
-          {tags?.slice(0, 2).map(t => <Tag key={t} color="blue">{t}</Tag>)}
-          {tags?.length > 2 && <Tag>+{tags.length - 2}</Tag>}
-        </Space>
-      )
-    },
-    {
-      title: 'Author', dataIndex: 'authorName', key: 'authorName', width: 150,
-      render: (name, record) => (
-        <Space>
-          <Avatar size="small" src={record.authorImage} icon={<UserOutlined />} />
-          <Text>{name || 'Admin'}</Text>
-        </Space>
-      )
-    },
-    {
-      title: 'Date', dataIndex: 'createdAt', key: 'createdAt', width: 120,
-      render: (d) => moment(d).format('MMM DD, YYYY')
-    },
-    {
-      title: 'Status', dataIndex: 'isPublished', key: 'isPublished', width: 100,
-      render: (p) => <Badge status={p ? 'success' : 'warning'} text={p ? 'Published' : 'Draft'} />
-    },
-    {
-      title: 'Actions', key: 'actions', align: 'center', width: 200,
-      render: (_, record) => (
-        <Space size="small">
-          <Tooltip title="Edit">
-            <Button type="text" icon={<EditOutlined style={{ color: THEME.primary }} />} onClick={() => fetchBlogById(record._id)} />
-          </Tooltip>
-          <Tooltip title="Full Preview">
-            <Button type="text" icon={<EyeOutlined style={{ color: THEME.info }} />} onClick={() => showPreview(record)} />
-          </Tooltip>
-          <Dropdown overlay={
-            <Menu>
-              <Menu.Item key="dup" icon={<CopyOutlined />} onClick={() => duplicateBlog(record)}>Duplicate</Menu.Item>
-              <Menu.Item key="exp" icon={<FileTextOutlined />} onClick={() => exportBlog(record)}>Export JSON</Menu.Item>
-            </Menu>
-          }>
-            <Button type="text" icon={<MoreOutlined />} />
-          </Dropdown>
-          <Popconfirm title="Delete this post?" onConfirm={() => deleteBlog(record._id)}>
-            <Tooltip title="Delete">
-              <Button type="text" danger icon={<DeleteOutlined />} />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
-      )
-    },
-  ];
 
   return (
     <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
@@ -668,8 +620,7 @@ const BlogManagement = () => {
             onClick={() => {
               setEditingId(null); form.resetFields();
               setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
-              setContentValue(''); setHeadings([]); setDetectedLinks([]);
-              setSmartFillApplied(false);
+              setContentValue(''); setHeadings([]); setSmartFillApplied(false);
               setModalVisible(true);
               setTimeout(() => loadDraft(), 100);
             }}
@@ -695,13 +646,13 @@ const BlogManagement = () => {
         </Row>
       </div>
 
-      <Card className="shadow-sm mb-4">
+      <Card className="shadow-sm mb-4" bodyStyle={{ padding: '16px 24px' }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={8}>
-            <Input prefix={<SearchOutlined />} placeholder="Search title, content, tags..." value={searchText} onChange={e => setSearchText(e.target.value)} allowClear size="large" />
+            <Input prefix={<SearchOutlined className="text-gray-400" />} placeholder="Search title, content, tags..." value={searchText} onChange={handleSearch} allowClear size="large" />
           </Col>
           <Col xs={12} md={4}>
-            <Select placeholder="Category" value={selectedCategory} onChange={setSelectedCategory} allowClear size="large" style={{ width: '100%' }}>
+            <Select placeholder="Category" value={selectedCategory} onChange={(v) => handleFilterChange('category', v)} allowClear size="large" style={{ width: '100%' }}>
               <Option value="AI">🤖 AI</Option>
               <Option value="Real Estate">🏠 Real Estate</Option>
               <Option value="PropTech">📱 PropTech</Option>
@@ -710,22 +661,175 @@ const BlogManagement = () => {
             </Select>
           </Col>
           <Col xs={12} md={4}>
-            <Select placeholder="Status" value={selectedStatus} onChange={setSelectedStatus} allowClear size="large" style={{ width: '100%' }}>
+            <Select placeholder="Status" value={selectedStatus} onChange={(v) => handleFilterChange('status', v)} allowClear size="large" style={{ width: '100%' }}>
               <Option value="published">✅ Published</Option>
               <Option value="draft">📝 Draft</Option>
             </Select>
           </Col>
           <Col xs={24} md={8}>
-            <Button icon={<UndoOutlined />} onClick={() => { setSearchText(''); setSelectedCategory(''); setSelectedStatus(''); }}>Clear Filters</Button>
+            <Button icon={<UndoOutlined />} onClick={handleClearFilters}>Clear Filters</Button>
           </Col>
         </Row>
       </Card>
 
-      <Card className="shadow-sm" bodyStyle={{ padding: 0 }}>
-        <Table columns={columns} dataSource={blogs} loading={loading} rowKey="_id" scroll={{ x: 1200 }}
-          pagination={{ current: currentPage, pageSize, total, showSizeChanger: true, showTotal: t => `Total ${t} posts`, onChange: (p, s) => { setCurrentPage(p); setPageSize(s); } }}
-        />
-      </Card>
+      <div className="blog-list-container">
+        {loading ? (
+          <div style={{ marginTop: '30px' }}>
+             <Skeleton active avatar={{ size: 120, shape: 'square' }} paragraph={{ rows: 4 }} />
+             <Skeleton active avatar={{ size: 120, shape: 'square' }} paragraph={{ rows: 4 }} style={{ marginTop: 20 }} />
+          </div>
+        ) : blogs.length === 0 ? (
+          <Card className="shadow-sm">
+             <Empty description="No blogs found" />
+          </Card>
+        ) : (
+          <>
+            {blogs.map(record => (
+              <Card 
+                key={record._id} 
+                hoverable 
+                className="mb-4 shadow-sm" 
+                bodyStyle={{ padding: 0, overflow: 'hidden', borderRadius: '8px', border: '1px solid #f0f0f0' }}
+                style={{ marginBottom: '24px' }}
+              >
+                <Row>
+                  <Col xs={24} sm={24} md={8} lg={7} xl={6}>
+                    <div style={{ width: '100%', height: '100%', minHeight: '260px', backgroundColor: '#f9f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {record.featuredImage ? (
+                        <img src={record.featuredImage} alt={record.title} style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: '260px' }} />
+                      ) : (
+                        <FileTextOutlined style={{ fontSize: 64, color: '#d9d9d9' }} />
+                      )}
+                    </div>
+                  </Col>
+
+                  <Col xs={24} sm={24} md={16} lg={17} xl={18} style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                        <Space wrap>
+                          <Tag color="purple" style={{ padding: '4px 12px', fontSize: '13px', borderRadius: '20px' }}>
+                            {record.category || 'Uncategorized'}
+                          </Tag>
+                          <Badge 
+                            status={record.isPublished ? 'success' : 'warning'} 
+                            text={<span style={{ fontWeight: 600, color: record.isPublished ? THEME.success : THEME.warning }}>{record.isPublished ? 'Published' : 'Draft'}</span>} 
+                          />
+                        </Space>
+
+                        <Space size="middle">
+                          <Tooltip title="Edit Post">
+                            <Button shape="circle" icon={<EditOutlined />} onClick={() => fetchBlogById(record._id)} />
+                          </Tooltip>
+                          <Tooltip title="Preview Post">
+                            {/* ✅ Updated onClick handler to fetch details first */}
+                            <Button shape="circle" icon={<EyeOutlined />} onClick={() => handleCardPreview(record)} />
+                          </Tooltip>
+                          <Popconfirm title="Are you sure you want to delete this post?" onConfirm={() => deleteBlog(record._id)}>
+                            <Tooltip title="Delete">
+                              <Button shape="circle" danger icon={<DeleteOutlined />} />
+                            </Tooltip>
+                          </Popconfirm>
+                        </Space>
+                      </div>
+
+                      <Title level={3} style={{ marginTop: 0, marginBottom: '8px', color: '#1a1a2e', fontWeight: 700 }}>
+                        {record.title || 'Untitled Post'}
+                      </Title>
+                      <Text type="secondary" style={{ display: 'block', marginBottom: '20px', fontSize: '15px', lineHeight: '1.6', color: '#555' }}>
+                        {record.subHeading ? record.subHeading : 'No excerpt available...'}
+                      </Text>
+
+                      <div style={{ marginBottom: '20px' }}>
+                        {record.tags?.slice(0, 5).map(t => <Tag key={t} color="blue" style={{ borderRadius: '4px' }}>#{t}</Tag>)}
+                        {record.tags?.length > 5 && <Tag style={{ borderRadius: '4px' }}>+{record.tags.length - 5} more</Tag>}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                      <Space size="large">
+                        <Space>
+                          <Avatar size="default" src={record.authorImage} icon={<UserOutlined />} style={{ backgroundColor: THEME.primary }} />
+                          <Text strong style={{ fontSize: '14px', color: '#333' }}>{record.authorName || 'Admin'}</Text>
+                        </Space>
+                        <Space>
+                          <CalendarOutlined style={{ color: '#888' }} />
+                          <Text type="secondary" style={{ fontSize: '14px' }}>{moment(record.createdAt).format('MMM DD, YYYY')}</Text>
+                        </Space>
+                      </Space>
+                      
+                      <Space size="large">
+                        <Space>
+                          <ClockCircleOutlined style={{ color: '#888' }} />
+                          <Text type="secondary" style={{ fontSize: '14px' }}>{record.readingTime || 2} min read</Text>
+                        </Space>
+                        <Space>
+                          <EyeOutlined style={{ color: '#888' }} />
+                          <Text type="secondary" style={{ fontSize: '14px' }}>{record.viewCount || 0} views</Text>
+                        </Space>
+                      </Space>
+                    </div>
+                  </Col>
+                </Row>
+              </Card>
+            ))}
+
+          <div className="flex flex-col md:flex-row justify-between items-center mt-8 gap-4">
+            <div className="text-sm text-gray-600">
+              Showing {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}
+              {' '}to{' '}
+              {Math.min(
+                pagination.currentPage * pagination.itemsPerPage,
+                pagination.totalResults
+              )}
+              {' '}of {pagination.totalResults}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() =>
+                  fetchBlogs(pagination.currentPage - 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)
+                }
+                disabled={pagination.currentPage === 1}
+                className="px-3 py-1 border rounded-md text-gray-600 disabled:opacity-50"
+              >
+                ←
+              </button>
+
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                .slice(
+                  Math.max(0, pagination.currentPage - 3),
+                  pagination.currentPage + 2
+                )
+                .map((page) => (
+                  <button
+                    key={page}
+                    onClick={() =>
+                      fetchBlogs(page, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)
+                    }
+                    className={`px-4 py-1 rounded-md border ${
+                      pagination.currentPage === page
+                        ? 'bg-purple-700 text-white border-purple-700'
+                        : 'text-gray-700 border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+              <button
+                onClick={() =>
+                  fetchBlogs(pagination.currentPage + 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)
+                }
+                disabled={pagination.currentPage === pagination.totalPages}
+                className="px-3 py-1 border rounded-md text-gray-600 disabled:opacity-50"
+              >
+                →
+              </button>
+            </div>
+          </div>
+          </>
+        )}
+      </div>
 
       <Modal
         title={
@@ -742,21 +846,13 @@ const BlogManagement = () => {
         width={screens.xs ? '95%' : 1050}
         bodyStyle={{ maxHeight: '82vh', overflowY: 'auto' }}
       >
-        <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ status: 'draft', category: 'Other', authorName: 'Admin' }}>
+        <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ category: 'Other', authorName: 'Admin' }}>
           <Tabs defaultActiveKey="content">
             <TabPane tab={<span><EditOutlined /> Content</span>} key="content">
               <Row gutter={16}>
-                <Col span={16}>
+                <Col span={24}>
                   <Form.Item name="title" label="Post Title" rules={[{ required: true, message: 'Title is required' }]}>
                     <Input placeholder="Enter an engaging title" size="large" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="status" label="Status">
-                    <Select size="large">
-                      <Option value="draft">📝 Draft</Option>
-                      <Option value="published">🚀 Publish Now</Option>
-                    </Select>
                   </Form.Item>
                 </Col>
               </Row>
@@ -799,32 +895,26 @@ const BlogManagement = () => {
                     onChange={handleEditorChange}
                   />
                 </div>
-
+                
+                {/* Internal Live Preview inside Modal */}
                 <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button icon={<EyeOutlined />} onClick={() => showPreview({})} disabled={!contentValue || contentValue === '<p><br></p>'}>Live Preview</Button>
+                  {/* ✅ Yahan `true` pass kiya hai taaki form ka content le */}
+                  <Button icon={<EyeOutlined />} onClick={() => showPreview({}, true)} disabled={!contentValue || contentValue === '<p><br></p>'}>Live Preview</Button>
                 </div>
               </Form.Item>
-
-              {headings.length > 0 && (
-                <Alert
-                  message="📚 Table of Contents Detected"
-                  description={<ul style={{ marginBottom: 0 }}>{headings.map((h, i) => <li key={i} style={{ marginLeft: `${(h.level - 1) * 20}px` }}><Tag color="purple">H{h.level}</Tag> {h.text}</li>)}</ul>}
-                  type="success" showIcon className="mt-2"
-                />
-              )}
             </TabPane>
 
             <TabPane tab={<span><PictureOutlined /> Media</span>} key="media">
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item label="Featured Image (Thumbnail)">
+                  <Form.Item label="Featured Image (Thumbnail)" extra="Recommended: 1200 x 800px (Max: 5MB)">
                     <Upload listType="picture-card" fileList={featuredImageList} onPreview={handlePreview} onChange={({ fileList }) => setFeaturedImageList(fileList)} beforeUpload={f => validateImage(f, 0.1, 5)} maxCount={1}>
                       {featuredImageList.length < 1 && <div><PlusOutlined /><div style={{ marginTop: 8 }}>Upload</div></div>}
                     </Upload>
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item label="Cover Image (Hero Banner)">
+                  <Form.Item label="Cover Image (Hero Banner)" extra="Recommended: 1920 x 1080px (Max: 5MB)">
                     <Upload listType="picture-card" fileList={coverImageList} onPreview={handlePreview} onChange={({ fileList }) => setCoverImageList(fileList)} beforeUpload={f => validateImage(f, 0.1, 5)} maxCount={1}>
                       {coverImageList.length < 1 && <div><PlusOutlined /><div style={{ marginTop: 8 }}>Upload</div></div>}
                     </Upload>
@@ -841,7 +931,7 @@ const BlogManagement = () => {
                   </Form.Item>
                 </Col>
                 <Col span={8}>
-                  <Form.Item label="Author Avatar">
+                  <Form.Item label="Author Avatar" extra="Recommended: 400 x 400px (Max: 2MB)">
                     <Upload listType="picture-card" fileList={authorImageList} onPreview={handlePreview} onChange={({ fileList }) => setAuthorImageList(fileList)} beforeUpload={f => validateImage(f, 0.05, 2)} maxCount={1}>
                       {authorImageList.length < 1 && <UserOutlined />}
                     </Upload>
@@ -859,32 +949,18 @@ const BlogManagement = () => {
               <Text type="secondary">Auto-save (30s)</Text>
             </Space>
             <Space>
-              <Button size="large" icon={<EyeOutlined />} onClick={() => showPreview({})}>Preview</Button>
-              <Button size="large" onClick={closeModal}>Cancel</Button>
-              <Button type="primary" htmlType="submit" loading={saving} size="large" icon={<SaveOutlined />} style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}>
-                {editingId ? 'Update Blog' : 'Publish Blog'}
+              <Button size="large" onClick={() => { setTargetStatus('draft'); form.submit(); }} loading={saving}>
+                Save as Draft
+              </Button>
+              <Button type="primary" onClick={() => { setTargetStatus('published'); form.submit(); }} loading={saving} size="large" icon={editingId ? <CheckCircleOutlined /> : <PlusOutlined />} style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}>
+                {editingId ? 'Update & Publish' : 'Publish Blog'}
               </Button>
             </Space>
           </div>
         </Form>
       </Modal>
 
-      <Modal
-        title={
-          <Space>
-            <EyeOutlined style={{ color: THEME.primary }} />
-            <span style={{ fontWeight: 700 }}>Blog Preview</span>
-          </Space>
-        }
-        open={previewModalVisible}
-        onCancel={() => setPreviewModalVisible(false)}
-        footer={[
-          <Button key="close" onClick={() => setPreviewModalVisible(false)}>Close</Button>
-        ]}
-        width={screens.xs ? '95%' : 860}
-        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: '24px 32px' }}
-        centered
-      >
+      <Modal open={previewModalVisible} onCancel={() => setPreviewModalVisible(false)} footer={null} width={screens.xs ? '95%' : 860} bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: '24px 32px' }} centered>
         <BlogPreview data={previewBlogData} />
       </Modal>
 
@@ -892,7 +968,8 @@ const BlogManagement = () => {
         <img alt="preview" style={{ width: '100%' }} src={previewImage} />
       </Modal>
     </div>
-  );
+  ); 
 };
+//blog managemnet
 
 export default BlogManagement;

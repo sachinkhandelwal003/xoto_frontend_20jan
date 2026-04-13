@@ -45,7 +45,7 @@ const navItems = [
   {
     key: "knowledgeHub",
     children: [
-      { key: "blogs", path: "/explore" },
+      { key: "blogs", path: "/Blogs" },
       { key: "caseStudies", path: "/case-studies" },
       { key: "training", path: "/training" },
       { key: "about", path: "/about" },

@@ -27,7 +27,7 @@
     { "label": "金融机构", "path": "/" }
   ],
   "knowledge": [
-    { "label": "知识中心", "path": "/explore" },
+    { "label": "知识中心", "path": "/Blogs" },
     { "label": "我们的可持续性 重点", "path": "/about" },
     { "label": "", "path": "/about" },
     { "label": "提交反馈", "path": "/about" },

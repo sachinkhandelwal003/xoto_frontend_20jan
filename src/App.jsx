@@ -30,6 +30,7 @@ import HomeB2C from "./components/ecommerce/B2C/Home";
 import CartPage from "./components/ecommerce/B2C/products/CartPage.jsx";
 import CmsApp from "./components/CMS/CmsApp";
 import AITool from "./components/AI/Tool/AITool";
+import PrivacyPolicy from "./components/homepage/PrivacyPolicy";
 const NotFound = lazy(() => import("./components/NotFound"));
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -159,7 +160,7 @@ function LayoutWrapper({ children }) {
     "/freelancer/free-listing", "/ecommerce", "/freelancer/create-business",
     "/designs/Tool", "/dashboard", "/customer/dashboard", "/admin/login",
     "/user/login", "/other/login", "/aiPlanner", "/aiPlanner/interior",
-    "/aiPlanner/landscape", "/estimate/calculator", "/estimate/calculator/interior",
+    "/aiPlanner/landscape", "/estimate/calculator",
     "/accountant/login", "/ecommerce/seller","/aiPlanner/enhance","/aiPlanner/sky","/aiPlanner/virtual" ,
   ];
   const isDashboard = location.pathname.startsWith("/dashboard");
@@ -184,7 +185,7 @@ function LayoutWrapper({ children }) {
     "/login", "/quotation", "/designs/Tool", "/dashboard", "/customer/dashboard",
     "/profile", "/admin/login", "/user/login", "/other/login", "/aiPlanner",
     "/aiPlanner/interior", "/aiPlanner/landscape", "/estimate/calculator",
-    "/estimate/calculator/interior", "/accountant/login", "/ecommerce/seller",
+     "/accountant/login", "/ecommerce/seller",
     "/freelancer/registration","/aiPlanner/enhance","/aiPlanner/sky","/aiPlanner/virtual" ,
   ];
 // Chatbot sirf in pages par dikhega (jo path chahiye yaha add kar lena)
@@ -195,7 +196,7 @@ function LayoutWrapper({ children }) {
     "/services/interior",
     "/landscaping",
     "/ecommerce/b2c",
-    "/explore",
+    "/Blogs",
     "/case-studies",
     "/training",
     "/ecosystem",
@@ -204,7 +205,8 @@ function LayoutWrapper({ children }) {
     "/ecommerce",
     "/about",
     "/contact",
-    "/consultation"
+    "/consultation",
+   "/estimate/calculator/interior"
   ];
   const hideFooter = hideFooterPaths.includes(location.pathname) || isDashboard || location.pathname.startsWith("/profile/");
 const showChatbot = allowedChatbotPaths.includes(location.pathname);
@@ -273,6 +275,7 @@ function App() {
               <Route path="/accountant/login" element={<AccountantLogin />} />
               <Route path="/consultation" element={<Consult />} />
               <Route path="/designs" element={<Designs />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                             <Route path="/ecommerce/cart" element={<CartPage />} />
                             <Route path="/ecommerce/checkout" element={<CheckoutPage />} />
                             <Route path="/ecommerce/payment/success" element={<PaymentSuccess />} />
@@ -287,10 +290,10 @@ function App() {
                   </DndProvider>
                 }
               />
-              <Route path="/ai" element={<Ai />} />
+              <Route path="/Blog" element={<Ai />} />
               <Route path="/mortgage/services" element={<Service />} />
               <Route path="/properties" element={<Page2 />} />
-              <Route path="/explore" element={<Page3 />} />
+              <Route path="/Blogs" element={<Page3 />} />
               <Route path="/contact" element={<Page />} />
               <Route path="/quotation" element={<Quotation />} />
               <Route path="/ecommerce" element={<MainEcommercePage />} />

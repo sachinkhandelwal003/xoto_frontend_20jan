@@ -27,7 +27,7 @@
     { "label": "ਵਿੱਤੀ ਸੰਸਥਾਵਾਂ", "path": "/" }
   ],
   "knowledge": [
-    { "label": "ਗਿਆਨ ਕੇਂਦਰ", "path": "/explore" },
+    { "label": "ਗਿਆਨ ਕੇਂਦਰ", "path": "/Blogs" },
     { "label": "ਸਾਡੀ ਟਿਕਾਊਤਾ ਫੋਕਸ", "path": "/about" },
     
     { "label": "ਫੀਡਬੈਕ ਭੇਜੋ", "path": "/about" },

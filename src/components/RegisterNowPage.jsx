@@ -245,9 +245,9 @@ const RegisterNowPage = () => {
         }
         
         // 2 sec baad login page pe bhej do
-        if (msg.includes("already") || msg.includes("exists")) {
-          setTimeout(() => navigate("/user/login"), 2000);
-        }
+        // if (msg.includes("already") || msg.includes("exists")) {
+        //   setTimeout(() => navigate("/user/login"), 2000);
+        // }
       };
 
       if (apiError?.errors && Array.isArray(apiError.errors) && apiError.errors.length > 0) {
