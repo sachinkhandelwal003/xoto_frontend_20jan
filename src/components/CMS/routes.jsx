@@ -193,6 +193,10 @@ import VaultLeadDocuments from "../ecommerce/B2C/VaultLeadDocuments";
 import VaultAgentLeadList from "../ecommerce/B2C/VaultAgentLeadList";
 import VaultAgentLeadDetail from "../ecommerce/B2C/VaultAgentLeadDetail";
 import VaultLeadDocumentUpload from "../ecommerce/B2C/VaultLeadDocumentUpload";
+import PartnerAgentleads from "../ecommerce/B2C/PartnerAgentleadlist";
+// import VaultAgentDocuments from "../ecommerce/B2C/VaultAgentDocuments";
+import VaultAgentDocument from "../ecommerce/B2C/VaultAgentDocument";
+import PartnerLeadDetails from "../ecommerce/B2C/PartnerLeadDetails";
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 
@@ -465,7 +469,9 @@ const CmsRoutes = () => {
 <Route path="leads" element={<VaultLeads />} />
 <Route path="leads/:leadId" element={<VaultLeadDetails />} />
 <Route path="leads/:leadId/documents" element={<VaultLeadDocuments />} />
-
+<Route path="/lead-documents/:leadId"element={<VaultAgentDocument/>} />
+<Route path="partner-leads" element={<PartnerAgentleads />} />
+<Route path="partner/lead/:id"element={<PartnerLeadDetails />}/>
 
 
 
