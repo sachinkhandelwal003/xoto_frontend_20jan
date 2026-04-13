@@ -87,7 +87,7 @@ const VaultAgentLeadList = () => {
   // Navigation Handlers
   const handleViewDetail = (_id) => {
     if (_id) {
-      navigate(`/dashboard/vaultagent/vault/lead/${_id}`);
+      navigate(`/dashboard/vaultagentlead-admin-detail/vault/lead/${_id}`);
     } else {
       message.warning('Lead ID not available');
     }
@@ -166,36 +166,36 @@ const VaultAgentLeadList = () => {
         return val ? <Tag color={STATUS_COLORS[val] || 'default'} className="font-medium">{val}</Tag> : '—';
       },
     },
-    {
-      key: 'documentCollection',
-      title: 'Documents',
-      render: (_, record) => {
-        const dc = record?.documentCollection || {};
-        const pct = dc.collectionPercentage || 0;
-        return (
-          <div className="min-w-[130px]">
-            <div className="text-sm text-gray-600 mb-2">
-              {dc.documentsUploaded || 0} / {dc.totalDocumentsRequired || 7}
-              {dc.readyForSubmission && <CheckCircleOutlined className="ml-2 text-emerald-600" />}
-            </div>
-            <Progress percent={pct} size="small" showInfo={false} strokeColor={pct === 100 ? '#10b981' : '#6366f1'} />
-          </div>
-        );
-      },
-    },
-    {
-      key: 'expectedCommission',
-      title: 'Est. Commission',
-      render: (_, record) => {
-        const comm = record?.expectedCommission;
-        return comm ? (
-          <div>
-            <div className="font-medium text-violet-700">AED {fmt(comm)}</div>
-            <div className="text-xs text-gray-500">{record.commissionTier}% tier</div>
-          </div>
-        ) : '—';
-      },
-    },
+    // {
+    //   key: 'documentCollection',
+    //   title: 'Documents',
+    //   render: (_, record) => {
+    //     const dc = record?.documentCollection || {};
+    //     const pct = dc.collectionPercentage || 0;
+    //     return (
+    //       <div className="min-w-[130px]">
+    //         <div className="text-sm text-gray-600 mb-2">
+    //           {dc.documentsUploaded || 0} / {dc.totalDocumentsRequired || 7}
+    //           {dc.readyForSubmission && <CheckCircleOutlined className="ml-2 text-emerald-600" />}
+    //         </div>
+    //         <Progress percent={pct} size="small" showInfo={false} strokeColor={pct === 100 ? '#10b981' : '#6366f1'} />
+    //       </div>
+    //     );
+    //   },
+    // },
+    // {
+    //   key: 'expectedCommission',
+    //   title: 'Est. Commission',
+    //   render: (_, record) => {
+    //     const comm = record?.expectedCommission;
+    //     return comm ? (
+    //       <div>
+    //         <div className="font-medium text-violet-700">AED {fmt(comm)}</div>
+    //         <div className="text-xs text-gray-500">{record.commissionTier}% tier</div>
+    //       </div>
+    //     ) : '—';
+    //   },
+    // },
     {
       key: 'sourceInfo',
       title: 'Agent',
@@ -209,16 +209,16 @@ const VaultAgentLeadList = () => {
         ) : '—';
       },
     },
-    {
-      key: 'createdAt',
-      title: 'Date',
-      render: (_, record) => (
-        <div className="text-gray-700">
-          <div>{fmtDate(record?.createdAt)}</div>
-          {record?.leadId && <div className="text-xs text-gray-400 mt-1 font-mono">{record.leadId}</div>}
-        </div>
-      ),
-    },
+    // {
+    //   key: 'createdAt',
+    //   title: 'Date',
+    //   render: (_, record) => (
+    //     <div className="text-gray-700">
+    //       <div>{fmtDate(record?.createdAt)}</div>
+    //       {record?.leadId && <div className="text-xs text-gray-400 mt-1 font-mono">{record.leadId}</div>}
+    //     </div>
+    //   ),
+    // },
     {
       key: 'actions',
       title: 'Actions',
@@ -296,8 +296,6 @@ const VaultAgentLeadList = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
         {[
           { label: 'Total Leads', value: totalItems, sub: 'in pipeline' },
-          { label: 'Total Loan Value', value: `AED ${fmt(data.reduce((a, r) => a + (r.propertyDetails?.loanAmountRequired || 0), 0))}`, sub: 'combined' },
-          { label: 'Est. Commission', value: `AED ${fmt(data.reduce((a, r) => a + (r.expectedCommission || 0), 0))}`, sub: 'pending' },
           { label: 'Docs Ready', value: `${data.filter(r => r.documentCollection?.readyForSubmission).length}/${data.length}`, sub: 'ready for submission' },
         ].map((item, i) => (
           <div key={i} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
