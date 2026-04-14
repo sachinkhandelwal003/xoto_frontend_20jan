@@ -122,7 +122,7 @@ import DeveloperAnalytics from "../ecommerce/B2C/DeveloperAnalytics";
 import DeveloperCommissionScheme from "../ecommerce/B2C/DeveloperCommisionScheme";
 import DeveloperDetail from "./pages/Developerdetail";
 import DealCommissionManager from "./pages/DealCommissionManager";
-import DeveloperAddProperty from "../ecommerce/B2C/DveloperAddProperty";
+import DeveloperAddProperty from "../ecommerce/B2C/DeveloperAddProperty";
 import DeveloperPropertyEdit from "../ecommerce/B2C/DeveloperPropertyEdit";
 import BankProductManagement from "../homepage/BankProductManagement";
 // {Agency}------------------------------------------------------------
@@ -197,7 +197,7 @@ import PartnerAgentleads from "../ecommerce/B2C/PartnerAgentleadlist";
 // import VaultAgentDocuments from "../ecommerce/B2C/VaultAgentDocuments";
 import VaultAgentDocument from "../ecommerce/B2C/VaultAgentDocument";
 import PartnerLeadDetails from "../ecommerce/B2C/PartnerLeadDetails";
-import CreateProposal from "../ecommerce/B2C/PartnerCrateproposal";
+import CreateProposal from "../ecommerce/B2C/PartnerCreateproposal";
 import ProposalForm from "../ecommerce/B2C/ProposalForm";
 import AllProposals from "../ecommerce/B2C/AllProposals";
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";

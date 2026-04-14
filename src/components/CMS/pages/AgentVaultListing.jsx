@@ -15,7 +15,6 @@ export default function VaultAgentlist() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalAgents, setTotalAgents] = useState(0);
 
-  // Action states
   const [actionLoading, setActionLoading] = useState(null);
   const [suspendModal, setSuspendModal] = useState(null);
   const [deleteModal, setDeleteModal] = useState(null);
@@ -25,22 +24,22 @@ export default function VaultAgentlist() {
   const fetchAgents = async (page = 1, limit = 10) => {
     setLoading(true);
     try {
-
       const response = await apiService.get(`/vault/agent/partner/agents?page=${page}&limit=${limit}`);
       const data = response?.data || response;
 
       let list = [];
       let total = 0;
 
-      if (Array.isArray(data)) {
+      // API returns: { success, data: [...], total, pagination }
+      if (data?.data && Array.isArray(data.data)) {
+        list = data.data;
+        total = data.total || data.pagination?.totalItems || data.data.length;
+      } else if (Array.isArray(data)) {
         list = data;
         total = data.length;
       } else if (data?.agents) {
         list = data.agents;
         total = data.total || data.agents.length;
-      } else if (data?.data) {
-        list = data.data;
-        total = data.total || data.data.length;
       } else if (data?.docs) {
         list = data.docs;
         total = data.totalDocs || data.docs.length;
@@ -59,20 +58,18 @@ export default function VaultAgentlist() {
     fetchAgents(currentPage, itemsPerPage);
   }, [currentPage, itemsPerPage]);
 
-  const getAgentId = (row) => row._id || row.id;
+  // ✅ Fixed: name is nested object { first_name, last_name }
+  const getAgentId   = (row) => row._id || row.id;
   const getAgentName = (row) =>
-    `${row.first_name || row.firstName || ""} ${row.last_name || row.lastName || ""}`.trim() || "Agent";
+    `${row.name?.first_name || ""} ${row.name?.last_name || ""}`.trim() || "Agent";
 
-  // Activate Agent (matches backend route: POST /vault/agent/activate/:id)
   const handleActivate = async (row) => {
     const id = getAgentId(row);
     setActionLoading(id + "_activate");
     try {
       await apiService.post(`/vault/agent/activate/${id}`);
       setAgents((prev) =>
-        prev.map((a) =>
-          getAgentId(a) === id ? { ...a, isActive: true, status: "active" } : a
-        )
+        prev.map((a) => getAgentId(a) === id ? { ...a, isActive: true, status: "active" } : a)
       );
     } catch (err) {
       alert(err?.response?.data?.message || "Activation failed");
@@ -81,16 +78,13 @@ export default function VaultAgentlist() {
     }
   };
 
-  // Suspend Agent (matches backend route: POST /vault/agent/suspend/:id)
   const handleSuspendConfirm = async () => {
     const id = getAgentId(suspendModal);
     setActionLoading(id + "_suspend");
     try {
       await apiService.post(`/vault/agent/suspend/${id}`, { suspensionReason: "" });
       setAgents((prev) =>
-        prev.map((a) =>
-          getAgentId(a) === id ? { ...a, isActive: false, status: "suspended" } : a
-        )
+        prev.map((a) => getAgentId(a) === id ? { ...a, isActive: false, status: "suspended" } : a)
       );
       setSuspendModal(null);
     } catch (err) {
@@ -100,7 +94,6 @@ export default function VaultAgentlist() {
     }
   };
 
-  // Delete Agent (matches backend route: DELETE /vault/agent/delete/:id)
   const handleDeleteConfirm = async () => {
     const id = getAgentId(deleteModal);
     setActionLoading(id + "_delete");
@@ -116,7 +109,6 @@ export default function VaultAgentlist() {
     }
   };
 
-  // Table columns
   const columns = [
     {
       key: "name",
@@ -127,10 +119,11 @@ export default function VaultAgentlist() {
             <User size={15} color={PURPLE} />
           </div>
           <div>
-            <p style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-              {row.first_name || row.firstName || ""} {row.last_name || row.lastName || ""}
+            {/* ✅ Fixed: row.name.first_name & row.name.last_name */}
+            <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
+              {row.name?.first_name || ""} {row.name?.last_name || ""}
             </p>
-            <p style={{ fontSize: 11, color: "#9CA3AF" }}>{row.gender || ""} · {row.nationality || ""}</p>
+            <p style={{ fontSize: 11, color: "#9CA3AF", margin: 0 }}>{row.gender || ""}{row.gender && row.nationality ? " · " : ""}{row.nationality || ""}</p>
           </div>
         </div>
       ),
@@ -141,6 +134,7 @@ export default function VaultAgentlist() {
       render: (_, row) => (
         <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#374151" }}>
           <Mail size={13} color="#9CA3AF" />
+          {/* ✅ email is flat */}
           <span>{row.email || "N/A"}</span>
         </div>
       ),
@@ -151,7 +145,10 @@ export default function VaultAgentlist() {
       render: (_, row) => (
         <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#374151" }}>
           <Phone size={13} color="#9CA3AF" />
-          <span>{row.country_code || row.countryCode || ""} {row.phone_number || row.phoneNumber || "N/A"}</span>
+          {/* ✅ Fixed: phone is nested object { country_code, number } */}
+          <span>
+            {row.phone?.country_code || ""} {row.phone?.number || "N/A"}
+          </span>
         </div>
       ),
     },
@@ -161,6 +158,7 @@ export default function VaultAgentlist() {
       render: (_, row) => (
         <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#374151" }}>
           <MapPin size={13} color="#9CA3AF" />
+          {/* ✅ address can be null — optional chaining */}
           <span>{row.address?.city || "N/A"}</span>
         </div>
       ),
@@ -179,7 +177,7 @@ export default function VaultAgentlist() {
       key: "status",
       title: "Status",
       render: (_, row) => {
-        const isActive = row.status === "active" || row.isActive === true;
+        const isActive = row.isActive === true || row.status === "active";
         return (
           <span style={{ padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 600, background: isActive ? "#ECFDF5" : "#FEF2F2", color: isActive ? "#059669" : "#DC2626" }}>
             {isActive ? "Active" : "Inactive"}
@@ -192,10 +190,9 @@ export default function VaultAgentlist() {
       title: "Actions",
       render: (_, row) => {
         const id = getAgentId(row);
-        const isActive = row.status === "active" || row.isActive === true;
+        const isActive = row.isActive === true || row.status === "active";
         return (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {/* View */}
             <button
               onClick={() => navigate(`/dashboard/vault-admin/agent-details/${id}`)}
               style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", background: "#FAF5FF", border: "1px solid #E9D5FF", borderRadius: 7, fontSize: 12, fontWeight: 600, color: PURPLE, cursor: "pointer" }}
@@ -203,7 +200,6 @@ export default function VaultAgentlist() {
               <Eye size={13} /> View
             </button>
 
-            {/* Activate (only if inactive) */}
             {!isActive && (
               <button
                 onClick={() => handleActivate(row)}
@@ -217,7 +213,6 @@ export default function VaultAgentlist() {
               </button>
             )}
 
-            {/* Suspend (only if active) */}
             {isActive && (
               <button
                 onClick={() => setSuspendModal(row)}
@@ -228,7 +223,6 @@ export default function VaultAgentlist() {
               </button>
             )}
 
-            {/* Delete */}
             <button
               onClick={() => setDeleteModal(row)}
               disabled={!!actionLoading}
@@ -282,7 +276,7 @@ export default function VaultAgentlist() {
         }}
       />
 
-      {/* Suspend Confirmation Modal */}
+      {/* Suspend Modal */}
       {suspendModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 380, padding: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", textAlign: "center" }}>
@@ -294,17 +288,10 @@ export default function VaultAgentlist() {
               Are you sure you want to suspend <strong>{getAgentName(suspendModal)}</strong>? They will not be able to access the platform.
             </p>
             <div style={{ display: "flex", gap: 10 }}>
-              <button
-                onClick={() => setSuspendModal(null)}
-                style={{ flex: 1, padding: "10px 0", border: "1px solid #E5E7EB", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", background: "#fff", cursor: "pointer" }}
-              >
+              <button onClick={() => setSuspendModal(null)} style={{ flex: 1, padding: "10px 0", border: "1px solid #E5E7EB", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", background: "#fff", cursor: "pointer" }}>
                 Cancel
               </button>
-              <button
-                onClick={handleSuspendConfirm}
-                disabled={!!actionLoading}
-                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 0", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#fff", background: "#D97706", cursor: "pointer", opacity: actionLoading ? 0.7 : 1 }}
-              >
+              <button onClick={handleSuspendConfirm} disabled={!!actionLoading} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 0", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#fff", background: "#D97706", cursor: "pointer", opacity: actionLoading ? 0.7 : 1 }}>
                 {actionLoading ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <XCircle size={14} />}
                 Confirm Suspend
               </button>
@@ -313,7 +300,7 @@ export default function VaultAgentlist() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       {deleteModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 380, padding: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", textAlign: "center" }}>
@@ -325,17 +312,10 @@ export default function VaultAgentlist() {
               Are you sure you want to permanently delete <strong>{getAgentName(deleteModal)}</strong>? This action cannot be undone.
             </p>
             <div style={{ display: "flex", gap: 10 }}>
-              <button
-                onClick={() => setDeleteModal(null)}
-                style={{ flex: 1, padding: "10px 0", border: "1px solid #E5E7EB", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", background: "#fff", cursor: "pointer" }}
-              >
+              <button onClick={() => setDeleteModal(null)} style={{ flex: 1, padding: "10px 0", border: "1px solid #E5E7EB", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", background: "#fff", cursor: "pointer" }}>
                 Cancel
               </button>
-              <button
-                onClick={handleDeleteConfirm}
-                disabled={!!actionLoading}
-                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 0", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#fff", background: "#DC2626", cursor: "pointer", opacity: actionLoading ? 0.7 : 1 }}
-              >
+              <button onClick={handleDeleteConfirm} disabled={!!actionLoading} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 0", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#fff", background: "#DC2626", cursor: "pointer", opacity: actionLoading ? 0.7 : 1 }}>
                 {actionLoading ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={14} />}
                 Delete
               </button>

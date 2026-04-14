@@ -243,16 +243,7 @@ const handleReject = async (reason) => {
         </div>
       </div>
 
-      {/* Progress */}
-      <div style={{ background: "#fff", borderRadius: 12, padding: "14px 20px", marginBottom: 24, border: "1px solid #E5E7EB" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Upload Progress</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: PURPLE }}>{progressPercent}%</span>
-        </div>
-        <div style={{ height: 8, background: "#F3F4F6", borderRadius: 99 }}>
-          <div style={{ height: 8, background: `linear-gradient(90deg, ${PURPLE}, #8B5CF6)`, borderRadius: 99, width: `${progressPercent}%`, transition: "width 0.4s ease" }} />
-        </div>
-      </div>
+    
 
       {/* Categories */}
       {Object.entries(GROUPED).map(([category, docs]) => (
