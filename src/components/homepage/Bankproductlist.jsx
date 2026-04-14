@@ -259,7 +259,7 @@ const BankProductList = ({ onView, onCreate, onEdit }) => {
             />
           </Card>
         </Col>
-        <Col xs={12} sm={6}>
+        {/* <Col xs={12} sm={6}>
           <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(124,58,237,0.08)' }}>
             <Statistic
               title="Fixed Rate"
@@ -267,8 +267,8 @@ const BankProductList = ({ onView, onCreate, onEdit }) => {
               valueStyle={{ color: THEME.primary }}
             />
           </Card>
-        </Col>
-        <Col xs={12} sm={6}>
+        </Col> */}
+        {/* <Col xs={12} sm={6}>
           <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(16,185,129,0.08)' }}>
             <Statistic
               title="Islamic"
@@ -276,8 +276,8 @@ const BankProductList = ({ onView, onCreate, onEdit }) => {
               valueStyle={{ color: THEME.success }}
             />
           </Card>
-        </Col>
-        <Col xs={12} sm={6}>
+        </Col> */}
+        {/* <Col xs={12} sm={6}>
           <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(245,158,11,0.08)' }}>
             <Statistic
               title="Variable"
@@ -285,8 +285,8 @@ const BankProductList = ({ onView, onCreate, onEdit }) => {
               valueStyle={{ color: THEME.warning }}
             />
           </Card>
-        </Col>
-        <Col xs={12} sm={6}>
+        </Col> */}
+        {/* <Col xs={12} sm={6}>
           <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(124,58,237,0.08)' }}>
             <Statistic
               title="Total Banks"
@@ -294,8 +294,8 @@ const BankProductList = ({ onView, onCreate, onEdit }) => {
               valueStyle={{ color: THEME.primary }}
             />
           </Card>
-        </Col>
-        <Col xs={12} sm={6}>
+        </Col> */}
+        {/* <Col xs={12} sm={6}>
           <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(16,185,129,0.08)' }}>
             <Statistic
               title="Avg. Interest Rate"
@@ -304,8 +304,8 @@ const BankProductList = ({ onView, onCreate, onEdit }) => {
               valueStyle={{ color: THEME.success }}
             />
           </Card>
-        </Col>
-        <Col xs={12} sm={6}>
+        </Col> */}
+        {/* <Col xs={12} sm={6}>
           <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(245,158,11,0.08)' }}>
             <Statistic
               title="Popular"
@@ -313,8 +313,8 @@ const BankProductList = ({ onView, onCreate, onEdit }) => {
               valueStyle={{ color: THEME.warning }}
             />
           </Card>
-        </Col>
-        <Col xs={12} sm={6}>
+        </Col> */}
+        {/* <Col xs={12} sm={6}>
           <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(124,58,237,0.08)' }}>
             <Statistic
               title="Featured"
@@ -322,7 +322,7 @@ const BankProductList = ({ onView, onCreate, onEdit }) => {
               valueStyle={{ color: THEME.primary }}
             />
           </Card>
-        </Col>
+        </Col> */}
       </Row>
 
       {/* CustomTable */}
