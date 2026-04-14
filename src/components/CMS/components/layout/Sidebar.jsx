@@ -462,6 +462,15 @@ const CUSTOM_ROLE_LINKS = {
     icon: "fas fa-file-alt",
     path: "/dashboard/{roleSlug}/partner-leads",
   },
+  {
+  title: "Proposals",
+  icon: "fas fa-file-signature",
+  path: "/dashboard/{roleSlug}/proposals",
+  submenus: [
+    { title: "Create Proposal", path: "/dashboard/{roleSlug}/proposals/create" },
+    { title: "All Proposals", path: "/dashboard/{roleSlug}/proposals/all" },
+  ],
+},
 ],
 
 };
@@ -481,7 +490,7 @@ const roleSlugMap = {
   '17': "developer",
   '18': "vault-admin", //vault
   '22': "vaultagent",
-  '21': "xotovaultpartner",
+  '21': "vaultpartner",
 
 
 };
