@@ -374,26 +374,37 @@ const CUSTOM_ROLE_LINKS = {
       path: "/dashboard/{roleSlug}/leads",
       submenus: [
         { title: "Leads", path: "/dashboard/{roleSlug}/vault/agent-leads" },
-        { title: "Lead Documents ", path: "/dashboard/{roleSlug}/vault/lead-document" },
       ],
     },
+   
     {
-      title: "Clients",
-      icon: "fas fa-user-tie",
-      path: "/dashboard/{roleSlug}/clients",
-    },
-    {
-      title: "Cases",
+      title: "Propersals",
       icon: "fas fa-folder-open",
       path: "/dashboard/{roleSlug}/cases",
       submenus: [
-        { title: "All Cases", path: "/dashboard/{roleSlug}/cases" },
-        { title: "In Progress", path: "/dashboard/{roleSlug}/cases/in-progress" },
-        { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+        { title: "Create Proposals", path: "/dashboard/{roleSlug}/proposals/create" },
+        { title: "View Proposals", path: "/dashboard/{roleSlug}/proposals/view" },
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+
+       
+    {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Cases", path: "/dashboard/{roleSlug}/case/create" },
+        { title: "View Cases", path: "/dashboard/{roleSlug}/case/view" },
+                { title: "Process Cases", path: "/dashboard/{roleSlug}/case/view/all" },
+
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
       ],
 
     },
     {
+      
       title: "Vault Partners",
       icon: "fas fa-handshake",
       path: "/dashboard/{roleSlug}/partners",
@@ -403,15 +414,11 @@ const CUSTOM_ROLE_LINKS = {
       ]
     },
 
-    {
-      title: "Commission",
-      icon: "fas fa-rupee-sign",
-      path: "/dashboard/{roleSlug}/commission",
-    },
+    
     {
       title: "Bank Library",
       icon: "fas fa-university",
-      path: "/dashboard/{roleSlug}/bank-library",
+      path: "/dashboard/{roleSlug}/bank/products",
     },
     {
       title: "Reports",

@@ -203,6 +203,13 @@ import PartnerLeadDetails from "../ecommerce/B2C/PartnerLeadDetails";
 import CreateRentalProperty from "../../component/Rent/Createrentalproperty";
 import RentalPropertyList from "../../component/Rent/Rentalpropertylist";
 import AdminLeadList from "../../component/Rent/Adminleadlist";
+import BankProductListVault from "../ecommerce/vault/Index";
+import CreateProposalAdmin from "../ecommerce/vault/proposal/Index";
+import ViewProposal from "../ecommerce/vault/proposal/ViewProposal";
+import CreateCase from "../ecommerce/vault/case/Index";
+import ViewCases from "../ecommerce/vault/case/ViewCases";
+import DetailedViewCases from "../ecommerce/vault/case/DetailedViewCases";
+import ProcessCasesUpdates from "../ecommerce/vault/case/ProcessCasesUpdates";
 
 const roleSlugMap = {
   0: "superadmin",
@@ -460,7 +467,6 @@ const CmsRoutes = () => {
 <Route path="partner-list" element={<PartnerList/>}/>
 <Route path="partner-details/:id" element={<PartnerDetail/>}/>
 <Route path="agent-onboard" element={<VaultAgentonboard/>} />
-<Route path="/vault/agent-list" element={<VaultAgentlist/>} />
 <Route path="agent-details/:id" element={<VaultAgentdetail/>} />
 <Route path="xotovaultpartner" element={<VaultpartnerDashboard />} />
 <Route path="onboard-partner" element={<OnboardPartner />} />
@@ -549,6 +555,25 @@ const CmsRoutes = () => {
       <Route path="/developer/view/:id" element={<DeveloperDetail />} />
       {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
       {/* <Route path="team" element={<DeveloperTeam/>}/> */}
+
+
+
+{/* vault */}
+
+      <Route path="/bank/products" element={< BankProductListVault />} />
+            <Route path="/proposals/create" element={< CreateProposalAdmin />} />
+            <Route path="/proposals/view" element={< ViewProposal />} />
+
+
+
+            {/* cases vault */}
+
+            <Route path="/case/create" element={< CreateCase />} />
+            <Route path="/case/view" element={< ViewCases />} />
+                        <Route path="/case/view/all" element={< ProcessCasesUpdates />} />
+
+            <Route path="/case/view/:caseId" element={< DetailedViewCases/>} />
+
 
 
 
