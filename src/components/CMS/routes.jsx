@@ -481,7 +481,7 @@ const CmsRoutes = () => {
 <Route path="/lead-documents/:leadId"element={<VaultAgentDocument/>} />
 <Route path="partner-leads" element={<PartnerAgentleads />} />
 <Route path="partner/lead/:id"element={<PartnerLeadDetails />}/>
-<Route path="proposals/create" element={<CreateProposal />} />
+{/* <Route path="proposals/create" element={<CreateProposal />} /> */}
 <Route path="proposals/create/:leadId" element={<ProposalForm />} />
 <Route path="proposals/all" element={<AllProposals />} />
 
