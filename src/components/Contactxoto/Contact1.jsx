@@ -19,14 +19,14 @@ const ContactHero = () => {
     >
       {/* Content */}
       <div className="relative z-10 text-center max-w-4xl px-4 sm:px-6">
-        <h1 className="font-bold mb-4 text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight">
+        <h1 className="font-semibold mb-4 text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight">
           {/* Yahan Trans component use karne se JSON wala <br/> tag chalne lagega */}
           <Trans i18nKey="title" ns="contact">
             {t("title")}
           </Trans>
         </h1>
 
-        <p className="text-base sm:text-lg md:text-xl leading-relaxed font-semibold opacity-90">
+        <p className="text-base sm:text-lg md:text-xl leading-relaxed font-xl opacity-90">
           {t("description")}
         </p>
       </div>
