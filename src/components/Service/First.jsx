@@ -40,7 +40,7 @@ export default function HomeLoanHero() {
           
           {/* HERO TITLE */}
           <h1
-            className="text-3xl md:text-6xl heading-light font-extrabold"
+            className="text-3xl md:text-6xl heading-light font-bold"
             style={{ lineHeight: "1.4", ...dmSans }}
           >
             {t("title")}
@@ -48,7 +48,7 @@ export default function HomeLoanHero() {
 
           {/* HERO DESCRIPTION */}
           <p
-            className="mt-4 md:w-3/4 mx-auto text-sm md:text-2xl paragraph-light font-semibold"
+            className="mt-4 md:w-3/4 mx-auto text-sm md:text-2xl paragraph-light font-xl"
             style={dmSans}
           >
             {t("description.line1")}
