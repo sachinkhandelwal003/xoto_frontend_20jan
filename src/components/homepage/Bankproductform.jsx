@@ -95,6 +95,7 @@ const BankProductForm = ({ mode = 'create', editData = null, onBack, onSuccess }
 
   // ── Create / Update ──────────────────────────────────────────────────────
 const handleSave = async (values) => {
+  if (loading) return;
   setLoading(true);
   try {
     const payload = {
@@ -110,13 +111,6 @@ const handleSave = async (values) => {
       );
 
       // 2️⃣ Rate update — body mein sirf newRate jaata hai
-      if (values.offerSummary?.initialRate !== undefined) {
-        await apiService.put(
-          `${MORTGAGE_PATH}/update-rate/${editData._id}`,
-          { newRate: values.offerSummary.initialRate }
-        );
-      }
-
       notification.success({ message: 'Bank Product Updated Successfully!' });
     } else {
       // 3️⃣ Create new product
@@ -233,7 +227,6 @@ const handleSave = async (values) => {
         </div>
       </div>
 
-      // Form tag update karo
 <Form
   form={form}
   layout="vertical"
