@@ -187,34 +187,26 @@ const PreApprovalModal = ({ isOpen, onClose, calculatorData }) => {
     const toastId = toast.loading('Submitting your application...');
 
     try {
-      const nameParts = formData.name.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
-     // This payload perfectly matches the Mongoose Schema you created!
-const payload = {
-  type: "mortgage",
-  lead_sub_type: "pre_approval",
-  name: {
-    first_name: firstName,
-    last_name: lastName
-  },
-  mobile: {
-    country_code: formData.selectedCountry.dialCode,
-    number: formData.phone
-  },
-  email: formData.email,
-  has_property: formData.foundProperty === 'yes',
-  preferred_city: formData.location || "",
-  
-  mortgage: {
-    monthly_income: calculatorData.monthlyIncome,
-    monthly_debt: calculatorData.monthlyDebt,
-    // ... all the other calculator values
-  }
-};
-
-// 🚀 HERE IS YOUR API CALL!
+      const payload = {
+        type: "mortgage",
+        lead_sub_type: "pre_approval",
+        name: {
+          first_name: formData.firstName,
+          last_name: formData.lastName
+        },
+        mobile: {
+          country_code: formData.selectedCountry.dialCode,
+          number: formData.phone
+        },
+        email: formData.email,
+        has_property: formData.foundProperty === 'yes',
+        preferred_city: formData.location || "",
+        
+        mortgage: {
+          monthly_income: calculatorData.monthlyIncome,
+          monthly_debt: calculatorData.monthlyDebt,
+        }
+      };
 
       const res = await apiService.post('/property/lead/', payload); 
       
@@ -456,9 +448,15 @@ const ContactModal = ({ isOpen, onClose }) => {
           <p className="text-xs font-semibold text-slate-500 mb-3 ml-1 uppercase tracking-wide">Select Date</p>
           <div className="grid grid-cols-5 gap-2">
             {dates.map((d, idx) => (
-              <button key={idx} onClick={() => setSelectedDate(idx)} className={`p-3 text-center border-2 rounded-xl transition ${selectedDate === idx ? 'border-purple-600 bg-purple-50' : 'border-slate-100 hover:border-purple-200'}`}>
-                <div className={`text-[10px] font-bold ${selectedDate === idx ? 'text-purple-600' : 'text-slate-400'}`}>{d.day}</div>
-                <div className={`text-xl font-bold ${selectedDate === idx ? 'text-purple-700' : 'text-slate-700'}`}>{d.date}</div>
+              <button 
+                key={idx} 
+                onClick={() => setSelectedDate(idx)} 
+                className={`p-3 text-center border-2 rounded-xl transition ${selectedDate === idx ? 'border-purple-600 bg-purple-50' : 'border-slate-100 hover:border-purple-200'}`}
+              >
+                {/* 🚀 FIXED: Array index 0, 1, 2 hata diya, sirf day name dikhega */}
+                <div className={`text-sm font-bold ${selectedDate === idx ? 'text-purple-600' : 'text-slate-600'}`}>
+                  {d.day}
+                </div>
               </button>
             ))}
           </div>
@@ -486,13 +484,14 @@ export default function PerfectMortgageCalculator() {
   const [activeTab, setActiveTab] = useState('affordability');
   
   const [residency, setResidency] = useState('UAE Resident');
-  const [employment, setEmployment] = useState('salaried');
-  const [monthlyIncome, setMonthlyIncome] = useState(25000);
-  const [monthlyDebt, setMonthlyDebt] = useState(0);
+  const [employment, setEmployment] = useState(''); // ✅ FIXED: Khali string takki default "Select Employment" aaye
+  
+  const [monthlyIncome, setMonthlyIncome] = useState(25000); 
+  const [monthlyDebt, setMonthlyDebt] = useState(""); // ✅ FIXED: Khali string takki '0' chipka na rahe
   const [loanTenure, setLoanTenure] = useState(25);
   
-  const [propertyValue, setPropertyValue] = useState(1500000);
-  const [downpayment, setDownpayment] = useState(300000);
+  const [propertyValue, setPropertyValue] = useState(1500000); 
+  const [downpayment, setDownpayment] = useState(300000);      
   const [selectedProduct, setSelectedProduct] = useState(PRODUCTS[0]);
   const [loanDuration, setLoanDuration] = useState(25);
   
@@ -500,19 +499,34 @@ export default function PerfectMortgageCalculator() {
   const openModal = (type) => setModals({ ...modals, [type]: true });
   const closeModal = (type) => setModals({ ...modals, [type]: false });
   
-  const disposableIncome = monthlyIncome - monthlyDebt;
+  // ✅ FIXED: Calculation safe parsing (to avoid NaN if user clears the input)
+  const safeIncome = Number(monthlyIncome) || 0;
+  const safeDebt = Number(monthlyDebt) || 0;
+  const safePropVal = Number(propertyValue) || 0;
+  const safeDownpayment = Number(downpayment) || 0;
+
+  const disposableIncome = safeIncome - safeDebt;
   const maxEMI = disposableIncome * DSR;
-  const isEligible = monthlyIncome >= MIN_SALARY && maxEMI > 0;
+  const isEligible = safeIncome >= MIN_SALARY && maxEMI > 0;
   const affordability = isEligible ? calculateAffordability(maxEMI, STRESS_RATE, loanTenure) : 0;
   const monthlyPayment = isEligible ? Math.round(maxEMI) : 0;
   
-  const loanAmount = Math.max(0, propertyValue - downpayment);
+  const loanAmount = Math.max(0, safePropVal - safeDownpayment);
   const monthlyEMI = calculateEMI(loanAmount, selectedProduct.rate, loanDuration);
 
   const calculatorData = {
-    monthlyIncome, monthlyDebt, loanTenure, propertyValue, downpayment,
-    loanAmount, rate: selectedProduct.rate, loanDuration, affordability,
-    monthlyEMI, employment, residency
+    monthlyIncome: safeIncome, 
+    monthlyDebt: safeDebt, 
+    loanTenure, 
+    propertyValue: safePropVal, 
+    downpayment: safeDownpayment,
+    loanAmount, 
+    rate: selectedProduct.rate, 
+    loanDuration, 
+    affordability,
+    monthlyEMI, 
+    employment, 
+    residency
   };
 
   return (
@@ -523,7 +537,7 @@ export default function PerfectMortgageCalculator() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight mb-3">
-            Mortgage<span className="text-[#5C039B]">Pro</span>
+            Mortgage calculator
           </h1>
           <p className="text-slate-500 font-medium text-lg">Smart property financing for the UAE market</p>
         </div>
@@ -551,7 +565,8 @@ export default function PerfectMortgageCalculator() {
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide ml-1">Employment</label>
                     <select value={employment} onChange={(e) => setEmployment(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-medium outline-none transition">
-                      <option value="salaried">Employed</option>
+                      <option value="">Select Employment </option>
+                      <option value="salaried">Salaried</option>
                       <option value="self_employed">Self-Employed</option>
                     </select>
                   </div>
@@ -560,11 +575,13 @@ export default function PerfectMortgageCalculator() {
                 <div className="grid grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide ml-1">Monthly Income (AED)</label>
-                    <input type="number" value={monthlyIncome} onChange={(e) => setMonthlyIncome(Number(e.target.value))} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-medium outline-none transition" />
+                    {/* ✅ FIXED: Number() removed from set onChange */}
+                    <input type="number" value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} placeholder="0" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-medium outline-none transition" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide ml-1">Monthly Debts (AED)</label>
-                    <input type="number" value={monthlyDebt} onChange={(e) => setMonthlyDebt(Number(e.target.value))} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-medium outline-none transition" />
+                    {/* ✅ FIXED: Number() removed from set onChange */}
+                    <input type="number" value={monthlyDebt} onChange={(e) => setMonthlyDebt(e.target.value)} placeholder="0" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-medium outline-none transition" />
                   </div>
                 </div>
 
@@ -573,8 +590,8 @@ export default function PerfectMortgageCalculator() {
                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide ml-1">Loan Tenure</label>
                     <span className="font-bold text-xl text-purple-600">{loanTenure} <span className="text-sm font-medium text-slate-500">Yrs</span></span>
                   </div>
-                  <input type="range" min={1} max={25} value={loanTenure} onChange={(e) => setLoanTenure(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600" />
-                  <div className="flex justify-between text-xs font-medium text-slate-400"><span>1 year</span><span>25 years</span></div>
+                  <input type="range" min={5} max={25} value={loanTenure} onChange={(e) => setLoanTenure(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600" />
+                  <div className="flex justify-between text-xs font-medium text-slate-400"><span>5 years</span><span>25 years</span></div>
                 </div>
               </div>
             )}
@@ -595,14 +612,17 @@ export default function PerfectMortgageCalculator() {
                 <div className="grid grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide ml-1">Property Value (AED)</label>
-                    <input type="number" value={propertyValue} onChange={(e) => setPropertyValue(Number(e.target.value))} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-medium outline-none transition" />
+                    <input type="number" value={propertyValue} onChange={(e) => setPropertyValue(e.target.value)} placeholder="0" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-medium outline-none transition" />
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide ml-1">Downpayment</label>
-                       <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md">{((downpayment / propertyValue) * 100).toFixed(0)}%</span>
+                       {/* ✅ FIXED: NaN safe percentage calculation */}
+                       <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md">
+                         {safePropVal > 0 ? ((safeDownpayment / safePropVal) * 100).toFixed(0) : 0}%
+                       </span>
                     </div>
-                    <input type="number" value={downpayment} onChange={(e) => setDownpayment(Number(e.target.value))} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-medium outline-none transition" />
+                    <input type="number" value={downpayment} onChange={(e) => setDownpayment(e.target.value)} placeholder="0" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-medium outline-none transition" />
                   </div>
                 </div>
 
@@ -643,7 +663,7 @@ export default function PerfectMortgageCalculator() {
                     </div>
                   ) : (
                     <div className="bg-white/10 border border-white/20 rounded-2xl p-6 backdrop-blur-sm">
-                      <div className="text-amber-300 font-bold mb-2 flex items-center gap-2">⚠️ Eligibility Issue</div>
+                      <div className="text-alert font-bold mb-2 flex items-center gap-2">Eligibility Issue</div>
                       <p className="text-sm text-purple-100 font-medium">Minimum salary requirement of AED {MIN_SALARY.toLocaleString()} is not met.</p>
                     </div>
                   )
@@ -670,10 +690,6 @@ export default function PerfectMortgageCalculator() {
               <button onClick={() => openModal('preapproval')} className="w-full bg-[#5C039B] text-white py-4 rounded-xl font-semibold text-lg  transition shadow-lg shadow-purple-200 flex justify-center items-center gap-2">
                 Get Pre-Approved <FaArrowRight className="text-sm" />
               </button>
-              
-              <div className="grid grid-cols-2 gap-4">
-                {/* Extra buttons can go here if needed later */}
-              </div>
             </div>
             
           </div>

@@ -4,8 +4,8 @@
   "email": {
     "title": "Email Us",
     "subtitle": "Feel free to contact us at",
-    "primary": "sales.support@xoto.ae",
-    "secondary": "info@xoto.ae",
+    "primary": "biz@xoto.ae",
+    "secondary": "care@xoto.ae",
     "note": "We’ll respond promptly"
   },
 
@@ -17,7 +17,7 @@
 
   "phone": {
     "title": "Phone",
-    "number": "+971 50 918 0967",
+    "number": "+971-500888690",
     "timing": "Mon–Sat | 9AM–6PM"
   },
 
