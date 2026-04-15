@@ -155,23 +155,7 @@ export default function VaultAgentdetail() {
             <p style={{ fontSize: 12, color: "#9CA3AF" }}>ID: {agent._id || id}</p>
           </div>
           <div style={{ marginLeft: "auto" }}>
-            <button
-              onClick={handleOpenVerifyModal}
-              disabled={agent.isVerified || actionLoading}
-              style={{
-                display: "flex", alignItems: "center", gap: 8, padding: "8px 18px",
-                background: agent.isVerified ? "#E5E7EB" : PURPLE,
-                color: agent.isVerified ? "#6B7280" : "#fff",
-                border: "none", borderRadius: 9, fontSize: 13, fontWeight: 600,
-                cursor: agent.isVerified ? "not-allowed" : "pointer",
-                opacity: actionLoading ? 0.7 : 1,
-              }}
-            >
-              {actionLoading
-                ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
-                : <Verified size={16} />}
-              {actionLoading ? "Processing..." : agent.isVerified ? "Verified" : "Verify Agent"}
-            </button>
+            
           </div>
         </div>
 

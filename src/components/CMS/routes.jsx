@@ -122,7 +122,7 @@ import DeveloperAnalytics from "../ecommerce/B2C/DeveloperAnalytics";
 import DeveloperCommissionScheme from "../ecommerce/B2C/DeveloperCommisionScheme";
 import DeveloperDetail from "./pages/Developerdetail";
 import DealCommissionManager from "./pages/DealCommissionManager";
-import DeveloperAddProperty from "../ecommerce/B2C/DveloperAddProperty";
+import DeveloperAddProperty from "../ecommerce/B2C/DeveloperAddProperty";
 import DeveloperPropertyEdit from "../ecommerce/B2C/DeveloperPropertyEdit";
 import BankProductManagement from "../homepage/BankProductManagement";
 // {Agency}------------------------------------------------------------
@@ -197,6 +197,9 @@ import PartnerAgentleads from "../ecommerce/B2C/PartnerAgentleadlist";
 // import VaultAgentDocuments from "../ecommerce/B2C/VaultAgentDocuments";
 import VaultAgentDocument from "../ecommerce/B2C/VaultAgentDocument";
 import PartnerLeadDetails from "../ecommerce/B2C/PartnerLeadDetails";
+import CreateProposal from "../ecommerce/B2C/PartnerCreateproposal";
+import ProposalForm from "../ecommerce/B2C/ProposalForm";
+import AllProposals from "../ecommerce/B2C/AllProposals";
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 
@@ -226,7 +229,7 @@ const roleSlugMap = {
   18: "vault-admin",
   22: "vaultagent" ,
 
-21:"xotovaultpartner"
+21:"vaultpartner"
 };
 
 const dashboardMap = {
@@ -478,6 +481,9 @@ const CmsRoutes = () => {
 <Route path="/lead-documents/:leadId"element={<VaultAgentDocument/>} />
 <Route path="partner-leads" element={<PartnerAgentleads />} />
 <Route path="partner/lead/:id"element={<PartnerLeadDetails />}/>
+{/* <Route path="proposals/create" element={<CreateProposal />} /> */}
+<Route path="proposals/create/:leadId" element={<ProposalForm />} />
+<Route path="proposals/all" element={<AllProposals />} />
 
 
 

@@ -4,6 +4,7 @@ import {
   Card, Steps, Button, Typography, Row, Col, Avatar, 
   Tag, Descriptions, Divider, Spin, message, Modal, Input, Checkbox, Badge, Progress
 } from 'antd';
+import { useSelector } from 'react-redux';
 import {
   UserOutlined, FileTextOutlined, BankOutlined, 
   CheckCircleOutlined, InfoCircleOutlined, FilePdfOutlined, 
@@ -16,7 +17,24 @@ const { TextArea } = Input;
 
 // BRAND COLOR
 const THEME_COLOR = "#5C039B";
+const roleSlugMap = {
+  '0': 'superadmin',
+  '1': 'admin',
+  '2': "customer",
+  '5': 'vendor-b2c',
+  '6': 'vendor-b2b',
+  '7': 'freelancer',
+  '11': 'accountant',
+  '12': 'supervisor',
+  '15': "agency",        // Agency
+  '16': "agent",         // Agent
+  '17': "developer",
+  '18': "vault-admin", //vault
+  '22': "vaultagent",
+  '21': "vaultpartner",
 
+
+};
 const CreateProposalAdmin = () => {
   // --- STATE ---
   const [currentStep, setCurrentStep] = useState(0);
@@ -30,6 +48,8 @@ const CreateProposalAdmin = () => {
   
   const [bankProducts, setBankProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]); 
+    const { user, token, permissions } = useSelector((s) => s.auth);
+
   
   const [coverNote, setCoverNote] = useState('');
 
@@ -41,16 +61,33 @@ const CreateProposalAdmin = () => {
 
   // --- API CALLS ---
   const fetchLeads = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await apiService.get('/vault/lead/admin/all?page=1&limit=50&status=Qualified');
-      if (res?.success) setLeads(res.data || []);
-    } catch (err) {
-      message.error("Failed to fetch leads");
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    let url = '';
+
+    // ✅ Role-based API selection
+    if (user?.role?.code === '18') {
+      // Vault Admin
+      url = '/vault/lead/admin/all?page=1&limit=50&status=Qualified';
+    } else {
+      // Partner / Others
+      url = '/vault/lead/partner/get?page=1&limit=50&status=Qualified';
     }
-  }, []);
+
+    const res = await apiService.get(url);
+
+    if (res?.success) {
+      setLeads(res.data || []);
+    } else {
+      message.error("Failed to fetch leads");
+    }
+
+  } catch (err) {
+    message.error("Failed to fetch leads");
+  } finally {
+    setLoading(false);
+  }
+}, [user]);
 
   const fetchLeadDocuments = async (leadId) => {
     setLoading(true);
