@@ -1083,7 +1083,7 @@ const fetchLeadDetails = async (leadId) => {
 
   // Render Step 2: Income & Expenses
   const renderStep2 = () => {
-    return (
+    return ( +   
       <div style={{ animation: 'fadeIn 0.5s' }}>
         <Title level={4} style={{ color: THEME_COLOR, marginBottom: 24 }}>Income & Financial Assessment</Title>
         
