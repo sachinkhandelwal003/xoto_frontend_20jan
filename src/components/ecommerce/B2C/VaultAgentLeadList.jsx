@@ -273,7 +273,7 @@ const VaultAgentLeadList = () => {
           <p className="text-gray-500 text-sm mt-1">Mortgage pipeline management</p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        {/* <div className="flex flex-wrap gap-2">
           {STATUSES.map((s) => (
             <Tag
               key={s}
@@ -289,7 +289,7 @@ const VaultAgentLeadList = () => {
               Clear ✕
             </Tag>
           )}
-        </div>
+        </div> */}
       </div>
 
       {/* Stats Cards */}

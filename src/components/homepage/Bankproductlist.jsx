@@ -107,25 +107,82 @@ const BankProductList = ({ onView, onCreate, onEdit }) => {
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
-        {[
-          { title: "Total Products", val: stats.totalProducts, icon: <BankOutlined />, color: THEME_COLOR },
-          { title: "Fixed Rate", val: getTypeCount('FIXED'), color: THEME_COLOR },
-          { title: "Islamic", val: getTypeCount('ISLAMIC'), color: THEME.success },
-          { title: "Avg. Interest", val: `${stats.averageInterestRate}%`, color: THEME.success }
-        ].map((item, idx) => (
-          <Col xs={12} sm={6} key={idx}>
-            <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-              <Statistic 
-                title={<Text type="secondary" small>{item.title}</Text>} 
-                value={item.val} 
-                prefix={item.icon}
-                valueStyle={{ color: item.color, fontWeight: 'bold' }} 
-              />
-            </Card>
-          </Col>
-        ))}
+      {/* Stats — driven by /stats API */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={12} sm={6}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(124,58,237,0.08)' }}>
+            <Statistic
+              title="Total Products"
+              value={stats.totalProducts}
+              prefix={<BankOutlined style={{ color: THEME.primary }} />}
+              valueStyle={{ color: THEME.primary }}
+            />
+          </Card>
+        </Col>
+        {/* <Col xs={12} sm={6}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(124,58,237,0.08)' }}>
+            <Statistic
+              title="Fixed Rate"
+              value={getTypeCount('FIXED')}
+              valueStyle={{ color: THEME.primary }}
+            />
+          </Card>
+        </Col> */}
+        {/* <Col xs={12} sm={6}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(16,185,129,0.08)' }}>
+            <Statistic
+              title="Islamic"
+              value={getTypeCount('ISLAMIC')}
+              valueStyle={{ color: THEME.success }}
+            />
+          </Card>
+        </Col> */}
+        {/* <Col xs={12} sm={6}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(245,158,11,0.08)' }}>
+            <Statistic
+              title="Variable"
+              value={getTypeCount('VARIABLE')}
+              valueStyle={{ color: THEME.warning }}
+            />
+          </Card>
+        </Col> */}
+        {/* <Col xs={12} sm={6}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(124,58,237,0.08)' }}>
+            <Statistic
+              title="Total Banks"
+              value={stats.totalBanks}
+              valueStyle={{ color: THEME.primary }}
+            />
+          </Card>
+        </Col> */}
+        {/* <Col xs={12} sm={6}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(16,185,129,0.08)' }}>
+            <Statistic
+              title="Avg. Interest Rate"
+              value={stats.averageInterestRate}
+              suffix="%"
+              valueStyle={{ color: THEME.success }}
+            />
+          </Card>
+        </Col> */}
+        {/* <Col xs={12} sm={6}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(245,158,11,0.08)' }}>
+            <Statistic
+              title="Popular"
+              value={stats.popularCount}
+              valueStyle={{ color: THEME.warning }}
+            />
+          </Card>
+        </Col> */}
+        {/* <Col xs={12} sm={6}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 8px rgba(124,58,237,0.08)' }}>
+            <Statistic
+              title="Featured"
+              value={stats.featuredCount}
+              valueStyle={{ color: THEME.primary }}
+            />
+          </Card>
+        </Col> */}
       </Row>
 
       {/* Product Grid (The Cards) */}
