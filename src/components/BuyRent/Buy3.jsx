@@ -10,6 +10,12 @@ import Bathicon from "../../assets/img/buy/Bath.png";
 import Squareicon from "../../assets/img/buy/Square Meters.png";
 import favoriteicon from "../../assets/img/buy/Favorited.png";
 import popularicon from "../../assets/img/buy/Group 860.png";
+import waveint4 from "../../assets/img/wave/wavebuy.png";
+import bedicon from "../../assets/img/buy/icon-bed.png";
+import tubicon from "../../assets/img/buy/icon-tub.png";
+import layouticon from "../../assets/img/buy/icon-layout.png";
+import favroiteicon from "../../assets/img/buy/Frame 1618873262.png";
+
 import {
   parsePhoneNumberFromString,
   validatePhoneNumberLength,
@@ -285,18 +291,21 @@ if (phoneError) {
     <>
       {contextHolder}
       <div
-        className="min-h-screen py-10 md:py-16 px-4 sm:px-6 lg:px-12 bg-cover bg-center relative font-dm"
-        style={{ backgroundImage: `url(${bgImage})` }}
+        className="min-h-screen py-10 md:py-26 px-4 sm:px-6 lg:px-12 bg-cover bg-center relative overflow-hidden font-dm "
+        // style={{ backgroundImage: `url(${bgImage})` }} 
       >
+          <div className="absolute -bottom-10 sm:-bottom-20 lg:-bottom-38 left-0 w-full z-0 pointer-events-none select-none ">
+        <img src={waveint4} alt="Decorative wave" className="w-full object-cover" />
+      </div>
         <div className="max-w-7xl mx-auto mb-10 md:mb-14">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <h2 className="font-dm font-semibold text-[36px] md:text-[60px] leading-[1.1] tracking-[-0.03em] text-white max-w-[515px] w-full text-left">
-              {t("heading.title")}
-            </h2>
+            <h2 className="font-dm font-semibold text-[36px] md:text-[60px] leading-[40px] md:leading-[55px] tracking-[-0.03em] text-[#020202] max-w-[515px] w-full text-left">
+  {t("heading.title")}
+</h2>
 
-            <p className="text-white font-medium text-[18px] md:text-[24px] leading-[1.4] max-w-[454px] w-full text-left md:text-right">
-              {t("heading.subtitle")}
-            </p>
+            <p className=" text-[#020202] font-medium text-[20px] md:text-[24px] leading-[30px] md:leading-[33px] max-w-[454px] w-full text-left md:text-left font-[DM_Sans]">
+  {t("heading.subtitle")}
+</p>
           </div>
         </div>
 
@@ -517,47 +526,70 @@ if (phoneError) {
 
 function PropertyCard({ deal, onClick }) {
   return (
-    <div className="bg-white rounded-[16px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] overflow-hidden w-full max-w-[396px] mb-6 transition-transform duration-300 hover:scale-[1.02]">
-      <div className="relative">
-        <img src={deal.imgUrl} alt={deal.name} className="h-[200px] md:h-[230px] w-full object-cover" />
-        {/* Always show popular badge on all cards */}
-        <img
-          src={popularicon}
-          alt="Popular"
-          className="absolute left-0 bottom-[-16px] w-[100px] md:w-[124.22px] h-auto"
+    <div className="bg-white rounded-[10px] shadow-[0_4px_24px_rgba(0,0,0,0.10)] overflow-visible w-full max-w-[390px] mb-6 transition-transform duration-300 hover:scale-[1.02] z-10">
+      
+      {/* Image Section */}
+      <div className="relative rounded-t-[10px] overflow-hidden">
+        <img 
+          src={deal.imgUrl} 
+          alt={deal.title} 
+          className="h-[200px] md:h-[230px] w-full object-cover rounded-t-[10px]" 
         />
+        
+        {/* Popular badge - top left */}
+        <div className="absolute top-3 left-3 bg-white text-[#2F73F2] text-[12px] font-semibold px-3 py-1 rounded-[5px] shadow-sm">
+          Popular
+        </div>
+
+        {/* Favorite icon - top right */}
+        <div className="absolute top-3 right-3 bg-white w-[34px] h-[34px] rounded-[5px] flex items-center justify-center shadow-sm cursor-pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#5C039B" stroke="#5C039B" strokeWidth="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </div>
       </div>
 
-      <div className="p-5 md:p-[24px] bg-gradient-to-b from-[#F7F6F9] to-white">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-end gap-[4px]">
-            <span className="font-dm font-semibold text-[18px] md:text-[20px] leading-tight text-[#5C039B]">{deal.price}</span>
-            <span className="font-dm font-medium text-[13px] md:text-[14px] text-[#6B7280]">{deal.period}</span>
-          </div>
-          <img src={favoriteicon} alt="Favorite" className="w-[45px] md:w-[52.77px] h-auto cursor-pointer" />
+      {/* Content Section */}
+      <div className="p-5 md:p-[20px]">
+        
+        {/* Title + Location Tag Row */}
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <h3 className="text-[16px] font-semibold text-[#111827] leading-snug">{deal.title}</h3>
+          {/* Location pill - e.g. "Florida" */}
+          <span className="shrink-0 text-[11px] font-medium text-[#5C039B] bg-[#F3E8FF] px-2 py-[3px] rounded-full">
+            {deal.location?.split(",")[1]?.trim() || "Dubai"}
+          </span>
         </div>
 
-        <h3 className="text-[16px] leading-[24px] font-semibold text-[#111827]">{deal.name}</h3>
-        <p className="mt-1 text-[14px] leading-[20px] font-medium text-[#6B7280] opacity-90">{deal.location}</p>
+        {/* Price */}
+        <div className="flex items-end gap-[4px] mb-4">
+          <span className="font-bold text-[20px] text-[#111827]">{deal.price}</span>
+          <span className="font-medium text-[12px] text-[#9CA3AF] mb-[2px]">/month</span>
+        </div>
 
-        <div className="flex flex-wrap items-center gap-3 md:gap-4 mt-5 text-[12px] md:text-[13px] text-[#374151]">
+        {/* Divider */}
+        <div className="border-t border-[#F3F4F6] mb-4" />
+
+        {/* Icons Row */}
+        <div className="flex items-center gap-5 text-[13px] text-[#374151] mb-5">
           <div className="flex items-center gap-2">
-            <img src={Bedicon} alt="Beds" className="h-[14px] md:h-[16px]" />
-            {deal.beds} Beds
+            <img src={bedicon} alt="Beds" className="h-[16px] w-[16px]" />
+            <span>{deal.bedrooms} <span className="text-[#9CA3AF]">Bedrooms</span></span>
           </div>
           <div className="flex items-center gap-2">
-            <img src={Bathicon} alt="Bath" className="h-[14px] md:h-[16px]" />
-            {deal.bathrooms} Bath
+            <img src={tubicon} alt="Bath" className="h-[16px] w-[16px]" />
+            <span>{deal.bathrooms} <span className="text-[#9CA3AF]">Bathroom</span></span>
           </div>
           <div className="flex items-center gap-2">
-            <img src={Squareicon} alt="Area" className="h-[14px] md:h-[16px]" />
-            {deal.area}
+            <img src={layouticon} alt="Area" className="h-[16px] w-[16px]" />
+            <span>{deal.area} <span className="text-[#9CA3AF]">Living Area</span></span>
           </div>
         </div>
 
+        {/* Button */}
         <button
           onClick={onClick}
-          className="w-full mt-6 h-[44px] md:h-[48px] bg-[#5C039B] text-white rounded-[24px] font-semibold text-[15px] md:text-[16px] transition-all hover:bg-white hover:text-[#6A00D4] border-2 border-transparent hover:border-[#6A00D4]"
+          className="w-full h-[48px] bg-[#5C039B] text-white rounded-[30px] font-semibold text-[15px] transition-all hover:bg-[#4a0280]"
         >
           Show Details
         </button>
