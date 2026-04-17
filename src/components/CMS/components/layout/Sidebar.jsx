@@ -374,26 +374,37 @@ const CUSTOM_ROLE_LINKS = {
       path: "/dashboard/{roleSlug}/leads",
       submenus: [
         { title: "Leads", path: "/dashboard/{roleSlug}/vault/agent-leads" },
-        { title: "Lead Documents ", path: "/dashboard/{roleSlug}/vault/lead-document" },
       ],
     },
+   
     {
-      title: "Clients",
-      icon: "fas fa-user-tie",
-      path: "/dashboard/{roleSlug}/clients",
-    },
-    {
-      title: "Cases",
+      title: "Propersals",
       icon: "fas fa-folder-open",
       path: "/dashboard/{roleSlug}/cases",
       submenus: [
-        { title: "All Cases", path: "/dashboard/{roleSlug}/cases" },
-        { title: "In Progress", path: "/dashboard/{roleSlug}/cases/in-progress" },
-        { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+        { title: "Create Proposals", path: "/dashboard/{roleSlug}/proposals/create" },
+        { title: "View Proposals", path: "/dashboard/{roleSlug}/proposals/view" },
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+
+       
+    {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Cases", path: "/dashboard/{roleSlug}/case/create" },
+        { title: "View Cases", path: "/dashboard/{roleSlug}/case/view" },
+                { title: "Process Cases", path: "/dashboard/{roleSlug}/case/view/all" },
+
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
       ],
 
     },
     {
+      
       title: "Vault Partners",
       icon: "fas fa-handshake",
       path: "/dashboard/{roleSlug}/partners",
@@ -403,24 +414,14 @@ const CUSTOM_ROLE_LINKS = {
       ]
     },
 
-    {
-      title: "Commission",
-      icon: "fas fa-rupee-sign",
-      path: "/dashboard/{roleSlug}/commission",
-    },
+    
     {
       title: "Bank Library",
       icon: "fas fa-university",
-      path: "/dashboard/{roleSlug}/bank-library",
-    },
-    {
-      title: "Reports",
-      icon: "fas fa-chart-bar",
-      path: "/dashboard/{roleSlug}/reports",
-    },
+      path: "/dashboard/{roleSlug}/bank/products",
+    }
   ],
   "22": [
-    { title: "Clients", icon: "fas fa-user-tie", path: "/dashboard/{roleSlug}/clients" },
     {
     title: "Leads",   
     icon: "fas fa-users",
@@ -435,17 +436,8 @@ const CUSTOM_ROLE_LINKS = {
   path: "/dashboard/{roleSlug}/leads" 
 }
     ]
-  },
-    {
-      title: "Referrals", icon: "fas fa-file-alt", path: "/dashboard/{roleSlug}/referrals",
-      submenus: [
-        { title: "New Referral", path: "/dashboard/{roleSlug}/referrals/new" },
-        { title: "My Referrals", path: "/dashboard/{roleSlug}/referrals" },
-      ],
-    },
-    { title: "Commission", icon: "fas fa-rupee-sign", path: "/dashboard/{roleSlug}/commission" },
-    { title: "Calculator", icon: "fas fa-calculator", path: "/dashboard/{roleSlug}/calculator" },
-    { title: "Leaderboard", icon: "fas fa-trophy", path: "/dashboard/{roleSlug}/leaderboard" },
+  }
+    ,
   ],
 "21": [
   {
@@ -458,19 +450,39 @@ const CUSTOM_ROLE_LINKS = {
     ],
   },
   {
+      title: "Bank Library",
+      icon: "fas fa-university",
+      path: "/dashboard/{roleSlug}/bank/products",
+    },
+  {
     title: "All Leads",
     icon: "fas fa-file-alt",
     path: "/dashboard/{roleSlug}/partner-leads",
   },
-  {
-  title: "Proposals",
-  icon: "fas fa-file-signature",
-  path: "/dashboard/{roleSlug}/proposals",
-  submenus: [
-    { title: "Create Proposal", path: "/dashboard/{roleSlug}/proposals/create" },
-    { title: "All Proposals", path: "/dashboard/{roleSlug}/proposals/all" },
-  ],
-},
+{
+      title: "Propersals",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Proposals", path: "/dashboard/{roleSlug}/proposals/create" },
+        { title: "View Proposals", path: "/dashboard/{roleSlug}/proposals/view" },
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+     {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Cases", path: "/dashboard/{roleSlug}/case/create" },
+        { title: "View Cases", path: "/dashboard/{roleSlug}/case/view" },
+                { title: "Process Cases", path: "/dashboard/{roleSlug}/case/view/all" },
+
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
 ],
 
 };

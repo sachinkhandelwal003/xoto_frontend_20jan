@@ -105,6 +105,7 @@ import ResultsPage from "./component/Rent/ResultsPage";
 import HeroBuy from "./component/Buy/Herobuy";
 import BuyResultsPage from "./component/Buy/Buyresultspage";
 import MortgageCalculator from "./components/homepage/MortgageCalculator";
+import ProposalLink from "./components/ecommerce/vault/proposal/ProposalLink";
 
 
 
@@ -159,13 +160,15 @@ function LayoutWrapper({ children }) {
     "/login", "/quotation", "/freelancer/browse-category", "/freelancer/category",
     "/freelancer/free-listing", "/ecommerce", "/freelancer/create-business",
     "/designs/Tool", "/dashboard", "/customer/dashboard", "/admin/login",
-    "/user/login", "/other/login", "/aiPlanner", "/aiPlanner/interior",
+    "/user/login", "/other/login", "/aiPlanner", "/aiPlanner/interior","/proposal/view/link",
     "/aiPlanner/landscape", "/estimate/calculator",
     "/accountant/login", "/ecommerce/seller","/aiPlanner/enhance","/aiPlanner/sky","/aiPlanner/virtual" ,
   ];
   const isDashboard = location.pathname.startsWith("/dashboard");
-  const hideNavbar = hideNavbarPaths.includes(location.pathname) || isDashboard;
-
+const hideNavbar =
+  hideNavbarPaths.includes(location.pathname) ||
+  location.pathname.startsWith("/proposal/view/link") ||
+  isDashboard;
 
   if (isDashboard && (!user || !token)) {
     return <div className="min-h-screen">{children}</div>;
@@ -208,8 +211,13 @@ function LayoutWrapper({ children }) {
     "/consultation",
    "/estimate/calculator/interior"
   ];
-  const hideFooter = hideFooterPaths.includes(location.pathname) || isDashboard || location.pathname.startsWith("/profile/");
-const showChatbot = allowedChatbotPaths.includes(location.pathname);
+const hideFooter =
+  hideFooterPaths.includes(location.pathname) ||
+  location.pathname.startsWith("/proposal/view/link") ||
+  isDashboard ||
+  location.pathname.startsWith("/profile/");
+  
+  const showChatbot = allowedChatbotPaths.includes(location.pathname);
   return (
     <div className="min-h-screen relative">
       {!hideNavbar && <Navbar />}
@@ -268,6 +276,11 @@ function App() {
               <Route path="/other/login" element={<OtherLogin />} />
               <Route path="/case-studies" element={<Casestudy />} />
               <Route path="/training" element={<Training />} />
+
+
+              {/* secure links */}
+                            <Route path="/proposal/view/link/:id" element={<ProposalLink />} />
+
               <Route path="/login" element={<Login />} />
               <Route path="/grid/login" element={<Login />} />
               <Route path="/admin/login" element={<AdminLogin />} />

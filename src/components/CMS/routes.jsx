@@ -122,7 +122,7 @@ import DeveloperAnalytics from "../ecommerce/B2C/DeveloperAnalytics";
 import DeveloperCommissionScheme from "../ecommerce/B2C/DeveloperCommisionScheme";
 import DeveloperDetail from "./pages/Developerdetail";
 import DealCommissionManager from "./pages/DealCommissionManager";
-import DeveloperAddProperty from "../ecommerce/B2C/DveloperAddProperty";
+import DeveloperAddProperty from "../ecommerce/B2C/DeveloperAddProperty";
 import DeveloperPropertyEdit from "../ecommerce/B2C/DeveloperPropertyEdit";
 import BankProductManagement from "../homepage/BankProductManagement";
 // {Agency}------------------------------------------------------------
@@ -197,7 +197,7 @@ import PartnerAgentleads from "../ecommerce/B2C/PartnerAgentleadlist";
 // import VaultAgentDocuments from "../ecommerce/B2C/VaultAgentDocuments";
 import VaultAgentDocument from "../ecommerce/B2C/VaultAgentDocument";
 import PartnerLeadDetails from "../ecommerce/B2C/PartnerLeadDetails";
-import CreateProposal from "../ecommerce/B2C/PartnerCrateproposal";
+import CreateProposal from "../ecommerce/B2C/PartnerCreateproposal";
 import ProposalForm from "../ecommerce/B2C/ProposalForm";
 import AllProposals from "../ecommerce/B2C/AllProposals";
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
@@ -206,6 +206,13 @@ import AllProposals from "../ecommerce/B2C/AllProposals";
 import CreateRentalProperty from "../../component/Rent/Createrentalproperty";
 import RentalPropertyList from "../../component/Rent/Rentalpropertylist";
 import AdminLeadList from "../../component/Rent/Adminleadlist";
+import BankProductListVault from "../ecommerce/vault/Index";
+import CreateProposalAdmin from "../ecommerce/vault/proposal/Index";
+import ViewProposal from "../ecommerce/vault/proposal/ViewProposal";
+import CreateCase from "../ecommerce/vault/case/Index";
+import ViewCases from "../ecommerce/vault/case/ViewCases";
+import DetailedViewCases from "../ecommerce/vault/case/DetailedViewCases";
+import ProcessCasesUpdates from "../ecommerce/vault/case/ProcessCasesUpdates";
 
 const roleSlugMap = {
   0: "superadmin",
@@ -463,7 +470,6 @@ const CmsRoutes = () => {
 <Route path="partner-list" element={<PartnerList/>}/>
 <Route path="partner-details/:id" element={<PartnerDetail/>}/>
 <Route path="agent-onboard" element={<VaultAgentonboard/>} />
-<Route path="/vault/agent-list" element={<VaultAgentlist/>} />
 <Route path="agent-details/:id" element={<VaultAgentdetail/>} />
 <Route path="xotovaultpartner" element={<VaultpartnerDashboard />} />
 <Route path="onboard-partner" element={<OnboardPartner />} />
@@ -475,7 +481,7 @@ const CmsRoutes = () => {
 <Route path="/lead-documents/:leadId"element={<VaultAgentDocument/>} />
 <Route path="partner-leads" element={<PartnerAgentleads />} />
 <Route path="partner/lead/:id"element={<PartnerLeadDetails />}/>
-<Route path="proposals/create" element={<CreateProposal />} />
+{/* <Route path="proposals/create" element={<CreateProposal />} /> */}
 <Route path="proposals/create/:leadId" element={<ProposalForm />} />
 <Route path="proposals/all" element={<AllProposals />} />
 
@@ -555,6 +561,25 @@ const CmsRoutes = () => {
       <Route path="/developer/view/:id" element={<DeveloperDetail />} />
       {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
       {/* <Route path="team" element={<DeveloperTeam/>}/> */}
+
+
+
+{/* vault */}
+
+      <Route path="/bank/products" element={< BankProductListVault />} />
+            <Route path="/proposals/create" element={< CreateProposalAdmin />} />
+            <Route path="/proposals/view" element={< ViewProposal />} />
+
+
+
+            {/* cases vault */}
+
+            <Route path="/case/create" element={< CreateCase />} />
+            <Route path="/case/view" element={< ViewCases />} />
+                        <Route path="/case/view/all" element={< ProcessCasesUpdates />} />
+
+            <Route path="/case/view/:caseId" element={< DetailedViewCases/>} />
+
 
 
 
