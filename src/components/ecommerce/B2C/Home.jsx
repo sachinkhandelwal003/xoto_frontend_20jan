@@ -48,7 +48,7 @@ const Ecommerce = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="heading-light mb-6"
+            className="heading-light mb-6 leading-[54px]"
           >
             {t("hero.title")}
           </motion.h1>

@@ -1,9 +1,8 @@
 "use client";
-
 import React, { useState, useRef, useEffect, useContext } from "react";
 import { FaBars, FaTimes, FaTachometerAlt } from "react-icons/fa";
 import { NavLink, Link, useNavigate } from "react-router-dom";
-import logoNew from "../../assets/img/logonew2.png";
+import logoNew from "../../assets/img/logoXoto.png";
 import { ChevronDown, LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { AuthContext } from "../../context/ProfileContext";
@@ -31,7 +30,7 @@ export const languages = [
 const navItems = [
   { key: "home", path: "/" },
   { key: "mortgages", path: "/mortgage/services" },
-  { key: "rental", path: "/rent/search" },
+  // { key: "rental", path: "/rent/search" },
   { key: "properties", path: "/Property" },
   {
     key: "homeUpgrade",
@@ -149,7 +148,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-20">
           
           <Link to="/" className="flex flex-col">
-            <img src={logoNew} alt="Logo" className="h-15" />
+            <img src={logoNew} alt="Logo" className="h-45" />
           </Link>
 
           {/* DESKTOP NAV */}

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 // import Imagemain from "../../assets/img/buy.jpg";
 import { notification, Select } from 'antd';
 import { useTranslation } from "react-i18next";
@@ -28,9 +29,11 @@ const PHONE_LENGTH_RULES = {
   "971": 9, "91": 10, "7": 10, "1": 10, "44": 10,
 };
 
-export default function HeroSection() {
+export default function HeroSection({ openSellModal, setOpenSellModal }) {
+  const navigate = useNavigate();
   const { t } = useTranslation("buy1");
-  const [openModal, setOpenModal] = useState(false);
+  const openModal = openSellModal;
+const setOpenModal = setOpenSellModal;
   const [actionType, setActionType] = useState("Buy");
   const [loading, setLoading] = useState(false);
   
@@ -50,7 +53,11 @@ export default function HeroSection() {
     document.body.style.overflow = "";
   };
 }, [openModal]);
-
+useEffect(() => {
+  if (openModal) {
+    setActionType("Sell");
+  }
+}, [openModal]);
   // 2. Prepare Country Data (Memoized)
   const countryOptions = useMemo(() => {
     const priorityIsoCodes = ["AE", "IN", "RU", "US", "GB"]; 
@@ -257,18 +264,18 @@ if (!isPhoneValid) {
         </div>
 
         <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 text-center text-white">
-          <h1 className="mx-auto mb-8 max-w-5xl heading-light">
-            {t("hero.title.line1")} <br />
-            {t("hero.title.line2")}
-          </h1>
+         <h1 className="mx-auto mb-8 max-w-5xl heading-light flex flex-col items-center gap-4 leading-[54px]">
+  <span>{t("hero.title.line1")}</span>
+  <span>{t("hero.title.line2")}</span>
+</h1>
 
           <div className="flex items-center gap-3 flex-wrap justify-center">
             <div className="relative inline-block">
-              <button onClick={() => handleOpenModal("Buy")}  className="px-10 py-4 bg-[#5C039B] text-white font-extrabold rounded-lg shadow-md hover:bg-[#5C039B] hover:scale-105 transition-all">
+              <button onClick={() => navigate("/Property#rent")}  className="px-10 py-4 bg-transparent border-2 border-white text-white font-extrabold rounded-lg shadow-md hover:bg-[#5C039B] hover:border-[#5C039B] hover:scale-105 transition-all">
                 {t("hero.buttons.rent")}
               </button>
             </div>
-            <button onClick={() => handleOpenModal("Buy")} className="px-10 py-4 bg-transparent border-2 border-white text-white font-extrabold rounded-lg shadow-md hover:bg-[#5C039B] hover:border-[#5C039B] hover:scale-105 transition-all">
+            <button onClick={() => navigate("/Property#rent")} className="px-10 py-4 bg-transparent border-2 border-white text-white font-extrabold rounded-lg shadow-md hover:bg-[#5C039B] hover:border-[#5C039B] hover:scale-105 transition-all">
               {t("hero.buttons.find")}
             </button>
 
@@ -297,13 +304,13 @@ if (!isPhoneValid) {
 
             <div className="p-8 bg-gradient-to-r from-blue-600/5 via-purple-600/5 to-pink-600/5 border-b border-white/10">
               <div className="flex flex-col items-center mb-6">
-                <div className="flex bg-gradient-to-r from-blue-600 to-purple-600 p-1 rounded-2xl shadow-lg mb-6">
-                {["Buy", "Sell"].map((type) => (
+                {/* <div className="flex bg-gradient-to-r from-blue-600 to-purple-600 p-1 rounded-2xl shadow-lg mb-6">
+                {[ "Sell"].map((type) => (
                     <button key={type} onClick={() => setActionType(type)} className={`px-10 py-4 rounded-xl font-bold transition-all duration-300 ${actionType === type ? "bg-white text-gray-900 shadow-lg" : "text-white/80 hover:text-white hover:bg-white/10"}`}>
                     {type.toUpperCase()}
                     </button>
                 ))}
-                </div>
+                </div> */}
                 <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent mb-2">
                   {actionType === "Sell" ? t("modal.sell.title") : t("modal.buy.title")}
                 </h2>

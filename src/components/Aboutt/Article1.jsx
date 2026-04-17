@@ -22,18 +22,19 @@ const Article1 = () => {
 
       {/* Content */}
       <div className="relative z-10 text-center px-6">
-        <h1
-          className="
-            text-white font-bold
-            text-3xl sm:text-4xl md:text-5xl lg:text-[50px]
-            leading-tight lg:leading-[76px]
-            drop-shadow-xl
-          "
-        >
-          {t("title.line1")}
-          <br />
-          {t("title.line2")}
-        </h1>
+       <h1
+  className="
+    text-white font-bold
+    text-3xl sm:text-4xl md:text-5xl lg:text-[50px]
+    flex flex-col items-center
+    leading-[54px]
+    gap-2
+    drop-shadow-xl
+  "
+>
+  <span>{t("title.line1")}</span>
+  <span>{t("title.line2")}</span>
+</h1>
 
         <p
           className="

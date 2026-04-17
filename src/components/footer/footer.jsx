@@ -107,7 +107,7 @@ export default function Footer() {
        <div className="absolute right-2 top-12 flex flex-col gap-[14px]">
   {/* --- WhatsApp Button --- */}
   <div
-    onClick={() => window.open("https://wa.me/", "_blank")}
+    onClick={() => window.open("https://wa.me/+971500888690", "_blank")}
     className="w-[53px] h-[53px] rounded-full bg-[#03A4F4] flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
   >
     <img src={whatsappIcon} alt="WhatsApp" className="w-[32px] h-[32px]" />
@@ -115,7 +115,7 @@ export default function Footer() {
 
   {/* --- SMS / Chat Button --- */}
   <div
-    onClick={() => (window.location.href = "sms:+919785408712")}
+    onClick={() => (window.location.href = "sms:+971500888690")}
     className="w-[53px] h-[53px] rounded-full bg-[#32CD32] flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
   >
     <img src={chatIcon} alt="Chat" className="w-[28px] h-[28px]" />
@@ -199,6 +199,9 @@ export default function Footer() {
             {t("email.labels.customers")}:{" "}
             <span className="text-white">{t("email.customers")}</span>
           </p>
+
+
+
         </Accordion>
       </div>
 
@@ -288,9 +291,30 @@ export default function Footer() {
               {t("email.labels.customers")}:{" "}
               <strong>{t("email.customers")}</strong>
             </p>
+
+<div className="absolute right-6 bottom-35 flex flex-col gap-[14px] ">
+  
+  <div
+    onClick={() => window.open("https://wa.me/971500888690", "_blank")}
+    className="w-[38px] h-[38px] rounded-full bg-[#03A4F4] flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
+  >
+    <img src={whatsappIcon} alt="WhatsApp" className="w-[21px] h-[21px]" />
+  </div>
+
+  <div
+    onClick={() => (window.location.href = "sms:+971500888690")}
+    className="w-[38px] h-[38px] rounded-full bg-[#32CD32] flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
+  >
+    <img src={chatIcon} alt="Chat" className="w-[21px] h-[21px]" />
+  </div>
+</div>
+
+</div>
+
+            
           </div>
         </div>
-      </div>
+      
 
       {/* ================= COPYRIGHT ================= */}
       <div className="border-t py-10 border-purple-500/20">

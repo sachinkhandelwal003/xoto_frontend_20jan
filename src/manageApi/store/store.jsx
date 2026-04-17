@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer from './authSlice';
+import authReducer, { logoutUser } from './authSlice';
 import axios from 'axios';
 import productsReducer from './productsSlice.jsx';
 // Create the store
