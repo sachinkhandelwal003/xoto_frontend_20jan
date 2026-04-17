@@ -1,8 +1,9 @@
 {
   "hero": {
-    "title1": "Discover, Finance and Enhance",
-    "title2": " Your  Home - Seamlessly in  One Place",
-    "description": "From finding the right home to maximizing its value",
+    "title1": "Redefining Living",
+    "title2": "From Landscapes to Homes",
+    "description": "Discover AI-powered designs and curated ",
+    "description2":"properties that elevate every corner of your world.",
     "buttons": {
       "design": "Design My Space",
       "explore": "Explore Homes",
