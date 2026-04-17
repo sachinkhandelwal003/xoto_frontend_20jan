@@ -2,6 +2,7 @@ import React from "react";
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 import calender from "../../assets/icons/Homeicons/Calendar.png";
 import clock from "../../assets/icons/Homeicons/Clock.png";
@@ -13,6 +14,7 @@ import layer from "../../assets/img/home/Layer1.png";
 const icons = [gurantee, clock, map, calender];
 
 const HeroSection = () => {
+  const navigate = useNavigate();
   const { t } = useTranslation("home");
 
   const features = t("hero.features", { returnObjects: true });
@@ -54,7 +56,7 @@ const HeroSection = () => {
 
   return (
     <section className="relative w-full min-h-[80vh] overflow-hidden flex items-center justify-center text-white pt-24 pb-16 md:pt-28 md:pb-20 xl:pt-32 xl:pb-24">
-    {/* ✅ CHANGE 4: Popup JSX add kiya — baaki section mein kuch nahi badla */}
+   
       {popupVisible && (
         <>
           <div
@@ -62,23 +64,23 @@ const HeroSection = () => {
             onClick={() => setPopupVisible(false)}
           >
             <div
-              className="relative w-full max-w-[820px] flex rounded-xl overflow-hidden shadow-2xl animate-fadeIn"
+              className="relative w-full max-w-[820px] flex rounded-[5px] overflow-hidden shadow-2xl animate-fadeIn border-2 border-[#115a81] bg-white"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close Button */}
               <button
                 onClick={() => setPopupVisible(false)}
-                className="absolute top-3 right-3 z-10 w-8 h-8  bg-white rounded-md flex items-center justify-center text-gray-700 hover:bg-gray-100 transition text-sm font-bold shadow"
+                className="absolute top-3 right-3 z-10 w-8 h-8 bg-white rounded-md flex items-center justify-center text-gray-700 hover:bg-gray-100 transition text-sm font-bold shadow"
               >
                 ✕
               </button>
- 
+
               {/* LEFT: Form */}
               <div className="w-full md:w-[50%] bg-white p-8 flex flex-col justify-center font-['DM_Sans']">
-                <h2 className="text-[40px] font-['DM_Sans']  text-black  mb-1 tracking-normal align-middle">
-                  
-                  Not Sure Where <br /> To Start?
-                </h2>
+   <h2 className="text-[40px] font-black leading-[41px] text-black flex flex-col justify-center">
+  <span>Not Sure Where</span>
+  <span>To Start?</span>
+</h2>
                 <p className="text-gray-600 text-base font-bold mb-6">
                   We are here to help.
                 </p>
@@ -86,17 +88,21 @@ const HeroSection = () => {
                   <div className="flex gap-3 text-gray-600">
                     <input name="firstName" value={form.firstName} onChange={handleChange}
                       placeholder="First Name*" required
-                      className="w-1/2 border border-gray-400 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#5C039B]" />
+                      className="w-1/2 border rounded-lg px-4 py-3 text-sm focus:outline-none"
+                      style={{ borderColor: '#115a81' }} />
                     <input name="lastName" value={form.lastName} onChange={handleChange}
                       placeholder="Last Name"
-                      className="w-1/2 border border-gray-400 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#5C039B]" />
+                      className="w-1/2 border rounded-lg px-4 py-3 text-sm focus:outline-none"
+                      style={{ borderColor: '#115a81' }} />
                   </div>
                   <input name="email" type="email" value={form.email} onChange={handleChange}
                     placeholder="Email address"
-                    className="w-full border border-gray-400 text-gray-600 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#5C039B]" />
+                    className="w-full border text-gray-600 rounded-lg px-4 py-3 text-sm focus:outline-none"
+                    style={{ borderColor: '#115a81' }} />
                   <div className="flex gap-2 text-gray-600">
                     <select name="countryCode" value={form.countryCode} onChange={handleChange}
-                      className="w-[38%] border border-gray-400 rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-[#5C039B] bg-white">
+                      className="w-[38%] border rounded-lg px-2 py-2 text-sm focus:outline-none bg-white"
+                      style={{ borderColor: '#115a81' }}>
                       <option value="+971">🇦🇪 +971</option>
                       <option value="+91">🇮🇳 +91</option>
                       <option value="+966">🇸🇦 +966</option>
@@ -105,25 +111,27 @@ const HeroSection = () => {
                     </select>
                     <input name="phone" type="tel" value={form.phone} onChange={handleChange}
                       placeholder="Phone*" required
-                      className="flex-1 border border-gray-400 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#5C039B]" />
+                      className="flex-1 border rounded-lg px-4 py-3 text-sm focus:outline-none"
+                      style={{ borderColor: '#115a81' }} />
                   </div>
                   <textarea name="message" value={form.message} onChange={handleChange}
                     placeholder="Your message*" rows={3} required
-                    className="w-full border border-gray-400 text-gray-600 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#5C039B] resize-none" />
+                    className="w-full border text-gray-600 rounded-lg px-4 py-3 text-sm focus:outline-none resize-none"
+                    style={{ borderColor: '#115a81' }} />
                   <button type="submit"
-                    className="w-full bg-[#5C039B] hover:bg-[#4a0280] text-white  py-2.5 rounded-lg transition text-lg mt-1">
+                    className="w-full bg-[#5C039B] hover:bg-[#4a0280] text-white py-2.5 rounded-lg transition text-lg mt-1">
                     Submit
                   </button>
                 </form>
               </div>
- 
+
               {/* RIGHT: Image */}
-              <div className="hidden md:flex md:w-[50%] relative font-['DM_Sans'] ">
+              <div className="hidden md:flex md:w-[50%] relative font-['DM_Sans']">
                 <img src={dubaiImg} alt="Hot Property Deals" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 " />
-                <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 text-white ">
-                  <p className="text-[28px] font-semibold uppercase leading-tight tracking-wide text-[28px]">HOT PROPERTY DEALS</p>
-                  <p className="text-[14px] font-semibold text-white/80 ">Ready-to-move &amp; high ROI options</p>
+                <div className="absolute inset-0" />
+                <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 text-white">
+                  <p className="text-[28px] font-semibold uppercase leading-tight tracking-wide">HOT PROPERTY DEALS</p>
+                  <p className="text-[14px] font-semibold text-white/80">Ready-to-move &amp; high ROI options</p>
                   <button className="mt-4 mb-[19px] w-full border border-white h-[36px] rounded-lg py-1.5 text-[16.77px] leading-[16.77px] gap-[6.99px] bg-white text-[#5C039B]">
                     View Now
                   </button>
@@ -154,16 +162,16 @@ const HeroSection = () => {
   </div>
 
   {/* 2. EXCLUSIVE DEALS (LAYER) - Exact Figma Specs */}
-  <div className="absolute top-[-13px] right-0 z-10 w-[150px] md:w-[242px] pointer-events-none">
+  <div className="absolute top-[-13px] right-0 z-10 w-[150px] md:w-[242px] cursor-pointer">
     
 
     
     <img 
-      src={layer} 
-      alt="Exclusive Deals" 
-      className="w-full h-auto object-contain opacity-100"
-      style={{ maxHeight: '258px' }}
-    />
+  src={layer} 
+  alt="Exclusive Deals" 
+  className="w-full h-auto object-contain opacity-100"
+  onClick={() => navigate("/Property#buy3")}
+/>
      
   </div>
 
@@ -194,7 +202,7 @@ const HeroSection = () => {
           
           
           {/* Heading - Responsive wrapping (Mobile par wrap, Desktop par exactly 2 lines) */}
-          <h1 className="heading-light w-full text-center leading-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl px-2 flex flex-col items-center">
+          <h1 className="heading-light w-full text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl px-2 flex flex-col items-center leading-[54px]  gap-2">
             {/* First Line */}
             <span className="block">
               {t("hero.title1")}
@@ -210,11 +218,7 @@ const HeroSection = () => {
             {t("hero.description")}
           </p>
 
-          
-          {/* Description2 */}
-        <p className="block text-lg max-w-3xl mx-auto ">
-            {t("hero.description2")}
-          </p>
+
 
 </div>
           {/* Buttons — centered */}

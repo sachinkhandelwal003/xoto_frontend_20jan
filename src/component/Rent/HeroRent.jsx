@@ -481,7 +481,7 @@ export default function HeroSearch({ onSellClick })  {
   );
 
   return (
-    <div
+    <div id="rent"
       style={{
         minHeight: "100vh",
         position: "relative",

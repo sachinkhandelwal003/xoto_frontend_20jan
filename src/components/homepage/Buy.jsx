@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { useEffect } from 'react'
+import { useLocation } from "react-router-dom";
 // import React from 'react'
 import Buy1 from '../BuyRent/Buy1'
 import Buy3 from '../BuyRent/Buy3'
@@ -11,6 +13,16 @@ import HeroRent from "./../../component/Rent/HeroRent"
 
 import Buy7 from '../BuyRent/Buy7'
 const Buy = () => {
+    const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      const el = document.getElementById(location.hash.replace("#", ""));
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, [location]);
   const [openSellModal, setOpenSellModal] = useState(false);
   return (
     <div>

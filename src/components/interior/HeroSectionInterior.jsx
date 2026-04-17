@@ -29,9 +29,9 @@ export default function HeroSectionInterior() {
       <div className="relative z-10 px-4 sm:px-6 md:px-10 lg:px-16 py-28 md:py-40">
         <div className="max-w-4xl text-center mx-auto">
 
-          <h1 className="mb-6 heading-light">
-            {t("title")}
-          </h1>
+         <h1 className="mb-6 heading-light leading-[54px]">
+  {t("title")}
+</h1>
 
           <p className="mb-8 paragraph-light text-white">
             {t("description")}
