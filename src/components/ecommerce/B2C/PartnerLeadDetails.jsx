@@ -552,7 +552,7 @@ const PartnerLeadDetails = () => {
                               {sizeMb && (
                                 <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 500 }}>{sizeMb}</span>
                               )}
-                              <span style={{ fontSize: 11, color: T.textMuted, background: mime.bg, color: mime.color, padding: "1px 7px", borderRadius: 99, fontWeight: 600 }}>
+                             <span style={{ fontSize: 11, background: mime.bg, color: mime.color, padding: "1px 7px", borderRadius: 99, fontWeight: 600 }}>
                                 {mime.label}
                               </span>
                             </div>
