@@ -290,7 +290,7 @@ if (phoneError) {
   return (
     <>
       {contextHolder}
-      <div id="buy3"
+      <div id="buy3   "
         className="min-h-screen py-10 md:py-26 px-4 sm:px-6 lg:px-12 bg-cover bg-center relative overflow-hidden font-dm "
         // style={{ backgroundImage: `url(${bgImage})` }} 
       >
