@@ -351,7 +351,7 @@ const VaultRegister = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4">
 
           {/* LEFT SIDEBAR - VAULT MORTGAGE THEME */}
-          <div className="bg-gradient-to-b from-indigo-800 to-purple-900 text-white p-8 flex flex-col">
+          <div className="bg-[#5B0E98] text-white p-8 flex flex-col">
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="bg-white/20 p-3 rounded-xl shadow-inner">
