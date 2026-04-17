@@ -28,9 +28,10 @@ const PHONE_LENGTH_RULES = {
   "971": 9, "91": 10, "7": 10, "1": 10, "44": 10,
 };
 
-export default function HeroSection() {
+export default function HeroSection({ openSellModal, setOpenSellModal }) {
   const { t } = useTranslation("buy1");
-  const [openModal, setOpenModal] = useState(false);
+  const openModal = openSellModal;
+const setOpenModal = setOpenSellModal;
   const [actionType, setActionType] = useState("Buy");
   const [loading, setLoading] = useState(false);
   
@@ -50,7 +51,11 @@ export default function HeroSection() {
     document.body.style.overflow = "";
   };
 }, [openModal]);
-
+useEffect(() => {
+  if (openModal) {
+    setActionType("Sell");
+  }
+}, [openModal]);
   // 2. Prepare Country Data (Memoized)
   const countryOptions = useMemo(() => {
     const priorityIsoCodes = ["AE", "IN", "RU", "US", "GB"]; 

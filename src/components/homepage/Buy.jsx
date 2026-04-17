@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
+// import React from 'react'
 import Buy1 from '../BuyRent/Buy1'
 import Buy3 from '../BuyRent/Buy3'
 import Buy4 from '../BuyRent/Buy4'
@@ -10,12 +11,16 @@ import HeroRent from "./../../component/Rent/HeroRent"
 
 import Buy7 from '../BuyRent/Buy7'
 const Buy = () => {
+  const [openSellModal, setOpenSellModal] = useState(false);
   return (
     <div>
-      <Buy1/>
+      <Buy1 
+  openSellModal={openSellModal} 
+  setOpenSellModal={setOpenSellModal}
+/>
       {/* <Buy2/> */}
          <Buy3/>
-         <HeroRent />
+         <HeroRent onSellClick={() => setOpenSellModal(true)} />
                   <Buy4/>
                   <Buy5/>
                   <Buy6/>

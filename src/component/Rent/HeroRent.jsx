@@ -460,7 +460,7 @@ function BuyForm() {
 }
 
 // ─── Main Hero ────────────────────────────────────────────────────────────────
-export default function HeroSearch() {
+export default function HeroSearch({ onSellClick })  {
   const navigate   = useNavigate();
   const [mode, setMode] = useState("buy"); // "buy" | "rent"
 
@@ -514,7 +514,7 @@ export default function HeroSearch() {
       }}>
 
         {/* ── LEFT: Headline + house image ── */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 32, }}>
           <div>
             <h1 className="font-dm text-white font-semibold text-[36px] md:text-[48px] lg:text-[60px] leading-[42px] md:leading-[56px] lg:leading-[68px] tracking-[-0.03em]">
   Your Property<br />Journey starts here!!
@@ -545,6 +545,7 @@ export default function HeroSearch() {
           padding: 32,
           width: "100%",
           boxSizing: "border-box",
+          marginBottom:100
         }}>
 
           {/* Card title */}
@@ -562,7 +563,7 @@ export default function HeroSearch() {
             {TAB_BTN("Buy",  "buy")}
             {TAB_BTN("Rent", "rent")}
             <button
-              onClick={() => navigate("/sell")}
+              onClick={onSellClick}
               style={{
                 marginLeft: "auto",
                 width: 127, height: 43,
