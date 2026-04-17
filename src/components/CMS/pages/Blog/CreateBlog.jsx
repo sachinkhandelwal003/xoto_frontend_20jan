@@ -34,6 +34,100 @@ const THEME = {
 };
 
 // ─────────────────────────────────────────────
+//  BLOG CONTENT CSS — fixes Tailwind reset for ul/ol/li
+// ─────────────────────────────────────────────
+const BLOG_CONTENT_STYLES = `
+  .blog-preview-content ul,
+  .blog-render-content ul {
+    list-style-type: disc !important;
+    padding-left: 24px !important;
+    margin: 12px 0 !important;
+  }
+  .blog-preview-content ol,
+  .blog-render-content ol {
+    list-style-type: decimal !important;
+    padding-left: 24px !important;
+    margin: 12px 0 !important;
+  }
+  .blog-preview-content li,
+  .blog-render-content li {
+    display: list-item !important;
+    margin: 6px 0 !important;
+    line-height: 1.7 !important;
+  }
+  .blog-preview-content ul ul,
+  .blog-render-content ul ul {
+    list-style-type: circle !important;
+    padding-left: 20px !important;
+  }
+  .blog-preview-content ul ul ul,
+  .blog-render-content ul ul ul {
+    list-style-type: square !important;
+  }
+  .blog-preview-content p,
+  .blog-render-content p {
+    margin: 10px 0;
+  }
+  .blog-preview-content h1,
+  .blog-render-content h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 24px 0 12px;
+  }
+  .blog-preview-content h2,
+  .blog-render-content h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 20px 0 10px;
+  }
+  .blog-preview-content h3,
+  .blog-render-content h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 16px 0 8px;
+  }
+  .blog-preview-content blockquote,
+  .blog-render-content blockquote {
+    border-left: 4px solid #7c3aed;
+    padding-left: 16px;
+    margin: 16px 0;
+    color: #555;
+    font-style: italic;
+  }
+  .blog-preview-content a,
+  .blog-render-content a {
+    color: #7c3aed;
+    text-decoration: underline;
+  }
+  .blog-preview-content img,
+  .blog-render-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 12px 0;
+  }
+  .blog-preview-content table,
+  .blog-render-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+  }
+  .blog-preview-content th,
+  .blog-render-content th,
+  .blog-preview-content td,
+  .blog-render-content td {
+    border: 1px solid #e0e0e0;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  .blog-preview-content th,
+  .blog-render-content th {
+    background: #f5f5f5;
+    font-weight: 600;
+  }
+`;
+
+// ─────────────────────────────────────────────
 //  PASTE CLEANER & SMART AUTO-FILL
 // ─────────────────────────────────────────────
 const cleanWordHtml = (html) => {
@@ -210,7 +304,6 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
         </div>
       }
     >
-      {/* Crop area */}
       <div style={{ position: 'relative', width: '100%', height: 380, background: '#1a1a2e', borderRadius: 10, overflow: 'hidden' }}>
         {imageSrc ? (
           <Cropper
@@ -288,33 +381,32 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
   };
 
   const handlePreview = async (file) => {
-  if (!file.url && !file.preview && file.originFileObj) {
-    file.preview = await new Promise((res) => {
-      const r = new FileReader();
-      r.readAsDataURL(file.originFileObj);
-      r.onload = () => res(r.result);
-    });
-  }
-  const imageUrl = file.url || file.preview;
-  Modal.confirm({
-    icon: null,
-    width: 600,
-    centered: true,
-    okButtonProps: { style: { display: 'none' } },
-    cancelButtonProps: { style: { display: 'none' } },
-    content: (
-      <div>
-        <img src={imageUrl} alt="preview" style={{ width: '100%' }} />
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <Button onClick={() => Modal.destroyAll()}>Close</Button>
+    if (!file.url && !file.preview && file.originFileObj) {
+      file.preview = await new Promise((res) => {
+        const r = new FileReader();
+        r.readAsDataURL(file.originFileObj);
+        r.onload = () => res(r.result);
+      });
+    }
+    const imageUrl = file.url || file.preview;
+    Modal.confirm({
+      icon: null,
+      width: 600,
+      centered: true,
+      okButtonProps: { style: { display: 'none' } },
+      cancelButtonProps: { style: { display: 'none' } },
+      content: (
+        <div>
+          <img src={imageUrl} alt="preview" style={{ width: '100%' }} />
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <Button onClick={() => Modal.destroyAll()}>Close</Button>
+          </div>
         </div>
-      </div>
-    ),
-    onCancel: () => Modal.destroyAll(),
-  });
-};
+      ),
+      onCancel: () => Modal.destroyAll(),
+    });
+  };
 
-  // Custom item render — adds Crop/Edit button on uploaded image
   const itemRender = (originNode, file) => (
     <div style={{ position: 'relative', display: 'inline-block' }}>
       {originNode}
@@ -355,7 +447,6 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
           fileList={fileList}
           onPreview={handlePreview}
           onChange={({ fileList: fl }) => {
-            // Only allow removal through this (additions handled by beforeUpload)
             if (fl.length < fileList.length) onChange(fl);
           }}
           beforeUpload={handleBeforeUpload}
@@ -385,7 +476,7 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
 };
 
 // ─────────────────────────────────────────────
-//  JODIT CONFIG
+//  JODIT CONFIG — with bullet/list style support
 // ─────────────────────────────────────────────
 const editorConfig = {
   readonly: false,
@@ -397,6 +488,16 @@ const editorConfig = {
   askBeforePasteHTML: false,
   askBeforePasteFromWord: false,
   defaultActionOnPaste: 'insert_as_html',
+  // ✅ FIX: Inject CSS inside the Jodit iframe so bullets show correctly while editing
+  editorCssClass: 'jodit-blog-editor',
+  extraCSS: `
+    ul { list-style-type: disc !important; padding-left: 24px !important; margin: 8px 0 !important; }
+    ol { list-style-type: decimal !important; padding-left: 24px !important; margin: 8px 0 !important; }
+    li { display: list-item !important; margin: 4px 0 !important; }
+    ul ul { list-style-type: circle !important; }
+    ul ul ul { list-style-type: square !important; }
+    blockquote { border-left: 4px solid #7c3aed; padding-left: 16px; margin: 16px 0; color: #555; font-style: italic; }
+  `,
 };
 
 // ─────────────────────────────────────────────
@@ -409,6 +510,9 @@ const BlogPreview = ({ data }) => {
 
   return (
     <div style={{ fontFamily: "'Georgia', serif", color: '#1a1a2e', background: '#fff' }}>
+      {/* ✅ FIX: Inject styles so ul/ol/li render correctly in preview — Tailwind resets these */}
+      <style>{BLOG_CONTENT_STYLES}</style>
+
       {coverImage && (
         <div style={{ width: '100%', height: 280, overflow: 'hidden', borderRadius: 12, marginBottom: 28, background: '#f0f0f0' }}>
           <img src={coverImage} alt="cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -446,13 +550,15 @@ const BlogPreview = ({ data }) => {
           <div style={{ fontWeight: 700, fontSize: 14, color: '#7c3aed', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
             <BookOutlined /> Table of Contents
           </div>
-          <ol style={{ margin: 0, paddingLeft: 20 }}>
+          <ol style={{ margin: 0, paddingLeft: 20, listStyleType: 'decimal' }}>
             {headings.filter(h => h.level <= 3).map((h, i) => (
-              <li key={i} style={{ marginLeft: `${(h.level - 1) * 16}px`, fontSize: 13, padding: '3px 0', color: '#5b21b6' }}>{h.text}</li>
+              <li key={i} style={{ marginLeft: `${(h.level - 1) * 16}px`, fontSize: 13, padding: '3px 0', color: '#5b21b6', display: 'list-item' }}>{h.text}</li>
             ))}
           </ol>
         </div>
       )}
+
+      {/* ✅ FIX: class="blog-preview-content" — CSS above targets this class */}
       <div
         className="blog-preview-content"
         style={{ lineHeight: 1.85, fontSize: 16, color: '#1f1f1f' }}
@@ -499,7 +605,6 @@ const BlogManagement = () => {
   const [headings, setHeadings] = useState([]);
   const [smartFillApplied, setSmartFillApplied] = useState(false);
 
-  // Image states — each managed by UploadWithCrop
   const [featuredImageList, setFeaturedImageList] = useState([]);
   const [coverImageList, setCoverImageList] = useState([]);
   const [authorImageList, setAuthorImageList] = useState([]);
@@ -726,6 +831,20 @@ const BlogManagement = () => {
     }
   };
 
+  const deleteBlog = async (id) => {
+    try {
+      const response = await apiService.delete(`/blogs/delete-blog-by-id?id=${id}`);
+      if (response.success) {
+        message.success('Blog deleted successfully');
+        fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus);
+      } else {
+        message.error(response.message || 'Delete failed');
+      }
+    } catch (err) {
+      message.error('Failed to delete blog');
+    }
+  };
+
   const handleCardPreview = async (record) => {
     const hide = message.loading('Loading preview...', 0);
     try {
@@ -775,6 +894,9 @@ const BlogManagement = () => {
 
   return (
     <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
+      {/* ✅ FIX: Global style tag — fixes Tailwind CSS reset for bullet points everywhere */}
+      <style>{BLOG_CONTENT_STYLES}</style>
+
       {/* Header */}
       <div className="mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
@@ -977,6 +1099,7 @@ const BlogManagement = () => {
               <Form.Item label="Blog Content" required>
                 <Alert message="📋 Paste from Word, PDF, Google Docs — formatting preserved & tags auto-fill!" type="info" showIcon className="mb-3" />
                 {smartFillApplied && <Alert message="✨ Smart Fill Active — fields auto-detected" type="success" showIcon closable onClose={() => setSmartFillApplied(false)} className="mb-3" />}
+                {/* ✅ FIX: onPaste on wrapper div so smart paste still works */}
                 <div className="border rounded-lg" onPaste={handleSmartPaste}>
                   <JoditEditor ref={quillRef} value={contentValue} config={editorConfig} onChange={handleEditorChange} />
                 </div>
@@ -986,9 +1109,8 @@ const BlogManagement = () => {
               </Form.Item>
             </TabPane>
 
-            {/* ── MEDIA TAB — with crop ── */}
+            {/* ── MEDIA TAB ── */}
             <TabPane tab={<span><PictureOutlined /> Media</span>} key="media">
-              
               <Row gutter={16}>
                 <Col span={12}>
                   <UploadWithCrop
@@ -1015,7 +1137,7 @@ const BlogManagement = () => {
               </Row>
             </TabPane>
 
-            {/* ── AUTHOR TAB — with crop ── */}
+            {/* ── AUTHOR TAB ── */}
             <TabPane tab={<span><UserOutlined /> Author</span>} key="author">
               <Row gutter={16}>
                 <Col span={16}>
@@ -1056,7 +1178,14 @@ const BlogManagement = () => {
       </Modal>
 
       {/* BLOG PREVIEW MODAL */}
-      <Modal open={previewModalVisible} onCancel={() => setPreviewModalVisible(false)} footer={null} width={screens.xs ? '95%' : 860} bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: '24px 32px' }} centered>
+      <Modal
+        open={previewModalVisible}
+        onCancel={() => setPreviewModalVisible(false)}
+        footer={null}
+        width={screens.xs ? '95%' : 860}
+        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: '24px 32px' }}
+        centered
+      >
         <BlogPreview data={previewBlogData} />
       </Modal>
     </div>
@@ -1064,3 +1193,4 @@ const BlogManagement = () => {
 };
 
 export default BlogManagement;
+/////////////blog management
