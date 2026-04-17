@@ -88,6 +88,8 @@ const BuiltForEveryone = () => {
                 loop
                 muted
                 playsInline
+                disablePictureInPicture
+                controls={false}
                 className="w-full object-contain"
               />
             </div>

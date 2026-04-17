@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../../../manageApi/utils/custom.apiservice';
+import { useSelector } from 'react-redux';
 import {
   Card, Steps, Button, Typography, Row, Col, Avatar,
   Tag, Descriptions, Divider, Spin, message, Modal, Input, Select,
@@ -28,6 +29,7 @@ const CreateCase = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [fetchingProposals, setFetchingProposals] = useState(false);
+    const { user, token, permissions } = useSelector((s) => s.auth);
 
   // Data State
   const [acceptedProposals, setAcceptedProposals] = useState([]);
@@ -209,21 +211,36 @@ const CreateCase = () => {
     }
   }, []);
 
-  const fetchLeadDetails = async (leadId) => {
-    setLoading(true);
-    try {
-      const res = await apiService.get(`/vault/lead/admin/all?page=1&limit=1&leadId=${leadId}`);
-      if (res?.success && res.data.length > 0) {
-        const lead = res.data[0];
-        setSelectedLead(lead);
-        populateCaseFromLeadAndProposal(lead, selectedProposal);
-      }
-    } catch (err) {
-      message.error("Failed to fetch lead details");
-    } finally {
-      setLoading(false);
+const fetchLeadDetails = async (leadId) => {
+  setLoading(true);
+  try {
+    let url = '';
+
+    // ✅ Role-based condition
+    if (user?.role?.code === '18') {
+      // Vault Admin
+      url = `/vault/lead/admin/all?page=1&limit=1&leadId=${leadId}`;
+    } else {
+      // Partner / Others
+      url = `/vault/lead/partner/get?page=1&limit=1&leadId=${leadId}`;
     }
-  };
+
+    const res = await apiService.get(url);
+
+    if (res?.success && res.data?.length > 0) {
+      const lead = res.data[0];
+      setSelectedLead(lead);
+      populateCaseFromLeadAndProposal(lead, selectedProposal);
+    } else {
+      message.warning("Lead not found");
+    }
+
+  } catch (err) {
+    message.error("Failed to fetch lead details");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleUpload = async (documentType, file) => {
     try {
@@ -1066,7 +1083,7 @@ const CreateCase = () => {
 
   // Render Step 2: Income & Expenses
   const renderStep2 = () => {
-    return (
+    return ( +   
       <div style={{ animation: 'fadeIn 0.5s' }}>
         <Title level={4} style={{ color: THEME_COLOR, marginBottom: 24 }}>Income & Financial Assessment</Title>
         

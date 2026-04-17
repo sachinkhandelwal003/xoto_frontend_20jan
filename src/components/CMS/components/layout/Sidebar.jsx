@@ -427,7 +427,6 @@ const CUSTOM_ROLE_LINKS = {
     },
   ],
   "22": [
-    { title: "Clients", icon: "fas fa-user-tie", path: "/dashboard/{roleSlug}/clients" },
     {
     title: "Leads",   
     icon: "fas fa-users",
@@ -442,17 +441,8 @@ const CUSTOM_ROLE_LINKS = {
   path: "/dashboard/{roleSlug}/leads" 
 }
     ]
-  },
-    {
-      title: "Referrals", icon: "fas fa-file-alt", path: "/dashboard/{roleSlug}/referrals",
-      submenus: [
-        { title: "New Referral", path: "/dashboard/{roleSlug}/referrals/new" },
-        { title: "My Referrals", path: "/dashboard/{roleSlug}/referrals" },
-      ],
-    },
-    { title: "Commission", icon: "fas fa-rupee-sign", path: "/dashboard/{roleSlug}/commission" },
-    { title: "Calculator", icon: "fas fa-calculator", path: "/dashboard/{roleSlug}/calculator" },
-    { title: "Leaderboard", icon: "fas fa-trophy", path: "/dashboard/{roleSlug}/leaderboard" },
+  }
+    ,
   ],
 "21": [
   {
@@ -465,10 +455,39 @@ const CUSTOM_ROLE_LINKS = {
     ],
   },
   {
+      title: "Bank Library",
+      icon: "fas fa-university",
+      path: "/dashboard/{roleSlug}/bank/products",
+    },
+  {
     title: "All Leads",
     icon: "fas fa-file-alt",
     path: "/dashboard/{roleSlug}/partner-leads",
   },
+{
+      title: "Propersals",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Proposals", path: "/dashboard/{roleSlug}/proposals/create" },
+        { title: "View Proposals", path: "/dashboard/{roleSlug}/proposals/view" },
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+     {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Cases", path: "/dashboard/{roleSlug}/case/create" },
+        { title: "View Cases", path: "/dashboard/{roleSlug}/case/view" },
+                { title: "Process Cases", path: "/dashboard/{roleSlug}/case/view/all" },
+
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
 ],
 
 };
@@ -488,7 +507,7 @@ const roleSlugMap = {
   '17': "developer",
   '18': "vault-admin", //vault
   '22': "vaultagent",
-  '21': "xotovaultpartner",
+  '21': "vaultpartner",
 
 
 };

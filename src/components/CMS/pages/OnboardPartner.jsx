@@ -1,145 +1,270 @@
 // src/components/Vault/AgentOnboard.jsx
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  User, Mail, Phone, Lock, MapPin, AlertCircle, ChevronRight,
-  ChevronLeft, Check, Loader2, CreditCard, Users, FileText,
-  ShieldCheck, Banknote, Calendar, Globe, Heart, Plus, Trash2, MessageSquare, ChevronDown
-} from "lucide-react";
+  Form, Input, Select, Button, Card, Steps, Row, Col, DatePicker,
+  Upload, message, Space, Typography, Divider, Alert
+} from "antd";
+import {
+  UserOutlined, MailOutlined, LockOutlined, PhoneOutlined,
+  HomeOutlined, EnvironmentOutlined, HeartOutlined, GlobalOutlined,
+  BankOutlined, FileTextOutlined, CreditCardOutlined, PlusOutlined,
+  DeleteOutlined, CheckOutlined, ArrowLeftOutlined, ArrowRightOutlined,
+  UploadOutlined, IdcardOutlined, SafetyOutlined, TeamOutlined
+} from "@ant-design/icons";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
+import moment from "moment";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
-const STEPS = ["Personal Info", "Address & Emergency", "Identity Documents", "Bank Details"];
+const { Title, Text } = Typography;
+const { Step } = Steps;
+const { Option } = Select;
 
-// 🔹 Country Data
-const countryData = [
-  { name: "UAE", code: "+971", iso: "ae" },
-  { name: "India", code: "+91", iso: "in" },
-  { name: "USA / Canada", code: "+1", iso: "us" },
-  { name: "UK", code: "+44", iso: "gb" },
-  { name: "Saudi Arabia", code: "+966", iso: "sa" },
-  { name: "Qatar", code: "+974", iso: "qa" },
-  { name: "Bahrain", code: "+973", iso: "bh" },
-  { name: "Kuwait", code: "+965", iso: "kw" },
-  { name: "Oman", code: "+968", iso: "om" },
-  { name: "Pakistan", code: "+92", iso: "pk" },
-  { name: "Egypt", code: "+20", iso: "eg" }
+/* -------------------------------------------------------------------------- */
+/*  CONSTANTS                                                                 */
+/* -------------------------------------------------------------------------- */
+const COUNTRIES = [
+  "United Arab Emirates","Afghanistan","Albania","Algeria","Argentina","Australia",
+  "Austria","Bahrain","Bangladesh","Belgium","Brazil","Canada","China","Denmark",
+  "Egypt","Ethiopia","Finland","France","Germany","Ghana","Greece","India",
+  "Indonesia","Iran","Iraq","Ireland","Italy","Japan","Jordan","Kenya","Kuwait",
+  "Lebanon","Libya","Malaysia","Maldives","Morocco","Myanmar","Nepal","Netherlands",
+  "New Zealand","Nigeria","Norway","Oman","Pakistan","Palestine","Philippines",
+  "Poland","Portugal","Qatar","Romania","Russia","Saudi Arabia","Singapore",
+  "Somalia","South Africa","South Korea","Spain","Sri Lanka","Sudan","Sweden",
+  "Switzerland","Syria","Tanzania","Thailand","Tunisia","Turkey","Uganda",
+  "Ukraine","United Kingdom","United States","Vietnam","Yemen","Zimbabwe","Other",
 ];
 
-const initialForm = {
-  first_name: "", last_name: "", email: "", phone_number: "",
-  country_code: "+971", password: "", confirmPassword: "", maritalStatus: "", numberOfDependents: 0,
-  nationality: "", dateOfBirth: "", gender: "",
-  languagePreference: "English", communicationPreference: "WhatsApp",
-  dependents: [],
-  address: { building: "", apartment: "", area: "", city: "", poBox: "", country: "" },
-  emergencyContact: { name: "", relationship: "", phone: "" },
-  emiratesId: { number: "", issuanceDate: "", expiryDate: "", frontImageUrl: "", backImageUrl: "" },
-  passport: { number: "", countryOfIssue: "", issueDate: "", expiryDate: "", imageUrl: "" },
-  visa: { number: "", residencyStatus: "", sponsor: "", expiryDate: "", imageUrl: "" },
-  bankDetails: { beneficiaryName: "", bankName: "", accountNumber: "", iban: "", swiftCode: "", accountType: "" },
+const NATIONALITIES = [
+  "Emirati","Afghan","Albanian","Algerian","American","Argentinian","Australian",
+  "Austrian","Bahraini","Bangladeshi","Belgian","Brazilian","British","Canadian",
+  "Chinese","Danish","Egyptian","Ethiopian","Filipino","Finnish","French","German",
+  "Ghanaian","Greek","Indian","Indonesian","Iranian","Iraqi","Irish","Italian",
+  "Japanese","Jordanian","Kenyan","Kuwaiti","Lebanese","Libyan","Malaysian",
+  "Maldivian","Moroccan","Nepali","Nigerian","Norwegian","Omani","Pakistani",
+  "Palestinian","Polish","Portuguese","Qatari","Romanian","Russian","Saudi",
+  "Singaporean","Somali","South African","South Korean","Spanish","Sri Lankan",
+  "Sudanese","Swedish","Swiss","Syrian","Thai","Tunisian","Turkish","Ukrainian",
+  "Vietnamese","Yemeni","Zimbabwean","Other",
+];
+
+const BANKS = [
+  "Emirates NBD","Abu Dhabi Commercial Bank (ADCB)","First Abu Dhabi Bank (FAB)",
+  "Dubai Islamic Bank (DIB)","Mashreq Bank","RAKBANK","Union National Bank (UNB)",
+  "Commercial Bank of Dubai (CBD)","Abu Dhabi Islamic Bank (ADIB)",
+  "Sharjah Islamic Bank","Ajman Bank","Bank of Sharjah","Emirates Islamic Bank",
+  "HSBC UAE","Standard Chartered UAE","Citibank UAE","Lloyds Bank","Barclays",
+  "ICICI Bank","HDFC Bank","State Bank of India","Axis Bank","National Bank of Fujairah","Other"
+];
+
+/* -------------------------------------------------------------------------- */
+/*  CUSTOM PHONE INPUT WRAPPER (safe string conversion)                       */
+/* -------------------------------------------------------------------------- */
+const AntPhoneInput = ({ value, onChange, ...props }) => {
+  return (
+    <PhoneInput
+      {...props}
+      value={value || ""}
+      onChange={(value) => {
+        onChange(value); // direct value (string)
+      }}
+      inputStyle={{ width: "100%" }}
+    />
+  );
 };
 
-/* ── Reusable Field Wrapper ── */
-const Field = ({ label, icon: Icon, error, children, className = "" }) => (
-  <div className={`flex flex-col gap-1.5 ${className}`}>
-    <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-      {Icon && <Icon size={12} className="text-purple-700 flex-shrink-0" />}
-      {label}
-    </label>
-    {children}
-    {error && (
-      <p className="flex items-center gap-1 text-xs text-red-500">
-        <AlertCircle size={11} />{error}
-      </p>
-    )}
-  </div>
-);
+/* -------------------------------------------------------------------------- */
+/*  IMAGE UPLOAD FIELD (Base64 – no backend upload)                          */
+/* -------------------------------------------------------------------------- */
+const ImageUploadField = ({ value, onChange, label, required }) => {
+  const handleFile = (file) => {
+    if (!file || !file.type.startsWith('image/')) {
+      message.error('Please upload an image file (JPG, PNG, WEBP)');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      onChange(e.target.result); // store Base64 data URL
+      message.success('Image uploaded successfully');
+    };
+    reader.readAsDataURL(file);
+  };
 
-/* ── Reusable Input ── */
-const Input = ({ error, className = "", ...props }) => (
-  <input
-    className={`w-full px-3 py-2.5 text-sm border rounded-lg outline-none bg-white text-gray-800
-      placeholder-gray-400 transition-all
-      ${error ? "border-red-400 focus:ring-2 focus:ring-red-100" : "border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100"}
-      ${className}`}
-    {...props}
-  />
-);
-
-/* ── Reusable Select ── */
-const Select = ({ error, children, className = "", ...props }) => (
-  <select
-    className={`w-full px-3 py-2.5 text-sm border rounded-lg outline-none bg-white text-gray-800
-      cursor-pointer appearance-none transition-all
-      ${error ? "border-red-400 focus:ring-2 focus:ring-red-100" : "border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100"}
-      ${className}`}
-    {...props}
-  >
-    {children}
-  </select>
-);
-
-/* ── Section Title ── */
-const SectionTitle = ({ icon: Icon, title }) => (
-  <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-gray-100">
-    <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-      <Icon size={15} className="text-purple-700" />
+  return (
+    <div>
+      {value ? (
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <img 
+            src={value} 
+            alt="preview" 
+            style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb' }} 
+          />
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            style={{ position: 'absolute', top: -8, right: -8 }}
+            onClick={() => onChange('')}
+          />
+        </div>
+      ) : (
+        <Upload.Dragger
+          beforeUpload={(file) => {
+            handleFile(file);
+            return false; // prevent actual HTTP upload
+          }}
+          showUploadList={false}
+          accept="image/jpeg,image/png,image/webp"
+        >
+          <p className="ant-upload-drag-icon"><UploadOutlined /></p>
+          <p>Click or drag to upload</p>
+          <p style={{ fontSize: 12, color: '#9ca3af' }}>JPG, PNG, WEBP up to 10MB</p>
+        </Upload.Dragger>
+      )}
     </div>
-    <span className="text-base font-bold text-gray-800">{title}</span>
-  </div>
-);
+  );
+};
 
+/* -------------------------------------------------------------------------- */
+/*  MAIN COMPONENT                                                            */
+/* -------------------------------------------------------------------------- */
 export default function VaultAgentOnboard() {
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState(initialForm);
-  const [errors, setErrors] = useState({});
+  const [form] = Form.useForm();
+  const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [dependents, setDependents] = useState([]);
   const navigate = useNavigate();
 
-  const selectedCountry = countryData.find(c => c.code === form.country_code) || countryData[0];
+  const steps = [
+    { title: "Personal Info", icon: <UserOutlined /> },
+    { title: "Address & Emergency", icon: <HomeOutlined /> },
+    { title: "Identity Documents", icon: <IdcardOutlined /> },
+    { title: "Bank Details", icon: <BankOutlined /> },
+  ];
 
-  const set = (field, value) => {
-    setForm(p => ({ ...p, [field]: value }));
-    if (errors[field]) setErrors(p => ({ ...p, [field]: null }));
+  const addDependent = () => {
+    setDependents([...dependents, { name: "", age: "", relationship: "", location: "" }]);
+  };
+  const removeDependent = (index) => {
+    const newList = [...dependents];
+    newList.splice(index, 1);
+    setDependents(newList);
   };
 
-  const setNested = (parent, field, value) => {
-    setForm(p => ({ ...p, [parent]: { ...p[parent], [field]: value } }));
-    if (errors[`${parent}.${field}`]) setErrors(p => ({ ...p, [`${parent}.${field}`]: null }));
+  // Step validation
+  const validateStep = async () => {
+    try {
+      let fieldsToValidate = [];
+      if (currentStep === 0) {
+        fieldsToValidate = [
+          "first_name", "last_name", "email", "phone_number", "password", "confirmPassword",
+          "gender", "dateOfBirth", "nationality", "maritalStatus"
+        ];
+      } else if (currentStep === 1) {
+       fieldsToValidate = [
+  ["address", "building"],
+  ["address", "city"],
+  ["address", "country"],
+  ["emergencyContact", "name"],
+  ["emergencyContact", "relationship"],
+  ["emergencyContact", "phone"],
+];
+      } else if (currentStep === 2) {
+        fieldsToValidate = [
+          "emiratesId.number", "emiratesId.issuanceDate", "emiratesId.expiryDate",
+          "emiratesId.frontImageUrl", "emiratesId.backImageUrl",
+          "passport.number", "passport.countryOfIssue", "passport.issueDate", "passport.expiryDate"
+        ];
+      } else if (currentStep === 3) {
+        fieldsToValidate = [
+          "bankDetails.beneficiaryName", "bankDetails.bankName", "bankDetails.accountNumber",
+          "bankDetails.iban", "bankDetails.accountType"
+        ];
+      }
+      await form.validateFields(fieldsToValidate);
+      return true;
+    } catch (error) {
+      message.error("Please fill all required fields correctly.");
+      return false;
+    }
   };
 
-  const addDependent = () =>
-    setForm(p => ({ ...p, dependents: [...p.dependents, { name: "", age: "", relationship: "", location: "" }] }));
-
-  const removeDependent = (i) =>
-    setForm(p => ({ ...p, dependents: p.dependents.filter((_, idx) => idx !== i) }));
-
-  const setDependent = (i, field, value) =>
-    setForm(p => {
-      const deps = [...p.dependents];
-      deps[i] = { ...deps[i], [field]: value };
-      return { ...p, dependents: deps };
-    });
-
-  const validate = () => {
-    setErrors({});
-    return true;
+  const handleNext = async () => {
+    if (await validateStep()) {
+      setCurrentStep(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
-  const handleNext = () => { if (validate()) setStep(s => s + 1); };
-  const handleBack = () => { setStep(s => Math.max(0, s - 1)); setErrors({}); };
+  const handleBack = () => {
+    setCurrentStep(prev => prev - 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+    if (!await validateStep()) return;
     setLoading(true);
     try {
+      const values = form.getFieldsValue(true);
       const payload = {
-        ...form,
-        numberOfDependents: Number(form.numberOfDependents),
-        dependents: form.dependents.map(d => ({ ...d, age: Number(d.age) })),
+        first_name: values.first_name,
+        last_name: values.last_name,
+        email: values.email,
+        phone_number: values.phone_number,
+        password: values.password,
+        maritalStatus: values.maritalStatus,
+        numberOfDependents: dependents.length,
+        nationality: values.nationality,
+        dateOfBirth: values.dateOfBirth ? values.dateOfBirth.toISOString() : null,
+        gender: values.gender,
+        languagePreference: values.languagePreference,
+        communicationPreference: values.communicationPreference,
+        dependents: dependents.map(d => ({ ...d, age: Number(d.age) })),
+        address: {
+          building: values.address?.building,
+          apartment: values.address?.apartment,
+          area: values.address?.area,
+          city: values.address?.city,
+          poBox: values.address?.poBox,
+          country: values.address?.country,
+        },
+        emergencyContact: {
+          name: values.emergencyContact?.name,
+          relationship: values.emergencyContact?.relationship,
+          phone: values.emergencyContact?.phone,
+        },
+        emiratesId: {
+          number: values.emiratesId?.number,
+          issuanceDate: values.emiratesId?.issuanceDate ? values.emiratesId.issuanceDate.toISOString() : null,
+          expiryDate: values.emiratesId?.expiryDate ? values.emiratesId.expiryDate.toISOString() : null,
+          frontImageUrl: values.emiratesId?.frontImageUrl,
+          backImageUrl: values.emiratesId?.backImageUrl,
+        },
+        passport: {
+          number: values.passport?.number,
+          countryOfIssue: values.passport?.countryOfIssue,
+          issueDate: values.passport?.issueDate ? values.passport.issueDate.toISOString() : null,
+          expiryDate: values.passport?.expiryDate ? values.passport.expiryDate.toISOString() : null,
+          imageUrl: values.passport?.imageUrl,
+        },
+        visa: {
+          number: values.visa?.number,
+          residencyStatus: values.visa?.residencyStatus,
+          sponsor: values.visa?.sponsor,
+          expiryDate: values.visa?.expiryDate ? values.visa.expiryDate.toISOString() : null,
+          imageUrl: values.visa?.imageUrl,
+        },
+        bankDetails: {
+          beneficiaryName: values.bankDetails?.beneficiaryName,
+          bankName: values.bankDetails?.bankName,
+          accountNumber: values.bankDetails?.accountNumber,
+          iban: values.bankDetails?.iban,
+          swiftCode: values.bankDetails?.swiftCode,
+          accountType: values.bankDetails?.accountType,
+        },
         agentType: "PartnerAffiliatedAgent",
         commissionEligible: true,
         commissionPercentage: 45,
@@ -148,396 +273,461 @@ export default function VaultAgentOnboard() {
         isEmailVerified: true,
         isActive: true,
         affiliationStatus: "verified",
-        affiliationVerifiedAt: new Date().toISOString()
+        affiliationVerifiedAt: new Date().toISOString(),
       };
-
       await apiService.post("/vault/agent/partner/onboard-affiliate", payload);
       setSuccess(true);
     } catch (err) {
-      setErrors({ submit: err?.message || "Failed to onboard agent. Please try again." });
+      message.error(err?.response?.data?.message || "Failed to onboard agent. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  /* ── Success Screen ── */
+  // Success screen
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl p-10 max-w-sm w-full text-center shadow-sm border border-gray-100">
-          <div className="w-14 h-14 rounded-full bg-purple-700 flex items-center justify-center mx-auto mb-5">
-            <Check size={26} className="text-white" strokeWidth={2.5} />
+      <div style={{ minHeight: "100vh", background: "#F5F7FA", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <Card style={{ maxWidth: 500, width: "100%", textAlign: "center", borderRadius: 20 }}>
+          <div style={{ width: 70, height: 70, background: "#5C039B", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+            <CheckOutlined style={{ fontSize: 32, color: "#fff" }} />
           </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Agent Onboarded!</h2>
-          <p className="text-sm text-gray-500 mb-7">The affiliated agent has been successfully registered.</p>
-          <div className="flex gap-3">
-            <button onClick={() => { setForm(initialForm); setStep(0); setSuccess(false); }} className="flex-1 py-2.5 text-sm font-semibold border-2 border-purple-700 text-purple-700 rounded-lg hover:bg-purple-50 transition">
-              Onboard Another
-            </button>
-            <button onClick={() => navigate("/dashboard/vault-admin/agent-list")} className="flex-1 py-2.5 text-sm font-semibold bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition">
-              View Agents
-            </button>
-          </div>
-        </div>
+          <Title level={3}>Agent Onboarded!</Title>
+          <Text type="secondary">The affiliated agent has been successfully registered.</Text>
+          <Divider />
+          <Space direction="vertical" style={{ width: "100%" }}>
+            <Button block onClick={() => { setSuccess(false); setCurrentStep(0); form.resetFields(); setDependents([]); }}>Onboard Another</Button>
+            <Button type="primary" block onClick={() => navigate("/dashboard/vault-admin/agent-list")} style={{ background: "#5C039B" }}>View Agents</Button>
+          </Space>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 md:p-10">
-      <div className="max-w-5xl mx-auto">
+    <div style={{ background: "#F5F7FA", minHeight: "100vh", padding: 24 }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <Card style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+          <Title level={2} style={{ marginBottom: 4 }}>Onboard Affiliated Agent</Title>
+          <Text type="secondary" style={{ display: "block", marginBottom: 24 }}>Register a new agent under your partnership network.</Text>
 
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-xl font-bold text-gray-900">Onboard Affiliated Agent</h1>
-          <p className="text-sm text-gray-500 mt-1">Register a new agent under your partnership network.</p>
-        </div>
-
-        {/* Step Progress Bar */}
-        <div className="bg-white rounded-xl border border-gray-200 px-6 py-5 mb-5">
-          <div className="flex items-center w-full">
-            {STEPS.map((s, i) => (
-              <div key={i} className="flex items-center flex-1 last:flex-none">
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all
-                    ${i < step ? "bg-purple-700 text-white" : i === step ? "bg-purple-700 text-white" : "bg-gray-100 text-gray-400"}`}>
-                    {i < step ? <Check size={14} /> : i + 1}
-                  </div>
-                  <div className="flex flex-col hidden sm:flex">
-                    <span className={`text-xs text-gray-400 font-medium`}>Step {i + 1}</span>
-                    <span className={`text-sm font-semibold whitespace-nowrap transition-colors
-                      ${i === step ? "text-purple-700" : i < step ? "text-gray-700" : "text-gray-400"}`}>
-                      {s}
-                    </span>
-                  </div>
-                </div>
-                {i < STEPS.length - 1 && <div className={`flex-1 h-0.5 mx-4 rounded-full transition-colors ${i < step ? "bg-purple-700" : "bg-gray-200"}`} />}
-              </div>
+          {/* Steps */}
+          <Steps current={currentStep} style={{ marginBottom: 32 }}>
+            {steps.map((step, idx) => (
+              <Step key={idx} title={step.title} icon={step.icon} />
             ))}
-          </div>
-        </div>
+          </Steps>
 
-        {/* Error Banner */}
-        {errors.submit && (
-          <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl mb-4 text-sm text-red-700">
-            <AlertCircle size={15} className="flex-shrink-0" />{errors.submit}
-          </div>
-        )}
+          <Form
+            form={form}
+            layout="vertical"
+            initialValues={{
+              languagePreference: "English",
+              communicationPreference: "WhatsApp",
+              phone_number: "",
+              emergencyContact: { phone: "" }
+            }}
+          >
+            {/* -------------------- STEP 0: Personal Info -------------------- */}
+            {currentStep === 0 && (
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={12}>
+                  <Form.Item name="first_name" label="First Name" rules={[{ required: true, message: "First name required" }]}>
+                    <Input placeholder="e.g. Fatima" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name="last_name" label="Last Name" rules={[{ required: true, message: "Last name required" }]}>
+                    <Input placeholder="e.g. Hassan" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name="email" label="Email Address" rules={[{ required: true, type: "email" }]}>
+                    <Input placeholder="agent@example.com" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+            <Form.Item
+  name="phone_number"
+  label="Phone Number"
+  valuePropName="value"
+  getValueFromEvent={(value) => value}
+  rules={[{ required: true, message: "Phone number required" }]}
+>
+  <AntPhoneInput country="ae" enableSearch />
+</Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name="password" label="Password" rules={[{ required: true, min: 6, message: "Minimum 6 characters" }]}>
+                    <Input.Password placeholder="••••••" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item
+                    name="confirmPassword"
+                    label="Confirm Password"
+                    dependencies={["password"]}
+                    rules={[
+                      { required: true, message: "Please confirm password" },
+                      ({ getFieldValue }) => ({
+                        validator(_, value) {
+                          if (!value || getFieldValue("password") === value) return Promise.resolve();
+                          return Promise.reject("Passwords do not match");
+                        },
+                      }),
+                    ]}
+                  >
+                    <Input.Password placeholder="••••••" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name="gender" label="Gender" rules={[{ required: true, message: "Select gender" }]}>
+                    <Select placeholder="Select gender">
+                      <Option value="Male">Male</Option>
+                      <Option value="Female">Female</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name="dateOfBirth" label="Date of Birth" rules={[{ required: true, message: "Date of birth required" }]}>
+                    <DatePicker style={{ width: "100%" }} format="DD-MMM-YYYY" disabledDate={(current) => current && current > moment().endOf("day")} />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name="nationality" label="Nationality" rules={[{ required: true, message: "Nationality required" }]}>
+                    <Select showSearch filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
+                      {NATIONALITIES.map(n => <Option key={n} value={n}>{n}</Option>)}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name="maritalStatus" label="Marital Status" rules={[{ required: true, message: "Marital status required" }]}>
+                    <Select>
+                      <Option value="Single">Single</Option>
+                      <Option value="Married">Married</Option>
+                      <Option value="Divorced">Divorced</Option>
+                      <Option value="Widowed">Widowed</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name="languagePreference" label="Language Preference">
+                    <Select>
+                      <Option value="English">English</Option>
+                      <Option value="Arabic">Arabic</Option>
+                      <Option value="Hindi">Hindi</Option>
+                      <Option value="Urdu">Urdu</Option>
+                      <Option value="Tagalog">Tagalog</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name="communicationPreference" label="Communication Preference">
+                    <Select>
+                      <Option value="WhatsApp">WhatsApp</Option>
+                      <Option value="Email">Email</Option>
+                      <Option value="Phone Call">Phone Call</Option>
+                      <Option value="SMS">SMS</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Divider orientation="left">Dependents</Divider>
+                  {dependents.map((dep, idx) => (
+                    <Card key={idx} style={{ marginBottom: 12, background: "#FAFAFA" }} size="small">
+                      <Row gutter={16}>
+                        <Col xs={12} md={6}>
+                          <Input placeholder="Full Name" value={dep.name} onChange={(e) => {
+                            const newDeps = [...dependents];
+                            newDeps[idx].name = e.target.value;
+                            setDependents(newDeps);
+                          }} />
+                        </Col>
+                        <Col xs={12} md={6}>
+                          <Input placeholder="Age" type="number" value={dep.age} onChange={(e) => {
+                            const newDeps = [...dependents];
+                            newDeps[idx].age = e.target.value;
+                            setDependents(newDeps);
+                          }} />
+                        </Col>
+                        <Col xs={12} md={6}>
+                          <Select placeholder="Relationship" value={dep.relationship} onChange={(val) => {
+                            const newDeps = [...dependents];
+                            newDeps[idx].relationship = val;
+                            setDependents(newDeps);
+                          }} style={{ width: "100%" }}>
+                            <Option value="Spouse">Spouse</Option>
+                            <Option value="Son">Son</Option>
+                            <Option value="Daughter">Daughter</Option>
+                            <Option value="Parent">Parent</Option>
+                            <Option value="Sibling">Sibling</Option>
+                            <Option value="Other">Other</Option>
+                          </Select>
+                        </Col>
+                        <Col xs={12} md={6}>
+                          <Select placeholder="Location" value={dep.location} onChange={(val) => {
+                            const newDeps = [...dependents];
+                            newDeps[idx].location = val;
+                            setDependents(newDeps);
+                          }} style={{ width: "100%" }}>
+                            <Option value="In UAE">In UAE</Option>
+                            <Option value="Outside UAE">Outside UAE</Option>
+                          </Select>
+                        </Col>
+                      </Row>
+                      <Button type="text" danger icon={<DeleteOutlined />} onClick={() => removeDependent(idx)} style={{ marginTop: 8 }}>Remove</Button>
+                    </Card>
+                  ))}
+                  <Button type="dashed" onClick={addDependent} icon={<PlusOutlined />} block>Add Dependent</Button>
+                </Col>
+              </Row>
+            )}
 
-        {/* Form Card */}
-        <div className="bg-white rounded-xl border border-gray-200 p-8">
+            {/* -------------------- STEP 1: Address & Emergency -------------------- */}
+            {currentStep === 1 && (
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["address", "building"]} label="Building / Tower Name" rules={[{ required: true, message: "Required" }]}>
+                    <Input placeholder="e.g. Al Shafa Towers" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["address", "apartment"]} label="Apartment / Unit No.">
+                    <Input placeholder="e.g. Apartment 805" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["address", "area"]} label="Area / District">
+                    <Input placeholder="e.g. Al Nahda" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["address", "city"]} label="City" rules={[{ required: true, message: "Required" }]}>
+                    <Input placeholder="e.g. Dubai" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["address", "poBox"]} label="PO Box">
+                    <Input placeholder="e.g. 12345" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["address", "country"]} label="Country" rules={[{ required: true, message: "Required" }]}>
+                    <Select showSearch filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
+                      {COUNTRIES.map(c => <Option key={c} value={c}>{c}</Option>)}
+                    </Select>
+                  </Form.Item>
+                </Col>
 
-          {/* ── STEP 0: Personal Info ── */}
-          {step === 0 && (
-            <div>
-              <SectionTitle icon={User} title="Personal Information" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <Field label="First Name" icon={User}>
-                  <Input placeholder="Fatima" value={form.first_name} onChange={e => set("first_name", e.target.value)} />
-                </Field>
-                <Field label="Last Name" icon={User}>
-                  <Input placeholder="Hassan" value={form.last_name} onChange={e => set("last_name", e.target.value)} />
-                </Field>
-                <Field label="Email" icon={Mail}>
-                  <Input type="email" placeholder="agent@example.com" value={form.email} onChange={e => set("email", e.target.value)} />
-                </Field>
-                
-                <Field label="Phone Number" icon={Phone}>
-                  <div className="flex gap-2">
-                    {/* Dropdown Container */}
-                    <div 
-                      className="relative flex-shrink-0" 
-                      tabIndex={0} 
-                      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setIsDropdownOpen(false); }}
-                    >
-                      <div
-                        className={`flex items-center gap-2 px-3 py-2.5 text-sm border rounded-lg bg-white cursor-pointer transition-colors w-[100px] sm:w-[110px]
-                          ${isDropdownOpen ? "border-purple-500 ring-2 ring-purple-100" : "border-gray-200 hover:border-purple-300"}`}
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      >
-                        <img src={`https://flagcdn.com/w20/${selectedCountry.iso}.png`} alt={selectedCountry.name} className="w-5 h-3.5 object-cover rounded-sm shadow-sm" />
-                        <span className="font-medium text-gray-700 flex-1">{form.country_code}</span>
-                        <ChevronDown size={14} className={`text-gray-400 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
-                      </div>
-                      
-                      {isDropdownOpen && (
-                        <div className="absolute top-full left-0 mt-1.5 w-60 bg-white border border-gray-100 shadow-xl rounded-xl z-50 max-h-64 overflow-y-auto py-1">
-                          {countryData.map(c => (
-                            <button
-                              key={c.code}
-                              type="button"
-                              className={`flex items-center justify-between w-full px-4 py-2.5 text-sm text-left transition-colors
-                                ${form.country_code === c.code ? "bg-purple-50" : "hover:bg-gray-50"}`}
-                              onClick={() => {
-                                set("country_code", c.code);
-                                setIsDropdownOpen(false);
-                              }}
-                            >
-                              <div className="flex items-center gap-3">
-                                <img src={`https://flagcdn.com/w20/${c.iso}.png`} alt={c.name} className="w-5 h-3.5 object-cover rounded-sm shadow-sm" />
-                                <span className={`font-medium ${form.country_code === c.code ? "text-purple-700" : "text-gray-700"}`}>
-                                  {c.name}
-                                </span>
-                              </div>
-                              <span className="text-gray-400 text-xs font-medium">{c.code}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <Input 
-                      type="tel" 
-                      placeholder={selectedCountry.code === "+971" ? "501234567" : "Enter number"} 
-                      value={form.phone_number} 
-                      onChange={e => {
-                        const val = e.target.value.replace(/\D/g, ''); 
-                        set("phone_number", val);
-                      }} 
+                <Divider orientation="left">Emergency Contact</Divider>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["emergencyContact", "name"]} label="Full Name" rules={[{ required: true, message: "Required" }]}>
+                    <Input placeholder="e.g. Ahmed Hassan" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["emergencyContact", "relationship"]} label="Relationship" rules={[{ required: true, message: "Required" }]}>
+                    <Select>
+                      <Option value="Spouse">Spouse</Option>
+                      <Option value="Parent">Parent</Option>
+                      <Option value="Sibling">Sibling</Option>
+                      <Option value="Child">Child</Option>
+                      <Option value="Friend">Friend</Option>
+                      <Option value="Colleague">Colleague</Option>
+                      <Option value="Other">Other</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                   <Form.Item
+  name={["emergencyContact", "phone"]}
+  label="Phone Number"
+  valuePropName="value"
+  getValueFromEvent={(value) => value}
+  rules={[{ required: true, message: "Required" }]}
+>
+  <AntPhoneInput country="ae" enableSearch />
+</Form.Item>
+                </Col>
+              </Row>
+            )}
+
+            {/* -------------------- STEP 2: Identity Documents -------------------- */}
+            {currentStep === 2 && (
+              <Row gutter={[16, 16]}>
+                <Divider orientation="left">Emirates ID</Divider>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["emiratesId", "number"]} label="Emirates ID Number" rules={[{ required: true, message: "Required" }]}>
+                    <Input placeholder="784-1995-8765432-1" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["emiratesId", "issuanceDate"]} label="Issuance Date" rules={[{ required: true, message: "Required" }]}>
+                    <DatePicker style={{ width: "100%" }} format="DD-MMM-YYYY" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["emiratesId", "expiryDate"]} label="Expiry Date" rules={[{ required: true, message: "Required" }]}>
+                    <DatePicker style={{ width: "100%" }} format="DD-MMM-YYYY" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["emiratesId", "frontImageUrl"]} label="Front Side Image" rules={[{ required: true, message: "Required" }]}>
+                    <ImageUploadField
+                      value={form.getFieldValue(["emiratesId", "frontImageUrl"])}
+                      onChange={(val) => form.setFieldValue(["emiratesId", "frontImageUrl"], val)}
                     />
-                  </div>
-                </Field>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["emiratesId", "backImageUrl"]} label="Back Side Image" rules={[{ required: true, message: "Required" }]}>
+                    <ImageUploadField
+                      value={form.getFieldValue(["emiratesId", "backImageUrl"])}
+                      onChange={(val) => form.setFieldValue(["emiratesId", "backImageUrl"], val)}
+                    />
+                  </Form.Item>
+                </Col>
 
-                <Field label="Password" icon={Lock}>
-                  <Input type="password" placeholder="Min 6 characters" value={form.password} onChange={e => set("password", e.target.value)} />
-                </Field>
-                <Field label="Confirm Password" icon={Lock}>
-                  <Input type="password" placeholder="Re-enter password" value={form.confirmPassword} onChange={e => set("confirmPassword", e.target.value)} />
-                </Field>
-                <Field label="Gender" icon={User}>
-                  <Select value={form.gender} onChange={e => set("gender", e.target.value)}>
-                    <option value="">Select gender</option>
-                    <option>Male</option><option>Female</option>
-                  </Select>
-                </Field>
-                <Field label="Date of Birth" icon={Calendar}>
-                  <Input type="date" value={form.dateOfBirth} max={new Date().toISOString().split("T")[0]} onChange={e => set("dateOfBirth", e.target.value)} />
-                </Field>
-                <Field label="Nationality" icon={Globe}>
-                  <Input placeholder="UAE" value={form.nationality} onChange={e => set("nationality", e.target.value)} />
-                </Field>
-                <Field label="Marital Status" icon={Heart}>
-                  <Select value={form.maritalStatus} onChange={e => set("maritalStatus", e.target.value)}>
-                    <option value="">Select status</option>
-                    <option>Single</option><option>Married</option><option>Divorced</option><option>Widowed</option>
-                  </Select>
-                </Field>
-                <Field label="Language Preference" icon={MessageSquare}>
-                  <Input placeholder="English" value={form.languagePreference} onChange={e => set("languagePreference", e.target.value)} />
-                </Field>
-                <Field label="Comm. Preference" icon={Phone}>
-                  <Select value={form.communicationPreference} onChange={e => set("communicationPreference", e.target.value)}>
-                    <option>WhatsApp</option><option>Email</option><option>Phone Call</option>
-                  </Select>
-                </Field>
-                <Field label="Number of Dependents" icon={Users}>
-                  <Input type="number" min={0} value={form.numberOfDependents} onChange={e => set("numberOfDependents", e.target.value)} />
-                </Field>
-              </div>
+                <Divider orientation="left">Passport</Divider>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["passport", "number"]} label="Passport Number" rules={[{ required: true, message: "Required" }]}>
+                    <Input placeholder="P98765432" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["passport", "countryOfIssue"]} label="Country of Issue" rules={[{ required: true, message: "Required" }]}>
+                    <Select showSearch filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
+                      {COUNTRIES.map(c => <Option key={c} value={c}>{c}</Option>)}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["passport", "issueDate"]} label="Issue Date" rules={[{ required: true, message: "Required" }]}>
+                    <DatePicker style={{ width: "100%" }} format="DD-MMM-YYYY" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["passport", "expiryDate"]} label="Expiry Date" rules={[{ required: true, message: "Required" }]}>
+                    <DatePicker style={{ width: "100%" }} format="DD-MMM-YYYY" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Form.Item name={["passport", "imageUrl"]} label="Passport Photo Page">
+                    <ImageUploadField
+                      value={form.getFieldValue(["passport", "imageUrl"])}
+                      onChange={(val) => form.setFieldValue(["passport", "imageUrl"], val)}
+                    />
+                  </Form.Item>
+                </Col>
 
-              {/* 🔹 UPDATED: Dependents (Now using Dropdowns to prevent Enum errors) */}
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <Users size={14} className="text-purple-700" /> Dependents
-                  </span>
-                  <button onClick={addDependent} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition">
-                    <Plus size={12} /> Add Dependent
-                  </button>
-                </div>
-                {form.dependents.length === 0 && <p className="text-xs text-gray-400 text-center py-4 border border-dashed border-gray-200 rounded-lg">No dependents added yet</p>}
-                {form.dependents.map((dep, i) => (
-                  <div key={i} className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-3">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-xs font-semibold text-gray-600">Dependent {i + 1}</span>
-                      <button onClick={() => removeDependent(i)} className="text-red-400 hover:text-red-600 transition"><Trash2 size={14} /></button>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      <Input placeholder="Name" value={dep.name} onChange={e => setDependent(i, "name", e.target.value)} />
-                      <Input placeholder="Age" type="number" value={dep.age} onChange={e => setDependent(i, "age", e.target.value)} />
-                      
-                      {/* 🔹 Replaced Free Text with Dropdown for Relationship */}
-                      <Select value={dep.relationship} onChange={e => setDependent(i, "relationship", e.target.value)}>
-                        <option value="">Select Relationship</option>
-                        <option value="Spouse">Spouse</option>
-                        <option value="Son">Son</option>
-                        <option value="Daughter">Daughter</option>
-                        <option value="Parent">Parent</option>
-                      </Select>
+                <Divider orientation="left">UAE Visa (Optional)</Divider>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["visa", "number"]} label="Visa / File Number">
+                    <Input placeholder="202/2023/1234567" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["visa", "residencyStatus"]} label="Residency Status">
+                    <Select>
+                      <Option value="">Select status</Option>
+                      <Option value="Resident">Resident</Option>
+                      <Option value="Employment Visa">Employment Visa</Option>
+                      <Option value="Investor Visa">Investor Visa</Option>
+                      <Option value="Dependent Visa">Dependent Visa</Option>
+                      <Option value="Visit Visa">Visit Visa</Option>
+                      <Option value="GCC National">GCC National</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["visa", "sponsor"]} label="Sponsor / Employer Name">
+                    <Input placeholder="e.g. Elite Financial Services LLC" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["visa", "expiryDate"]} label="Visa Expiry Date">
+                    <DatePicker style={{ width: "100%" }} format="DD-MMM-YYYY" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Form.Item name={["visa", "imageUrl"]} label="Visa / Residency Page Image">
+                    <ImageUploadField
+                      value={form.getFieldValue(["visa", "imageUrl"])}
+                      onChange={(val) => form.setFieldValue(["visa", "imageUrl"], val)}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+            )}
 
-                      {/* 🔹 Replaced Free Text with Dropdown for Location */}
-                      <Select value={dep.location} onChange={e => setDependent(i, "location", e.target.value)}>
-                        <option value="">Select Location</option>
-                        <option value="In UAE">In UAE</option>
-                        <option value="Outside UAE">Outside UAE</option>
-                      </Select>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            {/* -------------------- STEP 3: Bank Details -------------------- */}
+            {currentStep === 3 && (
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["bankDetails", "beneficiaryName"]} label="Beneficiary Full Name" rules={[{ required: true, message: "Required" }]}>
+                    <Input placeholder="e.g. Fatima Hassan" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["bankDetails", "bankName"]} label="Bank Name" rules={[{ required: true, message: "Required" }]}>
+                    <Select showSearch>
+                      {BANKS.map(b => <Option key={b} value={b}>{b}</Option>)}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["bankDetails", "accountNumber"]} label="Account Number" rules={[{ required: true, message: "Required" }]}>
+                    <Input placeholder="12345678901234" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["bankDetails", "iban"]} label="IBAN" rules={[{ required: true, message: "Required" }]}>
+                    <Input placeholder="AE380440123456789012345" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["bankDetails", "swiftCode"]} label="SWIFT / BIC Code">
+                    <Input placeholder="EBILAEAD" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name={["bankDetails", "accountType"]} label="Account Type" rules={[{ required: true, message: "Required" }]}>
+                    <Select>
+                      <Option value="Savings">Savings Account</Option>
+                      <Option value="Current">Current Account</Option>
+                      <Option value="Fixed Deposit">Fixed Deposit</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Alert
+                    message="Confirmation"
+                    description="By submitting, you confirm that all information provided is accurate. The agent will be onboarded as a Partner Affiliated Agent with a 45% commission structure."
+                    type="info"
+                    showIcon
+                    icon={<SafetyOutlined />}
+                  />
+                </Col>
+              </Row>
+            )}
+
+            {/* Navigation Buttons */}
+            <Divider />
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              {currentStep > 0 && (
+                <Button onClick={handleBack} icon={<ArrowLeftOutlined />}>Back</Button>
+              )}
+              {currentStep < steps.length - 1 ? (
+                <Button type="primary" onClick={handleNext} icon={<ArrowRightOutlined />} style={{ marginLeft: "auto", background: "#5C039B" }}>Continue</Button>
+              ) : (
+                <Button type="primary" onClick={handleSubmit} loading={loading} icon={<CheckOutlined />} style={{ marginLeft: "auto", background: "#5C039B" }}>Onboard Agent</Button>
+              )}
             </div>
-          )}
-
-          {/* ── STEP 1: Address & Emergency ── */}
-          {step === 1 && (
-            <div>
-              <SectionTitle icon={MapPin} title="Address" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <Field label="Building">
-                  <Input placeholder="Al Shafa Towers" value={form.address.building} onChange={e => setNested("address", "building", e.target.value)} />
-                </Field>
-                <Field label="Apartment">
-                  <Input placeholder="Apartment 805" value={form.address.apartment} onChange={e => setNested("address", "apartment", e.target.value)} />
-                </Field>
-                <Field label="Area">
-                  <Input placeholder="Al Nahda" value={form.address.area} onChange={e => setNested("address", "area", e.target.value)} />
-                </Field>
-                <Field label="City">
-                  <Input placeholder="Dubai" value={form.address.city} onChange={e => setNested("address", "city", e.target.value)} />
-                </Field>
-                <Field label="PO Box">
-                  <Input placeholder="12345" value={form.address.poBox} onChange={e => setNested("address", "poBox", e.target.value)} />
-                </Field>
-                <Field label="Country">
-                  <Input placeholder="UAE" value={form.address.country} onChange={e => setNested("address", "country", e.target.value)} />
-                </Field>
-              </div>
-
-              <div className="border-t border-gray-100 pt-6">
-                <SectionTitle icon={ShieldCheck} title="Emergency Contact" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <Field label="Contact Name">
-                    <Input placeholder="Ahmed Hassan" value={form.emergencyContact.name} onChange={e => setNested("emergencyContact", "name", e.target.value)} />
-                  </Field>
-                  <Field label="Relationship">
-                    <Input placeholder="Husband" value={form.emergencyContact.relationship} onChange={e => setNested("emergencyContact", "relationship", e.target.value)} />
-                  </Field>
-                  <Field label="Phone">
-                    <Input placeholder="+971501004467" value={form.emergencyContact.phone} onChange={e => setNested("emergencyContact", "phone", e.target.value)} />
-                  </Field>
-                </div>
-              </div>
+            <div style={{ textAlign: "center", marginTop: 16 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>Fields marked with * are required</Text>
             </div>
-          )}
-
-          {/* ── STEP 2: Identity Documents ── */}
-          {step === 2 && (
-            <div className="space-y-6">
-              <div>
-                <SectionTitle icon={CreditCard} title="Emirates ID" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <Field label="Emirates ID Number">
-                    <Input placeholder="784-1995-8765432-1" value={form.emiratesId.number} onChange={e => setNested("emiratesId", "number", e.target.value)} />
-                  </Field>
-                  <Field label="Issuance Date">
-                    <Input type="date" value={form.emiratesId.issuanceDate} onChange={e => setNested("emiratesId", "issuanceDate", e.target.value)} />
-                  </Field>
-                  <Field label="Expiry Date">
-                    <Input type="date" value={form.emiratesId.expiryDate} onChange={e => setNested("emiratesId", "expiryDate", e.target.value)} />
-                  </Field>
-                  <Field label="Front Image URL">
-                    <Input placeholder="https://..." value={form.emiratesId.frontImageUrl} onChange={e => setNested("emiratesId", "frontImageUrl", e.target.value)} />
-                  </Field>
-                  <Field label="Back Image URL" className="sm:col-span-2">
-                    <Input placeholder="https://..." value={form.emiratesId.backImageUrl} onChange={e => setNested("emiratesId", "backImageUrl", e.target.value)} />
-                  </Field>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-100 pt-5">
-                <SectionTitle icon={FileText} title="Passport" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <Field label="Passport Number">
-                    <Input placeholder="P98765432" value={form.passport.number} onChange={e => setNested("passport", "number", e.target.value)} />
-                  </Field>
-                  <Field label="Country of Issue">
-                    <Input placeholder="UAE" value={form.passport.countryOfIssue} onChange={e => setNested("passport", "countryOfIssue", e.target.value)} />
-                  </Field>
-                  <Field label="Issue Date">
-                    <Input type="date" value={form.passport.issueDate} onChange={e => setNested("passport", "issueDate", e.target.value)} />
-                  </Field>
-                  <Field label="Expiry Date">
-                    <Input type="date" value={form.passport.expiryDate} onChange={e => setNested("passport", "expiryDate", e.target.value)} />
-                  </Field>
-                  <Field label="Passport Image URL" className="sm:col-span-2">
-                    <Input placeholder="https://..." value={form.passport.imageUrl} onChange={e => setNested("passport", "imageUrl", e.target.value)} />
-                  </Field>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-100 pt-5">
-                <SectionTitle icon={Globe} title="Visa" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <Field label="Visa Number">
-                    <Input placeholder="VISA-FATIMA-001" value={form.visa.number} onChange={e => setNested("visa", "number", e.target.value)} />
-                  </Field>
-                  <Field label="Residency Status">
-                    <Input placeholder="Resident" value={form.visa.residencyStatus} onChange={e => setNested("visa", "residencyStatus", e.target.value)} />
-                  </Field>
-                  <Field label="Sponsor Name">
-                    <Input placeholder="Elite Financial Services" value={form.visa.sponsor} onChange={e => setNested("visa", "sponsor", e.target.value)} />
-                  </Field>
-                  <Field label="Expiry Date">
-                    <Input type="date" value={form.visa.expiryDate} onChange={e => setNested("visa", "expiryDate", e.target.value)} />
-                  </Field>
-                  <Field label="Visa Image URL" className="sm:col-span-2">
-                    <Input placeholder="https://..." value={form.visa.imageUrl} onChange={e => setNested("visa", "imageUrl", e.target.value)} />
-                  </Field>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── STEP 3: Bank Details ── */}
-          {step === 3 && (
-            <div>
-              <SectionTitle icon={Banknote} title="Bank Details" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <Field label="Beneficiary Name">
-                  <Input placeholder="Fatima Hassan" value={form.bankDetails.beneficiaryName} onChange={e => setNested("bankDetails", "beneficiaryName", e.target.value)} />
-                </Field>
-                <Field label="Bank Name">
-                  <Input placeholder="Emirates NBD" value={form.bankDetails.bankName} onChange={e => setNested("bankDetails", "bankName", e.target.value)} />
-                </Field>
-                <Field label="Account Number">
-                  <Input placeholder="12345678901234" value={form.bankDetails.accountNumber} onChange={e => setNested("bankDetails", "accountNumber", e.target.value)} />
-                </Field>
-                <Field label="IBAN">
-                  <Input placeholder="AE38044..." value={form.bankDetails.iban} onChange={e => setNested("bankDetails", "iban", e.target.value)} />
-                </Field>
-                <Field label="SWIFT Code">
-                  <Input placeholder="EBILAEAD" value={form.bankDetails.swiftCode} onChange={e => setNested("bankDetails", "swiftCode", e.target.value)} />
-                </Field>
-                <Field label="Account Type">
-                  <Select value={form.bankDetails.accountType} onChange={e => setNested("bankDetails", "accountType", e.target.value)}>
-                    <option value="">Select type</option>
-                    <option>Savings</option><option>Current</option><option>Fixed Deposit</option>
-                  </Select>
-                </Field>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Navigation */}
-        <div className="flex justify-between items-center mt-4">
-          {step > 0 ? (
-            <button onClick={handleBack} className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold border border-gray-200 bg-white text-gray-600 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition">
-              <ChevronLeft size={15} /> Back
-            </button>
-          ) : <div />}
-
-          {step < STEPS.length - 1 ? (
-            <button onClick={handleNext} className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition">
-              Continue <ChevronRight size={15} />
-            </button>
-          ) : (
-            <button onClick={handleSubmit} disabled={loading} className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition disabled:opacity-50 disabled:cursor-not-allowed">
-              {loading ? <><Loader2 size={15} className="animate-spin" /> Submitting...</> : <><Check size={15} /> Onboard Agent</>}
-            </button>
-          )}
-        </div>
-
+          </Form>
+        </Card>
       </div>
     </div>
   );
