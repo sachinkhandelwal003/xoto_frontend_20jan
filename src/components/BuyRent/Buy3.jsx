@@ -291,7 +291,7 @@ if (phoneError) {
     <>
       {contextHolder}
       <div id="buy3"
-        className="min-h-screen py-10 md:py-26 px-4 sm:px-6 lg:px-12 bg-cover bg-center relative overflow-hidden font-dm "
+        className="min-h-screen bg-[var(--color-body)]  py-10 md:py-26 px-4 sm:px-6 lg:px-12 bg-cover bg-center relative overflow-hidden font-dm "
         // style={{ backgroundImage: `url(${bgImage})` }} 
       >
           <div className="absolute -bottom-10 sm:-bottom-20 lg:-bottom-38 left-0 w-full z-0 pointer-events-none select-none ">

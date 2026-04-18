@@ -29,7 +29,7 @@ export default function HomeLoanHero() {
       <style>{`
         .clip-left-shape {
              position: absolute;
-          bottom: 0; left: 0;
+          bottom: -1px; left: 0;
           width: 30vw;
           max-width: 320px;
           min-width: 120px;
@@ -40,9 +40,9 @@ export default function HomeLoanHero() {
         }
         .clip-right-shape {
                   position: absolute;
-          bottom: 0; right: 0;
+          bottom: -1px; right: 0;
           width: 30vw;
-          max-width: 320px;
+          max-width: 320px;                                             
           min-width: 120px;
           height: clamp(28px, 3.5vw, 48px);
           background: var(--color-body);

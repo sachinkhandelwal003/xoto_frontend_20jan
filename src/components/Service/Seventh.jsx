@@ -69,7 +69,7 @@ const Seventh = () => {
     // dir="ltr" fix kar diya hai taaki kisi bhi language mein layout flip na ho
     <section 
       dir="ltr" 
-      className="relative w-full py-30 bg-white overflow-hidden font-sans text-left"
+      className="relative w-full py-30 bg-[var(--color-body)] overflow-hidden font-sans text-left"
     >
       
       {/* Background Waves */}

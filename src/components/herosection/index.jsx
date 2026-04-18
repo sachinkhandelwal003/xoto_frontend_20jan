@@ -263,7 +263,7 @@ const HeroSection = () => {
       <style>{`
         .home-clip-left {
           position: absolute;
-          bottom: 0; left: 0;
+          bottom: -1px; left: 0;
           width: 30vw;
           max-width: 320px;
           min-width: 120px;
@@ -274,7 +274,7 @@ const HeroSection = () => {
         }
         .home-clip-right {
           position: absolute;
-          bottom: 0; right: 0;
+          bottom: -1px; right: 0;
           width: 30vw;
           max-width: 320px;
           min-width: 120px;
