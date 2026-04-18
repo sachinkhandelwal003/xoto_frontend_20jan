@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-// ─── STATIC DUMMY DATA ────────────────────────────────────────────────────────
 const STATIC_LISTINGS = [
   {
     _id: "buy001",
@@ -162,14 +161,12 @@ const STATIC_LISTINGS = [
   },
 ];
 
-const BEDROOMS       = ["Any", "Studio", "1 BR", "2 BR", "3 BR", "4 BR", "5+ BR"];
-const PROP_TYPES     = ["All", "Apartment", "Villa", "Penthouse", "Townhouse"];
-const AMENITY_LIST   = ["Pool", "Gym", "Parking", "Sea View", "Balcony", "Near Metro", "Payment Plan", "Mortgage Ready"];
+const BEDROOMS        = ["Any", "Studio", "1 BR", "2 BR", "3 BR", "4 BR", "5+ BR"];
+const PROP_TYPES      = ["All", "Apartment", "Villa", "Penthouse", "Townhouse"];
+const AMENITY_LIST    = ["Pool", "Gym", "Parking", "Sea View", "Balcony", "Near Metro", "Payment Plan", "Mortgage Ready"];
 const COMPLETION_OPTS = ["Any", "Ready", "Off-Plan", "Under Construction"];
 
-// ─── LIGHTBOX ─────────────────────────────────────────────────────────────────
-import { useEffect } from "react";
-
+// ─── LIGHTBOX ────────────────────────────────────────────────────────────────
 function Lightbox({ images, startIndex, onClose }) {
   const [current, setCurrent] = useState(startIndex);
 
@@ -231,7 +228,7 @@ function ImageGrid({ images, onOpen }) {
 }
 
 // ─── LISTING CARD ─────────────────────────────────────────────────────────────
-function ListingCard({ listing, saved, onSave }) {
+function ListingCard({ listing, saved, onSave, isMobile }) {
   const [lightboxOpen,  setLightboxOpen]  = useState(false);
   const [lightboxStart, setLightboxStart] = useState(0);
   const [hovered,       setHovered]       = useState(false);
@@ -245,14 +242,25 @@ function ListingCard({ listing, saved, onSave }) {
     <>
       {lightboxOpen && <Lightbox images={listing.images || []} startIndex={lightboxStart} onClose={() => setLightboxOpen(false)} />}
 
-      <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-        style={{ background: "#fff", border: `1.5px solid ${hovered ? "#c4b5fd" : "#f0f0f0"}`, borderRadius: 20, overflow: "hidden", boxShadow: hovered ? "0 12px 40px rgba(109,40,217,0.1)" : "0 2px 12px rgba(0,0,0,0.04)", transition: "all 0.25s ease", transform: hovered ? "translateY(-3px)" : "none", marginBottom: 20 }}>
-        <div style={{ display: "flex", gap: 0, flexWrap: "wrap" }}>
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          background: "#fff",
+          border: `1.5px solid ${hovered ? "#c4b5fd" : "#f0f0f0"}`,
+          borderRadius: 20,
+          overflow: "hidden",
+          boxShadow: hovered ? "0 12px 40px rgba(109,40,217,0.1)" : "0 2px 12px rgba(0,0,0,0.04)",
+          transition: "all 0.25s ease",
+          transform: hovered ? "translateY(-3px)" : "none",
+          marginBottom: 20,
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 0 }}>
 
           {/* Image Grid */}
-          <div style={{ width: 320, flexShrink: 0, padding: 12, position: "relative" }}>
+          <div style={{ width: isMobile ? "100%" : 320, flexShrink: 0, padding: 12, position: "relative", boxSizing: "border-box" }}>
             <ImageGrid images={listing.images} onOpen={openLightbox} />
-
             <div style={{ position: "absolute", top: 20, left: 20, display: "flex", flexDirection: "column", gap: 6 }}>
               {listing.verified && (
                 <div style={{ background: "#6d28d9", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 6, padding: "4px 10px", letterSpacing: "0.06em", textTransform: "uppercase" }}>✦ Verified</div>
@@ -260,11 +268,7 @@ function ListingCard({ listing, saved, onSave }) {
               {listing.paymentPlan && (
                 <div style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(6px)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 6, padding: "4px 10px" }}>💳 Payment Plan</div>
               )}
-              {listing.offPlan && (
-                <div style={{ background: "rgba(167,139,250,0.9)", color: "#3b0764", fontSize: 10, fontWeight: 700, borderRadius: 6, padding: "4px 10px" }}>🏗 Off-Plan</div>
-              )}
             </div>
-
             <button onClick={() => onSave(listing._id)}
               style={{ position: "absolute", top: 20, right: 20, background: saved ? "#6d28d9" : "rgba(255,255,255,0.9)", border: "1.5px solid " + (saved ? "#6d28d9" : "rgba(0,0,0,0.1)"), borderRadius: 10, width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", fontSize: 16, color: saved ? "#fff" : "#94a3b8" }}>
               {saved ? "♥" : "♡"}
@@ -272,19 +276,19 @@ function ListingCard({ listing, saved, onSave }) {
           </div>
 
           {/* Content */}
-          <div style={{ flex: 1, padding: "20px 24px 16px 12px", display: "flex", flexDirection: "column", gap: 12, minWidth: 0 }}>
+          <div style={{ flex: 1, padding: isMobile ? "0 16px 16px" : "20px 24px 16px 12px", display: "flex", flexDirection: "column", gap: 12, minWidth: 0 }}>
 
             {/* Title Row */}
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-              <div>
-                <h3 style={{ fontSize: 17, fontWeight: 800, color: "#1e1b4b", margin: "0 0 5px", letterSpacing: "-0.3px", lineHeight: 1.3 }}>{listing.title}</h3>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3 style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, color: "#1e1b4b", margin: "0 0 5px", letterSpacing: "-0.3px", lineHeight: 1.3 }}>{listing.title}</h3>
                 <div style={{ fontSize: 13, color: "#64748b", display: "flex", alignItems: "center", gap: 5 }}>
                   <span style={{ color: "#a78bfa" }}>⌖</span>
                   {listing.location?.area && `${listing.location.area}, `}{listing.emirate}
                 </div>
               </div>
               <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <div style={{ fontSize: 20, fontWeight: 900, color: "#6d28d9", letterSpacing: "-0.5px" }}>
+                <div style={{ fontSize: isMobile ? 17 : 20, fontWeight: 900, color: "#6d28d9", letterSpacing: "-0.5px" }}>
                   AED {(listing.price || 0).toLocaleString()}
                 </div>
                 <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>total price</div>
@@ -292,16 +296,16 @@ function ListingCard({ listing, saved, onSave }) {
             </div>
 
             {/* Stats Bar */}
-            <div style={{ display: "flex", gap: 12, background: "#f8f4ff", borderRadius: 12, padding: "10px 16px", border: "1px solid #ede9fe" }}>
+            <div style={{ display: "flex", gap: isMobile ? 8 : 12, background: "#f8f4ff", borderRadius: 12, padding: "10px 12px", border: "1px solid #ede9fe", flexWrap: "wrap" }}>
               {[
                 { icon: "⬛", label: (listing.size || "—") + " sqft" },
                 { icon: "🛏", label: listing.bhk || "—" },
                 { icon: "🚿", label: (listing.baths || "—") + " Bath" },
                 { icon: "✦",  label: (listing.furnishing || "—").split(" ")[0] },
               ].map((s, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "#475569" }}>
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#475569" }}>
                   <span>{s.icon}</span>{s.label}
-                  {i < 3 && <span style={{ color: "#d8b4fe", marginLeft: 12 }}>·</span>}
+                  {i < 3 && <span style={{ color: "#d8b4fe", marginLeft: isMobile ? 6 : 12 }}>·</span>}
                 </div>
               ))}
             </div>
@@ -351,7 +355,7 @@ function ListingCard({ listing, saved, onSave }) {
             {/* Expanded Panel */}
             {expanded && (
               <div style={{ background: "#fafafa", borderRadius: 12, padding: 16, border: "1px solid #f0f0f0", marginTop: 4 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
                   {[
                     { label: "Price",          value: `AED ${(listing.price || 0).toLocaleString()}` },
                     { label: "Service Charge", value: listing.serviceCharge ? `AED ${listing.serviceCharge.toLocaleString()}/yr` : "—" },
@@ -384,7 +388,126 @@ function ListingCard({ listing, saved, onSave }) {
   );
 }
 
-// ─── MAIN BUY RESULTS PAGE ────────────────────────────────────────────────────
+// ─── FILTER PANEL CONTENT ─────────────────────────────────────────────────────
+function FilterContent({ filterBeds, setFilterBeds, maxPrice, setMaxPrice, filterType, setFilterType, filterCompletion, setFilterCompletion, verifiedOnly, setVerifiedOnly, paymentPlanOnly, setPaymentPlanOnly, amenityFilters, toggleAmenity, resetFilters, setPage }) {
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <span style={{ fontSize: 15, fontWeight: 900, color: "#1e1b4b" }}>Filters</span>
+        <span onClick={resetFilters} style={{ fontSize: 12, fontWeight: 700, color: "#ef4444", cursor: "pointer" }}>Reset all</span>
+      </div>
+
+      {/* Bedrooms */}
+      <div style={{ marginBottom: 22 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#1e1b4b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Bedrooms</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+          {BEDROOMS.map((b) => (
+            <button key={b} onClick={() => { setFilterBeds(b); setPage(1); }} className={`pill${filterBeds === b ? " on" : ""}`}>{b}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Max Price */}
+      <div style={{ marginBottom: 22 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#1e1b4b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Max Price</div>
+        <div style={{ fontSize: 17, fontWeight: 900, color: "#6d28d9", marginBottom: 10 }}>
+          AED {maxPrice >= 10000000 ? "10M+" : (maxPrice / 1000000).toFixed(1) + "M"}
+        </div>
+        <input type="range" min={500000} max={10000000} step={100000} value={maxPrice}
+          onChange={(e) => { setMaxPrice(Number(e.target.value)); setPage(1); }} />
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#94a3b8", fontWeight: 600, marginTop: 4 }}>
+          <span>AED 500K</span><span>AED 10M+</span>
+        </div>
+      </div>
+
+      {/* Property Type */}
+      <div style={{ marginBottom: 22 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#1e1b4b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Property Type</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {PROP_TYPES.map((t) => (
+            <label key={t} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "#475569", fontWeight: 600 }}>
+              <input type="radio" name="ptype" className="chk" checked={filterType === t} onChange={() => { setFilterType(t); setPage(1); }} /> {t}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Completion */}
+      <div style={{ marginBottom: 22 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#1e1b4b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Completion</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {COMPLETION_OPTS.map((c) => (
+            <label key={c} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "#475569", fontWeight: 600 }}>
+              <input type="radio" name="completion" className="chk" checked={filterCompletion === c} onChange={() => { setFilterCompletion(c); setPage(1); }} /> {c}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Quick Toggles */}
+      <div style={{ marginBottom: 22, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#1e1b4b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Quick Filters</div>
+        {[
+          { label: "Verified Only", val: verifiedOnly,    set: setVerifiedOnly    },
+          { label: "Payment Plan",  val: paymentPlanOnly, set: setPaymentPlanOnly },
+        ].map((item, i) => (
+          <label key={i} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "#475569", fontWeight: 600 }}>
+            <input type="checkbox" className="chk" checked={item.val} onChange={(e) => { item.set(e.target.checked); setPage(1); }} /> {item.label}
+          </label>
+        ))}
+      </div>
+
+      {/* Amenities */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#1e1b4b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Amenities</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {AMENITY_LIST.map((a) => (
+            <button key={a} onClick={() => { toggleAmenity(a); setPage(1); }} className={`pill${amenityFilters.includes(a) ? " on" : ""}`}>{a}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── RIGHT SIDEBAR CONTENT ────────────────────────────────────────────────────
+function SidebarContent({ savedIds, navigate }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ background: savedIds.length ? "#f5f3ff" : "white", border: `1.5px solid ${savedIds.length ? "#c4b5fd" : "#f0f0f0"}`, borderRadius: 16, padding: "18px 20px", transition: "all 0.3s" }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "#1e1b4b", marginBottom: 6 }}>♥ Saved Properties</div>
+        {savedIds.length === 0 ? (
+          <div style={{ fontSize: 13, color: "#94a3b8" }}>Click the heart to shortlist properties.</div>
+        ) : (
+          <div style={{ fontSize: 28, fontWeight: 900, color: "#6d28d9" }}>
+            {savedIds.length} <span style={{ fontSize: 14, color: "#64748b", fontWeight: 600 }}>shortlisted</span>
+          </div>
+        )}
+      </div>
+
+      <div style={{ background: "linear-gradient(145deg, #1e1b4b 0%, #4c1d95 100%)", borderRadius: 16, padding: "22px 20px", color: "white", textAlign: "center", boxShadow: "0 8px 28px rgba(109,40,217,0.22)" }}>
+        <div style={{ fontSize: 28, marginBottom: 10 }}>🏛</div>
+        <div style={{ fontSize: 17, fontWeight: 900, marginBottom: 6 }}>DLD Transfer</div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 18, lineHeight: 1.6 }}>Dubai Land Department approved. Fast title deed transfer.</div>
+        <button style={{ width: "100%", background: "white", color: "#6d28d9", border: "none", borderRadius: 10, padding: 11, fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+          Get Transfer Help
+        </button>
+      </div>
+
+      <div style={{ background: "white", border: "1.5px solid #e9d5ff", borderRadius: 16, padding: "20px", textAlign: "center" }}>
+        <div style={{ fontSize: 28, marginBottom: 8 }}>🏦</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: "#1e1b4b", marginBottom: 8 }}>Mortgage Calculator</div>
+        <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 16 }}>Find out your monthly payments &amp; eligibility in seconds.</div>
+        <button onClick={() => navigate("/mortgages/calculator")}
+          style={{ width: "100%", background: "#6d28d9", color: "white", border: "none", borderRadius: 10, padding: "11px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+          Calculate Now
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function BuyResultsPage() {
   const location = useLocation();
   const navigate  = useNavigate();
@@ -399,21 +522,42 @@ export default function BuyResultsPage() {
   const [verifiedOnly,     setVerifiedOnly]     = useState(false);
   const [paymentPlanOnly,  setPaymentPlanOnly]  = useState(false);
   const [page,             setPage]             = useState(1);
+  const [filterOpen,       setFilterOpen]       = useState(false);
+  const [isMobile,         setIsMobile]         = useState(false);
+
   const LIMIT = 4;
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // Close filter drawer on outside click
+  useEffect(() => {
+    if (!filterOpen) return;
+    const handler = (e) => {
+      if (!e.target.closest("#filter-drawer") && !e.target.closest("#filter-toggle-btn")) {
+        setFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [filterOpen]);
 
   const heroState    = location.state || {};
   const emirateLabel = heroState.emirate || "UAE";
   const areaLabel    = heroState.tags?.join(", ") || "";
 
-  // ── Client-side filtering on static data ──
   const filtered = STATIC_LISTINGS.filter((l) => {
     if (filterBeds !== "Any" && l.bhk !== filterBeds) return false;
     if (filterType !== "All" && !l.title.toLowerCase().includes(filterType.toLowerCase())) return false;
     if (l.price > maxPrice) return false;
     if (filterCompletion !== "Any") {
-      if (filterCompletion === "Ready"             && !l.isReady)    return false;
-      if (filterCompletion === "Off-Plan"          && !l.offPlan)    return false;
-      if (filterCompletion === "Under Construction" && l.isReady)    return false;
+      if (filterCompletion === "Ready"              && !l.isReady) return false;
+      if (filterCompletion === "Off-Plan"           && !l.offPlan) return false;
+      if (filterCompletion === "Under Construction" && l.isReady)  return false;
     }
     if (verifiedOnly    && !l.verified)    return false;
     if (paymentPlanOnly && !l.paymentPlan) return false;
@@ -422,8 +566,8 @@ export default function BuyResultsPage() {
   });
 
   const sorted = [...filtered].sort((a, b) => {
-    if (sort === "Price: Low to High")  return a.price - b.price;
-    if (sort === "Price: High to Low")  return b.price - a.price;
+    if (sort === "Price: Low to High") return a.price - b.price;
+    if (sort === "Price: High to Low") return b.price - a.price;
     return 0;
   });
 
@@ -439,6 +583,18 @@ export default function BuyResultsPage() {
     setFilterCompletion("Any"); setPage(1);
   };
 
+  const filterProps = {
+    filterBeds, setFilterBeds, maxPrice, setMaxPrice,
+    filterType, setFilterType, filterCompletion, setFilterCompletion,
+    verifiedOnly, setVerifiedOnly, paymentPlanOnly, setPaymentPlanOnly,
+    amenityFilters, toggleAmenity, resetFilters, setPage,
+  };
+
+  const activeFilterCount = [
+    filterBeds !== "Any", filterType !== "All", maxPrice < 10000000,
+    filterCompletion !== "Any", verifiedOnly, paymentPlanOnly, amenityFilters.length > 0,
+  ].filter(Boolean).length;
+
   return (
     <div style={{ background: "#f7f6fb", minHeight: "100vh", fontFamily: "system-ui, sans-serif" }}>
       <style>{`
@@ -452,103 +608,78 @@ export default function BuyResultsPage() {
         select.fselect { border:1.5px solid #e2e8f0; border-radius:8px; padding:8px 32px 8px 12px; font-size:13px; font-weight:700; color:#1e1b4b; background:white; outline:none; cursor:pointer; font-family:inherit; }
         select.fselect:focus { border-color:#6d28d9; }
         .chk { width:16px; height:16px; accent-color:#6d28d9; cursor:pointer; }
+        #filter-drawer { transition: transform 0.3s ease, opacity 0.3s ease; }
       `}</style>
 
-      <div style={{ display: "grid", gridTemplateColumns: "264px 1fr 280px", gap: 20, maxWidth: 1400, margin: "0 auto", padding: "24px" }}>
+      {/* Mobile filter backdrop */}
+      {isMobile && filterOpen && (
+        <div onClick={() => setFilterOpen(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 998 }} />
+      )}
 
-        {/* ── LEFT FILTERS ── */}
-        <div style={{ background: "white", border: "1.5px solid #f0f0f0", borderRadius: 18, padding: 20, maxHeight: "calc(100vh - 96px)", position: "sticky", top: 82, overflowY: "auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <span style={{ fontSize: 15, fontWeight: 900, color: "#1e1b4b" }}>Filters</span>
-            <span onClick={resetFilters} style={{ fontSize: 12, fontWeight: 700, color: "#ef4444", cursor: "pointer" }}>Reset all</span>
+      {/* Mobile filter drawer */}
+      {isMobile && (
+        <div id="filter-drawer"
+          style={{
+            position: "fixed", top: 0, left: 0, bottom: 0, width: "85vw", maxWidth: 340,
+            background: "white", zIndex: 999, padding: 20, overflowY: "auto",
+            transform: filterOpen ? "translateX(0)" : "translateX(-100%)",
+            opacity: filterOpen ? 1 : 0,
+            boxShadow: filterOpen ? "4px 0 24px rgba(0,0,0,0.15)" : "none",
+            boxSizing: "border-box",
+          }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <span style={{ fontSize: 16, fontWeight: 900, color: "#1e1b4b" }}>Filters</span>
+            <button onClick={() => setFilterOpen(false)}
+              style={{ background: "#f1f5f9", border: "none", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, color: "#475569", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
           </div>
-
-          {/* Bedrooms */}
-          <div style={{ marginBottom: 22 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#1e1b4b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Bedrooms</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
-              {BEDROOMS.map((b) => (
-                <button key={b} onClick={() => { setFilterBeds(b); setPage(1); }} className={`pill${filterBeds === b ? " on" : ""}`}>{b}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Max Price */}
-          <div style={{ marginBottom: 22 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#1e1b4b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Max Price</div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: "#6d28d9", marginBottom: 10 }}>
-              AED {maxPrice >= 10000000 ? "10M+" : (maxPrice / 1000000).toFixed(1) + "M"}
-            </div>
-            <input type="range" min={500000} max={10000000} step={100000} value={maxPrice} onChange={(e) => { setMaxPrice(Number(e.target.value)); setPage(1); }} />
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#94a3b8", fontWeight: 600, marginTop: 4 }}>
-              <span>AED 500K</span><span>AED 10M+</span>
-            </div>
-          </div>
-
-          {/* Property Type */}
-          <div style={{ marginBottom: 22 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#1e1b4b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Property Type</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {PROP_TYPES.map((t) => (
-                <label key={t} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "#475569", fontWeight: 600 }}>
-                  <input type="radio" name="ptype" className="chk" checked={filterType === t} onChange={() => { setFilterType(t); setPage(1); }} /> {t}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Completion */}
-          <div style={{ marginBottom: 22 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#1e1b4b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Completion</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {COMPLETION_OPTS.map((c) => (
-                <label key={c} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "#475569", fontWeight: 600 }}>
-                  <input type="radio" name="completion" className="chk" checked={filterCompletion === c} onChange={() => { setFilterCompletion(c); setPage(1); }} /> {c}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Toggles */}
-          <div style={{ marginBottom: 22, display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#1e1b4b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Quick Filters</div>
-            {[
-              { label: "Verified Only", val: verifiedOnly,    set: setVerifiedOnly    },
-              { label: "Payment Plan",  val: paymentPlanOnly, set: setPaymentPlanOnly },
-            ].map((item, i) => (
-              <label key={i} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "#475569", fontWeight: 600 }}>
-                <input type="checkbox" className="chk" checked={item.val} onChange={(e) => { item.set(e.target.checked); setPage(1); }} /> {item.label}
-              </label>
-            ))}
-          </div>
-
-          {/* Amenities */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#1e1b4b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Amenities</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {AMENITY_LIST.map((a) => (
-                <button key={a} onClick={() => { toggleAmenity(a); setPage(1); }} className={`pill${amenityFilters.includes(a) ? " on" : ""}`}>{a}</button>
-              ))}
-            </div>
-          </div>
+          <FilterContent {...filterProps} />
         </div>
+      )}
 
-        {/* ── LISTINGS ── */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : "264px 1fr 280px",
+        gap: 20,
+        maxWidth: 1400,
+        margin: "0 auto",
+        padding: isMobile ? "16px" : "24px",
+        boxSizing: "border-box",
+      }}>
+
+        {/* Desktop left filter */}
+        {!isMobile && (
+          <div style={{ background: "white", border: "1.5px solid #f0f0f0", borderRadius: 18, padding: 20, maxHeight: "calc(100vh - 96px)", position: "sticky", top: 82, overflowY: "auto" }}>
+            <FilterContent {...filterProps} />
+          </div>
+        )}
+
+        {/* Listings column */}
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16 }}>
+          {/* Header row */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
             <div>
               <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600, marginBottom: 4 }}>
                 Home / UAE / {emirateLabel}{areaLabel ? ` / ${areaLabel}` : ""}
               </div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#1e1b4b", letterSpacing: "-0.5px" }}>
+              <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 900, color: "#1e1b4b", letterSpacing: "-0.5px" }}>
                 {sorted.length} Properties for Sale
               </div>
             </div>
-            <select className="fselect" value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }}>
-              <option>Recommended</option>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
-            </select>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              {/* Mobile filter toggle button */}
+              {isMobile && (
+                <button id="filter-toggle-btn" onClick={() => setFilterOpen(true)}
+                  style={{ display: "flex", alignItems: "center", gap: 6, background: activeFilterCount > 0 ? "#6d28d9" : "white", color: activeFilterCount > 0 ? "white" : "#1e1b4b", border: "1.5px solid " + (activeFilterCount > 0 ? "#6d28d9" : "#e2e8f0"), borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                  ⚙ Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
+                </button>
+              )}
+              <select className="fselect" value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }}>
+                <option>Recommended</option>
+                <option>Price: Low to High</option>
+                <option>Price: High to Low</option>
+              </select>
+            </div>
           </div>
 
           {paginated.length === 0 ? (
@@ -559,7 +690,7 @@ export default function BuyResultsPage() {
             </div>
           ) : (
             paginated.map((l) => (
-              <ListingCard key={l._id} listing={l} saved={savedIds.includes(l._id)} onSave={toggleSave} />
+              <ListingCard key={l._id} listing={l} saved={savedIds.includes(l._id)} onSave={toggleSave} isMobile={isMobile} />
             ))
           )}
 
@@ -574,45 +705,21 @@ export default function BuyResultsPage() {
               ))}
             </div>
           )}
+
+          {/* Right sidebar — stacks below on mobile */}
+          {isMobile && (
+            <div style={{ marginTop: 24 }}>
+              <SidebarContent savedIds={savedIds} navigate={navigate} />
+            </div>
+          )}
         </div>
 
-        {/* ── RIGHT SIDEBAR ── */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-
-          {/* Saved */}
-          <div style={{ background: savedIds.length ? "#f5f3ff" : "white", border: `1.5px solid ${savedIds.length ? "#c4b5fd" : "#f0f0f0"}`, borderRadius: 16, padding: "18px 20px", transition: "all 0.3s" }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#1e1b4b", marginBottom: 6 }}>♥ Saved Properties</div>
-            {savedIds.length === 0 ? (
-              <div style={{ fontSize: 13, color: "#94a3b8" }}>Click the heart to shortlist properties.</div>
-            ) : (
-              <div style={{ fontSize: 28, fontWeight: 900, color: "#6d28d9" }}>
-                {savedIds.length} <span style={{ fontSize: 14, color: "#64748b", fontWeight: 600 }}>shortlisted</span>
-              </div>
-            )}
+        {/* Desktop right sidebar */}
+        {!isMobile && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <SidebarContent savedIds={savedIds} navigate={navigate} />
           </div>
-
-          {/* DLD Transfer CTA */}
-          <div style={{ background: "linear-gradient(145deg, #1e1b4b 0%, #4c1d95 100%)", borderRadius: 16, padding: "22px 20px", color: "white", textAlign: "center", boxShadow: "0 8px 28px rgba(109,40,217,0.22)" }}>
-            <div style={{ fontSize: 28, marginBottom: 10 }}>🏛</div>
-            <div style={{ fontSize: 17, fontWeight: 900, marginBottom: 6 }}>DLD Transfer</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 18, lineHeight: 1.6 }}>Dubai Land Department approved. Fast title deed transfer.</div>
-            <button style={{ width: "100%", background: "white", color: "#6d28d9", border: "none", borderRadius: 10, padding: 11, fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-              Get Transfer Help
-            </button>
-          </div>
-
-          {/* Mortgage Calculator CTA */}
-          <div style={{ background: "white", border: "1.5px solid #e9d5ff", borderRadius: 16, padding: "20px", textAlign: "center" }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🏦</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#1e1b4b", marginBottom: 8 }}>Mortgage Calculator</div>
-            <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 16 }}>Find out your monthly payments &amp; eligibility in seconds.</div>
-            <button onClick={() => navigate("/mortgages")}
-              style={{ width: "100%", background: "#6d28d9", color: "white", border: "none", borderRadius: 10, padding: "11px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-              Calculate Now
-            </button>
-          </div>
-
-        </div>
+        )}
       </div>
     </div>
   );
