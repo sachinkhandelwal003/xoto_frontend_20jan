@@ -1,5 +1,5 @@
 import React from "react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +17,15 @@ const HeroSection = () => {
   const navigate = useNavigate();
   const { t } = useTranslation("home");
   const features = t("hero.features", { returnObjects: true });
+const videoRef = useRef(null);
 
+useEffect(() => {
+  if (videoRef.current) {
+    videoRef.current.play().catch(() => {
+      console.log("Autoplay blocked");
+    });
+  }
+}, []);
   return (
     <section className="relative w-full min-h-[80vh] overflow-hidden flex items-center justify-center text-white pt-24 pb-16 md:pt-28 md:pb-20 xl:pt-32 xl:pb-24">
 
@@ -44,13 +52,22 @@ const HeroSection = () => {
       <div className="absolute inset-0 bg-black/40 z-[1]" />
 
       {/* Background Video */}
-      <video
-        autoPlay loop muted playsInline
-        disablePictureInPicture controls={false}
-        className="absolute inset-0 w-full h-full object-cover z-0"
-      >
-        <source src="https://xotostaging.s3.me-central-1.amazonaws.com/properties/1776514026285-1768043300370-mortgage2+%282%29.mp4" type="video/mp4" />
-      </video>
+   <video
+  ref={videoRef}
+  autoPlay
+  loop
+  muted={true}
+  playsInline
+  preload="auto"
+  disablePictureInPicture
+  controls={false}
+  className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+>
+  <source
+    src="https://xotostaging.s3.me-central-1.amazonaws.com/properties/1776514026285-1768043300370-mortgage2+%282%29.mp4"
+    type="video/mp4"
+  />
+</video>
 
       {/* ── MAIN CONTENT ── */}
       <div className="relative z-[2] w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 flex flex-col items-center text-center gap-8 sm:gap-10">
