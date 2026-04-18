@@ -579,7 +579,7 @@ const generateAIDesigns = async (currentUser) => {
                 <Home className="text-gray-500 w-5 h-5 lg:w-6 lg:h-6" />
               </div>
               <span className="font-bold text-gray-700 text-sm lg:text-base">Room Type</span>
-              <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+              <span className="bg-white border border-gray-200 mt-5 text-gray-600 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                 {selectedRoomType ? 'Selected' : 'Choose'}
               </span>
               {selectedRoomType && <div className="absolute top-2 right-2 text-green-500 bg-white rounded-full p-1 shadow-sm"><CheckCircle2 size={16} /></div>}
@@ -590,7 +590,7 @@ const generateAIDesigns = async (currentUser) => {
                 <Sparkles className="text-gray-500 w-5 h-5 lg:w-6 lg:h-6" />
               </div>
               <span className="font-bold text-gray-700 text-sm lg:text-base">Style</span>
-              <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+              <span className="bg-white border border-gray-200 text-gray-600 mt-5 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                 {selectedStyles.length > 0 ? 'Selected' : 'Choose'}
               </span>
               {selectedStyles.length > 0 && <div className="absolute top-2 right-2 text-green-500 bg-white rounded-full p-1 shadow-sm"><CheckCircle2 size={16} /></div>}
@@ -601,7 +601,7 @@ const generateAIDesigns = async (currentUser) => {
                 <LayoutDashboard className="text-gray-500 w-5 h-5 lg:w-6 lg:h-6" />
               </div>
               <span className="font-bold text-gray-700 text-sm lg:text-base">Elements</span>
-              <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+              <span className="bg-white border border-gray-200 mt-5 text-gray-600 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                 {selectedElements.length > 0 ? 'Selected' : 'Choose'}
               </span>
               {selectedElements.length > 0 && <div className="absolute top-2 right-2 text-green-500 bg-white rounded-full p-1 shadow-sm"><CheckCircle2 size={16} /></div>}
