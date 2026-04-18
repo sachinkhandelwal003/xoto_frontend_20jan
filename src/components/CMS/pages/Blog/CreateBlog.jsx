@@ -148,10 +148,12 @@ const CATEGORY_KEYWORDS = {
   'PropTech': ['proptech', 'property technology', 'smart home', 'iot', 'digital property', 'virtual tour', 'property app'],
   'Technology': ['software', 'programming', 'javascript', 'react', 'node', 'cloud', 'saas', 'startup', 'tech', 'developer', 'api', 'database'],
   'Business': ['business', 'startup', 'entrepreneur', 'investment', 'revenue', 'marketing', 'sales', 'strategy', 'growth'],
-};
+    'Mortgage': ['mortgage', 'home loan', 'refinance', 'interest rate', 'lender', 'pre-approval', 'mortgage broker'],
+   'Landscaping': ['landscaping', 'garden design', 'outdoor space', 'hardscape', 'softscape', 'lawn care', 'irrigation'],
+  };
 
 const COMMON_TAGS = [
-  'AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Marketing',
+  'AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Mortgage', 'Landscaping', 'Marketing',
   'UAE', 'Dubai', 'Sustainability', 'Innovation', 'Digital', 'Cloud',
   'Investment', 'Architecture', 'Design', 'Smart Home', 'Automation'
 ];
@@ -946,6 +948,9 @@ const BlogManagement = () => {
               <Option value="PropTech">📱 PropTech</Option>
               <Option value="Technology">💻 Technology</Option>
               <Option value="Business">💼 Business</Option>
+              <Option value="Mortgage">🏦 Mortgage</Option>
+              <Option value="Landscaping">🌳 Landscaping</Option>
+              <Option value="Other">📌 Other</Option>
             </Select>
           </Col>
           <Col xs={12} md={4}>
@@ -1079,7 +1084,7 @@ const BlogManagement = () => {
                 <Col span={12}>
                   <Form.Item name="tags" label="Tags">
                     <Select mode="tags" size="large" placeholder="Add tags" tokenSeparators={[',']}>
-                      {['AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Marketing', 'UAE', 'Dubai'].map(tag => <Option key={tag} value={tag}>{tag}</Option>)}
+                      {['AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Mortgage', 'Landscaping', 'Marketing', 'UAE', 'Dubai'].map(tag => <Option key={tag} value={tag}>{tag}</Option>)}
                     </Select>
                   </Form.Item>
                 </Col>
@@ -1091,6 +1096,9 @@ const BlogManagement = () => {
                       <Option value="PropTech">📱 Property Technology</Option>
                       <Option value="Technology">💻 Technology</Option>
                       <Option value="Business">💼 Business</Option>
+                      <Option value="Landscaping">🌳 Landscaping</Option>
+                      <Option value="Mortgage">🏦 Mortgage</Option>
+
                       <Option value="Other">📄 Other</Option>
                     </Select>
                   </Form.Item>

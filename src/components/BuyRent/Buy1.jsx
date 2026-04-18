@@ -218,10 +218,9 @@ export default function HeroSection({ openSellModal, setOpenSellModal }) {
 
       {/* ── HERO SECTION ── */}
       <section className="relative w-full overflow-hidden font-dm h-140">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1770010905007-buy.jpg"})` }}
-        >
+        
+        {/* CHANGED: Removed inline style and added 'hero-bg-image' class */}
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat hero-bg-image">
           <div className="absolute inset-0 bg-black/40" />
         </div>
 
@@ -271,7 +270,6 @@ export default function HeroSection({ openSellModal, setOpenSellModal }) {
             background: var(--color-body);
             z-index: 3;
             clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
-            background: white;
             decoration: none;
             bottom: -1px;
           }
@@ -286,7 +284,6 @@ export default function HeroSection({ openSellModal, setOpenSellModal }) {
             background: var(--color-body);
             z-index: 3;
             clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
-            background: white;
             bottom: -1px;
              box-shadow: 0 -3px 0 white;
           }
@@ -602,6 +599,42 @@ export default function HeroSection({ openSellModal, setOpenSellModal }) {
       )}
 
       <style jsx global>{`
+        /* CHANGED: Added hero-bg-image logic here so it loads faster */
+        .hero-bg-image {
+          background-image: url("https://xotostaging.s3.me-central-1.amazonaws.com/properties/1770010905007-buy.jpg");
+        }
+
+        .clip-shape-left {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 3;
+          clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
+          background: white;
+          decoration: none;
+          bottom: -1px;
+        }
+        .clip-shape-right {
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 3;
+          clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
+          background: white;
+          bottom: -1px;
+          box-shadow: 0 -3px 0 white;
+        }
+
         .premium-input {
           width: 100%;
           padding: 0.875rem 1.25rem 0.875rem 3rem;

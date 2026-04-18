@@ -42,8 +42,12 @@ const COUNTRIES = [
 
 const MIN_SALARY = 10000;
 const DSR = 0.5;
-const STRESS_RATE = 6.5;
-
+const getStressRate = (years) => {
+  if (years <= 15) return 3.17;
+  if (years <= 17) return 3.41;
+  if (years <= 20) return 3.68;
+  return 3.98;
+};
 // --- Helpers ---
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('en-AE', {
@@ -61,12 +65,22 @@ const calculateEMI = (principal, annualRate, years) => {
   return Math.round(principal * monthlyRate * Math.pow(1 + monthlyRate, months) / (Math.pow(1 + monthlyRate, months) - 1));
 };
 
-const calculateAffordability = (maxEMI, stressRate, years) => {
+const calculatePropertyPrice = (maxEMI, annualRate, years) => {
   if (maxEMI <= 0) return 0;
-  const monthlyRate = stressRate / 100 / 12;
+
+  const monthlyRate = annualRate / 100 / 12;
   const months = years * 12;
-  return Math.round(maxEMI * (Math.pow(1 + monthlyRate, months) - 1) / (monthlyRate * Math.pow(1 + monthlyRate, months)));
-};
+
+  // Step 1: Loan amount
+  const loanAmount =
+    maxEMI *
+    (Math.pow(1 + monthlyRate, months) - 1) /
+    (monthlyRate * Math.pow(1 + monthlyRate, months));
+
+  // Step 2: Convert to property price
+  const propertyPrice = loanAmount / 0.85;
+
+return Math.round(propertyPrice * 0.92);};
 
 // --- Reusable UI Components ---
 const ModalWrapper = ({ isOpen, onClose, title, subtitle, children }) => {
@@ -505,11 +519,13 @@ export default function PerfectMortgageCalculator() {
   const safePropVal = Number(propertyValue) || 0;
   const safeDownpayment = Number(downpayment) || 0;
 
-  const disposableIncome = safeIncome - safeDebt;
-  const maxEMI = disposableIncome * DSR;
+  const maxEMI = (safeIncome * DSR) - safeDebt;
   const isEligible = safeIncome >= MIN_SALARY && maxEMI > 0;
-  const affordability = isEligible ? calculateAffordability(maxEMI, STRESS_RATE, loanTenure) : 0;
-  const monthlyPayment = isEligible ? Math.round(maxEMI) : 0;
+const stressRate = getStressRate(loanTenure);
+
+const affordability = isEligible
+  ? calculatePropertyPrice(maxEMI, stressRate, loanTenure)
+  : 0;  const monthlyPayment = isEligible ? Math.round(maxEMI) : 0;
   
   const loanAmount = Math.max(0, safePropVal - safeDownpayment);
   const monthlyEMI = calculateEMI(loanAmount, selectedProduct.rate, loanDuration);

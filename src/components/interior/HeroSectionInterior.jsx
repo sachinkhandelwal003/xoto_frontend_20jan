@@ -2,7 +2,6 @@
 
 import React from "react";
 import { ArrowRight } from "lucide-react";
-// import mainbgImage from "../../assets/img/logo/mainbgg.png";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -11,14 +10,19 @@ export default function HeroSectionInterior() {
 
   return (
     <div
-      className="relative w-full bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url(${ "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1770010584911-mainbgg.png"})` }}
+      // CHANGED: Removed inline style, added 'hero-bg-interior' class
+      className="relative w-full bg-cover bg-center bg-no-repeat hero-bg-interior"
     >
       {/* Bottom clipping shapes */}
       <div className="absolute bottom-0 left-0 w-72 h-12 bg-[var(--color-body)] z-[3] clip-left-shape" />
       <div className="absolute bottom-0 right-0 w-72 h-12 bg-[var(--color-body)] z-[3] clip-right-shape" />
 
       <style>{`
+        /* CHANGED: Background image is now handled here for faster rendering */
+        .hero-bg-interior {
+          background-image: url("https://xotostaging.s3.me-central-1.amazonaws.com/properties/1770010584911-mainbgg.png");
+        }
+
         .clip-left-shape {
           position: absolute;
           bottom: 0; left: 0;
@@ -31,7 +35,7 @@ export default function HeroSectionInterior() {
           clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
         }
         .clip-right-shape {
-        position: absolute;
+          position: absolute;
           bottom: 0; right: 0;
           width: 30vw;
           max-width: 320px;
@@ -45,12 +49,13 @@ export default function HeroSectionInterior() {
           .xs\\:text-\\[2\\.25rem\\] { font-size: 2.25rem !important; }
         }
       `}</style>
+      
       <div className="relative z-10 px-4 sm:px-6 md:px-10 lg:px-16 py-28 md:py-40">
         <div className="max-w-4xl text-center mx-auto">
 
-         <h1 className="mb-6 heading-light" style={{ fontSize: '54px', lineHeight: '1.15' }}>
-  {t("title")}
-</h1>
+          <h1 className="mb-6 heading-light" style={{ fontSize: '54px', lineHeight: '1.15' }}>
+            {t("title")}
+          </h1>
 
           <p className="mb-8 paragraph-light text-white">
             {t("description")}
