@@ -74,7 +74,7 @@ export default function XotoLandingPage() {
 
         {/* Content */}
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center h-full px-6 text-center text-white">
-          <h1 className="heading-light font-semibold">
+          <h1 className="heading-light font-semibold leading-[54px]">
             {t("hero.title")}
           </h1>
 

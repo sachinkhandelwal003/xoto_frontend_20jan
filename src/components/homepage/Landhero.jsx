@@ -27,7 +27,7 @@ export default function HeroSection() {
       transition={{ delay }}
       className="bg-white/10 backdrop-blur-md rounded-md p-1 flex items-center justify-center shadow-lg hover:bg-white/30 transition-all cursor-default min-h-[40px]"
     >
-      <h3 className="text-[10px] sm:text-sm md:text-lg font-medium text-white tracking-wide whitespace-normal text-center leading-tight">
+      <h3 className="text-[10px] sm:text-sm md:text-lg font-medium text-white tracking-wide whitespace-normal text-center leading-tight ">
         {title}
       </h3>
     </motion.div>
@@ -66,10 +66,10 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="mb-6 heading-light"
+          className="mb-6 heading-light leading-[54px]"
         >
           {t("hero.title")} <br />
-          <span className="text-white">{t("hero.subtitle")}</span>
+          <span className="text-white ">{t("hero.subtitle")}</span>
         </motion.h1>
 
         {/* Feature Pills Container */}

@@ -25,9 +25,7 @@ export default function WhatAreYouLookingFor() {
   return (
     <section className="relative bg-[var(--color-body)] overflow-hidden pt-15">
       {/* BOTTOM WAVE */}
-      <div className="absolute -bottom-10 sm:-bottom-20 lg:-bottom-48 left-0 w-full z-0 pointer-events-none select-none">
-        <img src={waveint4} alt="Decorative wave" className="w-full object-cover" />
-      </div>
+    
 
       <div className="container mx-auto px-6 lg:px-12 relative z-10">
         {/* HEADING */}

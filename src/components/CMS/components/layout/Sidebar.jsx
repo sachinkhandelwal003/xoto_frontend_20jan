@@ -419,12 +419,7 @@ const CUSTOM_ROLE_LINKS = {
       title: "Bank Library",
       icon: "fas fa-university",
       path: "/dashboard/{roleSlug}/bank/products",
-    },
-    {
-      title: "Reports",
-      icon: "fas fa-chart-bar",
-      path: "/dashboard/{roleSlug}/reports",
-    },
+    }
   ],
   "22": [
     {
