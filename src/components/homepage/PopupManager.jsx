@@ -11,26 +11,19 @@ const PopupManager = () => {
   const timerRef = useRef(null);
   const scrollCountRef = useRef(0);
   const isVisibleRef = useRef(false);
-  const popupCountRef = useRef(
-  parseInt(localStorage.getItem("popupCount") || "0")
-);
-const MAX_POPUPS = 3;
+  
 
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "",
     countryCode: "+971", phone: "", message: "",
   });
 
-  const showPopup = () => {
-  if (isVisibleRef.current) return;
+const showPopup = () => {
+  if (hasShownRef.current) return; // 🚫 already shown
 
-  // 🚫 3 baar ke baad block
-  if (popupCountRef.current >= MAX_POPUPS) return;
-
-  popupCountRef.current += 1; // count increase
-    popupCountRef.current += 1;
-localStorage.setItem("popupCount", popupCountRef.current);
+  hasShownRef.current = true;
   isVisibleRef.current = true;
+
   clearTimeout(timerRef.current);
   setPopupVisible(true);
 };
@@ -55,20 +48,17 @@ localStorage.setItem("popupCount", popupCountRef.current);
   useEffect(() => {
     const activityEvents = ["mousemove", "mousedown", "keypress", "touchstart"];
     activityEvents.forEach((e) => window.addEventListener(e, handleActivity));
-    window.addEventListener("scroll", handleScroll);
+    // window.addEventListener("scroll", handleScroll);
     startInactivityTimer();
     return () => {
       clearTimeout(timerRef.current);
       activityEvents.forEach((e) => window.removeEventListener(e, handleActivity));
-      window.removeEventListener("scroll", handleScroll);
+      // window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
   const handleClose = () => {
-    isVisibleRef.current = false;
-    scrollCountRef.current = 0;
-    setPopupVisible(false);
-    startInactivityTimer();
+   setPopupVisible(false);
   };
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
