@@ -22,15 +22,9 @@ const Article1 = () => {
 
       {/* Content */}
       <div className="relative z-10 text-center px-6">
-       <h1
-  className="
-    text-white font-bold
-    text-3xl sm:text-4xl md:text-5xl lg:text-[50px]
-    flex flex-col items-center
-    leading-[54px]
-    gap-2
-    drop-shadow-xl
-  "
+<h1
+  className="text-white font-bold flex flex-col items-center gap-2 drop-shadow-xl"
+  style={{ fontSize: '54px', lineHeight: '1.15' }}
 >
   <span>{t("title.line1")}</span>
   <span>{t("title.line2")}</span>
@@ -51,12 +45,31 @@ const Article1 = () => {
       <div className="absolute bottom-0 left-0 w-72 h-12 bg-[var(--color-body)] z-[3] clip-left-shape" />
       <div className="absolute bottom-0 right-0 w-72 h-12 bg-[var(--color-body)] z-[3] clip-right-shape" />
 
-      <style>{`
-        .clip-left-shape {
+    <style>{`
+          .clip-left-shape {
+             position: absolute;
+          bottom: 0; left: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 5;
           clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
-        }
-        .clip-right-shape {
+          }
+          .clip-right-shape {
+            position: absolute;
+          bottom: 0; right: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 5;
           clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        @media (min-width: 360px) {
+          .xs\\:text-\\[2\\.25rem\\] { font-size: 2.25rem !important; }
         }
       `}</style>
     </section>

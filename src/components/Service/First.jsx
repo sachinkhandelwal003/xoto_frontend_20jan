@@ -28,10 +28,29 @@ export default function HomeLoanHero() {
       {/* Custom clip paths */}
       <style>{`
         .clip-left-shape {
+             position: absolute;
+          bottom: 0; left: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 5;
           clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
         }
         .clip-right-shape {
+                  position: absolute;
+          bottom: 0; right: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 5;
           clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        @media (min-width: 360px) {
+          .xs\\:text-\\[2\\.25rem\\] { font-size: 2.25rem !important; }
         }
       `}</style>
 
@@ -40,11 +59,11 @@ export default function HomeLoanHero() {
           
           {/* HERO TITLE */}
           <h1
-            className="text-3xl md:text-6xl heading-light font-bold"
-            style={{ lineHeight: "1.4", ...dmSans }}
-          >
-            {t("title")}
-          </h1>
+  className="heading-light font-bold"
+  style={{ fontSize: '54px', lineHeight: '1.4', ...dmSans }}
+>
+  {t("title")}
+</h1>
 
           {/* HERO DESCRIPTION */}
           <p

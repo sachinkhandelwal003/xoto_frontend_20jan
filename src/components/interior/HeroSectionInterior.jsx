@@ -20,16 +20,35 @@ export default function HeroSectionInterior() {
 
       <style>{`
         .clip-left-shape {
+          position: absolute;
+          bottom: 0; left: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 5;
           clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
         }
         .clip-right-shape {
+        position: absolute;
+          bottom: 0; right: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 5;
           clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        @media (min-width: 360px) {
+          .xs\\:text-\\[2\\.25rem\\] { font-size: 2.25rem !important; }
         }
       `}</style>
       <div className="relative z-10 px-4 sm:px-6 md:px-10 lg:px-16 py-28 md:py-40">
         <div className="max-w-4xl text-center mx-auto">
 
-         <h1 className="mb-6 heading-light leading-[54px]">
+         <h1 className="mb-6 heading-light" style={{ fontSize: '54px', lineHeight: '1.15' }}>
   {t("title")}
 </h1>
 
