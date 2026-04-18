@@ -39,7 +39,7 @@ export default function HeroSection() {
       {/* Background Image & Overlay */}
       <div className="absolute inset-0">
         <img
-          src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1770009212214-interior.jpg"}
+          src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1776513404332-1770009212214-interior%20%281%29%20%281%29.jpg"}
           alt={t("hero.subtitle")}
           className="w-full h-full object-cover"
         />
