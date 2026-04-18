@@ -11,7 +11,6 @@ const PopupManager = () => {
   const timerRef = useRef(null);
   const scrollCountRef = useRef(0);
   const isVisibleRef = useRef(false);
-  const hasShownRef = useRef(false);
   
 
   const [form, setForm] = useState({
