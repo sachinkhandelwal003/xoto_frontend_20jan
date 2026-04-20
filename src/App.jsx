@@ -106,7 +106,7 @@ import HeroBuy from "./component/Buy/Herobuy";
 import BuyResultsPage from "./component/Buy/Buyresultspage";
 import MortgageCalculator from "./components/homepage/MortgageCalculator";
 import ProposalLink from "./components/ecommerce/vault/proposal/ProposalLink";
-
+import PopupManager from "./components/homepage/PopupManager";
 
 
 // Lazy-loaded components
@@ -216,18 +216,33 @@ const hideFooter =
   location.pathname.startsWith("/proposal/view/link") ||
   isDashboard ||
   location.pathname.startsWith("/profile/");
+
+  const hidePopup =
+  isDashboard ||
+  location.pathname.includes("login") ||
+  location.pathname.includes("register") ||
+  location.pathname.includes("/freelancer/registration") ||
+  location.pathname.includes("/ecommerce/seller") ||
+  location.pathname.includes("/admin/login") ||
+  location.pathname.startsWith("/dashboard");
+
+
   
   const showChatbot = allowedChatbotPaths.includes(location.pathname);
   return (
     <div className="min-h-screen relative">
       {!hideNavbar && <Navbar />}
       {showFreelancerNavbar && <FreelancerNavbar />}
+      {!hidePopup && <PopupManager />}
+      
       {children}
       {!hideFooter && <Footer />}
       {showChatbot && <XobiaChatbot />}
     </div>
   );
 }
+
+
 
 function App() {
   return (
@@ -237,11 +252,13 @@ function App() {
       <FreelancerProvider><ProductProvider>
         <LayoutWrapper>
           <ScrollToTop />
+        
           <Suspense fallback={<Loader />}>
             <Routes>
               {/* --- ADDED REDIRECT HERE --- */}
               <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
               {/* --------------------------- */}
+             
 
               <Route path="/dashboard" element={<Navigate to="/" replace />} />
               <Route path="/" element={<Home />} />
@@ -285,7 +302,6 @@ function App() {
               <Route path="/grid/login" element={<Login />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/user/login" element={<CustomerLogin />} />
-              <Route path="/accountant/login" element={<AccountantLogin />} />
               <Route path="/consultation" element={<Consult />} />
               <Route path="/designs" element={<Designs />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -367,7 +383,7 @@ function App() {
                <Route path="/waiting-approval" element={<WaitingApproval />} />
                <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
-
+  
               
               <Route
                 path="/dashboard/:roleSlug/*"
