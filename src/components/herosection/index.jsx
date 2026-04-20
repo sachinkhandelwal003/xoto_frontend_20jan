@@ -27,16 +27,7 @@ const HeroSection = () => {
       </div>
 
       {/* EXCLUSIVE DEALS LAYER — scales down on mobile */}
-     <div className="
-  absolute 
-  top-[0px] 
-  sm:top-[20px] 
-  md:top-[-13px] 
-  right-0 
-  z-10 
-  w-[100px] sm:w-[150px] md:w-[200px] lg:w-[242px] 
-  cursor-pointer
-">
+      <div className="absolute top-[0px] sm:top-[20px] md:top-[-13px] right-0 z-10 w-[100px] sm:w-[150px] md:w-[200px] lg:w-[242px] cursor-pointer">
         <img src={layer} alt="Exclusive Deals" className="w-full h-auto object-contain" onClick={() => navigate("/Property#buy3")} />
       </div>
 
@@ -56,18 +47,6 @@ const HeroSection = () => {
       <div className="relative z-[2] w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 flex flex-col items-center text-center gap-8 sm:gap-10">
         <div className="w-full space-y-4 sm:space-y-6">
 
-<<<<<<< HEAD
-          {/* Heading — fluid size: small on mobile, full size on desktop */}
-       <h1
-  className="heading-light w-full text-center flex flex-col items-center gap-1 sm:gap-2"
-  style={{ fontSize: 'clamp(28px, 6vw, 54px)', lineHeight: '1.15' }}
->
-  <span className="block">{t("hero.title1")}</span>
-  <span className="block">{t("hero.title2")}</span>
-</h1>
-{/* hello  */}
-{/* j;wbejkbd */}
-=======
           {/* Heading */}
           <h1
             className="heading-light w-full text-center flex flex-col items-center gap-1 sm:gap-2"
@@ -77,7 +56,6 @@ const HeroSection = () => {
             <span className="block">{t("hero.title2")}</span>
           </h1>
 
->>>>>>> fc93acdd49d483fff28a85fea6f7e0f1c7b9434f
           {/* Description */}
           <p className="block text-sm sm:text-base md:text-lg max-w-3xl mx-auto px-2">
             {t("hero.description")}
