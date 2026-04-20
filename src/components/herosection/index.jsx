@@ -208,6 +208,7 @@ const HeroSection = () => {
   <span className="block">{t("hero.title2")}</span>
 </h1>
 {/* hello  */}
+{/* j;wbejkbd */}
           {/* Description */}
           <p className="block text-sm sm:text-base md:text-lg max-w-3xl mx-auto px-2">
             {t("hero.description")}
