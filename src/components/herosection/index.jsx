@@ -35,16 +35,7 @@ useEffect(() => {
       </div>
 
       {/* EXCLUSIVE DEALS LAYER — scales down on mobile */}
-     <div className="
-  absolute 
-  top-[0px] 
-  sm:top-[20px] 
-  md:top-[-13px] 
-  right-0 
-  z-10 
-  w-[100px] sm:w-[150px] md:w-[200px] lg:w-[242px] 
-  cursor-pointer
-">
+      <div className="absolute top-[0px] sm:top-[20px] md:top-[-13px] right-0 z-10 w-[100px] sm:w-[150px] md:w-[200px] lg:w-[242px] cursor-pointer">
         <img src={layer} alt="Exclusive Deals" className="w-full h-auto object-contain" onClick={() => navigate("/Property#buy3")} />
       </div>
 
