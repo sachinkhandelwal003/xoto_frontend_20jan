@@ -39,7 +39,7 @@ export default function HeroSection() {
       {/* Background Image & Overlay */}
       <div className="absolute inset-0">
         <img
-          src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1770009212214-interior.jpg"}
+          src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1776513404332-1770009212214-interior%20%281%29%20%281%29.jpg"}
           alt={t("hero.subtitle")}
           className="w-full h-full object-cover"
         />
@@ -51,11 +51,30 @@ export default function HeroSection() {
       <div className="absolute bottom-0 right-0 w-72 h-12 bg-[var(--color-body)] z-[3] clip-right-shape" />
 
       <style>{`
-        .clip-left-shape {
+          .clip-left-shape {
+             position: absolute;
+          bottom: 0; left: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 5;
           clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
-        }
-        .clip-right-shape {
+          }
+          .clip-right-shape {
+            position: absolute;
+          bottom: 0; right: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 5;
           clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        @media (min-width: 360px) {
+          .xs\\:text-\\[2\\.25rem\\] { font-size: 2.25rem !important; }
         }
       `}</style>
 
@@ -63,14 +82,15 @@ export default function HeroSection() {
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 flex flex-col items-center text-center text-white">
         
         <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="mb-6 heading-light leading-[54px]"
-        >
-          {t("hero.title")} <br />
-          <span className="text-white ">{t("hero.subtitle")}</span>
-        </motion.h1>
+  initial={{ opacity: 0, y: 30 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.8 }}
+  className="mb-6 heading-light"
+  style={{ fontSize: '54px', lineHeight: '1.15' }}
+>
+  {t("hero.title")} <br />
+  <span className="text-white">{t("hero.subtitle")}</span>
+</motion.h1>
 
         {/* Feature Pills Container */}
         <div className="w-full flex flex-col items-center gap-3 md:gap-5 mb-12">

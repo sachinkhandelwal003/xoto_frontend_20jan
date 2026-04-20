@@ -446,13 +446,13 @@ const fetchSavedDesigns = async () => {
             <button onClick={() => setShowStyleModal(true)} className="bg-[#F3F4F6] hover:bg-gray-100 transition-colors rounded-[20px] lg:rounded-[24px] p-4 lg:p-6 flex flex-col items-center justify-center gap-3 lg:gap-4 aspect-square relative group">
               <div className="bg-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform"><Sparkles className="text-gray-500 w-5 h-5 lg:w-6 lg:h-6" /></div>
               <span className="font-bold text-gray-700 text-sm lg:text-base">Style</span>
-              <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">{selectedStyles.length > 0 ? 'Selected' : 'Choose'}</span>
+              <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs mt-5 font-bold px-3 py-1 rounded-full uppercase tracking-wide">{selectedStyles.length > 0 ? 'Selected' : 'Choose'}</span>
               {selectedStyles.length > 0 && <div className="absolute top-2 right-2 text-green-500 bg-white rounded-full p-1 shadow-sm"><CheckCircle2 size={16} /></div>}
             </button>
             <button onClick={() => setShowElementModal(true)} className="bg-[#F3F4F6] hover:bg-gray-100 transition-colors rounded-[20px] lg:rounded-[24px] p-4 lg:p-6 flex flex-col items-center justify-center gap-3 lg:gap-4 aspect-square relative group">
               <div className="bg-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform"><LayoutDashboard className="text-gray-500 w-5 h-5 lg:w-6 lg:h-6" /></div>
               <span className="font-bold text-gray-700 text-sm lg:text-base">Elements</span>
-              <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">{selectedElements.length > 0 ? 'Selected' : 'Choose'}</span>
+              <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs font-bold mt-5 px-3 py-1 rounded-full uppercase tracking-wide">{selectedElements.length > 0 ? 'Selected' : 'Choose'}</span>
               {selectedElements.length > 0 && <div className="absolute top-2 right-2 text-green-500 bg-white rounded-full p-1 shadow-sm"><CheckCircle2 size={16} /></div>}
             </button>
           </div>

@@ -58,12 +58,31 @@ export default function XotoLandingPage() {
 
         <style>{`
           .clip-left-shape {
-            clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
+             position: absolute;
+          bottom: 0; left: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: white;
+          z-index: 5;
+          clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
           }
           .clip-right-shape {
-            clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
-          }
-        `}</style>
+            position: absolute;
+          bottom: 0; right: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: white;
+          z-index: 5;
+          clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        @media (min-width: 360px) {
+          .xs\\:text-\\[2\\.25rem\\] { font-size: 2.25rem !important; }
+        }
+      `}</style>
 
         {/* Background Image */}
         <img
@@ -74,9 +93,9 @@ export default function XotoLandingPage() {
 
         {/* Content */}
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center h-full px-6 text-center text-white">
-          <h1 className="heading-light font-semibold leading-[54px]">
-            {t("hero.title")}
-          </h1>
+          <h1 className="heading-light font-semibold" style={{ fontSize: '54px', lineHeight: '1.15' }}>
+  {t("hero.title")}
+</h1>
 
           <p className="mt-4 text-lg md:text-xl max-w-3xl paragraph-light">
             {t("hero.subtitle")}

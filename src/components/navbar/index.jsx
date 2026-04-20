@@ -148,7 +148,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-20">
           
           <Link to="/" className="flex flex-col">
-            <img src={logoNew} alt="Logo" className="h-45" />
+            <img src={logoNew} alt="Logo" className="h-15" />
           </Link>
 
           {/* DESKTOP NAV */}

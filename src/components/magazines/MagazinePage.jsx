@@ -62,7 +62,7 @@ const BuiltForEveryone = () => {
   return (
     <section className="relative  z-10 py-8 px-4 sm:px-6 lg:px-8 bg-[var(--color-body)] overflow-hidden">
       {/* Wave */}
-      <div className="absolute bottom-[-20px] sm:bottom-[-50px] md:bottom-[-80px] lg:bottom-[-130px] xl:bottom-[-160px] left-0 w-full z-0  ">
+      <div className="absolute bottom-[-20px] sm:bottom-[-50px] md:bottom-[-80px] lg:bottom-[-130px] xl:bottom-[-160px] left-0 w-full z-20 pointer-events-none  ">
         <img
           src={wave1}
           alt=""
@@ -70,7 +70,7 @@ const BuiltForEveryone = () => {
         />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto  ">
+      <div className="relative z-0 max-w-7xl mx-auto  ">
         <h2
           className="text-center mb-6 lg:mb-16 heading-light"
           style={{ color: "var(--color-black)" }}
@@ -78,10 +78,10 @@ const BuiltForEveryone = () => {
           {t("title")}
         </h2>
 
-        <div className="flex flex-col lg:flex-row items-center justify-between">
+        <div className="flex flex-col lg:flex-row items-center justify-between ">
           {/* Video */}
-          <div className="w-full  z-0 overflow-hidden lg:w-1/2 flex justify-start items-start mb-10 lg:mb-25">
-            <div className="relative w-60 h-60 sm:w-100 sm:h-100 lg:w-110 lg:h-110 mx-auto">
+          <div className="w-full  relative    z-0 overflow-hidden  lg:w-1/2 flex justify-start items-start mb-10 lg:mb-25">
+            <div className="relative  z-0 w-60 h-60 sm:w-100 sm:h-100 lg:w-110 lg:h-110 mx-auto">
               <video
                 src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1773149793064-round321.mp4"}
                 autoPlay

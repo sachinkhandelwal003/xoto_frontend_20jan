@@ -27,7 +27,7 @@ const RegisterNowPage = () => {
     formState: { errors },
   } = useForm({ mode: "onBlur" });
 
-  const watchEmail = watch("email"); 
+  const watchEmail = watch("email");
 
   const [countryIso, setCountryIso] = useState("AE");
   const [mobileNumber, setMobileNumber] = useState("");
@@ -61,6 +61,13 @@ const RegisterNowPage = () => {
     });
   }, []);
 
+  // --- All countries for nationality dropdown ---
+  const nationalityOptions = useMemo(() => {
+    return Country.getAllCountries()
+      .map((c) => ({ name: c.name, iso: c.isoCode }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, []);
+
   const getCountryCode = () => {
     const selectedCountryData = Country.getCountryByCode(countryIso);
     return selectedCountryData ? `+${selectedCountryData.phonecode}` : "+971";
@@ -73,7 +80,6 @@ const RegisterNowPage = () => {
       message.error("Please enter a valid email address first.");
       return;
     }
-
     setEmailOtpLoading(true);
     try {
       await apiService.post("/otp/email-otp/send", { email: watchEmail.toLowerCase().trim() });
@@ -82,8 +88,6 @@ const RegisterNowPage = () => {
       setEmailOtpVerified(false);
     } catch (error) {
       const errData = error.response?.data;
-      
-      // ✅ Check if it's an array of errors OR a string message containing "email"
       if (errData?.errors && errData.errors.length > 0) {
         errData.errors.forEach(err => {
           if (err.field === 'email') setError("email", { type: "manual", message: err.message });
@@ -91,10 +95,7 @@ const RegisterNowPage = () => {
       } else if (errData?.message && /email/i.test(errData.message)) {
         setError("email", { type: "manual", message: errData.message });
       } else {
-        notification.error({
-          message: "Email Error",
-          description: errData?.message || "Failed to send OTP to email."
-        });
+        notification.error({ message: "Email Error", description: errData?.message || "Failed to send OTP to email." });
       }
     } finally {
       setEmailOtpLoading(false);
@@ -108,10 +109,7 @@ const RegisterNowPage = () => {
     }
     setEmailOtpLoading(true);
     try {
-      const payload = {
-        email: watchEmail.toLowerCase().trim(),
-        otp: emailEnteredOtp
-      };
+      const payload = { email: watchEmail.toLowerCase().trim(), otp: emailEnteredOtp };
       await apiService.post("/otp/email-otp/verify", payload);
       message.success("Email Verified Successfully!");
       setEmailOtpVerified(true);
@@ -119,7 +117,6 @@ const RegisterNowPage = () => {
     } catch (error) {
       const errData = error.response?.data;
       if (errData?.message && /otp/i.test(errData.message)) {
-        // You can set error to email field or just show popup for invalid OTP
         notification.error({ message: "Verification Failed", description: errData.message });
       } else {
         notification.error({ message: "Verification Failed", description: "Invalid Email OTP" });
@@ -137,21 +134,15 @@ const RegisterNowPage = () => {
       message.error(`Please enter a valid ${requiredDigits}-digit number first.`);
       return;
     }
-
     setOtpLoading(true);
     try {
-      const payload = {
-        country_code: getCountryCode(),
-        phone_number: mobileNumber
-      };
+      const payload = { country_code: getCountryCode(), phone_number: mobileNumber };
       await apiService.post("/otp/send-otp", payload);
       message.success("Verification code sent to your mobile!");
       setOtpSent(true);
       setOtpVerified(false);
     } catch (error) {
       const errData = error.response?.data;
-      
-      // ✅ Smart catch for mobile errors to show below input
       if (errData?.errors && errData.errors.length > 0) {
         errData.errors.forEach(err => {
           const fieldName = (err.field === 'mobile' || err.field === 'mobile.number') ? 'mobileNumber' : err.field;
@@ -160,10 +151,7 @@ const RegisterNowPage = () => {
       } else if (errData?.message && /(mobile|number|phone)/i.test(errData.message)) {
         setError("mobileNumber", { type: "manual", message: errData.message });
       } else {
-        notification.error({
-          message: "Error",
-          description: errData?.message || "Failed to send OTP"
-        });
+        notification.error({ message: "Error", description: errData?.message || "Failed to send OTP" });
       }
     } finally {
       setOtpLoading(false);
@@ -177,28 +165,19 @@ const RegisterNowPage = () => {
     }
     setOtpLoading(true);
     try {
-      const payload = {
-        country_code: getCountryCode(),
-        phone_number: mobileNumber,
-        otp: enteredOtp
-      };
+      const payload = { country_code: getCountryCode(), phone_number: mobileNumber, otp: enteredOtp };
       await apiService.post("/otp/verify-otp", payload);
       message.success("Mobile Verified Successfully!");
       setOtpVerified(true);
       setOtpSent(false);
     } catch (error) {
-      notification.error({
-        message: "Verification Failed",
-        description: error?.response?.data?.message || "Invalid OTP"
-      });
+      notification.error({ message: "Verification Failed", description: error?.response?.data?.message || "Invalid OTP" });
     } finally {
       setOtpLoading(false);
     }
   };
 
   /* ================= SUBMIT LOGIC ================= */
-
- /* ================= SUBMIT LOGIC ================= */
 
   const onSubmit = async (data) => {
     if (!otpVerified || !emailOtpVerified) {
@@ -212,6 +191,9 @@ const RegisterNowPage = () => {
       password: data.password,
       confirm_password: data.confirmPassword,
       mobile: { country_code: getCountryCode(), number: String(mobileNumber) },
+      gender: data.gender,
+      nationality: data.nationality,
+      residencyStatus: data.residencyStatus,
       comingFromAiPage: true,
     };
 
@@ -224,30 +206,13 @@ const RegisterNowPage = () => {
       navigate("/dashboard/customer", { replace: true });
     } catch (err) {
       const apiError = err?.response?.data;
-      
-      // ✅ Helper function taaki agar message me dono ka naam ho to dono jagah error dikhe
+
       const setFieldErrors = (errorMessage) => {
         const msg = errorMessage.toLowerCase();
         let isSet = false;
-        
-        if (msg.includes("email")) {
-          setError("email", { type: "manual", message: errorMessage });
-          isSet = true;
-        }
-        if (msg.includes("mobile") || msg.includes("phone") || msg.includes("number")) {
-          setError("mobileNumber", { type: "manual", message: errorMessage });
-          isSet = true;
-        }
-        
-        // Agar message me field ka naam nahi hai tabhi toast aayega
-        if (!isSet) {
-          showToast(errorMessage, "error");
-        }
-        
-        // 2 sec baad login page pe bhej do
-        // if (msg.includes("already") || msg.includes("exists")) {
-        //   setTimeout(() => navigate("/user/login"), 2000);
-        // }
+        if (msg.includes("email")) { setError("email", { type: "manual", message: errorMessage }); isSet = true; }
+        if (msg.includes("mobile") || msg.includes("phone") || msg.includes("number")) { setError("mobileNumber", { type: "manual", message: errorMessage }); isSet = true; }
+        if (!isSet) { showToast(errorMessage, "error"); }
       };
 
       if (apiError?.errors && Array.isArray(apiError.errors) && apiError.errors.length > 0) {
@@ -257,19 +222,13 @@ const RegisterNowPage = () => {
           if (fieldName === "mobile.number" || fieldName === "mobile") fieldName = "mobileNumber";
           setError(fieldName, { type: "manual", message: e.message });
         });
-      } 
-      else if (apiError?.message) {
+      } else if (apiError?.message) {
         setFieldErrors(apiError.message);
-      } 
-      else if (Array.isArray(apiError) && apiError.length > 0) {
+      } else if (Array.isArray(apiError) && apiError.length > 0) {
         const firstErr = apiError[0];
-        if (firstErr.message) {
-          setFieldErrors(firstErr.message);
-        } else if (typeof firstErr === "string") {
-          setFieldErrors(firstErr);
-        }
-      } 
-      else {
+        if (firstErr.message) setFieldErrors(firstErr.message);
+        else if (typeof firstErr === "string") setFieldErrors(firstErr);
+      } else {
         showToast("Registration failed. Try again.", "error");
       }
     } finally {
@@ -305,6 +264,7 @@ const RegisterNowPage = () => {
 
           <Form layout="vertical" onFinish={handleSubmit(onSubmit)} className="space-y-3">
 
+            {/* Name */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Form.Item label="First Name" validateStatus={errors.first_name && "error"} help={errors.first_name?.message}>
                 <Controller name="first_name" control={control} rules={{ required: "First name is required" }}
@@ -320,39 +280,31 @@ const RegisterNowPage = () => {
             <div className="mb-4">
               <Form.Item label="Email Address" validateStatus={(errors.email || (emailOtpSent && !emailOtpVerified)) ? "error" : ""} help={errors.email?.message} className="mb-0">
                 <div className="flex gap-2">
-                  <Controller 
-                    name="email" 
-                    control={control} 
+                  <Controller
+                    name="email"
+                    control={control}
                     rules={{ required: "Email is required", pattern: { value: /^\S+@\S+\.\S+$/, message: "Invalid email" } }}
                     render={({ field }) => (
-                      <Input 
+                      <Input
                         {...field}
-                        size="large" 
-                        prefix={<Mail size={18} />} 
+                        size="large"
+                        prefix={<Mail size={18} />}
                         placeholder="example@mail.com"
                         disabled={emailOtpVerified}
-                        onChange={(e) => {
-                          field.onChange(e);
-                          clearErrors("email");
-                        }}
+                        onChange={(e) => { field.onChange(e); clearErrors("email"); }}
                         suffix={emailOtpVerified && <CheckCircle size={16} className="text-green-500" />}
                       />
-                    )} 
+                    )}
                   />
                   {!emailOtpVerified && !emailOtpSent && (
-                    <Button 
-                      type="primary" 
-                      size="large" 
-                      onClick={handleSendEmailOtp} 
-                      loading={emailOtpLoading}
-                      style={{ backgroundColor: '#5C039B', borderColor: '#5C039B', minWidth: '90px' }}
-                    >
+                    <Button type="primary" size="large" onClick={handleSendEmailOtp} loading={emailOtpLoading}
+                      style={{ backgroundColor: '#5C039B', borderColor: '#5C039B', minWidth: '90px' }}>
                       Send OTP
                     </Button>
                   )}
-                   {emailOtpSent && !emailOtpVerified && (
+                  {emailOtpSent && !emailOtpVerified && (
                     <Button danger size="large" onClick={() => { setEmailOtpSent(false); setEmailEnteredOtp(""); }}>
-                        Change
+                      Change
                     </Button>
                   )}
                 </div>
@@ -362,22 +314,12 @@ const RegisterNowPage = () => {
                 <div className="mt-3 p-3 bg-blue-50 rounded-xl border border-blue-100 animate-fade-in">
                   <div className="flex gap-2 items-center">
                     <div className="flex-1">
-                      <Input
-                        size="large"
-                        placeholder="Email OTP Code"
-                        value={emailEnteredOtp}
+                      <Input size="large" placeholder="Email OTP Code" value={emailEnteredOtp}
                         onChange={(e) => setEmailEnteredOtp(e.target.value.replace(/\D/g, ""))}
-                        maxLength={6}
-                        prefix={<ShieldCheck size={16} className="text-blue-600" />}
-                      />
+                        maxLength={6} prefix={<ShieldCheck size={16} className="text-blue-600" />} />
                     </div>
-                    <Button 
-                      type="primary" 
-                      size="large" 
-                      onClick={handleVerifyEmailOtp} 
-                      loading={emailOtpLoading} 
-                      style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}
-                    >
+                    <Button type="primary" size="large" onClick={handleVerifyEmailOtp} loading={emailOtpLoading}
+                      style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}>
                       Verify Email
                     </Button>
                   </div>
@@ -392,21 +334,9 @@ const RegisterNowPage = () => {
               </label>
               <div className="flex gap-3 items-start">
                 <div className="w-[130px]">
-                  <Select
-                    size="large"
-                    value={countryIso}
-                    disabled={otpVerified}
-                    onChange={(val) => {
-                      setCountryIso(val);
-                      setMobileNumber("");
-                      setOtpSent(false);
-                      setOtpVerified(false);
-                      clearErrors("mobileNumber"); 
-                    }}
-                    className="w-full custom-select-register"
-                    showSearch
-                    optionFilterProp="children"
-                  >
+                  <Select size="large" value={countryIso} disabled={otpVerified}
+                    onChange={(val) => { setCountryIso(val); setMobileNumber(""); setOtpSent(false); setOtpVerified(false); clearErrors("mobileNumber"); }}
+                    className="w-full custom-select-register" showSearch optionFilterProp="children">
                     {countryOptions.map((item) => (
                       <Option key={item.iso} value={item.iso}>
                         <div className="flex items-center gap-2">
@@ -421,40 +351,19 @@ const RegisterNowPage = () => {
                 <div className="flex-1">
                   <Form.Item validateStatus={errors.mobileNumber && "error"} help={errors.mobileNumber?.message} className="mb-0">
                     <div className="flex gap-2">
-                      <Input
-                        size="large"
-                        prefix={<Phone size={16} className="text-gray-400" />}
-                        value={mobileNumber}
-                        disabled={otpVerified}
-                        onChange={(e) => {
-                          setMobileNumber(e.target.value.replace(/\D/g, ""));
-                          clearErrors("mobileNumber"); 
-                        }}
-                        placeholder="Enter digits"
-                        maxLength={PHONE_LENGTH_RULES[countryIso] || 15}
-                        suffix={otpVerified && <CheckCircle size={16} className="text-green-500" />}
-                      />
+                      <Input size="large" prefix={<Phone size={16} className="text-gray-400" />}
+                        value={mobileNumber} disabled={otpVerified}
+                        onChange={(e) => { setMobileNumber(e.target.value.replace(/\D/g, "")); clearErrors("mobileNumber"); }}
+                        placeholder="Enter digits" maxLength={PHONE_LENGTH_RULES[countryIso] || 15}
+                        suffix={otpVerified && <CheckCircle size={16} className="text-green-500" />} />
                       {!otpVerified && !otpSent && (
-                        <Button
-                          type="primary"
-                          size="large"
-                          onClick={handleSendOtp}
-                          loading={otpLoading}
-                          disabled={!mobileNumber}
-                          style={{
-                            backgroundColor: !mobileNumber ? 'white' : '#5C039B',
-                            borderColor: !mobileNumber ? '#d9d9d9' : '#5C039B',
-                            color: !mobileNumber ? 'rgba(0,0,0,0.25)' : 'white',
-                            minWidth: '90px'
-                          }}
-                        >
+                        <Button type="primary" size="large" onClick={handleSendOtp} loading={otpLoading} disabled={!mobileNumber}
+                          style={{ backgroundColor: !mobileNumber ? 'white' : '#5C039B', borderColor: !mobileNumber ? '#d9d9d9' : '#5C039B', color: !mobileNumber ? 'rgba(0,0,0,0.25)' : 'white', minWidth: '90px' }}>
                           Send OTP
                         </Button>
                       )}
                       {otpSent && !otpVerified && (
-                        <Button danger size="large" onClick={() => { setOtpSent(false); setEnteredOtp(""); }}>
-                          Change
-                        </Button>
+                        <Button danger size="large" onClick={() => { setOtpSent(false); setEnteredOtp(""); }}>Change</Button>
                       )}
                     </div>
                   </Form.Item>
@@ -465,16 +374,12 @@ const RegisterNowPage = () => {
                 <div className="mt-3 p-3 bg-purple-50 rounded-xl border border-purple-100 animate-fade-in">
                   <div className="flex gap-2 items-center">
                     <div className="flex-1">
-                      <Input
-                        size="large"
-                        placeholder="Enter Bypass OTP"
-                        value={enteredOtp}
+                      <Input size="large" placeholder="Enter Bypass OTP" value={enteredOtp}
                         onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ""))}
-                        maxLength={6}
-                        prefix={<ShieldCheck size={16} className="text-purple-600" />}
-                      />
+                        maxLength={6} prefix={<ShieldCheck size={16} className="text-purple-600" />} />
                     </div>
-                    <Button type="primary" size="large" onClick={handleVerifyOtp} loading={otpLoading} style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}>
+                    <Button type="primary" size="large" onClick={handleVerifyOtp} loading={otpLoading}
+                      style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}>
                       Verify OTP
                     </Button>
                   </div>
@@ -482,6 +387,74 @@ const RegisterNowPage = () => {
               )}
             </div>
 
+            {/* ── GENDER, NATIONALITY, RESIDENCY STATUS ── */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+              {/* Gender */}
+              <Form.Item 
+  label={<>Gender <span className="text-red-500">*</span></>}
+  validateStatus={errors.gender && "error"} 
+  help={errors.gender?.message}
+>
+  <Controller
+    name="gender"
+    control={control}
+    rules={{ required: "Gender is required" }}
+    render={({ field }) => (
+      <Select {...field} size="large" placeholder="Select gender" allowClear>
+        <Option value="male">Male</Option>
+        <Option value="female">Female</Option>
+        <Option value="other">Other</Option>
+      </Select>
+    )}
+  />
+</Form.Item>
+
+              {/* Nationality */}
+              <Form.Item 
+  label={<>Nationality <span className="text-red-500">*</span></>}
+  validateStatus={errors.nationality && "error"} 
+  help={errors.nationality?.message}
+>
+                <Controller name="nationality" control={control}
+                  rules={{ required: "Nationality is required" }}
+                  render={({ field }) => (
+                    <Select {...field} size="large" placeholder="Select nationality"
+                      showSearch optionFilterProp="children"
+                      filterOption={(input, option) =>
+                        option?.children?.toLowerCase().includes(input.toLowerCase())
+                      }>
+                      {nationalityOptions.map((c) => (
+                        <Option key={c.iso} value={c.name}>{c.name}</Option>
+                      ))}
+                    </Select>
+                  )} />
+              </Form.Item>
+
+              {/* Residency Status */}
+           <Form.Item 
+  label={<>Residency Status <span className="text-red-500">*</span></>}
+  validateStatus={errors.residencyStatus && "error"} 
+  help={errors.residencyStatus?.message}
+>
+  <Controller
+    name="residencyStatus"
+    control={control}
+    rules={{ required: "Residency status is required" }}
+    render={({ field }) => (
+      <Select {...field} size="large" placeholder="Select status" allowClear>
+        <Option value="national">National</Option>
+        <Option value="resident">Resident</Option>
+        <Option value="non_resident">Non Resident</Option>
+      </Select>
+    )}
+  />
+</Form.Item>
+
+            </div>
+            {/* ────────────────────────────────────────── */}
+
+            {/* Password */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Form.Item label="Password" validateStatus={errors.password && "error"} help={errors.password?.message}>
                 <Controller name="password" control={control} rules={{ required: "Required", minLength: { value: 6, message: "Min 6 chars" } }}
@@ -493,18 +466,13 @@ const RegisterNowPage = () => {
               </Form.Item>
             </div>
 
-            <Button
-              htmlType="submit"
-              loading={loading}
-              block
-              size="large"
+            <Button htmlType="submit" loading={loading} block size="large"
               disabled={!otpVerified || !emailOtpVerified}
               className={`rounded-xl h-12 mt-4 font-semibold !text-white !border-none ${
                 (!otpVerified || !emailOtpVerified)
                   ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed'
                   : '!bg-[#5C039B] hover:!bg-[#4a027d]'
-              }`}
-            >
+              }`}>
               {!emailOtpVerified ? "Verify Email to Continue" : !otpVerified ? "Verify Mobile to Continue" : "Create Account"}
             </Button>
 
