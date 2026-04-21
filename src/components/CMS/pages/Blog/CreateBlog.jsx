@@ -126,22 +126,73 @@ const BLOG_CONTENT_STYLES = `
     font-weight: 600;
   }
 `;
-
-// ─────────────────────────────────────────────
-//  PASTE CLEANER & SMART AUTO-FILL
-// ─────────────────────────────────────────────
+// ✅ FINAL - USE THIS ONE
+// ✅ FIXED VERSION - Preserves structure, removes Word garbage
 const cleanWordHtml = (html) => {
   if (!html) return '';
-  let c = html;
-  c = c.replace(/.*?<!\[endif\]-->/gs, '');
-  c = c.replace(/<o:p>.*?<\/o:p>/gs, '');
-  c = c.replace(/<style[^>]*>.*?<\/style>/gs, '');
-  c = c.replace(/<meta[^>]*>/gs, '');
-  c = c.replace(/<\?xml[^?]*\?>/gs, '');
-  c = c.replace(/mso-[^;:"']+;?/g, '');
-  return c;
+  
+  let cleaned = html;
+  
+  // Remove all lang attributes
+  cleaned = cleaned.replace(/lang="[^"]*"/gi, '');
+  
+  // Remove all inline styles
+  cleaned = cleaned.replace(/style="[^"]*"/gi, '');
+  
+  // Remove Word classes
+  cleaned = cleaned.replace(/class="[^"]*"/gi, '');
+  
+  // Remove empty headings with &nbsp;
+  cleaned = cleaned.replace(/<h[1-6][^>]*>\s*(&nbsp;|\s)*\s*<\/h[1-6]>/gi, '');
+  
+  // Remove name attributes from anchor tags
+  cleaned = cleaned.replace(/<a\s+name="[^"]*"[^>]*>/gi, '');
+  
+  // Clean up headings - remove nested bold/spans
+  cleaned = cleaned.replace(/<h([1-6])[^>]*>(?:<b>)?(?:<span[^>]*>)?([^<]+)(?:<\/span>)?(?:<\/b>)?<\/h\1>/gi, '<h$1>$2</h$1>');
+  
+  // Convert Word list items to proper HTML lists
+  // Find paragraphs with bullet points
+  const bulletPattern = /<p[^>]*>(?:<span[^>]*>)?(?:●|•|\d+\.)\s*([^<]+)<\/p>/gi;
+  
+  let match;
+  let bulletItems = [];
+  let lastIndex = 0;
+  let result = '';
+  
+  // Process the content
+  cleaned = cleaned.replace(bulletPattern, (match, content) => {
+    return `<li>${content.trim()}</li>`;
+  });
+  
+  // Wrap consecutive <li> in <ul>
+  cleaned = cleaned.replace(/(<li>.*?<\/li>)(?=(<li>|$))/gs, (match) => {
+    return `<ul>${match}</ul>`;
+  });
+  
+  // Remove spans but keep content
+  cleaned = cleaned.replace(/<span[^>]*>([\s\S]*?)<\/span>/gi, '$1');
+  
+  // Clean up bold tags
+  cleaned = cleaned.replace(/<b([^>]*)>/gi, '<strong$1>');
+  cleaned = cleaned.replace(/<\/b>/gi, '</strong>');
+  
+  // Clean up link attributes
+  cleaned = cleaned.replace(/<a\s+([^>]*?)href="([^"]+)"([^>]*)>/gi, (match, before, href, after) => {
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer">`;
+  });
+  
+  // Remove empty paragraphs
+  cleaned = cleaned.replace(/<p[^>]*>\s*<\/p>/gi, '');
+  
+  // Fix multiple line breaks
+  cleaned = cleaned.replace(/\n\s*\n/g, '\n');
+  
+  // Trim whitespace
+  cleaned = cleaned.trim();
+  
+  return cleaned;
 };
-
 const CATEGORY_KEYWORDS = {
   'AI': ['artificial intelligence', 'machine learning', 'deep learning', 'neural network', 'chatgpt', 'llm', 'ai ', ' ai,', 'automation', 'nlp', 'generative'],
   'Real Estate': ['property', 'real estate', 'housing', 'apartment', 'villa', 'rent', 'lease', 'mortgage', 'broker', 'land', 'plot', 'realty'],
@@ -489,16 +540,39 @@ const editorConfig = {
   toolbarSticky: false,
   askBeforePasteHTML: false,
   askBeforePasteFromWord: false,
-  defaultActionOnPaste: 'insert_as_html',
-  // ✅ FIX: Inject CSS inside the Jodit iframe so bullets show correctly while editing
+  defaultActionOnPaste: 'insert_as_html', // ✅ Changed from 'insert_clear_html'
   editorCssClass: 'jodit-blog-editor',
+  removeButtons: ['iframe', 'video'], // Optional: remove unwanted buttons
+  beautifyHTML: true,
   extraCSS: `
-    ul { list-style-type: disc !important; padding-left: 24px !important; margin: 8px 0 !important; }
-    ol { list-style-type: decimal !important; padding-left: 24px !important; margin: 8px 0 !important; }
-    li { display: list-item !important; margin: 4px 0 !important; }
+    ul, ol { 
+      padding-left: 24px !important; 
+      margin: 12px 0 !important; 
+    }
+    ul { list-style-type: disc !important; }
+    ol { list-style-type: decimal !important; }
+    li { 
+      margin: 6px 0 !important; 
+      line-height: 1.6 !important;
+    }
     ul ul { list-style-type: circle !important; }
     ul ul ul { list-style-type: square !important; }
-    blockquote { border-left: 4px solid #7c3aed; padding-left: 16px; margin: 16px 0; color: #555; font-style: italic; }
+    blockquote { 
+      border-left: 4px solid #7c3aed; 
+      padding-left: 16px; 
+      margin: 16px 0; 
+      color: #555; 
+      font-style: italic; 
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 24px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    p {
+      margin: 12px 0;
+      line-height: 1.6;
+    }
   `,
 };
 
@@ -613,27 +687,163 @@ const BlogManagement = () => {
 
   const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, views: 0 });
 
-  const handleSmartPaste = useCallback((event) => {
-    const clipboardData = event.clipboardData;
-    const pastedHtml = clipboardData.getData('text/html');
-    const pastedText = clipboardData.getData('text/plain');
-    const finalHtml = pastedHtml || pastedText;
-    if (finalHtml) {
-      const extracted = smartExtract(cleanWordHtml(finalHtml));
+const handleSmartPaste = useCallback((event) => {
+  event.preventDefault();
+  
+  const clipboardData = event.clipboardData;
+  const pastedHtml = clipboardData.getData('text/html');
+  const pastedText = clipboardData.getData('text/plain');
+  
+  const raw = pastedHtml || pastedText;
+  
+  console.log("🟡 RAW HTML length:", raw?.length);
+  
+  // ========== CLEAN WORD HTML FUNCTION ==========
+  const cleanWordHtml = (html) => {
+    if (!html) return '';
+    
+    let cleaned = html;
+    
+    // 1. Remove all lang attributes (ZH-CN, etc.)
+    cleaned = cleaned.replace(/lang="[^"]*"/gi, '');
+    
+    // 2. Remove all inline styles
+    cleaned = cleaned.replace(/style="[^"]*"/gi, '');
+    
+    // 3. Remove Word classes (MsoNormal, etc.)
+    cleaned = cleaned.replace(/class="[^"]*"/gi, '');
+    
+    // 4. Remove Word XML comments and declarations
+    cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
+    cleaned = cleaned.replace(/<\?xml[^?]*\?>/g, '');
+    cleaned = cleaned.replace(/<\!\[CDATA\[[\s\S]*?\]\]>/g, '');
+    
+    // 5. Remove name attributes from anchor tags
+    cleaned = cleaned.replace(/<a\s+name="[^"]*"[^>]*>/gi, '');
+    
+    // 6. Remove empty headings (with &nbsp; or whitespace)
+    cleaned = cleaned.replace(/<h[1-6][^>]*>\s*(&nbsp;|\s)*\s*<\/h[1-6]>/gi, '');
+    
+    // 7. Remove empty paragraphs
+    cleaned = cleaned.replace(/<p[^>]*>\s*<\/p>/gi, '');
+    
+    // 8. Clean up headings - remove nested bold, spans, and keep text
+    cleaned = cleaned.replace(/<h([1-6])[^>]*>(?:<b>)?(?:<strong>)?(?:<span[^>]*>)?([^<]+)(?:<\/span>)?(?:<\/b>)?(?:<\/strong>)?<\/h\1>/gi, '<h$1>$2</h$1>');
+    
+    // 9. Convert Word list items to proper HTML lists
+    // Match paragraphs with bullet points (●, •)
+    cleaned = cleaned.replace(/<p[^>]*>(?:<span[^>]*>)?[●•]\s*([^<]+)<\/p>/gi, '<li>$1</li>');
+    // Match numbered lists
+    cleaned = cleaned.replace(/<p[^>]*>(?:<span[^>]*>)?(\d+)\.\s*([^<]+)<\/p>/gi, '<li>$2</li>');
+    
+    // 10. Wrap consecutive list items in <ul> or <ol>
+    cleaned = cleaned.replace(/(<li>.*?<\/li>)+/gi, (match) => {
+      // Check if it's an ordered list (has numbers in the content pattern)
+      if (match.match(/<li>\d+\./)) {
+        return `<ol>${match}</ol>`;
+      }
+      return `<ul>${match}</ul>`;
+    });
+    
+    // 11. Remove spans but keep their content
+    cleaned = cleaned.replace(/<span[^>]*>([\s\S]*?)<\/span>/gi, '$1');
+    
+    // 12. Clean up bold tags to strong
+    cleaned = cleaned.replace(/<b([^>]*)>/gi, '<strong$1>');
+    cleaned = cleaned.replace(/<\/b>/gi, '</strong>');
+    
+    // 13. Clean up italic tags to em
+    cleaned = cleaned.replace(/<i([^>]*)>/gi, '<em$1>');
+    cleaned = cleaned.replace(/<\/i>/gi, '</em>');
+    
+    // 14. Clean up link attributes - keep only href
+    cleaned = cleaned.replace(/<a\s+[^>]*?href="([^"]+)"[^>]*>/gi, '<a href="$1" target="_blank" rel="noopener noreferrer">');
+    
+    // 15. Remove any remaining empty tags
+    cleaned = cleaned.replace(/<(p|div|span|h[1-6])\b[^>]*>\s*<\/\1>/gi, '');
+    
+    // 16. Fix multiple line breaks
+    cleaned = cleaned.replace(/\n\s*\n/g, '\n');
+    
+    // 17. Fix any remaining Word-specific artifacts
+    cleaned = cleaned.replace(/<o:p>[\s\S]*?<\/o:p>/gi, '');
+    cleaned = cleaned.replace(/<\/?(v|o):[^>]+>/gi, '');
+    
+    // 18. Ensure lists are properly nested (fix overlapping)
+    cleaned = cleaned.replace(/<\/ul><ul>/g, '');
+    cleaned = cleaned.replace(/<\/ol><ol>/g, '');
+    
+    // 19. Trim whitespace
+    cleaned = cleaned.trim();
+    
+    return cleaned;
+  };
+  // ========== END CLEAN FUNCTION ==========
+  
+  // Apply cleaning to the pasted content
+  const cleaned = cleanWordHtml(raw);
+  
+  console.log("🟢 CLEANED HTML:", cleaned);
+  console.log("🟢 CLEANED HTML length:", cleaned?.length);
+  
+  // Insert into Jodit editor
+  try {
+    if (quillRef.current?.editor?.selection) {
+      // Insert at cursor position
+      quillRef.current.editor.selection.insertHTML(cleaned);
+      console.log("✅ HTML inserted at cursor");
+    } else if (quillRef.current?.editor) {
+      // Fallback: replace entire content
+      quillRef.current.editor.value = cleaned;
+      setContentValue(cleaned);
+      console.log("✅ HTML inserted as full content");
+    } else {
+      console.warn("⚠️ Jodit not available, using state");
+      setContentValue(cleaned);
+    }
+  } catch (error) {
+    console.error("❌ Insert failed:", error);
+    setContentValue(prev => prev + cleaned);
+  }
+  
+  // Smart extract for tags and category
+  if (cleaned) {
+    setTimeout(() => {
+      const extracted = smartExtract(cleaned);
       const currentValues = form.getFieldsValue();
       const updates = {};
-      if (!currentValues.subHeading && extracted.excerpt) updates.subHeading = extracted.excerpt;
-      if ((!currentValues.category || currentValues.category === 'Other') && extracted.detectedCategory !== 'Other') updates.category = extracted.detectedCategory;
-      if ((!currentValues.tags || currentValues.tags.length === 0) && extracted.detectedTags.length > 0) updates.tags = extracted.detectedTags;
+      
+      if (!currentValues.subHeading && extracted.excerpt) {
+        updates.subHeading = extracted.excerpt;
+      }
+      
+      if ((!currentValues.category || currentValues.category === 'Other') && 
+          extracted.detectedCategory !== 'Other') {
+        updates.category = extracted.detectedCategory;
+      }
+      
+      if ((!currentValues.tags || currentValues.tags.length === 0) && 
+          extracted.detectedTags.length > 0) {
+        updates.tags = extracted.detectedTags;
+      }
+      
       if (Object.keys(updates).length > 0) {
         form.setFieldsValue(updates);
         setSmartFillApplied(true);
-        notification.info({ message: '✨ Smart Fill Applied', description: 'Auto-filled detected fields.', placement: 'topRight', duration: 4 });
+        notification.info({
+          message: '✨ Smart Fill Applied',
+          description: 'Auto-filled detected fields.',
+          placement: 'topRight',
+          duration: 4,
+        });
       }
-    }
-  }, [form]);
+    }, 100);
+  }
+}, [form, quillRef]);
 
   const handleEditorChange = (value) => {
+      console.log("✍️ EDITOR VALUE:", value);
+
     setContentValue(value);
     setHeadings(extractHeadings(value));
     const sub = form.getFieldValue('subHeading');
@@ -736,39 +946,73 @@ const BlogManagement = () => {
     fetchBlogs(1, pagination.itemsPerPage, "", "", "");
   };
 
-  const fetchBlogById = async (id) => {
-    setLoading(true);
-    try {
-      const response = await apiService.get(`/blogs/get-blog-by-id?id=${id}`);
-      if (response.success && response.data) {
-        const blog = response.data;
-        let finalContent = blog.content || '';
-        if (finalContent === '<p><br></p>') finalContent = '';
-        form.setFieldsValue({
-          title: blog.title || '',
-          subHeading: blog.subHeading || '',
-          tags: blog.tags || [],
-          category: blog.category || 'Other',
-          authorName: blog.authorName || 'Admin',
-        });
-        setContentValue(finalContent);
-        setHeadings(extractHeadings(finalContent));
-        setFeaturedImageList(blog.featuredImage ? [{ uid: '-1', name: 'featured', status: 'done', url: blog.featuredImage, preview: blog.featuredImage }] : []);
-        setCoverImageList(blog.coverImage ? [{ uid: '-2', name: 'cover', status: 'done', url: blog.coverImage, preview: blog.coverImage }] : []);
-        setAuthorImageList(blog.authorImage ? [{ uid: '-3', name: 'author', status: 'done', url: blog.authorImage, preview: blog.authorImage }] : []);
-        setEditingId(id);
-        setModalVisible(true);
-        setTimeout(() => loadDraft(), 100);
-      } else {
-        message.error(response.message || 'Failed to fetch details');
-      }
-    } catch (err) {
-      message.error('Failed to fetch blog details');
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchBlogById = async (id) => {
+  setLoading(true);
 
+  try {
+    const response = await apiService.get(`/blogs/get-blog-by-id?id=${id}`);
+
+    if (response.success && response.data) {
+      const blog = response.data;
+
+let finalContent = blog.content || '';
+
+console.log("🔴 DB CONTENT:", finalContent);
+
+finalContent = cleanWordHtml(finalContent); // ✅ only once
+
+console.log("🟢 CLEANED DB CONTENT:", finalContent);
+
+
+      if (finalContent === '<p><br></p>') finalContent = '';
+
+      // ✅ SET FORM
+      form.setFieldsValue({
+        title: blog.title || '',
+        subHeading: blog.subHeading || '',
+        tags: blog.tags || [],
+        category: blog.category || 'Other',
+        authorName: blog.authorName || 'Admin',
+      });
+
+      // ✅ SET CLEAN CONTENT
+      setContentValue(finalContent);
+      setHeadings(extractHeadings(finalContent));
+
+      // ✅ IMAGES
+      setFeaturedImageList(
+        blog.featuredImage
+          ? [{ uid: '-1', name: 'featured', status: 'done', url: blog.featuredImage, preview: blog.featuredImage }]
+          : []
+      );
+
+      setCoverImageList(
+        blog.coverImage
+          ? [{ uid: '-2', name: 'cover', status: 'done', url: blog.coverImage, preview: blog.coverImage }]
+          : []
+      );
+
+      setAuthorImageList(
+        blog.authorImage
+          ? [{ uid: '-3', name: 'author', status: 'done', url: blog.authorImage, preview: blog.authorImage }]
+          : []
+      );
+
+      setEditingId(id);
+      setModalVisible(true);
+
+      setTimeout(() => loadDraft(), 100);
+
+    } else {
+      message.error(response.message || 'Failed to fetch details');
+    }
+
+  } catch (err) {
+    message.error('Failed to fetch blog details');
+  } finally {
+    setLoading(false);
+  }
+};
   const uploadFile = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -786,6 +1030,9 @@ const BlogManagement = () => {
   };
 
   const handleSave = async (values) => {
+
+
+    
     if (!contentValue || contentValue === '<p><br></p>') {
       message.error('Please add content to your blog'); return;
     }
@@ -795,6 +1042,14 @@ const BlogManagement = () => {
       if (authorImageList.length === 0) { message.error('Author Image is mandatory for publishing.'); return; }
       if (!values.authorName) { message.error('Author Name is mandatory for publishing.'); return; }
     }
+
+
+    console.log("💾 BEFORE SAVE:", contentValue);
+
+const cleanedContent = cleanWordHtml(contentValue);
+
+console.log("🧹 CLEANED BEFORE SAVE:", cleanedContent);
+
     setSaving(true);
     try {
       const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([
@@ -805,8 +1060,8 @@ const BlogManagement = () => {
       const payload = {
         title: values.title,
         subHeading: values.subHeading || extractExcerpt(contentValue, 160),
-        content: contentValue,
-        authorName: values.authorName || 'Admin',
+content: cleanedContent, // ✅ keep only this
+
         authorImage: authorImgUrl,
         isPublished: targetStatus === 'published',
         tags: values.tags || [],
@@ -1108,9 +1363,14 @@ const BlogManagement = () => {
                 <Alert message="📋 Paste from Word, PDF, Google Docs — formatting preserved & tags auto-fill!" type="info" showIcon className="mb-3" />
                 {smartFillApplied && <Alert message="✨ Smart Fill Active — fields auto-detected" type="success" showIcon closable onClose={() => setSmartFillApplied(false)} className="mb-3" />}
                 {/* ✅ FIX: onPaste on wrapper div so smart paste still works */}
-                <div className="border rounded-lg" onPaste={handleSmartPaste}>
-                  <JoditEditor ref={quillRef} value={contentValue} config={editorConfig} onChange={handleEditorChange} />
-                </div>
+ <JoditEditor
+  ref={quillRef}
+  value={contentValue}
+  config={editorConfig}
+  onChange={handleEditorChange}
+  onPaste={handleSmartPaste}   // ✅ IMPORTANT
+/>
+
                 <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
                   <Button icon={<EyeOutlined />} onClick={() => showPreview({}, true)} disabled={!contentValue || contentValue === '<p><br></p>'}>Live Preview</Button>
                 </div>
