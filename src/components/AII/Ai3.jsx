@@ -198,7 +198,7 @@ const Ai3 = () => {
               onClick={() => navigate('/Blogs')} 
               className="w-full mt-5 text-[#5C039B] font-semibold text-sm hover:underline"
             >
-              View All Articles →
+              View All Blogs →
             </button>
           </div>
 
