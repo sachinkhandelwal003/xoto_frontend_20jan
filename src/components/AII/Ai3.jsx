@@ -89,15 +89,15 @@ const Ai3 = () => {
         {/* LEFT: CONTENT */}
         <div className="col-span-2 flex flex-col gap-8">
           <section>
+            {/* Subheading rendering directly */}
             {blog.subHeading && (
-              <p className="text-xl text-gray-600 mb-6">
-                <span className="font-bold text-black">Subheading:  <br /></span>
+              <p className="text-xl font-medium text-gray-800 mb-6">
                 {blog.subHeading}
               </p>
             )}
 
+            {/* Description rendering directly */}
             <div className="mb-4">
-              <h3 className="text-xl font-bold text-black mb-3">Description:</h3>
               <div 
                 className="text-gray-600 leading-relaxed prose max-w-none relative z-10" 
                 dangerouslySetInnerHTML={{ __html: blog.content || blog.description }} 
@@ -105,17 +105,16 @@ const Ai3 = () => {
             </div>
           </section>
 
-          {/* TAGS */}
+          {/* TAGS (Just showing the bubbles without the "Tags" heading) */}
           <section>
-             <h3 className="text-2xl font-bold mb-4">Tags</h3>
              <ul className="flex flex-wrap gap-2 text-gray-500">
                 {blog.tags?.length > 0
                   ? blog.tags.map((t, i) => (
-                      <li key={i} className="bg-white border px-3 py-1 rounded-full text-sm">
+                      <li key={i} className="bg-white border px-3 py-1 rounded-full text-sm shadow-sm">
                         {t}
                       </li>
                     ))
-                  : <li className="bg-white border px-3 py-1 rounded-full text-sm">General</li>}
+                  : <li className="bg-white border px-3 py-1 rounded-full text-sm shadow-sm">General</li>}
              </ul>
           </section>
         </div>
