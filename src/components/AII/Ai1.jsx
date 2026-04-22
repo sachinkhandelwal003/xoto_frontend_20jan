@@ -60,6 +60,7 @@ const Ai1 = () => {
   return (
     <div className="text-gray-900 w-full bg-[var(--color-body)]"> 
       <section
+      // <section
         className="
           relative
           w-full
@@ -69,7 +70,7 @@ const Ai1 = () => {
           text-white
           overflow-hidden
         "
-        style={{ backgroundImage: `url(${Picture})` }}
+        style={{ backgroundImage: `url(${blog.coverImage || blog.featuredImage || Picture})` }}
       >
         {/* Dark Overlay */}
         <div className="absolute inset-0 bg-black/40"></div>

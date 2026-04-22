@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { apiService } from "../../manageApi/utils/custom.apiservice";
 import { useBlogContext } from "../../context/BlogContext";
 import { FaFacebookF, FaTwitter, FaLinkedinIn } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6"
 
 const Ai3 = () => {
   const navigate = useNavigate();
@@ -122,21 +123,43 @@ const Ai3 = () => {
         {/* RIGHT: SIDEBAR */}
         <aside className="space-y-8">
           
-          {/* SHARE CARD */}
-          <div className="bg-white shadow-lg rounded-xl p-6 relative z-10">
-            <h3 className="text-xl font-bold mb-4">Share</h3>
-            <div className="flex flex-col gap-3">
-              <button className="flex items-center justify-center gap-2 bg-[#526FA3] text-white p-3 rounded-md hover:opacity-90 transition">
-                <FaFacebookF /> Facebook
-              </button>
-              <button className="flex items-center justify-center gap-2 bg-[#46C4FF] text-white p-3 rounded-md hover:opacity-90 transition">
-                <FaTwitter /> Twitter
-              </button>
-              <button className="flex items-center justify-center gap-2 bg-[#3C86AD] text-white p-3 rounded-md hover:opacity-90 transition">
-                <FaLinkedinIn /> Linkedin
-              </button>
-            </div>
-          </div>
+        {/* SHARE CARD */}
+<div className="bg-white shadow-lg rounded-xl p-6 relative z-10">
+  <h3 className="text-xl font-bold mb-4">Share</h3>
+  <div className="flex flex-col gap-3">
+    
+    {/* Facebook Link */}
+    <a 
+      href="https://www.facebook.com/xotouae" 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="flex items-center justify-center gap-2 bg-[#526FA3] text-white p-3 rounded-md hover:opacity-90 transition"
+    >
+      <FaFacebookF /> Facebook
+    </a>
+
+    {/* X (Twitter) Link */}
+    <a 
+      href="https://twitter.com" 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="flex items-center justify-center gap-2 bg-black text-white p-3 rounded-md hover:opacity-90 transition"
+    >
+      <FaXTwitter /> Twitter
+    </a>
+
+    {/* LinkedIn Link */}
+    <a 
+      href="https://www.linkedin.com/company/xotouae/?viewAsMember=true" 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="flex items-center justify-center gap-2 bg-[#3C86AD] text-white p-3 rounded-md hover:opacity-90 transition"
+    >
+      <FaLinkedinIn /> Linkedin
+    </a>
+
+  </div>
+</div>
 
           {/* NEWSLETTER CARD */}
           <div className="bg-white shadow-lg rounded-xl p-6 relative z-10">
@@ -152,6 +175,7 @@ const Ai3 = () => {
           </div>
 
           {/* RECENT BLOGS CARD */}
+         {/* RECENT BLOGS CARD */}
           <div className="bg-white shadow-lg rounded-xl p-6 relative z-10">
             <h3 className="text-xl font-bold mb-4">Recent Blogs</h3>
             <div className="flex flex-col gap-4">
@@ -171,9 +195,10 @@ const Ai3 = () => {
                     }}
                   >
                     <div className="w-16 h-16 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
+                      {/* 👇 Yahan sirf featuredImage ko priority di gayi hai 👇 */}
                       <img 
-                        src={item.coverImage || item.featuredImage || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"} 
-                        alt={item.title} 
+                        src={item.featuredImage || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"} 
+                        alt={item.title || "Blog Image"} 
                         className="w-full h-full object-cover group-hover:scale-110 transition duration-300" 
                       />
                     </div>

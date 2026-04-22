@@ -1,11 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-// ✅ io import HATAO — socket nahi chahiye
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Home, LayoutDashboard, Compass,
   Image as ImageIcon, Sparkles, Upload,
-  X, ArrowRight, CheckCircle2,
-  Download, Crown, Loader2, ArrowLeft, Check, Edit2
+  X, ArrowRight, ArrowLeft, CheckCircle2,
+  Download, Crown, Loader2, Check, Edit2
 } from 'lucide-react';
 import {
   Button, Modal, Progress, Card, Tag, Empty,
@@ -55,12 +54,11 @@ const dummySpaceImages = [
 const AIPlanner = () => {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // ✅ Socket NAHI — polling ref rakho
   const pollingRef = useRef(null);
-  const lastDesignCountRef = useRef(0); // kitne designs pehle se hain track karo
+  const lastDesignCountRef = useRef(0);
 
-  // ✅ States — same as before
   const [selectedImage, setSelectedImage] = useState(null);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [selectedStyles, setSelectedStyles] = useState([]);
@@ -86,6 +84,9 @@ const AIPlanner = () => {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [upgradeMessage, setUpgradeMessage] = useState('');
   const [activeMobileTab, setActiveMobileTab] = useState('create');
+  
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [verifiedPremium, setVerifiedPremium] = useState(false);
 
   const progress = Math.floor(generationProgress);
   const { title, subtitle } = getProgressText(progress);
@@ -94,111 +95,102 @@ const AIPlanner = () => {
     return user && (user.role?.name === 'Customer' || user.role?.name === 'SuperAdmin');
   }, [user]);
 
-  // ✅ Polling functions
+  // Helper function to get selected elements labels
+  const getSelectedElementsLabels = () => {
+    if (selectedElements.length === 0) return null;
+    return selectedElements.map(e => gardenElements.find(el => el.value === e)?.label).filter(Boolean);
+  };
+
   const stopPolling = () => {
     if (pollingRef.current) {
       clearInterval(pollingRef.current);
       pollingRef.current = null;
-      console.log("🛑 Polling stopped");
     }
   };
 
-const startPolling = () => {
-  stopPolling(); 
-  console.log("🔄 Polling started...");
-  pollingRef.current = setInterval(async () => {
+  const startPolling = () => {
+    stopPolling();
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await apiService.get("/ai/get-landscape-designs");
+        const apiDesigns = res?.data || [];
+
+        if (apiDesigns.length > lastDesignCountRef.current) {
+          const latest = apiDesigns[0];
+
+          if (latest?.imageUrl) {
+            stopPolling();
+            if (window.generationInterval) {
+              clearInterval(window.generationInterval);
+              window.generationInterval = null;
+            }
+
+            setGenerationProgress(100);
+            setCurrentResult({
+              url: latest.imageUrl,
+              desc: latest.aiMessage || "AI Generated Garden Design",
+              styleName: latest.styleName || null,
+              elementsList: latest.elements || [],
+              instruction: latest.description || ''
+            });
+            setIsGenerating(false);
+            setShowGeneratedModal(true);
+
+            const formatted = apiDesigns
+              .filter(item => item.imageUrl !== "failed")
+              .map((item, index) => ({
+                id: item._id,
+                image: item.imageUrl,
+                title: item.title || `Design ${index + 1}`,
+                timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+                aiAnalysis: item.aiMessage || "AI Generated Design",
+                styleName: item.styleName || null,
+                elements: item.elements || [],
+                description: item.description || null,
+                fromApi: true,
+              }));
+            setDesigns(formatted);
+            lastDesignCountRef.current = apiDesigns.length;
+
+            notification.success({ message: "✅ Design Ready!" });
+          }
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    }, 3000);
+  };
+
+  const fetchSavedDesigns = async () => {
+    if (!user) return;
     try {
+      setLoadingSaved(true);
       const res = await apiService.get("/ai/get-landscape-designs");
       const apiDesigns = res?.data || [];
 
-      console.log(`📊 Polling: ${apiDesigns.length} designs, before: ${lastDesignCountRef.current}`);
+      lastDesignCountRef.current = apiDesigns.length;
 
-      if (apiDesigns.length > lastDesignCountRef.current) {
-        // ✅ Backend createdAt:-1 se sort karta hai, toh [0] = sabse naya
-        const latest = apiDesigns[0];
+      const formatted = apiDesigns
+        .filter(item => item.imageUrl !== "failed")
+        .map((item, index) => ({
+          id: item._id,
+          image: item.imageUrl,
+          title: item.title || `Design ${index + 1}`,
+          timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+          aiAnalysis: item.aiMessage || "AI Generated Design",
+          styleName: item.styleName || null,
+          elements: item.elements || [],
+          description: item.description || null,
+          fromApi: true,
+        }));
 
-        if (latest?.imageUrl) {
-          console.log("✅ New design detected!", latest.imageUrl);
-
-          stopPolling();
-
-          if (window.generationInterval) {
-            clearInterval(window.generationInterval);
-            window.generationInterval = null;
-          }
-
-          setGenerationProgress(100);
-          setCurrentResult({
-            url: latest.imageUrl,
-            desc: latest.aiMessage || "AI Generated Garden Design",
-            styleName: latest.styleName || null,
-            elementsList: latest.elements || [],
-            instruction: latest.description || ''
-          });
-          setIsGenerating(false);
-          setShowGeneratedModal(true);
-
-          // ✅ Latest first — NO .reverse(), backend already sorted
-          const formatted = apiDesigns.map((item, index) => ({
-            id: item._id,
-            image: item.imageUrl,
-            title: item.title || `Design ${index + 1}`,
-            timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-            aiAnalysis: item.aiMessage || "AI Generated Design",
-            styleName: item.styleName || null,
-            elements: item.elements || [],
-            description: item.description || null,
-            fromApi: true,
-          }));
-          // ✅ .reverse() NAHI — backend ne already desc sort kiya hai
-          setDesigns(formatted);
-          lastDesignCountRef.current = apiDesigns.length;
-
-          notification.success({ message: "✅ Design Ready!" });
-        }
-      }
+      setDesigns(formatted);
     } catch (err) {
-      console.error("Polling error:", err);
+      console.error("Failed to load designs", err);
+    } finally {
+      setLoadingSaved(false);
     }
-  }, 3000);
-
   };
-
-  // ✅ Component unmount pe polling band karo
-  useEffect(() => {
-    return () => stopPolling();
-  }, []);
-
-  // ✅ Fetch saved designs
-const fetchSavedDesigns = async () => {
-  if (!user) return;
-  try {
-    setLoadingSaved(true);
-    const res = await apiService.get("/ai/get-landscape-designs");
-    const apiDesigns = res?.data || [];
-
-    lastDesignCountRef.current = apiDesigns.length;
-
-    const formatted = apiDesigns.map((item, index) => ({
-      id: item._id,
-      image: item.imageUrl,
-      title: item.title || `Design ${index + 1}`,
-      timestamp: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-      aiAnalysis: item.aiMessage || "AI Generated Design",
-      styleName: item.styleName || null,
-      elements: item.elements || [],
-      description: item.description || null,
-      fromApi: true,
-    }));
-
-    // ✅ .reverse() NAHI — backend sort: { createdAt: -1 } already latest first
-    setDesigns(formatted);
-  } catch (err) {
-    console.error("Failed to load designs", err);
-  } finally {
-    setLoadingSaved(false);
-  }
-};
 
   useEffect(() => {
     if (user) fetchSavedDesigns();
@@ -264,6 +256,138 @@ const fetchSavedDesigns = async () => {
     }
   };
 
+  const handleSubscription = async () => {
+    try {
+      setIsRedirecting(true);
+
+      const currentData = {
+        selectedImage,
+        selectedStyles,
+        selectedElements,
+        specificRequirement,
+      };
+      localStorage.setItem('xoto_pending_gen', JSON.stringify(currentData));
+
+      const currentUrl = window.location.origin + location.pathname;
+      
+      const response = await apiService.post("stripe/create-checkout-session", {
+        userId: user?._id || user?.id,
+        currentUrl: currentUrl
+      });
+      
+      const url = response?.data?.url || response?.url;
+
+      if (url) {
+        window.location.href = url;
+      } else {
+        notification.error({ message: "Failed to initialize payment." });
+      }
+    } catch (error) {
+      console.error("Stripe Checkout Error:", error);
+      notification.error({ message: "Server connection failed!" });
+    } finally {
+      setIsRedirecting(false);
+    }
+  };
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+
+    if (paymentStatus === 'success') {
+      window.history.replaceState(null, '', window.location.pathname);
+      const savedData = localStorage.getItem('xoto_pending_gen');
+
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        setSelectedImage(data.selectedImage);
+        setSelectedStyles(data.selectedStyles);
+        setSelectedElements(data.selectedElements);
+        setSpecificRequirement(data.specificRequirement);
+        localStorage.removeItem('xoto_pending_gen');
+
+        notification.info({
+          message: "Processing Payment...",
+          description: "Confirming with the server. Please wait...",
+          duration: 0,
+          key: "payment_verify"
+        });
+
+        let attempts = 0;
+        const checkBackend = setInterval(async () => {
+          attempts++;
+          try {
+            const res = await apiService.get(`/ai/get-user-generation-count?t=${new Date().getTime()}`); 
+
+            if (res?.isPremium || res?.data?.isPremium) {
+              clearInterval(checkBackend);
+              setVerifiedPremium(true); 
+              
+              notification.destroy("payment_verify");
+              notification.success({ 
+                message: "Payment Confirmed! 🎉", 
+                description: "You are now a Premium user. Starting generation!" 
+              });
+
+              executeDirectGeneration(data);
+            } else if (attempts >= 30) {
+              clearInterval(checkBackend);
+              notification.destroy("payment_verify");
+              notification.warning({ 
+                message: "Verification Delayed", 
+                description: "Payment successful but taking time to reflect. Try generating again." 
+              });
+            }
+          } catch (err) {
+            console.error("Verification failed", err);
+          }
+        }, 1000);
+      }
+    }
+  }, []);
+
+  const executeDirectGeneration = async (data) => {
+    setIsGenerating(true);
+    setGenerationProgress(5);
+
+    const progressInterval = setInterval(() => {
+      setGenerationProgress(prev => Math.min(prev + Math.random() * 3 + 1.5, 92));
+    }, 550);
+    window.generationInterval = progressInterval;
+
+    const formData = new FormData();
+
+    if (data.selectedImage?.startsWith('http')) {
+      try {
+        const res = await fetch(data.selectedImage);
+        const blob = await res.blob();
+        formData.append('gardenImage', new File([blob], "input.jpg", { type: blob.type || "image/jpeg" }));
+      } catch (e) {
+        console.error("Fetch failed", e);
+      }
+    }
+
+    formData.append('styleName', data.selectedStyles.length > 0
+      ? gardenStyles.find(s => s.value === data.selectedStyles[0])?.label || "Modern Garden"
+      : "Modern Garden"
+    );
+    formData.append('elements',
+      data.selectedElements.map(e => gardenElements.find(el => el.value === e)?.label).join(', ') || 'Natural Landscaping'
+    );
+    formData.append('description', data.specificRequirement || 'A professional landscaping design');
+
+    try {
+      await apiService.post("ai/generate-garden", formData);
+      startPolling();
+    } catch (error) {
+      console.error("❌ Error:", error);
+      notification.error({ message: "Failed to start generation" });
+      setIsGenerating(false);
+      clearInterval(progressInterval);
+      stopPolling();
+    }
+  };
+
   const handleGenerateClick = () => {
     if (!selectedImage) {
       notification.warning({ message: 'Please upload a photo first' });
@@ -274,6 +398,15 @@ const fetchSavedDesigns = async () => {
       setShowAuthModal(true);
       return;
     }
+
+    const isUserPremium = user?.isPremium || verifiedPremium;
+
+    if (!isUserPremium && designs.length >= 3) {
+      setUpgradeMessage("You've reached your free limit of 3 images. Upgrade to Pro for unlimited designs! 🚀");
+      setShowUpgradeModal(true);
+      return;
+    }
+
     generateAIDesigns();
   };
 
@@ -298,13 +431,8 @@ const fetchSavedDesigns = async () => {
     }
   };
 
-  // ✅ Generate + Polling start
   const generateAIDesigns = async () => {
     if (isGenerating) return;
-    if (!selectedImage) {
-      notification.warning({ message: 'Please upload a photo first' });
-      return;
-    }
 
     setIsGenerating(true);
     setGenerationProgress(5);
@@ -339,8 +467,7 @@ const fetchSavedDesigns = async () => {
 
     try {
       await apiService.post("ai/generate-garden", formData);
-      console.log("✅ Generation started — polling shuru...");
-      startPolling(); // ✅ Yahan polling start hogi
+      startPolling();
     } catch (error) {
       console.error("❌ Error:", error);
       notification.error({ message: "Failed to start generation" });
@@ -413,11 +540,12 @@ const fetchSavedDesigns = async () => {
               <Link to="/"><ArrowLeft className="text-gray-600" /></Link>
               <span className="font-bold text-lg">AI Planner</span>
             </div>
-            {isCustomerLoggedIn && <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">Pro</div>}
+            {(user?.isPremium || verifiedPremium) && <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">Pro ✨</div>}
           </div>
 
           <div className="hidden lg:flex rounded-2xl p-4 mb-8 justify-between items-center shadow-sm" style={{ backgroundColor: BRAND_PURPLE }}>
             <span className="font-bold text-lg text-white">Landscaping</span>
+            {(user?.isPremium || verifiedPremium) && <div className="bg-white/20 text-white text-xs px-3 py-1 rounded-full font-bold backdrop-blur-sm border border-white/30">PRO</div>}
           </div>
 
           <div className="bg-[#F3F4F6] rounded-[24px] lg:rounded-[32px] h-[280px] lg:h-[320px] mb-6 lg:mb-8 relative overflow-hidden group border border-gray-100 transition-colors hover:border-purple-100">
@@ -446,13 +574,36 @@ const fetchSavedDesigns = async () => {
             <button onClick={() => setShowStyleModal(true)} className="bg-[#F3F4F6] hover:bg-gray-100 transition-colors rounded-[20px] lg:rounded-[24px] p-4 lg:p-6 flex flex-col items-center justify-center gap-3 lg:gap-4 aspect-square relative group">
               <div className="bg-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform"><Sparkles className="text-gray-500 w-5 h-5 lg:w-6 lg:h-6" /></div>
               <span className="font-bold text-gray-700 text-sm lg:text-base">Style</span>
-              <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs mt-5 font-bold px-3 py-1 rounded-full uppercase tracking-wide">{selectedStyles.length > 0 ? 'Selected' : 'Choose'}</span>
+              <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs mt-5 font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                {selectedStyles.length > 0 ? gardenStyles.find(s => s.value === selectedStyles[0])?.label : 'Choose'}
+              </span>
               {selectedStyles.length > 0 && <div className="absolute top-2 right-2 text-green-500 bg-white rounded-full p-1 shadow-sm"><CheckCircle2 size={16} /></div>}
             </button>
+            
             <button onClick={() => setShowElementModal(true)} className="bg-[#F3F4F6] hover:bg-gray-100 transition-colors rounded-[20px] lg:rounded-[24px] p-4 lg:p-6 flex flex-col items-center justify-center gap-3 lg:gap-4 aspect-square relative group">
               <div className="bg-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform"><LayoutDashboard className="text-gray-500 w-5 h-5 lg:w-6 lg:h-6" /></div>
               <span className="font-bold text-gray-700 text-sm lg:text-base">Elements</span>
-              <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs font-bold mt-5 px-3 py-1 rounded-full uppercase tracking-wide">{selectedElements.length > 0 ? 'Selected' : 'Choose'}</span>
+              {/* Display selected elements instead of just "Selected" */}
+              <div className="w-full mt-3">
+                {selectedElements.length > 0 ? (
+                  <div className="flex flex-wrap gap-1 justify-center">
+                    {getSelectedElementsLabels().slice(0, 3).map((label, idx) => (
+                      <span key={idx} className="text-[10px] font-medium text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                        {label}
+                      </span>
+                    ))}
+                    {getSelectedElementsLabels().length > 3 && (
+                      <span className="text-[10px] font-medium text-gray-500">
+                        +{getSelectedElementsLabels().length - 3}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="bg-white border border-gray-200 text-gray-600 text-[10px] lg:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                    Choose
+                  </span>
+                )}
+              </div>
               {selectedElements.length > 0 && <div className="absolute top-2 right-2 text-green-500 bg-white rounded-full p-1 shadow-sm"><CheckCircle2 size={16} /></div>}
             </button>
           </div>
@@ -607,7 +758,17 @@ const fetchSavedDesigns = async () => {
           <h3 className="text-2xl font-bold text-gray-900 mb-3">Unlock Limitless Creativity</h3>
           <p className="text-gray-500 mb-8 leading-relaxed px-4">{upgradeMessage || "You've reached your limit. Upgrade to Pro to continue designing."}</p>
           <div className="space-y-3">
-            <Link to=""><Button type="primary" size="large" block className="h-12 text-base font-bold rounded-xl shadow-lg shadow-purple-200" style={{ background: 'linear-gradient(135deg, #5C039B 0%, #8E2DE2 100%)', border: 'none' }} onClick={() => setShowUpgradeModal(false)}>View Upgrade Plans</Button></Link>
+            <Button 
+              type="primary" 
+              size="large" 
+              block 
+              loading={isRedirecting}
+              className="h-12 text-base font-bold rounded-xl shadow-lg shadow-purple-200" 
+              style={{ background: 'linear-gradient(135deg, #5C039B 0%, #8E2DE2 100%)', border: 'none' }} 
+              onClick={handleSubscription}
+            >
+              View Upgrade Plans
+            </Button>
             <Button type="text" block className="text-gray-400" onClick={() => setShowUpgradeModal(false)}>Maybe Later</Button>
           </div>
         </div>
