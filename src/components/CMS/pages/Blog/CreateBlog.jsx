@@ -560,7 +560,7 @@ const GLOBAL_STYLES = `
 // ─────────────────────────────────────────────
 //  PASTE CLEANING UTILITIES (BULLET GAP FIX)
 // ─────────────────────────────────────────────
-const cleanWordHtml = (html) => {
+const cleanWordHtml = (html) => { 
   if (!html) return '';
   let cleaned = html;
 

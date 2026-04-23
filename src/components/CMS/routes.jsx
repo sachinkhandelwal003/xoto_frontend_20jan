@@ -500,9 +500,9 @@ const CmsRoutes = () => {
 <Route path="advisor/create" element={<CreateAdvisor />} />
 <Route path="advisor/list"   element={<AdvisorList />} />
 <Route path="advisor/:id" element={<VaultAdvisorDetail />} />
-<Route path="mortgage/create" element={<VaultCreateMortgage />} />
-<Route path="mortgage/list"   element={<VaultMortgageList />} />
-<Route path="mortgage/:id" element={<VaultMortgagedetail />} />
+<Route path="mortgage-ops/create" element={<VaultCreateMortgage />} />
+<Route path="mortgage-ops/list"   element={<VaultMortgageList />} />
+<Route path="mortgage-ops/:id" element={<VaultMortgagedetail />} />
 <Route path="mortgage/dashboard" element={<MortgageOpsDashboard />} />
 <Route path="advisor/dashboard" element={<AdvisorDashboard />} />
 

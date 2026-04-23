@@ -394,15 +394,15 @@ const CUSTOM_ROLE_LINKS = {
  {
   title: "Mortgages",
   icon: "fas fa-file-invoice-dollar",   // ✅ Distinct icon
-  path: "/dashboard/{roleSlug}/mortgage",
+  path: "/dashboard/{roleSlug}/mortgage-ops",
   submenus: [
     { 
       title: "Create Mortgage", 
-      path: "/dashboard/{roleSlug}/mortgage/create" 
+      path: "/dashboard/{roleSlug}/mortgage-ops/create" 
     },
     { 
       title: "All Mortgages", 
-      path: "/dashboard/{roleSlug}/mortgage/list" 
+      path: "/dashboard/{roleSlug}/mortgage-ops/list" 
     },
   ],
 },
