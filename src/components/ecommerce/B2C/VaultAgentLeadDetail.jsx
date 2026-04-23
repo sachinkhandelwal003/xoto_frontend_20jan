@@ -1,553 +1,910 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { apiService } from '../../../manageApi/utils/custom.apiservice';
-import { Button, message, Progress, Spin, Modal, Input } from 'antd';
+// src/pages/Leads/VaultAgentLeadDetail.jsx
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Spin, message } from "antd";
 import {
-  ArrowLeftOutlined, CheckCircleOutlined, CloseCircleOutlined,
-  UserOutlined, HomeOutlined, DollarOutlined, FileTextOutlined,
-  EyeOutlined, PhoneOutlined, MailOutlined, WhatsAppOutlined,
-  FilePdfOutlined, FileImageOutlined, EnvironmentOutlined,
-  CheckOutlined, StopOutlined, EditOutlined,
-} from '@ant-design/icons';
+  ChevronLeft, User, Mail, Phone, Home, DollarSign, FileText,
+  Eye, AlertCircle, RefreshCw, CheckCircle, XCircle, AlertTriangle,
+  Layers, BarChart2, Shield, Activity, Check, Copy, Info,
+  MapPin, Calendar, Hash, FilePlus, ClipboardList, Upload,
+  TrendingUp, Percent, MessageSquare, ExternalLink, Clock,
+  Zap, GitBranch, CreditCard, Globe, Target, Link,
+} from "lucide-react";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
-const fmt     = (n) => (n ? Number(n).toLocaleString('en-AE') : '—');
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-const isPdf   = (url) => url?.toLowerCase()?.includes('.pdf');
-const PRIMARY = '#5c039c';
-
-const STATUS_OPTIONS = ['New', 'Contacted', 'Qualified', 'Collecting Documentation', 'Disbursed'];
-
-const STATUS_CONFIG = {
-  'New':                    { color: '#6b7280', bg: '#f3f4f6', border: '#d1d5db' },
-  'Contacted':              { color: '#3b82f6', bg: '#eff6ff', border: '#93c5fd' },
-  'Qualified':              { color: '#8b5cf6', bg: '#f5f3ff', border: '#c4b5fd' },
-  'Collecting Documentation': { color: '#f59e0b', bg: '#fffbeb', border: '#fcd34d' },
-  'Disbursed':              { color: '#10b981', bg: '#ecfdf5', border: '#6ee7b7' },
+// ─── Design Tokens ─────────────────────────────────────────────────────────
+const C = {
+  primary     : "#5C039B",
+  primaryMid  : "#7C3AED",
+  primaryLight: "#9333EA",
+  primaryGlow : "rgba(92,3,155,0.12)",
+  primarySoft : "#F5F0FF",
+  primaryBord : "#E9D5FF",
+  green       : "#10B981",
+  greenSoft   : "#ECFDF5",
+  greenBord   : "#A7F3D0",
+  red         : "#EF4444",
+  redSoft     : "#FEF2F2",
+  redBord     : "#FECACA",
+  amber       : "#F59E0B",
+  amberSoft   : "#FFFBEB",
+  amberBord   : "#FDE68A",
+  blue        : "#3B82F6",
+  blueSoft    : "#EFF6FF",
+  gray        : "#6B7280",
+  grayLight   : "#F9FAFB",
+  grayBord    : "#E5E7EB",
+  text        : "#111827",
+  textSub     : "#374151",
+  textMuted   : "#9CA3AF",
+  white       : "#FFFFFF",
+  bg          : "#F4F0FA",
 };
 
-/* ── SectionCard ── */
-const SectionCard = ({ icon, title, children, extra }) => (
-  <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #f3f4f6', background: '#fafafa' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ width: 32, height: 32, borderRadius: 8, background: PRIMARY, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 16 }}>{icon}</span>
-        <span style={{ fontWeight: 600, fontSize: 15, color: '#1f2937' }}>{title}</span>
-      </div>
-      {extra}
-    </div>
-    <div style={{ padding: '20px' }}>{children}</div>
-  </div>
-);
+// ─── Helpers ───────────────────────────────────────────────────────────────
+const show      = (v) => (v !== null && v !== undefined && v !== "") ? v : null;
+const fmt       = (n) => n ? Number(n).toLocaleString("en-AE") : "—";
+const fmtDate   = (s) => { try { return s ? new Date(s).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : null; } catch { return null; } };
+const fmtDT     = (s) => { try { return s ? new Date(s).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : null; } catch { return null; } };
+const boolLabel = (v) => v === true ? "Yes" : v === false ? "No" : null;
+const isPdf     = (url) => url?.toLowerCase()?.includes(".pdf");
+const capWords  = (s) => s ? s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : null;
 
-/* ── InfoRow ── */
-const InfoRow = ({ label, value, icon }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #f3f4f6' }}>
-    {icon && <span style={{ color: '#6b7280', fontSize: 15 }}>{icon}</span>}
-    <span style={{ color: '#4b5563', minWidth: 120, fontSize: 14 }}>{label}</span>
-    <span style={{ color: '#111827', fontWeight: 500, flex: 1, textAlign: 'right', fontSize: 14 }}>{value || '—'}</span>
-  </div>
-);
-
-/* ── StatBox ── */
-const StatBox = ({ label, value, color }) => (
-  <div style={{ textAlign: 'center', padding: '14px 10px', borderRadius: 10, background: '#f9fafb', border: '1px solid #e5e7eb', flex: 1 }}>
-    <div style={{ fontSize: 26, fontWeight: 700, color }}>{value}</div>
-    <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>{label}</div>
-  </div>
-);
-
-/* ── DocCard ── */
-const DocCard = ({ doc, onView }) => {
-  const fileUrl    = doc.fileUrl || doc.url || doc.documentUrl || doc.file_url;
-  const fileName   = doc.fileName || doc.file_name || doc.name || 'Unnamed Document';
-  const docType    = doc.documentType || doc.document_type || doc.type;
-  const status     = doc.status || doc.verification_status;
-  const uploadedAt = doc.uploadedAt || doc.created_at || doc.createdAt;
-  const statusColor = status === 'Verified' ? '#10b981' : status === 'Rejected' ? '#ef4444' : '#f59e0b';
-
-  return (
-    <div style={{
-      background: '#fff',
-      border: `1px solid ${status === 'Verified' ? '#6ee7b7' : status === 'Rejected' ? '#fca5a5' : '#e5e7eb'}`,
-      borderRadius: 12, padding: 16,
-      display: 'flex', flexDirection: 'column', gap: 12, height: '100%',
-    }}>
-      <div style={{ display: 'flex', gap: 12 }}>
-        <div style={{ width: 48, height: 48, borderRadius: 10, flexShrink: 0, background: isPdf(fileUrl) ? '#fef2f2' : '#f3e8ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: isPdf(fileUrl) ? '#ef4444' : PRIMARY }}>
-          {isPdf(fileUrl) ? <FilePdfOutlined /> : <FileImageOutlined />}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: 14, color: '#1f2937', lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{fileName}</div>
-          {docType && <div style={{ fontSize: 12, color: PRIMARY, marginTop: 4 }}>{docType}</div>}
-        </div>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        {status && (
-          <span style={{ fontSize: 12, fontWeight: 600, color: statusColor, background: statusColor === '#10b981' ? '#ecfdf5' : statusColor === '#ef4444' ? '#fef2f2' : '#fffbeb', padding: '3px 10px', borderRadius: 20 }}>
-            {status}
-          </span>
-        )}
-        {uploadedAt && <span style={{ fontSize: 12, color: '#6b7280' }}>{fmtDate(uploadedAt)}</span>}
-      </div>
-      {status === 'Rejected' && doc.rejectionReason && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#dc2626' }}>
-          <strong>Reason:</strong> {doc.rejectionReason}
-        </div>
-      )}
-      <button
-        onClick={() => onView(doc)}
-        disabled={!fileUrl}
-        style={{
-          marginTop: 'auto', width: '100%', padding: '10px 0',
-          background: fileUrl ? PRIMARY : '#e5e7eb',
-          color: fileUrl ? '#fff' : '#9ca3af',
-          border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 14,
-          cursor: fileUrl ? 'pointer' : 'not-allowed',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-        }}
-      >
-        <EyeOutlined /> View Document
-      </button>
-    </div>
-  );
+// ─── Status config ─────────────────────────────────────────────────────────
+const STATUS_CFG = {
+  "New"                      : { bg: "#EFF6FF", color: "#1D4ED8", border: "#93C5FD" },
+  "Assigned"                 : { bg: C.primarySoft, color: C.primary, border: C.primaryBord },
+  "Contacted"                : { bg: "#FFF7ED", color: "#C2410C", border: "#FED7AA" },
+  "Qualified"                : { bg: "#EEF2FF", color: "#4338CA", border: "#C7D2FE" },
+  "Collecting Documentation" : { bg: C.amberSoft, color: "#B45309", border: C.amberBord },
+  "Documents Complete"       : { bg: "#ECFEFF", color: "#0E7490", border: "#A5F3FC" },
+  "Application Opened"       : { bg: "#FFF5F3", color: "#C2410C", border: C.redBord },
+  "Not Proceeding"           : { bg: C.redSoft, color: C.red, border: C.redBord },
+  "Disbursed"                : { bg: C.greenSoft, color: C.green, border: C.greenBord },
 };
 
-/* ── Main ── */
-const VaultAgentLeadDetail = () => {
-  const { id } = useParams();
+const STATUS_OPTIONS = [
+  "New", "Contacted", "Qualified", "Collecting Documentation",
+  "Documents Complete", "Application Opened", "Disbursed", "Not Proceeding",
+];
+
+// ══════════════════════════════════════════════════════════════════════════
+export default function VaultAgentLeadDetail() {
+  const { id }   = useParams();
   const navigate = useNavigate();
 
-  const [lead, setLead]           = useState(null);
-  const [documents, setDocuments] = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [docsLoading, setDocsLoading] = useState(false);
-
-  // Status update
-  const [leadStatus, setLeadStatus]       = useState('');
-  const [statusNote, setStatusNote]       = useState('');
+  const [lead,           setLead]           = useState(null);
+  const [documents,      setDocuments]      = useState([]);
+  const [loading,        setLoading]        = useState(true);
+  const [docsLoading,    setDocsLoading]    = useState(false);
+  const [error,          setError]          = useState("");
+  const [activeTab,      setActiveTab]      = useState("overview");
+  const [leadStatus,     setLeadStatus]     = useState("");
+  const [statusNote,     setStatusNote]     = useState("");
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [selectedDoc,    setSelectedDoc]    = useState(null);
+  const [modalOpen,      setModalOpen]      = useState(false);
+  const [modalLoading,   setModalLoading]   = useState(false);
+  const [verifying,      setVerifying]      = useState(false);
+  const [rejecting,      setRejecting]      = useState(false);
+  const [showRejectInput,setShowRejectInput]= useState(false);
+  const [rejectReason,   setRejectReason]   = useState("");
+  const [qualityScore,   setQualityScore]   = useState(95);
+  const [docOverrides,   setDocOverrides]   = useState({});
+  const [flashMsg,       setFlashMsg]       = useState({ type: "", text: "" });
 
-  // Preview modal
-  const [selectedDoc, setSelectedDoc]   = useState(null);
-  const [modalOpen, setModalOpen]       = useState(false);
-  const [modalLoading, setModalLoading] = useState(false);
+  const flash = (type, text) => {
+    setFlashMsg({ type, text });
+    setTimeout(() => setFlashMsg({ type: "", text: "" }), 4000);
+  };
 
-  // Action states inside modal
-  const [verifying, setVerifying]       = useState(false);
-  const [rejecting, setRejecting]       = useState(false);
-  const [showRejectInput, setShowRejectInput] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
-  const [qualityScore, setQualityScore] = useState(95);
-
-  const [docStatusOverrides, setDocStatusOverrides] = useState({});
-
+  // ── Fetch ─────────────────────────────────────────────────────────────
   const fetchLead = async () => {
     try {
-      setLoading(true);
-      const res = await apiService.get(`/vault/lead/admin/${id}`);
+      setLoading(true); setError("");
+      const res  = await apiService.get(`/vault/lead/${id}`);
+      // API returns { success: true, data: { ...leadObject } }
       const data = res?.data?.data || res?.data || null;
       setLead(data);
-          const status = data?.currentStatus || data?.status;
-
-      // Lead ka current status set karo
-      if (data?.status) setLeadStatus(data.status);
-    } catch { message.error('Failed to load lead details.'); }
-    finally { setLoading(false); }
+      setLeadStatus(data?.currentStatus || "");
+    } catch (err) {
+      setError(err?.response?.data?.message || err.message || "Failed to load lead");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchDocs = async () => {
     try {
       setDocsLoading(true);
-      const res = await apiService.get(`/vault/lead/documents/${id}`);
-      const raw = res?.data;
+      const res  = await apiService.get(`/vault/lead/documents/${id}`);
+      const raw  = res?.data;
       const docs = Array.isArray(raw) ? raw
         : Array.isArray(raw?.data) ? raw.data
         : Array.isArray(raw?.documents) ? raw.documents
         : Array.isArray(raw?.data?.documents) ? raw.data.documents : [];
       setDocuments(docs);
-      setSelectedDoc(prev => {
-  if (!prev) return prev;
-  const docId = prev._id || prev.id;
-  const updated = docs.find(d => (d._id || d.id) === docId);
-  if (!updated) return prev;
-  
-  // ✅ Agar prev mein already Verified/Rejected hai toh server se overwrite mat karo
-  const prevStatus = prev.status || prev.verification_status;
-  const serverStatus = updated.status || updated.verification_status;
-  const finalStatus = (prevStatus === 'Verified' || prevStatus === 'Rejected') 
-    ? prevStatus 
-    : serverStatus;
-
-  return { 
-    ...updated, 
-    fileUrl: prev.fileUrl,
-    status: finalStatus,
-    verification_status: finalStatus,
-  };
-});
-    } catch (err) { console.error(err); }
+    } catch { /* silent */ }
     finally { setDocsLoading(false); }
   };
 
   useEffect(() => { if (id) { fetchLead(); fetchDocs(); } }, [id]);
 
-  // ── Status Update Handler ──
+  // ── Status Update ─────────────────────────────────────────────────────
   const handleStatusUpdate = async () => {
-    if (!leadStatus) { message.warning('Please select a status'); return; }
+    if (!leadStatus) { flash("error", "Please select a status"); return; }
     try {
       setStatusUpdating(true);
       await apiService.put(`/vault/lead/admin/${id}/status`, {
         status: leadStatus,
-        notes: statusNote.trim() || undefined,
+        notes : statusNote.trim() || undefined,
       });
-      message.success(`Status updated to "${leadStatus}"`);
-      setStatusNote('');
+      flash("success", `Status updated to "${leadStatus}"`);
+      setStatusNote("");
       await fetchLead();
     } catch (err) {
-      message.error(err?.response?.data?.message || 'Status update failed');
-    } finally { setStatusUpdating(false); }
+      flash("error", err?.response?.data?.message || "Status update failed");
+    } finally {
+      setStatusUpdating(false);
+    }
   };
 
-const openModal = (doc) => {
-  const fileUrl = doc.fileUrl || doc.url || doc.documentUrl || doc.file_url;
-  if (!fileUrl) { message.warning('File URL not available'); return; }
-  const docId = doc._id || doc.id;
-  const freshDoc = documents.find(d => (d._id || d.id) === docId) || doc;
-  
-  // ✅ Agar pehle verify/reject hua hai toh override lagao
-  const override = docStatusOverrides[docId];
-  setSelectedDoc({ ...freshDoc, fileUrl, ...(override || {}) });
-  
-  setModalOpen(true);
-  setModalLoading(true);
-  setShowRejectInput(false);
-  setRejectReason('');
-  setQualityScore(95);
-}; 
-
-  const closeModal = () => {
-    setModalOpen(false);
-    setSelectedDoc(null);
+  // ── Document modal ─────────────────────────────────────────────────────
+  const openDocModal = (doc) => {
+    const fileUrl = doc.fileUrl || doc.url || doc.documentUrl || doc.file_url;
+    if (!fileUrl) { message.warning("File URL not available"); return; }
+    const docId   = doc._id || doc.id;
+    const override = docOverrides[docId];
+    setSelectedDoc({ ...doc, fileUrl, ...(override || {}) });
+    setModalOpen(true);
+    setModalLoading(true);
     setShowRejectInput(false);
-    setRejectReason('');
+    setRejectReason("");
+    setQualityScore(95);
   };
 
- const handleVerify = async () => {
-  const docId = selectedDoc?._id || selectedDoc?.id;
-  if (!docId) { message.warning('Document ID not found'); return; }
-  try {
+  const closeDocModal = () => { setModalOpen(false); setSelectedDoc(null); setShowRejectInput(false); };
+
+  const handleVerifyDoc = async () => {
+    const docId = selectedDoc?._id || selectedDoc?.id;
+    if (!docId) return;
     setVerifying(true);
-    await apiService.post(`/vault/lead/documents/${docId}/verify`, { qualityScore });
-    message.success('Document verified!');
-    // ✅ Override save karo
-    setDocStatusOverrides(prev => ({ ...prev, [docId]: { status: 'Verified', verification_status: 'Verified' } }));
-    setSelectedDoc(prev => ({ ...prev, status: 'Verified', verification_status: 'Verified' }));
-    await fetchDocs();
-  } catch (err) {
-    message.error(err?.response?.data?.message || 'Verification failed');
-  } finally { setVerifying(false); }
-};
+    try {
+      await apiService.post(`/vault/lead/documents/${docId}/verify`, { qualityScore });
+      const ov = { status: "Verified", verification_status: "Verified" };
+      setDocOverrides((p) => ({ ...p, [docId]: ov }));
+      setSelectedDoc((p) => ({ ...p, ...ov }));
+      flash("success", "Document verified!");
+      await fetchDocs();
+    } catch (err) {
+      flash("error", err?.response?.data?.message || "Verification failed");
+    } finally { setVerifying(false); }
+  };
 
-const handleReject = async () => {
-  if (!rejectReason.trim()) { message.warning('Please enter a rejection reason'); return; }
-  const docId = selectedDoc?._id || selectedDoc?.id;
-  if (!docId) { message.warning('Document ID not found'); return; }
-  try {
+  const handleRejectDoc = async () => {
+    if (!rejectReason.trim()) { flash("error", "Please enter a rejection reason"); return; }
+    const docId = selectedDoc?._id || selectedDoc?.id;
+    if (!docId) return;
     setRejecting(true);
-    await apiService.post(`/vault/lead/documents/${docId}/reject`, { reason: rejectReason });
-    message.success('Document rejected.');
-    // ✅ Override save karo
-    setDocStatusOverrides(prev => ({ ...prev, [docId]: { status: 'Rejected', verification_status: 'Rejected', rejectionReason: rejectReason } }));
-    setSelectedDoc(prev => ({ ...prev, status: 'Rejected', verification_status: 'Rejected', rejectionReason: rejectReason }));
-    setShowRejectInput(false);
-    await fetchDocs();
-  } catch (err) {
-    message.error(err?.response?.data?.message || 'Rejection failed');
-  } finally { setRejecting(false); }
-};
+    try {
+      await apiService.post(`/vault/lead/documents/${docId}/reject`, { reason: rejectReason });
+      const ov = { status: "Rejected", verification_status: "Rejected", rejectionReason: rejectReason };
+      setDocOverrides((p) => ({ ...p, [docId]: ov }));
+      setSelectedDoc((p) => ({ ...p, ...ov }));
+      setShowRejectInput(false);
+      flash("success", "Document rejected.");
+      await fetchDocs();
+    } catch (err) {
+      flash("error", err?.response?.data?.message || "Rejection failed");
+    } finally { setRejecting(false); }
+  };
 
+  // ── Loading / Error ────────────────────────────────────────────────────
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb' }}>
-      <Spin size="large" />
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{ width: 56, height: 56, borderRadius: 16, background: C.primarySoft, border: `2px solid ${C.primaryBord}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <RefreshCw size={24} color={C.primary} style={{ animation: "spin 1s linear infinite" }} />
+      </div>
+      <p style={{ color: C.gray, fontSize: 14, fontWeight: 500 }}>Loading lead details...</p>
     </div>
   );
 
-  if (!lead) return (
-    <div style={{ padding: 60, textAlign: 'center' }}>
-      <h2>Lead not found</h2>
-      <Button type="primary" onClick={() => navigate(-1)} style={{ background: PRIMARY, borderColor: PRIMARY }}>Go Back</Button>
+  if (error || !lead) return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
+      <div style={{ width: 64, height: 64, borderRadius: 20, background: C.redSoft, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+        <AlertCircle size={28} color={C.red} />
+      </div>
+      <p style={{ color: "#B91C1C", marginBottom: 20, fontSize: 15, fontWeight: 600 }}>{error || "Lead not found"}</p>
+      <button onClick={() => navigate(-1)} style={{ padding: "10px 24px", background: C.primary, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+        <ChevronLeft size={16} /> Go Back
+      </button>
     </div>
   );
 
-  const ci = lead.customerInfo || {};
-  const pd = lead.propertyDetails || {};
-  const dc = lead.documentCollection || {};
-  const propertyAddress = [pd.propertyAddress?.building, pd.propertyAddress?.area, pd.propertyAddress?.city].filter(Boolean).join(', ');
-  const docStatus = selectedDoc?.status || selectedDoc?.verification_status;
-  const savedStatus    = lead?.currentStatus || lead?.status;
-const savedStatusCfg = STATUS_CONFIG[savedStatus] || STATUS_CONFIG['New'];
+  // ══════════════════════════════════════════════════════════════════════
+  // ── Destructure API response (matching actual shape) ──────────────────
+  // ══════════════════════════════════════════════════════════════════════
+  const ci  = lead.customerInfo       || {};   // fullName, email, mobileNumber, etc.
+  const pd  = lead.propertyDetails    || {};   // propertyValue, loanAmountRequired, etc.
+  const pa  = pd.propertyAddress      || {};   // building, area, city
+  const dc  = lead.documentCollection || {};   // collectionPercentage, readyForSubmission, etc.
+  const si  = lead.sourceInfo         || {};   // source, createdByName, createdByRole
+  const at  = lead.assignedTo         || {};   // advisorId, advisorName, assignedAt ← ACTUAL API FIELD
+  const sla = lead.sla                || {};   // breached, deadline, firstContactAt
+  const lr  = lead.loanRequirements   || {};   // preferredTenureYears, preferredBanks, etc.
+  const cv  = lead.conversionInfo     || {};   // convertedToCase, caseId
+  const ci2 = lead.commissionInfo     || {};   // commissionEligible, commissionStatus, commissionAmount
+  const dup = lead.duplicateCheck     || {};   // isDuplicate, matchingPhoneFound
 
+  const currentStatus = lead.currentStatus || "New";
+  const statusCfg     = STATUS_CFG[currentStatus] || STATUS_CFG["New"];
 
+  // Property address string
+  const propertyAddr = [pa.building, pa.area, pa.city].filter(Boolean).join(", ");
 
+  // Document counts — use API's documentCollection fields
+  const docsUploaded = dc.documentsUploaded   ?? documents.length;
+  const docsVerified = dc.documentsVerified   ?? documents.filter((d) => (d.status || d.verification_status) === "Verified").length;
+  const docsPending  = dc.documentsPending    ?? documents.filter((d) => { const s = d.status || d.verification_status; return !s || s === "Pending"; }).length;
+  const docsRejected = dc.documentsRejected   ?? documents.filter((d) => (d.status || d.verification_status) === "Rejected").length;
+  const docsRequired = dc.totalDocumentsRequired ?? 7;
+
+  // SLA status
+  const isSlaBreached = sla.breached === true;
+  const slaDeadline   = sla.deadline;
+
+  // ── Tabs ──────────────────────────────────────────────────────────────
+  const TABS = [
+    { id: "overview",  label: "Overview",   icon: Layers        },
+    { id: "property",  label: "Property",   icon: Home          },
+    { id: "documents", label: "Documents",  icon: FileText      },
+    { id: "financial", label: "Financial",  icon: DollarSign    },
+    { id: "status",    label: "Status",     icon: ClipboardList },
+    { id: "system",    label: "System",     icon: Shield        },
+  ];
+
+  // ─────────────────────────────────────────────────────────────────────
   return (
-    <>
-      <div style={{ minHeight: '100vh', background: '#f9fafb', padding: '32px 20px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Inter', sans-serif" }}>
+      <style>{`
+        @keyframes spin   { to { transform: rotate(360deg) } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+        .pd-tab:hover { background: ${C.primaryGlow} !important; color: ${C.primary} !important; }
+        .pd-row:last-child { border-bottom: none !important; }
+        .pd-copy:hover { color: ${C.primary} !important; background: ${C.primarySoft} !important; }
+        .pd-stat:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(92,3,155,0.1) !important; }
+        .doc-card:hover { border-color: ${C.primaryBord} !important; box-shadow: 0 4px 16px rgba(92,3,155,0.08) !important; }
+        .status-btn:hover { opacity: 0.85; }
+        @media(max-width:768px){ .pd-grid-2{ grid-template-columns:1fr !important; } .pd-stats{ grid-template-columns:1fr 1fr !important; } }
+      `}</style>
 
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ marginBottom: 24, background: '#fff', borderColor: '#d1d5db' }}>
-            Back to Vault Leads
-          </Button>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px" }}>
 
-          {/* Client & Loan */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20, marginBottom: 24 }}>
-            <SectionCard icon={<UserOutlined />} title="Client Information">
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#1f2937' }}>{ci.fullName || '—'}</div>
-                {ci.preferredName && <div style={{ color: '#6b7280', marginTop: 4 }}>"{ci.preferredName}"</div>}
-              </div>
-              <InfoRow icon={<MailOutlined />}      label="Email"          value={ci.email} />
-              <InfoRow icon={<PhoneOutlined />}     label="Mobile"         value={ci.mobileNumber} />
-              {ci.whatsappNumber && <InfoRow icon={<WhatsAppOutlined />} label="WhatsApp" value={ci.whatsappNumber} />}
-              <InfoRow icon={<DollarOutlined />}    label="Monthly Salary" value={ci.monthlySalary ? `AED ${fmt(ci.monthlySalary)}` : null} />
-              <InfoRow                              label="Nationality"    value={ci.nationality} />
-              {ci.maritalStatus && <InfoRow         label="Marital Status" value={ci.maritalStatus} />}
-            </SectionCard>
+        {/* ── Back ── */}
+        <button
+          onClick={() => navigate(-1)}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 20, padding: "8px 16px", background: C.white, border: `1px solid ${C.grayBord}`, borderRadius: 10, fontSize: 13, fontWeight: 600, color: C.textSub, cursor: "pointer", transition: "all .2s" }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.primaryBord; e.currentTarget.style.color = C.primary; e.currentTarget.style.background = C.primarySoft; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.grayBord; e.currentTarget.style.color = C.textSub; e.currentTarget.style.background = C.white; }}
+        >
+          <ChevronLeft size={15} /> Back to Vault Leads
+        </button>
 
-            <SectionCard icon={<DollarOutlined />} title="Loan Summary">
-              <InfoRow label="Loan Amount"    value={`AED ${fmt(pd.loanAmountRequired || lead.loanAmount)}`} />
-              <InfoRow label="Property Value" value={`AED ${fmt(pd.propertyValue)}`} />
-              <InfoRow label="Down Payment"   value={`AED ${fmt(pd.downPaymentAmount)}`} />
-            </SectionCard>
+        {/* ── Flash ── */}
+        {flashMsg.text && (
+          <div style={{ marginBottom: 16, padding: "10px 16px", borderRadius: 10, fontSize: 13, display: "flex", alignItems: "center", gap: 8, background: flashMsg.type === "success" ? C.greenSoft : C.redSoft, color: flashMsg.type === "success" ? "#065F46" : "#991B1B", border: `1px solid ${flashMsg.type === "success" ? C.greenBord : C.redBord}` }}>
+            {flashMsg.type === "success" ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
+            {flashMsg.text}
           </div>
+        )}
 
-          {/* ── Lead Status Update ── */}
-          <div style={{ marginBottom: 24 }}>
-            <SectionCard
-              icon={<EditOutlined />}
-              title="Lead Status"
-              extra={
-                <span style={{
-                  fontSize: 12, fontWeight: 700,
-                  color: savedStatusCfg .color,
-                  background: savedStatusCfg.bg,
-                  border: `1px solid ${savedStatusCfg.border}`,
-                  padding: '4px 12px', borderRadius: 20,
-                }}>
-                  {leadStatus || 'Not Set'}
-                </span>
-              }
-            >
-              {/* Status buttons */}
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
-                {STATUS_OPTIONS.map(opt => {
-                  const cfg = STATUS_CONFIG[opt];
-                  const isActive = leadStatus === opt;
-                  return (
-                    <button
-                      key={opt}
-                      onClick={() => setLeadStatus(opt)}
-                      style={{
-                        padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                        border: `1.5px solid ${isActive ? cfg.color : '#e5e7eb'}`,
-                        background: isActive ? cfg.bg : '#fff',
-                        color: isActive ? cfg.color : '#6b7280',
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      {opt}
-                    </button>
-                  );
-                })}
-              </div>
-{savedStatus && (
-  <div style={{
-    display: 'flex', alignItems: 'center', gap: 10,
-    padding: '10px 14px', borderRadius: 8,
-    background: savedStatusCfg.bg,
-    border: `1px solid ${savedStatusCfg.border}`,
-    marginBottom: 16,
-  }}>
-    <div style={{ width: 10, height: 10, borderRadius: '50%', background: savedStatusCfg.color, flexShrink: 0 }} />
-    <span style={{ fontSize: 13, color: '#6b7280' }}>Current Status:</span>
-    <span style={{ fontSize: 13, fontWeight: 700, color: savedStatusCfg.color }}>
-      {savedStatus}
-    </span>
-  </div>
-)}
-
-            {/* Notes + Update button — stacked */}
-<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-  <Input.TextArea
-    placeholder="Add a note (optional)..."
-    value={statusNote}
-    onChange={e => setStatusNote(e.target.value)}
-    rows={2}
-    style={{ width: '100%', resize: 'none', fontSize: 14 }}
-  />
-  <button
-    onClick={handleStatusUpdate}
-    disabled={statusUpdating || !leadStatus}
-    style={{
-      width: '100%', padding: '10px 0', borderRadius: 8, border: 'none',
-      fontWeight: 700, fontSize: 14,
-      background: statusUpdating || !leadStatus ? '#e5e7eb' : PRIMARY,
-      color: statusUpdating || !leadStatus ? '#9ca3af' : '#fff',
-      cursor: statusUpdating || !leadStatus ? 'not-allowed' : 'pointer',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-    }}
-  >
-    {statusUpdating ? <Spin size="small" /> : 'Update Status'}
-  </button>
-</div>
-            </SectionCard>
+        {/* ── SLA Breach banner ── */}
+        {isSlaBreached && (
+          <div style={{ marginBottom: 14, padding: "10px 16px", borderRadius: 10, fontSize: 13, display: "flex", alignItems: "center", gap: 8, background: C.redSoft, color: "#991B1B", border: `1px solid ${C.redBord}`, fontWeight: 600 }}>
+            <AlertTriangle size={15} /> SLA Breached — This lead requires immediate attention
+            {slaDeadline && <span style={{ fontWeight: 400, marginLeft: 4 }}>Deadline was: {fmtDT(slaDeadline)}</span>}
           </div>
+        )}
 
-          {/* Property */}
-          {(propertyAddress || pd.propertyType) && (
-            <div style={{ marginBottom: 24 }}>
-              <SectionCard icon={<HomeOutlined />} title="Property Details">
-                <InfoRow icon={<EnvironmentOutlined style={{ color: '#6b7280' }} />} label="Address" value={propertyAddress} />
-                {pd.propertyType    && <InfoRow label="Property Type"    value={pd.propertyType} />}
-                {pd.completionDate  && <InfoRow label="Completion Date"  value={fmtDate(pd.completionDate)} />}
-              </SectionCard>
+        {/* ════════════════════════════════════════════════════════════
+            PROFILE HEADER
+        ════════════════════════════════════════════════════════════ */}
+        <div style={{ background: C.white, borderRadius: 18, border: `1px solid ${C.grayBord}`, marginBottom: 16, overflow: "hidden", boxShadow: "0 2px 16px rgba(92,3,155,0.06)", animation: "fadeUp .4s ease" }}>
+          <div style={{ height: 5, background: `linear-gradient(90deg, ${C.primary}, ${C.primaryMid}, ${C.primaryLight})` }} />
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 20, padding: "24px 28px 22px", flexWrap: "wrap" }}>
+            {/* Icon */}
+            <div style={{ width: 76, height: 76, borderRadius: 18, background: C.primarySoft, border: `2px solid ${C.primaryBord}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <User size={32} color={C.primary} />
+            </div>
+
+            {/* Client info */}
+            <div style={{ flex: 1, minWidth: 220 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0, letterSpacing: "-.4px" }}>
+                  {ci.fullName || "—"}
+                </h1>
+                {ci.preferredName && <StatusPill bg={C.primarySoft} color={C.primary} label={`"${ci.preferredName}"`} />}
+                <StatusPill bg={statusCfg.bg} color={statusCfg.color} label={currentStatus} dot />
+                {lead.referralType && <StatusPill bg="#F0F9FF" color="#0369A1" label={lead.referralType} />}
+                {lead.loanAmountRange && <StatusPill bg={C.amberSoft} color="#B45309" label={lead.loanAmountRange} />}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
+                <InfoChip icon={Mail}       value={ci.email} />
+                <InfoChip icon={Phone}      value={ci.mobileNumber} />
+                <InfoChip icon={MapPin}     value={propertyAddr || null} />
+                <InfoChip icon={DollarSign} value={pd.loanAmountRequired ? `Loan: AED ${fmt(pd.loanAmountRequired)}` : pd.propertyValue ? `Property: AED ${fmt(pd.propertyValue)}` : null} />
+                <InfoChip icon={Calendar}   value={lead.createdAt ? `Created ${fmtDate(lead.createdAt)}` : null} />
+                <InfoChip icon={Hash}       value={lead._id ? `ID: …${lead._id.slice(-6)}` : null} />
+              </div>
+            </div>
+
+            {/* Assigned Advisor + Source */}
+            <div style={{ flexShrink: 0, textAlign: "right", minWidth: 150 }}>
+              {at.advisorName ? (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, color: C.textMuted, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Assigned To</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{at.advisorName}</div>
+                  {at.assignedAt && <div style={{ fontSize: 11, color: C.gray, marginTop: 2 }}>{fmtDate(at.assignedAt)}</div>}
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: C.amber, background: C.amberSoft, padding: "4px 10px", borderRadius: 8, marginBottom: 10, display: "inline-block" }}>
+                  ⚠ No Advisor Assigned
+                </div>
+              )}
+              {si.source && <StatusPill bg={C.primarySoft} color={C.primary} label={capWords(si.source)} />}
+            </div>
+          </div>
+        </div>
+
+        {/* ════════════════════════════════════════════════════════════
+            STATS ROW
+        ════════════════════════════════════════════════════════════ */}
+        <div className="pd-stats" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 16 }}>
+          <StatTile icon={DollarSign} color={C.primary} label="Loan Amount"    value={pd.loanAmountRequired ? `AED ${fmt(pd.loanAmountRequired)}` : "—"} />
+          <StatTile icon={TrendingUp} color={C.green}   label="Property Value" value={pd.propertyValue      ? `AED ${fmt(pd.propertyValue)}`      : "—"} />
+          <StatTile icon={FileText}   color="#0891B2"   label="Documents"      value={`${docsUploaded} / ${docsRequired}`} />
+          <StatTile icon={Percent}    color={C.amber}   label="Collection"     value={`${dc.collectionPercentage ?? 0}%`} />
+          <StatTile icon={Clock}      color={isSlaBreached ? C.red : C.green} label="SLA" value={isSlaBreached ? "Breached" : "On Track"} />
+        </div>
+
+        {/* ════════════════════════════════════════════════════════════
+            TABS
+        ════════════════════════════════════════════════════════════ */}
+        <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.grayBord}`, padding: "4px 6px", display: "flex", gap: 2, marginBottom: 16, overflowX: "auto" }}>
+          {TABS.map((tab) => {
+            const active = activeTab === tab.id;
+            const Icon   = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                className="pd-tab"
+                onClick={() => setActiveTab(tab.id)}
+                style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 10, border: "none", background: active ? C.primarySoft : "transparent", color: active ? C.primary : C.gray, fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap", transition: "all .2s", borderBottom: active ? `2px solid ${C.primary}` : "2px solid transparent" }}
+              >
+                <Icon size={14} /> {tab.label}
+                {tab.id === "documents" && documents.length > 0 && (
+                  <span style={{ background: C.primarySoft, color: C.primary, fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 99, border: `1px solid ${C.primaryBord}` }}>
+                    {documents.length}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ════════════════════════════════════════════════════════════
+            TAB CONTENT
+        ════════════════════════════════════════════════════════════ */}
+        <div style={{ animation: "fadeUp .3s ease" }} key={activeTab}>
+
+          {/* ── OVERVIEW ──────────────────────────────────────────── */}
+          {activeTab === "overview" && (
+            <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+
+              <Section icon={User} title="Client Information">
+                <DRow label="Full Name"       value={show(ci.fullName)} />
+                <DRow label="Preferred Name"  value={show(ci.preferredName)} />
+                <DRow label="Email"           value={show(ci.email)} copy />
+                <DRow label="Mobile"          value={show(ci.mobileNumber)} copy />
+                <DRow label="Alt. Phone"      value={show(ci.alternativePhone)} />
+                <DRow label="WhatsApp"        value={show(ci.whatsappNumber)} copy />
+                <DRow label="Date of Birth"   value={fmtDate(ci.dateOfBirth)} />
+                <DRow label="Nationality"     value={show(ci.nationality)} />
+                <DRow label="Marital Status"  value={show(ci.maritalStatus)} />
+                <DRow label="Dependents"      value={show(ci.numberOfDependents)} />
+                <DRow label="Occupation"      value={show(ci.occupation)} />
+                <DRow label="Employer"        value={show(ci.employer)} />
+                <DRow label="Monthly Salary"  value={ci.monthlySalary ? `AED ${fmt(ci.monthlySalary)}` : null} />
+              </Section>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* Lead source */}
+                <Section icon={FilePlus} title="Lead Source">
+                  <DRow label="Source"          value={show(capWords(si.source))} />
+                  <DRow label="Submission"       value={show(capWords(si.submissionMethod))} />
+                  <DRow label="Created By"       value={show(si.createdByName)} />
+                  <DRow label="Role"             value={show(capWords(si.createdByRole))} />
+                  <DRow label="Agent ID"         value={show(si.createdById)} copy />
+                  <DRow label="Submitted At"     value={fmtDT(si.createdAt)} />
+                  <DRow label="Referral Type"    value={show(lead.referralType)} />
+                  <DRow label="Loan Range"       value={show(lead.loanAmountRange)} />
+                </Section>
+
+                {/* Assigned advisor */}
+                <Section icon={User} title="Assigned Advisor">
+                  {at.advisorName || at.advisorId ? (
+                    <>
+                      <DRow label="Advisor Name"  value={show(at.advisorName)} />
+                      <DRow label="Advisor ID"    value={show(at.advisorId)} copy />
+                      <DRow label="Assigned At"   value={fmtDT(at.assignedAt)} />
+                      <DRow label="Assigned By"   value={show(at.assignedBy)} copy />
+                    </>
+                  ) : <EmptyNote msg="No advisor assigned yet" />}
+                </Section>
+              </div>
+
+              {/* Notes */}
+              {lead.notesToXoto && (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <Section icon={MessageSquare} title="Notes to Xoto">
+                    <div style={{ background: C.primarySoft, borderRadius: 10, padding: "14px 16px", border: `1px solid ${C.primaryBord}`, fontSize: 14, color: C.textSub, lineHeight: 1.7, whiteSpace: "pre-line" }}>
+                      {lead.notesToXoto}
+                    </div>
+                  </Section>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Documents */}
-          <div style={{ marginBottom: 24 }}>
-            <SectionCard icon={<FileTextOutlined />} title="Document Collection" extra={docsLoading && <Spin size="small" />}>
-              <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-                <StatBox label="Uploaded" value={dc.documentsUploaded ?? documents.length ?? 0}                                                                                    color={PRIMARY}   />
-                <StatBox label="Verified" value={dc.documentsVerified ?? documents.filter(d => (d.status || d.verification_status) === 'Verified').length}                        color="#10b981"   />
-                <StatBox label="Pending"  value={dc.documentsPending  ?? documents.filter(d => { const s = d.status || d.verification_status; return !s || s === 'Pending'; }).length} color="#f59e0b" />
-                <StatBox label="Rejected" value={dc.documentsRejected ?? documents.filter(d => (d.status || d.verification_status) === 'Rejected').length}                        color="#ef4444"   />
+          {/* ── PROPERTY ──────────────────────────────────────────── */}
+          {activeTab === "property" && (
+            <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+
+              <Section icon={Home} title="Property Details">
+                <DRow label="Property Type"    value={show(pd.propertyType)} />
+                <DRow label="Property Subtype" value={show(pd.propertySubtype)} />
+                <DRow label="Property Value"   value={pd.propertyValue    ? `AED ${fmt(pd.propertyValue)}`    : null} />
+                <DRow label="Down Payment"     value={pd.downPaymentAmount ? `AED ${fmt(pd.downPaymentAmount)}` : null} />
+                <DRow label="Loan Amount"      value={pd.loanAmountRequired ? `AED ${fmt(pd.loanAmountRequired)}` : null} />
+                <DRow label="Property Age"     value={pd.propertyAgeYears !== null ? show(pd.propertyAgeYears) : null} />
+                <DRow label="Off-Plan"         value={boolLabel(pd.isOffPlan)} />
+                <DRow label="Completion Date"  value={fmtDate(pd.completionDate)} />
+              </Section>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <Section icon={MapPin} title="Property Address">
+                  <DRow label="Building" value={show(pa.building)} />
+                  <DRow label="Area"     value={show(pa.area)} />
+                  <DRow label="City"     value={show(pa.city)} />
+                </Section>
+
+                <Section icon={Target} title="Loan Requirements">
+                  <DRow label="Preferred Tenure"    value={lr.preferredTenureYears ? `${lr.preferredTenureYears} years` : null} />
+                  <DRow label="Rate Type"           value={show(lr.preferredInterestRateType)} />
+                  <DRow label="Preferred Banks"     value={lr.preferredBanks?.length ? lr.preferredBanks.join(", ") : "No preference"} />
+                  <DRow label="Fee Financing"       value={boolLabel(lr.feeFinancingPreference)} highlight={lr.feeFinancingPreference} />
+                  <DRow label="Life Insurance"      value={boolLabel(lr.lifeInsurancePreference)} highlight={lr.lifeInsurancePreference} />
+                  <DRow label="Property Insurance"  value={boolLabel(lr.propertyInsurancePreference)} highlight={lr.propertyInsurancePreference} />
+                  {lr.specialRequirements && <DRow label="Special Requirements" value={show(lr.specialRequirements)} />}
+                </Section>
               </div>
 
-              {dc.collectionPercentage !== undefined && (
-                <div style={{ marginBottom: 24 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ fontSize: 14, color: '#4b5563' }}>Collection Progress</span>
-                    <span style={{ fontWeight: 600, color: PRIMARY }}>{dc.collectionPercentage}%</span>
+            </div>
+          )}
+
+          {/* ── DOCUMENTS ─────────────────────────────────────────── */}
+          {activeTab === "documents" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+              {/* Doc stats from API */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
+                {[
+                  { label: "Required",  value: docsRequired,          color: C.gray   },
+                  { label: "Uploaded",  value: docsUploaded,          color: C.primary },
+                  { label: "Verified",  value: docsVerified,          color: C.green  },
+                  { label: "Pending",   value: docsPending,           color: C.amber  },
+                  { label: "Rejected",  value: docsRejected,          color: C.red    },
+                ].map((s) => (
+                  <div key={s.label} className="pd-stat" style={{ background: C.white, borderRadius: 12, padding: "14px 16px", border: `1px solid ${C.grayBord}`, transition: "all .2s", textAlign: "center" }}>
+                    <div style={{ fontSize: 26, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
+                    <div style={{ fontSize: 11, color: C.gray, fontWeight: 600, marginTop: 4, textTransform: "uppercase", letterSpacing: ".05em" }}>{s.label}</div>
                   </div>
-                  <Progress percent={dc.collectionPercentage} strokeColor={PRIMARY} />
-                </div>
-              )}
-
-              {dc.readyForSubmission && (
-                <div style={{ color: '#10b981', fontWeight: 600, marginBottom: 20 }}>
-                  <CheckCircleOutlined /> Ready for Submission
-                </div>
-              )}
-
-              <div style={{ marginBottom: 16, fontWeight: 600, color: '#374151' }}>
-                Available Documents ({documents.length})
+                ))}
               </div>
 
-              {docsLoading ? (
-                <div style={{ textAlign: 'center', padding: '40px 0' }}><Spin size="large" /></div>
-              ) : documents.length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
-                  {documents.map((doc, i) => (
-                    <DocCard key={doc._id || i} doc={doc} onView={openModal} />
-                  ))}
+              {/* Collection progress */}
+              <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.grayBord}`, padding: "16px 20px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: C.textSub }}>Collection Progress</span>
+                    {dc.collectionMethod && <span style={{ fontSize: 11, color: C.gray, marginLeft: 8 }}>via {capWords(dc.collectionMethod)}</span>}
+                  </div>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: C.primary }}>{dc.collectionPercentage ?? 0}%</span>
                 </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '60px 20px', color: '#6b7280' }}>No documents uploaded yet.</div>
-              )}
-            </SectionCard>
-          </div>
+                <div style={{ background: C.primaryBord, borderRadius: 99, height: 10, marginBottom: 8 }}>
+                  <div style={{ width: `${dc.collectionPercentage ?? 0}%`, background: `linear-gradient(90deg, ${C.primary}, ${C.primaryMid})`, height: "100%", borderRadius: 99, transition: "width .4s" }} />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                  <div style={{ fontSize: 11, color: C.gray }}>
+                    Verification: <strong style={{ color: C.primary }}>{dc.verificationPercentage ?? 0}%</strong>
+                  </div>
+                  <div style={{ fontSize: 11, color: C.gray }}>
+                    Collection Started: <strong style={{ color: C.textSub }}>{fmtDate(dc.collectionStartedAt) || "—"}</strong>
+                  </div>
+                  <div style={{ fontSize: 11 }}>
+                    {dc.readyForSubmission
+                      ? <span style={{ color: C.green, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}><CheckCircle size={12} /> Ready for Submission</span>
+                      : <span style={{ color: C.amber, display: "flex", alignItems: "center", gap: 4 }}><AlertTriangle size={12} /> Not Ready Yet</span>
+                    }
+                  </div>
+                </div>
+              </div>
 
-          {lead.notesToXoto && (
-            <SectionCard icon={<FileTextOutlined />} title="Notes from Agent">
-              <p style={{ color: '#374151', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{lead.notesToXoto}</p>
-            </SectionCard>
+              {/* Doc cards */}
+              <Section icon={FileText} title={`Uploaded Documents (${documents.length})`}>
+                {docsLoading ? (
+                  <div style={{ textAlign: "center", padding: "40px 0" }}><Spin size="large" /></div>
+                ) : documents.length > 0 ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+                    {documents.map((doc, i) => {
+                      const docId    = doc._id || doc.id;
+                      const override = docOverrides[docId];
+                      return <DocCard key={docId || i} doc={override ? { ...doc, ...override } : doc} onView={openDocModal} />;
+                    })}
+                  </div>
+                ) : <EmptyNote msg="No documents uploaded yet" />}
+              </Section>
+            </div>
+          )}
+
+          {/* ── FINANCIAL ─────────────────────────────────────────── */}
+          {activeTab === "financial" && (
+            <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+
+              <Section icon={DollarSign} title="Commission Information">
+                <DRow label="Commission Eligible" value={boolLabel(ci2.commissionEligible)} highlight={ci2.commissionEligible} />
+                <DRow label="Commission Status"   value={show(ci2.commissionStatus)} badge={ci2.commissionStatus === "Pending" ? { bg: C.amberSoft, color: "#B45309" } : ci2.commissionStatus === "Paid" ? { bg: C.greenSoft, color: C.green } : undefined} />
+                <DRow label="Commission Amount"   value={ci2.commissionAmount ? `AED ${fmt(ci2.commissionAmount)}` : null} />
+                <DRow label="Expected Commission" value={lead.expectedCommission ? `AED ${fmt(lead.expectedCommission)}` : null} />
+                <DRow label="Commission Tier"     value={show(lead.commissionTier) ? `${lead.commissionTier}%` : null} />
+                <DRow label="Loan Amount Range"   value={show(lead.loanAmountRange)} />
+                <DRow label="Payment Date"        value={fmtDate(ci2.expectedPaymentDate)} />
+                <DRow label="Paid At"             value={fmtDT(ci2.paidAt)} />
+              </Section>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <Section icon={BarChart2} title="Commission Calculation">
+                  <DRow label="Bank Commission to Xoto" value={ci2.calculation?.bankCommissionToXoto ? `${ci2.calculation.bankCommissionToXoto}%` : null} />
+                  <DRow label="Agent Percentage"        value={ci2.calculation?.agentPercentage ? `${ci2.calculation.agentPercentage}%` : null} />
+                  <DRow label="Formula"                 value={show(ci2.calculation?.formula)} />
+                </Section>
+
+                <Section icon={GitBranch} title="Conversion Status">
+                  <DRow label="Converted to Case" value={boolLabel(cv.convertedToCase)} highlight={cv.convertedToCase} />
+                  <DRow label="Case ID"           value={show(cv.caseId)} copy />
+                  <DRow label="Converted At"      value={fmtDT(cv.convertedAt)} />
+                  <DRow label="Converted By"      value={show(cv.convertedByName)} />
+                  <DRow label="Converted Role"    value={show(capWords(cv.convertedByRole))} />
+                </Section>
+              </div>
+
+            </div>
+          )}
+
+          {/* ── STATUS ────────────────────────────────────────────── */}
+          {activeTab === "status" && (
+            <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+
+              <Section icon={ClipboardList} title="Update Lead Status">
+                {/* Current */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 10, background: statusCfg.bg, border: `1px solid ${statusCfg.border}`, marginBottom: 18 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: statusCfg.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, color: C.gray }}>Current:</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: statusCfg.color }}>{currentStatus}</span>
+                </div>
+
+                {/* Status selector */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
+                  {STATUS_OPTIONS.map((opt) => {
+                    const cfg    = STATUS_CFG[opt] || {};
+                    const active = leadStatus === opt;
+                    return (
+                      <button key={opt} className="status-btn" onClick={() => setLeadStatus(opt)}
+                        style={{ padding: "7px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer", border: `1.5px solid ${active ? cfg.color || C.primary : C.grayBord}`, background: active ? cfg.bg || C.primarySoft : C.white, color: active ? cfg.color || C.primary : C.gray, transition: "all .15s" }}>
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.textSub, marginBottom: 6, textTransform: "uppercase", letterSpacing: ".04em" }}>
+                  Note <span style={{ color: C.textMuted, fontWeight: 400, textTransform: "none" }}>(optional)</span>
+                </label>
+                <textarea
+                  value={statusNote}
+                  onChange={(e) => setStatusNote(e.target.value)}
+                  rows={3}
+                  placeholder="Add a note about this status change..."
+                  style={{ width: "100%", border: `1px solid ${C.grayBord}`, borderRadius: 10, padding: "10px 14px", fontSize: 13, resize: "vertical", outline: "none", boxSizing: "border-box", fontFamily: "inherit", color: C.text, marginBottom: 14 }}
+                />
+                <button
+                  onClick={handleStatusUpdate}
+                  disabled={statusUpdating || !leadStatus}
+                  style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", fontWeight: 700, fontSize: 14, background: statusUpdating || !leadStatus ? C.grayBord : `linear-gradient(135deg, ${C.primary}, ${C.primaryMid})`, color: statusUpdating || !leadStatus ? C.textMuted : "#fff", cursor: statusUpdating || !leadStatus ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                >
+                  {statusUpdating ? <><RefreshCw size={14} style={{ animation: "spin 1s linear infinite" }} /> Updating...</> : <><ClipboardList size={14} /> Update Status</>}
+                </button>
+              </Section>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* SLA Info */}
+                <Section icon={Clock} title="SLA Information">
+                  <DRow label="SLA Breached"       value={boolLabel(sla.breached)} highlight={!sla.breached} />
+                  <DRow label="Deadline"           value={fmtDT(sla.deadline)} expired={isSlaBreached} />
+                  <DRow label="First Contact At"   value={fmtDT(sla.firstContactAt)} />
+                  <DRow label="Qualified At"       value={fmtDT(sla.qualificationAt)} />
+                  <DRow label="Breached At"        value={fmtDT(sla.breachedAt)} />
+                  <DRow label="Reminders Sent"     value={show(sla.reminderCount)} />
+                  <DRow label="Last Reminder"      value={fmtDT(sla.lastReminderSentAt)} />
+                </Section>
+
+                {/* Duplicate check */}
+                <Section icon={Activity} title="Duplicate Check">
+                  <DRow label="Is Duplicate"       value={boolLabel(dup.isDuplicate)} highlight={!dup.isDuplicate} />
+                  <DRow label="Phone Match Found"  value={boolLabel(dup.matchingPhoneFound)} highlight={!dup.matchingPhoneFound} />
+                  <DRow label="Lookback Days"      value={show(dup.lookbackDays) ? `${dup.lookbackDays} days` : null} />
+                  <DRow label="Checked At"         value={fmtDT(dup.checkPerformedAt)} />
+                </Section>
+              </div>
+            </div>
+          )}
+
+          {/* ── SYSTEM ────────────────────────────────────────────── */}
+          {activeTab === "system" && (
+            <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+
+              <Section icon={Shield} title="System Information">
+                <DRow label="Lead ID"       value={show(lead._id)} copy mono />
+                <DRow label="Customer ID"   value={show(lead.customerId)} copy />
+                <DRow label="Version"       value={lead.__v !== undefined ? `v${lead.__v}` : null} />
+                <DRow label="Source"        value={show(capWords(si.source))} />
+                <DRow label="Source IP"     value={show(si.sourceIp)} />
+                <DRow label="User Agent"    value={show(si.userAgent)} />
+                <DRow label="Created At"    value={fmtDT(lead.createdAt)} />
+                <DRow label="Updated At"    value={fmtDT(lead.updatedAt)} />
+                <DRow label="Deleted"       value={boolLabel(lead.isDeleted)} highlight={!lead.isDeleted} />
+                <DRow label="Deleted At"    value={fmtDT(lead.deletedAt)} />
+              </Section>
+
+              <Section icon={Activity} title="Lead Flags">
+                <FlagRow label="Docs Ready for Submission" value={dc.readyForSubmission}   icon={FileText}    />
+                <FlagRow label="Advisor Assigned"          value={!!(at.advisorId)}        icon={User}        />
+                <FlagRow label="SLA On Track"              value={!sla.breached}           icon={Clock}       />
+                <FlagRow label="Commission Eligible"       value={ci2.commissionEligible}  icon={DollarSign}  />
+                <FlagRow label="Converted to Case"         value={cv.convertedToCase}      icon={GitBranch}   />
+                <FlagRow label="Is Duplicate"              value={dup.isDuplicate}         icon={Activity}    invert />
+                <FlagRow label="Deleted"                   value={lead.isDeleted}          icon={XCircle}     invert />
+              </Section>
+
+            </div>
           )}
         </div>
       </div>
 
-      {/* ── Document Preview Modal ── */}
-      <Modal
-        open={modalOpen}
-        onCancel={closeModal}
-        footer={null}
-        width={1050}
-        centered
-        destroyOnClose
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 40 }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>
-                {selectedDoc?.fileName || selectedDoc?.file_name || 'Document Preview'}
+      {/* ════════════════════════════════════════════════════════════════
+          DOCUMENT PREVIEW MODAL
+      ════════════════════════════════════════════════════════════════ */}
+      {modalOpen && selectedDoc && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(2px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeDocModal(); }}
+        >
+          <div style={{ background: C.white, borderRadius: 18, width: "100%", maxWidth: 960, maxHeight: "92vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.25)" }}>
+            <div style={{ height: 4, background: `linear-gradient(90deg, ${C.primary}, ${C.primaryMid})` }} />
+
+            {/* Modal header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${C.grayBord}` }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{selectedDoc?.fileName || selectedDoc?.file_name || "Document Preview"}</div>
+                {selectedDoc?.documentType && <div style={{ fontSize: 12, color: C.primary, marginTop: 2 }}>{selectedDoc.documentType}</div>}
               </div>
-              {selectedDoc?.documentType && (
-                <div style={{ fontSize: 12, color: PRIMARY, marginTop: 2 }}>{selectedDoc.documentType}</div>
-              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                {(() => {
+                  const ds  = selectedDoc?.status || selectedDoc?.verification_status;
+                  const cfg = { Verified: { color: C.green, bg: C.greenSoft }, Rejected: { color: C.red, bg: C.redSoft }, Pending: { color: C.amber, bg: C.amberSoft } }[ds];
+                  return ds && cfg ? <span style={{ fontSize: 12, fontWeight: 700, color: cfg.color, background: cfg.bg, padding: "4px 12px", borderRadius: 99 }}>{ds}</span> : null;
+                })()}
+                <button onClick={closeDocModal} style={{ background: "none", border: "none", cursor: "pointer", color: C.textMuted, fontSize: 20, lineHeight: 1, padding: 4 }}>✕</button>
+              </div>
             </div>
-            {docStatus && (() => {
-              const cfg = { Verified: { color: '#10b981', bg: '#ecfdf5' }, Rejected: { color: '#ef4444', bg: '#fef2f2' }, Pending: { color: '#f59e0b', bg: '#fffbeb' } };
-              const c = cfg[docStatus] || { color: '#6b7280', bg: '#f3f4f6' };
-              return <span style={{ fontSize: 12, fontWeight: 700, color: c.color, background: c.bg, padding: '4px 12px', borderRadius: 20 }}>{docStatus}</span>;
-            })()}
+
+            {/* Preview */}
+            <div style={{ flex: 1, background: C.grayLight, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", minHeight: 400, overflow: "hidden" }}>
+              {modalLoading && <div style={{ position: "absolute", zIndex: 2 }}><Spin size="large" /></div>}
+              {isPdf(selectedDoc.fileUrl)
+                ? <iframe src={selectedDoc.fileUrl} style={{ width: "100%", height: 500, border: "none" }} onLoad={() => setModalLoading(false)} title="pdf" />
+                : <img src={selectedDoc.fileUrl} alt="preview" style={{ maxHeight: 500, maxWidth: "100%", objectFit: "contain" }} onLoad={() => setModalLoading(false)} />
+              }
+            </div>
+
+            {/* Actions */}
+            <div style={{ padding: "16px 20px", borderTop: `1px solid ${C.grayBord}` }}>
+              {(() => {
+                const ds = selectedDoc?.status || selectedDoc?.verification_status;
+                if (ds === "Verified") return <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.green, fontWeight: 600, fontSize: 13 }}><CheckCircle size={15} /> Document is Verified</div>;
+                if (ds === "Rejected") return (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.red, fontWeight: 600, fontSize: 13 }}>
+                    <XCircle size={15} /> Rejected
+                    {selectedDoc?.rejectionReason && <span style={{ fontWeight: 400, color: C.gray, fontSize: 12 }}>— {selectedDoc.rejectionReason}</span>}
+                  </div>
+                );
+                return showRejectInput ? (
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <input autoFocus value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleRejectDoc()} placeholder="Enter rejection reason..." style={{ flex: 1, padding: "9px 14px", border: `1px solid ${C.grayBord}`, borderRadius: 10, fontSize: 13, outline: "none", fontFamily: "inherit" }} />
+                    <button onClick={handleRejectDoc} disabled={rejecting || !rejectReason.trim()} style={{ padding: "9px 18px", borderRadius: 10, border: "none", background: rejecting || !rejectReason.trim() ? C.grayBord : C.red, color: "#fff", fontWeight: 700, fontSize: 13, cursor: !rejectReason.trim() ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}>
+                      {rejecting ? "Rejecting..." : "Confirm Reject"}
+                    </button>
+                    <button onClick={() => { setShowRejectInput(false); setRejectReason(""); }} style={{ padding: "9px 14px", borderRadius: 10, border: `1px solid ${C.grayBord}`, background: C.white, color: C.gray, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>Cancel</button>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: C.grayLight, border: `1px solid ${C.grayBord}`, borderRadius: 10, padding: "8px 14px" }}>
+                      <span style={{ fontSize: 13, color: C.textSub, fontWeight: 500 }}>Quality Score</span>
+                      <input type="number" min={0} max={100} value={qualityScore} onChange={(e) => setQualityScore(Math.min(100, Math.max(0, Number(e.target.value))))} style={{ width: 60, padding: "4px 8px", border: `1px solid ${C.grayBord}`, borderRadius: 8, fontSize: 14, fontWeight: 700, color: C.primary, textAlign: "center", outline: "none" }} />
+                      <span style={{ fontSize: 12, color: C.gray }}>/100</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+                      <button onClick={() => setShowRejectInput(true)} style={{ padding: "9px 18px", borderRadius: 10, border: `1.5px solid ${C.redBord}`, background: C.redSoft, color: C.red, fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}><XCircle size={14} /> Reject</button>
+                      <button onClick={handleVerifyDoc} disabled={verifying} style={{ padding: "9px 18px", borderRadius: 10, border: "none", background: verifying ? C.grayBord : C.green, color: verifying ? C.textMuted : "#fff", fontWeight: 700, fontSize: 13, cursor: verifying ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                        {verifying ? <><RefreshCw size={14} style={{ animation: "spin 1s linear infinite" }} /> Verifying...</> : <><CheckCircle size={14} /> Verify</>}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
-        }
-      >
-        <div style={{ minHeight: 560, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
-          {modalLoading && <Spin size="large" style={{ position: 'absolute', zIndex: 2 }} />}
-          {selectedDoc && (
-            isPdf(selectedDoc.fileUrl)
-              ? <iframe src={selectedDoc.fileUrl} style={{ width: '100%', height: 560, border: 'none', display: 'block' }} onLoad={() => setModalLoading(false)} title="pdf-preview" />
-              : <img src={selectedDoc.fileUrl} alt="preview" style={{ maxHeight: 560, maxWidth: '100%', objectFit: 'contain' }} onLoad={() => setModalLoading(false)} />
-          )}
         </div>
-
-        <div style={{ marginTop: 16, padding: '16px 0 4px', borderTop: '1px solid #f3f4f6' }}>
-          {docStatus === 'Verified' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#10b981', fontWeight: 600 }}>
-              <CheckCircleOutlined /> Document is already Verified
-            </div>
-          )}
-          {docStatus === 'Rejected' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444', fontWeight: 600 }}>
-              <CloseCircleOutlined /> Document is Rejected
-              {selectedDoc?.rejectionReason && <span style={{ fontWeight: 400, color: '#6b7280', fontSize: 13 }}>— {selectedDoc.rejectionReason}</span>}
-            </div>
-          )}
-          {docStatus !== 'Verified' && docStatus !== 'Rejected' && !showRejectInput && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 14px' }}>
-                <span style={{ fontSize: 13, color: '#374151', fontWeight: 500, whiteSpace: 'nowrap' }}>Quality Score</span>
-                <input
-                  type="number" min={0} max={100} value={qualityScore}
-                  onChange={e => setQualityScore(Math.min(100, Math.max(0, Number(e.target.value))))}
-                  style={{ width: 60, padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, fontWeight: 700, color: PRIMARY, textAlign: 'center', outline: 'none' }}
-                />
-                <span style={{ fontSize: 12, color: '#6b7280' }}>/100</span>
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-                <button onClick={() => setShowRejectInput(true)} style={{ padding: '9px 20px', borderRadius: 8, border: '1.5px solid #fca5a5', background: '#fef2f2', color: '#ef4444', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <StopOutlined /> Reject
-                </button>
-                <button onClick={handleVerify} disabled={verifying} style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: verifying ? '#e5e7eb' : '#10b981', color: verifying ? '#9ca3af' : '#fff', fontWeight: 700, fontSize: 13, cursor: verifying ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {verifying ? <Spin size="small" /> : <><CheckOutlined /> Verify</>}
-                </button>
-              </div>
-            </div>
-          )}
-          {showRejectInput && (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <Input placeholder="Enter rejection reason..." value={rejectReason} onChange={e => setRejectReason(e.target.value)} onPressEnter={handleReject} style={{ flex: 1 }} autoFocus />
-              <button onClick={handleReject} disabled={rejecting || !rejectReason.trim()} style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: rejecting || !rejectReason.trim() ? '#e5e7eb' : '#ef4444', color: rejecting || !rejectReason.trim() ? '#9ca3af' : '#fff', fontWeight: 700, fontSize: 13, cursor: rejecting || !rejectReason.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
-                {rejecting ? <Spin size="small" /> : 'Confirm Reject'}
-              </button>
-              <button onClick={() => { setShowRejectInput(false); setRejectReason(''); }} style={{ padding: '9px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-                Cancel
-              </button>
-            </div>
-          )}
-        </div>
-      </Modal>
-    </>
+      )}
+    </div>
   );
-};
+}
 
-export default VaultAgentLeadDetail;
+// ════════════════════════════════════════════════════════════════════════════
+// ── Sub-components ───────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+
+function Section({ icon: Icon, title, children }) {
+  return (
+    <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.grayBord}`, overflow: "hidden", boxShadow: "0 1px 8px rgba(0,0,0,0.04)" }}>
+      <div style={{ padding: "13px 20px", background: C.grayLight, borderBottom: `1px solid ${C.grayBord}`, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 30, height: 30, borderRadius: 8, background: C.primarySoft, border: `1px solid ${C.primaryBord}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Icon size={14} color={C.primary} />
+        </div>
+        <span style={{ fontSize: 14, fontWeight: 700, color: C.text, letterSpacing: "-.2px" }}>{title}</span>
+      </div>
+      <div style={{ padding: "14px 20px" }}>{children}</div>
+    </div>
+  );
+}
+
+function DRow({ label, value, copy, link, badge, highlight, expired, mono }) {
+  const [copied, setCopied] = useState(false);
+  const display   = value ?? "—";
+  const isMissing = display === "—" || value === null || value === undefined;
+  return (
+    <div className="pd-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.grayLight}` }}>
+      <span style={{ fontSize: 12, color: C.gray, fontWeight: 500, minWidth: 150, flexShrink: 0 }}>{label}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, justifyContent: "flex-end", flexWrap: "wrap" }}>
+        {badge && !isMissing ? (
+          <span style={{ padding: "2px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: badge.bg, color: badge.color }}>{display}</span>
+        ) : link && !isMissing ? (
+          <a href={link} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: C.primary, fontWeight: 500, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>{display} <ExternalLink size={11} /></a>
+        ) : (
+          <span style={{ fontSize: 13, fontWeight: isMissing ? 400 : 500, color: expired ? C.red : highlight ? C.green : isMissing ? C.textMuted : C.text, fontFamily: mono && !isMissing ? "'Courier New', monospace" : undefined, wordBreak: "break-all", textAlign: "right" }}>
+            {expired && !isMissing ? <span style={{ display: "flex", alignItems: "center", gap: 4 }}><AlertTriangle size={12} color={C.red} /> {display}</span> : display}
+          </span>
+        )}
+        {copy && value && (
+          <button className="pd-copy" onClick={() => { navigator.clipboard.writeText(String(value)); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "3px 5px", borderRadius: 5, color: copied ? C.green : C.textMuted, display: "flex", alignItems: "center", transition: "all .2s" }}>
+            {copied ? <Check size={12} /> : <Copy size={12} />}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StatTile({ icon: Icon, label, value, color }) {
+  return (
+    <div className="pd-stat" style={{ background: C.white, borderRadius: 12, padding: "12px 14px", border: `1px solid ${C.grayBord}`, transition: "all .2s" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+        <div style={{ width: 26, height: 26, borderRadius: 7, background: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon size={12} color={color} />
+        </div>
+        <span style={{ fontSize: 10, color: C.gray, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}>{label}</span>
+      </div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{value}</div>
+    </div>
+  );
+}
+
+function StatusPill({ bg, color, icon: Icon, label, dot }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: bg, color }}>
+      {dot && <span style={{ width: 7, height: 7, borderRadius: "50%", background: color, display: "inline-block" }} />}
+      {Icon && <Icon size={11} />}
+      {label}
+    </span>
+  );
+}
+
+function InfoChip({ icon: Icon, value }) {
+  return value ? (
+    <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: C.gray }}>
+      <Icon size={13} color={C.textMuted} /> {value}
+    </div>
+  ) : null;
+}
+
+function EmptyNote({ msg }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 7, color: C.textMuted, fontSize: 13, padding: "10px 0", fontStyle: "italic" }}>
+      <Info size={14} color={C.textMuted} /> {msg}
+    </div>
+  );
+}
+
+function FlagRow({ label, value, icon: Icon, invert = false }) {
+  const isTrue = value === true, isFalse = value === false;
+  const good   = invert ? isFalse : isTrue;
+  return (
+    <div className="pd-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.grayLight}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.textSub, fontWeight: 500 }}>
+        <Icon size={14} color={C.gray} /> {label}
+      </div>
+      {!isTrue && !isFalse ? (
+        <span style={{ fontSize: 12, color: C.textMuted, fontStyle: "italic" }}>—</span>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: good ? C.greenSoft : C.redSoft }}>
+          {good ? <CheckCircle size={12} color={C.green} /> : <XCircle size={12} color={C.red} />}
+          <span style={{ fontSize: 11, fontWeight: 700, color: good ? C.green : C.red }}>{isTrue ? "Yes" : "No"}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DocCard({ doc, onView }) {
+  const fileUrl  = doc.fileUrl || doc.url || doc.documentUrl || doc.file_url;
+  const fileName = doc.fileName || doc.file_name || doc.name || "Unnamed Document";
+  const docType  = doc.documentType || doc.document_type || doc.type;
+  const status   = doc.status || doc.verification_status;
+  const uploadAt = doc.uploadedAt || doc.created_at || doc.createdAt;
+  const sCfg     = { Verified: { color: C.green, bg: C.greenSoft, border: C.greenBord }, Rejected: { color: C.red, bg: C.redSoft, border: C.redBord }, Pending: { color: C.amber, bg: C.amberSoft, border: C.amberBord } }[status] || { color: C.gray, bg: C.grayLight, border: C.grayBord };
+  return (
+    <div className="doc-card" style={{ background: C.white, borderRadius: 12, border: `1px solid ${status === "Verified" ? C.greenBord : status === "Rejected" ? C.redBord : C.grayBord}`, padding: 16, display: "flex", flexDirection: "column", gap: 10, transition: "all .2s", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+      <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 10, flexShrink: 0, background: isPdf(fileUrl) ? C.redSoft : C.primarySoft, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${isPdf(fileUrl) ? C.redBord : C.primaryBord}` }}>
+          <FileText size={20} color={isPdf(fileUrl) ? C.red : C.primary} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: 13, color: C.text, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{fileName}</div>
+          {docType  && <div style={{ fontSize: 11, color: C.primary, marginTop: 2 }}>{docType}</div>}
+          {uploadAt && <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>{fmtDate(uploadAt)}</div>}
+        </div>
+      </div>
+      {status && <span style={{ padding: "3px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: sCfg.bg, color: sCfg.color, border: `1px solid ${sCfg.border}`, alignSelf: "flex-start" }}>{status}</span>}
+      {status === "Rejected" && doc.rejectionReason && (
+        <div style={{ background: C.redSoft, border: `1px solid ${C.redBord}`, borderRadius: 8, padding: "7px 10px", fontSize: 12, color: "#DC2626" }}>
+          <strong>Reason:</strong> {doc.rejectionReason}
+        </div>
+      )}
+      <button onClick={() => onView(doc)} disabled={!fileUrl} style={{ marginTop: "auto", width: "100%", padding: "9px 0", background: fileUrl ? `linear-gradient(135deg, ${C.primary}, ${C.primaryMid})` : C.grayBord, color: fileUrl ? "#fff" : C.textMuted, border: "none", borderRadius: 9, fontWeight: 600, fontSize: 13, cursor: fileUrl ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        <Eye size={14} /> View Document
+      </button>
+    </div>
+  );
+}

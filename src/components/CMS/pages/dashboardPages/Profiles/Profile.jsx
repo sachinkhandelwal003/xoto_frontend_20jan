@@ -8,6 +8,8 @@ import CustomerProfile from "./CustomerProfile";
 import { ConsoleSqlOutlined } from "@ant-design/icons";
 import AccountantProfile from "./AccountantProfile";
 import AgentProfile from "./AgentProfile";
+import VaultAgentProfile from "./VaultAgentprofile";
+import VaultPartnerProfile from "./VaultPartnerProfile";
 import DeveloperProfile from "./DeveloperProfile";
 import GridAdminProfile from "./GridAdmin";
 
@@ -44,6 +46,10 @@ const Profile = () => {
       return <AgentProfile /> ;
       case 17: 
       return <DeveloperProfile /> ;
+      case 22:
+        return <VaultAgentProfile /> ;
+        case 21:
+          return <VaultPartnerProfile /> ;
 
       case 1:
         return <GridAdminProfile />
