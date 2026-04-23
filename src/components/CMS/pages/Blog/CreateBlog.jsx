@@ -47,7 +47,7 @@ const THEME = {
 };
 // j;basfjklsdbafljksdbfljsadbflkbb
 // ─────────────────────────────────────────────
-//  GLOBAL STYLES
+//  GLOBAL STYLES 'eaihsfsndfskld;nf;osdnfklsda;nfklsdanfsdan;f;klsdanfklsdanf;klsdanfklsdnf;sdanf;sdn
 // ─────────────────────────────────────────────
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
