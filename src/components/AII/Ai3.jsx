@@ -12,6 +12,64 @@ const Ai3 = () => {
   const [recentBlogs, setRecentBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 🚨 CRITICAL FIX: CSS to override Tailwind's list resets on the frontend
+  const BLOG_HTML_STYLES = `
+    .blog-html-content {
+      color: #4b5563; /* text-gray-600 */
+      line-height: 1.8;
+      font-size: 16px;
+    }
+    .blog-html-content ul { 
+      list-style-type: disc !important; 
+      padding-left: 2.5em !important; 
+      margin: 1.2em 0 !important; 
+      display: block !important; 
+    }
+    .blog-html-content ol { 
+      list-style-type: decimal !important; 
+      padding-left: 2.5em !important; 
+      margin: 1.2em 0 !important; 
+      display: block !important; 
+    }
+    .blog-html-content li { 
+      display: list-item !important; 
+      list-style-position: outside !important; 
+      margin-bottom: 0.5em !important; 
+      line-height: 1.7; 
+    }
+    .blog-html-content p { 
+      margin-bottom: 1.2em !important; 
+    }
+    .blog-html-content h1, 
+    .blog-html-content h2, 
+    .blog-html-content h3, 
+    .blog-html-content h4, 
+    .blog-html-content h5, 
+    .blog-html-content h6 { 
+      margin-top: 1.5em !important; 
+      margin-bottom: 0.5em !important; 
+      font-weight: 700 !important; 
+      color: #1f2937; /* text-gray-800 */
+    }
+    .blog-html-content h1 { font-size: 2.25em !important; line-height: 1.2 !important; }
+    .blog-html-content h2 { font-size: 1.8em !important; line-height: 1.3 !important; }
+    .blog-html-content h3 { font-size: 1.5em !important; line-height: 1.4 !important; }
+    .blog-html-content a { 
+      color: #5C039B !important; 
+      text-decoration: underline !important; 
+    }
+    .blog-html-content blockquote { 
+      border-left: 4px solid #5C039B !important; 
+      padding: 12px 20px !important; 
+      margin: 1.2em 0 !important; 
+      background-color: #f5f3ff !important; 
+      font-style: italic !important; 
+      border-radius: 0 8px 8px 0;
+    }
+    .blog-html-content strong, .blog-html-content b { font-weight: bold !important; color: #111827; }
+    .blog-html-content img { max-width: 100% !important; height: auto !important; border-radius: 8px !important; margin: 1.5em 0 !important; }
+  `;
+
   useEffect(() => {
     // 🔹 LocalStorage trick
     let activeId = selectedBlogId;
@@ -84,6 +142,9 @@ const Ai3 = () => {
   return (
     <div className="relative w-full bg-[var(--color-body)] px-4 py-16 overflow-hidden z-0">
       
+      {/* 🚨 Injecting Styles here 🚨 */}
+      <style>{BLOG_HTML_STYLES}</style>
+
       {/* Main Content Container */}
       <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-10 relative z-10">
         
@@ -100,22 +161,23 @@ const Ai3 = () => {
             {/* Description rendering directly */}
             <div className="mb-4">
               <div 
-                className="text-gray-600 leading-relaxed prose max-w-none relative z-10" 
+                /* 🚨 Replaced 'prose' with 'blog-html-content' to apply our custom styles 🚨 */
+                className="blog-html-content relative z-10" 
                 dangerouslySetInnerHTML={{ __html: blog.content || blog.description }} 
               />
             </div>
           </section>
 
-          {/* TAGS (Just showing the bubbles without the "Tags" heading) */}
+          {/* TAGS */}
           <section>
-             <ul className="flex flex-wrap gap-2 text-gray-500">
+             <ul className="flex flex-wrap gap-2 text-gray-500" style={{ listStyleType: 'none !important', paddingLeft: 0 }}>
                 {blog.tags?.length > 0
                   ? blog.tags.map((t, i) => (
-                      <li key={i} className="bg-white border px-3 py-1 rounded-full text-sm shadow-sm">
+                      <li key={i} className="bg-white border px-3 py-1 rounded-full text-sm shadow-sm" style={{ margin: 0 }}>
                         {t}
                       </li>
                     ))
-                  : <li className="bg-white border px-3 py-1 rounded-full text-sm shadow-sm">General</li>}
+                  : <li className="bg-white border px-3 py-1 rounded-full text-sm shadow-sm" style={{ margin: 0 }}>General</li>}
              </ul>
           </section>
         </div>
@@ -174,7 +236,6 @@ const Ai3 = () => {
             </button>
           </div>
 
-          {/* RECENT BLOGS CARD */}
          {/* RECENT BLOGS CARD */}
           <div className="bg-white shadow-lg rounded-xl p-6 relative z-10">
             <h3 className="text-xl font-bold mb-4">Recent Blogs</h3>
@@ -195,7 +256,6 @@ const Ai3 = () => {
                     }}
                   >
                     <div className="w-16 h-16 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
-                      {/* 👇 Yahan sirf featuredImage ko priority di gayi hai 👇 */}
                       <img 
                         src={item.featuredImage || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"} 
                         alt={item.title || "Blog Image"} 
