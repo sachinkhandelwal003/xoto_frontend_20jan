@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
 import { showToast } from '../../../../manageApi/utils/toast';
+import JoditEditor from 'jodit-react';
 import DOMPurify from 'dompurify';
 import moment from 'moment';
 import Cropper from 'react-easy-crop';
-
-// ── TINYMCE IMPORT ──
-import { Editor } from '@tinymce/tinymce-react';
 
 import {
   Button, Modal, Form, Input, Popconfirm, Card,
   Typography, Avatar, Row, Col, Statistic, Space, Divider,
   message, notification, Tooltip, Grid, Tag, Select, Badge,
-  Upload, Tabs, Alert, Switch, Slider, Skeleton, Empty
+  Upload, Tabs, Alert, Switch, Slider, Pagination, Skeleton, Empty
 } from 'antd';
 import {
   PlusOutlined, FileTextOutlined, DeleteOutlined,
@@ -28,7 +26,7 @@ const { TextArea } = Input;
 const { TabPane } = Tabs;
 
 const THEME = {
-  primary: "#5C039B",
+  primary: "#7c3aed",
   success: "#10b981",
   error: "#ef4444",
   warning: "#f59e0b",
@@ -36,39 +34,180 @@ const THEME = {
 };
 
 // ─────────────────────────────────────────────
-//  BLOG CONTENT CSS — fixes Tailwind reset for Preview
+//  BLOG CONTENT CSS — fixes Tailwind reset for ul/ol/li
 // ─────────────────────────────────────────────
 const BLOG_CONTENT_STYLES = `
-  .tox-tinymce {
-    border-radius: 8px !important;
-    border: 1px solid #d9d9d9 !important;
+  .blog-preview-content ul,
+  .blog-render-content ul {
+    list-style-type: disc !important;
+    padding-left: 24px !important;
+    margin: 12px 0 !important;
   }
-  .blog-preview-content ul { list-style-type: disc !important; padding-left: 24px !important; margin: 12px 0 !important; }
-  .blog-preview-content ol { list-style-type: decimal !important; padding-left: 24px !important; margin: 12px 0 !important; }
-  .blog-preview-content li { display: list-item !important; margin: 6px 0 !important; line-height: 1.7 !important; }
-  .blog-preview-content p { margin: 10px 0; line-height: 1.6; }
-  .blog-preview-content h1 { font-size: 28px; font-weight: 700; margin: 24px 0 12px; }
-  .blog-preview-content h2 { font-size: 22px; font-weight: 700; margin: 20px 0 10px; }
-  .blog-preview-content h3 { font-size: 18px; font-weight: 700; margin: 16px 0 8px; }
-  .blog-preview-content blockquote { border-left: 4px solid #5C039B; padding-left: 16px; margin: 16px 0; color: #555; font-style: italic; }
-  .blog-preview-content a { color: #5C039B; text-decoration: underline; }
-  .blog-preview-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; display: block; }
+  .blog-preview-content ol,
+  .blog-render-content ol {
+    list-style-type: decimal !important;
+    padding-left: 24px !important;
+    margin: 12px 0 !important;
+  }
+  .blog-preview-content li,
+  .blog-render-content li {
+    display: list-item !important;
+    margin: 6px 0 !important;
+    line-height: 1.7 !important;
+  }
+  .blog-preview-content ul ul,
+  .blog-render-content ul ul {
+    list-style-type: circle !important;
+    padding-left: 20px !important;
+  }
+  .blog-preview-content ul ul ul,
+  .blog-render-content ul ul ul {
+    list-style-type: square !important;
+  }
+  .blog-preview-content p,
+  .blog-render-content p {
+    margin: 10px 0;
+  }
+  .blog-preview-content h1,
+  .blog-render-content h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 24px 0 12px;
+  }
+  .blog-preview-content h2,
+  .blog-render-content h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 20px 0 10px;
+  }
+  .blog-preview-content h3,
+  .blog-render-content h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 16px 0 8px;
+  }
+  .blog-preview-content blockquote,
+  .blog-render-content blockquote {
+    border-left: 4px solid #7c3aed;
+    padding-left: 16px;
+    margin: 16px 0;
+    color: #555;
+    font-style: italic;
+  }
+  .blog-preview-content a,
+  .blog-render-content a {
+    color: #7c3aed;
+    text-decoration: underline;
+  }
+  .blog-preview-content img,
+  .blog-render-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 12px 0;
+  }
+  .blog-preview-content table,
+  .blog-render-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+  }
+  .blog-preview-content th,
+  .blog-render-content th,
+  .blog-preview-content td,
+  .blog-render-content td {
+    border: 1px solid #e0e0e0;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  .blog-preview-content th,
+  .blog-render-content th {
+    background: #f5f5f5;
+    font-weight: 600;
+  }
 `;
-
-// ─────────────────────────────────────────────
-//  HELPERS
-// ─────────────────────────────────────────────
-const CATEGORY_KEYWORDS = {
-  'AI': ['artificial intelligence', 'machine learning', 'deep learning', 'chatgpt', 'llm', 'automation'],
-  'Real Estate': ['property', 'real estate', 'housing', 'apartment', 'villa', 'broker'],
-  'PropTech': ['proptech', 'property technology', 'smart home', 'iot'],
-  'Technology': ['software', 'programming', 'javascript', 'react', 'node', 'developer'],
-  'Business': ['business', 'startup', 'entrepreneur', 'investment', 'marketing'],
-  'Mortgage': ['mortgage', 'home loan', 'refinance', 'interest rate'],
-  'Landscaping': ['landscaping', 'garden design', 'outdoor space'],
+// ✅ FINAL - USE THIS ONE
+// ✅ FIXED VERSION - Preserves structure, removes Word garbage
+const cleanWordHtml = (html) => {
+  if (!html) return '';
+  
+  let cleaned = html;
+  
+  // Remove all lang attributes
+  cleaned = cleaned.replace(/lang="[^"]*"/gi, '');
+  
+  // Remove all inline styles
+  cleaned = cleaned.replace(/style="[^"]*"/gi, '');
+  
+  // Remove Word classes
+  cleaned = cleaned.replace(/class="[^"]*"/gi, '');
+  
+  // Remove empty headings with &nbsp;
+  cleaned = cleaned.replace(/<h[1-6][^>]*>\s*(&nbsp;|\s)*\s*<\/h[1-6]>/gi, '');
+  
+  // Remove name attributes from anchor tags
+  cleaned = cleaned.replace(/<a\s+name="[^"]*"[^>]*>/gi, '');
+  
+  // Clean up headings - remove nested bold/spans
+  cleaned = cleaned.replace(/<h([1-6])[^>]*>(?:<b>)?(?:<span[^>]*>)?([^<]+)(?:<\/span>)?(?:<\/b>)?<\/h\1>/gi, '<h$1>$2</h$1>');
+  
+  // Convert Word list items to proper HTML lists
+  // Find paragraphs with bullet points
+  const bulletPattern = /<p[^>]*>(?:<span[^>]*>)?(?:●|•|\d+\.)\s*([^<]+)<\/p>/gi;
+  
+  let match;
+  let bulletItems = [];
+  let lastIndex = 0;
+  let result = '';
+  
+  // Process the content
+  cleaned = cleaned.replace(bulletPattern, (match, content) => {
+    return `<li>${content.trim()}</li>`;
+  });
+  
+  // Wrap consecutive <li> in <ul>
+  cleaned = cleaned.replace(/(<li>.*?<\/li>)(?=(<li>|$))/gs, (match) => {
+    return `<ul>${match}</ul>`;
+  });
+  
+  // Remove spans but keep content
+  cleaned = cleaned.replace(/<span[^>]*>([\s\S]*?)<\/span>/gi, '$1');
+  
+  // Clean up bold tags
+  cleaned = cleaned.replace(/<b([^>]*)>/gi, '<strong$1>');
+  cleaned = cleaned.replace(/<\/b>/gi, '</strong>');
+  
+  // Clean up link attributes
+  cleaned = cleaned.replace(/<a\s+([^>]*?)href="([^"]+)"([^>]*)>/gi, (match, before, href, after) => {
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer">`;
+  });
+  
+  // Remove empty paragraphs
+  cleaned = cleaned.replace(/<p[^>]*>\s*<\/p>/gi, '');
+  
+  // Fix multiple line breaks
+  cleaned = cleaned.replace(/\n\s*\n/g, '\n');
+  
+  // Trim whitespace
+  cleaned = cleaned.trim();
+  
+  return cleaned;
 };
+const CATEGORY_KEYWORDS = {
+  'AI': ['artificial intelligence', 'machine learning', 'deep learning', 'neural network', 'chatgpt', 'llm', 'ai ', ' ai,', 'automation', 'nlp', 'generative'],
+  'Real Estate': ['property', 'real estate', 'housing', 'apartment', 'villa', 'rent', 'lease', 'mortgage', 'broker', 'land', 'plot', 'realty'],
+  'PropTech': ['proptech', 'property technology', 'smart home', 'iot', 'digital property', 'virtual tour', 'property app'],
+  'Technology': ['software', 'programming', 'javascript', 'react', 'node', 'cloud', 'saas', 'startup', 'tech', 'developer', 'api', 'database'],
+  'Business': ['business', 'startup', 'entrepreneur', 'investment', 'revenue', 'marketing', 'sales', 'strategy', 'growth'],
+    'Mortgage': ['mortgage', 'home loan', 'refinance', 'interest rate', 'lender', 'pre-approval', 'mortgage broker'],
+   'Landscaping': ['landscaping', 'garden design', 'outdoor space', 'hardscape', 'softscape', 'lawn care', 'irrigation'],
+  };
 
-const COMMON_TAGS = ['AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Mortgage', 'Landscaping', 'Marketing', 'UAE', 'Dubai', 'Sustainability', 'Innovation'];
+const COMMON_TAGS = [
+  'AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Mortgage', 'Landscaping', 'Marketing',
+  'UAE', 'Dubai', 'Sustainability', 'Innovation', 'Digital', 'Cloud',
+  'Investment', 'Architecture', 'Design', 'Smart Home', 'Automation'
+];
 
 const smartExtract = (html) => {
   if (!html) return {};
@@ -80,11 +219,23 @@ const smartExtract = (html) => {
     if (matches > maxMatches) { maxMatches = matches; detectedCategory = cat; }
   }
   const detectedTags = COMMON_TAGS.filter(tag => text.includes(tag.toLowerCase())).slice(0, 6);
+  const headings = [];
+  const headingRegex = /<h([1-6])[^>]*>(.*?)<\/h\1>/gi;
+  let match;
+  while ((match = headingRegex.exec(html)) !== null) {
+    headings.push({ level: parseInt(match[1]), text: match[2].replace(/<[^>]*>/g, '').trim() });
+  }
   const paraMatch = html.match(/<p[^>]*>(.*?)<\/p>/i);
-  let excerpt = paraMatch ? paraMatch[1].replace(/<[^>]*>/g, '').trim().substring(0, 160) : '';
+  let excerpt = '';
+  if (paraMatch) excerpt = paraMatch[1].replace(/<[^>]*>/g, '').trim().substring(0, 160);
+  const links = [];
+  const linkRegex = /<a[^>]+href="([^"]+)"[^>]*>(.*?)<\/a>/gi;
+  while ((match = linkRegex.exec(html)) !== null) {
+    links.push({ href: match[1], text: match[2].replace(/<[^>]*>/g, '').trim() });
+  }
   const wordCount = text.split(/\s+/).length;
   const readingTime = Math.ceil(wordCount / 200);
-  return { detectedCategory, detectedTags, excerpt, wordCount, readingTime };
+  return { detectedCategory, detectedTags, headings, excerpt, links, wordCount, readingTime };
 };
 
 const extractHeadings = (html) => {
@@ -117,7 +268,13 @@ const getCroppedImg = (imageSrc, pixelCrop) => {
       canvas.width = pixelCrop.width;
       canvas.height = pixelCrop.height;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
+      ctx.drawImage(
+        image,
+        pixelCrop.x, pixelCrop.y,
+        pixelCrop.width, pixelCrop.height,
+        0, 0,
+        pixelCrop.width, pixelCrop.height
+      );
       canvas.toBlob(blob => {
         if (!blob) return reject(new Error('Canvas is empty'));
         resolve(blob);
@@ -137,7 +294,11 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
   const [cropping, setCropping] = useState(false);
 
   useEffect(() => {
-    if (open) { setCrop({ x: 0, y: 0 }); setZoom(1); setCroppedAreaPixels(null); }
+    if (open) {
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setCroppedAreaPixels(null);
+    }
   }, [open, imageSrc]);
 
   const handleConfirm = async () => {
@@ -146,29 +307,81 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
     try {
       const blob = await getCroppedImg(imageSrc, croppedAreaPixels);
       onConfirm(blob);
-    } catch (e) { message.error('Crop failed, please try again'); } 
-    finally { setCropping(false); }
+    } catch (e) {
+      message.error('Crop failed, please try again');
+    } finally {
+      setCropping(false);
+    }
   };
 
   return (
-    <Modal open={open} title={<Space><ScissorOutlined style={{ color: THEME.primary }} /><span>{title || 'Crop Image'}</span></Space>} onCancel={onCancel} width={620} centered destroyOnClose
+    <Modal
+      open={open}
+      title={
+        <Space>
+          <ScissorOutlined style={{ color: THEME.primary }} />
+          <span>{title || 'Crop Image'}</span>
+        </Space>
+      }
+      onCancel={onCancel}
+      width={620}
+      centered
+      destroyOnClose
       footer={
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space>
             <ZoomInOutlined style={{ color: '#888' }} />
-            <Slider min={1} max={3} step={0.05} value={zoom} onChange={setZoom} style={{ width: 160 }} />
+            <Slider
+              min={1}
+              max={3}
+              step={0.05}
+              value={zoom}
+              onChange={setZoom}
+              style={{ width: 160 }}
+              tooltip={{ formatter: v => `${Math.round(v * 100)}%` }}
+            />
             <Text type="secondary" style={{ fontSize: 12 }}>{Math.round(zoom * 100)}%</Text>
           </Space>
           <Space>
             <Button onClick={onCancel}>Cancel</Button>
-            <Button type="primary" loading={cropping} onClick={handleConfirm} style={{ background: THEME.primary, borderColor: THEME.primary }}>Apply Crop</Button>
+            <Button
+              type="primary"
+              icon={<ScissorOutlined />}
+              loading={cropping}
+              onClick={handleConfirm}
+              style={{ background: THEME.primary, borderColor: THEME.primary }}
+            >
+              Apply Crop
+            </Button>
           </Space>
         </div>
-      }>
+      }
+    >
       <div style={{ position: 'relative', width: '100%', height: 380, background: '#1a1a2e', borderRadius: 10, overflow: 'hidden' }}>
         {imageSrc ? (
-          <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={aspect} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)} />
-        ) : (<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><Text type="secondary">Loading image...</Text></div>)}
+          <Cropper
+            image={imageSrc}
+            crop={crop}
+            zoom={zoom}
+            aspect={aspect}
+            onCropChange={setCrop}
+            onZoomChange={setZoom}
+            onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)}
+            style={{
+              containerStyle: { borderRadius: 10 },
+              cropAreaStyle: { border: '2px solid #7c3aed', boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)' },
+            }}
+          />
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <Text type="secondary">Loading image...</Text>
+          </div>
+        )}
+      </div>
+      <div style={{ marginTop: 10, textAlign: 'center' }}>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          Drag to reposition · Scroll or use slider to zoom
+        </Text>
       </div>
     </Modal>
   );
@@ -199,23 +412,80 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
     const fileName = pendingFile?.name || 'image.jpg';
     const croppedFile = new File([blob], fileName, { type: 'image/jpeg' });
     const preview = URL.createObjectURL(blob);
-    onChange([{ uid: `crop-${Date.now()}`, name: fileName, status: 'done', originFileObj: croppedFile, preview, url: preview }]);
+    const newFileObj = {
+      uid: `crop-${Date.now()}`,
+      name: fileName,
+      status: 'done',
+      originFileObj: croppedFile,
+      preview,
+      url: preview,
+    };
+    onChange([newFileObj]);
     setCropModal({ open: false, src: '' });
     setPendingFile(null);
+    message.success('Image cropped successfully!');
   };
 
   const handleEditCrop = (file) => {
     const src = file.url || file.preview;
-    if (!src) return;
+    if (!src) { message.error('Cannot edit this image'); return; }
     setPendingFile(file.originFileObj || null);
     setCropModal({ open: true, src });
+  };
+
+  const handlePreview = async (file) => {
+    if (!file.url && !file.preview && file.originFileObj) {
+      file.preview = await new Promise((res) => {
+        const r = new FileReader();
+        r.readAsDataURL(file.originFileObj);
+        r.onload = () => res(r.result);
+      });
+    }
+    const imageUrl = file.url || file.preview;
+    Modal.confirm({
+      icon: null,
+      width: 600,
+      centered: true,
+      okButtonProps: { style: { display: 'none' } },
+      cancelButtonProps: { style: { display: 'none' } },
+      content: (
+        <div>
+          <img src={imageUrl} alt="preview" style={{ width: '100%' }} />
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <Button onClick={() => Modal.destroyAll()}>Close</Button>
+          </div>
+        </div>
+      ),
+      onCancel: () => Modal.destroyAll(),
+    });
   };
 
   const itemRender = (originNode, file) => (
     <div style={{ position: 'relative', display: 'inline-block' }}>
       {originNode}
       <Tooltip title="Crop / Edit">
-        <button onClick={(e) => { e.stopPropagation(); handleEditCrop(file); }} style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', background: 'rgba(92,3,155,0.92)', border: 'none', borderRadius: 6, color: '#fff', fontSize: 11, fontWeight: 600, padding: '2px 10px', cursor: 'pointer', zIndex: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <button
+          onClick={(e) => { e.stopPropagation(); handleEditCrop(file); }}
+          style={{
+            position: 'absolute',
+            bottom: 4,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(124,58,237,0.92)',
+            border: 'none',
+            borderRadius: 6,
+            color: '#fff',
+            fontSize: 11,
+            fontWeight: 600,
+            padding: '2px 10px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            whiteSpace: 'nowrap',
+            zIndex: 10,
+          }}
+        >
           <ScissorOutlined style={{ fontSize: 10 }} /> Edit
         </button>
       </Tooltip>
@@ -225,13 +495,85 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
   return (
     <>
       <Form.Item label={label} extra={extra}>
-        <Upload listType="picture-card" fileList={fileList} onChange={({ fileList: fl }) => { if (fl.length < fileList.length) onChange(fl); }} beforeUpload={handleBeforeUpload} maxCount={maxCount} itemRender={itemRender} accept="image/jpeg,image/png,image/webp">
-          {fileList.length < maxCount && (<div><PlusOutlined /><div style={{ marginTop: 8, fontSize: 12 }}>Upload</div></div>)}
+        <Upload
+          listType="picture-card"
+          fileList={fileList}
+          onPreview={handlePreview}
+          onChange={({ fileList: fl }) => {
+            if (fl.length < fileList.length) onChange(fl);
+          }}
+          beforeUpload={handleBeforeUpload}
+          maxCount={maxCount}
+          itemRender={itemRender}
+          accept="image/jpeg,image/png,image/webp"
+        >
+          {fileList.length < maxCount && (
+            <div>
+              <PlusOutlined />
+              <div style={{ marginTop: 8, fontSize: 12 }}>Upload</div>
+            </div>
+          )}
         </Upload>
       </Form.Item>
-      <ImageCropModal open={cropModal.open} imageSrc={cropModal.src} aspect={aspect} title={cropTitle} onConfirm={handleCropConfirm} onCancel={() => { setCropModal({ open: false, src: '' }); setPendingFile(null); }} />
+
+      <ImageCropModal
+        open={cropModal.open}
+        imageSrc={cropModal.src}
+        aspect={aspect}
+        title={cropTitle}
+        onConfirm={handleCropConfirm}
+        onCancel={() => { setCropModal({ open: false, src: '' }); setPendingFile(null); }}
+      />
     </>
   );
+};
+
+// ─────────────────────────────────────────────
+//  JODIT CONFIG — with bullet/list style support
+// ─────────────────────────────────────────────
+const editorConfig = {
+  readonly: false,
+  placeholder: 'Write here, or paste from Word/PDF. Formatting will be preserved automatically...',
+  height: 400,
+  enableDragAndDropFileToEditor: true,
+  uploader: { insertImageAsBase64URI: true },
+  toolbarSticky: false,
+  askBeforePasteHTML: false,
+  askBeforePasteFromWord: false,
+  defaultActionOnPaste: 'insert_as_html', // ✅ Changed from 'insert_clear_html'
+  editorCssClass: 'jodit-blog-editor',
+  removeButtons: ['iframe', 'video'], // Optional: remove unwanted buttons
+  beautifyHTML: true,
+  extraCSS: `
+    ul, ol { 
+      padding-left: 24px !important; 
+      margin: 12px 0 !important; 
+    }
+    ul { list-style-type: disc !important; }
+    ol { list-style-type: decimal !important; }
+    li { 
+      margin: 6px 0 !important; 
+      line-height: 1.6 !important;
+    }
+    ul ul { list-style-type: circle !important; }
+    ul ul ul { list-style-type: square !important; }
+    blockquote { 
+      border-left: 4px solid #7c3aed; 
+      padding-left: 16px; 
+      margin: 16px 0; 
+      color: #555; 
+      font-style: italic; 
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 24px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    p {
+      margin: 12px 0;
+      line-height: 1.6;
+    }
+  `,
 };
 
 // ─────────────────────────────────────────────
@@ -239,10 +581,14 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
 // ─────────────────────────────────────────────
 const BlogPreview = ({ data }) => {
   if (!data) return null;
-  const { title, subHeading, content, authorName, authorImage, tags, category, featuredImage, coverImage, createdAt, readingTime, headings } = data;
+  const { title, subHeading, content, authorName, authorImage, tags, category,
+    featuredImage, coverImage, createdAt, readingTime, headings } = data;
 
   return (
     <div style={{ fontFamily: "'Georgia', serif", color: '#1a1a2e', background: '#fff' }}>
+      {/* ✅ FIX: Inject styles so ul/ol/li render correctly in preview — Tailwind resets these */}
+      <style>{BLOG_CONTENT_STYLES}</style>
+
       {coverImage && (
         <div style={{ width: '100%', height: 280, overflow: 'hidden', borderRadius: 12, marginBottom: 28, background: '#f0f0f0' }}>
           <img src={coverImage} alt="cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -252,10 +598,16 @@ const BlogPreview = ({ data }) => {
         {category && <Tag color="purple" style={{ fontSize: 12, padding: '2px 10px', borderRadius: 20 }}>{category}</Tag>}
         {tags?.map(tag => <Tag key={tag} color="blue" style={{ fontSize: 11, borderRadius: 20 }}>#{tag}</Tag>)}
       </div>
-      <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.25, color: '#0f0f23', marginBottom: 12, fontFamily: "'Georgia', serif" }}>{title || 'Untitled Post'}</h1>
-      {subHeading && <p style={{ fontSize: 18, color: '#555', lineHeight: 1.6, marginBottom: 20, fontStyle: 'italic', borderLeft: `4px solid ${THEME.primary}`, paddingLeft: 16 }}>{subHeading}</p>}
+      <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.25, color: '#0f0f23', marginBottom: 12, fontFamily: "'Georgia', serif" }}>
+        {title || 'Untitled Post'}
+      </h1>
+      {subHeading && (
+        <p style={{ fontSize: 18, color: '#555', lineHeight: 1.6, marginBottom: 20, fontStyle: 'italic', borderLeft: '4px solid #7c3aed', paddingLeft: 16 }}>
+          {subHeading}
+        </p>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0', borderTop: '1px solid #eee', borderBottom: '1px solid #eee', marginBottom: 24 }}>
-        <Avatar size={42} src={authorImage} icon={<UserOutlined />} style={{ backgroundColor: THEME.primary }} />
+        <Avatar size={42} src={authorImage} icon={<UserOutlined />} style={{ backgroundColor: '#7c3aed' }} />
         <div>
           <div style={{ fontWeight: 600, fontSize: 14 }}>{authorName || 'Admin'}</div>
           <div style={{ fontSize: 12, color: '#888', display: 'flex', gap: 16 }}>
@@ -271,14 +623,28 @@ const BlogPreview = ({ data }) => {
       )}
       {headings && headings.length > 2 && (
         <div style={{ background: '#f8f4ff', border: '1px solid #e0d0ff', borderRadius: 10, padding: '16px 20px', marginBottom: 28 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: THEME.primary, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><BookOutlined /> Table of Contents</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#7c3aed', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <BookOutlined /> Table of Contents
+          </div>
           <ol style={{ margin: 0, paddingLeft: 20, listStyleType: 'decimal' }}>
-            {headings.filter(h => h.level <= 3).map((h, i) => (<li key={i} style={{ marginLeft: `${(h.level - 1) * 16}px`, fontSize: 13, padding: '3px 0', color: THEME.primary, display: 'list-item' }}>{h.text}</li>))}
+            {headings.filter(h => h.level <= 3).map((h, i) => (
+              <li key={i} style={{ marginLeft: `${(h.level - 1) * 16}px`, fontSize: 13, padding: '3px 0', color: '#5b21b6', display: 'list-item' }}>{h.text}</li>
+            ))}
           </ol>
         </div>
       )}
-      <div className="blog-preview-content" style={{ lineHeight: 1.85, fontSize: 16, color: '#1f1f1f' }}
-        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content || '', { ADD_TAGS: ['iframe'], ADD_ATTR: ['allow', 'allowfullscreen', 'target', 'style'] }) }} />
+
+      {/* ✅ FIX: class="blog-preview-content" — CSS above targets this class */}
+      <div
+        className="blog-preview-content"
+        style={{ lineHeight: 1.85, fontSize: 16, color: '#1f1f1f' }}
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(content || '', {
+            ADD_TAGS: ['iframe'],
+            ADD_ATTR: ['allow', 'allowfullscreen', 'target'],
+          }),
+        }}
+      />
     </div>
   );
 };
@@ -288,6 +654,7 @@ const BlogPreview = ({ data }) => {
 // ─────────────────────────────────────────────
 const BlogManagement = () => {
   const screens = useBreakpoint();
+  const quillRef = useRef(null);
   const searchTimeout = useRef(null);
 
   const [blogs, setBlogs] = useState([]);
@@ -295,7 +662,10 @@ const BlogManagement = () => {
   const [saving, setSaving] = useState(false);
   const [targetStatus, setTargetStatus] = useState('draft');
 
-  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalResults: 0, itemsPerPage: 10 });
+  const [pagination, setPagination] = useState({
+    currentPage: 1, totalPages: 1, totalResults: 0, itemsPerPage: 10,
+  });
+
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -305,7 +675,6 @@ const BlogManagement = () => {
   const [previewBlogData, setPreviewBlogData] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [form] = Form.useForm();
-  
   const [contentValue, setContentValue] = useState('');
   const [autoSave, setAutoSave] = useState(true);
   const [lastSaved, setLastSaved] = useState(null);
@@ -318,9 +687,177 @@ const BlogManagement = () => {
 
   const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, views: 0 });
 
+const handleSmartPaste = useCallback((event) => {
+  event.preventDefault();
+  
+  const clipboardData = event.clipboardData;
+  const pastedHtml = clipboardData.getData('text/html');
+  const pastedText = clipboardData.getData('text/plain');
+  
+  const raw = pastedHtml || pastedText;
+  
+  console.log("🟡 RAW HTML length:", raw?.length);
+  
+  // ========== CLEAN WORD HTML FUNCTION ==========
+  const cleanWordHtml = (html) => {
+    if (!html) return '';
+    
+    let cleaned = html;
+    
+    // 1. Remove all lang attributes (ZH-CN, etc.)
+    cleaned = cleaned.replace(/lang="[^"]*"/gi, '');
+    
+    // 2. Remove all inline styles
+    cleaned = cleaned.replace(/style="[^"]*"/gi, '');
+    
+    // 3. Remove Word classes (MsoNormal, etc.)
+    cleaned = cleaned.replace(/class="[^"]*"/gi, '');
+    
+    // 4. Remove Word XML comments and declarations
+    cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
+    cleaned = cleaned.replace(/<\?xml[^?]*\?>/g, '');
+    cleaned = cleaned.replace(/<\!\[CDATA\[[\s\S]*?\]\]>/g, '');
+    
+    // 5. Remove name attributes from anchor tags
+    cleaned = cleaned.replace(/<a\s+name="[^"]*"[^>]*>/gi, '');
+    
+    // 6. Remove empty headings (with &nbsp; or whitespace)
+    cleaned = cleaned.replace(/<h[1-6][^>]*>\s*(&nbsp;|\s)*\s*<\/h[1-6]>/gi, '');
+    
+    // 7. Remove empty paragraphs
+    cleaned = cleaned.replace(/<p[^>]*>\s*<\/p>/gi, '');
+    
+    // 8. Clean up headings - remove nested bold, spans, and keep text
+    cleaned = cleaned.replace(/<h([1-6])[^>]*>(?:<b>)?(?:<strong>)?(?:<span[^>]*>)?([^<]+)(?:<\/span>)?(?:<\/b>)?(?:<\/strong>)?<\/h\1>/gi, '<h$1>$2</h$1>');
+    
+    // 9. Convert Word list items to proper HTML lists
+    // Match paragraphs with bullet points (●, •)
+    cleaned = cleaned.replace(/<p[^>]*>(?:<span[^>]*>)?[●•]\s*([^<]+)<\/p>/gi, '<li>$1</li>');
+    // Match numbered lists
+    cleaned = cleaned.replace(/<p[^>]*>(?:<span[^>]*>)?(\d+)\.\s*([^<]+)<\/p>/gi, '<li>$2</li>');
+    
+    // 10. Wrap consecutive list items in <ul> or <ol>
+    cleaned = cleaned.replace(/(<li>.*?<\/li>)+/gi, (match) => {
+      // Check if it's an ordered list (has numbers in the content pattern)
+      if (match.match(/<li>\d+\./)) {
+        return `<ol>${match}</ol>`;
+      }
+      return `<ul>${match}</ul>`;
+    });
+    
+    // 11. Remove spans but keep their content
+    cleaned = cleaned.replace(/<span[^>]*>([\s\S]*?)<\/span>/gi, '$1');
+    
+    // 12. Clean up bold tags to strong
+    cleaned = cleaned.replace(/<b([^>]*)>/gi, '<strong$1>');
+    cleaned = cleaned.replace(/<\/b>/gi, '</strong>');
+    
+    // 13. Clean up italic tags to em
+    cleaned = cleaned.replace(/<i([^>]*)>/gi, '<em$1>');
+    cleaned = cleaned.replace(/<\/i>/gi, '</em>');
+    
+    // 14. Clean up link attributes - keep only href
+    cleaned = cleaned.replace(/<a\s+[^>]*?href="([^"]+)"[^>]*>/gi, '<a href="$1" target="_blank" rel="noopener noreferrer">');
+    
+    // 15. Remove any remaining empty tags
+    cleaned = cleaned.replace(/<(p|div|span|h[1-6])\b[^>]*>\s*<\/\1>/gi, '');
+    
+    // 16. Fix multiple line breaks
+    cleaned = cleaned.replace(/\n\s*\n/g, '\n');
+    
+    // 17. Fix any remaining Word-specific artifacts
+    cleaned = cleaned.replace(/<o:p>[\s\S]*?<\/o:p>/gi, '');
+    cleaned = cleaned.replace(/<\/?(v|o):[^>]+>/gi, '');
+    
+    // 18. Ensure lists are properly nested (fix overlapping)
+    cleaned = cleaned.replace(/<\/ul><ul>/g, '');
+    cleaned = cleaned.replace(/<\/ol><ol>/g, '');
+    
+    // 19. Trim whitespace
+    cleaned = cleaned.trim();
+    
+    return cleaned;
+  };
+  // ========== END CLEAN FUNCTION ==========
+  
+  // Apply cleaning to the pasted content
+  const cleaned = cleanWordHtml(raw);
+  
+  console.log("🟢 CLEANED HTML:", cleaned);
+  console.log("🟢 CLEANED HTML length:", cleaned?.length);
+  
+  // Insert into Jodit editor
+  try {
+    if (quillRef.current?.editor?.selection) {
+      // Insert at cursor position
+      quillRef.current.editor.selection.insertHTML(cleaned);
+      console.log("✅ HTML inserted at cursor");
+    } else if (quillRef.current?.editor) {
+      // Fallback: replace entire content
+      quillRef.current.editor.value = cleaned;
+      setContentValue(cleaned);
+      console.log("✅ HTML inserted as full content");
+    } else {
+      console.warn("⚠️ Jodit not available, using state");
+      setContentValue(cleaned);
+    }
+  } catch (error) {
+    console.error("❌ Insert failed:", error);
+    setContentValue(prev => prev + cleaned);
+  }
+  
+  // Smart extract for tags and category
+  if (cleaned) {
+    setTimeout(() => {
+      const extracted = smartExtract(cleaned);
+      const currentValues = form.getFieldsValue();
+      const updates = {};
+      
+      if (!currentValues.subHeading && extracted.excerpt) {
+        updates.subHeading = extracted.excerpt;
+      }
+      
+      if ((!currentValues.category || currentValues.category === 'Other') && 
+          extracted.detectedCategory !== 'Other') {
+        updates.category = extracted.detectedCategory;
+      }
+      
+      if ((!currentValues.tags || currentValues.tags.length === 0) && 
+          extracted.detectedTags.length > 0) {
+        updates.tags = extracted.detectedTags;
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        form.setFieldsValue(updates);
+        setSmartFillApplied(true);
+        notification.info({
+          message: '✨ Smart Fill Applied',
+          description: 'Auto-filled detected fields.',
+          placement: 'topRight',
+          duration: 4,
+        });
+      }
+    }, 100);
+  }
+}, [form, quillRef]);
+
+  const handleEditorChange = (value) => {
+      console.log("✍️ EDITOR VALUE:", value);
+
+    setContentValue(value);
+    setHeadings(extractHeadings(value));
+    const sub = form.getFieldValue('subHeading');
+    if (!sub && value && value !== '<p><br></p>') {
+      const exc = extractExcerpt(value, 160);
+      if (exc) form.setFieldsValue({ subHeading: exc });
+    }
+  };
+
   useEffect(() => {
     let t;
-    if (autoSave && contentValue && modalVisible) { t = setTimeout(() => handleAutoSave(), 30000); }
+    if (autoSave && contentValue && modalVisible) {
+      t = setTimeout(() => handleAutoSave(), 30000);
+    }
     return () => clearTimeout(t);
   }, [contentValue, autoSave, modalVisible]);
 
@@ -378,7 +915,9 @@ const BlogManagement = () => {
     } catch (e) {
       if (showToast) showToast('Failed to load blogs', 'error');
       else message.error('Failed to load blogs');
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetchBlogs(1, 10, "", "", ""); }, [fetchBlogs]);
@@ -387,12 +926,19 @@ const BlogManagement = () => {
     const val = e.target.value;
     setSearchText(val);
     clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => fetchBlogs(1, pagination.itemsPerPage, val, selectedCategory, selectedStatus), 500);
+    searchTimeout.current = setTimeout(() => {
+      fetchBlogs(1, pagination.itemsPerPage, val, selectedCategory, selectedStatus);
+    }, 500);
   };
 
   const handleFilterChange = (type, val) => {
-    if (type === 'category') { setSelectedCategory(val); fetchBlogs(1, pagination.itemsPerPage, searchText, val, selectedStatus); } 
-    else if (type === 'status') { setSelectedStatus(val); fetchBlogs(1, pagination.itemsPerPage, searchText, selectedCategory, val); }
+    if (type === 'category') {
+      setSelectedCategory(val);
+      fetchBlogs(1, pagination.itemsPerPage, searchText, val, selectedStatus);
+    } else if (type === 'status') {
+      setSelectedStatus(val);
+      fetchBlogs(1, pagination.itemsPerPage, searchText, selectedCategory, val);
+    }
   };
 
   const handleClearFilters = () => {
@@ -400,38 +946,73 @@ const BlogManagement = () => {
     fetchBlogs(1, pagination.itemsPerPage, "", "", "");
   };
 
-  const fetchBlogById = async (id) => {
-    setLoading(true);
-    try {
-      const response = await apiService.get(`/blogs/get-blog-by-id?id=${id}`);
-      if (response.success && response.data) {
-        const blog = response.data;
-        let finalContent = blog.content || '';
-        if (finalContent === '<p><br></p>') finalContent = '';
+const fetchBlogById = async (id) => {
+  setLoading(true);
 
-        form.setFieldsValue({
-          title: blog.title || '',
-          subHeading: blog.subHeading || '',
-          tags: blog.tags || [],
-          category: blog.category || 'Other',
-          authorName: blog.authorName || 'Admin',
-        });
+  try {
+    const response = await apiService.get(`/blogs/get-blog-by-id?id=${id}`);
 
-        setContentValue(finalContent);
-        setHeadings(extractHeadings(finalContent));
+    if (response.success && response.data) {
+      const blog = response.data;
 
-        setFeaturedImageList(blog.featuredImage ? [{ uid: '-1', name: 'featured', status: 'done', url: blog.featuredImage, preview: blog.featuredImage }] : []);
-        setCoverImageList(blog.coverImage ? [{ uid: '-2', name: 'cover', status: 'done', url: blog.coverImage, preview: blog.coverImage }] : []);
-        setAuthorImageList(blog.authorImage ? [{ uid: '-3', name: 'author', status: 'done', url: blog.authorImage, preview: blog.authorImage }] : []);
+let finalContent = blog.content || '';
 
-        setEditingId(id);
-        setModalVisible(true);
-        setTimeout(() => loadDraft(), 100);
-      } else { message.error(response.message || 'Failed to fetch details'); }
-    } catch (err) { message.error('Failed to fetch blog details'); } 
-    finally { setLoading(false); }
-  };
+console.log("🔴 DB CONTENT:", finalContent);
 
+finalContent = cleanWordHtml(finalContent); // ✅ only once
+
+console.log("🟢 CLEANED DB CONTENT:", finalContent);
+
+
+      if (finalContent === '<p><br></p>') finalContent = '';
+
+      // ✅ SET FORM
+      form.setFieldsValue({
+        title: blog.title || '',
+        subHeading: blog.subHeading || '',
+        tags: blog.tags || [],
+        category: blog.category || 'Other',
+        authorName: blog.authorName || 'Admin',
+      });
+
+      // ✅ SET CLEAN CONTENT
+      setContentValue(finalContent);
+      setHeadings(extractHeadings(finalContent));
+
+      // ✅ IMAGES
+      setFeaturedImageList(
+        blog.featuredImage
+          ? [{ uid: '-1', name: 'featured', status: 'done', url: blog.featuredImage, preview: blog.featuredImage }]
+          : []
+      );
+
+      setCoverImageList(
+        blog.coverImage
+          ? [{ uid: '-2', name: 'cover', status: 'done', url: blog.coverImage, preview: blog.coverImage }]
+          : []
+      );
+
+      setAuthorImageList(
+        blog.authorImage
+          ? [{ uid: '-3', name: 'author', status: 'done', url: blog.authorImage, preview: blog.authorImage }]
+          : []
+      );
+
+      setEditingId(id);
+      setModalVisible(true);
+
+      setTimeout(() => loadDraft(), 100);
+
+    } else {
+      message.error(response.message || 'Failed to fetch details');
+    }
+
+  } catch (err) {
+    message.error('Failed to fetch blog details');
+  } finally {
+    setLoading(false);
+  }
+};
   const uploadFile = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -444,11 +1025,17 @@ const BlogManagement = () => {
     if (!imageList || imageList.length === 0) return '';
     if (imageList[0].originFileObj) return await uploadFile(imageList[0].originFileObj);
     if (imageList[0].url && !imageList[0].url.startsWith('blob:')) return imageList[0].url;
+    if (imageList[0].originFileObj) return await uploadFile(imageList[0].originFileObj);
     return '';
   };
 
   const handleSave = async (values) => {
-    if (!contentValue || contentValue === '<p></p>' || contentValue === '<p><br data-mce-bogus="1"></p>') { message.error('Please add content to your blog'); return; }
+
+
+    
+    if (!contentValue || contentValue === '<p><br></p>') {
+      message.error('Please add content to your blog'); return;
+    }
     if (targetStatus === 'published') {
       if (featuredImageList.length === 0) { message.error('Featured Image is mandatory for publishing.'); return; }
       if (coverImageList.length === 0) { message.error('Cover Image is mandatory for publishing.'); return; }
@@ -456,15 +1043,25 @@ const BlogManagement = () => {
       if (!values.authorName) { message.error('Author Name is mandatory for publishing.'); return; }
     }
 
+
+    console.log("💾 BEFORE SAVE:", contentValue);
+
+const cleanedContent = cleanWordHtml(contentValue);
+
+console.log("🧹 CLEANED BEFORE SAVE:", cleanedContent);
+
     setSaving(true);
     try {
       const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([
-        processImage(featuredImageList), processImage(coverImageList), processImage(authorImageList),
+        processImage(featuredImageList),
+        processImage(coverImageList),
+        processImage(authorImageList),
       ]);
       const payload = {
         title: values.title,
         subHeading: values.subHeading || extractExcerpt(contentValue, 160),
-        content: contentValue,
+content: cleanedContent, // ✅ keep only this
+
         authorImage: authorImgUrl,
         isPublished: targetStatus === 'published',
         tags: values.tags || [],
@@ -476,15 +1073,19 @@ const BlogManagement = () => {
       const response = editingId
         ? await apiService.put(`/blogs/edit-blog-by-id?id=${editingId}`, payload)
         : await apiService.post('/blogs/create-blog', payload);
-      
       if (response.success) {
         notification.success({ message: editingId ? 'Blog Updated' : 'Blog Created', description: `"${values.title}" saved successfully`, placement: 'topRight' });
         localStorage.removeItem(`blog_draft_${editingId || 'new'}`);
         closeModal();
         fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus);
-      } else { message.error(response.message || 'Operation failed'); }
-    } catch (err) { message.error(err.message || 'Failed to save blog'); } 
-    finally { setSaving(false); }
+      } else {
+        message.error(response.message || 'Operation failed');
+      }
+    } catch (err) {
+      message.error(err.message || 'Failed to save blog');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const deleteBlog = async (id) => {
@@ -493,8 +1094,12 @@ const BlogManagement = () => {
       if (response.success) {
         message.success('Blog deleted successfully');
         fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus);
-      } else { message.error(response.message || 'Delete failed'); }
-    } catch (err) { message.error('Failed to delete blog'); }
+      } else {
+        message.error(response.message || 'Delete failed');
+      }
+    } catch (err) {
+      message.error('Failed to delete blog');
+    }
   };
 
   const handleCardPreview = async (record) => {
@@ -502,19 +1107,22 @@ const BlogManagement = () => {
     try {
       const response = await apiService.get(`/blogs/get-blog-by-id?id=${record._id}`);
       showPreview(response.success && response.data ? response.data : record, false);
-    } catch { showPreview(record, false); } 
-    finally { hide(); }
+    } catch {
+      showPreview(record, false);
+    } finally {
+      hide();
+    }
   };
 
   const showPreview = (blogData = {}, isLiveFormPreview = false) => {
     if (isLiveFormPreview) {
       const formVals = form.getFieldsValue();
       setPreviewBlogData({
-        title: formVals.title || 'Untitled Post',
+        title: formVals.title || 'Untitled',
         subHeading: formVals.subHeading,
         content: contentValue,
         authorName: formVals.authorName,
-        tags: formVals.tags || [],
+        tags: formVals.tags,
         category: formVals.category,
         featuredImage: featuredImageList[0]?.url || featuredImageList[0]?.preview,
         coverImage: coverImageList[0]?.url || coverImageList[0]?.preview,
@@ -536,32 +1144,14 @@ const BlogManagement = () => {
   const closeModal = () => {
     setModalVisible(false); setEditingId(null);
     setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
-    setContentValue(''); setHeadings([]); setSmartFillApplied(false); setLastSaved(null);
+    setContentValue(''); setHeadings([]);
+    setSmartFillApplied(false); setLastSaved(null);
     form.resetFields();
-  };
-
-  // ── TINYMCE ONCHANGE HANDLER ──
-  const handleEditorChange = (content, editor) => {
-    setContentValue(content);
-    setHeadings(extractHeadings(content));
-    
-    const currentValues = form.getFieldsValue();
-    if (!currentValues.subHeading && content.length > 50) {
-      const extracted = smartExtract(content);
-      const updates = {};
-      if (extracted.excerpt) updates.subHeading = extracted.excerpt;
-      if ((!currentValues.category || currentValues.category === 'Other') && extracted.detectedCategory !== 'Other') updates.category = extracted.detectedCategory;
-      if ((!currentValues.tags || currentValues.tags.length === 0) && extracted.detectedTags.length > 0) updates.tags = extracted.detectedTags;
-      
-      if (Object.keys(updates).length > 0) {
-        form.setFieldsValue(updates);
-        setSmartFillApplied(true);
-      }
-    }
   };
 
   return (
     <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
+      {/* ✅ FIX: Global style tag — fixes Tailwind CSS reset for bullet points everywhere */}
       <style>{BLOG_CONTENT_STYLES}</style>
 
       {/* Header */}
@@ -571,14 +1161,17 @@ const BlogManagement = () => {
             <Title level={3} style={{ margin: 0 }}> Blog Management</Title>
             <Text type="secondary">Create, manage, and publish content</Text>
           </div>
-          <Button type="primary" size="large" icon={<PlusOutlined />} style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}
+          <Button
+            type="primary" size="large" icon={<PlusOutlined />}
             onClick={() => {
               setEditingId(null); form.resetFields();
               setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
               setContentValue(''); setHeadings([]); setSmartFillApplied(false);
               setModalVisible(true);
               setTimeout(() => loadDraft(), 100);
-            }}>
+            }}
+            style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}
+          >
             Create New Post
           </Button>
         </div>
@@ -639,7 +1232,11 @@ const BlogManagement = () => {
         ) : (
           <>
             {blogs.map(record => (
-              <Card key={record._id} hoverable className="mb-4 shadow-sm" bodyStyle={{ padding: 0, overflow: 'hidden', borderRadius: 8, border: '1px solid #f0f0f0' }} style={{ marginBottom: 24 }}>
+              <Card
+                key={record._id} hoverable className="mb-4 shadow-sm"
+                bodyStyle={{ padding: 0, overflow: 'hidden', borderRadius: 8, border: '1px solid #f0f0f0' }}
+                style={{ marginBottom: 24 }}
+              >
                 <Row>
                   <Col xs={24} sm={24} md={8} lg={7} xl={6}>
                     <div style={{ width: '100%', height: '100%', minHeight: 260, backgroundColor: '#f9f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -675,8 +1272,14 @@ const BlogManagement = () => {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: 16, flexWrap: 'wrap', gap: 12 }}>
                       <Space size="large">
-                        <Space><Avatar size="default" src={record.authorImage} icon={<UserOutlined />} style={{ backgroundColor: THEME.primary }} /><Text strong style={{ fontSize: 14, color: '#333' }}>{record.authorName || 'Admin'}</Text></Space>
-                        <Space><CalendarOutlined style={{ color: '#888' }} /><Text type="secondary" style={{ fontSize: 14 }}>{moment(record.createdAt).format('MMM DD, YYYY')}</Text></Space>
+                        <Space>
+                          <Avatar size="default" src={record.authorImage} icon={<UserOutlined />} style={{ backgroundColor: THEME.primary }} />
+                          <Text strong style={{ fontSize: 14, color: '#333' }}>{record.authorName || 'Admin'}</Text>
+                        </Space>
+                        <Space>
+                          <CalendarOutlined style={{ color: '#888' }} />
+                          <Text type="secondary" style={{ fontSize: 14 }}>{moment(record.createdAt).format('MMM DD, YYYY')}</Text>
+                        </Space>
                       </Space>
                       <Space size="large">
                         <Space><ClockCircleOutlined style={{ color: '#888' }} /><Text type="secondary" style={{ fontSize: 14 }}>{record.readingTime || 2} min read</Text></Space>
@@ -706,8 +1309,21 @@ const BlogManagement = () => {
       </div>
 
       {/* CREATE / EDIT MODAL */}
-      <Modal title={<div style={{ fontWeight: 700, fontSize: 16 }}>{editingId ? <EditOutlined /> : <PlusOutlined />} {editingId ? 'Edit Post' : 'Create New Post'}{lastSaved && autoSave && <Text type="secondary" style={{ fontSize: 12, marginLeft: 12 }}>Saved {moment(lastSaved).format('HH:mm:ss')}</Text>}</div>}
-        open={modalVisible} onCancel={closeModal} footer={null} centered destroyOnClose width={screens.xs ? '95%' : 1050} bodyStyle={{ maxHeight: '82vh', overflowY: 'auto' }}>
+      <Modal
+        title={
+          <div style={{ fontWeight: 700, fontSize: 16 }}>
+            {editingId ? <EditOutlined /> : <PlusOutlined />} {editingId ? 'Edit Post' : 'Create New Post'}
+            {lastSaved && autoSave && <Text type="secondary" style={{ fontSize: 12, marginLeft: 12 }}>Saved {moment(lastSaved).format('HH:mm:ss')}</Text>}
+          </div>
+        }
+        open={modalVisible}
+        onCancel={closeModal}
+        footer={null}
+        centered
+        destroyOnClose
+        width={screens.xs ? '95%' : 1050}
+        bodyStyle={{ maxHeight: '82vh', overflowY: 'auto' }}
+      >
         <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ category: 'Other', authorName: 'Admin' }}>
           <Tabs defaultActiveKey="content">
 
@@ -737,75 +1353,26 @@ const BlogManagement = () => {
                       <Option value="Business">💼 Business</Option>
                       <Option value="Landscaping">🌳 Landscaping</Option>
                       <Option value="Mortgage">🏦 Mortgage</Option>
+
                       <Option value="Other">📄 Other</Option>
                     </Select>
                   </Form.Item>
                 </Col>
               </Row>
               <Form.Item label="Blog Content" required>
-                <Alert message="📋 Full Featured Editor — Word/Web se Text, Bullets, Images sab ekdum accurate paste hoga!" type="info" showIcon className="mb-3" />
+                <Alert message="📋 Paste from Word, PDF, Google Docs — formatting preserved & tags auto-fill!" type="info" showIcon className="mb-3" />
                 {smartFillApplied && <Alert message="✨ Smart Fill Active — fields auto-detected" type="success" showIcon closable onClose={() => setSmartFillApplied(false)} className="mb-3" />}
-                
-                {/* ── TINYMCE IMPLEMENTATION ── */}
-                <Editor
-                  tinymceScriptSrc="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"
-                  value={contentValue}
-                  onEditorChange={handleEditorChange}
-                  init={{
-                    height: 500,
-                    menubar: true,
-                    promotion: false, 
-                    branding: false,  
-                    plugins: [
-                      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                      'insertdatetime', 'media', 'table', 'help', 'wordcount'
-                    ],
-                    toolbar: 'undo redo | blocks fontfamily fontsize | ' +
-                      'bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter ' +
-                      'alignright alignjustify | bullist numlist | link image media table | removeformat',
-                      
-                    images_upload_handler: async (blobInfo, progress) => {
-                      try {
-                        const file = blobInfo.blob();
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        const response = await apiService.post('/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-                        if (response.success) {
-                          return response.url || response.file?.url;
-                        } else {
-                          throw new Error('Upload failed');
-                        }
-                      } catch (error) {
-                        throw new Error('Image upload failed');
-                      }
-                    },
-                    image_title: true,
-                    automatic_uploads: true,
-                    paste_data_images: true,
-                    paste_as_text: false,
-                    paste_retain_style_properties: "all",
-                    paste_webkit_styles: "all",
-                    paste_word_valid_elements: "b,strong,i,em,h1,h2,h3,h4,h5,h6,p,span,table,tbody,td,tfoot,th,thead,tr,ul,ol,li",
-                    font_family_formats: 'Arial=arial,helvetica,sans-serif; Courier New=courier new,courier; Georgia=georgia,palatino; Helvetica=helvetica; Impact=impact,chicago; Symbol=symbol; Tahoma=tahoma,arial,helvetica,sans-serif; Times New Roman=times new roman,times; Verdana=verdana,geneva',
-                    font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 24pt 36pt',
-                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px; line-height: 1.6; }'
-                  }}
-                />
+                {/* ✅ FIX: onPaste on wrapper div so smart paste still works */}
+ <JoditEditor
+  ref={quillRef}
+  value={contentValue}
+  config={editorConfig}
+  onChange={handleEditorChange}
+  onPaste={handleSmartPaste}   // ✅ IMPORTANT
+/>
 
-                <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
-                  {/* LIVE PREVIEW BUTTON FIX - preventDefault & type="button" to stop form submit */}
-                  <Button 
-                    htmlType="button" 
-                    icon={<EyeOutlined />} 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      showPreview({}, true);
-                    }}
-                  >
-                    Live Preview
-                  </Button>
+                <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button icon={<EyeOutlined />} onClick={() => showPreview({}, true)} disabled={!contentValue || contentValue === '<p><br></p>'}>Live Preview</Button>
                 </div>
               </Form.Item>
             </TabPane>
@@ -814,10 +1381,26 @@ const BlogManagement = () => {
             <TabPane tab={<span><PictureOutlined /> Media</span>} key="media">
               <Row gutter={16}>
                 <Col span={12}>
-                  <UploadWithCrop fileList={featuredImageList} onChange={setFeaturedImageList} aspect={3 / 2} cropTitle="Crop Featured Image (3:2)" maxSizeMB={5} label="Featured Image (Thumbnail)" extra="Recommended: 1200 × 800px · Max 5MB" />
+                  <UploadWithCrop
+                    fileList={featuredImageList}
+                    onChange={setFeaturedImageList}
+                    aspect={3 / 2}
+                    cropTitle="Crop Featured Image (3:2)"
+                    maxSizeMB={5}
+                    label="Featured Image (Thumbnail)"
+                    extra="Recommended: 1200 × 800px · Max 5MB"
+                  />
                 </Col>
                 <Col span={12}>
-                  <UploadWithCrop fileList={coverImageList} onChange={setCoverImageList} aspect={16 / 9} cropTitle="Crop Cover Image (16:9)" maxSizeMB={5} label="Cover Image (Hero Banner)" extra="Recommended: 1920 × 1080px · Max 5MB" />
+                  <UploadWithCrop
+                    fileList={coverImageList}
+                    onChange={setCoverImageList}
+                    aspect={16 / 9}
+                    cropTitle="Crop Cover Image (16:9)"
+                    maxSizeMB={5}
+                    label="Cover Image (Hero Banner)"
+                    extra="Recommended: 1920 × 1080px · Max 5MB"
+                  />
                 </Col>
               </Row>
             </TabPane>
@@ -831,7 +1414,15 @@ const BlogManagement = () => {
                   </Form.Item>
                 </Col>
                 <Col span={8}>
-                  <UploadWithCrop fileList={authorImageList} onChange={setAuthorImageList} aspect={1} cropTitle="Crop Author Avatar (1:1)" maxSizeMB={2} label="Author Avatar" extra="Recommended: 400 × 400px · Max 2MB" />
+                  <UploadWithCrop
+                    fileList={authorImageList}
+                    onChange={setAuthorImageList}
+                    aspect={1}
+                    cropTitle="Crop Author Avatar (1:1)"
+                    maxSizeMB={2}
+                    label="Author Avatar"
+                    extra="Recommended: 400 × 400px · Max 2MB"
+                  />
                 </Col>
               </Row>
             </TabPane>
@@ -854,14 +1445,13 @@ const BlogManagement = () => {
         </Form>
       </Modal>
 
-      {/* BLOG PREVIEW MODAL - zIndex fix added to show over the main modal */}
-      <Modal 
-        zIndex={2000} 
-        open={previewModalVisible} 
-        onCancel={() => setPreviewModalVisible(false)} 
-        footer={null} 
-        width={screens.xs ? '95%' : 860} 
-        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: '24px 32px' }} 
+      {/* BLOG PREVIEW MODAL */}
+      <Modal
+        open={previewModalVisible}
+        onCancel={() => setPreviewModalVisible(false)}
+        footer={null}
+        width={screens.xs ? '95%' : 860}
+        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: '24px 32px' }}
         centered
       >
         <BlogPreview data={previewBlogData} />
@@ -871,3 +1461,4 @@ const BlogManagement = () => {
 };
 
 export default BlogManagement;
+/////////////blog management
