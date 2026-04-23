@@ -185,14 +185,14 @@ const Login = () => {
     //   color: "#F97316",
     //   gradient: "linear-gradient(135deg, #F97316, #EA580C)",
     // },
-    {
-      value: "agent",
-      label: "Agent",
-      desc: "For Real Estate Agents",
-      icon: <IdcardOutlined style={{ fontSize: "28px" }} />,
-      color: "#E11D48",
-      gradient: "linear-gradient(135deg, #E11D48, #BE123C)",
-    },
+    // {
+    //   value: "agent",
+    //   label: "Agent",
+    //   desc: "For Real Estate Agents",
+    //   icon: <IdcardOutlined style={{ fontSize: "28px" }} />,
+    //   color: "#E11D48",
+    //   gradient: "linear-gradient(135deg, #E11D48, #BE123C)",
+    // },
     // {
     //   value: "agency",
     //   label: "Agency",
@@ -201,22 +201,22 @@ const Login = () => {
     //   color: "#4F46E5",
     //   gradient: "linear-gradient(135deg, #4F46E5, #4338ca)",
     // },
-    {
-      value: "vault-admin",
-      label: "Vault Partner",
-      desc: "Vault Platform Access",
-      icon: <BankOutlined style={{ fontSize: "28px" }} />,
-      color: "#5C039B",
-      gradient: "linear-gradient(135deg, #5C039B, #03A4F4)",
-    },
-    {
-      value: "vaultagent",
-      label: "Xoto Vault Agent",
-      desc: "Mortgage Platform - Agent",
-      icon: <BankOutlined style={{ fontSize: "28px" }} />,
-      color: "#5C039B",
-      gradient: "linear-gradient(135deg, #5C039B, #03A4F4)",
-    },
+    // {
+    //   value: "vault-admin",
+    //   label: "Vault Partner",
+    //   desc: "Vault Platform Access",
+    //   icon: <BankOutlined style={{ fontSize: "28px" }} />,
+    //   color: "#5C039B",
+    //   gradient: "linear-gradient(135deg, #5C039B, #03A4F4)",
+    // },
+    // {
+    //   value: "vaultagent",
+    //   label: "Xoto Vault Agent",
+    //   desc: "Mortgage Platform - Agent",
+    //   icon: <BankOutlined style={{ fontSize: "28px" }} />,
+    //   color: "#5C039B",
+    //   gradient: "linear-gradient(135deg, #5C039B, #03A4F4)",
+    // },
   ];
 
   const getSelectedPartner = () =>

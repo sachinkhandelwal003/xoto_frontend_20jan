@@ -84,6 +84,7 @@
     "leaflet": "^1.9.4",
     "libphonenumber-js": "^1.12.41",
     "lucide-react": "^0.503.0",
+    "mammoth": "^1.12.0",
     "marked": "^17.0.5",
     "moment": "^2.30.1",
     "mongoose": "^8.19.3",

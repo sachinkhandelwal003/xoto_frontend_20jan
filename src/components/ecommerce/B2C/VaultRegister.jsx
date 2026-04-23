@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   User, Mail, Phone, Lock, Building2, Briefcase, Users,
-  Plus, Trash2, ChevronLeft, ChevronRight, Check, ArrowRight,
+  ChevronLeft, ChevronRight, Check, ArrowRight,
   Edit, ShieldCheck, Award, TrendingUp, Home, DollarSign, FileCheck
 } from "lucide-react";
 import {
@@ -11,14 +11,12 @@ import {
 } from "antd";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
-// --- Libraries ---
 import { Country } from 'country-state-city';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
 
-// --- FIXED Options (Title Case to match Mongoose Enums) ---
 const maritalStatusOptions = [
   { value: "Single", label: "Single" },
   { value: "Married", label: "Married" },
@@ -51,12 +49,14 @@ const nationalityOptions = [
   { value: "BH", label: "Bahraini" },
 ];
 
-const dependentsCountOptions = Array.from({ length: 11 }, (_, i) => ({ value: i, label: i === 0 ? "None" : i === 1 ? "1 Dependent" : `${i} Dependents` }));
+const dependentsCountOptions = Array.from({ length: 11 }, (_, i) => ({
+  value: i,
+  label: i === 0 ? "None" : i === 1 ? "1 Dependent" : `${i} Dependents`,
+}));
 
 const dependentRelationshipOptions = ["Son", "Daughter", "Spouse", "Other"];
 const dependentLocationOptions = ["In UAE", "Outside UAE"];
 
-// --- Main Component ---
 const VaultRegister = () => {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState({
@@ -69,23 +69,19 @@ const VaultRegister = () => {
   });
   const [success, setSuccess] = useState(false);
 
-  // --- Partner Data ---
   const [partners, setPartners] = useState([]);
   const [selectedAgentMode, setSelectedAgentMode] = useState("freelance");
 
-  // --- Mobile Verification State ---
   const [countryCode, setCountryCode] = useState("971");
   const [mobileNumber, setMobileNumber] = useState("");
   const [isMobileVerified, setIsMobileVerified] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpValue, setOtpValue] = useState("");
 
-  // --- Email Verification State ---
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [showEmailOtpInput, setShowEmailOtpInput] = useState(false);
   const [emailOtpValue, setEmailOtpValue] = useState("");
 
-  // --- React Hook Form ---
   const {
     control,
     handleSubmit,
@@ -106,33 +102,34 @@ const VaultRegister = () => {
       nationality: null,
       dateOfBirth: "",
       gender: null,
-    }
+    },
   });
 
   const watchEmail = watch("email");
   const watchAgentMode = watch("agentMode");
   const watchDependentsCount = watch("numberOfDependents");
 
-  // Sync local state with form watch
   useEffect(() => {
     setSelectedAgentMode(watchAgentMode || "freelance");
   }, [watchAgentMode]);
 
-  // --- Country Options with Flags ---
   const countryOptions = useMemo(() => {
     const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB"];
-    return Country.getAllCountries().map((country) => ({
-      name: country.name, code: country.phonecode, iso: country.isoCode,
-    })).sort((a, b) => {
-      const aPriority = priorityIsoCodes.includes(a.iso);
-      const bPriority = priorityIsoCodes.includes(b.iso);
-      if (aPriority && !bPriority) return -1;
-      if (!aPriority && bPriority) return 1;
-      return a.name.localeCompare(b.name);
-    });
+    return Country.getAllCountries()
+      .map((country) => ({
+        name: country.name,
+        code: country.phonecode,
+        iso: country.isoCode,
+      }))
+      .sort((a, b) => {
+        const aPriority = priorityIsoCodes.includes(a.iso);
+        const bPriority = priorityIsoCodes.includes(b.iso);
+        if (aPriority && !bPriority) return -1;
+        if (!aPriority && bPriority) return 1;
+        return a.name.localeCompare(b.name);
+      });
   }, []);
 
-  // --- Mobile Number Validation ---
   useEffect(() => {
     register("mobile_number", {
       required: "Mobile number is required",
@@ -140,18 +137,15 @@ const VaultRegister = () => {
         if (!value) return "Mobile number is required";
         const fullNum = `+${countryCode}${value}`;
         const phoneNumber = parsePhoneNumberFromString(fullNum);
-        if (phoneNumber && phoneNumber.isValid()) {
-          return true;
-        }
+        if (phoneNumber && phoneNumber.isValid()) return true;
         return `Invalid mobile number format for +${countryCode}`;
-      }
+      },
     });
   }, [register, countryCode]);
 
-  // --- Fetch Partners on Mount ---
   useEffect(() => {
     const fetchPartners = async () => {
-      setLoading(prev => ({ ...prev, partners: true }));
+      setLoading((prev) => ({ ...prev, partners: true }));
       try {
         const response = await apiService.get("/vault/partner/dropdown");
         if (response.success && response.data) {
@@ -164,18 +158,16 @@ const VaultRegister = () => {
       } catch (error) {
         setPartners([]);
       } finally {
-        setLoading(prev => ({ ...prev, partners: false }));
+        setLoading((prev) => ({ ...prev, partners: false }));
       }
     };
     fetchPartners();
   }, []);
 
-  // --- Email OTP Handlers ---
   const handleSendEmailOtp = async () => {
     const isEmailValid = await trigger("email");
     if (!isEmailValid) return;
-
-    setLoading(prev => ({ ...prev, emailOtpSending: true }));
+    setLoading((prev) => ({ ...prev, emailOtpSending: true }));
     try {
       await apiService.post("https://xoto.ae/api/otp/email-otp/send", { email: watchEmail });
       message.success("OTP sent! Please check your email inbox.");
@@ -183,13 +175,13 @@ const VaultRegister = () => {
     } catch (error) {
       message.error("Failed to send Email OTP");
     } finally {
-      setLoading(prev => ({ ...prev, emailOtpSending: false }));
+      setLoading((prev) => ({ ...prev, emailOtpSending: false }));
     }
   };
 
   const handleVerifyEmailOtp = async () => {
     if (!emailOtpValue || emailOtpValue.length < 4) return message.error("Please enter a valid OTP");
-    setLoading(prev => ({ ...prev, emailOtpVerifying: true }));
+    setLoading((prev) => ({ ...prev, emailOtpVerifying: true }));
     try {
       await apiService.post("https://xoto.ae/api/otp/email-otp/verify", { email: watchEmail, otp: emailOtpValue });
       message.success("Email verified successfully!");
@@ -199,31 +191,37 @@ const VaultRegister = () => {
     } catch (error) {
       message.error("Invalid OTP. Please try again.");
     } finally {
-      setLoading(prev => ({ ...prev, emailOtpVerifying: false }));
+      setLoading((prev) => ({ ...prev, emailOtpVerifying: false }));
     }
   };
 
-  // --- Mobile OTP Handlers ---
   const handleSendOtp = async () => {
     const isMobileValid = await trigger("mobile_number");
     if (!isMobileValid) return;
-    setLoading(prev => ({ ...prev, otpSending: true }));
+    setLoading((prev) => ({ ...prev, otpSending: true }));
     try {
-      await apiService.post("/otp/send-otp", { country_code: `+${countryCode}`, phone_number: mobileNumber });
+      await apiService.post("/otp/send-otp", {
+        country_code: `+${countryCode}`,
+        phone_number: mobileNumber,
+      });
       message.success(`OTP sent to +${countryCode}${mobileNumber}`);
       setShowOtpInput(true);
     } catch (error) {
       message.error("Failed to send OTP");
     } finally {
-      setLoading(prev => ({ ...prev, otpSending: false }));
+      setLoading((prev) => ({ ...prev, otpSending: false }));
     }
   };
 
   const handleVerifyOtp = async () => {
     if (!otpValue || otpValue.length < 4) return message.error("Please enter a valid OTP");
-    setLoading(prev => ({ ...prev, otpVerifying: true }));
+    setLoading((prev) => ({ ...prev, otpVerifying: true }));
     try {
-      await apiService.post("/otp/verify-otp", { country_code: `+${countryCode}`, phone_number: mobileNumber, otp: otpValue });
+      await apiService.post("/otp/verify-otp", {
+        country_code: `+${countryCode}`,
+        phone_number: mobileNumber,
+        otp: otpValue,
+      });
       message.success("Mobile number verified successfully!");
       setIsMobileVerified(true);
       setShowOtpInput(false);
@@ -231,7 +229,7 @@ const VaultRegister = () => {
     } catch (error) {
       message.error("Invalid OTP. Please try again.");
     } finally {
-      setLoading(prev => ({ ...prev, otpVerifying: false }));
+      setLoading((prev) => ({ ...prev, otpVerifying: false }));
     }
   };
 
@@ -247,53 +245,42 @@ const VaultRegister = () => {
     setEmailOtpValue("");
   };
 
-  // --- Navigation ---
   const next = async () => {
     let isValid = true;
     if (step === 0) {
       const fields = ["first_name", "last_name", "email", "password", "confirmPassword", "mobile_number", "agentMode"];
       if (selectedAgentMode === "partner") fields.push("partnerId");
       const formValid = await trigger(fields);
-
       if (!isMobileVerified) { setError("mobile_number", { type: "manual", message: "Please verify mobile number" }); isValid = false; }
       if (!isEmailVerified) { setError("email", { type: "manual", message: "Please verify your email" }); isValid = false; }
       if (!formValid) isValid = false;
-    }
-    else if (step === 1) {
+    } else if (step === 1) {
       const fields = ["maritalStatus", "numberOfDependents", "nationality", "dateOfBirth", "gender"];
-      
-      // Also validate dynamic dependent arrays if there are any
       if (watchDependentsCount > 0) {
-          for (let i = 0; i < watchDependentsCount; i++) {
-              fields.push(`dependents.${i}.age`);
-              fields.push(`dependents.${i}.location`);
-          }
+        for (let i = 0; i < watchDependentsCount; i++) {
+          fields.push(`dependents.${i}.age`);
+          fields.push(`dependents.${i}.location`);
+        }
       }
-
       const formValid = await trigger(fields);
       if (!formValid) isValid = false;
     }
-
-    if (isValid) setStep(s => s + 1);
+    if (isValid) setStep((s) => s + 1);
   };
 
-  const back = () => setStep(s => s - 1);
+  const back = () => setStep((s) => s - 1);
 
-  // --- Submit Handler ---
   const onSubmit = async (data) => {
-    if (!isEmailVerified || !isMobileVerified) return message.error("Please verify your email and mobile number");
+    if (!isEmailVerified || !isMobileVerified)
+      return message.error("Please verify your email and mobile number");
     if (data.password !== data.confirmPassword) {
       setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
       return;
     }
-
-    setLoading(prev => ({ ...prev, submitting: true }));
-
-    // Clean up dependents array before sending (remove any extras if count was reduced)
-    const cleanedDependents = data.dependents 
-      ? data.dependents.slice(0, data.numberOfDependents || 0) 
+    setLoading((prev) => ({ ...prev, submitting: true }));
+    const cleanedDependents = data.dependents
+      ? data.dependents.slice(0, data.numberOfDependents || 0)
       : [];
-
     const payload = {
       first_name: data.first_name,
       last_name: data.last_name,
@@ -310,7 +297,6 @@ const VaultRegister = () => {
       dateOfBirth: data.dateOfBirth || null,
       gender: data.gender || null,
     };
-
     try {
       await apiService.post("/vault/agent/signup", payload);
       setSuccess(true);
@@ -318,144 +304,183 @@ const VaultRegister = () => {
     } catch (err) {
       message.error(err.response?.data?.message || "Registration failed. Check validation rules.");
     } finally {
-      setLoading(prev => ({ ...prev, submitting: false }));
+      setLoading((prev) => ({ ...prev, submitting: false }));
     }
   };
 
-  // --- Success Screen ---
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl shadow-2xl p-10 max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check className="w-12 h-12 text-green-600" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center border border-gray-200">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="w-10 h-10 text-green-600" />
           </div>
-          <h1 className="text-3xl font-bold mb-4">Registration Successful!</h1>
-          <p className="text-gray-600 mb-8">
-            {selectedAgentMode === 'partner'
+          <h1 className="text-2xl font-bold mb-3 text-gray-800">Registration Successful!</h1>
+          <p className="text-gray-600 mb-6">
+            {selectedAgentMode === "partner"
               ? "Your registration is complete. Awaiting admin approval for partner affiliation."
               : "Freelance agent registered successfully. Awaiting admin verification."}
           </p>
-          <a href="/login" className="inline-flex items-center gap-2 bg-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-purple-700 transition">
-            Go to Login <ArrowRight className="w-5 h-5" />
+          <a href="/login" className="inline-flex items-center gap-2 bg-[#5C039B] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#4a027d] transition-all shadow-md">
+            Go to Login <ArrowRight className="w-4 h-4" />
           </a>
         </div>
       </div>
     );
   }
 
-  // --- Main Form ---
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl overflow-hidden border border-gray-100">
-        <div className="grid grid-cols-1 lg:grid-cols-4">
+    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
 
-          {/* LEFT SIDEBAR - VAULT MORTGAGE THEME */}
-          <div className="bg-[#5B0E98] text-white p-8 flex flex-col">
-            <div className="mb-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-white/20 p-3 rounded-xl shadow-inner">
-                  <Home className="w-8 h-8" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold tracking-wider">VAULT</h2>
-                  <p className="text-indigo-200 text-sm">Mortgage Partners</p>
-                </div>
+      {/* ✅ Global CSS for Radio buttons and Send OTP */}
+      <style>{`
+        .agent-type-radio .ant-radio-button-wrapper {
+          background: #fff;
+          color: #5C039B;
+          border-color: #5C039B;
+        }
+        .agent-type-radio .ant-radio-button-wrapper:hover {
+          color: #5C039B;
+          border-color: #5C039B;
+        }
+        .agent-type-radio .ant-radio-button-wrapper-checked {
+          background: #5C039B !important;
+          color: #fff !important;
+          border-color: #5C039B !important;
+        }
+        .agent-type-radio .ant-radio-button-wrapper-checked::before {
+          background: #5C039B !important;
+        }
+        .send-otp-btn {
+          background-color: #5C039B !important;
+          border-color: #5C039B !important;
+          color: #fff !important;
+        }
+        .send-otp-btn:hover {
+          background-color: #4a027d !important;
+          border-color: #4a027d !important;
+          color: #fff !important;
+        }
+        .send-otp-btn:disabled {
+          opacity: 0.5;
+        }
+      `}</style>
+
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-6xl h-full max-h-[900px] flex border border-gray-200 overflow-hidden">
+
+        {/* LEFT SIDEBAR */}
+        <div className="w-1/4 bg-gradient-to-br from-[#5C039B] to-[#3a0266] text-white p-5 flex flex-col">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="bg-white/20 p-2 rounded-lg">
+                <Home className="w-6 h-6" />
               </div>
-              <Divider className="bg-white/20 my-4" />
-            </div>
-
-            <div className="space-y-8 flex-1">
               <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <DollarSign className="w-6 h-6 text-yellow-300" />
-                  <h3 className="font-semibold text-lg">Earn Commission</h3>
-                </div>
-                <p className="text-indigo-200 text-sm">Competitive commission structure for every successful deal</p>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <TrendingUp className="w-6 h-6 text-green-300" />
-                  <h3 className="font-semibold text-lg">Lead Generation</h3>
-                </div>
-                <p className="text-indigo-200 text-sm">Access to quality mortgage leads and exclusive opportunities</p>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <FileCheck className="w-6 h-6 text-blue-300" />
-                  <h3 className="font-semibold text-lg">Fast Approval</h3>
-                </div>
-                <p className="text-indigo-200 text-sm">Quick verification and onboarding process</p>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <Award className="w-6 h-6 text-purple-300" />
-                  <h3 className="font-semibold text-lg">Top Performer</h3>
-                </div>
-                <p className="text-indigo-200 text-sm">Recognition and bonus for top-performing agents</p>
+                <h2 className="text-xl font-bold tracking-wider">VAULT</h2>
+                <p className="text-purple-200 text-xs">Mortgage Partners</p>
               </div>
             </div>
+            <Divider className="bg-white/20 my-3" />
+          </div>
 
-            <div className="mt-8 pt-6 border-t border-white/20">
-              <div className="flex items-center gap-2 text-indigo-200 text-sm">
-                <ShieldCheck className="w-4 h-4" />
-                <span>Secure & Verified Platform</span>
+          <div className="space-y-4 flex-1">
+            <div className="bg-white/10 p-3 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <DollarSign className="w-4 h-4 text-yellow-300" />
+                <h3 className="font-semibold text-sm">Earn Commission</h3>
+              </div>
+              <p className="text-purple-200 text-xs">Competitive commission structure</p>
+            </div>
+            <div className="bg-white/10 p-3 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp className="w-4 h-4 text-green-300" />
+                <h3 className="font-semibold text-sm">Lead Generation</h3>
+              </div>
+              <p className="text-purple-200 text-xs">Access to quality mortgage leads</p>
+            </div>
+            <div className="bg-white/10 p-3 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <FileCheck className="w-4 h-4 text-blue-300" />
+                <h3 className="font-semibold text-sm">Fast Approval</h3>
+              </div>
+              <p className="text-purple-200 text-xs">Quick verification process</p>
+            </div>
+            <div className="bg-white/10 p-3 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Award className="w-4 h-4 text-purple-300" />
+                <h3 className="font-semibold text-sm">Top Performer</h3>
+              </div>
+              <p className="text-purple-200 text-xs">Recognition and bonus</p>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-white/20">
+            <div className="flex items-center gap-1 text-purple-200 text-xs">
+              <ShieldCheck className="w-3 h-3" />
+              <span>Secure & Verified Platform</span>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT FORM */}
+        <div className="w-3/4 p-6 flex flex-col h-full bg-white">
+          <div className="flex-none">
+            <Title level={3} className="!mb-0 text-gray-800">Agent Registration</Title>
+            <Text type="secondary" className="block mb-4 text-sm">Join Vault as a mortgage agent or partner</Text>
+
+            {/* Step Indicator */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 text-[#5C039B] font-medium">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 0 ? "bg-[#5C039B] text-white" : "bg-gray-200 text-gray-600"}`}>1</span>
+                <span className={`w-10 h-0.5 ${step >= 1 ? "bg-[#5C039B]" : "bg-gray-200"}`}></span>
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 1 ? "bg-[#5C039B] text-white" : "bg-gray-200 text-gray-600"}`}>2</span>
+                <span className={`w-10 h-0.5 ${step >= 2 ? "bg-[#5C039B]" : "bg-gray-200"}`}></span>
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 2 ? "bg-[#5C039B] text-white" : "bg-gray-200 text-gray-600"}`}>3</span>
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-1 px-0.5">
+                <span>Account</span>
+                <span>Profile</span>
+                <span>Review</span>
               </div>
             </div>
           </div>
 
-          {/* RIGHT FORM CONTENT */}
-          <div className="lg:col-span-3 p-10 max-h-[90vh] overflow-y-auto bg-white">
-            <Title level={2} className="text-gray-800 mb-2">Agent Registration</Title>
-            <Text type="secondary" className="block mb-6">Join Vault as a mortgage agent or partner</Text>
+          <div className="flex-1 overflow-y-auto pr-1" style={{ maxHeight: "calc(100% - 130px)" }}>
+            <Form layout="vertical" size="middle" onSubmitCapture={handleSubmit(onSubmit)} className="space-y-3">
 
-            <div className="mb-8">
-              <div className="flex items-center gap-2 text-purple-600 font-medium">
-                <span className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 0 ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-600'}`}>1</span>
-                <span className={`w-16 h-0.5 ${step >= 1 ? 'bg-purple-600' : 'bg-gray-200'}`}></span>
-                <span className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-600'}`}>2</span>
-                <span className={`w-16 h-0.5 ${step >= 2 ? 'bg-purple-600' : 'bg-gray-200'}`}></span>
-                <span className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-600'}`}>3</span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-500 mt-2">
-                <span>Account Info</span>
-                <span className="ml-8">Profile Details</span>
-                <span className="ml-8">Review</span>
-              </div>
-            </div>
-
-            <Form layout="vertical" onSubmitCapture={handleSubmit(onSubmit)}>
-
-              {/* STEP 0: BASIC INFO & AGENT TYPE */}
+              {/* ── STEP 0 ── */}
               {step === 0 && (
-                <div className="animate-fade-in">
-                  <Form.Item label="Agent Type" required>
+                <div className="animate-fade-in space-y-2">
+
+                  {/* ✅ Agent Type Radio — fixed styles */}
+                  <Form.Item label={<span className="font-medium text-sm">Agent Type</span>} required className="mb-2">
                     <Controller
-                      name="agentMode" control={control} rules={{ required: "Please select agent type" }}
+                      name="agentMode"
+                      control={control}
+                      rules={{ required: "Please select agent type" }}
                       render={({ field }) => (
-                        <Radio.Group {...field} buttonStyle="solid" size="large" className="w-full">
-                          <Radio.Button value="freelance" className="w-1/2 text-center">
-                            <Briefcase className="inline mr-2 w-4 h-4" /> Freelance Agent
+                        <Radio.Group {...field} buttonStyle="solid" className="w-full agent-type-radio">
+                          <Radio.Button value="freelance" className="w-1/2 text-center h-9 flex items-center justify-center text-sm">
+                            <Briefcase className="inline mr-1 w-3.5 h-3.5" /> Freelance
                           </Radio.Button>
-                          <Radio.Button value="partner" className="w-1/2 text-center">
-                            <Building2 className="inline mr-2 w-4 h-4" /> Partner Affiliated
+                          <Radio.Button value="partner" className="w-1/2 text-center h-9 flex items-center justify-center text-sm">
+                            <Building2 className="inline mr-1 w-3.5 h-3.5" /> Partner
                           </Radio.Button>
                         </Radio.Group>
                       )}
                     />
-                    {errors.agentMode && <div className="text-red-500 text-sm mt-1">{errors.agentMode.message}</div>}
+                    {errors.agentMode && <div className="text-red-500 text-xs mt-0.5">{errors.agentMode.message}</div>}
                   </Form.Item>
 
                   {selectedAgentMode === "partner" && (
-                    <Form.Item label="Select Partner Company" required validateStatus={errors.partnerId ? "error" : ""} help={errors.partnerId?.message}>
+                    <Form.Item label={<span className="font-medium text-sm">Select Partner</span>} required validateStatus={errors.partnerId ? "error" : ""} help={errors.partnerId?.message} className="mb-2">
                       <Controller
-                        name="partnerId" control={control} rules={{ required: "Please select a partner company" }}
+                        name="partnerId"
+                        control={control}
+                        rules={{ required: "Please select a partner company" }}
                         render={({ field }) => (
-                          <Select {...field} size="large" placeholder="Choose your partner company" loading={loading.partners} showSearch className="w-full">
-                            {partners.map(partner => (
+                          <Select {...field} placeholder="Choose partner" loading={loading.partners} showSearch className="w-full">
+                            {partners.map((partner) => (
                               <Option key={partner._id} value={partner._id}>{partner.companyName}</Option>
                             ))}
                           </Select>
@@ -464,142 +489,184 @@ const VaultRegister = () => {
                     </Form.Item>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Form.Item label="First Name" required validateStatus={errors.first_name ? "error" : ""} help={errors.first_name?.message}>
-                      <Controller name="first_name" control={control} rules={{ required: "Required" }} render={({ field }) => <Input prefix={<User />} size="large" {...field} />} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Form.Item label={<span className="font-medium text-sm">First Name</span>} required validateStatus={errors.first_name ? "error" : ""} help={errors.first_name?.message} className="mb-0">
+                      <Controller name="first_name" control={control} rules={{ required: "Required" }} render={({ field }) => <Input prefix={<User className="text-gray-400 w-4 h-4" />} {...field} />} />
                     </Form.Item>
-                    <Form.Item label="Last Name" required validateStatus={errors.last_name ? "error" : ""} help={errors.last_name?.message}>
-                      <Controller name="last_name" control={control} rules={{ required: "Required" }} render={({ field }) => <Input prefix={<User />} size="large" {...field} />} />
+                    <Form.Item label={<span className="font-medium text-sm">Last Name</span>} required validateStatus={errors.last_name ? "error" : ""} help={errors.last_name?.message} className="mb-0">
+                      <Controller name="last_name" control={control} rules={{ required: "Required" }} render={({ field }) => <Input prefix={<User className="text-gray-400 w-4 h-4" />} {...field} />} />
                     </Form.Item>
                   </div>
 
-                  <Form.Item label={<Space><span>Email Address</span>{isEmailVerified && <Tag color="success" icon={<Check size={12} />}>Verified</Tag>}</Space>} required validateStatus={errors.email ? "error" : ""} help={errors.email?.message}>
-                    <Space.Compact style={{ width: '100%' }}>
-                      <Controller name="email" control={control} rules={{ required: "Required", pattern: { value: /^\S+@\S+$/i, message: "Invalid email" } }}
-                        render={({ field }) => <Input {...field} prefix={<Mail size={16} />} size="large" style={{ width: '80%' }} disabled={showEmailOtpInput || isEmailVerified} />}
+                  {/* Email */}
+                  <Form.Item
+                    label={<Space><span className="font-medium text-sm">Email</span>{isEmailVerified && <Tag color="success" className="text-xs px-1 py-0">Verified</Tag>}</Space>}
+                    required
+                    validateStatus={errors.email ? "error" : ""}
+                    help={errors.email?.message}
+                    className="mb-2"
+                  >
+                    <Space.Compact style={{ width: "100%" }}>
+                      <Controller
+                        name="email"
+                        control={control}
+                        rules={{ required: "Required", pattern: { value: /^\S+@\S+$/i, message: "Invalid email" } }}
+                        render={({ field }) => (
+                          <Input {...field} prefix={<Mail className="text-gray-400 w-4 h-4" />} style={{ width: "70%" }} disabled={showEmailOtpInput || isEmailVerified} />
+                        )}
                       />
                       {!isEmailVerified && !showEmailOtpInput && (
-                        <Button type="primary" size="large" onClick={handleSendEmailOtp} disabled={!watchEmail} loading={loading.emailOtpSending} style={{ width: '20%', minWidth: '100px', backgroundColor: '#5C039B', borderColor: '#5C039B' }}>Send OTP</Button>
+                        <Button type="primary" onClick={handleSendEmailOtp} disabled={!watchEmail} loading={loading.emailOtpSending} style={{ width: "30%", backgroundColor: "#5C039B", borderColor: "#5C039B", color: "#fff" }}>
+                          Send OTP
+                        </Button>
                       )}
                       {(showEmailOtpInput || isEmailVerified) && (
-                        <Button size="large" icon={<Edit size={16} />} onClick={handleChangeEmail} style={{ width: '20%', minWidth: '100px' }}>Change</Button>
+                        <Button icon={<Edit size={14} />} onClick={handleChangeEmail} style={{ width: "30%" }}>Change</Button>
                       )}
                     </Space.Compact>
                     {showEmailOtpInput && (
-                      <div className="mt-4 p-4 bg-gray-50 border border-purple-100 rounded-lg">
-                        <Text type="secondary" className="block mb-3">Enter the code sent to <strong>{watchEmail}</strong></Text>
-                        <div className="flex gap-3">
-                          <Input placeholder="Enter OTP" maxLength={6} value={emailOtpValue} onChange={(e) => setEmailOtpValue(e.target.value)} size="large" style={{ width: '200px' }} />
-                          <Button type="primary" onClick={handleVerifyEmailOtp} loading={loading.emailOtpVerifying} size="large" style={{ backgroundColor: '#5C039B' }}>Verify Email</Button>
+                      <div className="mt-2 p-3 bg-gray-50 border border-purple-100 rounded-lg">
+                        <Text type="secondary" className="block mb-2 text-xs">Code sent to <strong>{watchEmail}</strong></Text>
+                        <div className="flex gap-2">
+                          <Input placeholder="OTP" maxLength={6} value={emailOtpValue} onChange={(e) => setEmailOtpValue(e.target.value)} style={{ width: "60%" }} />
+                          <Button type="primary" onClick={handleVerifyEmailOtp} loading={loading.emailOtpVerifying} style={{ backgroundColor: "#5C039B", borderColor: "#5C039B", color: "#fff" }}>Verify</Button>
                         </div>
                       </div>
                     )}
                   </Form.Item>
 
-                  <Form.Item label={<Space><span>Mobile Number</span>{isMobileVerified && <Tag color="success" icon={<Check size={12} />}>Verified</Tag>}</Space>} required validateStatus={errors.mobile_number ? "error" : ""} help={errors.mobile_number?.message}>
-                    <Space.Compact style={{ width: '100%' }}>
-                      <Select showSearch value={countryCode} size="large" onChange={(val) => { setCountryCode(val); trigger("mobile_number"); }} style={{ width: '30%', minWidth: '130px' }} disabled={showOtpInput || isMobileVerified}>
+                  {/* ✅ Mobile — Send OTP white text fix */}
+                  <Form.Item
+                    label={<Space><span className="font-medium text-sm">Mobile</span>{isMobileVerified && <Tag color="success" className="text-xs px-1 py-0">Verified</Tag>}</Space>}
+                    required
+                    validateStatus={errors.mobile_number ? "error" : ""}
+                    help={errors.mobile_number?.message}
+                    className="mb-2"
+                  >
+                    <Space.Compact style={{ width: "100%" }}>
+                      <Select
+                        showSearch
+                        value={countryCode}
+                        onChange={(val) => { setCountryCode(val); trigger("mobile_number"); }}
+                        style={{ width: "25%" }}
+                        disabled={showOtpInput || isMobileVerified}
+                      >
                         {countryOptions.map((item) => (
                           <Option key={item.iso} value={item.code}>+{item.code} {item.iso}</Option>
                         ))}
                       </Select>
-                      <Input prefix={<Phone size={16} />} value={mobileNumber} size="large"
-                        onChange={e => {
+                      <Input
+                        prefix={<Phone className="text-gray-400 w-4 h-4" />}
+                        value={mobileNumber}
+                        style={{ width: "45%" }}
+                        disabled={showOtpInput || isMobileVerified}
+                        onChange={(e) => {
                           const val = e.target.value.replace(/\D/g, "");
                           setMobileNumber(val);
                           setValue("mobile_number", val, { shouldValidate: true });
                           trigger("mobile_number");
                         }}
-                        style={{ width: '50%' }} disabled={showOtpInput || isMobileVerified}
                       />
+                      {/* ✅ Send OTP — white text */}
                       {!isMobileVerified && !showOtpInput && (
-                        <Button type="primary" size="large" onClick={handleSendOtp} disabled={!mobileNumber || errors.mobile_number} loading={loading.otpSending} style={{ width: '20%', minWidth: '100px', backgroundColor: '#5C039B' }}>Send OTP</Button>
+                        <Button
+                          className="send-otp-btn"
+                          onClick={handleSendOtp}
+                          disabled={!mobileNumber || !!errors.mobile_number}
+                          loading={loading.otpSending}
+                          style={{ width: "30%", backgroundColor: "#5C039B", borderColor: "#5C039B", color: "#fff" }}
+                        >
+                          Send OTP
+                        </Button>
                       )}
                       {(showOtpInput || isMobileVerified) && (
-                        <Button size="large" icon={<Edit size={16} />} onClick={handleChangeNumber} style={{ width: '20%', minWidth: '100px' }}>Change</Button>
+                        <Button icon={<Edit size={14} />} onClick={handleChangeNumber} style={{ width: "30%" }}>Change</Button>
                       )}
                     </Space.Compact>
                     {showOtpInput && (
-                      <div className="mt-4 p-4 bg-gray-50 border border-purple-100 rounded-lg">
-                        <Text type="secondary" className="block mb-3">Enter the 6-digit code sent to <strong>+{countryCode} {mobileNumber}</strong></Text>
-                        <div className="flex gap-3">
-                          <Input placeholder="Enter OTP" maxLength={6} value={otpValue} onChange={(e) => setOtpValue(e.target.value)} size="large" style={{ width: '200px' }} />
-                          <Button type="primary" onClick={handleVerifyOtp} loading={loading.otpVerifying} size="large" style={{ backgroundColor: '#5C039B' }}>Verify OTP</Button>
+                      <div className="mt-2 p-3 bg-gray-50 border border-purple-100 rounded-lg">
+                        <Text type="secondary" className="block mb-2 text-xs">Code sent to <strong>+{countryCode} {mobileNumber}</strong></Text>
+                        <div className="flex gap-2">
+                          <Input placeholder="OTP" maxLength={6} value={otpValue} onChange={(e) => setOtpValue(e.target.value)} style={{ width: "60%" }} />
+                          <Button type="primary" onClick={handleVerifyOtp} loading={loading.otpVerifying} style={{ backgroundColor: "#5C039B", borderColor: "#5C039B", color: "#fff" }}>Verify</Button>
                         </div>
                       </div>
                     )}
                   </Form.Item>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Form.Item label="Password" required validateStatus={errors.password ? "error" : ""} help={errors.password?.message}>
-                      <Controller name="password" control={control} rules={{ required: "Required", minLength: { value: 6, message: "Min 6 characters" } }} render={({ field }) => <Input.Password prefix={<Lock />} size="large" {...field} />} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Form.Item label={<span className="font-medium text-sm">Password</span>} required validateStatus={errors.password ? "error" : ""} help={errors.password?.message} className="mb-0">
+                      <Controller name="password" control={control} rules={{ required: "Required", minLength: { value: 6, message: "Min 6 chars" } }} render={({ field }) => <Input.Password prefix={<Lock className="text-gray-400 w-4 h-4" />} {...field} />} />
                     </Form.Item>
-                    <Form.Item label="Confirm Password" required validateStatus={errors.confirmPassword ? "error" : ""} help={errors.confirmPassword?.message}>
-                      <Controller name="confirmPassword" control={control} rules={{ required: "Required" }} render={({ field }) => <Input.Password prefix={<Lock />} size="large" {...field} />} />
+                    <Form.Item label={<span className="font-medium text-sm">Confirm</span>} required validateStatus={errors.confirmPassword ? "error" : ""} help={errors.confirmPassword?.message} className="mb-0">
+                      <Controller name="confirmPassword" control={control} rules={{ required: "Required" }} render={({ field }) => <Input.Password prefix={<Lock className="text-gray-400 w-4 h-4" />} {...field} />} />
                     </Form.Item>
                   </div>
 
-                  <div className="text-right mt-8">
-                    <Button type="primary" size="large" onClick={next} style={{ backgroundColor: '#5C039B' }} disabled={!isMobileVerified || !isEmailVerified}>Next <ChevronRight className="inline" /></Button>
+                  <div className="text-right pt-2">
+                    <Button type="primary" onClick={next} style={{ backgroundColor: "#5C039B", borderColor: "#5C039B", color: "#fff" }} disabled={!isMobileVerified || !isEmailVerified}>
+                      Next <ChevronRight className="inline w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               )}
 
-              {/* STEP 1: PROFILE DETAILS & DEPENDENTS */}
+              {/* ── STEP 1 ── */}
               {step === 1 && (
-                <div className="animate-fade-in">
-                  <Row gutter={24}>
+                <div className="animate-fade-in space-y-2">
+                  <Row gutter={16}>
                     <Col span={12}>
-                      <Form.Item label="Marital Status" validateStatus={errors.maritalStatus ? "error" : ""} help={errors.maritalStatus?.message}>
+                      <Form.Item label={<span className="font-medium text-sm">Marital Status</span>} className="mb-2">
                         <Controller name="maritalStatus" control={control} render={({ field }) => (
-                          <Select size="large" placeholder="Select status" {...field} allowClear>
-                            {maritalStatusOptions.map(o => <Option key={o.value} value={o.value}>{o.label}</Option>)}
+                          <Select placeholder="Select" {...field} allowClear>
+                            {maritalStatusOptions.map((o) => <Option key={o.value} value={o.value}>{o.label}</Option>)}
                           </Select>
                         )} />
                       </Form.Item>
                     </Col>
                     <Col span={12}>
-                      <Form.Item label="Number of Dependents" validateStatus={errors.numberOfDependents ? "error" : ""} help={errors.numberOfDependents?.message}>
+                      <Form.Item label={<span className="font-medium text-sm">Dependents</span>} className="mb-2">
                         <Controller name="numberOfDependents" control={control} render={({ field }) => (
-                          <Select size="large" placeholder="Select count" {...field} allowClear>
-                            {dependentsCountOptions.map(o => <Option key={o.value} value={o.value}>{o.label}</Option>)}
+                          <Select placeholder="Count" {...field} allowClear>
+                            {dependentsCountOptions.map((o) => <Option key={o.value} value={o.value}>{o.label}</Option>)}
                           </Select>
                         )} />
                       </Form.Item>
                     </Col>
                   </Row>
 
-                  {/* DYNAMIC DEPENDENT FIELDS */}
                   {watchDependentsCount > 0 && (
-                    <div className="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                      <Title level={5} className="mb-4 flex items-center gap-2"><Users className="w-5 h-5 text-purple-600"/> Dependent Information</Title>
+                    <div className="mb-2 bg-slate-50 p-3 rounded-lg border border-slate-200 max-h-56 overflow-y-auto">
+                      <Title level={5} className="!mb-2 text-sm flex items-center gap-1">
+                        <Users className="w-4 h-4 text-[#5C039B]" /> Dependents
+                      </Title>
                       {Array.from({ length: watchDependentsCount }).map((_, index) => (
-                        <Card key={index} size="small" className="mb-4 border-slate-200" title={`Dependent ${index + 1}`}>
-                          <Row gutter={16}>
-                            <Col span={12}>
-                              <Form.Item label="Name">
-                                <Controller name={`dependents.${index}.name`} control={control} render={({ field }) => <Input {...field} placeholder="Full Name" />} />
+                        <Card key={index} size="small" className="mb-2 border-slate-200" title={<span className="text-xs">Dependent {index + 1}</span>}>
+                          <Row gutter={8}>
+                            <Col span={6}>
+                              <Form.Item label="Name" className="mb-0">
+                                <Controller name={`dependents.${index}.name`} control={control} render={({ field }) => <Input {...field} placeholder="Name" size="small" />} />
                               </Form.Item>
                             </Col>
-                            <Col span={12}>
-                              <Form.Item label="Age" required validateStatus={errors?.dependents?.[index]?.age ? "error" : ""} help={errors?.dependents?.[index]?.age?.message}>
-                                <Controller name={`dependents.${index}.age`} rules={{ required: "Age is required" }} control={control} render={({ field }) => <Input type="number" {...field} placeholder="Age" />} />
+                            <Col span={3}>
+                              <Form.Item label="Age" required className="mb-0">
+                                <Controller name={`dependents.${index}.age`} rules={{ required: true }} control={control} render={({ field }) => <Input type="number" {...field} placeholder="Age" size="small" />} />
                               </Form.Item>
                             </Col>
-                            <Col span={12}>
-                              <Form.Item label="Relationship">
+                            <Col span={7}>
+                              <Form.Item label="Rel." className="mb-0">
                                 <Controller name={`dependents.${index}.relationship`} control={control} render={({ field }) => (
-                                  <Select {...field} placeholder="Select Relationship" allowClear>
-                                    {dependentRelationshipOptions.map(opt => <Option key={opt} value={opt}>{opt}</Option>)}
+                                  <Select {...field} placeholder="Rel" size="small" allowClear>
+                                    {dependentRelationshipOptions.map((opt) => <Option key={opt} value={opt}>{opt}</Option>)}
                                   </Select>
                                 )} />
                               </Form.Item>
                             </Col>
-                            <Col span={12}>
-                              <Form.Item label="Location" required validateStatus={errors?.dependents?.[index]?.location ? "error" : ""} help={errors?.dependents?.[index]?.location?.message}>
-                                <Controller name={`dependents.${index}.location`} rules={{ required: "Location is required" }} control={control} render={({ field }) => (
-                                  <Select {...field} placeholder="Select Location" allowClear>
-                                    {dependentLocationOptions.map(opt => <Option key={opt} value={opt}>{opt}</Option>)}
+                            <Col span={8}>
+                              <Form.Item label="Location" required className="mb-0">
+                                <Controller name={`dependents.${index}.location`} rules={{ required: true }} control={control} render={({ field }) => (
+                                  <Select {...field} placeholder="Loc" size="small" allowClear>
+                                    {dependentLocationOptions.map((opt) => <Option key={opt} value={opt}>{opt}</Option>)}
                                   </Select>
                                 )} />
                               </Form.Item>
@@ -610,80 +677,86 @@ const VaultRegister = () => {
                     </div>
                   )}
 
-                  <Row gutter={24}>
+                  <Row gutter={16}>
                     <Col span={12}>
-                      <Form.Item label="Nationality" validateStatus={errors.nationality ? "error" : ""} help={errors.nationality?.message}>
+                      <Form.Item label={<span className="font-medium text-sm">Nationality</span>} className="mb-2">
                         <Controller name="nationality" control={control} render={({ field }) => (
-                          <Select size="large" placeholder="Select nationality" showSearch optionFilterProp="label" {...field} allowClear>
-                            {nationalityOptions.map(o => <Option key={o.value} value={o.value} label={o.label}>{o.label}</Option>)}
+                          <Select placeholder="Select" showSearch optionFilterProp="label" {...field} allowClear>
+                            {nationalityOptions.map((o) => <Option key={o.value} value={o.value} label={o.label}>{o.label}</Option>)}
                           </Select>
                         )} />
                       </Form.Item>
                     </Col>
                     <Col span={12}>
-                      <Form.Item label="Date of Birth" validateStatus={errors.dateOfBirth ? "error" : ""} help={errors.dateOfBirth?.message}>
-                        <Controller name="dateOfBirth" control={control} render={({ field }) => (
-                          <Input type="date" size="large" {...field} />
-                        )} />
+                      <Form.Item label={<span className="font-medium text-sm">Date of Birth</span>} className="mb-2">
+                        <Controller name="dateOfBirth" control={control} render={({ field }) => <Input type="date" {...field} />} />
                       </Form.Item>
                     </Col>
                   </Row>
 
-                  <Form.Item label="Gender" validateStatus={errors.gender ? "error" : ""} help={errors.gender?.message}>
+                  <Form.Item label={<span className="font-medium text-sm">Gender</span>} className="mb-2">
                     <Controller name="gender" control={control} render={({ field }) => (
-                      <Radio.Group {...field} size="large">
-                        {genderOptions.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}
+                      <Radio.Group {...field}>
+                        {genderOptions.map((o) => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}
                       </Radio.Group>
                     )} />
                   </Form.Item>
 
-                  <div className="flex justify-between mt-8">
-                    <Button size="large" onClick={back}><ChevronLeft /> Back</Button>
-                    <Button type="primary" size="large" onClick={next} style={{ backgroundColor: '#5C039B' }}>Next <ChevronRight /></Button>
+                  <div className="flex justify-between pt-2">
+                    <Button onClick={back}><ChevronLeft className="w-4 h-4" /> Back</Button>
+                    <Button type="primary" onClick={next} style={{ backgroundColor: "#5C039B", borderColor: "#5C039B", color: "#fff" }}>
+                      Next <ChevronRight className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               )}
 
-              {/* STEP 2: REVIEW & SUBMIT */}
+              {/* ── STEP 2 ── */}
               {step === 2 && (
                 <Spin spinning={loading.submitting}>
-                  <Card className="bg-gray-50 border-purple-100 mb-6">
-                    <Title level={4} className="text-purple-800 mb-4">Review Your Information</Title>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div><Text strong>Agent Type:</Text> <Text>{selectedAgentMode === 'freelance' ? 'Freelance Agent' : 'Partner Affiliated'}</Text></div>
-                      {selectedAgentMode === 'partner' && (
-                        <div><Text strong>Partner Company:</Text> <Text>{partners.find(p => p._id === watch("partnerId"))?.companyName || 'Selected'}</Text></div>
+                  <Card className="bg-gray-50 border-purple-100 mb-4" bodyStyle={{ padding: "16px" }}>
+                    <Title level={5} className="!text-[#5C039B] !mb-3">Review Information</Title>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                      <div><Text strong>Agent:</Text> <Text>{selectedAgentMode === "freelance" ? "Freelance" : "Partner"}</Text></div>
+                      {selectedAgentMode === "partner" && (
+                        <div><Text strong>Company:</Text> <Text className="truncate">{partners.find((p) => p._id === watch("partnerId"))?.companyName || "Selected"}</Text></div>
                       )}
                       <div><Text strong>Name:</Text> <Text>{watch("first_name")} {watch("last_name")}</Text></div>
-                      <div><Text strong>Email:</Text> <Text>{watch("email")}</Text></div>
+                      <div><Text strong>Email:</Text> <Text className="truncate">{watch("email")}</Text></div>
                       <div><Text strong>Mobile:</Text> <Text>+{countryCode} {mobileNumber}</Text></div>
-                      <div><Text strong>Verification:</Text> <Tag color="green">Verified</Tag></div>
-                    </div>
-                    <Divider />
-                    <div className="grid grid-cols-2 gap-4">
-                      <div><Text strong>Marital Status:</Text> <Text>{watch("maritalStatus") || 'Not specified'}</Text></div>
+                      <div><Text strong>Verified:</Text> <Tag color="green" className="text-xs">Yes</Tag></div>
+                      <div><Text strong>Marital:</Text> <Text>{watch("maritalStatus") || "-"}</Text></div>
                       <div><Text strong>Dependents:</Text> <Text>{watch("numberOfDependents") || 0}</Text></div>
-                      <div><Text strong>Nationality:</Text> <Text>{nationalityOptions.find(o => o.value === watch("nationality"))?.label || 'Not specified'}</Text></div>
-                      <div><Text strong>Date of Birth:</Text> <Text>{watch("dateOfBirth") || 'Not specified'}</Text></div>
-                      <div><Text strong>Gender:</Text> <Text>{watch("gender") || 'Not specified'}</Text></div>
+                      <div><Text strong>Nationality:</Text> <Text>{nationalityOptions.find((o) => o.value === watch("nationality"))?.label || "-"}</Text></div>
+                      <div><Text strong>DOB:</Text> <Text>{watch("dateOfBirth") || "-"}</Text></div>
+                      <div><Text strong>Gender:</Text> <Text>{watch("gender") || "-"}</Text></div>
                     </div>
                   </Card>
 
-                  <Form.Item>
-                    <Controller name="agreed_to_terms" control={control} rules={{ required: "You must agree to terms" }}
+                  <Form.Item className="mb-2">
+                    <Controller
+                      name="agreed_to_terms"
+                      control={control}
+                      rules={{ required: "You must agree" }}
                       render={({ field }) => (
-                        <Checkbox checked={field.value} onChange={e => field.onChange(e.target.checked)}>
-                          I agree to the <a href="#" className="text-purple-600">Terms of Service</a> and <a href="#" className="text-purple-600">Privacy Policy</a>
+                        <Checkbox checked={field.value} onChange={(e) => field.onChange(e.target.checked)}>
+                          <span className="text-sm">I agree to <a href="#" className="text-[#5C039B]">Terms</a> and <a href="#" className="text-[#5C039B]">Privacy</a></span>
                         </Checkbox>
                       )}
                     />
-                    {errors.agreed_to_terms && <div className="text-red-500 text-sm mt-1">{errors.agreed_to_terms.message}</div>}
+                    {errors.agreed_to_terms && <div className="text-red-500 text-xs">{errors.agreed_to_terms.message}</div>}
                   </Form.Item>
 
-                  <div className="flex justify-between mt-12">
-                    <Button size="large" onClick={back}><ChevronLeft /> Back</Button>
-                    <Button type="primary" htmlType="submit" loading={loading.submitting} size="large" style={{ backgroundColor: '#5C039B' }} disabled={!isEmailVerified || !isMobileVerified}>
-                      Complete Registration <Check className="ml-2" />
+                  <div className="flex justify-between pt-2">
+                    <Button onClick={back}><ChevronLeft className="w-4 h-4" /> Back</Button>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={loading.submitting}
+                      style={{ backgroundColor: "#5C039B", borderColor: "#5C039B", color: "#fff" }}
+                      disabled={!isEmailVerified || !isMobileVerified}
+                    >
+                      Complete <Check className="ml-1 w-4 h-4" />
                     </Button>
                   </div>
                 </Spin>

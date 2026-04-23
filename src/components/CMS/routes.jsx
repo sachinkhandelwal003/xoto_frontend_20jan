@@ -200,6 +200,15 @@ import PartnerLeadDetails from "../ecommerce/B2C/PartnerLeadDetails";
 import CreateProposal from "../ecommerce/B2C/PartnerCreateproposal";
 import ProposalForm from "../ecommerce/B2C/ProposalForm";
 import AllProposals from "../ecommerce/B2C/AllProposals";
+import CreateAdvisor from "../ecommerce/B2C/VaultCreateadviosor";
+import AdvisorList   from "../ecommerce/B2C/VaultAdvisorlist";
+import VaultAdvisorDetail from "../ecommerce/B2C/VaultAdvisorDetail";
+import VaultCreateMortgage from "../ecommerce/B2C/VaultCreateMortgage";
+import VaultMortgageList from "../ecommerce/B2C/VaultMortgageList";
+import VaultMortgagedetail from "../ecommerce/B2C/VaultMortgagedetail";
+import MortgageOpsDashboard from "../ecommerce/B2C/MortgageOpsDashboard";
+import AdvisorDashboard from "../ecommerce/B2C/AdvisorDashboard";
+
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 
@@ -228,6 +237,8 @@ const roleSlugMap = {
   17: "developer",
   18: "vault-admin",
   22: "vaultagent" ,
+  26: "vault-advisor",
+  23: "vault-ops",
 
 21:"vaultpartner"
 };
@@ -246,6 +257,8 @@ const dashboardMap = {
   15: <AgencyDashboard />,
   18: <VaultAdminDashboard />,
   22: <VaultAgentDashboard />,
+  26: <AdvisorDashboard />,
+  23: <MortgageOpsDashboard />,
 
 
     12: <SupervisorDashboard />,
@@ -484,6 +497,15 @@ const CmsRoutes = () => {
 {/* <Route path="proposals/create" element={<CreateProposal />} /> */}
 <Route path="proposals/create/:leadId" element={<ProposalForm />} />
 <Route path="proposals/all" element={<AllProposals />} />
+<Route path="advisor/create" element={<CreateAdvisor />} />
+<Route path="advisor/list"   element={<AdvisorList />} />
+<Route path="advisor/:id" element={<VaultAdvisorDetail />} />
+<Route path="mortgage/create" element={<VaultCreateMortgage />} />
+<Route path="mortgage/list"   element={<VaultMortgageList />} />
+<Route path="mortgage/:id" element={<VaultMortgagedetail />} />
+<Route path="mortgage/dashboard" element={<MortgageOpsDashboard />} />
+<Route path="advisor/dashboard" element={<AdvisorDashboard />} />
+
 
 
 
