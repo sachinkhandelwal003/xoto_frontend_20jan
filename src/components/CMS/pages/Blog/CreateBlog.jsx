@@ -45,9 +45,9 @@ const THEME = {
   text: "#1e1b4b",
   muted: "#6b7280",
 };
-
+// j;basfjklsdbafljksdbfljsadbflkbb
 // ─────────────────────────────────────────────
-//  GLOBAL STYLES
+//  GLOBAL STYLES 'eaihsfsndfskld;nf;osdnfklsda;nfklsdanfsdan;f;klsdanfklsdanf;klsdanfklsdnf;sdanf;sdn
 // ─────────────────────────────────────────────
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -460,49 +460,37 @@ const GLOBAL_STYLES = `
   .preview-modal .ant-modal-title { color: #fff !important; font-weight: 700 !important; }
   .preview-modal .ant-modal-body { padding: 0 !important; }
 
-  /* ─── BLOG PREVIEW CONTENT ─── */
+  /* ─── BLOG PREVIEW CONTENT (FIXED SPACING) ─── */
   .blog-preview-wrap {
     font-family: 'DM Sans', sans-serif;
     color: #1e1b4b;
     background: #fff;
   }
 
-  .blog-preview-hero {
-    width: 100%;
-    height: 320px;
-    object-fit: cover;
-    display: block;
-  }
-
+  .blog-preview-hero { width: 100%; height: 320px; object-fit: cover; display: block; }
   .blog-preview-inner { padding: 36px 40px; }
 
-  .blog-preview-content h1 { font-family: 'Playfair Display', serif; font-size: 2em; font-weight: 800; margin: 1.4em 0 0.6em; line-height: 1.25; color: #1e1b4b; }
-  .blog-preview-content h2 { font-family: 'Playfair Display', serif; font-size: 1.6em; font-weight: 700; margin: 1.2em 0 0.5em; line-height: 1.3; color: #1e1b4b; }
-  .blog-preview-content h3 { font-size: 1.3em; font-weight: 700; margin: 1em 0 0.4em; color: #2d1b69; }
-  .blog-preview-content h4 { font-size: 1.1em; font-weight: 600; margin: 0.8em 0 0.4em; }
-  .blog-preview-content p { margin: 1em 0; line-height: 1.8; font-size: 16px; color: #374151; }
-  .blog-preview-content ul { list-style: disc; padding-left: 1.8em; margin: 0.8em 0; }
-  .blog-preview-content ol { list-style: decimal; padding-left: 1.8em; margin: 0.8em 0; }
-  .blog-preview-content li { margin: 0.4em 0; line-height: 1.7; color: #374151; }
+  /* Added !important to enforce spacing despite Tailwind's reset */
+  .blog-preview-content h1 { font-family: 'Playfair Display', serif; font-size: 2em; font-weight: 800; margin: 1.4em 0 0.6em !important; line-height: 1.25; color: #1e1b4b; display: block; }
+  .blog-preview-content h2 { font-family: 'Playfair Display', serif; font-size: 1.6em; font-weight: 700; margin: 1.2em 0 0.5em !important; line-height: 1.3; color: #1e1b4b; display: block; }
+  .blog-preview-content h3 { font-size: 1.3em; font-weight: 700; margin: 1em 0 0.4em !important; color: #2d1b69; display: block; }
+  .blog-preview-content h4 { font-size: 1.1em; font-weight: 600; margin: 0.8em 0 0.4em !important; display: block; }
+  .blog-preview-content p { margin: 0 0 1.2em 0 !important; line-height: 1.8; font-size: 16px; color: #374151; display: block; }
+  .blog-preview-content ul { list-style: disc; padding-left: 1.8em !important; margin: 0 0 1.2em 0 !important; display: block; }
+  .blog-preview-content ol { list-style: decimal; padding-left: 1.8em !important; margin: 0 0 1.2em 0 !important; display: block; }
+  .blog-preview-content li { margin: 0 0 0.6em 0 !important; line-height: 1.7; color: #374151; display: list-item; }
   .blog-preview-content blockquote {
-    border-left: 4px solid #8b5cf6;
-    padding: 12px 20px;
-    margin: 1.2em 0;
-    background: #f5f3ff;
-    border-radius: 0 12px 12px 0;
-    font-style: italic;
-    color: #4c1d95;
+    border-left: 4px solid #8b5cf6; padding: 12px 20px; margin: 1.2em 0 !important;
+    background: #f5f3ff; border-radius: 0 12px 12px 0; font-style: italic; color: #4c1d95;
   }
   .blog-preview-content a { color: #6d28d9; text-decoration: underline; }
-  .blog-preview-content img { max-width: 100%; border-radius: 10px; margin: 1em 0; }
-  .blog-preview-content table { width: 100%; border-collapse: collapse; margin: 1em 0; }
-  .blog-preview-content th, .blog-preview-content td {
-    border: 1px solid #e9d5ff; padding: 10px 14px; text-align: left;
-  }
+  .blog-preview-content img { max-width: 100%; border-radius: 10px; margin: 1em 0 !important; }
+  .blog-preview-content table { width: 100%; border-collapse: collapse; margin: 1em 0 !important; }
+  .blog-preview-content th, .blog-preview-content td { border: 1px solid #e9d5ff; padding: 10px 14px; text-align: left; }
   .blog-preview-content th { background: #f5f3ff; font-weight: 700; color: #4c1d95; }
   .blog-preview-content code { background: #f5f3ff; padding: 2px 7px; border-radius: 5px; font-family: monospace; font-size: 0.9em; color: #6d28d9; }
-  .blog-preview-content pre { background: #1e1b4b; color: #e9d5ff; padding: 18px; border-radius: 12px; overflow-x: auto; margin: 1em 0; }
-  .blog-preview-content hr { border: none; border-top: 2px solid #ede9fe; margin: 2em 0; }
+  .blog-preview-content pre { background: #1e1b4b; color: #e9d5ff; padding: 18px; border-radius: 12px; overflow-x: auto; margin: 1em 0 !important; }
+  .blog-preview-content hr { border: none; border-top: 2px solid #ede9fe; margin: 2em 0 !important; }
 
   /* ─── TOC ─── */
   .bm-toc {
@@ -570,34 +558,44 @@ const GLOBAL_STYLES = `
 `;
 
 // ─────────────────────────────────────────────
-//  PASTE CLEANING UTILITIES
+//  PASTE CLEANING UTILITIES (BULLET GAP FIX)
 // ─────────────────────────────────────────────
 const cleanWordHtml = (html) => {
   if (!html) return '';
-  let c = html;
-  c = c.replace(/<\?xml[^?]*\?>/gi, '');
-  c = c.replace(/<\!\[CDATA\[.*?\]\]>/gis, '');
-  c = c.replace(/<!--\[if[^>]*>.*?<!\[endif\]-->/gis, '');
-  c = c.replace(/<meta[^>]*>/gi, '');
-  c = c.replace(/<style[^>]*>.*?<\/style>/gis, '');
-  c = c.replace(/<xml[^>]*>.*?<\/xml>/gis, '');
-  c = c.replace(/\s*class="[^"]*Mso[^"]*"/gi, '');
-  c = c.replace(/\s*style="[^"]*"/gi, '');
-  c = c.replace(/\s*lang="[^"]*"/gi, '');
-  c = c.replace(/<span[^>]*>\s*<\/span>/gi, '');
-  c = c.replace(/<\/?font[^>]*>/gi, '');
-  c = c.replace(/<p[^>]*>(&nbsp;|\s)*<\/p>/gi, '');
-  c = c.replace(/&nbsp;/gi, ' ');
-  c = c.replace(/[\u200B-\u200D\uFEFF]/g, '');
-  c = c.replace(/\s+/g, ' ').trim();
-  return c;
+  let cleaned = html;
+
+  // Basic cleanup
+  cleaned = cleaned.replace(/lang="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/class="[^"]*"/gi, '');
+
+  // Strip spans entirely. Word hides massive spaces like &nbsp;&nbsp;&nbsp;&nbsp; inside nested spans.
+  // This alone solves 90% of huge bullet gap problems.
+  cleaned = cleaned.replace(/<\/?span[^>]*>/gi, '');
+
+  // Strip excessive non-breaking spaces (turn 2+ &nbsp; into a single normal space)
+  cleaned = cleaned.replace(/(&nbsp;|\s){2,}/gi, ' ');
+
+  // Convert fake Word paragraphs starting with bullets into real <li> items
+  // Matches: <p> ● Faltu spaces Text </p>
+  const pListPattern = /<p[^>]*>\s*([·●•▪o\-]|\&#183;)\s*([\s\S]*?)<\/p>/gi;
+  cleaned = cleaned.replace(pListPattern, '<li>$2</li>');
+
+  // Clean up existing list items that have hardcoded bullets pasted inside them
+  const liListPattern = /<li[^>]*>\s*([·●•▪o\-]|\&#183;)\s*([\s\S]*?)<\/li>/gi;
+  cleaned = cleaned.replace(liListPattern, '<li>$2</li>');
+
+  // Standardize bold tags
+  cleaned = cleaned.replace(/<b([^>]*)>/gi, '<strong$1>');
+  cleaned = cleaned.replace(/<\/b>/gi, '</strong>');
+
+  return cleaned.trim();
 };
 
 const sanitizePastedHtml = (html) => {
   if (!html) return '';
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
-  ['script', 'style', 'iframe', 'object', 'embed', 'applet', 'link', 'meta'].forEach(sel => {
+  ['script', 'iframe', 'object', 'embed', 'applet', 'link', 'meta'].forEach(sel => {
     tempDiv.querySelectorAll(sel).forEach(el => el.remove());
   });
   return tempDiv.innerHTML;
@@ -607,10 +605,7 @@ const cleanPastedContent = (html) => {
   if (!html) return '';
   let c = cleanWordHtml(html);
   c = sanitizePastedHtml(c);
-  c = c.replace(/\s*style="[^"]*"/gi, '');
   c = c.replace(/\s*class="[^"]*"/gi, '');
-  c = c.replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '</p><p>');
-  c = c.replace(/<p[^>]*>\s*<\/p>/gi, '');
   return c.trim();
 };
 
@@ -830,8 +825,8 @@ const BlogPreview = ({ data }) => {
   const { title, subHeading, content, authorName, authorImage, tags, category, featuredImage, coverImage, createdAt, readingTime, headings } = data;
 
   const sanitized = content ? DOMPurify.sanitize(content, {
-    ALLOWED_TAGS: ['p','br','strong','b','em','i','u','strike','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th','div','span'],
-    ALLOWED_ATTR: ['href','src','alt','title','target','rel'],
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'strike', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'pre', 'code', 'hr', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'div', 'span'],
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target', 'rel', 'style'], // ✅ ADDED style to preserve formatting
     ALLOW_DATA_ATTR: false
   }) : '';
 
@@ -1138,8 +1133,9 @@ const BlogManagement = () => {
     try {
       const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([processImage(featuredImageList), processImage(coverImageList), processImage(authorImageList)]);
       const cleanedContent = DOMPurify.sanitize(cleanPastedContent(contentValue), {
-        ALLOWED_TAGS: ['p','br','strong','b','em','i','u','strike','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th'],
-        ALLOWED_ATTR: ['href','src','alt','title','target','rel'], ALLOW_DATA_ATTR: false
+        ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'strike', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'pre', 'code', 'hr', 'table', 'thead', 'tbody', 'tr', 'td', 'th'],
+        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target', 'rel', 'style'], // ✅ ADDED style to preserve formatting
+        ALLOW_DATA_ATTR: false
       });
       const payload = {
         title: values.title,
@@ -1258,55 +1254,55 @@ const BlogManagement = () => {
 
         {/* Filters */}
         <div className="bm-filters" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-  <Input
-    size="large"   // ✅ ADD THIS
-    prefix={<SearchOutlined style={{ color: '#c4b5fd' }} />}
-    placeholder="Search posts by title, content or tags..."
-    value={searchText}
-    onChange={handleSearch}
-    allowClear
-    style={{ flex: 1, minWidth: 200, borderRadius: 10 }}
-  />
+          <Input
+            size="large"
+            prefix={<SearchOutlined style={{ color: '#c4b5fd' }} />}
+            placeholder="Search posts by title, content or tags..."
+            value={searchText}
+            onChange={handleSearch}
+            allowClear
+            style={{ flex: 1, minWidth: 200, borderRadius: 10 }}
+          />
 
-  <Select
-    size="large"   // ✅ ADD THIS
-    placeholder="Category"
-    value={selectedCategory || undefined}
-    onChange={v => handleFilterChange('category', v)}
-    allowClear
-    style={{ width: 180 }}
-  >
-    {[['AI','🤖 AI'],['Real Estate','🏠 Real Estate'],['PropTech','📱 PropTech'],['Technology','💻 Technology'],['Business','💼 Business'],['Mortgage','🏦 Mortgage'],['Landscaping','🌳 Landscaping'],['Other','📄 Other']].map(([v,l]) => (
-      <Option key={v} value={v}>{l}</Option>
-    ))}
-  </Select>
+          <Select
+            size="large"
+            placeholder="Category"
+            value={selectedCategory || undefined}
+            onChange={v => handleFilterChange('category', v)}
+            allowClear
+            style={{ width: 180 }}
+          >
+            {[['AI', '🤖 AI'], ['Real Estate', '🏠 Real Estate'], ['PropTech', '📱 PropTech'], ['Technology', '💻 Technology'], ['Business', '💼 Business'], ['Mortgage', '🏦 Mortgage'], ['Landscaping', '🌳 Landscaping'], ['Other', '📄 Other']].map(([v, l]) => (
+              <Option key={v} value={v}>{l}</Option>
+            ))}
+          </Select>
 
-  <Select
-    size="large"   // ✅ ADD THIS
-    placeholder="Status"
-    value={selectedStatus || undefined}
-    onChange={v => handleFilterChange('status', v)}
-    allowClear
-    style={{ width: 140 }}
-  >
-    <Option value="published">✅ Published</Option>
-    <Option value="draft">📝 Draft</Option>
-  </Select>
+          <Select
+            size="large"
+            placeholder="Status"
+            value={selectedStatus || undefined}
+            onChange={v => handleFilterChange('status', v)}
+            allowClear
+            style={{ width: 140 }}
+          >
+            <Option value="published">✅ Published</Option>
+            <Option value="draft">📝 Draft</Option>
+          </Select>
 
-  <Button
-    size="large"   // ✅ ADD THIS
-    icon={<UndoOutlined />}
-    onClick={handleClearFilters}
-    style={{ borderRadius: 10, borderColor: '#ede9fe', color: '#6b7280' }}
-  >
-    Clear
-  </Button>
-</div>
+          <Button
+            size="large"
+            icon={<UndoOutlined />}
+            onClick={handleClearFilters}
+            style={{ borderRadius: 10, borderColor: '#ede9fe', color: '#6b7280' }}
+          >
+            Clear
+          </Button>
+        </div>
 
         {/* Blog List */}
         {loading ? (
           <div>
-            {[1,2,3].map(i => <Card key={i} style={{ borderRadius: 18, marginBottom: 20, border: '1.5px solid #ede9fe' }} bodyStyle={{ padding: 24 }}><Skeleton active avatar={{ size: 80, shape: 'square' }} paragraph={{ rows: 3 }} /></Card>)}
+            {[1, 2, 3].map(i => <Card key={i} style={{ borderRadius: 18, marginBottom: 20, border: '1.5px solid #ede9fe' }} bodyStyle={{ padding: 24 }}><Skeleton active avatar={{ size: 80, shape: 'square' }} paragraph={{ rows: 3 }} /></Card>)}
           </div>
         ) : blogs.length === 0 ? (
           <div className="bm-empty">
@@ -1428,14 +1424,14 @@ const BlogManagement = () => {
                 <Col xs={24} md={12}>
                   <Form.Item name="tags" label="Tags">
                     <Select mode="tags" size="large" placeholder="Add tags (press Enter)" tokenSeparators={[',']} style={{ borderRadius: 10 }}>
-                      {['AI','Real Estate','PropTech','Technology','Business','Mortgage','Landscaping','Marketing','UAE','Dubai','Innovation'].map(t => <Option key={t} value={t}>{t}</Option>)}
+                      {['AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Mortgage', 'Landscaping', 'Marketing', 'UAE', 'Dubai', 'Innovation'].map(t => <Option key={t} value={t}>{t}</Option>)}
                     </Select>
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
                   <Form.Item name="category" label="Category">
                     <Select size="large" placeholder="Select category">
-                      {[['AI','🤖'],['Real Estate','🏠'],['PropTech','📱'],['Technology','💻'],['Business','💼'],['Mortgage','🏦'],['Landscaping','🌳'],['Other','📄']].map(([v,e]) => <Option key={v} value={v}>{e} {v}</Option>)}
+                      {[['AI', '🤖'], ['Real Estate', '🏠'], ['PropTech', '📱'], ['Technology', '💻'], ['Business', '💼'], ['Mortgage', '🏦'], ['Landscaping', '🌳'], ['Other', '📄']].map(([v, e]) => <Option key={v} value={v}>{e} {v}</Option>)}
                     </Select>
                   </Form.Item>
                 </Col>
@@ -1474,10 +1470,10 @@ const BlogManagement = () => {
               </div>
               <Row gutter={[24, 16]}>
                 <Col xs={24} md={12}>
-                  <UploadWithCrop fileList={featuredImageList} onChange={setFeaturedImageList} aspect={3/2} cropTitle="Crop Featured Image (3:2)" maxSizeMB={5} label="Featured Image (Card Thumbnail)" extra="Recommended: 1200 × 800px · Max 5MB" />
+                  <UploadWithCrop fileList={featuredImageList} onChange={setFeaturedImageList} aspect={3 / 2} cropTitle="Crop Featured Image (3:2)" maxSizeMB={5} label="Featured Image (Card Thumbnail)" extra="Recommended: 1200 × 800px · Max 5MB" />
                 </Col>
                 <Col xs={24} md={12}>
-                  <UploadWithCrop fileList={coverImageList} onChange={setCoverImageList} aspect={16/9} cropTitle="Crop Cover / Hero Image (16:9)" maxSizeMB={5} label="Cover Image (Hero Banner)" extra="Recommended: 1920 × 1080px · Max 5MB" />
+                  <UploadWithCrop fileList={coverImageList} onChange={setCoverImageList} aspect={16 / 9} cropTitle="Crop Cover / Hero Image (16:9)" maxSizeMB={5} label="Cover Image (Hero Banner)" extra="Recommended: 1920 × 1080px · Max 5MB" />
                 </Col>
               </Row>
             </TabPane>
