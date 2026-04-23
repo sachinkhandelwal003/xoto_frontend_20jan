@@ -10,7 +10,7 @@ import {
   Button, Modal, Form, Input, Popconfirm, Card,
   Typography, Avatar, Row, Col, Statistic, Space, Divider,
   message, notification, Tooltip, Grid, Tag, Select, Badge,
-  Upload, Tabs, Alert, Switch, Slider, Skeleton, Empty
+  Upload, Tabs, Alert, Switch, Slider, Pagination, Skeleton, Empty
 } from 'antd';
 import {
   PlusOutlined, FileTextOutlined, DeleteOutlined,
@@ -31,10 +31,14 @@ const { TabPane } = Tabs;
 //  DESIGN TOKENS
 // ─────────────────────────────────────────────
 const THEME = {
+<<<<<<< HEAD
+  primary: "#7c3aed",
+=======
   primary: "#6d28d9",
   primaryLight: "#8b5cf6",
   primaryDark: "#4c1d95",
   accent: "#f59e0b",
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
   success: "#10b981",
   error: "#ef4444",
   warning: "#f59e0b",
@@ -47,6 +51,166 @@ const THEME = {
 };
 
 // ─────────────────────────────────────────────
+<<<<<<< HEAD
+//  BLOG CONTENT CSS — fixes Tailwind reset for ul/ol/li
+// ─────────────────────────────────────────────
+const BLOG_CONTENT_STYLES = `
+  .blog-preview-content ul,
+  .blog-render-content ul {
+    list-style-type: disc !important;
+    padding-left: 24px !important;
+    margin: 12px 0 !important;
+  }
+  .blog-preview-content ol,
+  .blog-render-content ol {
+    list-style-type: decimal !important;
+    padding-left: 24px !important;
+    margin: 12px 0 !important;
+  }
+  .blog-preview-content li,
+  .blog-render-content li {
+    display: list-item !important;
+    margin: 6px 0 !important;
+    line-height: 1.7 !important;
+  }
+  .blog-preview-content ul ul,
+  .blog-render-content ul ul {
+    list-style-type: circle !important;
+    padding-left: 20px !important;
+  }
+  .blog-preview-content ul ul ul,
+  .blog-render-content ul ul ul {
+    list-style-type: square !important;
+  }
+  .blog-preview-content p,
+  .blog-render-content p {
+    margin: 10px 0;
+  }
+  .blog-preview-content h1,
+  .blog-render-content h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 24px 0 12px;
+  }
+  .blog-preview-content h2,
+  .blog-render-content h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 20px 0 10px;
+  }
+  .blog-preview-content h3,
+  .blog-render-content h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 16px 0 8px;
+  }
+  .blog-preview-content blockquote,
+  .blog-render-content blockquote {
+    border-left: 4px solid #7c3aed;
+    padding-left: 16px;
+    margin: 16px 0;
+    color: #555;
+    font-style: italic;
+  }
+  .blog-preview-content a,
+  .blog-render-content a {
+    color: #7c3aed;
+    text-decoration: underline;
+  }
+  .blog-preview-content img,
+  .blog-render-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 12px 0;
+  }
+  .blog-preview-content table,
+  .blog-render-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+  }
+  .blog-preview-content th,
+  .blog-render-content th,
+  .blog-preview-content td,
+  .blog-render-content td {
+    border: 1px solid #e0e0e0;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  .blog-preview-content th,
+  .blog-render-content th {
+    background: #f5f5f5;
+    font-weight: 600;
+  }
+`;
+// ✅ FINAL - USE THIS ONE
+// ✅ FIXED VERSION - Preserves structure, removes Word garbage
+const cleanWordHtml = (html) => {
+  if (!html) return '';
+  
+  let cleaned = html;
+  
+  // Remove all lang attributes
+  cleaned = cleaned.replace(/lang="[^"]*"/gi, '');
+  
+  // Remove all inline styles
+  cleaned = cleaned.replace(/style="[^"]*"/gi, '');
+  
+  // Remove Word classes
+  cleaned = cleaned.replace(/class="[^"]*"/gi, '');
+  
+  // Remove empty headings with &nbsp;
+  cleaned = cleaned.replace(/<h[1-6][^>]*>\s*(&nbsp;|\s)*\s*<\/h[1-6]>/gi, '');
+  
+  // Remove name attributes from anchor tags
+  cleaned = cleaned.replace(/<a\s+name="[^"]*"[^>]*>/gi, '');
+  
+  // Clean up headings - remove nested bold/spans
+  cleaned = cleaned.replace(/<h([1-6])[^>]*>(?:<b>)?(?:<span[^>]*>)?([^<]+)(?:<\/span>)?(?:<\/b>)?<\/h\1>/gi, '<h$1>$2</h$1>');
+  
+  // Convert Word list items to proper HTML lists
+  // Find paragraphs with bullet points
+  const bulletPattern = /<p[^>]*>(?:<span[^>]*>)?(?:●|•|\d+\.)\s*([^<]+)<\/p>/gi;
+  
+  let match;
+  let bulletItems = [];
+  let lastIndex = 0;
+  let result = '';
+  
+  // Process the content
+  cleaned = cleaned.replace(bulletPattern, (match, content) => {
+    return `<li>${content.trim()}</li>`;
+  });
+  
+  // Wrap consecutive <li> in <ul>
+  cleaned = cleaned.replace(/(<li>.*?<\/li>)(?=(<li>|$))/gs, (match) => {
+    return `<ul>${match}</ul>`;
+  });
+  
+  // Remove spans but keep content
+  cleaned = cleaned.replace(/<span[^>]*>([\s\S]*?)<\/span>/gi, '$1');
+  
+  // Clean up bold tags
+  cleaned = cleaned.replace(/<b([^>]*)>/gi, '<strong$1>');
+  cleaned = cleaned.replace(/<\/b>/gi, '</strong>');
+  
+  // Clean up link attributes
+  cleaned = cleaned.replace(/<a\s+([^>]*?)href="([^"]+)"([^>]*)>/gi, (match, before, href, after) => {
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer">`;
+  });
+  
+  // Remove empty paragraphs
+  cleaned = cleaned.replace(/<p[^>]*>\s*<\/p>/gi, '');
+  
+  // Fix multiple line breaks
+  cleaned = cleaned.replace(/\n\s*\n/g, '\n');
+  
+  // Trim whitespace
+  cleaned = cleaned.trim();
+  
+  return cleaned;
+=======
 //  GLOBAL STYLES
 // ─────────────────────────────────────────────
 const GLOBAL_STYLES = `
@@ -591,8 +755,53 @@ const cleanWordHtml = (html) => {
   c = c.replace(/[\u200B-\u200D\uFEFF]/g, '');
   c = c.replace(/\s+/g, ' ').trim();
   return c;
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
 };
+const CATEGORY_KEYWORDS = {
+  'AI': ['artificial intelligence', 'machine learning', 'deep learning', 'neural network', 'chatgpt', 'llm', 'ai ', ' ai,', 'automation', 'nlp', 'generative'],
+  'Real Estate': ['property', 'real estate', 'housing', 'apartment', 'villa', 'rent', 'lease', 'mortgage', 'broker', 'land', 'plot', 'realty'],
+  'PropTech': ['proptech', 'property technology', 'smart home', 'iot', 'digital property', 'virtual tour', 'property app'],
+  'Technology': ['software', 'programming', 'javascript', 'react', 'node', 'cloud', 'saas', 'startup', 'tech', 'developer', 'api', 'database'],
+  'Business': ['business', 'startup', 'entrepreneur', 'investment', 'revenue', 'marketing', 'sales', 'strategy', 'growth'],
+    'Mortgage': ['mortgage', 'home loan', 'refinance', 'interest rate', 'lender', 'pre-approval', 'mortgage broker'],
+   'Landscaping': ['landscaping', 'garden design', 'outdoor space', 'hardscape', 'softscape', 'lawn care', 'irrigation'],
+  };
 
+<<<<<<< HEAD
+const COMMON_TAGS = [
+  'AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Mortgage', 'Landscaping', 'Marketing',
+  'UAE', 'Dubai', 'Sustainability', 'Innovation', 'Digital', 'Cloud',
+  'Investment', 'Architecture', 'Design', 'Smart Home', 'Automation'
+];
+
+const smartExtract = (html) => {
+  if (!html) return {};
+  const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+  let detectedCategory = 'Other';
+  let maxMatches = 0;
+  for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    const matches = keywords.filter(kw => text.includes(kw)).length;
+    if (matches > maxMatches) { maxMatches = matches; detectedCategory = cat; }
+  }
+  const detectedTags = COMMON_TAGS.filter(tag => text.includes(tag.toLowerCase())).slice(0, 6);
+  const headings = [];
+  const headingRegex = /<h([1-6])[^>]*>(.*?)<\/h\1>/gi;
+  let match;
+  while ((match = headingRegex.exec(html)) !== null) {
+    headings.push({ level: parseInt(match[1]), text: match[2].replace(/<[^>]*>/g, '').trim() });
+  }
+  const paraMatch = html.match(/<p[^>]*>(.*?)<\/p>/i);
+  let excerpt = '';
+  if (paraMatch) excerpt = paraMatch[1].replace(/<[^>]*>/g, '').trim().substring(0, 160);
+  const links = [];
+  const linkRegex = /<a[^>]+href="([^"]+)"[^>]*>(.*?)<\/a>/gi;
+  while ((match = linkRegex.exec(html)) !== null) {
+    links.push({ href: match[1], text: match[2].replace(/<[^>]*>/g, '').trim() });
+  }
+  const wordCount = text.split(/\s+/).length;
+  const readingTime = Math.ceil(wordCount / 200);
+  return { detectedCategory, detectedTags, headings, excerpt, links, wordCount, readingTime };
+=======
 const sanitizePastedHtml = (html) => {
   if (!html) return '';
   const tempDiv = document.createElement('div');
@@ -619,6 +828,7 @@ const htmlToPlainText = (html) => {
   const d = document.createElement('div');
   d.innerHTML = html;
   return d.textContent || d.innerText || '';
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
 };
 
 const extractHeadings = (html) => {
@@ -668,6 +878,33 @@ const smartExtract = (html) => {
 // ─────────────────────────────────────────────
 //  CROP HELPER
 // ─────────────────────────────────────────────
+<<<<<<< HEAD
+const getCroppedImg = (imageSrc, pixelCrop) => {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.src = imageSrc;
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = pixelCrop.width;
+      canvas.height = pixelCrop.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(
+        image,
+        pixelCrop.x, pixelCrop.y,
+        pixelCrop.width, pixelCrop.height,
+        0, 0,
+        pixelCrop.width, pixelCrop.height
+      );
+      canvas.toBlob(blob => {
+        if (!blob) return reject(new Error('Canvas is empty'));
+        resolve(blob);
+      }, 'image/jpeg', 0.92);
+    };
+    image.onerror = reject;
+  });
+};
+=======
 const getCroppedImg = (imageSrc, pixelCrop) => new Promise((resolve, reject) => {
   const image = new Image();
   image.crossOrigin = 'anonymous';
@@ -682,6 +919,7 @@ const getCroppedImg = (imageSrc, pixelCrop) => new Promise((resolve, reject) => 
   };
   image.onerror = reject;
 });
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
 
 // ─────────────────────────────────────────────
 //  IMAGE CROP MODAL
@@ -693,7 +931,11 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
   const [cropping, setCropping] = useState(false);
 
   useEffect(() => {
-    if (open) { setCrop({ x: 0, y: 0 }); setZoom(1); setCroppedAreaPixels(null); }
+    if (open) {
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setCroppedAreaPixels(null);
+    }
   }, [open, imageSrc]);
 
   const handleConfirm = async () => {
@@ -702,35 +944,104 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
     try {
       const blob = await getCroppedImg(imageSrc, croppedAreaPixels);
       onConfirm(blob);
+<<<<<<< HEAD
+    } catch (e) {
+      message.error('Crop failed, please try again');
+    } finally {
+      setCropping(false);
+    }
+=======
     } catch { message.error('Crop failed, please try again'); }
     finally { setCropping(false); }
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
   };
 
   return (
     <Modal
       open={open}
+<<<<<<< HEAD
+      title={
+        <Space>
+          <ScissorOutlined style={{ color: THEME.primary }} />
+          <span>{title || 'Crop Image'}</span>
+        </Space>
+      }
+=======
       title={<Space><ScissorOutlined style={{ color: '#8b5cf6' }} /><span style={{ color: '#fff' }}>{title || 'Crop Image'}</span></Space>}
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
       onCancel={onCancel}
       width={620}
       centered
       destroyOnClose
+<<<<<<< HEAD
+=======
       className="bm-modal"
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
       footer={
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space>
             <ZoomInOutlined style={{ color: '#888' }} />
+<<<<<<< HEAD
+            <Slider
+              min={1}
+              max={3}
+              step={0.05}
+              value={zoom}
+              onChange={setZoom}
+              style={{ width: 160 }}
+              tooltip={{ formatter: v => `${Math.round(v * 100)}%` }}
+            />
+=======
             <Slider min={1} max={3} step={0.05} value={zoom} onChange={setZoom} style={{ width: 160 }} tooltip={{ formatter: v => `${Math.round(v * 100)}%` }} />
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
             <Text type="secondary" style={{ fontSize: 12 }}>{Math.round(zoom * 100)}%</Text>
           </Space>
           <Space>
             <Button onClick={onCancel}>Cancel</Button>
+<<<<<<< HEAD
+            <Button
+              type="primary"
+              icon={<ScissorOutlined />}
+              loading={cropping}
+              onClick={handleConfirm}
+              style={{ background: THEME.primary, borderColor: THEME.primary }}
+            >
+=======
             <Button type="primary" icon={<ScissorOutlined />} loading={cropping} onClick={handleConfirm} style={{ background: THEME.primary, borderColor: THEME.primary, borderRadius: 10 }}>
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
               Apply Crop
             </Button>
           </Space>
         </div>
       }
     >
+<<<<<<< HEAD
+      <div style={{ position: 'relative', width: '100%', height: 380, background: '#1a1a2e', borderRadius: 10, overflow: 'hidden' }}>
+        {imageSrc ? (
+          <Cropper
+            image={imageSrc}
+            crop={crop}
+            zoom={zoom}
+            aspect={aspect}
+            onCropChange={setCrop}
+            onZoomChange={setZoom}
+            onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)}
+            style={{
+              containerStyle: { borderRadius: 10 },
+              cropAreaStyle: { border: '2px solid #7c3aed', boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)' },
+            }}
+          />
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <Text type="secondary">Loading image...</Text>
+          </div>
+        )}
+      </div>
+      <div style={{ marginTop: 10, textAlign: 'center' }}>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          Drag to reposition · Scroll or use slider to zoom
+        </Text>
+=======
       <div style={{ position: 'relative', width: '100%', height: 380, background: '#1e1b4b', borderRadius: 14, overflow: 'hidden' }}>
         {imageSrc
           ? <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={aspect} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_, px) => setCroppedAreaPixels(px)} style={{ containerStyle: { borderRadius: 14 }, cropAreaStyle: { border: '2px solid #8b5cf6', boxShadow: '0 0 0 9999px rgba(0,0,0,0.65)' } }} />
@@ -739,6 +1050,7 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
       </div>
       <div style={{ marginTop: 10, textAlign: 'center' }}>
         <Text type="secondary" style={{ fontSize: 12 }}>Drag to reposition · Scroll or slider to zoom</Text>
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
       </div>
     </Modal>
   );
@@ -766,9 +1078,24 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
     const fileName = pendingFile?.name || 'image.jpg';
     const croppedFile = new File([blob], fileName, { type: 'image/jpeg' });
     const preview = URL.createObjectURL(blob);
+<<<<<<< HEAD
+    const newFileObj = {
+      uid: `crop-${Date.now()}`,
+      name: fileName,
+      status: 'done',
+      originFileObj: croppedFile,
+      preview,
+      url: preview,
+    };
+    onChange([newFileObj]);
+    setCropModal({ open: false, src: '' });
+    setPendingFile(null);
+    message.success('Image cropped successfully!');
+=======
     onChange([{ uid: `crop-${Date.now()}`, name: fileName, status: 'done', originFileObj: croppedFile, preview, url: preview }]);
     setCropModal({ open: false, src: '' }); setPendingFile(null);
     message.success('Image cropped!');
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
   };
 
   const handleEditCrop = (file) => {
@@ -780,6 +1107,29 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
 
   const handlePreview = async (file) => {
     if (!file.url && !file.preview && file.originFileObj) {
+<<<<<<< HEAD
+      file.preview = await new Promise((res) => {
+        const r = new FileReader();
+        r.readAsDataURL(file.originFileObj);
+        r.onload = () => res(r.result);
+      });
+    }
+    const imageUrl = file.url || file.preview;
+    Modal.confirm({
+      icon: null,
+      width: 600,
+      centered: true,
+      okButtonProps: { style: { display: 'none' } },
+      cancelButtonProps: { style: { display: 'none' } },
+      content: (
+        <div>
+          <img src={imageUrl} alt="preview" style={{ width: '100%' }} />
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <Button onClick={() => Modal.destroyAll()}>Close</Button>
+          </div>
+        </div>
+      ),
+=======
       file.preview = await new Promise(res => { const r = new FileReader(); r.readAsDataURL(file.originFileObj); r.onload = () => res(r.result); });
     }
     const imageUrl = file.url || file.preview;
@@ -787,6 +1137,7 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
       icon: null, width: 600, centered: true,
       okButtonProps: { style: { display: 'none' } }, cancelButtonProps: { style: { display: 'none' } },
       content: <div><img src={imageUrl} alt="preview" style={{ width: '100%', borderRadius: 12 }} /><div style={{ textAlign: 'center', marginTop: 16 }}><Button onClick={() => Modal.destroyAll()}>Close</Button></div></div>,
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
       onCancel: () => Modal.destroyAll(),
     });
   };
@@ -797,7 +1148,29 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
       <Tooltip title="Crop / Edit">
         <button
           onClick={(e) => { e.stopPropagation(); handleEditCrop(file); }}
+<<<<<<< HEAD
+          style={{
+            position: 'absolute',
+            bottom: 4,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(124,58,237,0.92)',
+            border: 'none',
+            borderRadius: 6,
+            color: '#fff',
+            fontSize: 11,
+            fontWeight: 600,
+            padding: '2px 10px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            whiteSpace: 'nowrap',
+            zIndex: 10,
+          }}
+=======
           style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg,#6d28d9,#8b5cf6)', border: 'none', borderRadius: 6, color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', zIndex: 10 }}
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
         >
           <ScissorOutlined style={{ fontSize: 10 }} /> Edit
         </button>
@@ -807,19 +1180,95 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
 
   return (
     <>
+<<<<<<< HEAD
+      <Form.Item label={label} extra={extra}>
+        <Upload
+          listType="picture-card"
+          fileList={fileList}
+          onPreview={handlePreview}
+          onChange={({ fileList: fl }) => {
+            if (fl.length < fileList.length) onChange(fl);
+          }}
+          beforeUpload={handleBeforeUpload}
+          maxCount={maxCount}
+          itemRender={itemRender}
+          accept="image/jpeg,image/png,image/webp"
+        >
+          {fileList.length < maxCount && (
+            <div>
+              <PlusOutlined />
+              <div style={{ marginTop: 8, fontSize: 12 }}>Upload</div>
+=======
       <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>{label}</span>} extra={<span style={{ fontSize: 12, color: '#9ca3af' }}>{extra}</span>}>
         <Upload className="bm-upload" listType="picture-card" fileList={fileList} onPreview={handlePreview} onChange={({ fileList: fl }) => { if (fl.length < fileList.length) onChange(fl); }} beforeUpload={handleBeforeUpload} maxCount={maxCount} itemRender={itemRender} accept="image/jpeg,image/png,image/webp">
           {fileList.length < maxCount && (
             <div style={{ textAlign: 'center' }}>
               <PlusOutlined style={{ color: '#8b5cf6', fontSize: 18 }} />
               <div style={{ marginTop: 8, fontSize: 12, color: '#6d28d9', fontWeight: 600 }}>Upload</div>
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
             </div>
           )}
         </Upload>
       </Form.Item>
-      <ImageCropModal open={cropModal.open} imageSrc={cropModal.src} aspect={aspect} title={cropTitle} onConfirm={handleCropConfirm} onCancel={() => { setCropModal({ open: false, src: '' }); setPendingFile(null); }} />
+
+      <ImageCropModal
+        open={cropModal.open}
+        imageSrc={cropModal.src}
+        aspect={aspect}
+        title={cropTitle}
+        onConfirm={handleCropConfirm}
+        onCancel={() => { setCropModal({ open: false, src: '' }); setPendingFile(null); }}
+      />
     </>
   );
+};
+
+// ─────────────────────────────────────────────
+//  JODIT CONFIG — with bullet/list style support
+// ─────────────────────────────────────────────
+const editorConfig = {
+  readonly: false,
+  placeholder: 'Write here, or paste from Word/PDF. Formatting will be preserved automatically...',
+  height: 400,
+  enableDragAndDropFileToEditor: true,
+  uploader: { insertImageAsBase64URI: true },
+  toolbarSticky: false,
+  askBeforePasteHTML: false,
+  askBeforePasteFromWord: false,
+  defaultActionOnPaste: 'insert_as_html', // ✅ Changed from 'insert_clear_html'
+  editorCssClass: 'jodit-blog-editor',
+  removeButtons: ['iframe', 'video'], // Optional: remove unwanted buttons
+  beautifyHTML: true,
+  extraCSS: `
+    ul, ol { 
+      padding-left: 24px !important; 
+      margin: 12px 0 !important; 
+    }
+    ul { list-style-type: disc !important; }
+    ol { list-style-type: decimal !important; }
+    li { 
+      margin: 6px 0 !important; 
+      line-height: 1.6 !important;
+    }
+    ul ul { list-style-type: circle !important; }
+    ul ul ul { list-style-type: square !important; }
+    blockquote { 
+      border-left: 4px solid #7c3aed; 
+      padding-left: 16px; 
+      margin: 16px 0; 
+      color: #555; 
+      font-style: italic; 
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 24px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    p {
+      margin: 12px 0;
+      line-height: 1.6;
+    }
+  `,
 };
 
 // ─────────────────────────────────────────────
@@ -827,7 +1276,8 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
 // ─────────────────────────────────────────────
 const BlogPreview = ({ data }) => {
   if (!data) return null;
-  const { title, subHeading, content, authorName, authorImage, tags, category, featuredImage, coverImage, createdAt, readingTime, headings } = data;
+  const { title, subHeading, content, authorName, authorImage, tags, category,
+    featuredImage, coverImage, createdAt, readingTime, headings } = data;
 
   const sanitized = content ? DOMPurify.sanitize(content, {
     ALLOWED_TAGS: ['p','br','strong','b','em','i','u','strike','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th','div','span'],
@@ -838,6 +1288,36 @@ const BlogPreview = ({ data }) => {
   const heroImg = coverImage || featuredImage;
 
   return (
+<<<<<<< HEAD
+    <div style={{ fontFamily: "'Georgia', serif", color: '#1a1a2e', background: '#fff' }}>
+      {/* ✅ FIX: Inject styles so ul/ol/li render correctly in preview — Tailwind resets these */}
+      <style>{BLOG_CONTENT_STYLES}</style>
+
+      {coverImage && (
+        <div style={{ width: '100%', height: 280, overflow: 'hidden', borderRadius: 12, marginBottom: 28, background: '#f0f0f0' }}>
+          <img src={coverImage} alt="cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
+      )}
+      <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+        {category && <Tag color="purple" style={{ fontSize: 12, padding: '2px 10px', borderRadius: 20 }}>{category}</Tag>}
+        {tags?.map(tag => <Tag key={tag} color="blue" style={{ fontSize: 11, borderRadius: 20 }}>#{tag}</Tag>)}
+      </div>
+      <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.25, color: '#0f0f23', marginBottom: 12, fontFamily: "'Georgia', serif" }}>
+        {title || 'Untitled Post'}
+      </h1>
+      {subHeading && (
+        <p style={{ fontSize: 18, color: '#555', lineHeight: 1.6, marginBottom: 20, fontStyle: 'italic', borderLeft: '4px solid #7c3aed', paddingLeft: 16 }}>
+          {subHeading}
+        </p>
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0', borderTop: '1px solid #eee', borderBottom: '1px solid #eee', marginBottom: 24 }}>
+        <Avatar size={42} src={authorImage} icon={<UserOutlined />} style={{ backgroundColor: '#7c3aed' }} />
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 14 }}>{authorName || 'Admin'}</div>
+          <div style={{ fontSize: 12, color: '#888', display: 'flex', gap: 16 }}>
+            {createdAt && <span><CalendarOutlined /> {moment(createdAt).format('MMM DD, YYYY')}</span>}
+            {readingTime && <span><ClockCircleOutlined /> {readingTime} min read</span>}
+=======
     <div className="blog-preview-wrap">
       {heroImg && <img src={heroImg} alt="cover" className="blog-preview-hero" />}
       <div className="blog-preview-inner">
@@ -868,6 +1348,7 @@ const BlogPreview = ({ data }) => {
               {createdAt && <span><CalendarOutlined style={{ marginRight: 4 }} />{moment(createdAt).format('MMM DD, YYYY')}</span>}
               {readingTime && <span><ClockCircleOutlined style={{ marginRight: 4 }} />{readingTime} min read</span>}
             </div>
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
           </div>
         </div>
 
@@ -886,6 +1367,38 @@ const BlogPreview = ({ data }) => {
         {/* Content */}
         <div className="blog-preview-content" dangerouslySetInnerHTML={{ __html: sanitized }} />
       </div>
+<<<<<<< HEAD
+      {!coverImage && featuredImage && (
+        <div style={{ marginBottom: 24, borderRadius: 10, overflow: 'hidden' }}>
+          <img src={featuredImage} alt="featured" style={{ width: '100%', maxHeight: 400, objectFit: 'cover' }} />
+        </div>
+      )}
+      {headings && headings.length > 2 && (
+        <div style={{ background: '#f8f4ff', border: '1px solid #e0d0ff', borderRadius: 10, padding: '16px 20px', marginBottom: 28 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#7c3aed', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <BookOutlined /> Table of Contents
+          </div>
+          <ol style={{ margin: 0, paddingLeft: 20, listStyleType: 'decimal' }}>
+            {headings.filter(h => h.level <= 3).map((h, i) => (
+              <li key={i} style={{ marginLeft: `${(h.level - 1) * 16}px`, fontSize: 13, padding: '3px 0', color: '#5b21b6', display: 'list-item' }}>{h.text}</li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {/* ✅ FIX: class="blog-preview-content" — CSS above targets this class */}
+      <div
+        className="blog-preview-content"
+        style={{ lineHeight: 1.85, fontSize: 16, color: '#1f1f1f' }}
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(content || '', {
+            ADD_TAGS: ['iframe'],
+            ADD_ATTR: ['allow', 'allowfullscreen', 'target'],
+          }),
+        }}
+      />
+=======
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
     </div>
   );
 };
@@ -923,7 +1436,11 @@ const getEditorConfig = () => ({
 // ─────────────────────────────────────────────
 const BlogManagement = () => {
   const screens = useBreakpoint();
+<<<<<<< HEAD
+  const quillRef = useRef(null);
+=======
   const editorRef = useRef(null);
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
   const searchTimeout = useRef(null);
 
   const [blogs, setBlogs] = useState([]);
@@ -931,7 +1448,10 @@ const BlogManagement = () => {
   const [saving, setSaving] = useState(false);
   const [targetStatus, setTargetStatus] = useState('draft');
 
-  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalResults: 0, itemsPerPage: 10 });
+  const [pagination, setPagination] = useState({
+    currentPage: 1, totalPages: 1, totalResults: 0, itemsPerPage: 10,
+  });
+
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -1072,8 +1592,17 @@ const BlogManagement = () => {
         setPagination({ currentPage: res.pagination?.page || page, totalPages: res.pagination?.totalPages || 1, totalResults: res.pagination?.total || res.data?.length || 0, itemsPerPage: res.pagination?.limit || limit });
         setStats({ total: res.pagination?.total || 0, published: res.data?.filter(b => b.isPublished).length || 0, drafts: res.data?.filter(b => !b.isPublished).length || 0, views: res.data?.reduce((s, b) => s + (b.viewCount || 0), 0) || 0 });
       }
+<<<<<<< HEAD
+    } catch (e) {
+      if (showToast) showToast('Failed to load blogs', 'error');
+      else message.error('Failed to load blogs');
+    } finally {
+      setLoading(false);
+    }
+=======
     } catch (e) { console.error(e); message.error('Failed to load blogs'); }
     finally { setLoading(false); }
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
   }, []);
 
   useEffect(() => { fetchBlogs(1, 10, "", "", ""); }, [fetchBlogs]);
@@ -1081,12 +1610,24 @@ const BlogManagement = () => {
   const handleSearch = (e) => {
     const val = e.target.value; setSearchText(val);
     clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => fetchBlogs(1, pagination.itemsPerPage, val, selectedCategory, selectedStatus), 500);
+    searchTimeout.current = setTimeout(() => {
+      fetchBlogs(1, pagination.itemsPerPage, val, selectedCategory, selectedStatus);
+    }, 500);
   };
 
   const handleFilterChange = (type, val) => {
+<<<<<<< HEAD
+    if (type === 'category') {
+      setSelectedCategory(val);
+      fetchBlogs(1, pagination.itemsPerPage, searchText, val, selectedStatus);
+    } else if (type === 'status') {
+      setSelectedStatus(val);
+      fetchBlogs(1, pagination.itemsPerPage, searchText, selectedCategory, val);
+    }
+=======
     if (type === 'category') { setSelectedCategory(val); fetchBlogs(1, pagination.itemsPerPage, searchText, val, selectedStatus); }
     else { setSelectedStatus(val); fetchBlogs(1, pagination.itemsPerPage, searchText, selectedCategory, val); }
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
   };
 
   const handleClearFilters = () => {
@@ -1094,6 +1635,20 @@ const BlogManagement = () => {
     fetchBlogs(1, pagination.itemsPerPage, "", "", "");
   };
 
+<<<<<<< HEAD
+const fetchBlogById = async (id) => {
+  setLoading(true);
+
+  try {
+    const response = await apiService.get(`/blogs/get-blog-by-id?id=${id}`);
+
+    if (response.success && response.data) {
+      const blog = response.data;
+
+let finalContent = blog.content || '';
+
+console.log("🔴 DB CONTENT:", finalContent);
+=======
   const fetchBlogById = async (id) => {
     setLoading(true);
     try {
@@ -1111,7 +1666,62 @@ const BlogManagement = () => {
     } catch (e) { console.error(e); message.error('Failed to fetch blog'); }
     finally { setLoading(false); }
   };
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
 
+finalContent = cleanWordHtml(finalContent); // ✅ only once
+
+console.log("🟢 CLEANED DB CONTENT:", finalContent);
+
+
+      if (finalContent === '<p><br></p>') finalContent = '';
+
+      // ✅ SET FORM
+      form.setFieldsValue({
+        title: blog.title || '',
+        subHeading: blog.subHeading || '',
+        tags: blog.tags || [],
+        category: blog.category || 'Other',
+        authorName: blog.authorName || 'Admin',
+      });
+
+      // ✅ SET CLEAN CONTENT
+      setContentValue(finalContent);
+      setHeadings(extractHeadings(finalContent));
+
+      // ✅ IMAGES
+      setFeaturedImageList(
+        blog.featuredImage
+          ? [{ uid: '-1', name: 'featured', status: 'done', url: blog.featuredImage, preview: blog.featuredImage }]
+          : []
+      );
+
+      setCoverImageList(
+        blog.coverImage
+          ? [{ uid: '-2', name: 'cover', status: 'done', url: blog.coverImage, preview: blog.coverImage }]
+          : []
+      );
+
+      setAuthorImageList(
+        blog.authorImage
+          ? [{ uid: '-3', name: 'author', status: 'done', url: blog.authorImage, preview: blog.authorImage }]
+          : []
+      );
+
+      setEditingId(id);
+      setModalVisible(true);
+
+      setTimeout(() => loadDraft(), 100);
+
+    } else {
+      message.error(response.message || 'Failed to fetch details');
+    }
+
+  } catch (err) {
+    message.error('Failed to fetch blog details');
+  } finally {
+    setLoading(false);
+  }
+};
   const uploadFile = async (file) => {
     const fd = new FormData(); fd.append('file', file);
     const res = await apiService.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -1123,17 +1733,49 @@ const BlogManagement = () => {
     if (!imageList || imageList.length === 0) return '';
     if (imageList[0].originFileObj) return await uploadFile(imageList[0].originFileObj);
     if (imageList[0].url && !imageList[0].url.startsWith('blob:')) return imageList[0].url;
+    if (imageList[0].originFileObj) return await uploadFile(imageList[0].originFileObj);
     return '';
   };
 
   const handleSave = async (values) => {
+<<<<<<< HEAD
+
+
+    
+    if (!contentValue || contentValue === '<p><br></p>') {
+      message.error('Please add content to your blog'); return;
+    }
+=======
     if (!contentValue || contentValue === '<p><br></p>') { message.error('Please add blog content'); return; }
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
     if (targetStatus === 'published') {
       if (!featuredImageList.length) { message.error('Featured Image required for publishing'); return; }
       if (!coverImageList.length) { message.error('Cover Image required for publishing'); return; }
       if (!authorImageList.length) { message.error('Author Image required for publishing'); return; }
       if (!values.authorName) { message.error('Author Name required for publishing'); return; }
     }
+<<<<<<< HEAD
+
+
+    console.log("💾 BEFORE SAVE:", contentValue);
+
+const cleanedContent = cleanWordHtml(contentValue);
+
+console.log("🧹 CLEANED BEFORE SAVE:", cleanedContent);
+
+    setSaving(true);
+    try {
+      const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([
+        processImage(featuredImageList),
+        processImage(coverImageList),
+        processImage(authorImageList),
+      ]);
+      const payload = {
+        title: values.title,
+        subHeading: values.subHeading || extractExcerpt(contentValue, 160),
+content: cleanedContent, // ✅ keep only this
+
+=======
     setSaving(true);
     try {
       const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([processImage(featuredImageList), processImage(coverImageList), processImage(authorImageList)]);
@@ -1146,6 +1788,7 @@ const BlogManagement = () => {
         subHeading: values.subHeading || extractExcerpt(cleanedContent, 160),
         content: cleanedContent,
         authorName: values.authorName || 'Admin',
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
         authorImage: authorImgUrl,
         isPublished: targetStatus === 'published',
         tags: values.tags || [],
@@ -1157,6 +1800,21 @@ const BlogManagement = () => {
       const res = editingId
         ? await apiService.put(`/blogs/edit-blog-by-id?id=${editingId}`, payload)
         : await apiService.post('/blogs/create-blog', payload);
+<<<<<<< HEAD
+      if (response.success) {
+        notification.success({ message: editingId ? 'Blog Updated' : 'Blog Created', description: `"${values.title}" saved successfully`, placement: 'topRight' });
+        localStorage.removeItem(`blog_draft_${editingId || 'new'}`);
+        closeModal();
+        fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus);
+      } else {
+        message.error(response.message || 'Operation failed');
+      }
+    } catch (err) {
+      message.error(err.message || 'Failed to save blog');
+    } finally {
+      setSaving(false);
+    }
+=======
       if (res.success) {
         notification.success({
           message: editingId ? '✅ Blog Updated' : '🚀 Blog Created',
@@ -1169,31 +1827,64 @@ const BlogManagement = () => {
       } else message.error(res.message || 'Operation failed');
     } catch (e) { console.error(e); message.error(e.message || 'Failed to save blog'); }
     finally { setSaving(false); }
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
   };
 
   const deleteBlog = async (id) => {
     try {
+<<<<<<< HEAD
+      const response = await apiService.delete(`/blogs/delete-blog-by-id?id=${id}`);
+      if (response.success) {
+        message.success('Blog deleted successfully');
+        fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus);
+      } else {
+        message.error(response.message || 'Delete failed');
+      }
+    } catch (err) {
+      message.error('Failed to delete blog');
+    }
+=======
       const res = await apiService.delete(`/blogs/delete-blog-by-id?id=${id}`);
       if (res.success) { message.success('Blog deleted'); fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus); }
       else message.error(res.message || 'Delete failed');
     } catch (e) { console.error(e); message.error('Failed to delete'); }
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
   };
 
   const handleCardPreview = async (record) => {
     const hide = message.loading('Loading preview...', 0);
     try {
+<<<<<<< HEAD
+      const response = await apiService.get(`/blogs/get-blog-by-id?id=${record._id}`);
+      showPreview(response.success && response.data ? response.data : record, false);
+    } catch {
+      showPreview(record, false);
+    } finally {
+      hide();
+    }
+=======
       const res = await apiService.get(`/blogs/get-blog-by-id?id=${record._id}`);
       showPreview(res.success && res.data ? res.data : record, false);
     } catch { showPreview(record, false); }
     finally { hide(); }
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
   };
 
   const showPreview = (blogData = {}, isLive = false) => {
     if (isLive) {
       const fv = form.getFieldsValue();
       setPreviewBlogData({
+<<<<<<< HEAD
+        title: formVals.title || 'Untitled',
+        subHeading: formVals.subHeading,
+        content: contentValue,
+        authorName: formVals.authorName,
+        tags: formVals.tags,
+        category: formVals.category,
+=======
         title: fv.title || 'Untitled', subHeading: fv.subHeading, content: contentValue,
         authorName: fv.authorName, tags: fv.tags, category: fv.category,
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
         featuredImage: featuredImageList[0]?.url || featuredImageList[0]?.preview,
         coverImage: coverImageList[0]?.url || coverImageList[0]?.preview,
         authorImage: authorImageList[0]?.url || authorImageList[0]?.preview,
@@ -1209,10 +1900,17 @@ const BlogManagement = () => {
   const closeModal = () => {
     setModalVisible(false); setEditingId(null);
     setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
-    setContentValue(''); setHeadings([]); setSmartFillApplied(false); setLastSaved(null);
+    setContentValue(''); setHeadings([]);
+    setSmartFillApplied(false); setLastSaved(null);
     form.resetFields();
   };
 
+<<<<<<< HEAD
+  return (
+    <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
+      {/* ✅ FIX: Global style tag — fixes Tailwind CSS reset for bullet points everywhere */}
+      <style>{BLOG_CONTENT_STYLES}</style>
+=======
   const openCreate = () => {
     setEditingId(null); form.resetFields();
     setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
@@ -1226,6 +1924,7 @@ const BlogManagement = () => {
     { label: 'Drafts', value: stats.drafts, icon: <SyncOutlined />, color: 'amber' },
     { label: 'Total Views', value: stats.views, icon: <EyeOutlined />, color: 'blue' },
   ];
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
 
   const PAGE_RANGE = Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
     .slice(Math.max(0, pagination.currentPage - 3), pagination.currentPage + 2);
@@ -1240,7 +1939,21 @@ const BlogManagement = () => {
             <h1 className="bm-header-title">Blog Management</h1>
             <p className="bm-header-sub">Create, manage & publish — with smart paste from Word, PDF & Google Docs</p>
           </div>
+<<<<<<< HEAD
+          <Button
+            type="primary" size="large" icon={<PlusOutlined />}
+            onClick={() => {
+              setEditingId(null); form.resetFields();
+              setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
+              setContentValue(''); setHeadings([]); setSmartFillApplied(false);
+              setModalVisible(true);
+              setTimeout(() => loadDraft(), 100);
+            }}
+            style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}
+          >
+=======
           <Button type="primary" size="large" icon={<PlusOutlined />} onClick={openCreate} className="bm-btn-primary">
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
             Create New Post
           </Button>
         </div>
@@ -1317,6 +2030,36 @@ const BlogManagement = () => {
         ) : (
           <>
             {blogs.map(record => (
+<<<<<<< HEAD
+              <Card
+                key={record._id} hoverable className="mb-4 shadow-sm"
+                bodyStyle={{ padding: 0, overflow: 'hidden', borderRadius: 8, border: '1px solid #f0f0f0' }}
+                style={{ marginBottom: 24 }}
+              >
+                <Row>
+                  <Col xs={24} sm={24} md={8} lg={7} xl={6}>
+                    <div style={{ width: '100%', height: '100%', minHeight: 260, backgroundColor: '#f9f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {record.featuredImage
+                        ? <img src={record.featuredImage} alt={record.title} style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: 260 }} />
+                        : <FileTextOutlined style={{ fontSize: 64, color: '#d9d9d9' }} />
+                      }
+                    </div>
+                  </Col>
+                  <Col xs={24} sm={24} md={16} lg={17} xl={18} style={{ padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                        <Space wrap>
+                          <Tag color="purple" style={{ padding: '4px 12px', fontSize: 13, borderRadius: 20 }}>{record.category || 'Uncategorized'}</Tag>
+                          <Badge status={record.isPublished ? 'success' : 'warning'} text={<span style={{ fontWeight: 600, color: record.isPublished ? THEME.success : THEME.warning }}>{record.isPublished ? 'Published' : 'Draft'}</span>} />
+                        </Space>
+                        <Space size="middle">
+                          <Tooltip title="Edit Post"><Button shape="circle" icon={<EditOutlined />} onClick={() => fetchBlogById(record._id)} /></Tooltip>
+                          <Tooltip title="Preview Post"><Button shape="circle" icon={<EyeOutlined />} onClick={() => handleCardPreview(record)} /></Tooltip>
+                          <Popconfirm title="Are you sure you want to delete this post?" onConfirm={() => deleteBlog(record._id)}>
+                            <Tooltip title="Delete"><Button shape="circle" danger icon={<DeleteOutlined />} /></Tooltip>
+                          </Popconfirm>
+                        </Space>
+=======
               <div key={record._id} className="bm-blog-card">
                 <div className="bm-blog-thumb">
                   {record.featuredImage
@@ -1332,6 +2075,7 @@ const BlogManagement = () => {
                         <span className={`bm-status-badge ${record.isPublished ? 'published' : 'draft'}`}>
                           {record.isPublished ? <><CheckCircleOutlined /> Published</> : <><SyncOutlined /> Draft</>}
                         </span>
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
                       </div>
                       <div className="bm-blog-actions">
                         <Tooltip title="Edit"><button className="bm-action-btn" onClick={() => fetchBlogById(record._id)}><EditOutlined /></button></Tooltip>
@@ -1341,11 +2085,29 @@ const BlogManagement = () => {
                         </Popconfirm>
                       </div>
                     </div>
+<<<<<<< HEAD
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: 16, flexWrap: 'wrap', gap: 12 }}>
+                      <Space size="large">
+                        <Space>
+                          <Avatar size="default" src={record.authorImage} icon={<UserOutlined />} style={{ backgroundColor: THEME.primary }} />
+                          <Text strong style={{ fontSize: 14, color: '#333' }}>{record.authorName || 'Admin'}</Text>
+                        </Space>
+                        <Space>
+                          <CalendarOutlined style={{ color: '#888' }} />
+                          <Text type="secondary" style={{ fontSize: 14 }}>{moment(record.createdAt).format('MMM DD, YYYY')}</Text>
+                        </Space>
+                      </Space>
+                      <Space size="large">
+                        <Space><ClockCircleOutlined style={{ color: '#888' }} /><Text type="secondary" style={{ fontSize: 14 }}>{record.readingTime || 2} min read</Text></Space>
+                        <Space><EyeOutlined style={{ color: '#888' }} /><Text type="secondary" style={{ fontSize: 14 }}>{record.viewCount || 0} views</Text></Space>
+                      </Space>
+=======
                     <div className="bm-blog-title">{record.title || 'Untitled Post'}</div>
                     <div className="bm-blog-excerpt">{record.subHeading || 'No excerpt available...'}</div>
                     <div className="bm-blog-tags">
                       {record.tags?.slice(0, 5).map(tag => <span key={tag} className="bm-tag">#{tag}</span>)}
                       {record.tags?.length > 5 && <span className="bm-tag">+{record.tags.length - 5}</span>}
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
                     </div>
                   </div>
                   <div className="bm-blog-footer">
@@ -1386,6 +2148,14 @@ const BlogManagement = () => {
         )}
       </div>
 
+<<<<<<< HEAD
+      {/* CREATE / EDIT MODAL */}
+      <Modal
+        title={
+          <div style={{ fontWeight: 700, fontSize: 16 }}>
+            {editingId ? <EditOutlined /> : <PlusOutlined />} {editingId ? 'Edit Post' : 'Create New Post'}
+            {lastSaved && autoSave && <Text type="secondary" style={{ fontSize: 12, marginLeft: 12 }}>Saved {moment(lastSaved).format('HH:mm:ss')}</Text>}
+=======
       {/* ─── CREATE / EDIT MODAL ─── */}
       <Modal
         title={
@@ -1397,6 +2167,7 @@ const BlogManagement = () => {
                 Saved {moment(lastSaved).format('HH:mm:ss')}
               </div>
             )}
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
           </div>
         }
         open={modalVisible}
@@ -1404,9 +2175,14 @@ const BlogManagement = () => {
         footer={null}
         centered
         destroyOnClose
+<<<<<<< HEAD
+        width={screens.xs ? '95%' : 1050}
+        bodyStyle={{ maxHeight: '82vh', overflowY: 'auto' }}
+=======
         className="bm-modal"
         width={screens.xs ? '98%' : 1060}
         bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: '20px 28px' }}
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
       >
         <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ category: 'Other', authorName: 'Admin' }}>
           <Tabs defaultActiveKey="content" size="large">
@@ -1435,11 +2211,39 @@ const BlogManagement = () => {
                 <Col xs={24} md={12}>
                   <Form.Item name="category" label="Category">
                     <Select size="large" placeholder="Select category">
+<<<<<<< HEAD
+                      <Option value="AI">🤖 Artificial Intelligence</Option>
+                      <Option value="Real Estate">🏠 Real Estate</Option>
+                      <Option value="PropTech">📱 Property Technology</Option>
+                      <Option value="Technology">💻 Technology</Option>
+                      <Option value="Business">💼 Business</Option>
+                      <Option value="Landscaping">🌳 Landscaping</Option>
+                      <Option value="Mortgage">🏦 Mortgage</Option>
+
+                      <Option value="Other">📄 Other</Option>
+=======
                       {[['AI','🤖'],['Real Estate','🏠'],['PropTech','📱'],['Technology','💻'],['Business','💼'],['Mortgage','🏦'],['Landscaping','🌳'],['Other','📄']].map(([v,e]) => <Option key={v} value={v}>{e} {v}</Option>)}
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
                     </Select>
                   </Form.Item>
                 </Col>
               </Row>
+<<<<<<< HEAD
+              <Form.Item label="Blog Content" required>
+                <Alert message="📋 Paste from Word, PDF, Google Docs — formatting preserved & tags auto-fill!" type="info" showIcon className="mb-3" />
+                {smartFillApplied && <Alert message="✨ Smart Fill Active — fields auto-detected" type="success" showIcon closable onClose={() => setSmartFillApplied(false)} className="mb-3" />}
+                {/* ✅ FIX: onPaste on wrapper div so smart paste still works */}
+ <JoditEditor
+  ref={quillRef}
+  value={contentValue}
+  config={editorConfig}
+  onChange={handleEditorChange}
+  onPaste={handleSmartPaste}   // ✅ IMPORTANT
+/>
+
+                <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button icon={<EyeOutlined />} onClick={() => showPreview({}, true)} disabled={!contentValue || contentValue === '<p><br></p>'}>Live Preview</Button>
+=======
 
               <Form.Item label={<span style={{ fontWeight: 700, color: '#1e1b4b' }}>Blog Content <span style={{ color: '#ef4444' }}>*</span></span>}>
                 <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: 12, padding: '12px 16px', marginBottom: 12, border: '1px solid #e9d5ff' }}>
@@ -1462,10 +2266,37 @@ const BlogManagement = () => {
                   <Button icon={<EyeOutlined />} onClick={() => showPreview({}, true)} disabled={!contentValue || contentValue === '<p><br></p>'} style={{ borderRadius: 10, borderColor: '#c4b5fd', color: '#6d28d9', fontWeight: 600 }}>
                     Live Preview
                   </Button>
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
                 </div>
               </Form.Item>
             </TabPane>
 
+<<<<<<< HEAD
+            {/* ── MEDIA TAB ── */}
+            <TabPane tab={<span><PictureOutlined /> Media</span>} key="media">
+              <Row gutter={16}>
+                <Col span={12}>
+                  <UploadWithCrop
+                    fileList={featuredImageList}
+                    onChange={setFeaturedImageList}
+                    aspect={3 / 2}
+                    cropTitle="Crop Featured Image (3:2)"
+                    maxSizeMB={5}
+                    label="Featured Image (Thumbnail)"
+                    extra="Recommended: 1200 × 800px · Max 5MB"
+                  />
+                </Col>
+                <Col span={12}>
+                  <UploadWithCrop
+                    fileList={coverImageList}
+                    onChange={setCoverImageList}
+                    aspect={16 / 9}
+                    cropTitle="Crop Cover Image (16:9)"
+                    maxSizeMB={5}
+                    label="Cover Image (Hero Banner)"
+                    extra="Recommended: 1920 × 1080px · Max 5MB"
+                  />
+=======
             {/* ─── MEDIA TAB ─── */}
             <TabPane tab={<span><PictureOutlined />  Media</span>} key="media">
               <div style={{ background: '#f5f3ff', borderRadius: 12, padding: '14px 18px', marginBottom: 20, border: '1px solid #e9d5ff' }}>
@@ -1478,6 +2309,7 @@ const BlogManagement = () => {
                 </Col>
                 <Col xs={24} md={12}>
                   <UploadWithCrop fileList={coverImageList} onChange={setCoverImageList} aspect={16/9} cropTitle="Crop Cover / Hero Image (16:9)" maxSizeMB={5} label="Cover Image (Hero Banner)" extra="Recommended: 1920 × 1080px · Max 5MB" />
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
                 </Col>
               </Row>
             </TabPane>
@@ -1494,8 +2326,21 @@ const BlogManagement = () => {
                     <div style={{ fontSize: 12, color: '#6d28d9', marginTop: 4 }}>Author name and image appear below the post title in the blog preview. All fields are optional for drafts but required for publishing.</div>
                   </div>
                 </Col>
+<<<<<<< HEAD
+                <Col span={8}>
+                  <UploadWithCrop
+                    fileList={authorImageList}
+                    onChange={setAuthorImageList}
+                    aspect={1}
+                    cropTitle="Crop Author Avatar (1:1)"
+                    maxSizeMB={2}
+                    label="Author Avatar"
+                    extra="Recommended: 400 × 400px · Max 2MB"
+                  />
+=======
                 <Col xs={24} md={8}>
                   <UploadWithCrop fileList={authorImageList} onChange={setAuthorImageList} aspect={1} cropTitle="Crop Author Avatar (1:1)" maxSizeMB={2} label="Author Avatar" extra="Recommended: 400 × 400px · Max 2MB" />
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
                 </Col>
               </Row>
             </TabPane>
@@ -1519,6 +2364,15 @@ const BlogManagement = () => {
         </Form>
       </Modal>
 
+<<<<<<< HEAD
+      {/* BLOG PREVIEW MODAL */}
+      <Modal
+        open={previewModalVisible}
+        onCancel={() => setPreviewModalVisible(false)}
+        footer={null}
+        width={screens.xs ? '95%' : 860}
+        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: '24px 32px' }}
+=======
       {/* ─── PREVIEW MODAL ─── */}
       <Modal
         open={previewModalVisible}
@@ -1531,6 +2385,7 @@ const BlogManagement = () => {
         }
         width={screens.xs ? '98%' : 880}
         bodyStyle={{ maxHeight: '78vh', overflowY: 'auto', padding: 0 }}
+>>>>>>> 460f906982ada50629d2ca1db4e086fbab0fa4fd
         centered
         className="preview-modal"
         title={<span style={{ color: '#fff' }}><EyeOutlined style={{ marginRight: 8 }} />Blog Preview</span>}
@@ -1542,3 +2397,4 @@ const BlogManagement = () => {
 };
 
 export default BlogManagement;
+/////////////blog management
