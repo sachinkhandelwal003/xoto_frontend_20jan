@@ -208,6 +208,7 @@ import VaultMortgageList from "../ecommerce/B2C/VaultMortgageList";
 import VaultMortgagedetail from "../ecommerce/B2C/VaultMortgagedetail";
 import MortgageOpsDashboard from "../ecommerce/B2C/MortgageOpsDashboard";
 import AdvisorDashboard from "../ecommerce/B2C/AdvisorDashboard";
+import IndividualLeadCreate from "../ecommerce/vault/individualpartner/IndividualLead";
 
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
@@ -505,6 +506,7 @@ const CmsRoutes = () => {
 <Route path="mortgage/:id" element={<VaultMortgagedetail />} />
 <Route path="mortgage/dashboard" element={<MortgageOpsDashboard />} />
 <Route path="advisor/dashboard" element={<AdvisorDashboard />} />
+<Route path="leads/partner/create" element={<IndividualLeadCreate />} />
 
 
 
@@ -581,6 +583,8 @@ const CmsRoutes = () => {
       <Route path="commission-scheme" element={<DeveloperCommissionScheme />} />
       <Route path="commission-scheme/:id" element={<DeveloperCommissionScheme />} />
       <Route path="/developer/view/:id" element={<DeveloperDetail />} />
+      
+
       {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
       {/* <Route path="team" element={<DeveloperTeam/>}/> */}
 

@@ -255,7 +255,7 @@ const PartnerLeadDetails = () => {
         setLoading(true);
         setFetchError("");
         const [leadRes, docRes] = await Promise.all([
-          apiService.get(`/vault/lead/admin/${id}`),
+          apiService.get(`/vault/lead/${id}`),
           apiService.get(`/vault/lead/documents/${id}`),
         ]);
         const leadData = leadRes?.data?.data || leadRes?.data || null;
@@ -280,7 +280,7 @@ const PartnerLeadDetails = () => {
     setUpdating(true);
     setUpdateMsg(null);
     try {
-      await apiService.put(`/vault/lead/admin/${id}/status`, {
+      await apiService.put(`/vault/lead/${id}/status`, {
         currentStatus: selectedStatus,
         status:        selectedStatus,
         reason:        reason.trim() || undefined,
