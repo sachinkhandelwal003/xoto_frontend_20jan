@@ -2,33 +2,64 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ChevronLeft, User, Mail, Phone, MapPin, Globe, Calendar,
+  ChevronLeft, User, Mail, Phone, Globe, Calendar,
   CreditCard, FileText, Banknote, ShieldCheck, Heart, Users,
-  Loader2, AlertCircle, Building2, CheckCircle, XCircle,
+  AlertCircle, Building2, CheckCircle, XCircle, MapPin,
   Clock, Star, DollarSign, Percent, Info, AlertTriangle,
-  BadgeCheck, Activity, TrendingUp, Wallet, UserCheck
+  BadgeCheck, Activity, TrendingUp, Wallet, RefreshCw,
+  Shield, Layers, BarChart2, Lock, Check, Copy, ExternalLink,
+  CheckSquare, Tag, Hash,
 } from "lucide-react";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
-const PURPLE = "#5C039B";
-const PURPLE_LIGHT = "#FAF5FF";
-const PURPLE_BORDER = "#E9D5FF";
-const GREEN = "#10B981";
-const RED = "#EF4444";
-const GRAY = "#6B7280";
+// ─── Design Tokens (same as PartnerDetail) ────────────────────────────────
+const C = {
+  primary     : "#5C039B",
+  primaryMid  : "#7C3AED",
+  primaryLight: "#9333EA",
+  primaryGlow : "rgba(92,3,155,0.12)",
+  primarySoft : "#F5F0FF",
+  primaryBord : "#E9D5FF",
+  green       : "#10B981",
+  greenSoft   : "#ECFDF5",
+  greenBord   : "#A7F3D0",
+  red         : "#EF4444",
+  redSoft     : "#FEF2F2",
+  amber       : "#F59E0B",
+  amberSoft   : "#FFFBEB",
+  blue        : "#3B82F6",
+  blueSoft    : "#EFF6FF",
+  gray        : "#6B7280",
+  grayLight   : "#F9FAFB",
+  grayBord    : "#E5E7EB",
+  text        : "#111827",
+  textSub     : "#374151",
+  textMuted   : "#9CA3AF",
+  white       : "#FFFFFF",
+  bg          : "#F4F0FA",
+};
 
+// ─── Helpers ──────────────────────────────────────────────────────────────
+const show    = (v) => (v !== null && v !== undefined && v !== "") ? v : null;
+const fmtDate = (s) => { try { return s ? new Date(s).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : null; } catch { return null; } };
+const fmtAED  = (n) => n !== undefined && n !== null ? `AED ${Number(n).toLocaleString()}` : null;
+const boolLabel = (v) => v === true ? "Yes" : v === false ? "No" : null;
+
+// ══════════════════════════════════════════════════════════════════════════
 export default function VaultAgentdetail() {
-  const { id } = useParams();
+  const { id }   = useParams();
   const navigate = useNavigate();
-  const [agent, setAgent] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [agent, setAgent]       = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState("");
+  const [activeTab, setActiveTab] = useState("overview");
 
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
-  const [rejectMode, setRejectMode] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
-  const [verifyMessage, setVerifyMessage] = useState({ type: "", text: "" });
+  // Verify/Reject modal
+  const [showVerifyModal, setShowVerifyModal]   = useState(false);
+  const [rejectMode, setRejectMode]             = useState(false);
+  const [rejectionReason, setRejectionReason]   = useState("");
+  const [actionLoading, setActionLoading]       = useState(false);
+  const [verifyMessage, setVerifyMessage]       = useState({ type: "", text: "" });
 
   const fetchAgent = async () => {
     setLoading(true);
@@ -96,532 +127,689 @@ export default function VaultAgentdetail() {
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#F9FAFB", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <Loader2 size={36} color={PURPLE} style={{ animation: "spin 1s linear infinite" }} />
-        <p style={{ color: GRAY, fontSize: 14 }}>Loading agent details...</p>
+  // ── Loading ──────────────────────────────────────────────────────────
+  if (loading) return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
+      <div style={{ width: 56, height: 56, borderRadius: 16, background: C.primarySoft, border: `2px solid ${C.primaryBord}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <RefreshCw size={24} color={C.primary} style={{ animation: "spin 1s linear infinite" }} />
       </div>
-    );
-  }
+      <p style={{ color: C.gray, fontSize: 14, fontWeight: 500 }}>Loading agent details...</p>
+    </div>
+  );
 
-  if (error || !agent) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#F9FAFB", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
-        <AlertCircle size={44} color={RED} style={{ marginBottom: 12 }} />
-        <p style={{ color: "#B91C1C", marginBottom: 16, fontSize: 14 }}>{error || "Agent not found"}</p>
-        <button onClick={() => navigate(-1)} style={{ padding: "9px 20px", background: PURPLE, color: "#fff", border: "none", borderRadius: 9, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-          Go Back
-        </button>
+  // ── Error ────────────────────────────────────────────────────────────
+  if (error || !agent) return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
+      <div style={{ width: 64, height: 64, borderRadius: 20, background: C.redSoft, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+        <AlertCircle size={28} color={C.red} />
       </div>
-    );
-  }
+      <p style={{ color: "#B91C1C", marginBottom: 20, fontSize: 15, fontWeight: 600 }}>{error || "Agent not found"}</p>
+      <button onClick={() => navigate(-1)} style={{ padding: "10px 24px", background: C.primary, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+        <ChevronLeft size={16} /> Go Back
+      </button>
+    </div>
+  );
 
-  // ── Data extraction (handles all API field shapes) ──
-  const firstName  = agent.name?.first_name || agent.first_name  || agent.firstName  || "";
-  const lastName   = agent.name?.last_name  || agent.last_name   || agent.lastName   || "";
-  const fullName   = `${firstName} ${lastName}`.trim();
-  const isActive   = agent.isActive === true || agent.status === "active";
-  const phoneCode  = agent.phone?.country_code || agent.country_code || agent.countryCode || "";
-  const phoneNum   = agent.phone?.number       || agent.phone_number || agent.phoneNumber  || "";
-  const phoneStr   = phoneCode && phoneNum ? `${phoneCode} ${phoneNum}` : phoneNum || null;
+  // ── Derived values ───────────────────────────────────────────────────
+  const firstName = agent.name?.first_name || agent.first_name  || agent.firstName  || "";
+  const lastName  = agent.name?.last_name  || agent.last_name   || agent.lastName   || "";
+  const fullName  = `${firstName} ${lastName}`.trim();
+  const isActive  = agent.isActive === true || agent.status === "active";
+  const phoneCode = agent.phone?.country_code || agent.country_code || agent.countryCode || "";
+  const phoneNum  = agent.phone?.number       || agent.phone_number || agent.phoneNumber  || "";
+  const phoneStr  = phoneCode && phoneNum ? `${phoneCode} ${phoneNum}` : phoneNum || null;
 
-  // Verification status
-  const agentVerificationStatus = agent.isVerified
-    ? "verified"
-    : agent.rejectionReason
-    ? "rejected"
-    : "pending";
-
-  const statusColors = {
-    verified: { bg: "#ECFDF5", color: "#059669", label: "Verified" },
-    rejected: { bg: "#FEF2F2", color: "#DC2626", label: "Rejected" },
-    pending:  { bg: "#FFF7ED", color: "#D97706", label: "Pending Verification" },
+  const verificationStatus = agent.isVerified ? "verified" : agent.rejectionReason ? "rejected" : "pending";
+  const vsMap = {
+    verified: { bg: C.greenSoft, color: C.green,   icon: BadgeCheck,     label: "Verified"             },
+    rejected: { bg: C.redSoft,   color: C.red,     icon: XCircle,        label: "Rejected"             },
+    pending:  { bg: C.amberSoft, color: C.amber,   icon: AlertTriangle,  label: "Pending Verification" },
   };
-  const vs = statusColors[agentVerificationStatus];
+  const vs = vsMap[verificationStatus];
 
+  // ── Tabs ─────────────────────────────────────────────────────────────
+  const TABS = [
+    { id: "overview",     label: "Overview",     icon: Layers       },
+    { id: "documents",    label: "Documents",    icon: FileText     },
+    { id: "financial",    label: "Financial",    icon: BarChart2    },
+    { id: "affiliation",  label: "Affiliation",  icon: Building2    },
+    { id: "system",       label: "System",       icon: Shield       },
+  ];
+
+  const bk = agent.bankDetails || {};
+  const ag = agent.earnings    || {};
+  const fc = agent.freelanceCommission || null;
+
+  // ════════════════════════════════════════════════════════════════════
   return (
-    <div style={{ minHeight: "100vh", background: "#F9FAFB", padding: "28px 24px" }}>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Inter', sans-serif" }}>
+      <style>{`
+        @keyframes spin    { to { transform: rotate(360deg) } }
+        @keyframes fadeUp  { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+        .pd-tab  { transition: all .2s; cursor: pointer; }
+        .pd-tab:hover { background: ${C.primaryGlow} !important; color: ${C.primary} !important; }
+        .pd-row:last-child { border-bottom: none !important; }
+        .pd-copy:hover { color: ${C.primary} !important; background: ${C.primarySoft} !important; }
+        .pd-stat:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(92,3,155,0.1) !important; }
+        @media(max-width:768px) { .pd-grid-2 { grid-template-columns: 1fr !important; } .pd-header-inner { flex-direction: column !important; } .pd-stats { grid-template-columns: 1fr 1fr !important; } }
+      `}</style>
 
-        {/* ── Header ── */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
-          <button
-            onClick={() => navigate(-1)}
-            style={{ display: "flex", alignItems: "center", gap: 5, padding: "8px 14px", border: "1.5px solid #E5E7EB", borderRadius: 9, background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}
-          >
-            <ChevronLeft size={15} /> Back
-          </button>
-          <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111827" }}>Agent Details</h1>
-            <p style={{ fontSize: 12, color: "#9CA3AF" }}>ID: {agent._id || id}</p>
-          </div>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px" }}>
 
-          {/* ── Verify / Reject Button ── */}
-          <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-            {!agent.isVerified && (
-              <button
-                onClick={handleOpenVerifyModal}
-                style={{
-                  display: "flex", alignItems: "center", gap: 7,
-                  padding: "9px 18px", background: PURPLE, color: "#fff",
-                  border: "none", borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                }}
-              >
-                <ShieldCheck size={15} /> Verify Agent
-              </button>
-            )}
-            {agent.isVerified && (
-              <span style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: "#ECFDF5", color: "#059669", borderRadius: 9, fontSize: 13, fontWeight: 600, border: "1px solid #A7F3D0" }}>
-                <CheckCircle size={14} /> Verified
-              </span>
-            )}
-          </div>
-        </div>
+        {/* ── Back Button ── */}
+        <button
+          onClick={() => navigate(-1)}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 20, padding: "8px 16px", background: C.white, border: `1px solid ${C.grayBord}`, borderRadius: 10, fontSize: 13, fontWeight: 600, color: C.textSub, cursor: "pointer", transition: "all .2s" }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.primaryBord; e.currentTarget.style.color = C.primary; e.currentTarget.style.background = C.primarySoft; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.grayBord;    e.currentTarget.style.color = C.textSub;  e.currentTarget.style.background = C.white; }}
+        >
+          <ChevronLeft size={15} /> Back to Agents
+        </button>
 
         {/* ── Flash Message ── */}
         {verifyMessage.text && (
           <div style={{
-            marginBottom: 16, padding: "10px 16px", borderRadius: 8,
-            background: verifyMessage.type === "success" ? "#D1FAE5" : verifyMessage.type === "error" ? "#FEE2E2" : "#DBEAFE",
+            marginBottom: 16, padding: "10px 16px", borderRadius: 10,
+            background: verifyMessage.type === "success" ? C.greenSoft : verifyMessage.type === "error" ? C.redSoft : C.blueSoft,
             color: verifyMessage.type === "success" ? "#065F46" : verifyMessage.type === "error" ? "#991B1B" : "#1E40AF",
             fontSize: 13, display: "flex", alignItems: "center", gap: 8,
+            border: `1px solid ${verifyMessage.type === "success" ? C.greenBord : verifyMessage.type === "error" ? "#FECACA" : "#BFDBFE"}`,
           }}>
-            {verifyMessage.type === "success" ? <CheckCircle size={16} /> : verifyMessage.type === "error" ? <AlertCircle size={16} /> : <Info size={16} />}
+            {verifyMessage.type === "success" ? <CheckCircle size={15} /> : verifyMessage.type === "error" ? <AlertCircle size={15} /> : <Info size={15} />}
             {verifyMessage.text}
           </div>
         )}
 
-        {/* ── Profile Card ── */}
-        <div style={{ background: "#fff", borderRadius: 14, padding: "24px 28px", border: "1px solid #E5E7EB", marginBottom: 16, display: "flex", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
-          {/* Avatar */}
-          <div style={{ width: 76, height: 76, borderRadius: "50%", background: PURPLE_LIGHT, border: `2px solid ${PURPLE_BORDER}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            {agent.profilePic
-              ? <img src={agent.profilePic} alt={fullName} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
-              : <User size={32} color={PURPLE} />}
-          </div>
+        {/* ════════════════════════════════════════════════════════════
+            PROFILE HEADER CARD
+        ════════════════════════════════════════════════════════════ */}
+        <div style={{ background: C.white, borderRadius: 18, border: `1px solid ${C.grayBord}`, marginBottom: 16, overflow: "hidden", boxShadow: "0 2px 16px rgba(92,3,155,0.06)", animation: "fadeUp .4s ease" }}>
+          {/* Purple accent bar */}
+          <div style={{ height: 5, background: `linear-gradient(90deg, ${C.primary}, ${C.primaryMid}, ${C.primaryLight})` }} />
 
-          {/* Main info */}
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
-              <h2 style={{ fontSize: 21, fontWeight: 700, color: "#111827" }}>{fullName || "—"}</h2>
-              <Pill bg={isActive ? "#ECFDF5" : "#FEF2F2"} color={isActive ? "#059669" : "#DC2626"}>
-                {isActive ? "Active" : "Inactive"}
-              </Pill>
-              <Pill bg={vs.bg} color={vs.color}>{vs.label}</Pill>
-              {agent.agentType && (
-                <Pill bg="#F0F9FF" color="#0369A1">{agent.agentType.replace(/([A-Z])/g, ' $1').trim()}</Pill>
-              )}
+          <div className="pd-header-inner" style={{ display: "flex", alignItems: "flex-start", gap: 20, padding: "24px 28px 20px" }}>
+            {/* Avatar */}
+            <div style={{ width: 76, height: 76, borderRadius: "50%", background: C.primarySoft, border: `2px solid ${C.primaryBord}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+              {agent.profilePic
+                ? <img src={agent.profilePic} alt={fullName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <User size={32} color={C.primary} />}
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 28px" }}>
-              <InfoChip icon={Mail}     value={agent.email} />
-              <InfoChip icon={Phone}    value={phoneStr} />
-              <InfoChip icon={Globe}    value={agent.nationality} />
-              <InfoChip icon={Calendar} value={agent.dateOfBirth ? new Date(agent.dateOfBirth).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : null} />
-              <InfoChip icon={Star}     value={`${agent.profileCompletionPercentage ?? 0}% Profile Complete`} />
-            </div>
-          </div>
 
-          {/* Profile completion bar */}
-          <div style={{ minWidth: 160 }}>
-            <p style={{ fontSize: 11, color: GRAY, fontWeight: 600, marginBottom: 6, textTransform: "uppercase", letterSpacing: ".05em" }}>Profile Completion</p>
-            <div style={{ background: "#F3F4F6", borderRadius: 99, height: 8, marginBottom: 4 }}>
-              <div style={{ width: `${agent.profileCompletionPercentage ?? 0}%`, background: agent.profileCompletionPercentage >= 80 ? GREEN : agent.profileCompletionPercentage >= 40 ? "#F59E0B" : RED, height: "100%", borderRadius: 99, transition: "width .4s" }} />
-            </div>
-            <p style={{ fontSize: 12, color: GRAY }}>{agent.profileCompletionPercentage ?? 0}% complete</p>
-            <p style={{ fontSize: 11, color: agent.isProfileComplete ? "#059669" : "#D97706", marginTop: 4, fontWeight: 600 }}>
-              {agent.isProfileComplete ? "✓ Profile Complete" : "⚠ Incomplete"}
-            </p>
-          </div>
-        </div>
-
-        {/* ── Verification Status Row ── */}
-        <div style={{ background: "#fff", borderRadius: 12, padding: "16px 24px", border: "1px solid #E5E7EB", marginBottom: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 12 }}>Verification Status</p>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <VerificationBadge label="Email"       verified={agent.isEmailVerified} />
-            <VerificationBadge label="Phone"       verified={agent.isPhoneVerified} />
-            <VerificationBadge label="Emirates ID" verified={agent.emiratesId?.verified} />
-            <VerificationBadge label="Passport"    verified={agent.passport?.verified} />
-            <VerificationBadge label="Visa"        verified={agent.visa?.verified} />
-            <VerificationBadge label="Bank"        verified={agent.bankDetails?.verified} />
-            <VerificationBadge label="Agent"       verified={agent.isVerified} />
-          </div>
-          {agent.rejectionReason && (
-            <div style={{ marginTop: 12, padding: "10px 14px", background: "#FEF2F2", borderRadius: 8, border: "1px solid #FECACA", fontSize: 13, color: "#991B1B", display: "flex", gap: 8 }}>
-              <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
-              <span><strong>Rejection Reason:</strong> {agent.rejectionReason}</span>
-            </div>
-          )}
-        </div>
-
-        {/* ── Quick Stats ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 16 }}>
-          <StatCard icon={TrendingUp}  label="Total Commission"    value={`AED ${(agent.earnings?.totalCommissionEarned ?? 0).toLocaleString()}`} color="#7C3AED" />
-          <StatCard icon={Wallet}      label="Pending Commission"  value={`AED ${(agent.earnings?.pendingCommission ?? 0).toLocaleString()}`}     color="#D97706" />
-          <StatCard icon={Activity}    label="Leads Submitted"     value={agent.earnings?.totalLeadsSubmitted ?? 0}                               color="#0891B2" />
-          <StatCard icon={CheckCircle} label="Successful Disbursals" value={agent.earnings?.successfulDisbursals ?? 0}                            color={GREEN} />
-          <StatCard icon={Percent}     label="Conversion Rate"     value={`${agent.earnings?.conversionRate ?? 0}%`}                              color="#DB2777" />
-          <StatCard icon={Star}        label="Leaderboard Rank"    value={agent.earnings?.leaderboardRank ?? "—"}                                 color="#EA580C" />
-        </div>
-
-        {/* ── Personal Information ── */}
-        <Section icon={User} title="Personal Information">
-          <Grid columns={3}>
-            <Detail label="First Name"                value={firstName} />
-            <Detail label="Last Name"                 value={lastName} />
-            <Detail label="Gender"                    value={agent.gender} />
-            <Detail label="Date of Birth"             value={agent.dateOfBirth ? new Date(agent.dateOfBirth).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : null} />
-            <Detail label="Nationality"               value={agent.nationality} />
-            <Detail label="Marital Status"            value={agent.maritalStatus} />
-            <Detail label="Number of Dependents"      value={agent.numberOfDependents ?? 0} />
-            <Detail label="Language Preference"       value={agent.languagePreference} />
-            <Detail label="Communication Preference"  value={agent.communicationPreference} />
-          </Grid>
-        </Section>
-
-        {/* ── Dependents ── */}
-        {agent.dependents && agent.dependents.length > 0 ? (
-          <Section icon={Users} title={`Dependents (${agent.dependents.length})`}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {agent.dependents.map((dep, idx) => (
-                <div key={idx} style={{ background: "#F9FAFB", borderRadius: 10, padding: "12px 16px", border: "1px solid #E5E7EB" }}>
-                  <Grid columns={4}>
-                    <Detail label="Name"         value={dep.name} />
-                    <Detail label="Age"          value={dep.age} />
-                    <Detail label="Relationship" value={dep.relationship} />
-                    <Detail label="Location"     value={dep.location} />
-                  </Grid>
-                </div>
-              ))}
-            </div>
-          </Section>
-        ) : (
-          <Section icon={Users} title="Dependents">
-            <EmptyRow message="No dependents added" />
-          </Section>
-        )}
-
-        {/* ── Address ── */}
-        <Section icon={MapPin} title="Address">
-          {agent.address && (agent.address.building || agent.address.area || agent.address.city) ? (
-            <Grid columns={3}>
-              <Detail label="Building"  value={agent.address.building} />
-              <Detail label="Apartment" value={agent.address.apartment} />
-              <Detail label="Area"      value={agent.address.area} />
-              <Detail label="City"      value={agent.address.city} />
-              <Detail label="Country"   value={agent.address.country} />
-            </Grid>
-          ) : (
-            <EmptyRow message="No address on record" />
-          )}
-        </Section>
-
-        {/* ── Emergency Contact ── */}
-        <Section icon={Heart} title="Emergency Contact">
-          {agent.emergencyContact && (agent.emergencyContact.name || agent.emergencyContact.phone) ? (
-            <Grid columns={3}>
-              <Detail label="Name"         value={agent.emergencyContact.name} />
-              <Detail label="Relationship" value={agent.emergencyContact.relationship} />
-              <Detail label="Phone"        value={agent.emergencyContact.phone} />
-            </Grid>
-          ) : (
-            <EmptyRow message="No emergency contact added" />
-          )}
-        </Section>
-
-        {/* ── Emirates ID ── */}
-        <Section icon={CreditCard} title="Emirates ID">
-          <Grid columns={3}>
-            <Detail label="ID Number"    value={agent.emiratesId?.number} />
-            <Detail label="Issue Date"   value={agent.emiratesId?.issuanceDate ? new Date(agent.emiratesId.issuanceDate).toLocaleDateString() : null} />
-            <Detail label="Expiry Date"  value={agent.emiratesId?.expiryDate ? new Date(agent.emiratesId.expiryDate).toLocaleDateString() : null} />
-            <Detail label="Verified"     value={agent.emiratesId?.verified ? "Yes" : "No"} highlight={agent.emiratesId?.verified} />
-            <Detail label="Verified At"  value={agent.emiratesId?.verifiedAt ? new Date(agent.emiratesId.verifiedAt).toLocaleDateString() : null} />
-          </Grid>
-          {(agent.emiratesId?.frontImageUrl || agent.emiratesId?.backImageUrl) ? (
-            <div style={{ display: "flex", gap: 16, marginTop: 14, flexWrap: "wrap" }}>
-              {agent.emiratesId.frontImageUrl && <DocImage label="Front" url={agent.emiratesId.frontImageUrl} />}
-              {agent.emiratesId.backImageUrl  && <DocImage label="Back"  url={agent.emiratesId.backImageUrl} />}
-            </div>
-          ) : (
-            <div style={{ marginTop: 12 }}><EmptyRow message="No Emirates ID documents uploaded" /></div>
-          )}
-        </Section>
-
-        {/* ── Passport ── */}
-        <Section icon={FileText} title="Passport">
-          <Grid columns={3}>
-            <Detail label="Passport Number"   value={agent.passport?.number} />
-            <Detail label="Country of Issue"  value={agent.passport?.countryOfIssue} />
-            <Detail label="Issue Date"        value={agent.passport?.issueDate ? new Date(agent.passport.issueDate).toLocaleDateString() : null} />
-            <Detail label="Expiry Date"       value={agent.passport?.expiryDate ? new Date(agent.passport.expiryDate).toLocaleDateString() : null} />
-            <Detail label="Verified"          value={agent.passport?.verified ? "Yes" : "No"} highlight={agent.passport?.verified} />
-            <Detail label="Verified At"       value={agent.passport?.verifiedAt ? new Date(agent.passport.verifiedAt).toLocaleDateString() : null} />
-          </Grid>
-          {agent.passport?.imageUrl ? (
-            <div style={{ marginTop: 14 }}><DocImage label="Passport" url={agent.passport.imageUrl} /></div>
-          ) : (
-            <div style={{ marginTop: 12 }}><EmptyRow message="No passport document uploaded" /></div>
-          )}
-        </Section>
-
-        {/* ── Visa / Residency ── */}
-        <Section icon={Globe} title="Visa / Residency">
-          <Grid columns={3}>
-            <Detail label="Visa Number"       value={agent.visa?.number} />
-            <Detail label="Residency Status"  value={agent.visa?.residencyStatus} />
-            <Detail label="Sponsor"           value={agent.visa?.sponsor} />
-            <Detail label="Expiry Date"       value={agent.visa?.expiryDate ? new Date(agent.visa.expiryDate).toLocaleDateString() : null} />
-            <Detail label="Verified"          value={agent.visa?.verified ? "Yes" : "No"} highlight={agent.visa?.verified} />
-            <Detail label="Verified At"       value={agent.visa?.verifiedAt ? new Date(agent.visa.verifiedAt).toLocaleDateString() : null} />
-          </Grid>
-          {agent.visa?.imageUrl ? (
-            <div style={{ marginTop: 14 }}><DocImage label="Visa" url={agent.visa.imageUrl} /></div>
-          ) : (
-            <div style={{ marginTop: 12 }}><EmptyRow message="No visa document uploaded" /></div>
-          )}
-        </Section>
-
-        {/* ── Bank Details ── */}
-        <Section icon={Banknote} title="Bank Details">
-          <Grid columns={3}>
-            <Detail label="Beneficiary Name" value={agent.bankDetails?.beneficiaryName} />
-            <Detail label="Bank Name"        value={agent.bankDetails?.bankName} />
-            <Detail label="Account Number"   value={agent.bankDetails?.accountNumber} />
-            <Detail label="IBAN"             value={agent.bankDetails?.iban} />
-            <Detail label="SWIFT Code"       value={agent.bankDetails?.swiftCode} />
-            <Detail label="Account Type"     value={agent.bankDetails?.accountType} />
-            <Detail label="Verified"         value={agent.bankDetails?.verified ? "Yes" : "No"} highlight={agent.bankDetails?.verified} />
-            <Detail label="Verified At"      value={agent.bankDetails?.verifiedAt ? new Date(agent.bankDetails.verifiedAt).toLocaleDateString() : null} />
-          </Grid>
-        </Section>
-
-        {/* ── Agent & Affiliation ── */}
-        <Section icon={Building2} title="Agent & Affiliation">
-          <Grid columns={3}>
-            <Detail label="Agent Type"         value={agent.agentType?.replace(/([A-Z])/g, ' $1').trim()} />
-            <Detail label="Affiliation Status" value={agent.affiliationStatus}
-              badge={{ verified: { bg: "#ECFDF5", color: "#059669" }, rejected: { bg: "#FEF2F2", color: "#DC2626" }, pending: { bg: "#FFF7ED", color: "#D97706" } }[agent.affiliationStatus?.toLowerCase()]} />
-            <Detail label="Partner Company"    value={agent.partnerId?.companyName} />
-            <Detail label="Partner Status"     value={agent.partnerId?.status} />
-            <Detail label="Partner ID"         value={agent.partnerId?._id} />
-            <Detail label="Role"               value={agent.role?.name} />
-            <Detail label="Role Code"          value={agent.role?.code} />
-            <Detail label="Commission Eligible" value={agent.commissionEligible ? "Yes" : "No"} highlight={agent.commissionEligible} />
-            {agent.commissionEligibilityReason && <Detail label="Eligibility Reason" value={agent.commissionEligibilityReason} />}
-            {agent.affiliationRejectionReason  && <Detail label="Rejection Reason"   value={agent.affiliationRejectionReason} />}
-          </Grid>
-          <div style={{ marginTop: 12, fontSize: 12, color: GRAY, display: "flex", gap: 24, flexWrap: "wrap" }}>
-            <span>Affiliation verified at: <strong style={{ color: "#374151" }}>{agent.affiliationVerifiedAt ? new Date(agent.affiliationVerifiedAt).toLocaleString() : "—"}</strong></span>
-            {agent.affiliationVerifiedBy && <span>Verified by: <strong style={{ color: "#374151" }}>{agent.affiliationVerifiedBy}</strong></span>}
-          </div>
-        </Section>
-
-        {/* ── Commission & Earnings ── */}
-        <Section icon={DollarSign} title="Commission & Earnings">
-          <Grid columns={3}>
-            <Detail label="Commission Eligible"    value={agent.commissionEligible ? "Yes" : "No"} highlight={agent.commissionEligible} />
-            <Detail label="Total Commission Earned" value={`AED ${(agent.earnings?.totalCommissionEarned ?? 0).toLocaleString()}`} />
-            <Detail label="Pending Commission"      value={`AED ${(agent.earnings?.pendingCommission ?? 0).toLocaleString()}`} />
-            <Detail label="Total Leads Submitted"   value={agent.earnings?.totalLeadsSubmitted ?? 0} />
-            <Detail label="Successful Disbursals"   value={agent.earnings?.successfulDisbursals ?? 0} />
-            <Detail label="Conversion Rate"         value={`${agent.earnings?.conversionRate ?? 0}%`} />
-            <Detail label="Leaderboard Rank"        value={agent.earnings?.leaderboardRank ?? "—"} />
-          </Grid>
-        </Section>
-
-        {/* ── Freelance Commission Rates ── */}
-        {agent.freelanceCommission && (
-          <Section icon={Percent} title="Freelance Commission Rates">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              {/* Referral Only */}
-              <div style={{ background: "#F9FAFB", borderRadius: 10, padding: "14px 18px", border: "1px solid #E5E7EB" }}>
-                <p style={{ fontWeight: 700, fontSize: 13, color: "#374151", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#7C3AED", display: "inline-block" }} />
-                  Referral Only
-                </p>
-                <Grid columns={2}>
-                  <Detail label="Below AED 5M" value={`${agent.freelanceCommission.referralOnly?.below5M ?? "—"}%`} />
-                  <Detail label="Above AED 5M" value={`${agent.freelanceCommission.referralOnly?.above5M ?? "—"}%`} />
-                </Grid>
+            {/* Main info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0, letterSpacing: "-.4px" }}>
+                  {fullName || "—"}
+                </h1>
+                {agent.agentType && (
+                  <StatusPill bg={C.primarySoft} color={C.primary} label={agent.agentType.replace(/([A-Z])/g, ' $1').trim()} />
+                )}
+                <StatusPill
+                  bg={isActive ? C.greenSoft : C.redSoft}
+                  color={isActive ? C.green : C.red}
+                  icon={isActive ? CheckCircle : XCircle}
+                  label={isActive ? "Active" : "Inactive"}
+                />
+                <StatusPill bg={vs.bg} color={vs.color} icon={vs.icon} label={vs.label} />
               </div>
-              {/* Referral + Docs */}
-              <div style={{ background: "#F9FAFB", borderRadius: 10, padding: "14px 18px", border: "1px solid #E5E7EB" }}>
-                <p style={{ fontWeight: 700, fontSize: 13, color: "#374151", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#059669", display: "inline-block" }} />
-                  Referral + Documents
-                </p>
-                <Grid columns={2}>
-                  <Detail label="Below AED 5M" value={`${agent.freelanceCommission.referralPlusDocs?.below5M ?? "—"}%`} />
-                  <Detail label="Above AED 5M" value={`${agent.freelanceCommission.referralPlusDocs?.above5M ?? "—"}%`} />
-                </Grid>
+
+              {/* Contact chips */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
+                <InfoChip icon={Mail}     value={agent.email} />
+                <InfoChip icon={Phone}    value={phoneStr} />
+                <InfoChip icon={Globe}    value={agent.nationality} />
+                <InfoChip icon={Calendar} value={agent.dateOfBirth ? `DOB: ${fmtDate(agent.dateOfBirth)}` : null} />
+               
               </div>
             </div>
-          </Section>
-        )}
 
-        {/* ── System Information ── */}
-        <Section icon={Clock} title="System Information">
-          <Grid columns={2}>
-            <Detail label="Agent ID"    value={agent._id} />
-            <Detail label="Version"     value={agent.__v !== undefined ? `v${agent.__v}` : null} />
-            <Detail label="Created At"  value={agent.createdAt ? new Date(agent.createdAt).toLocaleString() : null} />
-            <Detail label="Updated At"  value={agent.updatedAt ? new Date(agent.updatedAt).toLocaleString() : null} />
-            <Detail label="Verified At" value={agent.verifiedAt ? new Date(agent.verifiedAt).toLocaleString() : null} />
-            <Detail label="Verified By" value={agent.verifiedBy ?? null} />
-            <Detail label="Deleted"     value={agent.isDeleted ? "Yes" : "No"} />
-            <Detail label="Suspended"   value={agent.suspendedAt ? `Yes — ${new Date(agent.suspendedAt).toLocaleDateString()}` : "No"} />
-            {agent.suspensionReason && <Detail label="Suspension Reason" value={agent.suspensionReason} />}
-            {agent.suspendedBy      && <Detail label="Suspended By"      value={agent.suspendedBy} />}
-          </Grid>
-        </Section>
-
-        {/* ── Verify / Reject Modal ── */}
-        {showVerifyModal && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-            <div style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 450, padding: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
-                <button onClick={() => { setShowVerifyModal(false); setRejectMode(false); setRejectionReason(""); }}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "#9CA3AF", fontSize: 18, lineHeight: 1 }}>✕</button>
-              </div>
-              {!rejectMode ? (
-                <>
-                  <div style={{ textAlign: "center", marginBottom: 20 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: "50%", background: PURPLE_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-                      <ShieldCheck size={28} color={PURPLE} />
-                    </div>
-                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginBottom: 4 }}>Verify or Reject Agent</h2>
-                    <p style={{ fontSize: 13, color: GRAY }}>Review the agent's documents and confirm your action.</p>
-                  </div>
-                  <div style={{ display: "flex", gap: 12 }}>
-                    <button onClick={handleVerify} disabled={actionLoading}
-                      style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 0", background: GREEN, border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, color: "#fff", cursor: actionLoading ? "not-allowed" : "pointer", opacity: actionLoading ? 0.6 : 1 }}>
-                      {actionLoading ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle size={16} />}
-                      Verify
-                    </button>
-                    <button onClick={() => setRejectMode(true)} disabled={actionLoading}
-                      style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 0", background: "#fff", border: "1.5px solid #E5E7EB", borderRadius: 10, fontSize: 14, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
-                      <XCircle size={16} color={RED} /> Reject
-                    </button>
-                  </div>
-                </>
+            {/* Profile completion + verify button */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12, flexShrink: 0 }}>
+              {/* Verify button */}
+              {!agent.isVerified ? (
+                <button
+                  onClick={handleOpenVerifyModal}
+                  style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: C.primary, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                >
+                  <ShieldCheck size={15} /> Verify Agent
+                </button>
               ) : (
-                <>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#FEF2F2", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <AlertTriangle size={18} color={RED} />
-                    </div>
-                    <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>Reject Agent</h2>
-                  </div>
-                  <p style={{ fontSize: 13, color: GRAY, marginBottom: 12 }}>Provide a reason for rejection. This will be shared with the agent.</p>
-                  <textarea
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                    placeholder="e.g. Invalid Emirates ID, Passport expired, etc."
-                    rows={4}
-                    style={{ width: "100%", border: "1px solid #E5E7EB", borderRadius: 10, padding: "10px 14px", fontSize: 13, resize: "vertical", outline: "none", boxSizing: "border-box" }}
-                  />
-                  <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                    <button onClick={() => { setRejectMode(false); setRejectionReason(""); }}
-                      style={{ flex: 1, padding: "10px 0", border: "1px solid #E5E7EB", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", background: "#fff", cursor: "pointer" }}>
-                      Back
-                    </button>
-                    <button onClick={handleReject} disabled={actionLoading || !rejectionReason.trim()}
-                      style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 0", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#fff", background: !rejectionReason.trim() ? "#FCA5A5" : RED, cursor: !rejectionReason.trim() ? "not-allowed" : "pointer" }}>
-                      {actionLoading ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <XCircle size={14} />}
-                      Confirm Reject
-                    </button>
-                  </div>
-                </>
+                <span style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: C.greenSoft, color: C.green, borderRadius: 10, fontSize: 13, fontWeight: 600, border: `1px solid ${C.greenBord}` }}>
+                  <CheckCircle size={14} /> Verified
+                </span>
               )}
+
+              {/* Progress bar */}
+             
             </div>
           </div>
-        )}
+        </div>
 
+        {/* ════════════════════════════════════════════════════════════
+            STATS ROW
+        ════════════════════════════════════════════════════════════ */}
+        <div className="pd-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+          <StatTile icon={TrendingUp}  color={C.primary}  label="Commission Earned"  value={fmtAED(ag.totalCommissionEarned) || "AED 0"} />
+          <StatTile icon={Activity}    color="#0891B2"    label="Leads Submitted"    value={ag.totalLeadsSubmitted ?? 0} />
+          <StatTile icon={CheckCircle} color={C.green}    label="Disbursals"         value={ag.successfulDisbursals ?? 0} />
+          <StatTile icon={Percent}     color={C.amber}    label="Conversion Rate"    value={`${ag.conversionRate ?? 0}%`} />
+        </div>
+
+        {/* ════════════════════════════════════════════════════════════
+            TABS
+        ════════════════════════════════════════════════════════════ */}
+        <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.grayBord}`, padding: "4px 6px", display: "flex", gap: 2, marginBottom: 16, overflowX: "auto" }}>
+          {TABS.map((tab) => {
+            const active = activeTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                className="pd-tab"
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 7,
+                  padding: "9px 16px", borderRadius: 10, border: "none",
+                  background: active ? C.primarySoft : "transparent",
+                  color: active ? C.primary : C.gray,
+                  fontWeight: active ? 700 : 500, fontSize: 13,
+                  cursor: "pointer", whiteSpace: "nowrap", transition: "all .2s",
+                  borderBottom: active ? `2px solid ${C.primary}` : "2px solid transparent",
+                }}
+              >
+                <Icon size={14} /> {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ════════════════════════════════════════════════════════════
+            TAB CONTENT
+        ════════════════════════════════════════════════════════════ */}
+        <div style={{ animation: "fadeUp .3s ease" }} key={activeTab}>
+
+          {/* ── OVERVIEW ─────────────────────────────────────────── */}
+          {activeTab === "overview" && (
+            <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Section icon={User} title="Personal Information">
+                <DRow label="First Name"               value={show(firstName)} />
+                <DRow label="Last Name"                value={show(lastName)} />
+                <DRow label="Gender"                   value={show(agent.gender)} />
+                <DRow label="Date of Birth"            value={fmtDate(agent.dateOfBirth)} />
+                <DRow label="Nationality"              value={show(agent.nationality)} />
+                <DRow label="Marital Status"           value={show(agent.maritalStatus)} />
+                <DRow label="Dependents"               value={show(agent.numberOfDependents ?? 0)} />
+                <DRow label="Language"                 value={show(agent.languagePreference)} />
+                <DRow label="Communication Pref"       value={show(agent.communicationPreference)} />
+                <DRow label="Profile Completion"       value={`${agent.profileCompletionPercentage ?? 0}%`} />
+              </Section>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <Section icon={MapPin} title="Address">
+                  {agent.address && (agent.address.building || agent.address.city) ? (
+                    <>
+                      <DRow label="Building"  value={show(agent.address.building)} />
+                      <DRow label="Apartment" value={show(agent.address.apartment)} />
+                      <DRow label="Area"      value={show(agent.address.area)} />
+                      <DRow label="City"      value={show(agent.address.city)} />
+                      <DRow label="Country"   value={show(agent.address.country)} />
+                    </>
+                  ) : <EmptyNote msg="No address on record" />}
+                </Section>
+
+                <Section icon={Heart} title="Emergency Contact">
+                  {agent.emergencyContact && (agent.emergencyContact.name || agent.emergencyContact.phone) ? (
+                    <>
+                      <DRow label="Name"         value={show(agent.emergencyContact.name)} />
+                      <DRow label="Relationship" value={show(agent.emergencyContact.relationship)} />
+                      <DRow label="Phone"        value={show(agent.emergencyContact.phone)} copy />
+                    </>
+                  ) : <EmptyNote msg="No emergency contact added" />}
+                </Section>
+              </div>
+
+              {/* Dependents — full width */}
+              {agent.dependents && agent.dependents.length > 0 && (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <Section icon={Users} title={`Dependents (${agent.dependents.length})`}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
+                      {agent.dependents.map((dep, idx) => (
+                        <div key={idx} style={{ background: C.grayLight, borderRadius: 10, padding: "12px 16px", border: `1px solid ${C.grayBord}` }}>
+                          <DRow label="Name"         value={show(dep.name)} />
+                          <DRow label="Age"          value={show(dep.age)} />
+                          <DRow label="Relationship" value={show(dep.relationship)} />
+                          <DRow label="Location"     value={show(dep.location)} />
+                        </div>
+                      ))}
+                    </div>
+                  </Section>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── DOCUMENTS ────────────────────────────────────────── */}
+          {activeTab === "documents" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+              {/* Verification badges row */}
+              <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.grayBord}`, padding: "16px 20px" }}>
+                <GroupLabel label="Verification Status" />
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8 }}>
+                  <VerificationBadge label="Email"       verified={agent.isEmailVerified} />
+                  <VerificationBadge label="Phone"       verified={agent.isPhoneVerified} />
+                  <VerificationBadge label="Emirates ID" verified={agent.emiratesId?.verified} />
+                  <VerificationBadge label="Passport"    verified={agent.passport?.verified} />
+                  <VerificationBadge label="Visa"        verified={agent.visa?.verified} />
+                  <VerificationBadge label="Bank"        verified={agent.bankDetails?.verified} />
+                  <VerificationBadge label="Agent"       verified={agent.isVerified} />
+                </div>
+                {agent.rejectionReason && (
+                  <div style={{ marginTop: 12, padding: "10px 14px", background: C.redSoft, borderRadius: 8, border: "1px solid #FECACA", fontSize: 13, color: "#991B1B", display: "flex", gap: 8, alignItems: "flex-start" }}>
+                    <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <span><strong>Rejection Reason:</strong> {agent.rejectionReason}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                {/* Emirates ID */}
+                <Section icon={CreditCard} title="Emirates ID">
+                  <DRow label="ID Number"   value={show(agent.emiratesId?.number)} copy />
+                  <DRow label="Issue Date"  value={fmtDate(agent.emiratesId?.issuanceDate)} />
+                  <DRow label="Expiry Date" value={fmtDate(agent.emiratesId?.expiryDate)} />
+                  <DRow label="Verified"    value={boolLabel(agent.emiratesId?.verified)} highlight={agent.emiratesId?.verified} />
+                  <DRow label="Verified At" value={fmtDate(agent.emiratesId?.verifiedAt)} />
+                  {(agent.emiratesId?.frontImageUrl || agent.emiratesId?.backImageUrl) && (
+                    <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
+                      {agent.emiratesId.frontImageUrl && <DocImage label="Front" url={agent.emiratesId.frontImageUrl} />}
+                      {agent.emiratesId.backImageUrl  && <DocImage label="Back"  url={agent.emiratesId.backImageUrl} />}
+                    </div>
+                  )}
+                  {!agent.emiratesId?.frontImageUrl && !agent.emiratesId?.backImageUrl && (
+                    <div style={{ marginTop: 10 }}><EmptyNote msg="No Emirates ID documents uploaded" /></div>
+                  )}
+                </Section>
+
+                {/* Passport */}
+                <Section icon={FileText} title="Passport">
+                  <DRow label="Passport No."     value={show(agent.passport?.number)} copy />
+                  <DRow label="Country of Issue" value={show(agent.passport?.countryOfIssue)} />
+                  <DRow label="Issue Date"       value={fmtDate(agent.passport?.issueDate)} />
+                  <DRow label="Expiry Date"      value={fmtDate(agent.passport?.expiryDate)} />
+                  <DRow label="Verified"         value={boolLabel(agent.passport?.verified)} highlight={agent.passport?.verified} />
+                  <DRow label="Verified At"      value={fmtDate(agent.passport?.verifiedAt)} />
+                  {agent.passport?.imageUrl ? (
+                    <div style={{ marginTop: 12 }}><DocImage label="Passport" url={agent.passport.imageUrl} /></div>
+                  ) : (
+                    <div style={{ marginTop: 10 }}><EmptyNote msg="No passport document uploaded" /></div>
+                  )}
+                </Section>
+
+                {/* Visa */}
+                <Section icon={Globe} title="Visa / Residency">
+                  <DRow label="Visa Number"      value={show(agent.visa?.number)} copy />
+                  <DRow label="Residency Status" value={show(agent.visa?.residencyStatus)} />
+                  <DRow label="Sponsor"          value={show(agent.visa?.sponsor)} />
+                  <DRow label="Expiry Date"      value={fmtDate(agent.visa?.expiryDate)} />
+                  <DRow label="Verified"         value={boolLabel(agent.visa?.verified)} highlight={agent.visa?.verified} />
+                  <DRow label="Verified At"      value={fmtDate(agent.visa?.verifiedAt)} />
+                  {agent.visa?.imageUrl ? (
+                    <div style={{ marginTop: 12 }}><DocImage label="Visa" url={agent.visa.imageUrl} /></div>
+                  ) : (
+                    <div style={{ marginTop: 10 }}><EmptyNote msg="No visa document uploaded" /></div>
+                  )}
+                </Section>
+              </div>
+            </div>
+          )}
+
+          {/* ── FINANCIAL ────────────────────────────────────────── */}
+          {activeTab === "financial" && (
+            <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+
+              <Section icon={Banknote} title="Bank Details">
+                {bk.bankName || bk.accountNumber ? (
+                  <>
+                    <DRow label="Beneficiary"   value={show(bk.beneficiaryName)} copy />
+                    <DRow label="Bank Name"     value={show(bk.bankName)} />
+                    <DRow label="Account No."  value={show(bk.accountNumber)} copy />
+                    <DRow label="IBAN"          value={show(bk.iban)} copy />
+                    <DRow label="SWIFT"         value={show(bk.swiftCode)} copy />
+                    <DRow label="Account Type" value={show(bk.accountType)} />
+                    <DRow label="Verified"     value={boolLabel(bk.verified)} highlight={bk.verified} />
+                    {bk.verifiedAt && <DRow label="Verified At" value={fmtDate(bk.verifiedAt)} />}
+                  </>
+                ) : <EmptyNote msg="No bank details added" />}
+              </Section>
+
+              <Section icon={DollarSign} title="Commission & Earnings">
+                <DRow label="Total Earned"       value={fmtAED(ag.totalCommissionEarned)} />
+                <DRow label="Pending"            value={fmtAED(ag.pendingCommission)} />
+                <DRow label="Leads Submitted"    value={show(ag.totalLeadsSubmitted ?? 0)} />
+                <DRow label="Successful Disbursals" value={show(ag.successfulDisbursals ?? 0)} />
+                <DRow label="Conversion Rate"    value={ag.conversionRate !== undefined ? `${ag.conversionRate}%` : null} />
+                <DRow label="Leaderboard Rank"   value={show(ag.leaderboardRank)} />
+              </Section>
+
+              {/* Freelance commission — full width */}
+              {fc && (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <Section icon={Percent} title="Freelance Commission Rates">
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                      <div style={{ background: C.primarySoft, borderRadius: 12, padding: "14px 16px", border: `1px solid ${C.primaryBord}` }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                          <div style={{ width: 24, height: 24, borderRadius: 7, background: C.primary, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Tag size={12} color="#fff" />
+                          </div>
+                          <span style={{ fontWeight: 700, fontSize: 13, color: C.primary }}>Referral Only</span>
+                        </div>
+                        <DRow label="Below AED 5M" value={fc.referralOnly?.below5M !== undefined ? `${fc.referralOnly.below5M}%` : null} />
+                        <DRow label="Above AED 5M" value={fc.referralOnly?.above5M !== undefined ? `${fc.referralOnly.above5M}%` : null} />
+                      </div>
+                      <div style={{ background: C.greenSoft, borderRadius: 12, padding: "14px 16px", border: `1px solid ${C.greenBord}` }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                          <div style={{ width: 24, height: 24, borderRadius: 7, background: C.green, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Tag size={12} color="#fff" />
+                          </div>
+                          <span style={{ fontWeight: 700, fontSize: 13, color: "#065F46" }}>Referral + Documents</span>
+                        </div>
+                        <DRow label="Below AED 5M" value={fc.referralPlusDocs?.below5M !== undefined ? `${fc.referralPlusDocs.below5M}%` : null} />
+                        <DRow label="Above AED 5M" value={fc.referralPlusDocs?.above5M !== undefined ? `${fc.referralPlusDocs.above5M}%` : null} />
+                      </div>
+                    </div>
+                  </Section>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── AFFILIATION ──────────────────────────────────────── */}
+          {activeTab === "affiliation" && (
+            <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Section icon={Building2} title="Agent & Affiliation">
+                <DRow label="Agent Type"          value={show(agent.agentType?.replace(/([A-Z])/g, ' $1').trim())} />
+                <DRow label="Affiliation Status"  value={show(agent.affiliationStatus)}
+                  badge={
+                    agent.affiliationStatus?.toLowerCase() === "verified"  ? { bg: C.greenSoft, color: C.green } :
+                    agent.affiliationStatus?.toLowerCase() === "rejected"  ? { bg: C.redSoft,   color: C.red   } :
+                    agent.affiliationStatus?.toLowerCase() === "pending"   ? { bg: C.amberSoft, color: C.amber } : undefined
+                  }
+                />
+                <DRow label="Commission Eligible" value={boolLabel(agent.commissionEligible)} highlight={agent.commissionEligible} />
+                {agent.commissionEligibilityReason && <DRow label="Eligibility Reason"  value={show(agent.commissionEligibilityReason)} />}
+                {agent.affiliationRejectionReason  && <DRow label="Rejection Reason"    value={show(agent.affiliationRejectionReason)} />}
+                {agent.affiliationVerifiedAt && (
+                  <DRow label="Affiliation Verified" value={new Date(agent.affiliationVerifiedAt).toLocaleString()} />
+                )}
+                {agent.affiliationVerifiedBy && <DRow label="Verified By" value={show(agent.affiliationVerifiedBy)} />}
+              </Section>
+
+              <Section icon={Hash} title="Partner Link">
+                <DRow label="Partner Company" value={show(agent.partnerId?.companyName)} />
+                <DRow label="Partner Status"  value={show(agent.partnerId?.status)} />
+                <DRow label="Partner ID"      value={show(agent.partnerId?._id)} copy />
+                <DRow label="Role"            value={show(agent.role?.name)} />
+                <DRow label="Role Code"       value={show(agent.role?.code)} />
+              </Section>
+            </div>
+          )}
+
+          {/* ── SYSTEM ───────────────────────────────────────────── */}
+          {activeTab === "system" && (
+            <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Section icon={Shield} title="System Information">
+                <DRow label="Agent ID"    value={show(agent._id)} copy />
+                <DRow label="Version"     value={agent.__v !== undefined ? `v${agent.__v}` : null} />
+                <DRow label="Created At"  value={agent.createdAt ? new Date(agent.createdAt).toLocaleString() : null} />
+                <DRow label="Updated At"  value={agent.updatedAt ? new Date(agent.updatedAt).toLocaleString() : null} />
+                <DRow label="Verified At" value={agent.verifiedAt ? new Date(agent.verifiedAt).toLocaleString() : null} />
+                <DRow label="Verified By" value={show(agent.verifiedBy)} />
+                <DRow label="Deleted"     value={boolLabel(agent.isDeleted)} />
+                {agent.suspendedAt && (
+                  <>
+                    <DRow label="Suspended At"     value={new Date(agent.suspendedAt).toLocaleString()} />
+                    <DRow label="Suspension Reason" value={show(agent.suspensionReason)} />
+                    <DRow label="Suspended By"     value={show(agent.suspendedBy)} />
+                  </>
+                )}
+              </Section>
+
+              <Section icon={Activity} title="Account Flags">
+                <FlagRow label="Account Active"   value={agent.isActive}          icon={CheckCircle} />
+                <FlagRow label="Email Verified"   value={agent.isEmailVerified}   icon={Mail} />
+                <FlagRow label="Phone Verified"   value={agent.isPhoneVerified}   icon={Phone} />
+                <FlagRow label="Agent Verified"   value={agent.isVerified}        icon={BadgeCheck} />
+                <FlagRow label="Bank Verified"    value={bk.verified}             icon={Banknote} />
+                <FlagRow label="Commission Eligible" value={agent.commissionEligible} icon={Percent} />
+                <FlagRow label="Suspended"        value={!!agent.suspendedAt}     icon={AlertTriangle} />
+              </Section>
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════
+          VERIFY / REJECT MODAL
+      ════════════════════════════════════════════════════════════════ */}
+      {showVerifyModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: C.white, borderRadius: 18, width: "100%", maxWidth: 440, padding: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.18)", overflow: "hidden" }}>
+            {/* Accent bar */}
+            <div style={{ height: 4, background: `linear-gradient(90deg, ${C.primary}, ${C.primaryMid})`, borderRadius: 4, marginBottom: 20 }} />
+            <button onClick={() => { setShowVerifyModal(false); setRejectMode(false); setRejectionReason(""); }}
+              style={{ position: "absolute", top: 16, right: 20, background: "none", border: "none", cursor: "pointer", color: C.textMuted, fontSize: 18 }}>✕</button>
+
+            {!rejectMode ? (
+              <>
+                <div style={{ textAlign: "center", marginBottom: 24 }}>
+                  <div style={{ width: 56, height: 56, borderRadius: 16, background: C.primarySoft, border: `2px solid ${C.primaryBord}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                    <ShieldCheck size={26} color={C.primary} />
+                  </div>
+                  <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 6 }}>Verify or Reject Agent</h2>
+                  <p style={{ fontSize: 13, color: C.gray }}>Review the agent's documents and confirm your action.</p>
+                </div>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button onClick={handleVerify} disabled={actionLoading}
+                    style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 0", background: C.green, border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, color: "#fff", cursor: actionLoading ? "not-allowed" : "pointer", opacity: actionLoading ? 0.7 : 1 }}>
+                    {actionLoading ? <RefreshCw size={16} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle size={16} />}
+                    Verify
+                  </button>
+                  <button onClick={() => setRejectMode(true)} disabled={actionLoading}
+                    style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 0", background: C.white, border: `1.5px solid ${C.grayBord}`, borderRadius: 10, fontSize: 14, fontWeight: 600, color: C.textSub, cursor: "pointer" }}>
+                    <XCircle size={16} color={C.red} /> Reject
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: C.redSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <AlertTriangle size={18} color={C.red} />
+                  </div>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text }}>Reject Agent</h2>
+                </div>
+                <p style={{ fontSize: 13, color: C.gray, marginBottom: 12 }}>Provide a reason for rejection. This will be shared with the agent.</p>
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="e.g. Invalid Emirates ID, Passport expired, etc."
+                  rows={4}
+                  style={{ width: "100%", border: `1px solid ${C.grayBord}`, borderRadius: 10, padding: "10px 14px", fontSize: 13, resize: "vertical", outline: "none", boxSizing: "border-box", fontFamily: "inherit" }}
+                />
+                <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+                  <button onClick={() => { setRejectMode(false); setRejectionReason(""); }}
+                    style={{ flex: 1, padding: "11px 0", border: `1px solid ${C.grayBord}`, borderRadius: 10, fontSize: 13, fontWeight: 600, color: C.textSub, background: C.white, cursor: "pointer" }}>
+                    Back
+                  </button>
+                  <button onClick={handleReject} disabled={actionLoading || !rejectionReason.trim()}
+                    style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "11px 0", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#fff", background: !rejectionReason.trim() ? "#FCA5A5" : C.red, cursor: !rejectionReason.trim() ? "not-allowed" : "pointer" }}>
+                    {actionLoading ? <RefreshCw size={14} style={{ animation: "spin 1s linear infinite" }} /> : <XCircle size={14} />}
+                    Confirm Reject
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── Shared Sub-components (mirrors PartnerDetail exactly) ───────────────────
+// ════════════════════════════════════════════════════════════════════════════
+
+function Section({ icon: Icon, title, children }) {
+  return (
+    <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.grayBord}`, overflow: "hidden", boxShadow: "0 1px 8px rgba(0,0,0,0.04)" }}>
+      <div style={{ padding: "13px 20px", background: C.grayLight, borderBottom: `1px solid ${C.grayBord}`, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 30, height: 30, borderRadius: 8, background: C.primarySoft, border: `1px solid ${C.primaryBord}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Icon size={14} color={C.primary} />
+        </div>
+        <span style={{ fontSize: 14, fontWeight: 700, color: C.text, letterSpacing: "-.2px" }}>{title}</span>
+      </div>
+      <div style={{ padding: "14px 20px" }}>{children}</div>
+    </div>
+  );
+}
+
+function DRow({ label, value, copy, link, badge, highlight, expired, mono }) {
+  const [copied, setCopied] = useState(false);
+  const display   = value ?? "—";
+  const isMissing = display === "—" || value === null || value === undefined;
+
+  const handleCopy = () => {
+    if (!value) return;
+    navigator.clipboard.writeText(String(value));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="pd-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.grayLight}` }}>
+      <span style={{ fontSize: 12, color: C.gray, fontWeight: 500, minWidth: 130, flexShrink: 0 }}>{label}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, justifyContent: "flex-end", flexWrap: "wrap" }}>
+        {badge && !isMissing ? (
+          <span style={{ padding: "2px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: badge.bg, color: badge.color }}>
+            {display}
+          </span>
+        ) : link && !isMissing ? (
+          <a href={link} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: C.primary, fontWeight: 500, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+            {display} <ExternalLink size={11} />
+          </a>
+        ) : (
+          <span style={{
+            fontSize: 13, fontWeight: isMissing ? 400 : 500,
+            color: expired ? C.red : highlight ? C.green : isMissing ? C.textMuted : C.text,
+            fontFamily: mono && !isMissing ? "'Courier New', monospace" : undefined,
+            wordBreak: "break-all", textAlign: "right",
+          }}>
+            {expired && !isMissing ? (
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <AlertTriangle size={12} color={C.red} /> {display}
+              </span>
+            ) : display}
+          </span>
+        )}
+        {copy && value && (
+          <button className="pd-copy" onClick={handleCopy} title="Copy"
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "3px 5px", borderRadius: 5, color: copied ? C.green : C.textMuted, display: "flex", alignItems: "center", transition: "all .2s" }}>
+            {copied ? <Check size={12} /> : <Copy size={12} />}
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-/* ─── Helper Components ─── */
-
-const Section = ({ icon: I, title, children }) => (
-  <div style={{ background: "#fff", borderRadius: 12, padding: "22px 24px", border: "1px solid #E5E7EB", marginBottom: 14 }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18, paddingBottom: 14, borderBottom: "1px solid #F3F4F6" }}>
-      <div style={{ width: 30, height: 30, borderRadius: 8, background: "#FAF5FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <I size={14} color="#5C039B" />
+function StatTile({ icon: Icon, label, value, color }) {
+  return (
+    <div className="pd-stat" style={{ background: C.white, borderRadius: 12, padding: "14px 16px", border: `1px solid ${C.grayBord}`, transition: "all .2s", cursor: "default" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon size={13} color={color} />
+        </div>
+        <span style={{ fontSize: 10, color: C.gray, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".06em" }}>{label}</span>
       </div>
-      <span style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>{title}</span>
+      <div style={{ fontSize: 15, fontWeight: 700, color: C.text, wordBreak: "break-all" }}>{value}</div>
     </div>
-    {children}
-  </div>
-);
+  );
+}
 
-const Grid = ({ children, columns = 3 }) => (
-  <div style={{ display: "grid", gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: "14px 20px" }}>
-    {children}
-  </div>
-);
+function StatusPill({ bg, color, icon: Icon, label }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: bg, color }}>
+      {Icon && <Icon size={11} />} {label}
+    </span>
+  );
+}
 
-// badge = optional { bg, color } for status pills inside Detail
-const Detail = ({ label, value, highlight, badge }) => (
-  <div>
-    <p style={{ fontSize: 11, fontWeight: 600, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 3 }}>{label}</p>
-    {badge && value && value !== "—" ? (
-      <span style={{ display: "inline-block", padding: "2px 10px", borderRadius: 99, fontSize: 12, fontWeight: 600, background: badge.bg, color: badge.color }}>
-        {value}
-      </span>
-    ) : (
-      <p style={{ fontSize: 14, fontWeight: 500, color: highlight ? "#059669" : (value !== null && value !== undefined && value !== "—") ? "#111827" : "#D1D5DB" }}>
-        {value ?? "—"}
-      </p>
-    )}
-  </div>
-);
+function InfoChip({ icon: Icon, value }) {
+  if (!value) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: C.gray }}>
+      <Icon size={13} color={C.textMuted} /> {value}
+    </div>
+  );
+}
 
-const Pill = ({ children, bg, color }) => (
-  <span style={{ padding: "2px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: bg, color }}>
-    {children}
-  </span>
-);
+function GroupLabel({ label }) {
+  return (
+    <p style={{ fontSize: 11, fontWeight: 700, color: C.gray, textTransform: "uppercase", letterSpacing: ".06em", margin: "0 0 10px", display: "flex", alignItems: "center", gap: 6 }}>
+      <span style={{ height: 1, width: 16, background: C.grayBord, display: "inline-block" }} />
+      {label}
+      <span style={{ height: 1, flex: 1, background: C.grayBord, display: "inline-block" }} />
+    </p>
+  );
+}
 
-const InfoChip = ({ icon: I, value }) => value ? (
-  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: "#6B7280" }}>
-    <I size={13} color="#9CA3AF" />{value}
-  </div>
-) : null;
+function EmptyNote({ msg }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 7, color: C.textMuted, fontSize: 13, padding: "10px 0", fontStyle: "italic" }}>
+      <Info size={14} color={C.textMuted} /> {msg}
+    </div>
+  );
+}
 
-const DocImage = ({ label, url }) => (
-  <div style={{ border: "1px solid #E5E7EB", borderRadius: 9, overflow: "hidden", maxWidth: 220 }}>
-    <div style={{ padding: "6px 10px", background: "#F9FAFB", borderBottom: "1px solid #E5E7EB", fontSize: 11, fontWeight: 600, color: "#6B7280", textTransform: "uppercase", letterSpacing: ".05em" }}>{label}</div>
-    <img src={url} alt={label} onError={e => { e.target.style.display = "none"; }} style={{ width: "100%", maxHeight: 140, objectFit: "cover", display: "block" }} />
-  </div>
-);
-
-const VerificationBadge = ({ label, verified }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 8, background: verified ? "#ECFDF5" : "#FEF2F2", border: `1px solid ${verified ? "#A7F3D0" : "#FECACA"}` }}>
-    {verified ? <CheckCircle size={13} color="#059669" /> : <XCircle size={13} color="#EF4444" />}
-    <span style={{ fontSize: 12, fontWeight: 600, color: verified ? "#059669" : "#DC2626" }}>{label}</span>
-  </div>
-);
-
-const StatCard = ({ icon: I, label, value, color }) => (
-  <div style={{ background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #E5E7EB" }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-      <div style={{ width: 28, height: 28, borderRadius: 7, background: `${color}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <I size={14} color={color} />
+function FlagRow({ label, value, icon: Icon }) {
+  const isTrue  = value === true;
+  const isFalse = value === false;
+  const isNull  = !isTrue && !isFalse;
+  return (
+    <div className="pd-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.grayLight}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.textSub, fontWeight: 500 }}>
+        <Icon size={14} color={C.gray} /> {label}
       </div>
-      <p style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".04em" }}>{label}</p>
+      {isNull ? (
+        <span style={{ fontSize: 12, color: C.textMuted, fontStyle: "italic" }}>—</span>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: isTrue ? C.greenSoft : C.redSoft }}>
+          {isTrue ? <CheckCircle size={12} color={C.green} /> : <XCircle size={12} color={C.red} />}
+          <span style={{ fontSize: 11, fontWeight: 700, color: isTrue ? C.green : C.red }}>{isTrue ? "Yes" : "No"}</span>
+        </div>
+      )}
     </div>
-    <p style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>{value}</p>
-  </div>
-);
+  );
+}
 
-const EmptyRow = ({ message }) => (
-  <div style={{ padding: "12px 0", color: "#9CA3AF", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
-    <Info size={14} /> {message}
-  </div>
-);
+function VerificationBadge({ label, verified }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 8, background: verified ? C.greenSoft : C.redSoft, border: `1px solid ${verified ? C.greenBord : "#FECACA"}` }}>
+      {verified ? <CheckCircle size={13} color={C.green} /> : <XCircle size={13} color={C.red} />}
+      <span style={{ fontSize: 12, fontWeight: 600, color: verified ? C.green : C.red }}>{label}</span>
+    </div>
+  );
+}
+
+function DocImage({ label, url }) {
+  return (
+    <div style={{ border: `1px solid ${C.grayBord}`, borderRadius: 10, overflow: "hidden", maxWidth: 200 }}>
+      <div style={{ padding: "6px 10px", background: C.grayLight, borderBottom: `1px solid ${C.grayBord}`, fontSize: 11, fontWeight: 600, color: C.gray, textTransform: "uppercase", letterSpacing: ".05em" }}>{label}</div>
+      <img src={url} alt={label} onError={(e) => { e.target.style.display = "none"; }} style={{ width: "100%", maxHeight: 140, objectFit: "cover", display: "block" }} />
+    </div>
+  );
+}

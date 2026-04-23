@@ -376,6 +376,36 @@ const CUSTOM_ROLE_LINKS = {
         { title: "Leads", path: "/dashboard/{roleSlug}/vault/agent-leads" },
       ],
     },
+ {
+  title: "Advisors",
+  icon: "fas fa-user-tie",
+  path: "/dashboard/{roleSlug}/advisor",  // parent path (optional)
+  submenus: [
+    { 
+      title: "Create Advisor", 
+      path: "/dashboard/{roleSlug}/advisor/create" 
+    },
+    { 
+      title: "All Advisors", 
+      path: "/dashboard/{roleSlug}/advisor/list" 
+    },
+  ],
+},
+ {
+  title: "Mortgages",
+  icon: "fas fa-file-invoice-dollar",   // ✅ Distinct icon
+  path: "/dashboard/{roleSlug}/mortgage",
+  submenus: [
+    { 
+      title: "Create Mortgage", 
+      path: "/dashboard/{roleSlug}/mortgage/create" 
+    },
+    { 
+      title: "All Mortgages", 
+      path: "/dashboard/{roleSlug}/mortgage/list" 
+    },
+  ],
+},
    
     {
       title: "Propersals",
@@ -503,6 +533,10 @@ const roleSlugMap = {
   '18': "vault-admin", //vault
   '22': "vaultagent",
   '21': "vaultpartner",
+  '23': "vault-advisor",
+  '26': "vault-ops",
+   
+ 
 
 
 };
@@ -518,7 +552,7 @@ const ROLE_MODULE_ORDER = {
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '16': ['Dashboard', 'AgentLead Management'],
   '15': ['Dashboard', 'Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
-  '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners'],
+  '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners', 'Advisors', 'Mortgages'],
   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
   '21': ['Dashboard', 'Vault Partners', 'All Leads',],
 };
