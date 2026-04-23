@@ -22,20 +22,15 @@ import {
   UserOutlined,
   MailOutlined,
   PhoneOutlined,
-  CalendarOutlined,
-  FlagOutlined,
-  TeamOutlined,
-  IdcardOutlined,
   BankOutlined,
-  SaveOutlined,
-  LockOutlined,
+  IdcardOutlined,
   CheckOutlined,
   UploadOutlined,
+  LockOutlined,
 } from "@ant-design/icons";
 import { Country } from "country-state-city";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
-import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -96,7 +91,6 @@ const VaultCreatemortgage = () => {
     } finally {
       setUploadingProfile(false);
     }
-
     return false;
   };
 
@@ -132,7 +126,7 @@ const VaultCreatemortgage = () => {
       message.success("Mortgage Ops created! Login credentials sent via email.");
       form.resetFields();
       setProfileUrl("");
-      setTimeout(() => navigate("/mortgage/list"), 1500);
+      setTimeout(() => navigate(-1), 1500);
     } catch (err) {
       console.error("Create Mortgage Ops Error:", err);
       message.error(err?.response?.data?.message || "Failed to create mortgage ops");
@@ -165,17 +159,9 @@ const VaultCreatemortgage = () => {
 
   return (
     <div style={{ padding: "24px", background: "#f8f9fa", minHeight: "100vh" }}>
+      {/* Header */}
       <div style={{ marginBottom: "24px", display: "flex", alignItems: "center", gap: "16px" }}>
-        <Button
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/mortgage/list")}
-          style={{
-            border: "none",
-            background: "#fff",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-            borderRadius: "8px",
-          }}
-        />
+      
         <div>
           <Title level={3} style={{ margin: 0, color: "#1f2937" }}>
             Create New Mortgage Operations
@@ -231,9 +217,7 @@ const VaultCreatemortgage = () => {
                   <Form.Item
                     name="email"
                     label="Login Email"
-                    rules={[
-                      { required: true, type: "email", message: "Valid email required" },
-                    ]}
+                    rules={[{ required: true, type: "email", message: "Valid email required" }]}
                   >
                     <Input placeholder="ahmed@xoto.ae" size="large" style={{ borderRadius: "8px" }} />
                   </Form.Item>
@@ -242,9 +226,7 @@ const VaultCreatemortgage = () => {
                   <Form.Item
                     name="password"
                     label="Password"
-                    rules={[
-                      { required: true, min: 8, message: "Min 8 characters" },
-                    ]}
+                    rules={[{ required: true, min: 8, message: "Min 8 characters" }]}
                   >
                     <Input.Password
                       placeholder="Enter secure password"
@@ -312,9 +294,7 @@ const VaultCreatemortgage = () => {
                               const code = form.getFieldValue("country_code");
                               const fullNumber = `+${code}${value}`;
                               const phoneNumber = parsePhoneNumberFromString(fullNumber);
-                              if (phoneNumber && phoneNumber.isValid()) {
-                                return Promise.resolve();
-                              }
+                              if (phoneNumber && phoneNumber.isValid()) return Promise.resolve();
                               return Promise.reject(new Error("Invalid mobile number"));
                             },
                           },
@@ -469,12 +449,27 @@ const VaultCreatemortgage = () => {
                     }}
                     loading={uploadingProfile}
                   >
-                    {profileUrl ? "Uploaded" : "Upload Photo"}
+                    {profileUrl ? "Change Photo" : "Upload Photo"}
                   </Button>
                 </Upload>
+                {/* Image Preview */}
                 {profileUrl && (
-                  <div style={{ marginTop: 5, fontSize: 12, color: "#52c41a" }}>
-                    ✓ Image uploaded successfully!
+                  <div style={{ marginTop: 16, textAlign: "center" }}>
+                    <img
+                      src={profileUrl}
+                      alt="Profile Preview"
+                      style={{
+                        width: 120,
+                        height: 120,
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        border: `3px solid ${BRAND_PURPLE}`,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                      }}
+                    />
+                    <div style={{ marginTop: 8, fontSize: 13, color: "#52c41a", fontWeight: 500 }}>
+                      ✓ Image uploaded successfully!
+                    </div>
                   </div>
                 )}
               </Form.Item>
@@ -483,13 +478,14 @@ const VaultCreatemortgage = () => {
               <div style={{ marginTop: 8 }}>
                 <Text type="secondary">
                   • Login credentials will be sent to the provided email.
-                  <br />• The advisor can update their profile after first login.
+                  <br />• The user can update their profile after first login.
                 </Text>
               </div>
             </Card>
           </Col>
         </Row>
 
+        {/* Bottom Action Bar */}
         <div
           style={{
             marginTop: "24px",
@@ -498,16 +494,17 @@ const VaultCreatemortgage = () => {
             borderRadius: "12px",
             boxShadow: "0 -2px 10px rgba(0,0,0,0.02)",
             display: "flex",
-            justifyContent: "flex-end",
-            gap: "12px",
+            justifyContent: "space-between", // Back button on left, Create on right
+            alignItems: "center",
           }}
         >
           <Button
             size="large"
-            onClick={() => navigate("/mortgage/list")}
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate(-1)}
             style={{ borderRadius: "8px", fontWeight: "600" }}
           >
-            Cancel
+            Back
           </Button>
           <Button
             type="primary"
