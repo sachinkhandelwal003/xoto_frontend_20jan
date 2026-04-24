@@ -228,12 +228,6 @@ const GLOBAL_STYLES = `
   }
   .bm-blog-card:hover .bm-blog-thumb img { transform: scale(1.04); }
 
-  .bm-blog-thumb-placeholder {
-    display: flex; align-items: center; justify-content: center;
-    width: 100%; height: 100%;
-    font-size: 48px; color: #c4b5fd;
-  }
-
   .bm-blog-body {
     padding: 22px 26px;
     flex: 1;
@@ -287,19 +281,8 @@ const GLOBAL_STYLES = `
     cursor: pointer;
     padding: 0 !important;
   }
-  .bm-action-btn:hover {
-    background: #ede9fe !important;
-    border-color: #c4b5fd !important;
-  }
-  .bm-action-btn.danger {
-    background: #fff5f5 !important;
-    border-color: #fecaca !important;
-    color: #ef4444 !important;
-  }
-  .bm-action-btn.danger:hover {
-    background: #fee2e2 !important;
-    border-color: #f87171 !important;
-  }
+  .bm-action-btn:hover { background: #ede9fe !important; border-color: #c4b5fd !important; }
+  .bm-action-btn.danger { background: #fff5f5 !important; border-color: #fecaca !important; color: #ef4444 !important; }
 
   .bm-blog-title {
     font-family: 'Playfair Display', serif;
@@ -342,39 +325,8 @@ const GLOBAL_STYLES = `
     gap: 10px;
   }
 
-  .bm-meta-item {
-    display: flex; align-items: center; gap: 5px;
-    font-size: 12.5px; color: #9ca3af;
-  }
+  .bm-meta-item { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: #9ca3af; }
   .bm-meta-item strong { color: #374151; font-weight: 600; }
-
-  /* ─── PAGINATION ─── */
-  .bm-pagination {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 28px;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .bm-page-info { font-size: 13px; color: #6b7280; }
-
-  .bm-page-btns { display: flex; gap: 6px; align-items: center; }
-  .bm-page-btn {
-    width: 36px; height: 36px;
-    border: 1.5px solid #ede9fe;
-    background: #fff;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #6b7280;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s;
-  }
-  .bm-page-btn:hover:not(:disabled) { border-color: #8b5cf6; color: #6d28d9; background: #f5f3ff; }
-  .bm-page-btn.active { background: #6d28d9; border-color: #6d28d9; color: #fff; }
-  .bm-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
   /* ─── MODAL ─── */
   .bm-modal .ant-modal-content {
@@ -389,215 +341,93 @@ const GLOBAL_STYLES = `
     border-bottom: none !important;
     margin-bottom: 0 !important;
   }
-  .bm-modal .ant-modal-title {
-    color: #fff !important;
-    font-family: 'Playfair Display', serif !important;
-    font-size: 20px !important;
-    font-weight: 700 !important;
-  }
+  .bm-modal .ant-modal-title { color: #fff !important; font-family: 'Playfair Display', serif !important; font-size: 20px !important; font-weight: 700 !important; }
   .bm-modal .ant-modal-close-x { color: #a78bfa !important; }
   .bm-modal .ant-modal-body { padding: 24px 28px !important; }
-  .bm-modal .ant-tabs-tab {
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    padding: 10px 4px !important;
-  }
-  .bm-modal .ant-tabs-tab-active .ant-tabs-tab-btn { color: #6d28d9 !important; }
-  .bm-modal .ant-tabs-ink-bar { background: #6d28d9 !important; }
-
-  .bm-form-label .ant-form-item-label label {
-    font-weight: 600 !important;
-    font-size: 13px !important;
-    color: #374151 !important;
-  }
 
   /* ─── FOOTER ACTIONS ─── */
-  .bm-footer-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 0 0;
-    border-top: 1.5px solid #f5f3ff;
-    margin-top: 8px;
-  }
-
-  .bm-save-draft-btn {
-    height: 44px !important;
-    padding: 0 24px !important;
-    border-radius: 12px !important;
-    border-color: #c4b5fd !important;
-    color: #6d28d9 !important;
-    font-weight: 600 !important;
-    background: #faf5ff !important;
-  }
-  .bm-save-draft-btn:hover {
-    background: #ede9fe !important;
-    border-color: #8b5cf6 !important;
-  }
-
-  .bm-publish-btn {
-    height: 44px !important;
-    padding: 0 28px !important;
-    border-radius: 12px !important;
-    background: linear-gradient(135deg, #6d28d9, #8b5cf6) !important;
-    border: none !important;
-    font-weight: 700 !important;
-    font-size: 14px !important;
-    box-shadow: 0 4px 14px rgba(109,40,217,0.35) !important;
-  }
-  .bm-publish-btn:hover {
-    box-shadow: 0 6px 18px rgba(109,40,217,0.45) !important;
-  }
+  .bm-footer-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 0 0; border-top: 1.5px solid #f5f3ff; margin-top: 8px; }
+  .bm-save-draft-btn { height: 44px !important; padding: 0 24px !important; border-radius: 12px !important; border-color: #c4b5fd !important; color: #6d28d9 !important; font-weight: 600 !important; background: #faf5ff !important; }
+  .bm-publish-btn { height: 44px !important; padding: 0 28px !important; border-radius: 12px !important; background: linear-gradient(135deg, #6d28d9, #8b5cf6) !important; border: none !important; font-weight: 700 !important; font-size: 14px !important; box-shadow: 0 4px 14px rgba(109,40,217,0.35) !important; color: #fff !important; }
 
   /* ─── PREVIEW MODAL ─── */
   .preview-modal .ant-modal-content { border-radius: 20px !important; overflow: hidden; }
-  .preview-modal .ant-modal-header { 
-    background: linear-gradient(135deg, #1e1b4b, #4c1d95) !important;
-    border-bottom: none !important;
-    margin-bottom: 0 !important;
-    padding: 18px 28px !important;
-  }
+  .preview-modal .ant-modal-header { background: linear-gradient(135deg, #1e1b4b, #4c1d95) !important; border-bottom: none !important; margin-bottom: 0 !important; padding: 18px 28px !important; }
   .preview-modal .ant-modal-title { color: #fff !important; font-weight: 700 !important; }
   .preview-modal .ant-modal-body { padding: 0 !important; }
 
-  /* ─── BLOG PREVIEW CONTENT ─── */
-  .blog-preview-wrap {
-    font-family: 'DM Sans', sans-serif;
-    color: #1e1b4b;
-    background: #fff;
-  }
-
-  .blog-preview-hero {
-    width: 100%;
-    height: 320px;
-    object-fit: cover;
-    display: block;
-  }
-
+  /* ─── BLOG PREVIEW CONTENT (FIXED BULLETS & SPACING) ─── */
+  .blog-preview-wrap { font-family: 'DM Sans', sans-serif; color: #1e1b4b; background: #fff; }
+  .blog-preview-hero { width: 100%; height: 320px; object-fit: cover; display: block; }
   .blog-preview-inner { padding: 36px 40px; }
 
-  .blog-preview-content h1 { font-family: 'Playfair Display', serif; font-size: 2em; font-weight: 800; margin: 1.4em 0 0.6em; line-height: 1.25; color: #1e1b4b; }
-  .blog-preview-content h2 { font-family: 'Playfair Display', serif; font-size: 1.6em; font-weight: 700; margin: 1.2em 0 0.5em; line-height: 1.3; color: #1e1b4b; }
-  .blog-preview-content h3 { font-size: 1.3em; font-weight: 700; margin: 1em 0 0.4em; color: #2d1b69; }
-  .blog-preview-content h4 { font-size: 1.1em; font-weight: 600; margin: 0.8em 0 0.4em; }
-  .blog-preview-content p { margin: 1em 0; line-height: 1.8; font-size: 16px; color: #374151; }
-  .blog-preview-content ul { list-style: disc; padding-left: 1.8em; margin: 0.8em 0; }
-  .blog-preview-content ol { list-style: decimal; padding-left: 1.8em; margin: 0.8em 0; }
-  .blog-preview-content li { margin: 0.4em 0; line-height: 1.7; color: #374151; }
-  .blog-preview-content blockquote {
-    border-left: 4px solid #8b5cf6;
-    padding: 12px 20px;
-    margin: 1.2em 0;
-    background: #f5f3ff;
-    border-radius: 0 12px 12px 0;
-    font-style: italic;
-    color: #4c1d95;
-  }
+  /* 🚨 CRITICAL FIX: FORCING LIST STYLES 🚨 */
+  .blog-preview-content ul { list-style-type: disc !important; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
+  .blog-preview-content ol { list-style-type: decimal !important; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
+  .blog-preview-content li { display: list-item !important; list-style-position: outside !important; margin: 0 0 0.6em 0 !important; line-height: 1.7; color: #374151; }
+  
+  .blog-preview-content h1 { font-family: 'Playfair Display', serif; font-size: 2em; font-weight: 800; margin: 1.4em 0 0.6em !important; line-height: 1.25; color: #1e1b4b; display: block; }
+  .blog-preview-content h2 { font-family: 'Playfair Display', serif; font-size: 1.6em; font-weight: 700; margin: 1.2em 0 0.5em !important; line-height: 1.3; color: #1e1b4b; display: block; }
+  .blog-preview-content h3 { font-size: 1.3em; font-weight: 700; margin: 1em 0 0.4em !important; color: #2d1b69; display: block; }
+  .blog-preview-content p { margin: 0 0 1.2em 0 !important; line-height: 1.8; font-size: 16px; color: #374151; display: block; }
+  .blog-preview-content blockquote { border-left: 4px solid #8b5cf6; padding: 12px 20px; margin: 1.2em 0 !important; background: #f5f3ff; border-radius: 0 12px 12px 0; font-style: italic; color: #4c1d95; }
   .blog-preview-content a { color: #6d28d9; text-decoration: underline; }
-  .blog-preview-content img { max-width: 100%; border-radius: 10px; margin: 1em 0; }
-  .blog-preview-content table { width: 100%; border-collapse: collapse; margin: 1em 0; }
-  .blog-preview-content th, .blog-preview-content td {
-    border: 1px solid #e9d5ff; padding: 10px 14px; text-align: left;
-  }
-  .blog-preview-content th { background: #f5f3ff; font-weight: 700; color: #4c1d95; }
-  .blog-preview-content code { background: #f5f3ff; padding: 2px 7px; border-radius: 5px; font-family: monospace; font-size: 0.9em; color: #6d28d9; }
-  .blog-preview-content pre { background: #1e1b4b; color: #e9d5ff; padding: 18px; border-radius: 12px; overflow-x: auto; margin: 1em 0; }
-  .blog-preview-content hr { border: none; border-top: 2px solid #ede9fe; margin: 2em 0; }
+  .blog-preview-content img { max-width: 100%; border-radius: 10px; margin: 1em 0 !important; }
 
-  /* ─── TOC ─── */
-  .bm-toc {
-    background: #f5f3ff;
-    border: 1.5px solid #e9d5ff;
-    border-radius: 14px;
-    padding: 18px 22px;
-    margin-bottom: 28px;
-  }
+  .bm-toc { background: #f5f3ff; border: 1.5px solid #e9d5ff; border-radius: 14px; padding: 18px 22px; margin-bottom: 28px; }
   .bm-toc-title { font-weight: 700; font-size: 13px; color: #6d28d9; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
   .bm-toc ol { list-style: decimal; padding-left: 18px; margin: 0; }
   .bm-toc li { font-size: 13.5px; color: #4c1d95; padding: 3px 0; line-height: 1.5; }
-
-  /* ─── EMPTY ─── */
-  .bm-empty {
-    background: #fff;
-    border-radius: 18px;
-    border: 1.5px dashed #ddd6fe;
-    padding: 64px 40px;
-    text-align: center;
-  }
-  .bm-empty-icon { font-size: 56px; color: #c4b5fd; margin-bottom: 16px; }
-  .bm-empty-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: #1e1b4b; margin-bottom: 8px; }
-  .bm-empty-sub { font-size: 14px; color: #9ca3af; }
-
-  /* ─── AUTOSAVE INDICATOR ─── */
-  .bm-autosave {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 12px; color: #9ca3af;
-  }
-  .bm-autosave-dot {
-    width: 8px; height: 8px; border-radius: 50%; background: #10b981;
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-
-  /* ─── UPLOAD AREA ─── */
-  .bm-upload .ant-upload-list-item {
-    border-radius: 10px !important;
-    border-color: #ede9fe !important;
-  }
-  .ant-upload-select { border-radius: 12px !important; border-color: #c4b5fd !important; }
-  .ant-upload-select:hover { border-color: #8b5cf6 !important; background: #faf5ff !important; }
-
-  /* ─── ANT OVERRIDES IN MODAL ─── */
-  .bm-modal .ant-form-item-label > label { color: #374151 !important; font-weight: 600 !important; font-size: 13px !important; }
-  .bm-modal .ant-input, .bm-modal .ant-select-selector, .bm-modal .ant-input-affix-wrapper {
-    border-radius: 10px !important;
-    border-color: #e9d5ff !important;
-  }
-  .bm-modal .ant-input:focus, .bm-modal .ant-select-focused .ant-select-selector {
-    border-color: #8b5cf6 !important;
-    box-shadow: 0 0 0 2px rgba(139,92,246,0.15) !important;
-  }
-
-  /* Responsive */
-  @media (max-width: 600px) {
-    .bm-blog-body { padding: 16px; }
-    .blog-preview-inner { padding: 20px; }
-    .blog-preview-hero { height: 200px; }
-  }
 `;
 
 // ─────────────────────────────────────────────
-//  PASTE CLEANING UTILITIES
+//  PASTE CLEANING UTILITIES (FIXED BULLETS)
 // ─────────────────────────────────────────────
-const cleanWordHtml = (html) => {
+const cleanWordHtml = (html) => { 
   if (!html) return '';
-  let c = html;
-  c = c.replace(/<\?xml[^?]*\?>/gi, '');
-  c = c.replace(/<\!\[CDATA\[.*?\]\]>/gis, '');
-  c = c.replace(/<!--\[if[^>]*>.*?<!\[endif\]-->/gis, '');
-  c = c.replace(/<meta[^>]*>/gi, '');
-  c = c.replace(/<style[^>]*>.*?<\/style>/gis, '');
-  c = c.replace(/<xml[^>]*>.*?<\/xml>/gis, '');
-  c = c.replace(/\s*class="[^"]*Mso[^"]*"/gi, '');
-  c = c.replace(/\s*style="[^"]*"/gi, '');
-  c = c.replace(/\s*lang="[^"]*"/gi, '');
-  c = c.replace(/<span[^>]*>\s*<\/span>/gi, '');
-  c = c.replace(/<\/?font[^>]*>/gi, '');
-  c = c.replace(/<p[^>]*>(&nbsp;|\s)*<\/p>/gi, '');
-  c = c.replace(/&nbsp;/gi, ' ');
-  c = c.replace(/[\u200B-\u200D\uFEFF]/g, '');
-  c = c.replace(/\s+/g, ' ').trim();
-  return c;
+  let cleaned = html;
+
+  // Basic cleanup
+  cleaned = cleaned.replace(/lang="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/class="[^"]*"/gi, '');
+  
+  // 🚨 STRIP SPANS: Word hides massive blank spaces inside nested span tags
+  cleaned = cleaned.replace(/<\/?span[^>]*>/gi, '');
+  
+  // Strip excessive non-breaking spaces (converts multiple &nbsp; to single space)
+  cleaned = cleaned.replace(/(&nbsp;|\s){2,}/gi, ' ');
+
+  // 1. Convert fake paragraphs with bullets to <li> (matches ●, •, ·, etc.)
+  const pListPattern = /<p[^>]*>\s*([·●•▪o\-]|\&#183;)\s*([\s\S]*?)<\/p>/gi;
+  cleaned = cleaned.replace(pListPattern, '<li>$2</li>');
+  
+  // 2. Clean existing <li> that have hardcoded bullets inside them
+  const liListPattern = /<li[^>]*>\s*([·●•▪o\-]|\&#183;)\s*([\s\S]*?)<\/li>/gi;
+  cleaned = cleaned.replace(liListPattern, '<li>$2</li>');
+
+  // 3. Group consecutive <li> tags into a single <ul> tag!
+  cleaned = cleaned.replace(/(<li>[\s\S]*?<\/li>\s*)+/gi, (match) => {
+    return `<ul>\n${match}\n</ul>`;
+  });
+  
+  // Fix double <ul> if they accidentally got wrapped twice
+  cleaned = cleaned.replace(/<ul>\s*<ul>/gi, '<ul>');
+  cleaned = cleaned.replace(/<\/ul>\s*<\/ul>/gi, '</ul>');
+  cleaned = cleaned.replace(/<ol>\s*<ul>/gi, '<ol>');
+  cleaned = cleaned.replace(/<\/ul>\s*<\/ol>/gi, '</ol>');
+
+  // Standardize bold tags
+  cleaned = cleaned.replace(/<b([^>]*)>/gi, '<strong$1>');
+  cleaned = cleaned.replace(/<\/b>/gi, '</strong>');
+
+  return cleaned.trim();
 };
 
 const sanitizePastedHtml = (html) => {
   if (!html) return '';
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
-  ['script', 'style', 'iframe', 'object', 'embed', 'applet', 'link', 'meta'].forEach(sel => {
+  ['script', 'iframe', 'object', 'embed', 'applet', 'link', 'meta'].forEach(sel => {
     tempDiv.querySelectorAll(sel).forEach(el => el.remove());
   });
   return tempDiv.innerHTML;
@@ -607,10 +437,7 @@ const cleanPastedContent = (html) => {
   if (!html) return '';
   let c = cleanWordHtml(html);
   c = sanitizePastedHtml(c);
-  c = c.replace(/\s*style="[^"]*"/gi, '');
   c = c.replace(/\s*class="[^"]*"/gi, '');
-  c = c.replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '</p><p>');
-  c = c.replace(/<p[^>]*>\s*<\/p>/gi, '');
   return c.trim();
 };
 
@@ -642,11 +469,11 @@ const smartExtract = (html) => {
   if (!html) return {};
   const text = htmlToPlainText(html).toLowerCase();
   const CATS = {
-    'AI': ['artificial intelligence', 'machine learning', 'deep learning', 'chatgpt', 'llm', 'ai ', 'openai', 'generative'],
+    'AI': ['artificial intelligence', 'machine learning', 'deep learning', 'chatgpt', 'llm', 'ai ', 'openai'],
     'Real Estate': ['property', 'real estate', 'housing', 'apartment', 'villa', 'rent', 'mortgage', 'broker'],
-    'PropTech': ['proptech', 'property technology', 'smart home', 'iot', 'digital property', 'virtual tour'],
-    'Technology': ['software', 'programming', 'javascript', 'react', 'cloud', 'saas', 'startup', 'api', 'coding'],
-    'Business': ['business', 'startup', 'entrepreneur', 'investment', 'revenue', 'marketing', 'sales', 'strategy'],
+    'PropTech': ['proptech', 'property technology', 'smart home', 'iot', 'digital property'],
+    'Technology': ['software', 'programming', 'javascript', 'react', 'cloud', 'saas', 'startup', 'api'],
+    'Business': ['business', 'startup', 'entrepreneur', 'investment', 'revenue', 'marketing', 'sales'],
     'Mortgage': ['mortgage', 'home loan', 'refinance', 'interest rate', 'lender'],
     'Landscaping': ['landscaping', 'garden', 'outdoor', 'hardscape', 'lawn', 'irrigation'],
   };
@@ -655,7 +482,7 @@ const smartExtract = (html) => {
     const matches = kws.filter(kw => text.includes(kw)).length;
     if (matches > maxMatches) { maxMatches = matches; detectedCategory = cat; }
   }
-  const TAGS = ['AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Mortgage', 'Landscaping', 'Marketing', 'UAE', 'Dubai', 'Innovation', 'Digital', 'Cloud', 'Investment', 'Architecture', 'Smart Home', 'Automation'];
+  const TAGS = ['AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Mortgage', 'Landscaping', 'Marketing', 'UAE', 'Dubai', 'Innovation', 'Digital', 'Cloud', 'Investment'];
   const detectedTags = TAGS.filter(t => text.includes(t.toLowerCase())).slice(0, 6);
   let excerpt = '';
   const pm = html.match(/<p[^>]*>(.*?)<\/p>/i);
@@ -831,7 +658,7 @@ const BlogPreview = ({ data }) => {
 
   const sanitized = content ? DOMPurify.sanitize(content, {
     ALLOWED_TAGS: ['p','br','strong','b','em','i','u','strike','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th','div','span'],
-    ALLOWED_ATTR: ['href','src','alt','title','target','rel'],
+    ALLOWED_ATTR: ['href','src','alt','title','target','rel', 'style'], 
     ALLOW_DATA_ATTR: false
   }) : '';
 
@@ -891,7 +718,7 @@ const BlogPreview = ({ data }) => {
 };
 
 // ─────────────────────────────────────────────
-//  EDITOR CONFIG
+//  EDITOR CONFIG (FIXED BULLETS)
 // ─────────────────────────────────────────────
 const getEditorConfig = () => ({
   readonly: false,
@@ -908,9 +735,12 @@ const getEditorConfig = () => ({
   editorCssClass: 'jodit-clean-editor',
   extraCSS: `
     .jodit-clean-editor { font-family: 'DM Sans', sans-serif; line-height: 1.65; font-size: 16px; color: #1e1b4b; }
-    .jodit-clean-editor ul { list-style: disc; padding-left: 2em; margin: 0.5em 0; }
-    .jodit-clean-editor ol { list-style: decimal; padding-left: 2em; margin: 0.5em 0; }
-    .jodit-clean-editor li { margin: 0.25em 0; display: list-item; }
+    
+    /* 🚨 CRITICAL FIX: FORCING LIST STYLES IN EDITOR 🚨 */
+    .jodit-clean-editor ul { list-style-type: disc !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
+    .jodit-clean-editor ol { list-style-type: decimal !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
+    .jodit-clean-editor li { display: list-item !important; list-style-position: outside !important; margin: 0.5em 0 !important; }
+    
     .jodit-clean-editor p { margin: 0.75em 0; }
     .jodit-clean-editor h1, .jodit-clean-editor h2, .jodit-clean-editor h3 { font-family: 'Playfair Display', serif; margin: 1em 0 0.5em; font-weight: 700; }
     .jodit-clean-editor blockquote { border-left: 3px solid #8b5cf6; padding-left: 1em; margin: 1em 0; color: #6b7280; font-style: italic; background: #f5f3ff; border-radius: 0 8px 8px 0; padding: 10px 16px; }
@@ -1139,7 +969,8 @@ const BlogManagement = () => {
       const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([processImage(featuredImageList), processImage(coverImageList), processImage(authorImageList)]);
       const cleanedContent = DOMPurify.sanitize(cleanPastedContent(contentValue), {
         ALLOWED_TAGS: ['p','br','strong','b','em','i','u','strike','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th'],
-        ALLOWED_ATTR: ['href','src','alt','title','target','rel'], ALLOW_DATA_ATTR: false
+        ALLOWED_ATTR: ['href','src','alt','title','target','rel', 'style'],
+        ALLOW_DATA_ATTR: false
       });
       const payload = {
         title: values.title,
@@ -1258,50 +1089,50 @@ const BlogManagement = () => {
 
         {/* Filters */}
         <div className="bm-filters" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-  <Input
-    size="large"   // ✅ ADD THIS
-    prefix={<SearchOutlined style={{ color: '#c4b5fd' }} />}
-    placeholder="Search posts by title, content or tags..."
-    value={searchText}
-    onChange={handleSearch}
-    allowClear
-    style={{ flex: 1, minWidth: 200, borderRadius: 10 }}
-  />
+          <Input
+            size="large"
+            prefix={<SearchOutlined style={{ color: '#c4b5fd' }} />}
+            placeholder="Search posts by title, content or tags..."
+            value={searchText}
+            onChange={handleSearch}
+            allowClear
+            style={{ flex: 1, minWidth: 200, borderRadius: 10 }}
+          />
 
-  <Select
-    size="large"   // ✅ ADD THIS
-    placeholder="Category"
-    value={selectedCategory || undefined}
-    onChange={v => handleFilterChange('category', v)}
-    allowClear
-    style={{ width: 180 }}
-  >
-    {[['AI','🤖 AI'],['Real Estate','🏠 Real Estate'],['PropTech','📱 PropTech'],['Technology','💻 Technology'],['Business','💼 Business'],['Mortgage','🏦 Mortgage'],['Landscaping','🌳 Landscaping'],['Other','📄 Other']].map(([v,l]) => (
-      <Option key={v} value={v}>{l}</Option>
-    ))}
-  </Select>
+          <Select
+            size="large"
+            placeholder="Category"
+            value={selectedCategory || undefined}
+            onChange={v => handleFilterChange('category', v)}
+            allowClear
+            style={{ width: 180 }}
+          >
+            {[['AI','🤖 AI'],['Real Estate','🏠 Real Estate'],['PropTech','📱 PropTech'],['Technology','💻 Technology'],['Business','💼 Business'],['Mortgage','🏦 Mortgage'],['Landscaping','🌳 Landscaping'],['Other','📄 Other']].map(([v,l]) => (
+              <Option key={v} value={v}>{l}</Option>
+            ))}
+          </Select>
 
-  <Select
-    size="large"   // ✅ ADD THIS
-    placeholder="Status"
-    value={selectedStatus || undefined}
-    onChange={v => handleFilterChange('status', v)}
-    allowClear
-    style={{ width: 140 }}
-  >
-    <Option value="published">✅ Published</Option>
-    <Option value="draft">📝 Draft</Option>
-  </Select>
+          <Select
+            size="large"
+            placeholder="Status"
+            value={selectedStatus || undefined}
+            onChange={v => handleFilterChange('status', v)}
+            allowClear
+            style={{ width: 140 }}
+          >
+            <Option value="published">✅ Published</Option>
+            <Option value="draft">📝 Draft</Option>
+          </Select>
 
-  <Button
-    size="large"   // ✅ ADD THIS
-    icon={<UndoOutlined />}
-    onClick={handleClearFilters}
-    style={{ borderRadius: 10, borderColor: '#ede9fe', color: '#6b7280' }}
-  >
-    Clear
-  </Button>
-</div>
+          <Button
+            size="large"
+            icon={<UndoOutlined />}
+            onClick={handleClearFilters}
+            style={{ borderRadius: 10, borderColor: '#ede9fe', color: '#6b7280' }}
+          >
+            Clear
+          </Button>
+        </div>
 
         {/* Blog List */}
         {loading ? (
