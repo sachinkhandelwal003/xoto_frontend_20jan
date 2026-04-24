@@ -522,6 +522,40 @@ const CUSTOM_ROLE_LINKS = {
     },
 ],
 
+"26": [
+  {
+    title: "My Leads",
+    icon : "fas fa-file-alt",
+    path : "/dashboard/{roleSlug}/leads",  
+  },
+   {
+      title: "Proposals",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Proposals", path: "/dashboard/{roleSlug}/proposals/create" },
+        { title: "View Proposals", path: "/dashboard/{roleSlug}/proposals/view" },
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+
+       
+    {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Cases", path: "/dashboard/{roleSlug}/case/create" },
+        { title: "View Cases", path: "/dashboard/{roleSlug}/case/view" },
+                { title: "Process Cases", path: "/dashboard/{roleSlug}/case/view/all" },
+
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+],
+
 };
 
 
@@ -540,8 +574,8 @@ const roleSlugMap = {
   '18': "vault-admin", //vault
   '22': "vaultagent",
   '21': "vaultpartner",
-  '23': "vault-advisor",
-  '26': "vault-ops",
+  '26': "vault-advisor",
+  '23': "vault-ops",
    
  
 
@@ -562,6 +596,7 @@ const ROLE_MODULE_ORDER = {
   '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners', 'Advisors', 'Mortgages'],
   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
   '21': ['Dashboard','Create Lead',  'Vault Partners', 'All Leads',],
+    '26': ['Dashboard', 'All Leads','Case','Proposals'],
 };
 
 
