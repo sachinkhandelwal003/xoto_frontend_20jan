@@ -1,7 +1,7 @@
 // src/pages/Leads/VaultAgentLeadDetail.jsx
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Spin, message } from "antd";
+import { Spin, message, Modal, Form, Input, Select, InputNumber, DatePicker, Button } from "antd";
 import {
   ChevronLeft, User, Mail, Phone, Home, DollarSign, FileText,
   Eye, AlertCircle, RefreshCw, CheckCircle, XCircle, AlertTriangle,
@@ -10,6 +10,8 @@ import {
   TrendingUp, Percent, MessageSquare, ExternalLink, Clock,
   Zap, GitBranch, CreditCard, Globe, Target, Link,
 } from "lucide-react";
+import { Edit3 } from "lucide-react";
+import dayjs from "dayjs";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────
@@ -92,6 +94,10 @@ export default function VaultAgentLeadDetail() {
   const [qualityScore,   setQualityScore]   = useState(95);
   const [docOverrides,   setDocOverrides]   = useState({});
   const [flashMsg,       setFlashMsg]       = useState({ type: "", text: "" });
+  const [editModalOpen, setEditModalOpen] = useState(false);
+const [editSubmitting, setEditSubmitting] = useState(false);
+const [form] = Form.useForm();
+
 
   const flash = (type, text) => {
     setFlashMsg({ type, text });
@@ -127,8 +133,48 @@ export default function VaultAgentLeadDetail() {
     } catch { /* silent */ }
     finally { setDocsLoading(false); }
   };
+ const handleEditSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      setEditSubmitting(true);
+
+      const payload = {
+        customerInfo: {
+          ...values.customerInfo,
+          dateOfBirth: values.customerInfo.dateOfBirth
+            ? values.customerInfo.dateOfBirth.format('YYYY-MM-DD')
+            : undefined,
+        },
+        propertyDetails: {
+          ...values.propertyDetails,
+          completionDate: values.propertyDetails.completionDate
+            ? values.propertyDetails.completionDate.format('YYYY-MM-DD')
+            : undefined,
+        },
+        loanRequirements: values.loanRequirements,
+        referralType: values.referralType,
+        loanAmountRange: values.loanAmountRange,
+        source: values.source,
+        notesToXoto: values.notesToXoto,
+        currentStatus: values.currentStatus,
+        commissionInfo: values.commissionInfo,
+      };
+
+      // ✅ Correct endpoint
+      await apiService.put(`/vault/lead/advisor/lead/${id}/info`, payload);
+      message.success('Lead updated successfully');
+      setEditModalOpen(false);
+      fetchLead(); // refresh data
+    } catch (err) {
+      if (err?.errorFields) return; // form validation error
+      message.error(err?.response?.data?.message || 'Update failed');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
 
   useEffect(() => { if (id) { fetchLead(); fetchDocs(); } }, [id]);
+
 
   // ── Status Update ─────────────────────────────────────────────────────
   const handleStatusUpdate = async () => {
@@ -198,7 +244,68 @@ export default function VaultAgentLeadDetail() {
       flash("error", err?.response?.data?.message || "Rejection failed");
     } finally { setRejecting(false); }
   };
+useEffect(() => {
+  if (editModalOpen && lead) {
+    const ci = lead.customerInfo || {};
+    const pd = lead.propertyDetails || {};
+    const pa = pd.propertyAddress || {};
+    const lr = lead.loanRequirements || {};
+    const si = lead.sourceInfo || {};
+    const ci2 = lead.commissionInfo || {};
 
+    form.setFieldsValue({
+      customerInfo: {
+        fullName: ci.fullName,
+        email: ci.email,
+        mobileNumber: ci.mobileNumber,
+        alternativePhone: ci.alternativePhone,
+        whatsappNumber: ci.whatsappNumber,
+        dateOfBirth: ci.dateOfBirth ? dayjs(ci.dateOfBirth) : null,
+        nationality: ci.nationality,
+        maritalStatus: ci.maritalStatus,
+        numberOfDependents: ci.numberOfDependents,
+        occupation: ci.occupation,
+        employer: ci.employer,
+        monthlySalary: ci.monthlySalary,
+        preferredName: ci.preferredName,
+      },
+      propertyDetails: {
+        propertyType: pd.propertyType,
+        propertySubtype: pd.propertySubtype,
+        propertyValue: pd.propertyValue,
+        downPaymentAmount: pd.downPaymentAmount,
+        loanAmountRequired: pd.loanAmountRequired,
+        propertyAgeYears: pd.propertyAgeYears,
+        isOffPlan: pd.isOffPlan,
+        completionDate: pd.completionDate ? dayjs(pd.completionDate) : null,
+        propertyAddress: {
+          building: pa.building,
+          area: pa.area,
+          city: pa.city,
+        },
+      },
+      loanRequirements: {
+        preferredTenureYears: lr.preferredTenureYears,
+        preferredInterestRateType: lr.preferredInterestRateType,
+        preferredBanks: lr.preferredBanks || [],
+        feeFinancingPreference: lr.feeFinancingPreference,
+        lifeInsurancePreference: lr.lifeInsurancePreference,
+        propertyInsurancePreference: lr.propertyInsurancePreference,
+        specialRequirements: lr.specialRequirements,
+      },
+      referralType: lead.referralType,
+      loanAmountRange: lead.loanAmountRange,
+      source: si.source,
+      notesToXoto: lead.notesToXoto,
+      currentStatus: lead.currentStatus,
+      commissionInfo: {
+        commissionEligible: ci2.commissionEligible,
+        commissionStatus: ci2.commissionStatus,
+        commissionAmount: ci2.commissionAmount,
+      },
+    });
+  }
+}, [editModalOpen, lead, form]);
   // ── Loading / Error ────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
@@ -290,6 +397,25 @@ export default function VaultAgentLeadDetail() {
         >
           <ChevronLeft size={15} /> Back to Vault Leads
         </button>
+         <button
+    onClick={() => setEditModalOpen(true)}
+    style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '8px 16px', background: C.white, border: `1px solid ${C.grayBord}`,
+      borderRadius: 10, fontSize: 13, fontWeight: 600, color: C.primary,
+      cursor: 'pointer', transition: 'all .2s',
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.borderColor = C.primaryBord;
+      e.currentTarget.style.background = C.primarySoft;
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.borderColor = C.grayBord;
+      e.currentTarget.style.background = C.white;
+    }}
+  >
+    <Edit3 size={15} /> Edit Lead
+  </button>
 
         {/* ── Flash ── */}
         {flashMsg.text && (
@@ -767,6 +893,230 @@ export default function VaultAgentLeadDetail() {
           </div>
         </div>
       )}
+       <Modal
+  title={
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <Edit3 size={18} color={C.primary} />
+      <span style={{ fontWeight: 700, fontSize: 16 }}>Edit Lead</span>
+    </div>
+  }
+  open={editModalOpen}
+  onCancel={() => setEditModalOpen(false)}
+  width={960}
+  footer={null}
+  destroyOnClose
+>
+  <Form
+    form={form}
+    layout="vertical"
+    style={{ maxHeight: '70vh', overflowY: 'auto', paddingRight: 4 }}
+  >
+    {/* ----- Client Information ----- */}
+    <div style={{ marginBottom: 20 }}>
+      <h4 style={{ margin: '0 0 12px', color: C.primary }}>Client Information</h4>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+        <Form.Item name={['customerInfo', 'fullName']} label="Full Name" rules={[{ required: true }]}>
+          <Input />
+        </Form.Item>
+        <Form.Item name={['customerInfo', 'preferredName']} label="Preferred Name">
+          <Input />
+        </Form.Item>
+        <Form.Item name={['customerInfo', 'email']} label="Email">
+          <Input />
+        </Form.Item>
+        <Form.Item name={['customerInfo', 'mobileNumber']} label="Mobile">
+          <Input />
+        </Form.Item>
+        <Form.Item name={['customerInfo', 'alternativePhone']} label="Alt. Phone">
+          <Input />
+        </Form.Item>
+        <Form.Item name={['customerInfo', 'whatsappNumber']} label="WhatsApp">
+          <Input />
+        </Form.Item>
+        <Form.Item name={['customerInfo', 'dateOfBirth']} label="Date of Birth">
+          <DatePicker style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item name={['customerInfo', 'nationality']} label="Nationality">
+          <Input />
+        </Form.Item>
+        <Form.Item name={['customerInfo', 'maritalStatus']} label="Marital Status">
+          <Select allowClear>
+            <Select.Option value="Single">Single</Select.Option>
+            <Select.Option value="Married">Married</Select.Option>
+            <Select.Option value="Other">Other</Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name={['customerInfo', 'numberOfDependents']} label="Dependents">
+          <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item name={['customerInfo', 'occupation']} label="Occupation">
+          <Input />
+        </Form.Item>
+        <Form.Item name={['customerInfo', 'employer']} label="Employer">
+          <Input />
+        </Form.Item>
+        <Form.Item name={['customerInfo', 'monthlySalary']} label="Monthly Salary">
+          <InputNumber min={0} style={{ width: '100%' }} addonBefore="AED" />
+        </Form.Item>
+      </div>
+    </div>
+
+    {/* ----- Property Details ----- */}
+    <div style={{ marginBottom: 20 }}>
+      <h4 style={{ margin: '0 0 12px', color: C.primary }}>Property Details</h4>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+        <Form.Item name={['propertyDetails', 'propertyType']} label="Property Type">
+          <Input />
+        </Form.Item>
+        <Form.Item name={['propertyDetails', 'propertySubtype']} label="Subtype">
+          <Input />
+        </Form.Item>
+        <Form.Item name={['propertyDetails', 'propertyValue']} label="Property Value">
+          <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
+        </Form.Item>
+        <Form.Item name={['propertyDetails', 'downPaymentAmount']} label="Down Payment">
+          <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
+        </Form.Item>
+        <Form.Item name={['propertyDetails', 'loanAmountRequired']} label="Loan Required">
+          <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
+        </Form.Item>
+        <Form.Item name={['propertyDetails', 'propertyAgeYears']} label="Property Age (years)">
+          <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item name={['propertyDetails', 'isOffPlan']} label="Off-Plan?">
+          <Select allowClear>
+            <Select.Option value={true}>Yes</Select.Option>
+            <Select.Option value={false}>No</Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name={['propertyDetails', 'completionDate']} label="Completion Date">
+          <DatePicker style={{ width: '100%' }} />
+        </Form.Item>
+      </div>
+      <h4 style={{ margin: '16px 0 8px' }}>Property Address</h4>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
+        <Form.Item name={['propertyDetails', 'propertyAddress', 'building']} label="Building">
+          <Input />
+        </Form.Item>
+        <Form.Item name={['propertyDetails', 'propertyAddress', 'area']} label="Area">
+          <Input />
+        </Form.Item>
+        <Form.Item name={['propertyDetails', 'propertyAddress', 'city']} label="City">
+          <Input />
+        </Form.Item>
+      </div>
+    </div>
+
+    {/* ----- Loan Requirements ----- */}
+    <div style={{ marginBottom: 20 }}>
+      <h4 style={{ margin: '0 0 12px', color: C.primary }}>Loan Requirements</h4>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+        <Form.Item name={['loanRequirements', 'preferredTenureYears']} label="Tenure (years)">
+          <InputNumber min={1} max={25} style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item name={['loanRequirements', 'preferredInterestRateType']} label="Rate Type">
+          <Select allowClear>
+            <Select.Option value="Fixed">Fixed</Select.Option>
+            <Select.Option value="Variable">Variable</Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name={['loanRequirements', 'preferredBanks']} label="Preferred Banks (comma separated)">
+          <Select mode="tags" style={{ width: '100%' }} placeholder="Select or type bank" />
+        </Form.Item>
+        <Form.Item name={['loanRequirements', 'feeFinancingPreference']} label="Fee Financing?">
+          <Select allowClear>
+            <Select.Option value={true}>Yes</Select.Option>
+            <Select.Option value={false}>No</Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name={['loanRequirements', 'lifeInsurancePreference']} label="Life Insurance?">
+          <Select allowClear>
+            <Select.Option value={true}>Yes</Select.Option>
+            <Select.Option value={false}>No</Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name={['loanRequirements', 'propertyInsurancePreference']} label="Property Insurance?">
+          <Select allowClear>
+            <Select.Option value={true}>Yes</Select.Option>
+            <Select.Option value={false}>No</Select.Option>
+          </Select>
+        </Form.Item>
+      </div>
+      <Form.Item name={['loanRequirements', 'specialRequirements']} label="Special Requirements">
+        <Input.TextArea rows={2} />
+      </Form.Item>
+    </div>
+
+    {/* ----- Commission & Lead Info ----- */}
+    <div>
+      <h4 style={{ margin: '0 0 12px', color: C.primary }}>Commission & Lead Info</h4>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+        <Form.Item name={['commissionInfo', 'commissionEligible']} label="Commission Eligible?">
+          <Select allowClear>
+            <Select.Option value={true}>Yes</Select.Option>
+            <Select.Option value={false}>No</Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name={['commissionInfo', 'commissionStatus']} label="Commission Status">
+          <Select allowClear>
+            <Select.Option value="Pending">Pending</Select.Option>
+            <Select.Option value="Paid">Paid</Select.Option>
+            <Select.Option value="Cancelled">Cancelled</Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name={['commissionInfo', 'commissionAmount']} label="Commission Amount">
+          <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
+        </Form.Item>
+        <Form.Item name="referralType" label="Referral Type">
+          <Select allowClear>
+            <Select.Option value="Referral Only">Referral Only</Select.Option>
+            <Select.Option value="Docs Provided">Docs Provided</Select.Option>
+            <Select.Option value="Full Application">Full Application</Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name="loanAmountRange" label="Loan Amount Range">
+          <Select allowClear>
+            <Select.Option value="< 500K">{'< 500K'}</Select.Option>
+            <Select.Option value="500K-1M">500K-1M</Select.Option>
+            <Select.Option value="1M-2M">1M-2M</Select.Option>
+            <Select.Option value="2M-5M">2M-5M</Select.Option>
+            <Select.Option value="> 5M">{'> 5M'}</Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name="source" label="Source">
+          <Select allowClear>
+            <Select.Option value="website">Website</Select.Option>
+            <Select.Option value="freelance_agent">Freelance Agent</Select.Option>
+            <Select.Option value="partner">Partner</Select.Option>
+            <Select.Option value="admin">Admin</Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name="currentStatus" label="Status">
+          <Select allowClear>
+            {STATUS_OPTIONS.map(opt => (
+              <Select.Option key={opt} value={opt}>{opt}</Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
+      </div>
+      <Form.Item name="notesToXoto" label="Notes to Xoto">
+        <Input.TextArea rows={3} />
+      </Form.Item>
+    </div>
+
+    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24, borderTop: `1px solid ${C.grayBord}`, paddingTop: 16 }}>
+      <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
+      <Button
+        type="primary"
+        loading={editSubmitting}
+        onClick={handleEditSubmit}
+        icon={<Edit3 size={14} />}
+      >
+        Save Changes
+      </Button>
+    </div>
+  </Form>
+</Modal>
     </div>
   );
 }
@@ -905,6 +1255,7 @@ function DocCard({ doc, onView }) {
       <button onClick={() => onView(doc)} disabled={!fileUrl} style={{ marginTop: "auto", width: "100%", padding: "9px 0", background: fileUrl ? `linear-gradient(135deg, ${C.primary}, ${C.primaryMid})` : C.grayBord, color: fileUrl ? "#fff" : C.textMuted, border: "none", borderRadius: 9, fontWeight: 600, fontSize: 13, cursor: fileUrl ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
         <Eye size={14} /> View Document
       </button>
+     
     </div>
   );
 }

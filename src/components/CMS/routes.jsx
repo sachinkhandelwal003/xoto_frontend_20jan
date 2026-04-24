@@ -142,6 +142,7 @@ import AgencyAgentProperties from "./pages/Properties/AgencyAgentProperties";
 import AgencySubscription from "../ecommerce/B2C/AgencySubscription";
 import AgencyProjects from "../ecommerce/B2C/AgencyProjects";
 import AgencyDeals from "../ecommerce/B2C/AgencyDeals";
+
 // import AgencyAssignProjects from "../ecommerce/B2C/AgencyAssignProjects";
 
 // import RegistrationAgency from "./pages/Properties/RegistrationAgency";
@@ -208,6 +209,9 @@ import VaultMortgageList from "../ecommerce/B2C/VaultMortgageList";
 import VaultMortgagedetail from "../ecommerce/B2C/VaultMortgagedetail";
 import MortgageOpsDashboard from "../ecommerce/B2C/MortgageOpsDashboard";
 import AdvisorDashboard from "../ecommerce/B2C/AdvisorDashboard";
+import IndividualLeadCreate from "../ecommerce/vault/individualpartner/IndividualLead";
+import AdvisorLeads from "../ecommerce/vault/vaultadvisor/index";
+import AdvisorLeadUploadDocuments from "../ecommerce/vault/vaultadvisor/UploadDocuments";
 
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
@@ -222,6 +226,7 @@ import CreateCase from "../ecommerce/vault/case/Index";
 import ViewCases from "../ecommerce/vault/case/ViewCases";
 import DetailedViewCases from "../ecommerce/vault/case/DetailedViewCases";
 import ProcessCasesUpdates from "../ecommerce/vault/case/ProcessCasesUpdates";
+import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
 
 const roleSlugMap = {
   0: "superadmin",
@@ -238,7 +243,7 @@ const roleSlugMap = {
   18: "vault-admin",
   22: "vaultagent" ,
   26: "vault-advisor",
-  23: "vault-ops",
+  23: "vault-mortgage-ops",
 
 21:"vaultpartner"
 };
@@ -488,9 +493,9 @@ const CmsRoutes = () => {
 <Route path="onboard-partner" element={<OnboardPartner />} />
 <Route path="AgentVaultlisting" element={<AgentVaultListing />} />
 <Route path="leads/create" element={<VaultCreateLeads />} />
-<Route path="leads" element={<VaultLeads />} />
+<Route path="leads" element={<LeadsVault/>} />
 <Route path="leads/:leadId" element={<VaultLeadDetails />} />
-<Route path="leads/:leadId/documents" element={<VaultLeadDocuments />} />
+<Route path="leads/:leadId/documents" element={<VaultLeadDocuments />} /> 
 <Route path="/lead-documents/:leadId"element={<VaultAgentDocument/>} />
 <Route path="partner-leads" element={<PartnerAgentleads />} />
 <Route path="partner/lead/:id"element={<PartnerLeadDetails />}/>
@@ -505,6 +510,9 @@ const CmsRoutes = () => {
 <Route path="mortgage-ops/:id" element={<VaultMortgagedetail />} />
 <Route path="mortgage/dashboard" element={<MortgageOpsDashboard />} />
 <Route path="advisor/dashboard" element={<AdvisorDashboard />} />
+<Route path="/advisor/adv-leads" element={<AdvisorLeads />} />
+<Route path="advisor/upload-documents" element={<AdvisorLeadUploadDocuments />} />
+<Route path="leads/partner/create" element={<IndividualLeadCreate />} />
 
 
 
@@ -581,6 +589,8 @@ const CmsRoutes = () => {
       <Route path="commission-scheme" element={<DeveloperCommissionScheme />} />
       <Route path="commission-scheme/:id" element={<DeveloperCommissionScheme />} />
       <Route path="/developer/view/:id" element={<DeveloperDetail />} />
+      
+
       {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
       {/* <Route path="team" element={<DeveloperTeam/>}/> */}
 
