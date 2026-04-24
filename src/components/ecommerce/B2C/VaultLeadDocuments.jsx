@@ -2,12 +2,14 @@ import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
+import { message } from 'antd';
 import {
   ArrowLeft, Upload, CheckCircle2,
   Loader2, FileText, X, RefreshCw,
+  ShieldCheck, ShieldAlert,
 } from 'lucide-react';
 
-/* ── Fonts ──────────────────────────────────────────────────────────────────── */
+/* ── Fonts ──────────────────────────────────────────────────── */
 const FontInjector = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
@@ -22,7 +24,18 @@ const FontInjector = () => (
   `}</style>
 );
 
-/* ── Document Schema ─────────────────────────────────────────────────────────── */
+/* ── Shared styles ────────────────────────────────────────────── */
+const badgeBase = {
+  fontSize: 10.5,
+  fontWeight: 700,
+  padding: '2px 7px',
+  borderRadius: 999,
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
+  border: '1px solid transparent',
+};
+
+/* ── Document Schema ───────────────────────────────────────── */
 const DOC_SCHEMA = {
   identity: {
     label: 'Identity Documents',
@@ -52,21 +65,27 @@ const DOC_SCHEMA = {
 const fmtSize   = (b) => b < 1024 * 1024 ? `${(b / 1024).toFixed(1)} KB` : `${(b / (1024 * 1024)).toFixed(2)} MB`;
 const fmtSizeMb = (b) => parseFloat((b / (1024 * 1024)).toFixed(3));
 
-/* ── Single Document Card ───────────────────────────────────────────────────── */
-const DocCard = ({ doc, category, categoryMeta, leadId, existingDoc, onUploadSuccess }) => {
+/* ── Single Document Card ───────────────────────────────────── */
+const DocCard = ({
+  doc,
+  category,
+  categoryMeta,
+  leadId,
+  existingDoc,
+  onUploadSuccess,
+  role,
+}) => {
   const fileRef = useRef(null);
   const [file, setFile]         = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [errMsg, setErrMsg]     = useState('');
 
-  // If doc already uploaded on server → start as success
   const [status, setStatus] = useState(existingDoc ? 'success' : 'idle');
-  // Show server filename when already uploaded
   const uploadedFileName = existingDoc?.fileName || existingDoc?.originalName || '';
 
+  // Upload mutation
   const { mutate: upload, isLoading: uploading } = useMutation({
     mutationFn: async (f) => {
-      // Step 1: upload file to get storage URL
       const form = new FormData();
       form.append('file', f);
       form.append('entityType', 'Lead');
@@ -77,7 +96,6 @@ const DocCard = ({ doc, category, categoryMeta, leadId, existingDoc, onUploadSuc
       });
       const fileUrl = uploadRes?.url || uploadRes?.file?.url;
 
-      // Step 2: register document metadata
       return apiService.post(`/vault/lead/documents/${leadId}`, {
         entityType:       'Lead',
         entityId:         leadId,
@@ -98,6 +116,30 @@ const DocCard = ({ doc, category, categoryMeta, leadId, existingDoc, onUploadSuc
       setErrMsg(e?.response?.data?.message || 'Upload failed. Please try again.');
     },
   });
+
+  // Verify mutation
+  const documentId = existingDoc?._id || existingDoc?.documentId;
+  const [verifyStatus, setVerifyStatus] = useState(
+    existingDoc ? (existingDoc.isVerified ? 'verified' : 'unverified') : null
+  );
+
+  const { mutate: verifyDoc, isLoading: verifying } = useMutation({
+    mutationFn: async ({ isVerified, qualityScore, reason }) => {
+      const body = { isVerified };
+      if (isVerified && qualityScore !== undefined) body.qualityScore = qualityScore;
+      else if (!isVerified && reason) body.reason = reason;
+      return apiService.put(`/vault/lead/documents/advisor/verify/${documentId}`, body);
+    },
+    onSuccess: (data, variables) => {
+      setVerifyStatus(variables.isVerified ? 'verified' : 'unverified');
+      onUploadSuccess?.();
+    },
+    onError: (e) => {
+      message.error(e?.response?.data?.message || 'Verification failed');
+    },
+  });
+
+  const showVerify = role === 26 && status === 'success' && documentId;
 
   const pick  = (f) => { if (f) { setFile(f); setStatus('idle'); setErrMsg(''); } };
   const clear = ()  => { setFile(null); setStatus('idle'); setErrMsg(''); };
@@ -124,40 +166,80 @@ const DocCard = ({ doc, category, categoryMeta, leadId, existingDoc, onUploadSuc
             <p style={{ margin: '1px 0 0', fontSize: 10.5, color: '#94a3b8', fontFamily: "'JetBrains Mono', monospace" }}>{doc.type}</p>
           </div>
         </div>
-        {doc.required
-          ? <span style={{ fontSize: 10.5, fontWeight: 700, color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', padding: '2px 7px', borderRadius: 999, whiteSpace: 'nowrap', flexShrink: 0 }}>Required</span>
-          : <span style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 7px', borderRadius: 999, whiteSpace: 'nowrap', flexShrink: 0 }}>Optional</span>
-        }
+        {doc.required ? (
+          <span style={{ ...badgeBase, background: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' }}>Required</span>
+        ) : (
+          <span style={{ ...badgeBase, background: '#f8fafc', color: '#64748b', borderColor: '#e2e8f0' }}>Optional</span>
+        )}
       </div>
 
-      {/* ── Success ── */}
+      {/* Success + verification */}
       {status === 'success' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-          <CheckCircle2 size={15} style={{ color: '#16a34a', flexShrink: 0 }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: 12.5, fontWeight: 600, color: '#15803d' }}>Uploaded successfully</p>
-            <p style={{ margin: '1px 0 0', fontSize: 11.5, color: '#4ade80', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {file?.name || uploadedFileName || 'Document on file'}
-            </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+            <CheckCircle2 size={15} style={{ color: '#16a34a', flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: 12.5, fontWeight: 600, color: '#15803d' }}>Uploaded successfully</p>
+              <p style={{ margin: '1px 0 0', fontSize: 11.5, color: '#4ade80', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {file?.name || uploadedFileName || 'Document on file'}
+              </p>
+            </div>
+            <button onClick={clear} title="Replace file" style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #bbf7d0', background: '#fff', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <RefreshCw size={11} />
+            </button>
           </div>
-          <button
-            onClick={clear}
-            title="Replace file"
-            style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #bbf7d0', background: '#fff', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          >
-            <RefreshCw size={11} />
-          </button>
+
+          {showVerify && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              {verifyStatus === 'verified' ? (
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <ShieldCheck size={14} /> Verified
+                </span>
+              ) : (
+                <button
+                  onClick={() => verifyDoc({ isVerified: true, qualityScore: 85 })}
+                  disabled={verifying}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    padding: '4px 10px', borderRadius: 6, border: '1px solid #bbf7d0',
+                    background: '#f0fdf4', color: '#16a34a', fontSize: 12, fontWeight: 600,
+                    cursor: 'pointer', transition: 'all 0.14s',
+                  }}
+                >
+                  {verifying ? <Loader2 size={12} style={{ animation: 'ld-spin 0.8s linear infinite' }} /> : <ShieldCheck size={14} />}
+                  Verify
+                </button>
+              )}
+              {verifyStatus === 'unverified' && (
+                <button
+                  onClick={() => {
+                    const reason = prompt('Rejection reason (e.g. blurry, missing info):');
+                    if (reason) verifyDoc({ isVerified: false, reason });
+                  }}
+                  disabled={verifying}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    padding: '4px 10px', borderRadius: 6, border: '1px solid #fecaca',
+                    background: '#fef2f2', color: '#dc2626', fontSize: 12, fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <X size={13} /> Reject
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── Error banner ── */}
+      {/* Error */}
       {status === 'error' && (
         <div style={{ padding: '9px 12px', borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca', marginBottom: 10 }}>
           <p style={{ margin: 0, fontSize: 12, color: '#dc2626', fontWeight: 600 }}>{errMsg}</p>
         </div>
       )}
 
-      {/* ── File preview (selected, not yet uploaded) ── */}
+      {/* File preview (selected, not yet uploaded) */}
       {status !== 'success' && file && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0', marginBottom: 10 }}>
           <FileText size={14} style={{ color: '#64748b', flexShrink: 0 }} />
@@ -171,7 +253,7 @@ const DocCard = ({ doc, category, categoryMeta, leadId, existingDoc, onUploadSuc
         </div>
       )}
 
-      {/* ── Drop zone ── */}
+      {/* Drop zone */}
       {status !== 'success' && !file && (
         <div
           className={`ld-drop ${dragOver ? 'over' : ''}`}
@@ -188,43 +270,38 @@ const DocCard = ({ doc, category, categoryMeta, leadId, existingDoc, onUploadSuc
         </div>
       )}
 
-      {/* ── Upload button ── */}
+      {/* Upload button */}
       {status !== 'success' && file && (
-        <button
-          className="ld-upload-btn"
-          onClick={() => upload(file)}
-          disabled={uploading}
+        <button className="ld-upload-btn" onClick={() => upload(file)} disabled={uploading}
           style={{
             width: '100%', padding: '9px', borderRadius: 9, border: 'none',
             background: uploading ? '#93c5fd' : '#2563eb', color: '#fff',
             fontSize: 13, fontWeight: 700, cursor: uploading ? 'not-allowed' : 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
             transition: 'background 0.15s', marginTop: 4,
-          }}
-        >
-          {uploading
-            ? <><Loader2 size={14} style={{ animation: 'ld-spin 0.8s linear infinite' }} /> Uploading…</>
-            : <><Upload size={14} /> Upload</>
-          }
+          }}>
+          {uploading ? <><Loader2 size={14} style={{ animation: 'ld-spin 0.8s linear infinite' }} /> Uploading…</>
+          : <><Upload size={14} /> Upload</>}
         </button>
       )}
     </div>
   );
 };
 
-/* ── Main Page ───────────────────────────────────────────────────────────────── */
+/* ── Main Page ─────────────────────────────────────────────── */
 const VaultLeadDocuments = () => {
   const { leadId } = useParams();
   const navigate   = useNavigate();
 
-  // Fetch lead info
+  // Replace with your actual auth role extraction
+  const role = 26;
+
   const { data: leadData, isLoading: leadLoading } = useQuery({
     queryKey: ['leadDetail', leadId],
     queryFn:  () => apiService.get(`/vault/lead/${leadId}`),
     enabled:  !!leadId,
   });
 
-  // Fetch existing uploaded documents
   const { data: docsData, isLoading: docsLoading, refetch: refetchDocs } = useQuery({
     queryKey: ['leadDocuments', leadId],
     queryFn:  () => apiService.get(`/vault/lead/documents/${leadId}`),
@@ -237,8 +314,6 @@ const VaultLeadDocuments = () => {
 
   const allDocs = Object.values(DOC_SCHEMA).flatMap(c => c.docs);
   const reqDocs = allDocs.filter(d => d.required);
-
-  // Count how many required docs are already uploaded
   const uploadedReqCount = reqDocs.filter(d =>
     existingDocs.some(e => e.documentType === d.type)
   ).length;
@@ -247,7 +322,7 @@ const VaultLeadDocuments = () => {
     <div className="ld-root" style={{ padding: '32px 36px', minHeight: '100vh', background: '#f4f7fb' }}>
       <FontInjector />
 
-      {/* ── Top Bar ── */}
+      {/* Top Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <button className="ld-back" onClick={() => navigate(-1)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 14px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, color: '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
@@ -264,7 +339,6 @@ const VaultLeadDocuments = () => {
           </div>
         </div>
 
-        {/* Progress pill */}
         {!isLoading && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 12, color: '#64748b' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -283,7 +357,6 @@ const VaultLeadDocuments = () => {
         )}
       </div>
 
-      {/* ── Loading ── */}
       {isLoading && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 80, gap: 12 }}>
           <Loader2 size={28} style={{ color: '#2563eb', animation: 'ld-spin 0.8s linear infinite' }} />
@@ -291,12 +364,10 @@ const VaultLeadDocuments = () => {
         </div>
       )}
 
-      {/* ── Doc Sections ── */}
       {!isLoading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
           {Object.entries(DOC_SCHEMA).map(([catKey, catMeta]) => (
             <div key={catKey}>
-              {/* Category heading */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: catMeta.color, flexShrink: 0 }} />
                 <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#334155' }}>{catMeta.label}</h2>
@@ -306,10 +377,8 @@ const VaultLeadDocuments = () => {
                 </span>
               </div>
 
-              {/* Cards grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
                 {catMeta.docs.map((doc, i) => {
-                  // Find if this doc type is already uploaded
                   const existingDoc = existingDocs.find(e => e.documentType === doc.type) || null;
                   return (
                     <div key={doc.type} style={{ animationDelay: `${i * 0.05}s` }}>
@@ -320,6 +389,7 @@ const VaultLeadDocuments = () => {
                         leadId={leadId}
                         existingDoc={existingDoc}
                         onUploadSuccess={refetchDocs}
+                        role={role}
                       />
                     </div>
                   );

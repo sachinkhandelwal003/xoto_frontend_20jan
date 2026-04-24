@@ -91,26 +91,29 @@ const Seventh = () => {
           {t("heading", "Our Mortgage Product Portfolio")}
         </h2>
 
-        {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 lg:gap-4 xl:gap-6 mt-12">
+        {/* FIX 1: items-stretch add kiya (Height barabar karne ke liye)
+            FIX 2: gap-y-12 add kiya (Taaki icon upar wale card mein na ghuse) 
+        */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-12 lg:gap-y-4 xl:gap-6 mt-12 items-stretch">
           {portfolioData.map((item, index) => (
             <div 
               key={index}
-              className="relative bg-white rounded-2xl p-6 pt-10 shadow-[0_4px_25px_rgb(0,0,0,0.05)] border border-gray-100 flex flex-col hover:-translate-y-1 transition-transform duration-300 shadow-xl"
+              /* FIX 3: h-full add kiya and pt-10 ko pt-14 kiya taaki text aur icon me space aaye */
+              className="relative bg-white rounded-2xl p-6 pt-14 shadow-[0_4px_25px_rgb(0,0,0,0.05)] border border-gray-100 flex flex-col h-full hover:-translate-y-1 transition-transform duration-300"
             >
               
-              {/* Overlapping Icon Container - Ab hamesha Left mein hi rahega */}
+              {/* Overlapping Icon Container */}
               <div className="absolute -top-6 left-6 w-14 h-14 bg-[#5C039B] rounded-full flex items-center justify-center shadow-lg  ">
                 {item.icon}
               </div>
 
               {/* Card Title */}
-              <h3 className="text-[17px] font-bold text-gray-900 mb-5 leading-tight whitespace-pre-line">
+              <h3 className="text-[17px] font-bold text-gray-900 mb-5 leading-tight whitespace-pre-line flex-shrink-0">
                 {item.title}
               </h3>
 
-              {/* Feature List */}
-              <ul className="space-y-3">
+              {/* FIX 4: flex-grow add kiya jisse list poori empty height cover kar le */}
+              <ul className="space-y-3 flex-grow">
                 {item.features && item.features.map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-2.5">
                     <img 
