@@ -217,7 +217,7 @@ export default function HeroSection({ openSellModal, setOpenSellModal }) {
       {contextHolder}
 
       {/* ── HERO SECTION ── */}
-      <section className="relative w-full overflow-hidden font-dm h-140">
+      <section className="relative w-full overflow-hidden font-dm h-140 bg-[var(--color-body)]">
         
         {/* CHANGED: Removed inline style and added 'hero-bg-image' class */}
         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat hero-bg-image">

@@ -21,7 +21,7 @@ const Article4 = () => {
         <div className="w-full lg:w-1/2 max-w-xl">
           <h2
             className="
-              font-semibold tracking-tight
+              font-semibold tracking-tight justify-center text-center
               text-3xl sm:text-4xl md:text-5xl lg:text-[60px]
               leading-tight lg:leading-[55px]
             "
@@ -32,7 +32,7 @@ const Article4 = () => {
           <p
             className="
               mt-6 sm:mt-8
-              font-medium
+              font-medium justify-center text-center
               text-base sm:text-lg md:text-xl lg:text-[24px]
               leading-relaxed lg:leading-[33px]
               max-w-[520px]
