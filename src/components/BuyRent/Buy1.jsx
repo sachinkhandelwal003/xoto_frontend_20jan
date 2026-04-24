@@ -615,7 +615,6 @@ export default function HeroSection({ openSellModal, setOpenSellModal }) {
           background: var(--color-body);
           z-index: 3;
           clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
-          background: white;
           decoration: none;
           bottom: -1px;
         }
@@ -630,7 +629,6 @@ export default function HeroSection({ openSellModal, setOpenSellModal }) {
           background: var(--color-body);
           z-index: 3;
           clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
-          background: white;
           bottom: -1px;
           box-shadow: 0 -3px 0 white;
         }

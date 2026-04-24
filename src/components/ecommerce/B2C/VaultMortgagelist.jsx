@@ -450,17 +450,7 @@ const VaultMortgageOpsList = () => {
           Reset Filters
         </button>
       </div>
-      <button
-        onClick={() => navigate("/mortgage-ops/create")}
-        style={{
-          background: `linear-gradient(135deg, ${PURPLE}, #7C3AED)`,
-          border: "none", borderRadius: 30, padding: "8px 20px", fontWeight: 600,
-          color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-          fontSize: 13
-        }}
-      >
-        + Create Ops Staff
-      </button>
+   
     </div>
   );
 

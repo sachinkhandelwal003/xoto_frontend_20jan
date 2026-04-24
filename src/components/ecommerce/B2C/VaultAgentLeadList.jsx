@@ -291,6 +291,45 @@ const VaultAgentLeadList = () => {
       },
     },
     {
+  key: "assignedAdvisor",
+  title: "Assigned Advisor",
+  render: (_, r) => {
+    const assigned = r?.assignedTo;
+    const name = assigned?.advisorName;
+    const isAssigned = !!assigned?.advisorId;
+
+    if (isAssigned) {
+      return (
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Avatar size={26} icon={<UserOutlined />} />
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>
+              {name || "Assigned"}
+            </div>
+            <div style={{ fontSize: 10, color: "#10B981", fontWeight: 600 }}>
+              ● Assigned
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Avatar size={26} icon={<UserOutlined />} />
+        <div>
+          <div style={{ fontSize: 12, color: "#D97706", fontWeight: 600 }}>
+            Unassigned
+          </div>
+          <div style={{ fontSize: 10, color: "#9CA3AF" }}>
+            ● Not Assigned
+          </div>
+        </div>
+      </div>
+    );
+  },
+},
+    {
       key  : "currentStatus",
       title: "Status",
       render: (_, r) => {
@@ -367,8 +406,7 @@ const VaultAgentLeadList = () => {
         const refType    = (r?.referralType || "").trim().toLowerCase();
         const leadId     = r?._id || r?.leadId;
         const showUpload = refType === "referral" || refType === "referral only" || refType.includes("referral only");
-        const hasAdvisor = r?.assignedAdvisor || r?.advisorId;
-
+const hasAdvisor = !!r?.assignedTo?.advisorId;
         return (
           <Space size={4}>
             {/* View */}
