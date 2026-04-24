@@ -18,7 +18,8 @@ import {
   UserOutlined, PictureOutlined, EyeOutlined, ClockCircleOutlined,
   UndoOutlined, ScissorOutlined, ZoomInOutlined, BookOutlined, CalendarOutlined,
   RocketOutlined, FireOutlined, StarOutlined, TagOutlined, FilterOutlined,
-  ArrowLeftOutlined, ArrowRightOutlined, SaveOutlined, GlobalOutlined
+  ArrowLeftOutlined, ArrowRightOutlined, SaveOutlined, GlobalOutlined,
+  AppstoreAddOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -40,196 +41,190 @@ const THEME = {
   warning: "#f59e0b",
   info: "#3b82f6",
   surface: "#ffffff",
-  bg: "#f5f3ff",
-  border: "#ede9fe",
-  text: "#1e1b4b",
-  muted: "#6b7280",
+  bg: "#f8fafc",
+  border: "#e2e8f0",
+  text: "#0f172a", 
+  muted: "#64748b",
 };
 
 // ─────────────────────────────────────────────
-//  GLOBAL STYLES
+//  GLOBAL STYLES (CLEAN SAAS UI)
 // ─────────────────────────────────────────────
 const GLOBAL_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
   .bm-root * { box-sizing: border-box; }
 
   .bm-root {
-    font-family: 'DM Sans', sans-serif;
-    background: #ffffff;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #f8fafc;
     min-height: 100vh;
-    padding: 32px;
-    color: #1e1b4b;
+    padding: 32px 40px;
+    color: ${THEME.text};
   }
 
   /* ─── HEADER ─── */
   .bm-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 36px;
+    align-items: flex-end;
+    margin-bottom: 32px;
     flex-wrap: wrap;
     gap: 16px;
   }
 
   .bm-header-title {
-    font-family: 'Playfair Display', serif !important;
-    font-size: 34px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 28px !important;
     font-weight: 800 !important;
-    color: #1e1b4b !important;
+    color: #0f172a !important;
     margin: 0 !important;
     line-height: 1.2 !important;
+    letter-spacing: -0.5px !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 
   .bm-header-sub {
     font-size: 14px;
-    color: #6b7280;
+    color: ${THEME.muted};
     margin-top: 4px;
-    font-weight: 400;
+    font-weight: 500;
   }
 
   .bm-btn-primary {
-    background: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%) !important;
+    background: #6d28d9 !important;
     border: none !important;
-    height: 46px !important;
-    padding: 0 28px !important;
-    border-radius: 12px !important;
+    height: 44px !important;
+    padding: 0 24px !important;
+    border-radius: 10px !important;
     font-weight: 600 !important;
     font-size: 14px !important;
-    box-shadow: 0 4px 16px rgba(109, 40, 217, 0.35) !important;
+    box-shadow: 0 4px 12px rgba(109, 40, 217, 0.2) !important;
     transition: all 0.2s ease !important;
   }
   .bm-btn-primary:hover {
+    background: #5b21b6 !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 6px 20px rgba(109, 40, 217, 0.45) !important;
+    box-shadow: 0 6px 16px rgba(109, 40, 217, 0.3) !important;
   }
 
   /* ─── STATS ─── */
   .bm-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-
-  @media (max-width: 900px) {
-    .bm-stats { grid-template-columns: repeat(2, 1fr); }
-    .bm-root { padding: 16px; }
-  }
-  @media (max-width: 500px) {
-    .bm-stats { grid-template-columns: 1fr; }
+    gap: 20px;
+    margin-bottom: 32px;
   }
 
   .bm-stat-card {
     background: #fff;
     border-radius: 16px;
-    padding: 20px 22px;
-    border: 1.5px solid #ede9fe;
-    position: relative;
-    overflow: hidden;
-    transition: box-shadow 0.2s, transform 0.2s;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: all 0.2s ease;
   }
   .bm-stat-card:hover {
-    box-shadow: 0 8px 32px rgba(109,40,217,0.10);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+    border-color: #cbd5e1;
     transform: translateY(-2px);
   }
-  .bm-stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    border-radius: 16px 16px 0 0;
-  }
-  .bm-stat-card.purple::before { background: linear-gradient(90deg, #6d28d9, #8b5cf6); }
-  .bm-stat-card.green::before { background: linear-gradient(90deg, #059669, #10b981); }
-  .bm-stat-card.amber::before { background: linear-gradient(90deg, #d97706, #f59e0b); }
-  .bm-stat-card.blue::before { background: linear-gradient(90deg, #2563eb, #3b82f6); }
-
-  .bm-stat-icon {
-    width: 44px; height: 44px;
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
+  
+  .bm-stat-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 12px;
   }
-  .bm-stat-icon.purple { background: #ede9fe; color: #6d28d9; }
-  .bm-stat-icon.green { background: #d1fae5; color: #059669; }
-  .bm-stat-icon.amber { background: #fef3c7; color: #d97706; }
-  .bm-stat-icon.blue { background: #dbeafe; color: #2563eb; }
+
+  .bm-stat-label { 
+    font-size: 14px; 
+    color: #64748b; 
+    font-weight: 600; 
+  }
+
+  .bm-stat-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .bm-stat-icon.purple { background: #f5f3ff; color: #6d28d9; }
+  .bm-stat-icon.green { background: #ecfdf5; color: #10b981; }
+  .bm-stat-icon.amber { background: #fffbeb; color: #f59e0b; }
+  .bm-stat-icon.blue { background: #eff6ff; color: #3b82f6; }
 
   .bm-stat-value {
-    font-family: 'Playfair Display', serif;
-    font-size: 30px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 32px;
     font-weight: 800;
-    color: #1e1b4b;
+    color: #0f172a;
     line-height: 1;
-    margin-bottom: 4px;
+    letter-spacing: -0.5px;
   }
-  .bm-stat-label { font-size: 13px; color: #6b7280; font-weight: 500; }
 
   /* ─── FILTER BAR ─── */
   .bm-filters {
     background: #fff;
     border-radius: 16px;
-    padding: 18px 22px;
-    border: 1.5px solid #ede9fe;
+    padding: 16px 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     margin-bottom: 24px;
     display: flex;
-    gap: 12px;
+    gap: 16px;
     flex-wrap: wrap;
     align-items: center;
   }
 
-  .bm-filters .ant-input-affix-wrapper {
+  .bm-filters .ant-input-affix-wrapper, .bm-filters .ant-select-selector {
     border-radius: 10px !important;
-    border-color: #ede9fe !important;
+    border-color: #e2e8f0 !important;
     height: 42px !important;
-  }
-  .bm-filters .ant-select-selector {
-    border-radius: 10px !important;
-    border-color: #ede9fe !important;
-    height: 42px !important;
-    align-items: center;
+    font-weight: 500;
+    font-family: 'Plus Jakarta Sans', sans-serif;
   }
 
   /* ─── BLOG CARD ─── */
   .bm-blog-card {
     background: #fff;
-    border-radius: 18px;
-    border: 1.5px solid #ede9fe;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
     overflow: hidden;
     margin-bottom: 20px;
-    transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    transition: all 0.25s ease;
     display: flex;
     min-height: 220px;
   }
   .bm-blog-card:hover {
-    box-shadow: 0 12px 40px rgba(109,40,217,0.12);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.06);
     transform: translateY(-2px);
-    border-color: #c4b5fd;
+    border-color: #cbd5e1;
   }
 
   .bm-blog-thumb {
-    width: 240px;
-    min-width: 240px;
-    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+    width: 260px;
+    min-width: 260px;
+    background: #f1f5f9;
     position: relative;
     overflow: hidden;
     flex-shrink: 0;
-  }
-  @media (max-width: 700px) {
-    .bm-blog-card { flex-direction: column; }
-    .bm-blog-thumb { width: 100%; min-width: unset; height: 180px; }
   }
 
   .bm-blog-thumb img {
     width: 100%; height: 100%; object-fit: cover;
     transition: transform 0.4s ease;
   }
-  .bm-blog-card:hover .bm-blog-thumb img { transform: scale(1.04); }
+  .bm-blog-card:hover .bm-blog-thumb img { transform: scale(1.03); }
 
   .bm-blog-body {
-    padding: 22px 26px;
+    padding: 24px 28px;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -248,70 +243,69 @@ const GLOBAL_STYLES = `
   .bm-blog-badges { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
   .bm-cat-tag {
-    background: linear-gradient(135deg, #6d28d9, #8b5cf6) !important;
-    color: #fff !important;
-    border: none !important;
-    border-radius: 20px !important;
-    font-size: 11px !important;
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
     font-weight: 600 !important;
-    padding: 2px 12px !important;
-    letter-spacing: 0.3px;
+    padding: 4px 10px !important;
   }
 
   .bm-status-badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: 12px; font-weight: 600;
-    padding: 3px 12px;
-    border-radius: 20px;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
   }
-  .bm-status-badge.published { background: #d1fae5; color: #059669; }
-  .bm-status-badge.draft { background: #fef3c7; color: #d97706; }
+  .bm-status-badge.published { background: #ecfdf5; color: #10b981; }
+  .bm-status-badge.draft { background: #fffbeb; color: #f59e0b; }
 
   .bm-blog-actions { display: flex; gap: 8px; }
 
   .bm-action-btn {
     width: 36px !important; height: 36px !important;
-    border-radius: 10px !important;
+    border-radius: 8px !important;
     display: flex !important; align-items: center !important; justify-content: center !important;
-    border: 1.5px solid #ede9fe !important;
-    background: #faf5ff !important;
-    color: #6d28d9 !important;
-    font-size: 14px !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #fff !important;
+    color: #64748b !important;
+    font-size: 15px !important;
     transition: all 0.2s !important;
     cursor: pointer;
     padding: 0 !important;
   }
-  .bm-action-btn:hover { background: #ede9fe !important; border-color: #c4b5fd !important; }
-  .bm-action-btn.danger { background: #fff5f5 !important; border-color: #fecaca !important; color: #ef4444 !important; }
+  .bm-action-btn:hover { background: #f8fafc !important; border-color: #cbd5e1 !important; color: #0f172a !important; }
+  .bm-action-btn.danger:hover { background: #fef2f2 !important; border-color: #fca5a5 !important; color: #ef4444 !important; }
 
   .bm-blog-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 19px;
+    font-size: 20px;
     font-weight: 700;
-    color: #1e1b4b;
+    color: #0f172a;
     margin-bottom: 8px;
-    line-height: 1.35;
+    line-height: 1.3;
+    letter-spacing: -0.3px;
   }
 
   .bm-blog-excerpt {
-    font-size: 13.5px;
-    color: #6b7280;
+    font-size: 14px;
+    color: #64748b;
     line-height: 1.6;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
 
-  .bm-blog-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .bm-blog-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
   .bm-tag {
-    font-size: 11px !important;
-    border-radius: 20px !important;
-    background: #f5f3ff !important;
-    border-color: #ddd6fe !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
     color: #6d28d9 !important;
-    padding: 1px 10px !important;
+    padding: 2px 8px !important;
     font-weight: 500 !important;
   }
 
@@ -319,104 +313,136 @@ const GLOBAL_STYLES = `
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 14px;
-    border-top: 1px solid #f5f3ff;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
-  .bm-meta-item { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: #9ca3af; }
-  .bm-meta-item strong { color: #374151; font-weight: 600; }
+  .bm-meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #64748b; font-weight: 500; }
+  .bm-meta-item strong { color: #0f172a; font-weight: 600; }
 
-  /* ─── MODAL ─── */
+  /* ─── MODAL (CLEAN & SIMPLE UI) ─── */
   .bm-modal .ant-modal-content {
-    border-radius: 20px !important;
+    border-radius: 16px !important;
     overflow: hidden;
-    border: 1.5px solid #ede9fe;
-    box-shadow: 0 24px 64px rgba(109,40,217,0.15) !important;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1) !important;
   }
   .bm-modal .ant-modal-header {
-    background: linear-gradient(135deg, #1e1b4b 0%, #2d1b69 100%) !important;
-    padding: 20px 28px !important;
-    border-bottom: none !important;
+    background: #ffffff !important;
+    padding: 24px 32px 20px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
     margin-bottom: 0 !important;
   }
-  .bm-modal .ant-modal-title { color: #fff !important; font-family: 'Playfair Display', serif !important; font-size: 20px !important; font-weight: 700 !important; }
-  .bm-modal .ant-modal-close-x { color: #a78bfa !important; }
-  .bm-modal .ant-modal-body { padding: 24px 28px !important; }
+  .bm-modal .ant-modal-title { 
+    color: #0f172a !important; 
+    font-family: 'Plus Jakarta Sans', sans-serif !important; 
+    font-size: 18px !important; 
+    font-weight: 700 !important; 
+  }
+  .bm-modal .ant-modal-close-x { color: #64748b !important; font-size: 16px; }
+  .bm-modal .ant-modal-body { padding: 24px 32px !important; }
 
   /* ─── FOOTER ACTIONS ─── */
-  .bm-footer-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 0 0; border-top: 1.5px solid #f5f3ff; margin-top: 8px; }
-  .bm-save-draft-btn { height: 44px !important; padding: 0 24px !important; border-radius: 12px !important; border-color: #c4b5fd !important; color: #6d28d9 !important; font-weight: 600 !important; background: #faf5ff !important; }
-  .bm-publish-btn { height: 44px !important; padding: 0 28px !important; border-radius: 12px !important; background: linear-gradient(135deg, #6d28d9, #8b5cf6) !important; border: none !important; font-weight: 700 !important; font-size: 14px !important; box-shadow: 0 4px 14px rgba(109,40,217,0.35) !important; color: #fff !important; }
+  .bm-footer-bar { display: flex; justify-content: space-between; align-items: center; padding: 20px 0 0; border-top: 1px solid #f1f5f9; margin-top: 12px; }
+  .bm-save-draft-btn { height: 44px !important; padding: 0 24px !important; border-radius: 10px !important; border-color: #cbd5e1 !important; color: #475569 !important; font-weight: 600 !important; background: #fff !important; font-size: 14px !important;}
+  .bm-publish-btn { height: 44px !important; padding: 0 28px !important; border-radius: 10px !important; background: #6d28d9 !important; border: none !important; font-weight: 600 !important; font-size: 14px !important; color: #fff !important; }
 
   /* ─── PREVIEW MODAL ─── */
-  .preview-modal .ant-modal-content { border-radius: 20px !important; overflow: hidden; }
-  .preview-modal .ant-modal-header { background: linear-gradient(135deg, #1e1b4b, #4c1d95) !important; border-bottom: none !important; margin-bottom: 0 !important; padding: 18px 28px !important; }
-  .preview-modal .ant-modal-title { color: #fff !important; font-weight: 700 !important; }
+  .preview-modal .ant-modal-content { border-radius: 16px !important; overflow: hidden; }
+  .preview-modal .ant-modal-header { background: #ffffff !important; border-bottom: 1px solid #f1f5f9 !important; margin-bottom: 0 !important; padding: 20px 32px !important; }
+  .preview-modal .ant-modal-title { color: #0f172a !important; font-weight: 700 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 18px !important;}
   .preview-modal .ant-modal-body { padding: 0 !important; }
 
-  /* ─── BLOG PREVIEW CONTENT (FIXED BULLETS & SPACING) ─── */
-  .blog-preview-wrap { font-family: 'DM Sans', sans-serif; color: #1e1b4b; background: #fff; }
-  .blog-preview-hero { width: 100%; height: 320px; object-fit: cover; display: block; }
-  .blog-preview-inner { padding: 36px 40px; }
+  /* ─── BLOG PREVIEW CONTENT (NEWSPAPER STYLE ONLY HERE) ─── */
+  .blog-preview-wrap { font-family: 'DM Sans', sans-serif; color: #0f172a; background: #fff; }
+  .blog-preview-hero { width: 100%; height: 360px; object-fit: cover; display: block; border-bottom: 1px solid #e2e8f0; }
+  .blog-preview-inner { padding: 48px 56px; max-width: 860px; margin: 0 auto; }
 
-  /* 🚨 CRITICAL FIX: FORCING LIST STYLES 🚨 */
   .blog-preview-content ul { list-style-type: disc !important; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
   .blog-preview-content ol { list-style-type: decimal !important; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
-  .blog-preview-content li { display: list-item !important; list-style-position: outside !important; margin: 0 0 0.6em 0 !important; line-height: 1.7; color: #374151; }
-  
-  .blog-preview-content h1 { font-family: 'Playfair Display', serif; font-size: 2em; font-weight: 800; margin: 1.4em 0 0.6em !important; line-height: 1.25; color: #1e1b4b; display: block; }
-  .blog-preview-content h2 { font-family: 'Playfair Display', serif; font-size: 1.6em; font-weight: 700; margin: 1.2em 0 0.5em !important; line-height: 1.3; color: #1e1b4b; display: block; }
-  .blog-preview-content h3 { font-size: 1.3em; font-weight: 700; margin: 1em 0 0.4em !important; color: #2d1b69; display: block; }
-  .blog-preview-content p { margin: 0 0 1.2em 0 !important; line-height: 1.8; font-size: 16px; color: #374151; display: block; }
-  .blog-preview-content blockquote { border-left: 4px solid #8b5cf6; padding: 12px 20px; margin: 1.2em 0 !important; background: #f5f3ff; border-radius: 0 12px 12px 0; font-style: italic; color: #4c1d95; }
-  .blog-preview-content a { color: #6d28d9; text-decoration: underline; }
-  .blog-preview-content img { max-width: 100%; border-radius: 10px; margin: 1em 0 !important; }
+  .blog-preview-content li { display: list-item !important; list-style-position: outside !important; margin: 0 0 0.6em 0 !important; line-height: 1.8; color: #334155; font-size: 17px; }
 
-  .bm-toc { background: #f5f3ff; border: 1.5px solid #e9d5ff; border-radius: 14px; padding: 18px 22px; margin-bottom: 28px; }
-  .bm-toc-title { font-weight: 700; font-size: 13px; color: #6d28d9; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .bm-toc ol { list-style: decimal; padding-left: 18px; margin: 0; }
-  .bm-toc li { font-size: 13.5px; color: #4c1d95; padding: 3px 0; line-height: 1.5; }
+  .blog-preview-content h1 { font-family: 'Playfair Display', serif; font-size: 2.4em; font-weight: 800; margin: 1.4em 0 0.5em !important; line-height: 1.2; color: #0f172a; display: block; letter-spacing: -0.5px; }
+  .blog-preview-content h2 { font-family: 'Playfair Display', serif; font-size: 1.8em; font-weight: 700; margin: 1.2em 0 0.4em !important; line-height: 1.3; color: #0f172a; display: block; letter-spacing: -0.5px; }
+  .blog-preview-content h3 { font-family: 'Playfair Display', serif; font-size: 1.4em; font-weight: 700; margin: 1em 0 0.3em !important; color: #334155; display: block; }
+  .blog-preview-content p { margin: 0 0 1.2em 0 !important; line-height: 1.85; font-size: 17px; color: #334155; display: block; }
+  .blog-preview-content blockquote { border-left: 4px solid #6d28d9; padding: 16px 24px; margin: 1.5em 0 !important; background: #f8fafc; border-radius: 0 8px 8px 0; font-style: italic; color: #475569; font-size: 18px; font-family: 'Playfair Display', serif; }
+  .blog-preview-content a { color: #6d28d9; text-decoration: underline; font-weight: 600; }
+  .blog-preview-content img { max-width: 100%; border-radius: 12px; margin: 1.5em 0 !important; }
+
+  /* ─── PAGINATION ─── */
+  .bm-pagination { display: flex; justify-content: space-between; align-items: center; padding: 24px 0; flex-wrap: wrap; gap: 12px; }
+  .bm-page-info { font-size: 14px; color: #64748b; font-weight: 500; }
+  .bm-page-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .bm-page-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #475569; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .bm-page-btn:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
+  .bm-page-btn.active { background: #6d28d9; border-color: #6d28d9; color: #fff; }
+  .bm-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ─── EMPTY STATE ─── */
+  .bm-empty { text-align: center; padding: 80px 20px; }
+  .bm-empty-icon { font-size: 48px; color: #cbd5e1; margin-bottom: 16px; }
+  .bm-empty-title { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+  .bm-empty-sub { font-size: 14px; color: #64748b; }
+
+  /* ════════════════════════════════════════════════
+     RESPONSIVE MEDIA QUERIES
+     ════════════════════════════════════════════════ */
+  @media (max-width: 992px) {
+    .bm-stats { grid-template-columns: repeat(2, 1fr); }
+    .bm-blog-card { flex-direction: column; }
+    .bm-blog-thumb { width: 100%; min-width: unset; height: 200px; }
+    .blog-preview-inner { padding: 32px 40px; }
+  }
+  @media (max-width: 768px) {
+    .bm-root { padding: 16px; }
+    .bm-header { flex-direction: column; align-items: flex-start; }
+    .bm-header-title { font-size: 24px !important; }
+    .bm-header > button { width: 100%; }
+    .bm-filters { flex-direction: column; align-items: stretch; }
+    .bm-filters > * { width: 100% !important; max-width: none !important; }
+    .bm-modal .ant-modal-body { padding: 20px !important; }
+    .bm-modal .ant-modal-header { padding: 20px !important; }
+    .blog-preview-inner { padding: 24px 20px; }
+    .blog-preview-content h1 { font-size: 2em; }
+    .blog-preview-hero { height: 240px; }
+    .bm-footer-bar { flex-direction: column; align-items: stretch; gap: 16px; }
+    .bm-footer-bar .ant-space { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+    .bm-footer-bar .ant-space:last-child { display: flex; flex-direction: column; }
+    .bm-save-draft-btn, .bm-publish-btn { width: 100%; }
+  }
+  @media (max-width: 480px) {
+    .bm-stats { grid-template-columns: 1fr; }
+    .bm-blog-footer { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .bm-pagination { flex-direction: column; justify-content: center; gap: 16px; }
+    .bm-page-btns { justify-content: center; }
+  }
 `;
 
 // ─────────────────────────────────────────────
-//  PASTE CLEANING UTILITIES (FIXED BULLETS)
+//  PASTE CLEANING UTILITIES
 // ─────────────────────────────────────────────
 const cleanWordHtml = (html) => {
   if (!html) return '';
   let cleaned = html;
-
-  // Basic cleanup
   cleaned = cleaned.replace(/lang="[^"]*"/gi, '');
   cleaned = cleaned.replace(/class="[^"]*"/gi, '');
-  
-  // 🚨 STRIP SPANS: Word hides massive blank spaces inside nested span tags
   cleaned = cleaned.replace(/<\/?span[^>]*>/gi, '');
-  
-  // Strip excessive non-breaking spaces (converts multiple &nbsp; to single space)
   cleaned = cleaned.replace(/(&nbsp;|\s){2,}/gi, ' ');
 
-  // 1. Convert fake paragraphs with bullets to <li> (matches ●, •, ·, etc.)
   const pListPattern = /<p[^>]*>\s*([·●•▪o\-]|\&#183;)\s*([\s\S]*?)<\/p>/gi;
   cleaned = cleaned.replace(pListPattern, '<li>$2</li>');
-  
-  // 2. Clean existing <li> that have hardcoded bullets inside them
+
   const liListPattern = /<li[^>]*>\s*([·●•▪o\-]|\&#183;)\s*([\s\S]*?)<\/li>/gi;
   cleaned = cleaned.replace(liListPattern, '<li>$2</li>');
 
-  // 3. Group consecutive <li> tags into a single <ul> tag!
-  cleaned = cleaned.replace(/(<li>[\s\S]*?<\/li>\s*)+/gi, (match) => {
-    return `<ul>\n${match}\n</ul>`;
-  });
-  
-  // Fix double <ul> if they accidentally got wrapped twice
+  cleaned = cleaned.replace(/(<li>[\s\S]*?<\/li>\s*)+/gi, (match) => `<ul>\n${match}\n</ul>`);
   cleaned = cleaned.replace(/<ul>\s*<ul>/gi, '<ul>');
   cleaned = cleaned.replace(/<\/ul>\s*<\/ul>/gi, '</ul>');
   cleaned = cleaned.replace(/<ol>\s*<ul>/gi, '<ol>');
   cleaned = cleaned.replace(/<\/ul>\s*<\/ol>/gi, '</ol>');
-
-  // Standardize bold tags
   cleaned = cleaned.replace(/<b([^>]*)>/gi, '<strong$1>');
   cleaned = cleaned.replace(/<\/b>/gi, '</strong>');
 
@@ -518,6 +544,7 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [cropping, setCropping] = useState(false);
+  const screens = Grid.useBreakpoint();
 
   useEffect(() => {
     if (open) { setCrop({ x: 0, y: 0 }); setZoom(1); setCroppedAreaPixels(null); }
@@ -536,36 +563,36 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
   return (
     <Modal
       open={open}
-      title={<Space><ScissorOutlined style={{ color: '#8b5cf6' }} /><span style={{ color: '#fff' }}>{title || 'Crop Image'}</span></Space>}
+      title={<Space><ScissorOutlined style={{ color: '#6d28d9' }} /><span style={{ color: '#0f172a' }}>{title || 'Crop Image'}</span></Space>}
       onCancel={onCancel}
-      width={620}
+      width={screens.xs ? '98%' : 620}
       centered
       destroyOnClose
       className="bm-modal"
       footer={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
           <Space>
             <ZoomInOutlined style={{ color: '#888' }} />
-            <Slider min={1} max={3} step={0.05} value={zoom} onChange={setZoom} style={{ width: 160 }} tooltip={{ formatter: v => `${Math.round(v * 100)}%` }} />
-            <Text type="secondary" style={{ fontSize: 12 }}>{Math.round(zoom * 100)}%</Text>
+            <Slider min={1} max={3} step={0.05} value={zoom} onChange={setZoom} style={{ width: screens.xs ? 100 : 160 }} tooltip={{ formatter: v => `${Math.round(v * 100)}%` }} />
+            <Text type="secondary" style={{ fontSize: 13, fontWeight: 600 }}>{Math.round(zoom * 100)}%</Text>
           </Space>
           <Space>
-            <Button onClick={onCancel}>Cancel</Button>
-            <Button type="primary" icon={<ScissorOutlined />} loading={cropping} onClick={handleConfirm} style={{ background: THEME.primary, borderColor: THEME.primary, borderRadius: 10 }}>
+            <Button onClick={onCancel} style={{ fontWeight: 600, borderRadius: 8 }}>Cancel</Button>
+            <Button type="primary" icon={<ScissorOutlined />} loading={cropping} onClick={handleConfirm} style={{ background: THEME.primary, borderColor: THEME.primary, borderRadius: 8, fontWeight: 600 }}>
               Apply Crop
             </Button>
           </Space>
         </div>
       }
     >
-      <div style={{ position: 'relative', width: '100%', height: 380, background: '#1e1b4b', borderRadius: 14, overflow: 'hidden' }}>
+      <div style={{ position: 'relative', width: '100%', height: screens.xs ? 280 : 380, background: '#f8fafc', borderRadius: 12, overflow: 'hidden' }}>
         {imageSrc
-          ? <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={aspect} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_, px) => setCroppedAreaPixels(px)} style={{ containerStyle: { borderRadius: 14 }, cropAreaStyle: { border: '2px solid #8b5cf6', boxShadow: '0 0 0 9999px rgba(0,0,0,0.65)' } }} />
+          ? <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={aspect} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_, px) => setCroppedAreaPixels(px)} style={{ containerStyle: { borderRadius: 12 }, cropAreaStyle: { border: '2px solid #8b5cf6', boxShadow: '0 0 0 9999px rgba(0,0,0,0.65)' } }} />
           : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><Text type="secondary">Loading image...</Text></div>
         }
       </div>
-      <div style={{ marginTop: 10, textAlign: 'center' }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>Drag to reposition · Scroll or slider to zoom</Text>
+      <div style={{ marginTop: 12, textAlign: 'center' }}>
+        <Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>Drag to reposition · Scroll or slider to zoom</Text>
       </div>
     </Modal>
   );
@@ -613,7 +640,7 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
     Modal.confirm({
       icon: null, width: 600, centered: true,
       okButtonProps: { style: { display: 'none' } }, cancelButtonProps: { style: { display: 'none' } },
-      content: <div><img src={imageUrl} alt="preview" style={{ width: '100%', borderRadius: 12 }} /><div style={{ textAlign: 'center', marginTop: 16 }}><Button onClick={() => Modal.destroyAll()}>Close</Button></div></div>,
+      content: <div><img src={imageUrl} alt="preview" style={{ width: '100%', borderRadius: 12 }} /><div style={{ textAlign: 'center', marginTop: 16 }}><Button onClick={() => Modal.destroyAll()} style={{fontWeight: 600}}>Close</Button></div></div>,
       onCancel: () => Modal.destroyAll(),
     });
   };
@@ -624,9 +651,9 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
       <Tooltip title="Crop / Edit">
         <button
           onClick={(e) => { e.stopPropagation(); handleEditCrop(file); }}
-          style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg,#6d28d9,#8b5cf6)', border: 'none', borderRadius: 6, color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', zIndex: 10 }}
+          style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', background: '#0f172a', border: 'none', borderRadius: 6, color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', zIndex: 10 }}
         >
-          <ScissorOutlined style={{ fontSize: 10 }} /> Edit
+          <ScissorOutlined style={{ fontSize: 10 }} /> EDIT
         </button>
       </Tooltip>
     </div>
@@ -634,12 +661,12 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
 
   return (
     <>
-      <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>{label}</span>} extra={<span style={{ fontSize: 12, color: '#9ca3af' }}>{extra}</span>}>
+      <Form.Item label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>{label}</span>} extra={<span style={{ fontSize: 12, color: '#64748b' }}>{extra}</span>}>
         <Upload className="bm-upload" listType="picture-card" fileList={fileList} onPreview={handlePreview} onChange={({ fileList: fl }) => { if (fl.length < fileList.length) onChange(fl); }} beforeUpload={handleBeforeUpload} maxCount={maxCount} itemRender={itemRender} accept="image/jpeg,image/png,image/webp">
           {fileList.length < maxCount && (
             <div style={{ textAlign: 'center' }}>
-              <PlusOutlined style={{ color: '#8b5cf6', fontSize: 18 }} />
-              <div style={{ marginTop: 8, fontSize: 12, color: '#6d28d9', fontWeight: 600 }}>Upload</div>
+              <PlusOutlined style={{ color: '#64748b', fontSize: 20 }} />
+              <div style={{ marginTop: 8, fontSize: 12, color: '#475569', fontWeight: 600 }}>UPLOAD</div>
             </div>
           )}
         </Upload>
@@ -654,11 +681,11 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
 // ─────────────────────────────────────────────
 const BlogPreview = ({ data }) => {
   if (!data) return null;
-  const { title, subHeading, content, authorName, authorImage, tags, category, featuredImage, coverImage, createdAt, readingTime, headings } = data;
+  const { title, subHeading, content, authorName, authorDesignation, authorImage, tags, category, featuredImage, coverImage, createdAt, readingTime, headings } = data;
 
   const sanitized = content ? DOMPurify.sanitize(content, {
     ALLOWED_TAGS: ['p','br','strong','b','em','i','u','strike','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th','div','span'],
-    ALLOWED_ATTR: ['href','src','alt','title','target','rel', 'style'], 
+    ALLOWED_ATTR: ['href','src','alt','title','target','rel', 'style'],
     ALLOW_DATA_ATTR: false
   }) : '';
 
@@ -668,49 +695,44 @@ const BlogPreview = ({ data }) => {
     <div className="blog-preview-wrap">
       {heroImg && <img src={heroImg} alt="cover" className="blog-preview-hero" />}
       <div className="blog-preview-inner">
-        {/* Category & Tags */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-          {category && <span className="bm-cat-tag" style={{ background: 'linear-gradient(135deg,#6d28d9,#8b5cf6)', color: '#fff', padding: '3px 14px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>{category}</span>}
-          {tags?.slice(0, 5).map(t => <span key={t} className="bm-tag" style={{ fontSize: 11, padding: '2px 10px', borderRadius: 20, background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe' }}>#{t}</span>)}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+          {category && <span className="bm-cat-tag" style={{ background: '#f1f5f9', color: '#475569', padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 700, border: '1px solid #e2e8f0' }}>{category}</span>}
+          {tags?.slice(0, 5).map(t => <span key={t} className="bm-tag" style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', fontWeight: 600 }}>#{t}</span>)}
         </div>
 
-        {/* Title */}
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 36, fontWeight: 800, lineHeight: 1.2, color: '#1e1b4b', marginBottom: 12, marginTop: 0 }}>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 44, fontWeight: 800, lineHeight: 1.15, color: '#0f172a', marginBottom: 16, marginTop: 0, letterSpacing: '-0.5px' }}>
           {title || 'Untitled Post'}
         </h1>
 
-        {/* Subheading */}
         {subHeading && (
-          <p style={{ fontSize: 18, color: '#6b7280', lineHeight: 1.65, marginBottom: 20, fontStyle: 'italic', borderLeft: '4px solid #8b5cf6', paddingLeft: 18, background: '#f5f3ff', borderRadius: '0 10px 10px 0', padding: '10px 18px' }}>
+          <p style={{ fontSize: 18, color: '#475569', lineHeight: 1.6, marginBottom: 28, fontStyle: 'italic', borderLeft: '4px solid #6d28d9', paddingLeft: 20, background: '#f8fafc', borderRadius: '0 8px 8px 0', padding: '16px 24px' }}>
             {subHeading}
           </p>
         )}
 
-        {/* Author Row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderTop: '1px solid #ede9fe', borderBottom: '1px solid #ede9fe', marginBottom: 28 }}>
-          <Avatar size={46} src={authorImage} icon={<UserOutlined />} style={{ background: 'linear-gradient(135deg,#6d28d9,#8b5cf6)', flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '20px 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', marginBottom: 36 }}>
+          <Avatar size={54} src={authorImage} icon={<UserOutlined />} style={{ background: '#f1f5f9', color: '#64748b', flexShrink: 0 }} />
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#1e1b4b' }}>{authorName || 'Admin'}</div>
-            <div style={{ fontSize: 12, color: '#9ca3af', display: 'flex', gap: 18, marginTop: 2 }}>
-              {createdAt && <span><CalendarOutlined style={{ marginRight: 4 }} />{moment(createdAt).format('MMM DD, YYYY')}</span>}
-              {readingTime && <span><ClockCircleOutlined style={{ marginRight: 4 }} />{readingTime} min read</span>}
+            <div style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>{authorName || 'Admin'}</div>
+            {authorDesignation && <div style={{ fontSize: 13, color: '#6d28d9', marginTop: 2, fontWeight: 600 }}>{authorDesignation}</div>}
+            <div style={{ fontSize: 13, color: '#64748b', display: 'flex', gap: 16, marginTop: 4 }}>
+              {createdAt && <span><CalendarOutlined style={{ marginRight: 6 }} />{moment(createdAt).format('MMM DD, YYYY')}</span>}
+              {readingTime && <span><ClockCircleOutlined style={{ marginRight: 6 }} />{readingTime} min read</span>}
             </div>
           </div>
         </div>
 
-        {/* TOC */}
         {headings && headings.filter(h => h.level <= 3).length > 2 && (
           <div className="bm-toc">
-            <div className="bm-toc-title"><BookOutlined /> Table of Contents</div>
+            <div className="bm-toc-title"><BookOutlined style={{fontSize: 16}} /> Table of Contents</div>
             <ol>
               {headings.filter(h => h.level <= 3).map((h, i) => (
-                <li key={i} style={{ paddingLeft: (h.level - 1) * 14, listStyle: 'decimal' }}>{h.text}</li>
+                <li key={i} style={{ paddingLeft: (h.level - 1) * 16, listStyle: 'decimal' }}>{h.text}</li>
               ))}
             </ol>
           </div>
         )}
 
-        {/* Content */}
         <div className="blog-preview-content" dangerouslySetInnerHTML={{ __html: sanitized }} />
       </div>
     </div>
@@ -718,7 +740,7 @@ const BlogPreview = ({ data }) => {
 };
 
 // ─────────────────────────────────────────────
-//  EDITOR CONFIG (FIXED BULLETS)
+//  EDITOR CONFIG
 // ─────────────────────────────────────────────
 const getEditorConfig = () => ({
   readonly: false,
@@ -727,23 +749,53 @@ const getEditorConfig = () => ({
   enableDragAndDropFileToEditor: true,
   uploader: { insertImageAsBase64URI: true, imagesExtensions: ['jpg', 'png', 'jpeg', 'gif', 'svg', 'webp'] },
   toolbarSticky: false,
+
   askBeforePasteHTML: false,
   askBeforePasteFromWord: false,
   defaultActionOnPaste: 'insert_as_html',
+  processPasteHTML: false,
+
   removeButtons: ['file', 'video', 'print', 'about'],
   spellcheck: true,
   editorCssClass: 'jodit-clean-editor',
+
+  iframeStyle: `
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+    body {
+      font-family: 'DM Sans', sans-serif;
+      line-height: 1.7;
+      font-size: 16px;
+      color: #1e293b;
+      padding: 16px 20px;
+      margin: 0;
+    }
+    ul { list-style-type: disc !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
+    ol { list-style-type: decimal !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
+    li { display: list-item !important; list-style-position: outside !important; margin: 0.4em 0 !important; line-height: 1.8; }
+    ul ul { list-style-type: circle !important; }
+    ul ul ul { list-style-type: square !important; }
+    ol ol { list-style-type: lower-alpha !important; }
+    p { margin: 0.8em 0; }
+    h1 { font-family: 'Playfair Display', serif; font-size: 2.2em; font-weight: 800; margin: 1.2em 0 0.5em; color: #0f172a; }
+    h2 { font-family: 'Playfair Display', serif; font-size: 1.8em; font-weight: 700; margin: 1.1em 0 0.4em; color: #0f172a; }
+    h3 { font-family: 'Playfair Display', serif; font-size: 1.4em; font-weight: 600; margin: 1em 0 0.35em; color: #334155; }
+    blockquote { border-left: 4px solid #6d28d9; padding: 12px 20px; margin: 1.2em 0; color: #475569; font-style: italic; background: #f8fafc; border-radius: 0 8px 8px 0; font-family: 'Playfair Display', serif; }
+    img { max-width: 100%; border-radius: 8px; margin: 1em 0; }
+    strong, b { font-weight: 600; color: #0f172a; }
+    em, i { font-style: italic; }
+    a { color: #6d28d9; text-decoration: underline; font-weight: 500;}
+    pre, code { background: #f1f5f9; border-radius: 8px; padding: 2px 6px; font-family: monospace; color: #0f172a;}
+    pre { padding: 16px 20px; overflow-x: auto; }
+  `,
+
   extraCSS: `
-    .jodit-clean-editor { font-family: 'DM Sans', sans-serif; line-height: 1.65; font-size: 16px; color: #1e1b4b; }
-    
-    /* 🚨 CRITICAL FIX: FORCING LIST STYLES IN EDITOR 🚨 */
+    .jodit-clean-editor { font-family: 'DM Sans', sans-serif; line-height: 1.7; font-size: 16px; color: #1e293b; }
     .jodit-clean-editor ul { list-style-type: disc !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
     .jodit-clean-editor ol { list-style-type: decimal !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
     .jodit-clean-editor li { display: list-item !important; list-style-position: outside !important; margin: 0.5em 0 !important; }
-    
-    .jodit-clean-editor p { margin: 0.75em 0; }
-    .jodit-clean-editor h1, .jodit-clean-editor h2, .jodit-clean-editor h3 { font-family: 'Playfair Display', serif; margin: 1em 0 0.5em; font-weight: 700; }
-    .jodit-clean-editor blockquote { border-left: 3px solid #8b5cf6; padding-left: 1em; margin: 1em 0; color: #6b7280; font-style: italic; background: #f5f3ff; border-radius: 0 8px 8px 0; padding: 10px 16px; }
+    .jodit-clean-editor p { margin: 0.8em 0; }
+    .jodit-clean-editor h1, .jodit-clean-editor h2, .jodit-clean-editor h3 { font-family: 'Playfair Display', serif; margin: 1.2em 0 0.5em; font-weight: 700; }
+    .jodit-clean-editor blockquote { border-left: 4px solid #6d28d9; padding: 12px 20px; margin: 1.2em 0; color: #475569; font-style: italic; background: #f8fafc; border-radius: 0 8px 8px 0; font-family: 'Playfair Display', serif; }
     .jodit-clean-editor img { max-width: 100%; border-radius: 8px; }
   `
 });
@@ -756,22 +808,24 @@ const BlogManagement = () => {
   const editorRef = useRef(null);
   const searchTimeout = useRef(null);
 
+  // ─── State ───
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [targetStatus, setTargetStatus] = useState('draft');
-
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalResults: 0, itemsPerPage: 10 });
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
-
   const [modalVisible, setModalVisible] = useState(false);
   const [previewModalVisible, setPreviewModalVisible] = useState(false);
   const [previewBlogData, setPreviewBlogData] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [form] = Form.useForm();
+
   const [contentValue, setContentValue] = useState('');
+  const contentRef = useRef('');
+
   const [autoSave, setAutoSave] = useState(true);
   const [lastSaved, setLastSaved] = useState(null);
   const [headings, setHeadings] = useState([]);
@@ -782,73 +836,100 @@ const BlogManagement = () => {
   const [authorImageList, setAuthorImageList] = useState([]);
   const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, views: 0 });
 
-  // ─── Paste Handler ───
   const handlePaste = useCallback(async (event) => {
-    event.preventDefault(); event.stopPropagation();
+    const cd = event.clipboardData;
+    if (!cd) return;
+
+    const pastedHtml = cd.getData('text/html');
+    const pastedText = cd.getData('text/plain');
+
+    const isWordOrExternal = pastedHtml && (
+      pastedHtml.includes('urn:schemas-microsoft-com') ||
+      pastedHtml.includes('mso-') ||
+      pastedHtml.includes('google-docs') ||
+      pastedHtml.includes('docs.google') ||
+      pastedHtml.includes('xmlns:') ||
+      pastedHtml.length > pastedText.length * 3
+    );
+
+    if (!isWordOrExternal) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
     setPasteProcessing(true);
+
     try {
-      const cd = event.clipboardData;
-      let pastedHtml = cd.getData('text/html');
-      let pastedText = cd.getData('text/plain');
       let cleanHtml = '';
 
       if (pastedHtml) {
         cleanHtml = cleanPastedContent(pastedHtml);
-        if (cleanHtml !== pastedHtml) {
-          notification.info({ message: '✨ Content Cleaned', description: 'Pasted content formatted automatically.', duration: 2, placement: 'topRight' });
-        }
+        notification.info({ message: '✨ Content Cleaned', description: 'Word/Docs formatting removed automatically.', duration: 2, placement: 'topRight' });
       } else if (pastedText) {
         cleanHtml = pastedText.split(/\n\n+/).map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
       }
 
-      if (cleanHtml) {
-        const editor = editorRef.current;
-        if (editor && editor.editor) {
-          const sel = editor.editor.getSelection();
-          const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-          if (range) {
-            const td = document.createElement('div'); td.innerHTML = cleanHtml;
-            const frag = document.createDocumentFragment();
-            while (td.firstChild) frag.appendChild(td.firstChild);
-            range.deleteContents(); range.insertNode(frag); range.collapse(false);
-            sel.removeAllRanges(); sel.addRange(range);
-            const nc = editor.value;
-            setContentValue(nc); setHeadings(extractHeadings(nc));
-          }
+      if (cleanHtml && editorRef.current) {
+        const joditInstance = editorRef.current.jodit || editorRef.current;
+        if (joditInstance && joditInstance.s) {
+          joditInstance.s.insertHTML(cleanHtml);
+          const newContent = joditInstance.value;
+          contentRef.current = newContent;
+          setContentValue(newContent);
+          setHeadings(extractHeadings(newContent));
         } else {
-          setContentValue(prev => prev + cleanHtml);
-          setHeadings(extractHeadings(contentValue + cleanHtml));
+          const newContent = contentRef.current + cleanHtml;
+          contentRef.current = newContent;
+          setContentValue(newContent);
+          setHeadings(extractHeadings(newContent));
         }
-
-        const extracted = smartExtract(cleanHtml);
-        const cur = form.getFieldsValue(); const updates = {};
-        if (!cur.subHeading && extracted.excerpt) updates.subHeading = extracted.excerpt;
-        if ((!cur.category || cur.category === 'Other') && extracted.detectedCategory !== 'Other') {
-          updates.category = extracted.detectedCategory;
-          notification.success({ message: '🏷️ Category Detected', description: `Set to: ${extracted.detectedCategory}`, duration: 3, placement: 'topRight' });
-        }
-        if ((!cur.tags || cur.tags.length === 0) && extracted.detectedTags.length > 0) {
-          updates.tags = extracted.detectedTags;
-          notification.success({ message: '🔖 Tags Detected', description: extracted.detectedTags.join(', '), duration: 3, placement: 'topRight' });
-        }
-        if (Object.keys(updates).length > 0) { form.setFieldsValue(updates); setSmartFillApplied(true); setTimeout(() => setSmartFillApplied(false), 5000); }
       }
-    } catch (e) { console.error(e); message.error('Failed to process pasted content'); }
-    finally { setPasteProcessing(false); }
-  }, [form, contentValue]);
 
-  const handleEditorChange = (value) => {
-    const cleaned = cleanPastedContent(value);
-    setContentValue(cleaned);
-    setHeadings(extractHeadings(cleaned));
-    const subHeading = form.getFieldValue('subHeading');
-    if (!subHeading && cleaned && cleaned !== '<p><br></p>') {
-      const ex = extractExcerpt(cleaned, 160);
-      if (ex) form.setFieldsValue({ subHeading: ex });
+      const extracted = smartExtract(cleanHtml);
+      const cur = form.getFieldsValue();
+      const updates = {};
+      if (!cur.subHeading && extracted.excerpt) updates.subHeading = extracted.excerpt;
+      if ((!cur.category || cur.category === 'Other') && extracted.detectedCategory !== 'Other') {
+        updates.category = extracted.detectedCategory;
+        notification.success({ message: '🏷️ Category Detected', description: `Set to: ${extracted.detectedCategory}`, duration: 3, placement: 'topRight' });
+      }
+      if ((!cur.tags || cur.tags.length === 0) && extracted.detectedTags.length > 0) {
+        updates.tags = extracted.detectedTags;
+        notification.success({ message: '🔖 Tags Detected', description: extracted.detectedTags.join(', '), duration: 3, placement: 'topRight' });
+      }
+      if (Object.keys(updates).length > 0) {
+        form.setFieldsValue(updates);
+        setSmartFillApplied(true);
+        setTimeout(() => setSmartFillApplied(false), 5000);
+      }
+    } catch (e) {
+      console.error(e);
+      message.error('Failed to process pasted content');
+    } finally {
+      setPasteProcessing(false);
     }
-  };
+  }, [form]);
 
-  // ─── Auto-save ───
+  const handleEditorChange = useCallback((value) => {
+    contentRef.current = value;
+    setContentValue(value);
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (contentRef.current) {
+        setHeadings(extractHeadings(contentRef.current));
+        const subHeading = form.getFieldValue('subHeading');
+        if (!subHeading && contentRef.current && contentRef.current !== '<p><br></p>') {
+          const ex = extractExcerpt(contentRef.current, 160);
+          if (ex) form.setFieldsValue({ subHeading: ex });
+        }
+      }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [contentValue, form]);
+
   useEffect(() => {
     let t;
     if (autoSave && contentValue && modalVisible && !pasteProcessing) {
@@ -858,11 +939,19 @@ const BlogManagement = () => {
   }, [contentValue, autoSave, modalVisible, pasteProcessing]);
 
   const handleAutoSave = async () => {
-    if (!contentValue || !modalVisible || pasteProcessing) return;
+    if (!contentRef.current || !modalVisible || pasteProcessing) return;
     const values = form.getFieldsValue();
     if (!values.title) return;
     const key = `blog_draft_${editingId || 'new'}`;
-    localStorage.setItem(key, JSON.stringify({ ...values, content: contentValue, headings, featuredImage: featuredImageList, coverImage: coverImageList, authorImage: authorImageList, timestamp: new Date().toISOString() }));
+    localStorage.setItem(key, JSON.stringify({
+      ...values,
+      content: contentRef.current,
+      headings,
+      featuredImage: featuredImageList,
+      coverImage: coverImageList,
+      authorImage: authorImageList,
+      timestamp: new Date().toISOString()
+    }));
     setLastSaved(new Date());
   };
 
@@ -875,20 +964,25 @@ const BlogManagement = () => {
       const draftTime = moment(draft.timestamp);
       if (moment().diff(draftTime, 'hours') > 24) { localStorage.removeItem(key); return; }
       Modal.confirm({
-        title: <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700 }}>Draft Found</span>,
-        content: `Restore draft saved ${draftTime.format('MMM DD [at] HH:mm')}?`,
-        okButtonProps: { style: { background: THEME.primary, borderColor: THEME.primary, borderRadius: 8 } },
+        title: <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: THEME.text }}>Draft Found</span>,
+        content: <span style={{color: '#475569'}}>Restore draft saved {draftTime.format('MMM DD [at] HH:mm')}?</span>,
+        okButtonProps: { style: { background: THEME.primary, borderColor: THEME.primary, borderRadius: 8, fontWeight: 600 } },
+        cancelButtonProps: { style: { borderRadius: 8, fontWeight: 500 } },
         onOk: () => {
-          form.setFieldsValue({ title: draft.title, subHeading: draft.subHeading, tags: draft.tags, category: draft.category, authorName: draft.authorName });
-          setContentValue(draft.content || ''); setHeadings(draft.headings || []);
-          setFeaturedImageList(draft.featuredImage || []); setCoverImageList(draft.coverImage || []); setAuthorImageList(draft.authorImage || []);
+          form.setFieldsValue({ title: draft.title, subHeading: draft.subHeading, tags: draft.tags, category: draft.category, authorName: draft.authorName, authorDesignation: draft.authorDesignation });
+          const draftContent = draft.content || '';
+          contentRef.current = draftContent;
+          setContentValue(draftContent);
+          setHeadings(draft.headings || []);
+          setFeaturedImageList(draft.featuredImage || []);
+          setCoverImageList(draft.coverImage || []);
+          setAuthorImageList(draft.authorImage || []);
           message.success('Draft restored!');
         }
       });
     } catch (e) { console.error(e); }
   };
 
-  // ─── Fetch ───
   const fetchBlogs = useCallback(async (page = 1, limit = 10, searchVal = "", category = "", status = "") => {
     setLoading(true);
     try {
@@ -930,12 +1024,16 @@ const BlogManagement = () => {
       const res = await apiService.get(`/blogs/get-blog-by-id?id=${id}`);
       if (res.success && res.data) {
         const b = res.data;
-        form.setFieldsValue({ title: b.title || '', subHeading: b.subHeading || '', tags: b.tags || [], category: b.category || 'Other', authorName: b.authorName || 'Admin' });
-        setContentValue(b.content || ''); setHeadings(extractHeadings(b.content || ''));
+        form.setFieldsValue({ title: b.title || '', subHeading: b.subHeading || '', tags: b.tags || [], category: b.category || 'Other', authorName: b.authorName || 'Admin', authorDesignation: b.authorDesignation || 'Content Writer' });
+        const blogContent = b.content || '';
+        contentRef.current = blogContent;
+        setContentValue(blogContent);
+        setHeadings(extractHeadings(blogContent));
         setFeaturedImageList(b.featuredImage ? [{ uid: '-1', name: 'featured', status: 'done', url: b.featuredImage, preview: b.featuredImage }] : []);
         setCoverImageList(b.coverImage ? [{ uid: '-2', name: 'cover', status: 'done', url: b.coverImage, preview: b.coverImage }] : []);
         setAuthorImageList(b.authorImage ? [{ uid: '-3', name: 'author', status: 'done', url: b.authorImage, preview: b.authorImage }] : []);
-        setEditingId(id); setModalVisible(true);
+        setEditingId(id);
+        setModalVisible(true);
         setTimeout(() => loadDraft(), 100);
       } else message.error(res.message || 'Failed to fetch blog');
     } catch (e) { console.error(e); message.error('Failed to fetch blog'); }
@@ -957,7 +1055,8 @@ const BlogManagement = () => {
   };
 
   const handleSave = async (values) => {
-    if (!contentValue || contentValue === '<p><br></p>') { message.error('Please add blog content'); return; }
+    const currentContent = contentRef.current;
+    if (!currentContent || currentContent === '<p><br></p>') { message.error('Please add blog content'); return; }
     if (targetStatus === 'published') {
       if (!featuredImageList.length) { message.error('Featured Image required for publishing'); return; }
       if (!coverImageList.length) { message.error('Cover Image required for publishing'); return; }
@@ -967,16 +1066,19 @@ const BlogManagement = () => {
     setSaving(true);
     try {
       const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([processImage(featuredImageList), processImage(coverImageList), processImage(authorImageList)]);
-      const cleanedContent = DOMPurify.sanitize(cleanPastedContent(contentValue), {
+
+      const cleanedContent = DOMPurify.sanitize(cleanPastedContent(currentContent), {
         ALLOWED_TAGS: ['p','br','strong','b','em','i','u','strike','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th'],
         ALLOWED_ATTR: ['href','src','alt','title','target','rel', 'style'],
         ALLOW_DATA_ATTR: false
       });
+
       const payload = {
         title: values.title,
         subHeading: values.subHeading || extractExcerpt(cleanedContent, 160),
         content: cleanedContent,
         authorName: values.authorName || 'Admin',
+        authorDesignation: values.authorDesignation || 'Content Writer',
         authorImage: authorImgUrl,
         isPublished: targetStatus === 'published',
         tags: values.tags || [],
@@ -985,13 +1087,15 @@ const BlogManagement = () => {
         coverImage: coverUrl,
       };
       if (targetStatus === 'published') payload.publishedAt = new Date().toISOString();
+
       const res = editingId
         ? await apiService.put(`/blogs/edit-blog-by-id?id=${editingId}`, payload)
         : await apiService.post('/blogs/create-blog', payload);
+
       if (res.success) {
         notification.success({
-          message: editingId ? '✅ Blog Updated' : '🚀 Blog Created',
-          description: `"${values.title}" ${targetStatus === 'published' ? 'published' : 'saved as draft'} successfully`,
+          message: <span style={{fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif"}}>{editingId ? 'Blog Updated' : 'Blog Created'}</span>,
+          description: <span style={{color: '#475569'}}>"{values.title}" {targetStatus === 'published' ? 'published' : 'saved as draft'} successfully</span>,
           placement: 'topRight', duration: 4
         });
         localStorage.removeItem(`blog_draft_${editingId || 'new'}`);
@@ -1023,32 +1127,56 @@ const BlogManagement = () => {
     if (isLive) {
       const fv = form.getFieldsValue();
       setPreviewBlogData({
-        title: fv.title || 'Untitled', subHeading: fv.subHeading, content: contentValue,
-        authorName: fv.authorName, tags: fv.tags, category: fv.category,
+        title: fv.title || 'Untitled',
+        subHeading: fv.subHeading,
+        content: contentRef.current,
+        authorName: fv.authorName,
+        authorDesignation: fv.authorDesignation,
+        tags: fv.tags,
+        category: fv.category,
         featuredImage: featuredImageList[0]?.url || featuredImageList[0]?.preview,
         coverImage: coverImageList[0]?.url || coverImageList[0]?.preview,
         authorImage: authorImageList[0]?.url || authorImageList[0]?.preview,
-        headings, createdAt: new Date(),
-        readingTime: Math.max(1, Math.ceil((contentValue || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200)),
+        headings,
+        createdAt: new Date(),
+        readingTime: Math.max(1, Math.ceil((contentRef.current || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200)),
       });
     } else {
-      setPreviewBlogData({ ...blogData, headings: extractHeadings(blogData?.content || ''), readingTime: Math.max(1, Math.ceil((blogData?.content || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200)) });
+      setPreviewBlogData({
+        ...blogData,
+        headings: extractHeadings(blogData?.content || ''),
+        readingTime: Math.max(1, Math.ceil((blogData?.content || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200))
+      });
     }
     setPreviewModalVisible(true);
   };
 
   const closeModal = () => {
-    setModalVisible(false); setEditingId(null);
-    setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
-    setContentValue(''); setHeadings([]); setSmartFillApplied(false); setLastSaved(null);
+    setModalVisible(false);
+    setEditingId(null);
+    setFeaturedImageList([]);
+    setCoverImageList([]);
+    setAuthorImageList([]);
+    contentRef.current = '';
+    setContentValue('');
+    setHeadings([]);
+    setSmartFillApplied(false);
+    setLastSaved(null);
     form.resetFields();
   };
 
   const openCreate = () => {
-    setEditingId(null); form.resetFields();
-    setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
-    setContentValue(''); setHeadings([]); setSmartFillApplied(false);
-    setModalVisible(true); setTimeout(() => loadDraft(), 100);
+    setEditingId(null);
+    form.resetFields();
+    setFeaturedImageList([]);
+    setCoverImageList([]);
+    setAuthorImageList([]);
+    contentRef.current = '';
+    setContentValue('');
+    setHeadings([]);
+    setSmartFillApplied(false);
+    setModalVisible(true);
+    setTimeout(() => loadDraft(), 100);
   };
 
   const statCards = [
@@ -1068,7 +1196,10 @@ const BlogManagement = () => {
         {/* Header */}
         <div className="bm-header">
           <div>
-            <h1 className="bm-header-title">Blog Management</h1>
+            <h1 className="bm-header-title">
+              <AppstoreAddOutlined style={{ color: THEME.primary }} /> 
+              Blog Management
+            </h1>
             <p className="bm-header-sub">Create, manage & publish — with smart paste from Word, PDF & Google Docs</p>
           </div>
           <Button type="primary" size="large" icon={<PlusOutlined />} onClick={openCreate} className="bm-btn-primary">
@@ -1079,65 +1210,45 @@ const BlogManagement = () => {
         {/* Stats */}
         <div className="bm-stats">
           {statCards.map(s => (
-            <div key={s.label} className={`bm-stat-card ${s.color}`}>
-              <div className={`bm-stat-icon ${s.color}`}>{s.icon}</div>
+            <div key={s.label} className="bm-stat-card">
+              <div className="bm-stat-top">
+                <div className="bm-stat-label">{s.label}</div>
+                <div className={`bm-stat-icon ${s.color}`}>{s.icon}</div>
+              </div>
               <div className="bm-stat-value">{s.value.toLocaleString()}</div>
-              <div className="bm-stat-label">{s.label}</div>
             </div>
           ))}
         </div>
 
         {/* Filters */}
-        <div className="bm-filters" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div className="bm-filters">
           <Input
             size="large"
-            prefix={<SearchOutlined style={{ color: '#c4b5fd' }} />}
-            placeholder="Search posts by title, content or tags..."
+            prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+            placeholder="Search posts by title or tag..."
             value={searchText}
             onChange={handleSearch}
             allowClear
-            style={{ flex: 1, minWidth: 200, borderRadius: 10 }}
+            style={{ flex: 1, minWidth: 200 }}
           />
-
-          <Select
-            size="large"
-            placeholder="Category"
-            value={selectedCategory || undefined}
-            onChange={v => handleFilterChange('category', v)}
-            allowClear
-            style={{ width: 180 }}
-          >
-            {[['AI','🤖 AI'],['Real Estate','🏠 Real Estate'],['PropTech','📱 PropTech'],['Technology','💻 Technology'],['Business','💼 Business'],['Mortgage','🏦 Mortgage'],['Landscaping','🌳 Landscaping'],['Other','📄 Other']].map(([v,l]) => (
-              <Option key={v} value={v}>{l}</Option>
-            ))}
+          <Select size="large" placeholder="Category" value={selectedCategory || undefined} onChange={v => handleFilterChange('category', v)} allowClear style={{ flex: '1 1 150px', minWidth: 150 }}>
+            {[['AI','🤖 AI'],['Real Estate','🏠 Real Estate'],['PropTech','📱 PropTech'],['Technology','💻 Technology'],['Business','💼 Business'],['Mortgage','🏦 Mortgage'],['Landscaping','🌳 Landscaping'],['Other','📄 Other']].map(([v,l]) => <Option key={v} value={v}>{l}</Option>)}
           </Select>
-
-          <Select
-            size="large"
-            placeholder="Status"
-            value={selectedStatus || undefined}
-            onChange={v => handleFilterChange('status', v)}
-            allowClear
-            style={{ width: 140 }}
-          >
+          <Select size="large" placeholder="Status" value={selectedStatus || undefined} onChange={v => handleFilterChange('status', v)} allowClear style={{ flex: '1 1 130px', minWidth: 130 }}>
             <Option value="published">✅ Published</Option>
             <Option value="draft">📝 Draft</Option>
           </Select>
-
-          <Button
-            size="large"
-            icon={<UndoOutlined />}
-            onClick={handleClearFilters}
-            style={{ borderRadius: 10, borderColor: '#ede9fe', color: '#6b7280' }}
-          >
-            Clear
-          </Button>
+          <Button size="large" icon={<UndoOutlined />} onClick={handleClearFilters} style={{ borderRadius: 10, borderColor: '#e2e8f0', color: '#64748b', flex: '1 1 auto', minWidth: 100, fontWeight: 600 }}>Clear</Button>
         </div>
 
         {/* Blog List */}
         {loading ? (
           <div>
-            {[1,2,3].map(i => <Card key={i} style={{ borderRadius: 18, marginBottom: 20, border: '1.5px solid #ede9fe' }} bodyStyle={{ padding: 24 }}><Skeleton active avatar={{ size: 80, shape: 'square' }} paragraph={{ rows: 3 }} /></Card>)}
+            {[1,2,3].map(i => (
+              <Card key={i} style={{ borderRadius: 16, marginBottom: 20, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }} bodyStyle={{ padding: 24 }}>
+                <Skeleton active avatar={{ size: 80, shape: 'square' }} paragraph={{ rows: 3 }} />
+              </Card>
+            ))}
           </div>
         ) : blogs.length === 0 ? (
           <div className="bm-empty">
@@ -1152,7 +1263,7 @@ const BlogManagement = () => {
                 <div className="bm-blog-thumb">
                   {record.featuredImage
                     ? <img src={record.featuredImage} alt={record.title} />
-                    : <div className="bm-blog-thumb-placeholder"><FileTextOutlined /></div>
+                    : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 42, color: '#cbd5e1' }}><FileTextOutlined /></div>
                   }
                 </div>
                 <div className="bm-blog-body">
@@ -1167,7 +1278,13 @@ const BlogManagement = () => {
                       <div className="bm-blog-actions">
                         <Tooltip title="Edit"><button className="bm-action-btn" onClick={() => fetchBlogById(record._id)}><EditOutlined /></button></Tooltip>
                         <Tooltip title="Preview"><button className="bm-action-btn" onClick={() => handleCardPreview(record)}><EyeOutlined /></button></Tooltip>
-                        <Popconfirm title="Delete this post?" description="This action cannot be undone." onConfirm={() => deleteBlog(record._id)} okText="Delete" okButtonProps={{ danger: true }} cancelButtonProps={{ style: { borderRadius: 8 } }}>
+                        <Popconfirm 
+                          title={<span style={{fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif"}}>Delete Post</span>} 
+                          description={<span style={{color: '#475569'}}>This action cannot be undone.</span>} 
+                          onConfirm={() => deleteBlog(record._id)} 
+                          okText="Delete" 
+                          okButtonProps={{ danger: true, style: { fontWeight: 600, borderRadius: 8 } }} 
+                          cancelButtonProps={{ style: { borderRadius: 8, fontWeight: 500 } }}>
                           <Tooltip title="Delete"><button className="bm-action-btn danger"><DeleteOutlined /></button></Tooltip>
                         </Popconfirm>
                       </div>
@@ -1182,7 +1299,7 @@ const BlogManagement = () => {
                   <div className="bm-blog-footer">
                     <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
                       <div className="bm-meta-item">
-                        <Avatar size={26} src={record.authorImage} icon={<UserOutlined />} style={{ background: 'linear-gradient(135deg,#6d28d9,#8b5cf6)' }} />
+                        <Avatar size={24} src={record.authorImage} icon={<UserOutlined />} style={{ background: '#e2e8f0', color: '#64748b' }} />
                         <strong>{record.authorName || 'Admin'}</strong>
                       </div>
                       <div className="bm-meta-item"><CalendarOutlined />{moment(record.createdAt).format('MMM DD, YYYY')}</div>
@@ -1217,10 +1334,10 @@ const BlogManagement = () => {
         )}
       </div>
 
-      {/* ─── CREATE / EDIT MODAL ─── */}
+      {/* ─── CREATE / EDIT MODAL (CLEAN UI) ─── */}
       <Modal
         title={
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
             <span>{editingId ? <><EditOutlined style={{ marginRight: 8 }} />Edit Post</> : <><RocketOutlined style={{ marginRight: 8 }} />Create New Post</>}</span>
             {lastSaved && autoSave && (
               <div className="bm-autosave" style={{ marginRight: 32 }}>
@@ -1237,60 +1354,75 @@ const BlogManagement = () => {
         destroyOnClose
         className="bm-modal"
         width={screens.xs ? '98%' : 1060}
-        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: '20px 28px' }}
+        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto' }}
       >
-        <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ category: 'Other', authorName: 'Admin' }}>
-          <Tabs defaultActiveKey="content" size="large">
+        <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ category: 'Other', authorName: 'Admin', authorDesignation: 'Content Writer' }}>
+          <Tabs defaultActiveKey="content" size="large" tabBarStyle={{ fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             {/* ─── CONTENT TAB ─── */}
             <TabPane tab={<span><EditOutlined />  Content</span>} key="content">
               <Row gutter={16}>
                 <Col span={24}>
-                  <Form.Item name="title" label="Post Title" rules={[{ required: true, message: 'Title is required' }]}>
-                    <Input placeholder="Enter an engaging, SEO-friendly title..." size="large" style={{ borderRadius: 10, fontSize: 16, fontWeight: 500 }} />
+                  <Form.Item name="title" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Post Title</span>} rules={[{ required: true, message: 'Title is required' }]}>
+                    <Input placeholder="Enter an engaging, SEO-friendly title..." size="large" style={{ borderRadius: 8, fontSize: 15, fontWeight: 500, padding: '10px 14px' }} />
                   </Form.Item>
                 </Col>
               </Row>
 
-              <Form.Item name="subHeading" label="Subheading / Excerpt">
-                <TextArea rows={2} placeholder="Auto-extracted from content, or write your own (max 160 chars)" maxLength={160} showCount style={{ borderRadius: 10 }} />
+              <Form.Item name="subHeading" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Subheading / Excerpt</span>}>
+                <TextArea rows={2} placeholder="Auto-extracted from content, or write your own (max 160 chars)" maxLength={160} showCount style={{ borderRadius: 8, fontWeight: 500, fontSize: 14, padding: '10px 14px' }} />
               </Form.Item>
 
-              <Row gutter={16}>
+              <Row gutter={24}>
                 <Col xs={24} md={12}>
-                  <Form.Item name="tags" label="Tags">
-                    <Select mode="tags" size="large" placeholder="Add tags (press Enter)" tokenSeparators={[',']} style={{ borderRadius: 10 }}>
+                  <Form.Item name="tags" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Tags</span>}>
+                    <Select mode="tags" size="large" placeholder="Add tags (press Enter)" tokenSeparators={[',']} style={{ borderRadius: 8, fontWeight: 500 }}>
                       {['AI','Real Estate','PropTech','Technology','Business','Mortgage','Landscaping','Marketing','UAE','Dubai','Innovation'].map(t => <Option key={t} value={t}>{t}</Option>)}
                     </Select>
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item name="category" label="Category">
-                    <Select size="large" placeholder="Select category">
+                  <Form.Item name="category" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Category</span>}>
+                    <Select size="large" placeholder="Select category" style={{fontWeight: 500}}>
                       {[['AI','🤖'],['Real Estate','🏠'],['PropTech','📱'],['Technology','💻'],['Business','💼'],['Mortgage','🏦'],['Landscaping','🌳'],['Other','📄']].map(([v,e]) => <Option key={v} value={v}>{e} {v}</Option>)}
                     </Select>
                   </Form.Item>
                 </Col>
               </Row>
 
-              <Form.Item label={<span style={{ fontWeight: 700, color: '#1e1b4b' }}>Blog Content <span style={{ color: '#ef4444' }}>*</span></span>}>
-                <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: 12, padding: '12px 16px', marginBottom: 12, border: '1px solid #e9d5ff' }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: '#4c1d95', marginBottom: 4 }}>📋 Smart Paste Enabled</div>
-                  <div style={{ fontSize: 12, color: '#6d28d9' }}>Paste from Word, PDF, or Google Docs — formatting is automatically cleaned. Category & tags are auto-detected!</div>
+              <Form.Item label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Blog Content <span style={{ color: '#ef4444' }}>*</span></span>}>
+                
+                <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginBottom: 16, borderLeft: '4px solid #8b5cf6' }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a', marginBottom: 4 }}>✨ Smart Paste Enabled</div>
+                  <div style={{ fontSize: 13, color: '#475569', fontWeight: 500 }}>Directly type in the editor below, or paste from Word/Google Docs for auto-cleaning!</div>
                 </div>
 
                 {smartFillApplied && (
-                  <Alert message="✨ Smart Fill Applied — Category & tags auto-detected!" type="success" showIcon closable onClose={() => setSmartFillApplied(false)} style={{ marginBottom: 10, borderRadius: 10 }} />
+                  <Alert message={<span style={{fontWeight: 600}}>✨ Smart Fill Applied — Category & tags auto-detected!</span>} type="success" showIcon closable onClose={() => setSmartFillApplied(false)} style={{ marginBottom: 12, borderRadius: 8 }} />
                 )}
                 {pasteProcessing && (
-                  <Alert message="⏳ Processing paste content..." type="info" showIcon style={{ marginBottom: 10, borderRadius: 10 }} />
+                  <Alert message={<span style={{fontWeight: 600}}>⏳ Processing paste content...</span>} type="info" showIcon style={{ marginBottom: 12, borderRadius: 8 }} />
                 )}
 
-                <div onPaste={handlePaste} style={{ borderRadius: 12, overflow: 'hidden', border: '1.5px solid #e9d5ff' }}>
-                  <JoditEditor ref={editorRef} value={contentValue} config={getEditorConfig()} onChange={handleEditorChange} />
+                <div
+                  onPaste={handlePaste}
+                  style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}
+                >
+                  <JoditEditor
+                    ref={editorRef}
+                    value={contentValue}
+                    config={getEditorConfig()}
+                    onBlur={handleEditorChange}
+                    onChange={handleEditorChange}
+                  />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-                  <Button icon={<EyeOutlined />} onClick={() => showPreview({}, true)} disabled={!contentValue || contentValue === '<p><br></p>'} style={{ borderRadius: 10, borderColor: '#c4b5fd', color: '#6d28d9', fontWeight: 600 }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+                  <Button
+                    icon={<EyeOutlined />}
+                    onClick={() => showPreview({}, true)}
+                    disabled={!contentRef.current || contentRef.current === '<p><br></p>'}
+                    style={{ borderRadius: 8, borderColor: '#e2e8f0', color: '#4c1d95', fontWeight: 600, height: 40, padding: '0 20px', background: '#f8fafc' }}
+                  >
                     Live Preview
                   </Button>
                 </div>
@@ -1299,11 +1431,12 @@ const BlogManagement = () => {
 
             {/* ─── MEDIA TAB ─── */}
             <TabPane tab={<span><PictureOutlined />  Media</span>} key="media">
-              <div style={{ background: '#f5f3ff', borderRadius: 12, padding: '14px 18px', marginBottom: 20, border: '1px solid #e9d5ff' }}>
-                <div style={{ fontSize: 13, color: '#4c1d95', fontWeight: 600 }}>📸 Image Guidelines</div>
-                <div style={{ fontSize: 12, color: '#6d28d9', marginTop: 4 }}>Use high-quality images for best results. Featured image appears in blog listings; Cover image is the full-width hero banner in the preview.</div>
+              <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginBottom: 24, borderLeft: '4px solid #3b82f6' }}>
+                <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>📸 Image Guidelines</div>
+                <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>Use high-quality images. Featured image shows in blog listings; Cover image is the full-width hero banner.</div>
               </div>
-              <Row gutter={[24, 16]}>
+              
+              <Row gutter={[32, 24]}>
                 <Col xs={24} md={12}>
                   <UploadWithCrop fileList={featuredImageList} onChange={setFeaturedImageList} aspect={3/2} cropTitle="Crop Featured Image (3:2)" maxSizeMB={5} label="Featured Image (Card Thumbnail)" extra="Recommended: 1200 × 800px · Max 5MB" />
                 </Col>
@@ -1315,17 +1448,21 @@ const BlogManagement = () => {
 
             {/* ─── AUTHOR TAB ─── */}
             <TabPane tab={<span><UserOutlined />  Author</span>} key="author">
-              <Row gutter={24} align="top">
-                <Col xs={24} md={16}>
-                  <Form.Item name="authorName" label="Author Name">
-                    <Input prefix={<UserOutlined style={{ color: '#c4b5fd' }} />} placeholder="Author's full name" size="large" style={{ borderRadius: 10 }} />
+              <Row gutter={32} align="top">
+                <Col xs={24} md={14}>
+                  <Form.Item name="authorName" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Author Name</span>}>
+                    <Input prefix={<UserOutlined style={{ color: '#94a3b8' }} />} placeholder="Author's full name" size="large" style={{ borderRadius: 8, fontWeight: 500 }} />
                   </Form.Item>
-                  <div style={{ background: '#f5f3ff', borderRadius: 12, padding: '14px 18px', border: '1px solid #e9d5ff', marginTop: 8 }}>
-                    <div style={{ fontSize: 13, color: '#4c1d95', fontWeight: 600 }}>ℹ️ Author Info</div>
-                    <div style={{ fontSize: 12, color: '#6d28d9', marginTop: 4 }}>Author name and image appear below the post title in the blog preview. All fields are optional for drafts but required for publishing.</div>
+                  <Form.Item name="authorDesignation" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Author Designation</span>}>
+                    <Input prefix={<TagOutlined style={{ color: '#94a3b8' }} />} placeholder="e.g. Content Writer, Senior Editor, Guest Author" size="large" style={{ borderRadius: 8, fontWeight: 500 }} />
+                  </Form.Item>
+                  
+                  <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginTop: 24, borderLeft: '4px solid #10b981' }}>
+                    <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>ℹ️ Author Info</div>
+                    <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>Author name, designation, and image appear below the post title. Optional for drafts, required for publishing.</div>
                   </div>
                 </Col>
-                <Col xs={24} md={8}>
+                <Col xs={24} md={10}>
                   <UploadWithCrop fileList={authorImageList} onChange={setAuthorImageList} aspect={1} cropTitle="Crop Author Avatar (1:1)" maxSizeMB={2} label="Author Avatar" extra="Recommended: 400 × 400px · Max 2MB" />
                 </Col>
               </Row>
@@ -1335,12 +1472,12 @@ const BlogManagement = () => {
           {/* Footer */}
           <div className="bm-footer-bar">
             <Space>
-              <Switch checked={autoSave} onChange={setAutoSave} style={{ background: autoSave ? '#6d28d9' : undefined }} />
-              <Text style={{ fontSize: 13, color: '#9ca3af' }}>Auto-save every 30s</Text>
+              <Switch checked={autoSave} onChange={setAutoSave} style={{ background: autoSave ? '#0f172a' : undefined }} />
+              <Text style={{ fontSize: 14, color: '#475569', fontWeight: 500 }}>Auto-save</Text>
             </Space>
-            <Space size={10}>
+            <Space size={12} style={{ flexWrap: 'wrap' }}>
               <Button size="large" icon={<SaveOutlined />} onClick={() => { setTargetStatus('draft'); form.submit(); }} loading={saving && targetStatus === 'draft'} className="bm-save-draft-btn">
-                Save as Draft
+                Save Draft
               </Button>
               <Button type="primary" size="large" icon={editingId ? <CheckCircleOutlined /> : <RocketOutlined />} onClick={() => { setTargetStatus('published'); form.submit(); }} loading={saving && targetStatus === 'published'} className="bm-publish-btn">
                 {editingId ? 'Update & Publish' : 'Publish Post'}
@@ -1356,15 +1493,16 @@ const BlogManagement = () => {
         onCancel={() => setPreviewModalVisible(false)}
         footer={
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text type="secondary" style={{ fontSize: 12 }}>This is how your blog will appear to readers</Text>
-            <Button onClick={() => setPreviewModalVisible(false)} style={{ borderRadius: 10 }}>Close Preview</Button>
+            <Text type="secondary" style={{ fontSize: 13, fontWeight: 500, display: screens.xs ? 'none' : 'block' }}>This is how your blog will appear to readers</Text>
+            <Button onClick={() => setPreviewModalVisible(false)} style={{ borderRadius: 8, fontWeight: 600, width: screens.xs ? '100%' : 'auto', height: 40 }}>Close Preview</Button>
           </div>
         }
-        width={screens.xs ? '98%' : 880}
-        bodyStyle={{ maxHeight: '78vh', overflowY: 'auto', padding: 0 }}
+        width={screens.xs ? '98%' : 900}
+        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: 0 }}
         centered
         className="preview-modal"
-        title={<span style={{ color: '#fff' }}><EyeOutlined style={{ marginRight: 8 }} />Blog Preview</span>}
+        zIndex={1100}
+        title={<span style={{ color: '#0f172a' }}><EyeOutlined style={{ marginRight: 8 }} />Blog Preview</span>}
       >
         <BlogPreview data={previewBlogData} />
       </Modal>

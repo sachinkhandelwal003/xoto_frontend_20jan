@@ -140,146 +140,100 @@ export default function Sixth() {
   };
 
   // --- SUBMIT ---
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  //   if (!validateForm()) {
-  //       api.error({ message: "Validation Error", description: "Please fill all fields correctly." });
-  //       return;
-  //   }
+    // 1️⃣ Validation
+    if (!validateForm()) {
+      api.error({
+        message: "Validation Error",
+        description: "Please fill all fields correctly.",
+      });
+      return;
+    }
 
-  //   // --- FIX 3: Start Loading ---
-  //   setLoading(true);
+    setLoading(true);
 
-  //   const fullMobile = formData.countryCode + formData.phone;
+    // 2️⃣ Inquiry Payload
+    const payload = {
+      type: "mortgage",
+      name: {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+      },
+      email: formData.email.toLowerCase().trim(),
+      company: "Individual",
+      mobile: {
+        country_code: formData.countryCode,
+        number: formData.phone,
+      },
+      stakeholder_type: "Investor",
+      message: `Looking For: ${formData.lookingFor}, City: ${formData.city}, Country: ${formData.location_country}, Budget: ${formData.budget}`,
+    };
 
-  //   const payload = {
-  //     type: "mortgage",
-  //     name: { first_name: formData.firstName, last_name: formData.lastName },
-  //     email: formData.email.toLowerCase().trim(),
-  //     company: "Individual",
-  //     mobile: { country_code: formData.countryCode, number: formData.phone },
-  //     stakeholder_type: "Investor",
-      
-  //     // Sending City in Message as per original structure requirement
-  //     message: `Looking For: ${formData.lookingFor}, City: ${formData.city}, Country: ${formData.location_country}, Budget: ${formData.budget}`,
-  //   };
+    try {
+      // 3️⃣ Create Inquiry
+      const res = await apiService.post("/property/lead", payload);
 
-  //   try {
-  //     const res = await apiService.post("/property/lead", payload);
-  //     if (res?.success || res?.status === 200) {
-  //       api.success({ message: "Success", description: "Inquiry Submitted!" });
-  //       setFormData({ firstName: "", lastName: "", email: "", countryCode: "971", phone: "", lookingFor: "", budget: "", location_country: null, state: null, city: null });
-  //       setErrors({});
-  //     }
-  //   } catch (err) {
-  //     const errorData = err.response?.data;
-  //     let errorMessage = "Server Error";
-  //     if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
-  //       errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
-  //     } else if (errorData?.message) {
-  //       errorMessage = errorData.message;
-  //     }
-  //     api.error({ message: "Failed", description: errorMessage });
-  //   } finally {
-  //     // --- FIX 4: Stop Loading ---
-  //     setLoading(false);
-  //   }
-  // };
-const handleSubmit = async (e) => {
-  e.preventDefault();
+      if (res?.success || res?.status === 200) {
+        // 4️⃣ Notification Payload (SENDER MUST BE STRING)
+        const notificationPayload = {
+          sender: payload.email, // ✅ string only
+          receiverType: "SuperAdmin",
+          senderType: "user",
+          notificationType: "NEW_INQUIRY",
+          title: "Mortgage Inquiry",
+          message: "A user has submitted a new mortgage inquiry.",
+        };
 
-  // 1️⃣ Validation
-  if (!validateForm()) {
-    api.error({
-      message: "Validation Error",
-      description: "Please fill all fields correctly.",
-    });
-    return;
-  }
+        // 5️⃣ Create Notification
+        await apiService.post(
+          "/notifications/create-notification",
+          notificationPayload
+        );
 
-  setLoading(true);
+        // 6️⃣ Success UI
+        api.success({
+          message: "Success",
+          description: "Inquiry Submitted!",
+        });
 
-  // 2️⃣ Inquiry Payload
-  const payload = {
-    type: "mortgage",
-    name: {
-      first_name: formData.firstName,
-      last_name: formData.lastName,
-    },
-    email: formData.email.toLowerCase().trim(),
-    company: "Individual",
-    mobile: {
-      country_code: formData.countryCode,
-      number: formData.phone,
-    },
-    stakeholder_type: "Investor",
-    message: `Looking For: ${formData.lookingFor}, City: ${formData.city}, Country: ${formData.location_country}, Budget: ${formData.budget}`,
+        // 7️⃣ Reset Form
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          countryCode: "971",
+          phone: "",
+          lookingFor: "",
+          budget: "",
+          location_country: null,
+          state: null,
+          city: null,
+        });
+
+        setErrors({});
+      }
+    } catch (err) {
+      // 8️⃣ Error Handling
+      const errorData = err.response?.data;
+      let errorMessage = "Server Error";
+
+      if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
+        errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
+      } else if (errorData?.message) {
+        errorMessage = errorData.message;
+      }
+
+      api.error({
+        message: "Failed",
+        description: errorMessage,
+      });
+    } finally {
+      // 9️⃣ Stop Loader
+      setLoading(false);
+    }
   };
-
-  try {
-    // 3️⃣ Create Inquiry
-    const res = await apiService.post("/property/lead", payload);
-
-    if (res?.success || res?.status === 200) {
-      // 4️⃣ Notification Payload (SENDER MUST BE STRING)
-      const notificationPayload = {
-        sender: payload.email, // ✅ string only
-        receiverType: "SuperAdmin",
-        senderType: "user",
-        notificationType: "NEW_INQUIRY",
-        title: "Mortgage Inquiry",
-        message: "A user has submitted a new mortgage inquiry.",
-      };
-
-      // 5️⃣ Create Notification
-      await apiService.post(
-        "/notifications/create-notification",
-        notificationPayload
-      );
-
-      // 6️⃣ Success UI
-      api.success({
-        message: "Success",
-        description: "Inquiry Submitted!",
-      });
-
-      // 7️⃣ Reset Form
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        countryCode: "971",
-        phone: "",
-        lookingFor: "",
-        budget: "",
-        location_country: null,
-        state: null,
-        city: null,
-      });
-
-      setErrors({});
-    }
-  } catch (err) {
-    // 8️⃣ Error Handling
-    const errorData = err.response?.data;
-    let errorMessage = "Server Error";
-
-    if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
-      errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
-    } else if (errorData?.message) {
-      errorMessage = errorData.message;
-    }
-
-    api.error({
-      message: "Failed",
-      description: errorMessage,
-    });
-  } finally {
-    // 9️⃣ Stop Loader
-    setLoading(false);
-  }
-};
 
   return (
     <>
@@ -325,7 +279,8 @@ const handleSubmit = async (e) => {
             <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
 
               {/* FIRST / LAST NAME */}
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
+              {/* FIX: Changed grid-cols-2 to grid-cols-1 sm:grid-cols-2 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <div className="w-full min-w-0">
                   <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t("form.firstName")}*</label>
                   <input name="firstName" value={formData.firstName} onChange={handleChange} className={`w-full px-2 py-2 md:px-4 md:py-3 text-sm md:text-base border rounded-xl outline-none transition ${errors.firstName ? "border-red-500 bg-red-50" : "border-gray-300 focus:ring-2 focus:ring-purple-500"}`} />
@@ -340,7 +295,8 @@ const handleSubmit = async (e) => {
               </div>
 
               {/* EMAIL / PHONE */}
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
+              {/* FIX: Changed grid-cols-2 to grid-cols-1 sm:grid-cols-2 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <div className="w-full min-w-0">
                   <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t("form.email")}*</label>
                   <input type="email" name="email" value={formData.email} onChange={handleChange} className={`w-full px-2 py-2 md:px-4 md:py-3 text-sm md:text-base border rounded-xl outline-none transition ${errors.email ? "border-red-500 bg-red-50" : "border-gray-300 focus:ring-2 focus:ring-purple-500"}`} />
@@ -352,7 +308,7 @@ const handleSubmit = async (e) => {
                     {t("form.phone")}*
                   </label>
                   <div className="flex gap-1 md:gap-2">
-                    <div className="w-[80px] md:w-[110px] flex-shrink-0">
+                    <div className="w-[85px] md:w-[110px] flex-shrink-0">
                         <Select value={formData.countryCode} onChange={handleCountryCodeChange} showSearch optionFilterProp="children" filterOption={(input, option) => option.children.props?.children[1]?.props?.children[1]?.toLowerCase().includes(input.toLowerCase()) || option.value.includes(input)} className="w-full h-full custom-select-mort6" style={{ width: '100%' }} dropdownMatchSelectWidth={300}>
                             {phoneCountryOptions.map((item) => (
                             <Option key={item.iso} value={item.code}>
@@ -371,7 +327,8 @@ const handleSubmit = async (e) => {
               </div>
 
               {/* Looking For & Country */}
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
+              {/* FIX: Changed grid-cols-2 to grid-cols-1 sm:grid-cols-2 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <div className="relative w-full min-w-0">
                   <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                     {t("form.lookingFor")}*
@@ -384,7 +341,7 @@ const handleSubmit = async (e) => {
                       <option value="personalLoan">{t("form.options.personalLoan")}</option>
                     </select>
                     <ChevronDown
-                      className="absolute right-1 md:right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      className="absolute right-3 md:right-3 top-1/2 -translate-y-1/2 text-gray-400"
                       size={16}
                     />
                   </div>
@@ -404,7 +361,8 @@ const handleSubmit = async (e) => {
               </div>
 
               {/* State & City */}
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
+              {/* FIX: Changed grid-cols-2 to grid-cols-1 sm:grid-cols-2 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <div className="w-full min-w-0">
                   <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">State*</label>
                   <Select placeholder="Select State" showSearch optionFilterProp="children" onChange={handleLocationStateChange} disabled={!statesList.length} className={`w-full custom-select-mort6 ${errors.state ? "border-red-500" : ""}`} filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>

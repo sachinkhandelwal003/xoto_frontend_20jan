@@ -83,7 +83,7 @@ const Second = () => {
             
             <div className={`w-full lg:w-3/5 text-center ${isRTL ? "lg:text-right" : "lg:text-left"}`}>
               <h2
-                className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-6"
+                className="text-3xl sm:text-5xl lg:text-6xl font-semibold text-gray-900 leading-tight mb-6"
                 style={dmSans}
               >
                 {t("title")}
