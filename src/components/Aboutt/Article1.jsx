@@ -18,21 +18,24 @@ const Article1 = () => {
       style={{ backgroundImage: `url(${bgImage})` }}
     >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/30" />
+      {/* <di" /> */}
 
       {/* Content */}
       <div className="relative z-10 text-center px-6">
 <h1
-  className="text-white font-bold flex flex-col items-center gap-2 drop-shadow-xl"
-  style={{ fontSize: '54px', lineHeight: '1.15' }}
+  className="text-white font-bold flex font-semibold flex-col items-center gap-1 sm:gap-2 drop-shadow-xl text-center"
+  style={{ 
+    fontSize: 'clamp(30px, 8vw, 54px)', // Mobile pe 30px, Laptop pe 54px tak auto-scale hoga
+    lineHeight: '1.2' 
+  }}
 >
-  <span>{t("title.line1")}</span>
-  <span>{t("title.line2")}</span>
+  <span className="block">{t("title.line1")}</span>
+  <span className="block">{t("title.line2")}</span>
 </h1>
 
         <p
           className="
-            mt-4 text-white font-semibold
+            mt-4 text-white font-large
             text-base sm:text-lg md:text-xl
             drop-shadow-lg
           "
