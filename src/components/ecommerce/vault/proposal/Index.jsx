@@ -66,9 +66,9 @@ const CreateProposalAdmin = () => {
     let url = '';
 
     // ✅ Role-based API selection
-    if (user?.role?.code === '18') {
+    if (user?.role?.code === '26') {
       // Vault Admin
-      url = '/vault/lead/admin/all?page=1&limit=50&status=Qualified';
+      url = '/vault/lead/advisor/my-leads?page=1&limit=50&status=Qualified';
     } else {
       // Partner / Others
       url = '/vault/lead/partner/get?page=1&limit=50&status=Qualified';
