@@ -1,17 +1,15 @@
 // src/pages/Leads/VaultAgentLeadDetail.jsx
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Spin, message, Modal, Form, Input, Select, InputNumber, DatePicker, Button } from "antd";
+import { Spin, message } from "antd";
 import {
   ChevronLeft, User, Mail, Phone, Home, DollarSign, FileText,
   Eye, AlertCircle, RefreshCw, CheckCircle, XCircle, AlertTriangle,
   Layers, BarChart2, Shield, Activity, Check, Copy, Info,
   MapPin, Calendar, Hash, FilePlus, ClipboardList, Upload,
   TrendingUp, Percent, MessageSquare, ExternalLink, Clock,
-  Zap, GitBranch, CreditCard, Globe, Target, Link,
+  Zap, GitBranch, CreditCard, Globe, Target, Link, Edit2, Save, X,
 } from "lucide-react";
-import { Edit3 } from "lucide-react";
-import dayjs from "dayjs";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────
@@ -94,10 +92,12 @@ export default function VaultAgentLeadDetail() {
   const [qualityScore,   setQualityScore]   = useState(95);
   const [docOverrides,   setDocOverrides]   = useState({});
   const [flashMsg,       setFlashMsg]       = useState({ type: "", text: "" });
-  const [editModalOpen, setEditModalOpen] = useState(false);
-const [editSubmitting, setEditSubmitting] = useState(false);
-const [form] = Form.useForm();
 
+  // ── Edit Modal State ────────────────────────────────────────────────────
+  const [editModalOpen,     setEditModalOpen]     = useState(false);
+  const [editSaving,        setEditSaving]        = useState(false);
+  const [editForm,          setEditForm]          = useState({});
+  const [editFormOriginal,  setEditFormOriginal]  = useState({});
 
   const flash = (type, text) => {
     setFlashMsg({ type, text });
@@ -109,7 +109,6 @@ const [form] = Form.useForm();
     try {
       setLoading(true); setError("");
       const res  = await apiService.get(`/vault/lead/${id}`);
-      // API returns { success: true, data: { ...leadObject } }
       const data = res?.data?.data || res?.data || null;
       setLead(data);
       setLeadStatus(data?.currentStatus || "");
@@ -133,48 +132,166 @@ const [form] = Form.useForm();
     } catch { /* silent */ }
     finally { setDocsLoading(false); }
   };
- const handleEditSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      setEditSubmitting(true);
-
-      const payload = {
-        customerInfo: {
-          ...values.customerInfo,
-          dateOfBirth: values.customerInfo.dateOfBirth
-            ? values.customerInfo.dateOfBirth.format('YYYY-MM-DD')
-            : undefined,
-        },
-        propertyDetails: {
-          ...values.propertyDetails,
-          completionDate: values.propertyDetails.completionDate
-            ? values.propertyDetails.completionDate.format('YYYY-MM-DD')
-            : undefined,
-        },
-        loanRequirements: values.loanRequirements,
-        referralType: values.referralType,
-        loanAmountRange: values.loanAmountRange,
-        source: values.source,
-        notesToXoto: values.notesToXoto,
-        currentStatus: values.currentStatus,
-        commissionInfo: values.commissionInfo,
-      };
-
-      // ✅ Correct endpoint
-      await apiService.put(`/vault/lead/advisor/lead/${id}/info`, payload);
-      message.success('Lead updated successfully');
-      setEditModalOpen(false);
-      fetchLead(); // refresh data
-    } catch (err) {
-      if (err?.errorFields) return; // form validation error
-      message.error(err?.response?.data?.message || 'Update failed');
-    } finally {
-      setEditSubmitting(false);
-    }
-  };
 
   useEffect(() => { if (id) { fetchLead(); fetchDocs(); } }, [id]);
 
+  // ── Open Edit Modal ────────────────────────────────────────────────────
+  const openEditModal = () => {
+    if (!lead) return;
+    const ci = lead.customerInfo    || {};
+    const pd = lead.propertyDetails || {};
+    const pa = pd.propertyAddress   || {};
+    const lr = lead.loanRequirements|| {};
+    const initialForm = {
+      fullName                    : ci.fullName                    ?? "",
+      preferredName               : ci.preferredName               ?? "",
+      email                       : ci.email                       ?? "",
+      mobileNumber                : ci.mobileNumber                ?? "",
+      alternativePhone            : ci.alternativePhone            ?? "",
+      whatsappNumber              : ci.whatsappNumber              ?? "",
+      nationality                 : ci.nationality                 ?? "",
+      maritalStatus               : ci.maritalStatus               ?? "",
+      numberOfDependents          : ci.numberOfDependents          ?? "",
+      occupation                  : ci.occupation                  ?? "",
+      employer                    : ci.employer                    ?? "",
+      monthlySalary               : ci.monthlySalary               ?? "",
+      propertyType                : pd.propertyType                ?? "",
+      propertySubtype             : pd.propertySubtype             ?? "",
+      propertyValue               : pd.propertyValue               ?? "",
+      loanAmountRequired          : pd.loanAmountRequired          ?? "",
+      downPaymentAmount           : pd.downPaymentAmount           ?? "",
+      propertyAgeYears            : pd.propertyAgeYears            ?? "",
+      isOffPlan                   : pd.isOffPlan                   ?? false,
+      building                    : pa.building                    ?? "",
+      area                        : pa.area                        ?? "",
+      city                        : pa.city                        ?? "",
+      preferredTenureYears        : lr.preferredTenureYears        ?? "",
+      preferredInterestRateType   : lr.preferredInterestRateType   ?? "",
+      preferredBanks              : lr.preferredBanks?.join(", ") ?? "",
+      feeFinancingPreference      : lr.feeFinancingPreference      ?? false,
+      lifeInsurancePreference     : lr.lifeInsurancePreference     ?? false,
+      propertyInsurancePreference : lr.propertyInsurancePreference ?? false,
+      specialRequirements         : lr.specialRequirements         ?? "",
+      notesToXoto                 : lead.notesToXoto               ?? "",
+    };
+    setEditForm(initialForm);
+    setEditFormOriginal(initialForm);
+    setEditModalOpen(true);
+  };
+
+  const handleEditChange = (key, value) => {
+    setEditForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // ── Build only-changed nested payload, hit correct endpoint ───────────
+  const handleEditSave = async () => {
+    setEditSaving(true);
+    try {
+      const num        = (v) => (v !== "" && v !== null && v !== undefined) ? Number(v) : undefined;
+      const orig       = editFormOriginal;
+      const isDiff     = (key) => String(editForm[key]) !== String(orig[key] ?? "");
+      const isBoolDiff = (key) => editForm[key] !== orig[key];
+
+      // ── Customer Info section ─────────────────────────────────────────
+      const ciKeys  = ["fullName","preferredName","email","mobileNumber","alternativePhone","whatsappNumber","nationality","maritalStatus","numberOfDependents","occupation","employer","monthlySalary"];
+      const ciDirty = ciKeys.some(isDiff);
+      const ci = ciDirty ? {} : null;
+      if (ciDirty) {
+        if (isDiff("fullName"))            ci.fullName            = editForm.fullName;
+        if (isDiff("preferredName"))       ci.preferredName       = editForm.preferredName;
+        if (isDiff("email"))               ci.email               = editForm.email;
+        if (isDiff("mobileNumber"))        ci.mobileNumber        = editForm.mobileNumber;
+        if (isDiff("alternativePhone"))    ci.alternativePhone    = editForm.alternativePhone;
+        if (isDiff("whatsappNumber"))      ci.whatsappNumber      = editForm.whatsappNumber;
+        if (isDiff("nationality"))         ci.nationality         = editForm.nationality;
+        if (isDiff("maritalStatus"))       ci.maritalStatus       = editForm.maritalStatus;
+        if (isDiff("numberOfDependents"))  ci.numberOfDependents  = num(editForm.numberOfDependents);
+        if (isDiff("occupation"))          ci.occupation          = editForm.occupation;
+        if (isDiff("employer"))            ci.employer            = editForm.employer;
+        if (isDiff("monthlySalary"))       ci.monthlySalary       = num(editForm.monthlySalary);
+      }
+
+      // ── Property Details section ──────────────────────────────────────
+      const pdScalarKeys = ["propertyType","propertySubtype","propertyValue","loanAmountRequired","downPaymentAmount","propertyAgeYears"];
+      const addrKeys     = ["building","area","city"];
+      const pdDirty      = pdScalarKeys.some(isDiff) || isBoolDiff("isOffPlan") || addrKeys.some(isDiff);
+      const pd = pdDirty ? {} : null;
+      if (pdDirty) {
+        if (isDiff("propertyType"))         pd.propertyType       = editForm.propertyType;
+        if (isDiff("propertySubtype"))      pd.propertySubtype    = editForm.propertySubtype;
+        if (isDiff("propertyValue"))        pd.propertyValue      = num(editForm.propertyValue);
+        if (isDiff("loanAmountRequired"))   pd.loanAmountRequired = num(editForm.loanAmountRequired);
+        if (isDiff("downPaymentAmount"))    pd.downPaymentAmount  = num(editForm.downPaymentAmount);
+        if (isDiff("propertyAgeYears"))     pd.propertyAgeYears   = num(editForm.propertyAgeYears);
+        if (isBoolDiff("isOffPlan"))        pd.isOffPlan          = editForm.isOffPlan;
+        if (addrKeys.some(isDiff)) {
+          const addr = {};
+          if (isDiff("building")) addr.building = editForm.building;
+          if (isDiff("area"))     addr.area     = editForm.area;
+          if (isDiff("city"))     addr.city     = editForm.city;
+          pd.propertyAddress = addr;
+        }
+      }
+
+      // ── Loan Requirements section ─────────────────────────────────────
+      const lrScalarKeys = ["preferredTenureYears","preferredInterestRateType","preferredBanks","specialRequirements"];
+      const lrBoolKeys   = ["feeFinancingPreference","lifeInsurancePreference","propertyInsurancePreference"];
+      const lrDirty      = lrScalarKeys.some(isDiff) || lrBoolKeys.some(isBoolDiff);
+      const lr = lrDirty ? {} : null;
+      if (lrDirty) {
+        if (isDiff("preferredTenureYears"))        lr.preferredTenureYears      = num(editForm.preferredTenureYears);
+        if (isDiff("preferredInterestRateType"))   lr.preferredInterestRateType = editForm.preferredInterestRateType;
+        if (isDiff("preferredBanks"))              lr.preferredBanks            = editForm.preferredBanks.split(",").map((s) => s.trim()).filter(Boolean);
+        if (isDiff("specialRequirements"))         lr.specialRequirements       = editForm.specialRequirements;
+        if (isBoolDiff("feeFinancingPreference"))      lr.feeFinancingPreference      = editForm.feeFinancingPreference;
+        if (isBoolDiff("lifeInsurancePreference"))     lr.lifeInsurancePreference     = editForm.lifeInsurancePreference;
+        if (isBoolDiff("propertyInsurancePreference")) lr.propertyInsurancePreference = editForm.propertyInsurancePreference;
+      }
+
+      // ── Assemble final payload ────────────────────────────────────────
+      const payload = {};
+      if (ci)                              payload.customerInfo     = ci;
+      if (pd)                              payload.propertyDetails  = pd;
+      if (lr)                              payload.loanRequirements = lr;
+      if (isDiff("notesToXoto"))           payload.notesToXoto      = editForm.notesToXoto;
+
+      if (Object.keys(payload).length === 0) {
+        flash("error", "No changes to save");
+        setEditSaving(false);
+        return;
+      }
+
+      // ── Call correct API ──────────────────────────────────────────────
+      const res         = await apiService.put(`/vault/lead/advisor/lead/${id}/info`, payload);
+      const updatedData = res?.data?.data || res?.data || null;
+
+      // ── Optimistic merge: update local state immediately ──────────────
+      setLead((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        if (payload.customerInfo)    next.customerInfo    = { ...(prev.customerInfo    || {}), ...payload.customerInfo };
+        if (payload.propertyDetails) next.propertyDetails = {
+          ...(prev.propertyDetails || {}),
+          ...payload.propertyDetails,
+          propertyAddress: {
+            ...((prev.propertyDetails || {}).propertyAddress || {}),
+            ...(payload.propertyDetails.propertyAddress || {}),
+          },
+        };
+        if (payload.loanRequirements) next.loanRequirements = { ...(prev.loanRequirements || {}), ...payload.loanRequirements };
+        if (payload.notesToXoto !== undefined) next.notesToXoto = payload.notesToXoto;
+        return updatedData ? { ...next, ...updatedData } : next;
+      });
+
+      const sections = Object.keys(payload).join(", ");
+      flash("success", `Saved changes to: ${sections}`);
+      setEditModalOpen(false);
+    } catch (err) {
+      flash("error", err?.response?.data?.message || "Failed to save changes");
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   // ── Status Update ─────────────────────────────────────────────────────
   const handleStatusUpdate = async () => {
@@ -199,7 +316,7 @@ const [form] = Form.useForm();
   const openDocModal = (doc) => {
     const fileUrl = doc.fileUrl || doc.url || doc.documentUrl || doc.file_url;
     if (!fileUrl) { message.warning("File URL not available"); return; }
-    const docId   = doc._id || doc.id;
+    const docId    = doc._id || doc.id;
     const override = docOverrides[docId];
     setSelectedDoc({ ...doc, fileUrl, ...(override || {}) });
     setModalOpen(true);
@@ -244,68 +361,7 @@ const [form] = Form.useForm();
       flash("error", err?.response?.data?.message || "Rejection failed");
     } finally { setRejecting(false); }
   };
-useEffect(() => {
-  if (editModalOpen && lead) {
-    const ci = lead.customerInfo || {};
-    const pd = lead.propertyDetails || {};
-    const pa = pd.propertyAddress || {};
-    const lr = lead.loanRequirements || {};
-    const si = lead.sourceInfo || {};
-    const ci2 = lead.commissionInfo || {};
 
-    form.setFieldsValue({
-      customerInfo: {
-        fullName: ci.fullName,
-        email: ci.email,
-        mobileNumber: ci.mobileNumber,
-        alternativePhone: ci.alternativePhone,
-        whatsappNumber: ci.whatsappNumber,
-        dateOfBirth: ci.dateOfBirth ? dayjs(ci.dateOfBirth) : null,
-        nationality: ci.nationality,
-        maritalStatus: ci.maritalStatus,
-        numberOfDependents: ci.numberOfDependents,
-        occupation: ci.occupation,
-        employer: ci.employer,
-        monthlySalary: ci.monthlySalary,
-        preferredName: ci.preferredName,
-      },
-      propertyDetails: {
-        propertyType: pd.propertyType,
-        propertySubtype: pd.propertySubtype,
-        propertyValue: pd.propertyValue,
-        downPaymentAmount: pd.downPaymentAmount,
-        loanAmountRequired: pd.loanAmountRequired,
-        propertyAgeYears: pd.propertyAgeYears,
-        isOffPlan: pd.isOffPlan,
-        completionDate: pd.completionDate ? dayjs(pd.completionDate) : null,
-        propertyAddress: {
-          building: pa.building,
-          area: pa.area,
-          city: pa.city,
-        },
-      },
-      loanRequirements: {
-        preferredTenureYears: lr.preferredTenureYears,
-        preferredInterestRateType: lr.preferredInterestRateType,
-        preferredBanks: lr.preferredBanks || [],
-        feeFinancingPreference: lr.feeFinancingPreference,
-        lifeInsurancePreference: lr.lifeInsurancePreference,
-        propertyInsurancePreference: lr.propertyInsurancePreference,
-        specialRequirements: lr.specialRequirements,
-      },
-      referralType: lead.referralType,
-      loanAmountRange: lead.loanAmountRange,
-      source: si.source,
-      notesToXoto: lead.notesToXoto,
-      currentStatus: lead.currentStatus,
-      commissionInfo: {
-        commissionEligible: ci2.commissionEligible,
-        commissionStatus: ci2.commissionStatus,
-        commissionAmount: ci2.commissionAmount,
-      },
-    });
-  }
-}, [editModalOpen, lead, form]);
   // ── Loading / Error ────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
@@ -329,39 +385,33 @@ useEffect(() => {
     </div>
   );
 
-  // ══════════════════════════════════════════════════════════════════════
-  // ── Destructure API response (matching actual shape) ──────────────────
-  // ══════════════════════════════════════════════════════════════════════
-  const ci  = lead.customerInfo       || {};   // fullName, email, mobileNumber, etc.
-  const pd  = lead.propertyDetails    || {};   // propertyValue, loanAmountRequired, etc.
-  const pa  = pd.propertyAddress      || {};   // building, area, city
-  const dc  = lead.documentCollection || {};   // collectionPercentage, readyForSubmission, etc.
-  const si  = lead.sourceInfo         || {};   // source, createdByName, createdByRole
-  const at  = lead.assignedTo         || {};   // advisorId, advisorName, assignedAt ← ACTUAL API FIELD
-  const sla = lead.sla                || {};   // breached, deadline, firstContactAt
-  const lr  = lead.loanRequirements   || {};   // preferredTenureYears, preferredBanks, etc.
-  const cv  = lead.conversionInfo     || {};   // convertedToCase, caseId
-  const ci2 = lead.commissionInfo     || {};   // commissionEligible, commissionStatus, commissionAmount
-  const dup = lead.duplicateCheck     || {};   // isDuplicate, matchingPhoneFound
+  // ── Destructure API response ──────────────────────────────────────────
+  const ci  = lead.customerInfo       || {};
+  const pd  = lead.propertyDetails    || {};
+  const pa  = pd.propertyAddress      || {};
+  const dc  = lead.documentCollection || {};
+  const si  = lead.sourceInfo         || {};
+  const at  = lead.assignedTo         || {};
+  const sla = lead.sla                || {};
+  const lr  = lead.loanRequirements   || {};
+  const cv  = lead.conversionInfo     || {};
+  const ci2 = lead.commissionInfo     || {};
+  const dup = lead.duplicateCheck     || {};
 
   const currentStatus = lead.currentStatus || "New";
   const statusCfg     = STATUS_CFG[currentStatus] || STATUS_CFG["New"];
 
-  // Property address string
   const propertyAddr = [pa.building, pa.area, pa.city].filter(Boolean).join(", ");
 
-  // Document counts — use API's documentCollection fields
   const docsUploaded = dc.documentsUploaded   ?? documents.length;
   const docsVerified = dc.documentsVerified   ?? documents.filter((d) => (d.status || d.verification_status) === "Verified").length;
   const docsPending  = dc.documentsPending    ?? documents.filter((d) => { const s = d.status || d.verification_status; return !s || s === "Pending"; }).length;
   const docsRejected = dc.documentsRejected   ?? documents.filter((d) => (d.status || d.verification_status) === "Rejected").length;
   const docsRequired = dc.totalDocumentsRequired ?? 7;
 
-  // SLA status
   const isSlaBreached = sla.breached === true;
   const slaDeadline   = sla.deadline;
 
-  // ── Tabs ──────────────────────────────────────────────────────────────
   const TABS = [
     { id: "overview",  label: "Overview",   icon: Layers        },
     { id: "property",  label: "Property",   icon: Home          },
@@ -375,14 +425,21 @@ useEffect(() => {
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Inter', sans-serif" }}>
       <style>{`
-        @keyframes spin   { to { transform: rotate(360deg) } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
-        .pd-tab:hover { background: ${C.primaryGlow} !important; color: ${C.primary} !important; }
+        @keyframes spin    { to { transform: rotate(360deg) } }
+        @keyframes fadeUp  { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: translateY(0) } }
+        .pd-tab:hover     { background: ${C.primaryGlow} !important; color: ${C.primary} !important; }
         .pd-row:last-child { border-bottom: none !important; }
-        .pd-copy:hover { color: ${C.primary} !important; background: ${C.primarySoft} !important; }
-        .pd-stat:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(92,3,155,0.1) !important; }
-        .doc-card:hover { border-color: ${C.primaryBord} !important; box-shadow: 0 4px 16px rgba(92,3,155,0.08) !important; }
+        .pd-copy:hover    { color: ${C.primary} !important; background: ${C.primarySoft} !important; }
+        .pd-stat:hover    { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(92,3,155,0.1) !important; }
+        .doc-card:hover   { border-color: ${C.primaryBord} !important; box-shadow: 0 4px 16px rgba(92,3,155,0.08) !important; }
         .status-btn:hover { opacity: 0.85; }
+        .edit-btn:hover   { background: linear-gradient(135deg, #4A0280, #6D28D9) !important; box-shadow: 0 4px 20px rgba(92,3,155,0.35) !important; transform: translateY(-1px); }
+        .edit-input:focus { border-color: ${C.primary} !important; outline: none; box-shadow: 0 0 0 3px rgba(92,3,155,0.1); }
+        .edit-input       { transition: border-color .2s, box-shadow .2s; }
+        .em-overlay       { animation: fadeIn .2s ease; }
+        .em-panel         { animation: slideUp .25s ease; }
         @media(max-width:768px){ .pd-grid-2{ grid-template-columns:1fr !important; } .pd-stats{ grid-template-columns:1fr 1fr !important; } }
       `}</style>
 
@@ -397,25 +454,6 @@ useEffect(() => {
         >
           <ChevronLeft size={15} /> Back to Vault Leads
         </button>
-         <button
-    onClick={() => setEditModalOpen(true)}
-    style={{
-      display: 'inline-flex', alignItems: 'center', gap: 6,
-      padding: '8px 16px', background: C.white, border: `1px solid ${C.grayBord}`,
-      borderRadius: 10, fontSize: 13, fontWeight: 600, color: C.primary,
-      cursor: 'pointer', transition: 'all .2s',
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.borderColor = C.primaryBord;
-      e.currentTarget.style.background = C.primarySoft;
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.borderColor = C.grayBord;
-      e.currentTarget.style.background = C.white;
-    }}
-  >
-    <Edit3 size={15} /> Edit Lead
-  </button>
 
         {/* ── Flash ── */}
         {flashMsg.text && (
@@ -465,16 +503,41 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Assigned Advisor + Source */}
-            <div style={{ flexShrink: 0, textAlign: "right", minWidth: 150 }}>
+            {/* ── TOP RIGHT: Assigned Advisor + Source + EDIT BUTTON ── */}
+            <div style={{ flexShrink: 0, textAlign: "right", minWidth: 150, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
+              {/* Edit Button */}
+              <button
+                className="edit-btn"
+                onClick={openEditModal}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 7,
+                  padding: "9px 18px",
+                  background: `linear-gradient(135deg, ${C.primary}, ${C.primaryMid})`,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  transition: "all .2s",
+                  boxShadow: "0 2px 12px rgba(92,3,155,0.25)",
+                  letterSpacing: ".01em",
+                }}
+              >
+                <Edit2 size={14} /> Edit Lead
+              </button>
+
+              {/* Assigned Advisor */}
               {at.advisorName ? (
-                <div style={{ marginBottom: 10 }}>
+                <div>
                   <div style={{ fontSize: 10, color: C.textMuted, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Assigned To</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{at.advisorName}</div>
                   {at.assignedAt && <div style={{ fontSize: 11, color: C.gray, marginTop: 2 }}>{fmtDate(at.assignedAt)}</div>}
                 </div>
               ) : (
-                <div style={{ fontSize: 12, color: C.amber, background: C.amberSoft, padding: "4px 10px", borderRadius: 8, marginBottom: 10, display: "inline-block" }}>
+                <div style={{ fontSize: 12, color: C.amber, background: C.amberSoft, padding: "4px 10px", borderRadius: 8, display: "inline-block" }}>
                   ⚠ No Advisor Assigned
                 </div>
               )}
@@ -527,7 +590,6 @@ useEffect(() => {
           {/* ── OVERVIEW ──────────────────────────────────────────── */}
           {activeTab === "overview" && (
             <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-
               <Section icon={User} title="Client Information">
                 <DRow label="Full Name"       value={show(ci.fullName)} />
                 <DRow label="Preferred Name"  value={show(ci.preferredName)} />
@@ -545,7 +607,6 @@ useEffect(() => {
               </Section>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {/* Lead source */}
                 <Section icon={FilePlus} title="Lead Source">
                   <DRow label="Source"          value={show(capWords(si.source))} />
                   <DRow label="Submission"       value={show(capWords(si.submissionMethod))} />
@@ -557,7 +618,6 @@ useEffect(() => {
                   <DRow label="Loan Range"       value={show(lead.loanAmountRange)} />
                 </Section>
 
-                {/* Assigned advisor */}
                 <Section icon={User} title="Assigned Advisor">
                   {at.advisorName || at.advisorId ? (
                     <>
@@ -570,7 +630,6 @@ useEffect(() => {
                 </Section>
               </div>
 
-              {/* Notes */}
               {lead.notesToXoto && (
                 <div style={{ gridColumn: "1 / -1" }}>
                   <Section icon={MessageSquare} title="Notes to Xoto">
@@ -586,7 +645,6 @@ useEffect(() => {
           {/* ── PROPERTY ──────────────────────────────────────────── */}
           {activeTab === "property" && (
             <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-
               <Section icon={Home} title="Property Details">
                 <DRow label="Property Type"    value={show(pd.propertyType)} />
                 <DRow label="Property Subtype" value={show(pd.propertySubtype)} />
@@ -615,22 +673,19 @@ useEffect(() => {
                   {lr.specialRequirements && <DRow label="Special Requirements" value={show(lr.specialRequirements)} />}
                 </Section>
               </div>
-
             </div>
           )}
 
           {/* ── DOCUMENTS ─────────────────────────────────────────── */}
           {activeTab === "documents" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-
-              {/* Doc stats from API */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
                 {[
-                  { label: "Required",  value: docsRequired,          color: C.gray   },
-                  { label: "Uploaded",  value: docsUploaded,          color: C.primary },
-                  { label: "Verified",  value: docsVerified,          color: C.green  },
-                  { label: "Pending",   value: docsPending,           color: C.amber  },
-                  { label: "Rejected",  value: docsRejected,          color: C.red    },
+                  { label: "Required",  value: docsRequired, color: C.gray    },
+                  { label: "Uploaded",  value: docsUploaded, color: C.primary  },
+                  { label: "Verified",  value: docsVerified, color: C.green   },
+                  { label: "Pending",   value: docsPending,  color: C.amber   },
+                  { label: "Rejected",  value: docsRejected, color: C.red     },
                 ].map((s) => (
                   <div key={s.label} className="pd-stat" style={{ background: C.white, borderRadius: 12, padding: "14px 16px", border: `1px solid ${C.grayBord}`, transition: "all .2s", textAlign: "center" }}>
                     <div style={{ fontSize: 26, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
@@ -639,7 +694,6 @@ useEffect(() => {
                 ))}
               </div>
 
-              {/* Collection progress */}
               <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.grayBord}`, padding: "16px 20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                   <div>
@@ -667,7 +721,6 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* Doc cards */}
               <Section icon={FileText} title={`Uploaded Documents (${documents.length})`}>
                 {docsLoading ? (
                   <div style={{ textAlign: "center", padding: "40px 0" }}><Spin size="large" /></div>
@@ -687,7 +740,6 @@ useEffect(() => {
           {/* ── FINANCIAL ─────────────────────────────────────────── */}
           {activeTab === "financial" && (
             <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-
               <Section icon={DollarSign} title="Commission Information">
                 <DRow label="Commission Eligible" value={boolLabel(ci2.commissionEligible)} highlight={ci2.commissionEligible} />
                 <DRow label="Commission Status"   value={show(ci2.commissionStatus)} badge={ci2.commissionStatus === "Pending" ? { bg: C.amberSoft, color: "#B45309" } : ci2.commissionStatus === "Paid" ? { bg: C.greenSoft, color: C.green } : undefined} />
@@ -714,23 +766,19 @@ useEffect(() => {
                   <DRow label="Converted Role"    value={show(capWords(cv.convertedByRole))} />
                 </Section>
               </div>
-
             </div>
           )}
 
           {/* ── STATUS ────────────────────────────────────────────── */}
           {activeTab === "status" && (
             <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-
               <Section icon={ClipboardList} title="Update Lead Status">
-                {/* Current */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 10, background: statusCfg.bg, border: `1px solid ${statusCfg.border}`, marginBottom: 18 }}>
                   <div style={{ width: 10, height: 10, borderRadius: "50%", background: statusCfg.color, flexShrink: 0 }} />
                   <span style={{ fontSize: 13, color: C.gray }}>Current:</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: statusCfg.color }}>{currentStatus}</span>
                 </div>
 
-                {/* Status selector */}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
                   {STATUS_OPTIONS.map((opt) => {
                     const cfg    = STATUS_CFG[opt] || {};
@@ -764,7 +812,6 @@ useEffect(() => {
               </Section>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {/* SLA Info */}
                 <Section icon={Clock} title="SLA Information">
                   <DRow label="SLA Breached"       value={boolLabel(sla.breached)} highlight={!sla.breached} />
                   <DRow label="Deadline"           value={fmtDT(sla.deadline)} expired={isSlaBreached} />
@@ -775,7 +822,6 @@ useEffect(() => {
                   <DRow label="Last Reminder"      value={fmtDT(sla.lastReminderSentAt)} />
                 </Section>
 
-                {/* Duplicate check */}
                 <Section icon={Activity} title="Duplicate Check">
                   <DRow label="Is Duplicate"       value={boolLabel(dup.isDuplicate)} highlight={!dup.isDuplicate} />
                   <DRow label="Phone Match Found"  value={boolLabel(dup.matchingPhoneFound)} highlight={!dup.matchingPhoneFound} />
@@ -789,7 +835,6 @@ useEffect(() => {
           {/* ── SYSTEM ────────────────────────────────────────────── */}
           {activeTab === "system" && (
             <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-
               <Section icon={Shield} title="System Information">
                 <DRow label="Lead ID"       value={show(lead._id)} copy mono />
                 <DRow label="Customer ID"   value={show(lead.customerId)} copy />
@@ -812,7 +857,6 @@ useEffect(() => {
                 <FlagRow label="Is Duplicate"              value={dup.isDuplicate}         icon={Activity}    invert />
                 <FlagRow label="Deleted"                   value={lead.isDeleted}          icon={XCircle}     invert />
               </Section>
-
             </div>
           )}
         </div>
@@ -829,7 +873,6 @@ useEffect(() => {
           <div style={{ background: C.white, borderRadius: 18, width: "100%", maxWidth: 960, maxHeight: "92vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.25)" }}>
             <div style={{ height: 4, background: `linear-gradient(90deg, ${C.primary}, ${C.primaryMid})` }} />
 
-            {/* Modal header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${C.grayBord}` }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{selectedDoc?.fileName || selectedDoc?.file_name || "Document Preview"}</div>
@@ -845,7 +888,6 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Preview */}
             <div style={{ flex: 1, background: C.grayLight, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", minHeight: 400, overflow: "hidden" }}>
               {modalLoading && <div style={{ position: "absolute", zIndex: 2 }}><Spin size="large" /></div>}
               {isPdf(selectedDoc.fileUrl)
@@ -854,7 +896,6 @@ useEffect(() => {
               }
             </div>
 
-            {/* Actions */}
             <div style={{ padding: "16px 20px", borderTop: `1px solid ${C.grayBord}` }}>
               {(() => {
                 const ds = selectedDoc?.status || selectedDoc?.verification_status;
@@ -893,236 +934,289 @@ useEffect(() => {
           </div>
         </div>
       )}
-       <Modal
-  title={
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <Edit3 size={18} color={C.primary} />
-      <span style={{ fontWeight: 700, fontSize: 16 }}>Edit Lead</span>
-    </div>
-  }
-  open={editModalOpen}
-  onCancel={() => setEditModalOpen(false)}
-  width={960}
-  footer={null}
-  destroyOnClose
->
-  <Form
-    form={form}
-    layout="vertical"
-    style={{ maxHeight: '70vh', overflowY: 'auto', paddingRight: 4 }}
-  >
-    {/* ----- Client Information ----- */}
-    <div style={{ marginBottom: 20 }}>
-      <h4 style={{ margin: '0 0 12px', color: C.primary }}>Client Information</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-        <Form.Item name={['customerInfo', 'fullName']} label="Full Name" rules={[{ required: true }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'preferredName']} label="Preferred Name">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'email']} label="Email">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'mobileNumber']} label="Mobile">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'alternativePhone']} label="Alt. Phone">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'whatsappNumber']} label="WhatsApp">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'dateOfBirth']} label="Date of Birth">
-          <DatePicker style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'nationality']} label="Nationality">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'maritalStatus']} label="Marital Status">
-          <Select allowClear>
-            <Select.Option value="Single">Single</Select.Option>
-            <Select.Option value="Married">Married</Select.Option>
-            <Select.Option value="Other">Other</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'numberOfDependents']} label="Dependents">
-          <InputNumber min={0} style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'occupation']} label="Occupation">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'employer']} label="Employer">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'monthlySalary']} label="Monthly Salary">
-          <InputNumber min={0} style={{ width: '100%' }} addonBefore="AED" />
-        </Form.Item>
-      </div>
-    </div>
 
-    {/* ----- Property Details ----- */}
-    <div style={{ marginBottom: 20 }}>
-      <h4 style={{ margin: '0 0 12px', color: C.primary }}>Property Details</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-        <Form.Item name={['propertyDetails', 'propertyType']} label="Property Type">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'propertySubtype']} label="Subtype">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'propertyValue']} label="Property Value">
-          <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'downPaymentAmount']} label="Down Payment">
-          <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'loanAmountRequired']} label="Loan Required">
-          <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'propertyAgeYears']} label="Property Age (years)">
-          <InputNumber min={0} style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'isOffPlan']} label="Off-Plan?">
-          <Select allowClear>
-            <Select.Option value={true}>Yes</Select.Option>
-            <Select.Option value={false}>No</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'completionDate']} label="Completion Date">
-          <DatePicker style={{ width: '100%' }} />
-        </Form.Item>
-      </div>
-      <h4 style={{ margin: '16px 0 8px' }}>Property Address</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
-        <Form.Item name={['propertyDetails', 'propertyAddress', 'building']} label="Building">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'propertyAddress', 'area']} label="Area">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'propertyAddress', 'city']} label="City">
-          <Input />
-        </Form.Item>
-      </div>
-    </div>
-
-    {/* ----- Loan Requirements ----- */}
-    <div style={{ marginBottom: 20 }}>
-      <h4 style={{ margin: '0 0 12px', color: C.primary }}>Loan Requirements</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-        <Form.Item name={['loanRequirements', 'preferredTenureYears']} label="Tenure (years)">
-          <InputNumber min={1} max={25} style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item name={['loanRequirements', 'preferredInterestRateType']} label="Rate Type">
-          <Select allowClear>
-            <Select.Option value="Fixed">Fixed</Select.Option>
-            <Select.Option value="Variable">Variable</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['loanRequirements', 'preferredBanks']} label="Preferred Banks (comma separated)">
-          <Select mode="tags" style={{ width: '100%' }} placeholder="Select or type bank" />
-        </Form.Item>
-        <Form.Item name={['loanRequirements', 'feeFinancingPreference']} label="Fee Financing?">
-          <Select allowClear>
-            <Select.Option value={true}>Yes</Select.Option>
-            <Select.Option value={false}>No</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['loanRequirements', 'lifeInsurancePreference']} label="Life Insurance?">
-          <Select allowClear>
-            <Select.Option value={true}>Yes</Select.Option>
-            <Select.Option value={false}>No</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['loanRequirements', 'propertyInsurancePreference']} label="Property Insurance?">
-          <Select allowClear>
-            <Select.Option value={true}>Yes</Select.Option>
-            <Select.Option value={false}>No</Select.Option>
-          </Select>
-        </Form.Item>
-      </div>
-      <Form.Item name={['loanRequirements', 'specialRequirements']} label="Special Requirements">
-        <Input.TextArea rows={2} />
-      </Form.Item>
-    </div>
-
-    {/* ----- Commission & Lead Info ----- */}
-    <div>
-      <h4 style={{ margin: '0 0 12px', color: C.primary }}>Commission & Lead Info</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-        <Form.Item name={['commissionInfo', 'commissionEligible']} label="Commission Eligible?">
-          <Select allowClear>
-            <Select.Option value={true}>Yes</Select.Option>
-            <Select.Option value={false}>No</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['commissionInfo', 'commissionStatus']} label="Commission Status">
-          <Select allowClear>
-            <Select.Option value="Pending">Pending</Select.Option>
-            <Select.Option value="Paid">Paid</Select.Option>
-            <Select.Option value="Cancelled">Cancelled</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['commissionInfo', 'commissionAmount']} label="Commission Amount">
-          <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
-        </Form.Item>
-        <Form.Item name="referralType" label="Referral Type">
-          <Select allowClear>
-            <Select.Option value="Referral Only">Referral Only</Select.Option>
-            <Select.Option value="Docs Provided">Docs Provided</Select.Option>
-            <Select.Option value="Full Application">Full Application</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name="loanAmountRange" label="Loan Amount Range">
-          <Select allowClear>
-            <Select.Option value="< 500K">{'< 500K'}</Select.Option>
-            <Select.Option value="500K-1M">500K-1M</Select.Option>
-            <Select.Option value="1M-2M">1M-2M</Select.Option>
-            <Select.Option value="2M-5M">2M-5M</Select.Option>
-            <Select.Option value="> 5M">{'> 5M'}</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name="source" label="Source">
-          <Select allowClear>
-            <Select.Option value="website">Website</Select.Option>
-            <Select.Option value="freelance_agent">Freelance Agent</Select.Option>
-            <Select.Option value="partner">Partner</Select.Option>
-            <Select.Option value="admin">Admin</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name="currentStatus" label="Status">
-          <Select allowClear>
-            {STATUS_OPTIONS.map(opt => (
-              <Select.Option key={opt} value={opt}>{opt}</Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
-      </div>
-      <Form.Item name="notesToXoto" label="Notes to Xoto">
-        <Input.TextArea rows={3} />
-      </Form.Item>
-    </div>
-
-    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24, borderTop: `1px solid ${C.grayBord}`, paddingTop: 16 }}>
-      <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
-      <Button
-        type="primary"
-        loading={editSubmitting}
-        onClick={handleEditSubmit}
-        icon={<Edit3 size={14} />}
-      >
-        Save Changes
-      </Button>
-    </div>
-  </Form>
-</Modal>
+      {/* ════════════════════════════════════════════════════════════════
+          EDIT LEAD MODAL
+      ════════════════════════════════════════════════════════════════ */}
+      {editModalOpen && (
+        <EditModal
+          form={editForm}
+          original={editFormOriginal}
+          onChange={handleEditChange}
+          onSave={handleEditSave}
+          onClose={() => { if (!editSaving) setEditModalOpen(false); }}
+          saving={editSaving}
+          leadName={ci.fullName}
+        />
+      )}
     </div>
   );
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// ── Sub-components ───────────────────────────────────────────────────────────
+// ── EDIT MODAL ───────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+
+function EditModal({ form, original, onChange, onSave, onClose, saving, leadName }) {
+  // Track which fields have changed for visual diff indicator
+  const isDirty = (key) => String(form[key] ?? "") !== String(original[key] ?? "");
+  const isBoolDirty = (key) => form[key] !== original[key];
+
+  const dirtyCount = [
+    "fullName","preferredName","email","mobileNumber","alternativePhone","whatsappNumber",
+    "nationality","maritalStatus","numberOfDependents","occupation","employer","monthlySalary",
+    "propertyType","propertySubtype","propertyValue","loanAmountRequired","downPaymentAmount",
+    "propertyAgeYears","building","area","city","preferredTenureYears","preferredInterestRateType",
+    "preferredBanks","specialRequirements","notesToXoto",
+  ].filter(isDirty).length + [
+    "isOffPlan","feeFinancingPreference","lifeInsurancePreference","propertyInsurancePreference",
+  ].filter(isBoolDirty).length;
+
+  // Prevent body scroll while modal is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  return (
+    <div
+      className="em-overlay"
+      style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px", backdropFilter: "blur(3px)", overflowY: "auto" }}
+      onClick={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}
+    >
+      <div
+        className="em-panel"
+        style={{ background: C.white, borderRadius: 20, width: "100%", maxWidth: 860, boxShadow: "0 32px 100px rgba(0,0,0,0.22)", overflow: "hidden", marginBottom: 24 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ── Header ── */}
+        <div style={{ height: 5, background: `linear-gradient(90deg, ${C.primary}, ${C.primaryMid}, ${C.primaryLight})` }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: `1px solid ${C.grayBord}`, background: C.grayLight }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: C.primarySoft, border: `1.5px solid ${C.primaryBord}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Edit2 size={16} color={C.primary} />
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: C.text, letterSpacing: "-.3px" }}>Edit Lead</div>
+              {leadName && <div style={{ fontSize: 12, color: C.gray, marginTop: 1 }}>{leadName}</div>}
+            </div>
+            {dirtyCount > 0 && (
+              <span style={{ background: C.primarySoft, color: C.primary, border: `1px solid ${C.primaryBord}`, borderRadius: 99, fontSize: 11, fontWeight: 700, padding: "2px 9px" }}>
+                {dirtyCount} change{dirtyCount !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            disabled={saving}
+            style={{ background: "none", border: `1px solid ${C.grayBord}`, borderRadius: 8, cursor: saving ? "not-allowed" : "pointer", color: C.gray, padding: "6px 8px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
+            onMouseEnter={(e) => { if (!saving) { e.currentTarget.style.borderColor = C.redBord; e.currentTarget.style.color = C.red; e.currentTarget.style.background = C.redSoft; } }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.grayBord; e.currentTarget.style.color = C.gray; e.currentTarget.style.background = "none"; }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* ── Body ── */}
+        <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: 28, maxHeight: "70vh", overflowY: "auto" }}>
+
+          {/* ─── Customer Info ─────────────────────────────────── */}
+          <EditSection title="Customer Information" icon={User}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" }}>
+              <EditField label="Full Name"         value={form.fullName}          onChange={(v) => onChange("fullName", v)}          dirty={isDirty("fullName")} />
+              <EditField label="Preferred Name"    value={form.preferredName}     onChange={(v) => onChange("preferredName", v)}     dirty={isDirty("preferredName")} />
+              <EditField label="Email"             value={form.email}             onChange={(v) => onChange("email", v)}             type="email" dirty={isDirty("email")} />
+              <EditField label="Mobile Number"     value={form.mobileNumber}      onChange={(v) => onChange("mobileNumber", v)}      dirty={isDirty("mobileNumber")} />
+              <EditField label="Alternative Phone" value={form.alternativePhone}  onChange={(v) => onChange("alternativePhone", v)}  dirty={isDirty("alternativePhone")} />
+              <EditField label="WhatsApp Number"   value={form.whatsappNumber}    onChange={(v) => onChange("whatsappNumber", v)}    dirty={isDirty("whatsappNumber")} />
+              <EditField label="Nationality"       value={form.nationality}       onChange={(v) => onChange("nationality", v)}       dirty={isDirty("nationality")} />
+              <EditField label="Marital Status"    value={form.maritalStatus}     onChange={(v) => onChange("maritalStatus", v)}     dirty={isDirty("maritalStatus")} />
+              <EditField label="No. of Dependents" value={form.numberOfDependents}onChange={(v) => onChange("numberOfDependents", v)}type="number" dirty={isDirty("numberOfDependents")} />
+              <EditField label="Monthly Salary (AED)" value={form.monthlySalary} onChange={(v) => onChange("monthlySalary", v)}    type="number" dirty={isDirty("monthlySalary")} />
+              <EditField label="Occupation"        value={form.occupation}        onChange={(v) => onChange("occupation", v)}        dirty={isDirty("occupation")} />
+              <EditField label="Employer"          value={form.employer}          onChange={(v) => onChange("employer", v)}          dirty={isDirty("employer")} />
+            </div>
+          </EditSection>
+
+          {/* ─── Property Details ─────────────────────────────── */}
+          <EditSection title="Property Details" icon={Home}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" }}>
+              <EditField label="Property Type"       value={form.propertyType}       onChange={(v) => onChange("propertyType", v)}       dirty={isDirty("propertyType")} />
+              <EditField label="Property Subtype"    value={form.propertySubtype}    onChange={(v) => onChange("propertySubtype", v)}    dirty={isDirty("propertySubtype")} />
+              <EditField label="Property Value (AED)"value={form.propertyValue}      onChange={(v) => onChange("propertyValue", v)}      type="number" dirty={isDirty("propertyValue")} />
+              <EditField label="Loan Amount (AED)"   value={form.loanAmountRequired} onChange={(v) => onChange("loanAmountRequired", v)} type="number" dirty={isDirty("loanAmountRequired")} />
+              <EditField label="Down Payment (AED)"  value={form.downPaymentAmount}  onChange={(v) => onChange("downPaymentAmount", v)}  type="number" dirty={isDirty("downPaymentAmount")} />
+              <EditField label="Property Age (Years)"value={form.propertyAgeYears}   onChange={(v) => onChange("propertyAgeYears", v)}   type="number" dirty={isDirty("propertyAgeYears")} />
+            </div>
+
+            {/* Off-Plan Toggle */}
+            <div style={{ marginTop: 14 }}>
+              <EditToggle
+                label="Is Off-Plan"
+                value={form.isOffPlan}
+                onChange={(v) => onChange("isOffPlan", v)}
+                dirty={isBoolDirty("isOffPlan")}
+              />
+            </div>
+
+            {/* Property Address sub-section */}
+            <div style={{ marginTop: 18, padding: "14px 16px", background: C.grayLight, borderRadius: 12, border: `1px solid ${C.grayBord}` }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                <MapPin size={11} color={C.textMuted} /> Property Address
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px 16px" }}>
+                <EditField label="Building" value={form.building} onChange={(v) => onChange("building", v)} dirty={isDirty("building")} />
+                <EditField label="Area"     value={form.area}     onChange={(v) => onChange("area", v)}     dirty={isDirty("area")} />
+                <EditField label="City"     value={form.city}     onChange={(v) => onChange("city", v)}     dirty={isDirty("city")} />
+              </div>
+            </div>
+          </EditSection>
+
+          {/* ─── Loan Requirements ───────────────────────────── */}
+          <EditSection title="Loan Requirements" icon={Target}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" }}>
+              <EditField label="Preferred Tenure (Years)"  value={form.preferredTenureYears}      onChange={(v) => onChange("preferredTenureYears", v)}      type="number" dirty={isDirty("preferredTenureYears")} />
+              <EditField label="Preferred Rate Type"       value={form.preferredInterestRateType} onChange={(v) => onChange("preferredInterestRateType", v)} dirty={isDirty("preferredInterestRateType")} />
+              <div style={{ gridColumn: "1 / -1" }}>
+                <EditField label="Preferred Banks (comma-separated)" value={form.preferredBanks} onChange={(v) => onChange("preferredBanks", v)} dirty={isDirty("preferredBanks")} />
+              </div>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <EditField label="Special Requirements" value={form.specialRequirements} onChange={(v) => onChange("specialRequirements", v)} multiline rows={2} dirty={isDirty("specialRequirements")} />
+              </div>
+            </div>
+
+            <div style={{ marginTop: 14, display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <EditToggle label="Fee Financing Preference"      value={form.feeFinancingPreference}      onChange={(v) => onChange("feeFinancingPreference", v)}      dirty={isBoolDirty("feeFinancingPreference")} />
+              <EditToggle label="Life Insurance Preference"     value={form.lifeInsurancePreference}     onChange={(v) => onChange("lifeInsurancePreference", v)}     dirty={isBoolDirty("lifeInsurancePreference")} />
+              <EditToggle label="Property Insurance Preference" value={form.propertyInsurancePreference} onChange={(v) => onChange("propertyInsurancePreference", v)} dirty={isBoolDirty("propertyInsurancePreference")} />
+            </div>
+          </EditSection>
+
+          {/* ─── Notes ───────────────────────────────────────── */}
+          <EditSection title="Notes to Xoto" icon={MessageSquare}>
+            <EditField
+              label="Notes"
+              value={form.notesToXoto}
+              onChange={(v) => onChange("notesToXoto", v)}
+              multiline
+              rows={4}
+              dirty={isDirty("notesToXoto")}
+            />
+          </EditSection>
+        </div>
+
+        {/* ── Footer ── */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderTop: `1px solid ${C.grayBord}`, background: C.grayLight, gap: 12, flexWrap: "wrap" }}>
+          <div style={{ fontSize: 12, color: C.textMuted }}>
+            {dirtyCount > 0
+              ? <span style={{ color: C.primary, fontWeight: 600 }}>⬤ {dirtyCount} unsaved change{dirtyCount !== 1 ? "s" : ""}</span>
+              : <span>No changes yet</span>
+            }
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={onClose}
+              disabled={saving}
+              style={{ padding: "10px 20px", borderRadius: 10, border: `1.5px solid ${C.grayBord}`, background: C.white, color: C.textSub, fontWeight: 600, fontSize: 13, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6 }}
+            >
+              <X size={14} /> Cancel
+            </button>
+            <button
+              onClick={onSave}
+              disabled={saving || dirtyCount === 0}
+              style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: saving || dirtyCount === 0 ? C.grayBord : `linear-gradient(135deg, ${C.primary}, ${C.primaryMid})`, color: saving || dirtyCount === 0 ? C.textMuted : "#fff", fontWeight: 700, fontSize: 13, cursor: saving || dirtyCount === 0 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 7, boxShadow: saving || dirtyCount === 0 ? "none" : "0 2px 12px rgba(92,3,155,0.25)", transition: "all .2s" }}
+            >
+              {saving
+                ? <><RefreshCw size={14} style={{ animation: "spin 1s linear infinite" }} /> Saving...</>
+                : <><Save size={14} /> Save Changes</>
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── Edit Modal Sub-components ────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+
+function EditSection({ title, icon: Icon, children }) {
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, paddingBottom: 10, borderBottom: `2px solid ${C.primaryBord}` }}>
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: C.primarySoft, border: `1px solid ${C.primaryBord}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon size={13} color={C.primary} />
+        </div>
+        <span style={{ fontSize: 13, fontWeight: 700, color: C.text, letterSpacing: "-.2px" }}>{title}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function EditField({ label, value, onChange, type = "text", multiline = false, rows = 2, dirty = false }) {
+  const baseStyle = {
+    width: "100%",
+    padding: "9px 12px",
+    border: `1.5px solid ${dirty ? C.primaryBord : C.grayBord}`,
+    borderRadius: 9,
+    fontSize: 13,
+    color: C.text,
+    fontFamily: "inherit",
+    background: dirty ? C.primarySoft : C.white,
+    boxSizing: "border-box",
+    transition: "border-color .2s, box-shadow .2s, background .2s",
+    resize: multiline ? "vertical" : undefined,
+  };
+  return (
+    <div>
+      <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: dirty ? C.primary : C.textSub, marginBottom: 5, textTransform: "uppercase", letterSpacing: ".04em" }}>
+        {label}
+        {dirty && <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.primary, display: "inline-block", flexShrink: 0 }} />}
+      </label>
+      {multiline ? (
+        <textarea
+          className="edit-input"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={rows}
+          style={baseStyle}
+        />
+      ) : (
+        <input
+          className="edit-input"
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          style={baseStyle}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditToggle({ label, value, onChange, dirty = false }) {
+  return (
+    <div
+      onClick={() => onChange(!value)}
+      style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "9px 14px", borderRadius: 10, border: `1.5px solid ${dirty ? C.primaryBord : C.grayBord}`, background: dirty ? C.primarySoft : C.white, cursor: "pointer", userSelect: "none", transition: "all .2s" }}
+    >
+      {/* Toggle switch */}
+      <div style={{ width: 36, height: 20, borderRadius: 99, background: value ? C.primary : C.grayBord, position: "relative", transition: "background .2s", flexShrink: 0 }}>
+        <div style={{ position: "absolute", top: 3, left: value ? 19 : 3, width: 14, height: 14, borderRadius: "50%", background: C.white, transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+      </div>
+      <span style={{ fontSize: 12, fontWeight: 600, color: dirty ? C.primary : C.textSub }}>
+        {label}
+      </span>
+      {dirty && <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.primary, flexShrink: 0 }} />}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── Shared Sub-components ────────────────────────────────────────────────────
 // ════════════════════════════════════════════════════════════════════════════
 
 function Section({ icon: Icon, title, children }) {
@@ -1255,7 +1349,6 @@ function DocCard({ doc, onView }) {
       <button onClick={() => onView(doc)} disabled={!fileUrl} style={{ marginTop: "auto", width: "100%", padding: "9px 0", background: fileUrl ? `linear-gradient(135deg, ${C.primary}, ${C.primaryMid})` : C.grayBord, color: fileUrl ? "#fff" : C.textMuted, border: "none", borderRadius: 9, fontWeight: 600, fontSize: 13, cursor: fileUrl ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
         <Eye size={14} /> View Document
       </button>
-     
     </div>
   );
 }

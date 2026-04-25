@@ -556,6 +556,21 @@ const CUSTOM_ROLE_LINKS = {
     },
 ],
 
+"23": [
+  {
+    title: "Mortgage Cases",
+    icon: "fas fa-file-invoice-dollar",   // same icon as mortgage, or use fas fa-gavel
+    path: "/dashboard/{roleSlug}/mortgage-ops",
+    submenus: [
+      {
+        title: "All Cases",
+        path: "/dashboard/{roleSlug}/mortgage-ops/case/:caseId"
+      },
+      // Optional: Add a direct case detail link if needed, but usually you'd navigate from the list.
+    ]
+  } 
+],
+
 };
 
 
@@ -597,6 +612,7 @@ const ROLE_MODULE_ORDER = {
   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
   '21': ['Dashboard','Create Lead',  'Vault Partners', 'All Leads',],
     '26': ['Dashboard', 'All Leads','Case','Proposals'],
+    '23': ['Dashboard', 'Mortgage Cases'], 
 };
 
 
