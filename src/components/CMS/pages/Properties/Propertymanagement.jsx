@@ -1,433 +1,860 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Modal } from 'antd';
 import { apiService } from '../../../../manageApi/utils/custom.apiservice';
 import {
-  Button, Modal, Form, Input, InputNumber, Select, Row, Col, Divider,
-  Typography, Table, Card, Space, Tag, Popconfirm, message, notification,
-  Switch, Upload, Grid, DatePicker
+  Button, Input, Select, Tag, Spin, Empty,
+  Pagination, Tooltip, Badge, Drawer, Form, Space,
+  Popconfirm, message, InputNumber,
 } from 'antd';
-
 import {
-  PlusOutlined,
-  DeleteOutlined,
-  EyeOutlined,
-  UploadOutlined,
-  SearchOutlined,
+  SearchOutlined, FilterOutlined,
+  FireFilled, StarFilled, EnvironmentOutlined,
+  AppstoreOutlined, UnorderedListOutlined,
+  CheckCircleFilled, ClockCircleFilled, CloseCircleFilled,
+  EyeOutlined, DeleteOutlined, ReloadOutlined,
+  HomeOutlined, UserOutlined, ColumnWidthOutlined,
 } from '@ant-design/icons';
 
-import dayjs from 'dayjs';
-
-const { Title, Text } = Typography;
 const { Option } = Select;
-const { TextArea } = Input;
-const { useBreakpoint } = Grid;
 
-const THEME = { primary: "#7c3aed", success: "#10b981" };
+// ─── Theme ────────────────────────────────────────────────────────────────────
+const C = {
+  primary:  '#7c3aed',
+  hot:      '#ef4444',
+  featured: '#f59e0b',
+  approved: '#10b981',
+  pending:  '#f59e0b',
+  rejected: '#ef4444',
+  inactive: '#6b7280',
+  bg:       '#f5f3ff',
+  card:     '#ffffff',
+  border:   '#ede9fe',
+  text:     '#1e1b4b',
+  muted:    '#64748b',
+};
 
-const PropertyManagement = () => {
-  const UPLOAD_API = `${apiService.baseURL}/upload`;
-  const [properties, setProperties] = useState([]);
-  const [developers, setDevelopers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [formLoading, setFormLoading] = useState(false);
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const fmt = (n) => n ? `AED ${Number(n).toLocaleString()}` : '—';
 
-  const [total, setTotal] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
-  const [searchText, setSearchText] = useState('');
+const statusConfig = {
+  approved: { color: C.approved, icon: <CheckCircleFilled />, label: 'Live'     },
+  pending:  { color: C.pending,  icon: <ClockCircleFilled />, label: 'Pending'  },
+  rejected: { color: C.rejected, icon: <CloseCircleFilled />, label: 'Rejected' },
+  inactive: { color: C.inactive, icon: <CloseCircleFilled />, label: 'Inactive' },
+};
 
-  const [photoList, setPhotoList] = useState([]);
-  const [logoList, setLogoList] = useState([]);
-  const [brochureUrl, setBrochureUrl] = useState("");
 
-  const [form] = Form.useForm();
 
-  // Utility to capitalize first letter of each word
-  const capitalizeWords = (str) => {
-    if (!str) return "";
-    return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
-  };
+const typeColors = {
+  off_plan:   '#7c3aed',
+  secondary:  '#0ea5e9',
+  rental:     '#10b981',
+  commercial: '#f59e0b',
+};
 
-  const validateImageSize = (file) => {
-    const isImage = file.type.startsWith("image/");
-    if (!isImage) {
-      message.error("Only image files allowed");
-      return Upload.LIST_IGNORE;
-    }
-    const size = file.size / 1024 / 1024;
-    if (size < 1 || size > 20) {
-      message.error("Image size must be between 1MB and 20MB");
-      return Upload.LIST_IGNORE;
-    }
-    return true;
-  };
+const typeLabels = {
+  off_plan:   'Off-Plan',
+  secondary:  'Secondary',
+  rental:     'Rental',
+  commercial: 'Commercial',
+};
 
-  const fetchDevelopers = async () => {
-    try {
-      const res = await apiService.get("/property/get-all-developers");
-      const list = Array.isArray(res) ? res : (res?.data || []);
-      setDevelopers(list);
-    } catch (err) {
-      console.error("Error fetching developers");
-    }
-  };
+// ─── Property Card ─────────────────────────────────────────────────────────────
+const PropertyCard = ({ property, onApprove, onReject, onToggleHot, onToggleFeatured, onDelete, onView }) => {
+  const {
+    _id, propertyName, area, city, propertySubType,
+    approvalStatus, listingStatus, isFeatured, isHot,
+    price, price_min, price_max, mainLogo, photos,
+    bedrooms, bathrooms, builtUpArea, builtUpArea_min, builtUpArea_max,
+    developer, viewCount,
+  } = property;
 
-  const fetchProperties = useCallback(async (page, limit, search) => {
-    setLoading(true);
-    try {
-      const response = await apiService.get("/property/get-all-properties", {
-        page,
-        limit,
-        keyword: search || undefined
-      });
-      const resData = response;
-      const list = Array.isArray(resData?.data) ? resData.data : (Array.isArray(resData) ? resData : []);
-      setProperties(list);
-      setTotal(response?.pagination?.totalItems || 0);
-    } catch (err) {
-      message.error("Failed to load properties");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const status    = listingStatus === 'active' ? 'approved'
+                  : approvalStatus === 'pending' ? 'pending'
+                  : approvalStatus === 'rejected' ? 'rejected'
+                  : 'inactive';
+  const sc        = statusConfig[status] || statusConfig.pending;
+  const typeColor = typeColors[propertySubType] || '#7c3aed';
+  const coverImg  = mainLogo || photos?.architecture?.[0] || photos?.other?.[0] || null;
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchProperties(currentPage, pageSize, searchText);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchText, currentPage, pageSize, fetchProperties]);
+  const displayPrice = price_min && price_max && price_min !== price_max
+    ? `${fmt(price_min)} – ${fmt(price_max)}`
+    : fmt(price || price_min);
 
-  useEffect(() => {
-    fetchDevelopers();
-  }, []);
-
-  const handleSave = async (values) => {
-    setFormLoading(true);
-    try {
-      const finalPhotos = photoList
-        .map(f => f.url || f.response?.file?.url || f.response?.url || f.response)
-        .filter(url => typeof url === "string");
-
-      const finalLogo = logoList.length
-        ? (logoList[0].url || logoList[0].response?.file?.url || logoList[0].response?.url)
-        : "";
-
-      const payload = {
-        ...values,
-        // ✅ CAPITALIZE FIRST LETTER OF EACH WORD ON SAVE
-        propertyName: capitalizeWords(values.propertyName), 
-        price: Number(values.price || 0),
-        price_min: Number(values.price_min || 0),
-        price_max: Number(values.price_max || 0),
-        bedrooms: Number(values.bedrooms || 0),
-        bathrooms: Number(values.bathrooms || 0),
-        builtUpArea_min: Number(values.builtUpArea_min || 0),
-        builtUpArea_max: Number(values.builtUpArea_max || 0),
-        photos: finalPhotos,
-        mainLogo: finalLogo,
-        brochure: brochureUrl,
-        handover: values.handover ? dayjs(values.handover).format("YYYY-MM-DD") : "",
-      };
-
-      if (editingId) {
-        await apiService.post(`/property/edit-property?id=${editingId}`, payload);
-      } else {
-        await apiService.post("/property/create-properties", payload);
-      }
-
-      notification.success({ message: "Property Saved Successfully!" });
-      closeModal();
-      fetchProperties(currentPage, pageSize, searchText);
-    } catch (err) {
-      message.error("Error saving property");
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    setLoading(true);
-    try {
-      await apiService.post(`/property/delete-property?id=${id}`);
-      message.success("Property deleted successfully");
-      fetchProperties(currentPage, pageSize, searchText);
-    } catch {
-      message.error("Failed to delete");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const closeModal = () => {
-    setModalVisible(false);
-    setEditingId(null);
-    setPhotoList([]);
-    setLogoList([]);
-    setBrochureUrl("");
-    form.resetFields();
-  };
-
-  const handleEditClick = (record) => {
-    setEditingId(record._id);
-    const formData = {
-      ...record,
-      developer: record.developer?._id || record.developer,
-      handover: record.handover ? dayjs(record.handover) : null
-    };
-    form.setFieldsValue(formData);
-    if (record.photos)
-      setPhotoList(record.photos.map((url, i) => ({ uid: i, url, status: "done", name: `Img ${i + 1}` })));
-    if (record.mainLogo)
-      setLogoList([{ uid: "-1", url: record.mainLogo, status: "done", name: "Main Logo" }]);
-    if (record.brochure) setBrochureUrl(record.brochure);
-    setModalVisible(true);
-  };
-
-  const columns = [
-    {
-      title: "Property Name",
-      dataIndex: "propertyName",
-      width: 200,
-      // ✅ CSS CAPITALIZE FOR DISPLAY
-      render: (t) => <Text strong style={{ textTransform: 'capitalize' }}>{t}</Text>
-    },
-    {
-      title: "Price Min",
-      dataIndex: "price_min",
-      width: 150,
-      render: (p, r) => (
-        <Text strong style={{ color: THEME.primary }}>
-          {r.currency} {p?.toLocaleString()}
-        </Text>
-      )
-    },
-    {
-      title: "Location",
-      width: 200,
-      render: (_, r) => `${r.area || ""}, ${r.city || ""}`
-    },
-    {
-      title: "Status",
-      align: "center",
-      width: 120,
-      render: (_, record) =>
-        record.notReadyYet
-          ? <Tag color="processing">Construction</Tag>
-          : record.isAvailable
-            ? <Tag color="success">Available</Tag>
-            : <Tag color="error">Sold</Tag>
-    },
-    {
-      title: "Action",
-      width: 100,
-      render: (_, record) => (
-        <Space>
-          <Button type="text" icon={<EyeOutlined style={{ color: THEME.primary }} />} onClick={() => handleEditClick(record)} />
-          <Popconfirm title="Delete?" onConfirm={() => handleDelete(record._id)}>
-            <Button type="text" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
-      )
-    }
-  ];
+  const areaStr = builtUpArea_min && builtUpArea_max && builtUpArea_min !== builtUpArea_max
+    ? `${builtUpArea_min?.toLocaleString()} – ${builtUpArea_max?.toLocaleString()} sqft`
+    : builtUpArea ? `${builtUpArea?.toLocaleString()} sqft` : null;
 
   return (
-    <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
-        <Title level={3}>Property Management</Title>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setModalVisible(true)}
-          style={{ background: THEME.primary }}
-        >
-          Add New Property
-        </Button>
-      </div>
+    <div
+      style={{
+        background: C.card,
+        borderRadius: 16,
+        border: `1px solid ${isHot ? C.hot + '40' : isFeatured ? C.featured + '40' : C.border}`,
+        overflow: 'hidden',
+        boxShadow: isHot
+          ? `0 0 0 2px ${C.hot}30, 0 4px 20px rgba(0,0,0,0.08)`
+          : '0 2px 12px rgba(0,0,0,0.06)',
+        transition: 'all 0.2s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+      }}
+      onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+      onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+    >
+      {/* ── Image ── */}
+      <div style={{ position: 'relative', height: 180, background: '#f3f0ff', flexShrink: 0, cursor: 'pointer' }} onClick={() => onView(_id)}>
+        {coverImg ? (
+          <img
+            src={coverImg}
+            alt={propertyName}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={e => { e.target.style.display = 'none'; }}
+          />
+        ) : (
+          <div style={{
+            height: '100%', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: 40, color: '#c4b5fd',
+          }}>🏢</div>
+        )}
 
-      <Card className="mb-6 shadow-sm border-0">
-        <Input
-          placeholder="Search by property name, location..."
-          prefix={<SearchOutlined className="text-gray-400" />}
-          value={searchText}
-          size="large"
-          allowClear
-          onChange={(e) => {
-            setSearchText(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-      </Card>
+        {/* Badges top-left */}
+        <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <span style={{
+            background: typeColor, color: '#fff',
+            fontSize: 10, fontWeight: 700, padding: '3px 8px',
+            borderRadius: 20, letterSpacing: '0.05em',
+          }}>
+            {typeLabels[propertySubType] || propertySubType}
+          </span>
+          {isHot && (
+            <span style={{
+              background: C.hot, color: '#fff',
+              fontSize: 10, fontWeight: 700, padding: '3px 8px',
+              borderRadius: 20, display: 'flex', alignItems: 'center', gap: 3,
+            }}>
+              <FireFilled style={{ fontSize: 9 }} /> HOT
+            </span>
+          )}
+          {isFeatured && (
+            <span style={{
+              background: C.featured, color: '#fff',
+              fontSize: 10, fontWeight: 700, padding: '3px 8px',
+              borderRadius: 20, display: 'flex', alignItems: 'center', gap: 3,
+            }}>
+              <StarFilled style={{ fontSize: 9 }} /> FEATURED
+            </span>
+          )}
+        </div>
 
-      <Card className="shadow-sm border-0">
-        <Table
-          columns={columns}
-          dataSource={properties}
-          loading={loading}
-          rowKey="_id"
-          pagination={{
-            current: currentPage,
-            pageSize,
-            total,
-            onChange: (p) => setCurrentPage(p)
-          }}
-        />
-      </Card>
+        {/* Status badge top-right */}
+        <div style={{ position: 'absolute', top: 10, right: 10 }}>
+          <span style={{
+            background: sc.color + '20', color: sc.color,
+            border: `1px solid ${sc.color}40`,
+            fontSize: 10, fontWeight: 700, padding: '3px 8px',
+            borderRadius: 20, display: 'flex', alignItems: 'center', gap: 3,
+          }}>
+            {sc.icon} {sc.label}
+          </span>
+        </div>
 
-      <Modal
-        title={editingId ? "View / Edit Property" : "Add New Property"}
-        open={modalVisible}
-        onCancel={closeModal}
-        footer={null}
-        width={1000}
-        style={{ top: 20 }}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSave}
-          initialValues={{
-            currency: 'AED', lengthUnit: 'ft', breadthUnit: 'ft', builtUpAreaUnit: 'sqft',
-            transactionType: 'sell', propertySubType: 'off_plan', propertyType: 'Apartment',
-            isAvailable: true, country: 'United Arab Emirates', state: 'Dubai', city: 'Dubai', postalCode: '00000',
-            notReadyYet: true, isFeatured: false,
-            commissionType: "percentage", commissionValue: 3, commissionStage: "booking",
-            amenities: [], location_highlights: [], unitType: []
-          }}
-        >
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Basic Information</Divider>
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
-              <Form.Item name="propertyName" label="Property Name" rules={[{ required: true }]}>
-                {/* ✅ VISUAL CAPITALIZE WHILE TYPING */}
-                <Input style={{ textTransform: 'capitalize' }} placeholder="E.g. Burj Khalifa" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="developer" label="Developer" rules={[{ required: true }]}>
-                <Select placeholder="Select Developer" showSearch optionFilterProp="children">
-                  {developers.map(d => <Option key={d._id} value={d._id}>{d.name}</Option>)}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col xs={12} md={4}><Form.Item name="transactionType" label="Transaction"><Select><Option value="sell">Sell</Option><Option value="rent">Rent</Option></Select></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="propertyType" label="Prop Type"><Input placeholder="e.g Apartment" /></Form.Item></Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col xs={24} md={6}><Form.Item name="propertySubType" label="Sub Type"><Select><Option value="ready">Ready</Option><Option value="off_plan">Off Plan</Option><Option value="resale">Resale</Option></Select></Form.Item></Col>
-            <Col xs={24} md={12}>
-              <Form.Item name="unitType" label="Unit Types Available">
-                <Select mode="tags" placeholder="Type and press enter" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}><Form.Item name="handover" label="Handover Date"><DatePicker className="w-full" style={{ width: '100%' }} /></Form.Item></Col>
-          </Row>
-
-          <Form.Item name="description" label="Description"><TextArea rows={3} /></Form.Item>
-
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Pricing & Payment Plan</Divider>
-          <Row gutter={16}>
-            <Col xs={12} md={4}><Form.Item name="currency" label="Currency"><Select><Option value="AED">AED</Option><Option value="USD">USD</Option></Select></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="price" label="Fixed Price"><InputNumber className="w-full" style={{ width: '100%' }} formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} /></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="price_min" label="Min Price"><InputNumber className="w-full" style={{ width: '100%' }} formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} /></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="price_max" label="Max Price"><InputNumber className="w-full" style={{ width: '100%' }} formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} /></Form.Item></Col>
-            <Col xs={24} md={5}><Form.Item name="downPayment" label="Down Payment"><InputNumber className="w-full" suffix="%" /></Form.Item></Col>
-          </Row>
-
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Commission Scheme</Divider>
-          <Row gutter={16}>
-            <Col xs={12} md={6}><Form.Item name="commissionType" label="Type"><Select><Option value="percentage">Percentage (%)</Option><Option value="fixed">Fixed</Option></Select></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="commissionValue" label="Value"><InputNumber className="w-full" /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="commissionStage" label="Stage"><Select><Option value="booking">Booking</Option><Option value="contract">Contract</Option><Option value="handover">Handover</Option></Select></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="commissionNotes" label="Notes"><Input /></Form.Item></Col>
-          </Row>
-
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Area & Configuration</Divider>
-          <Row gutter={16}>
-            <Col xs={12} md={4}><Form.Item name="bedrooms" label="Bedrooms"><InputNumber className="w-full" /></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="bathrooms" label="Bathrooms"><InputNumber className="w-full" /></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="builtUpArea_min" label="Min Area"><InputNumber className="w-full" /></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="builtUpArea_max" label="Max Area"><InputNumber className="w-full" /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="builtUpAreaUnit" label="Unit"><Select><Option value="sqft">Sq. Ft</Option><Option value="sqm">Sq. M</Option></Select></Form.Item></Col>
-          </Row>
-
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Location Details</Divider>
-          <Row gutter={16}>
-            <Col xs={24} md={12}><Form.Item name="googleLocation" label="Google Maps Link"><Input /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="buildingNo" label="Building No"><Input /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="street" label="Street"><Input /></Form.Item></Col>
-          </Row>
-          <Row gutter={16}>
-            <Col xs={12} md={6}><Form.Item name="area" label="Area"><Input /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="city" label="City"><Input /></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="state" label="State"><Input /></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="country" label="Country"><Input /></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="postalCode" label="Zip Code"><Input /></Form.Item></Col>
-          </Row>
-
-        <Divider orientation="left" style={{ borderColor: THEME.primary }}>Media & Assets</Divider>
-<Row gutter={16}>
-  <Col xs={24} md={6}>
-    <Form.Item label="Main Logo">
-      <Upload listType="picture-card" fileList={logoList} action={UPLOAD_API} maxCount={1} beforeUpload={validateImageSize} onChange={({ fileList }) => setLogoList(fileList)}>
-        {logoList.length >= 1 ? null : <div><PlusOutlined /><div style={{ marginTop: 8 }}>Logo</div></div>}
-      </Upload>
-      <div style={{ marginTop: 6, padding: '6px 10px', background: '#e6f4ff', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 13 }}>ℹ️</span>
-        <Text style={{ fontSize: 12, color: '#1677ff' }}>Recommended: 400×400px JPG/PNG</Text>
-      </div>
-    </Form.Item>
-  </Col>
-
-  <Col xs={24} md={12}>
-    <Form.Item label="Property Photos">
-      <Upload listType="picture-card" fileList={photoList} action={UPLOAD_API} multiple beforeUpload={validateImageSize} onChange={({ fileList }) => setPhotoList(fileList)}>
-        <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
-      </Upload>
-      <div style={{ marginTop: 6, padding: '6px 10px', background: '#e6f4ff', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 13 }}>ℹ️</span>
-        <Text style={{ fontSize: 12, color: '#1677ff' }}>Recommended: 1200×800px JPG/PNG</Text>
-      </div>
-    </Form.Item>
-  </Col>
-
-  <Col xs={24} md={6}>
-    <Form.Item label="Brochure (PDF)">
-      <Upload action={UPLOAD_API} name="file" maxCount={1} onChange={(info) => {
-        if (info.file.status === 'done') {
-          setBrochureUrl(info.file.response?.file?.url || info.file.response?.url);
-          message.success("Brochure linked!");
-        }
-      }}>
-        <Button icon={<UploadOutlined />}>Upload PDF</Button>
-      </Upload>
-      <div style={{ marginTop: 6, padding: '6px 10px', background: '#e6f4ff', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 13 }}>ℹ️</span>
-        <Text style={{ fontSize: 12, color: '#1677ff' }}>PDF format only, max 20MB</Text>
-      </div>
-    </Form.Item>
-  </Col>
-</Row>
-
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Additional Details</Divider>
-          <Form.Item name="amenities" label="Amenities"><Select mode="tags" /></Form.Item>
-          <Row gutter={16}>
-            <Col xs={8}><Form.Item name="isAvailable" label="Available" valuePropName="checked"><Switch /></Form.Item></Col>
-            <Col xs={8}><Form.Item name="notReadyYet" label="Construction" valuePropName="checked"><Switch /></Form.Item></Col>
-            <Col xs={8}><Form.Item name="isFeatured" label="Featured" valuePropName="checked"><Switch /></Form.Item></Col>
-          </Row>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-            <Button onClick={closeModal} size="large">Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={formLoading} size="large" style={{ backgroundColor: THEME.primary }}>
-               {editingId ? "Update Property" : "Save Property"}
-            </Button>
+        {/* View count */}
+        {viewCount > 0 && (
+          <div style={{
+            position: 'absolute', bottom: 8, right: 10,
+            background: 'rgba(0,0,0,0.55)', color: '#fff',
+            fontSize: 10, padding: '2px 7px', borderRadius: 10,
+            display: 'flex', alignItems: 'center', gap: 3,
+          }}>
+            <EyeOutlined /> {viewCount}
           </div>
+        )}
+      </div>
+
+      {/* ── Content ── */}
+      <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div>
+          <div
+            style={{
+              fontSize: 14, fontWeight: 700, color: C.text,
+              lineHeight: 1.3, marginBottom: 4,
+              display: '-webkit-box', WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical', overflow: 'hidden',
+              cursor: 'pointer',
+            }}
+            onClick={() => onView(_id)}
+          >
+            {propertyName}
+          </div>
+          {(area || city) && (
+            <div style={{ fontSize: 12, color: C.muted, display: 'flex', alignItems: 'center', gap: 3 }}>
+              <EnvironmentOutlined style={{ fontSize: 11 }} />
+              {[area, city].filter(Boolean).join(', ')}
+            </div>
+          )}
+        </div>
+
+{/* Stats row */}
+{(bedrooms > 0 || bathrooms > 0 || areaStr) && (
+  <div style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, flexWrap: 'wrap', alignItems: 'center' }}>
+    {bedrooms > 0 && (
+      <span style={{
+        display: 'flex', alignItems: 'center', gap: 4,
+        background: '#f5f3ff', borderRadius: 6,
+        padding: '3px 8px', fontWeight: 600, color: '#5b21b6',
+      }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        {bedrooms} Bed
+      </span>
+    )}
+    {bathrooms > 0 && (
+      <span style={{
+        display: 'flex', alignItems: 'center', gap: 4,
+        background: '#f0f9ff', borderRadius: 6,
+        padding: '3px 8px', fontWeight: 600, color: '#0369a1',
+      }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M4 12h16a1 1 0 0 1 1 1v3a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-3a1 1 0 0 1 1-1z"/>
+          <path d="M6 12V5a2 2 0 0 1 2-2h3v2.25"/>
+        </svg>
+        {bathrooms} Bath
+      </span>
+    )}
+    {areaStr && (
+      <span style={{
+        display: 'flex', alignItems: 'center', gap: 4,
+        background: '#f0fdf4', borderRadius: 6,
+        padding: '3px 8px', fontWeight: 600, color: '#166534',
+      }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M21 3H3v18h18V3z"/>
+          <path d="M3 9h18M9 21V9"/>
+        </svg>
+        {areaStr}
+      </span>
+    )}
+  </div>
+)}
+
+        {/* Price */}
+        <div style={{ fontSize: 15, fontWeight: 800, color: C.primary, marginTop: 'auto' }}>
+          {displayPrice}
+        </div>
+
+        {/* Developer */}
+        {developer?.name && (
+          <div style={{ fontSize: 11, color: C.muted, fontWeight: 500 }}>
+            By <span style={{ color: C.primary, fontWeight: 700 }}>{developer.name}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Action bar ── */}
+      <div style={{
+        borderTop: `1px solid ${C.border}`,
+        padding: '10px 12px',
+        display: 'flex', gap: 6, flexWrap: 'wrap',
+        background: '#fafafa',
+      }}>
+        {/* View Button */}
+        <Tooltip title="View Details">
+          <Button
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => onView(_id)}
+            style={{
+              fontSize: 11,
+              background: C.primary + '10',
+              borderColor: C.primary + '40',
+              color: C.primary,
+              fontWeight: 600,
+            }}
+          >
+            View
+          </Button>
+        </Tooltip>
+
+        {approvalStatus === 'pending' && (
+          <>
+            <Button
+              size="small" type="primary" ghost
+              style={{ fontSize: 11, borderColor: C.approved, color: C.approved }}
+              onClick={() => onApprove(_id)}
+            >
+              ✓ Approve
+            </Button>
+<Button
+  size="small"
+  danger
+  ghost
+  onClick={() => onReject(_id)}
+>
+  ✕ Reject
+</Button>
+          </>
+        )}
+
+        <Tooltip title={isHot ? 'Remove Hot' : 'Mark Hot (max 3)'}>
+          <Button
+            size="small"
+            style={{
+              fontSize: 11,
+              background: isHot ? C.hot + '15' : 'transparent',
+              borderColor: isHot ? C.hot : '#d1d5db',
+              color: isHot ? C.hot : C.muted,
+            }}
+            icon={<FireFilled />}
+            onClick={() => onToggleHot(_id)}
+          >
+            Hot
+          </Button>
+        </Tooltip>
+
+        <Tooltip title={isFeatured ? 'Unfeature' : 'Feature'}>
+          <Button
+            size="small"
+            style={{
+              fontSize: 11,
+              background: isFeatured ? C.featured + '15' : 'transparent',
+              borderColor: isFeatured ? C.featured : '#d1d5db',
+              color: isFeatured ? C.featured : C.muted,
+            }}
+            icon={<StarFilled />}
+            onClick={() => onToggleFeatured(_id)}
+          />
+        </Tooltip>
+
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+          <Popconfirm title="Delete this property?" onConfirm={() => onDelete(_id)} okButtonProps={{ danger: true }}>
+            <Button size="small" type="text" danger icon={<DeleteOutlined />} style={{ fontSize: 11 }} />
+          </Popconfirm>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+const PropertyManagement = () => {
+  const openRejectModal = (id) => {
+  setRejectModal({ open: true, id, reason: '' });
+};
+  const [rejectModal, setRejectModal] = useState({
+  open: false,
+  id: null,
+  reason: ''
+});
+
+  const navigate = useNavigate();
+
+  const [properties,       setProperties]       = useState([]);
+  const [loading,          setLoading]          = useState(false);
+  const [total,            setTotal]            = useState(0);
+  const [stats,            setStats]            = useState(null);
+  const [filterOpen,       setFilterOpen]       = useState(false);
+  const [viewMode,         setViewMode]         = useState('grid');
+
+  const [filters, setFilters] = useState({
+    search: '', propertySubType: '', approvalStatus: '', listingStatus: '',
+    isHot: '', isFeatured: '', minPrice: '', maxPrice: '',
+    area: '', bedroomType: '', furnishing: '',
+    sortBy: 'createdAt', sortOrder: 'desc', page: 1, limit: 12,
+  });
+
+  const [tempFilters,       setTempFilters]       = useState({ ...filters });
+  const [activeFilterCount, setActiveFilterCount] = useState(0);
+
+  useEffect(() => {
+    const keys = ['propertySubType','approvalStatus','listingStatus','isHot','isFeatured',
+                  'minPrice','maxPrice','area','bedroomType','furnishing'];
+    setActiveFilterCount(keys.filter(k => filters[k] !== '').length);
+  }, [filters]);
+
+  const fetchProperties = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v !== '' && v !== undefined) params[k] = v;
+      });
+      const res = await apiService.get('/properties', params);
+      setProperties(Array.isArray(res?.data) ? res.data : []);
+      setTotal(res?.pagination?.totalItems || 0);
+      if (res?.stats) setStats(res.stats);
+    } catch {
+      message.error('Failed to load properties');
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
+  useEffect(() => {
+    const t = setTimeout(fetchProperties, 400);
+    return () => clearTimeout(t);
+  }, [fetchProperties]);
+
+  const applyFilters = () => { setFilters({ ...tempFilters, page: 1 }); setFilterOpen(false); };
+
+  const resetFilters = () => {
+    const reset = {
+      search: '', propertySubType: '', approvalStatus: '', listingStatus: '',
+      isHot: '', isFeatured: '', minPrice: '', maxPrice: '',
+      area: '', bedroomType: '', furnishing: '',
+      sortBy: 'createdAt', sortOrder: 'desc', page: 1, limit: 12,
+    };
+    setTempFilters(reset); setFilters(reset); setFilterOpen(false);
+  };
+
+const handleApprove = async (id) => {
+  try {
+    await apiService.put(`/properties/${id}/approve`);  // patch → put
+    message.success('Property approved and live');
+    fetchProperties();
+  } catch (e) { message.error(e?.response?.data?.message || 'Failed to approve'); }
+};
+
+const handleReject = async (id) => {
+  try {
+    await apiService.put(`/properties/${id}/reject`, { rejectionReason: 'Rejected by admin' });
+    message.success('Property rejected');
+    fetchProperties();
+  } catch (e) { message.error(e?.response?.data?.message || 'Failed to reject'); }
+};
+
+const handleToggleHot = async (id) => {
+  try {
+    const res = await apiService.put(`/properties/${id}/hot`);
+    message.success(res?.message || 'Hot status updated');
+    fetchProperties();
+  } catch (e) { message.error(e?.response?.data?.message || 'Failed'); }
+};
+
+const handleToggleFeatured = async (id) => {
+  try {
+    await apiService.put(`/properties/${id}/feature`);
+    message.success('Featured status updated');
+    fetchProperties();
+  } catch (e) { message.error(e?.response?.data?.message || 'Failed'); }
+};
+
+const handleDelete = async (id) => {
+  try {
+    await apiService.delete(`/properties/${id}`);
+    message.success('Property deleted');
+    fetchProperties();
+  } catch (e) { message.error(e?.response?.data?.message || 'Failed to delete'); }
+};
+
+const handleRejectConfirm = async () => {
+  if (!rejectModal.reason.trim()) {
+    message.error('Rejection reason is required');
+    return;
+  }
+
+  try {
+    await apiService.put(
+      `/properties/${rejectModal.id}/reject`,
+      { rejectionReason: rejectModal.reason }
+    );
+
+    message.success('Property rejected');
+    setRejectModal({ open: false, id: null, reason: '' });
+    fetchProperties();
+
+  } catch (e) {
+    message.error('Failed to reject');
+  }
+};
+
+  const handleView = (id) => {
+    navigate(`/dashboard/superadmin/developer/property/${id}`);
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  return (
+    <div style={{ padding: '24px', background: C.bg, minHeight: '100vh' }}>
+
+      {/* Header */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between',
+        alignItems: 'flex-start', marginBottom: 24, gap: 16, flexWrap: 'wrap',
+      }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 32, fontWeight: 700, color: C.text }}>
+            Property Management
+          </h2>
+          <p style={{ margin: '4px 0 0', color: C.muted, fontSize: 13 }}>
+            {total} listings total
+            {stats && ` · ${stats.byStatus?.activeCount || 0} live`}
+            {stats && ` · ${stats.byStatus?.pendingCount || 0} pending`}
+          </p>
+        </div>
+      </div>
+
+      {/* Stats bar */}
+      {stats && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+          gap: 10, marginBottom: 20,
+        }}>
+          {[
+            { label: 'Off-Plan',   value: stats.byType?.offPlan,          color: typeColors.off_plan   },
+            { label: 'Secondary',  value: stats.byType?.secondary,        color: typeColors.secondary  },
+            { label: 'Rental',     value: stats.byType?.rental,           color: typeColors.rental     },
+            { label: 'Commercial', value: stats.byType?.commercial,       color: typeColors.commercial },
+            { label: 'Pending',    value: stats.byStatus?.pendingCount,   color: C.pending  },
+            { label: 'Live',       value: stats.byStatus?.activeCount,    color: C.approved },
+            { label: 'Hot 🔥',     value: stats.hotCount,                 color: C.hot      },
+          ].map(({ label, value, color }) => (
+           <div style={{
+  background: '#fff',
+  borderRadius: 8,
+  padding: '14px 16px',
+  border: '1px solid #e5e7eb',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 4,
+}}>
+  <div style={{
+    fontSize: 12,
+    color: '#6b7280',
+    fontWeight: 500,
+  }}>
+    {label}
+  </div>
+
+  <div style={{
+    fontSize: 22,
+    fontWeight: 650,
+    color: '#111827',
+  }}>
+    {value ?? 0}
+  </div>
+</div>
+          ))}
+        </div>
+      )}
+
+      {/* Search + Filter bar */}
+      <div style={{
+        background: '#fff', borderRadius: 12, padding: '14px 16px',
+        border: `1px solid ${C.border}`, marginBottom: 20,
+        display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap',
+      }}>
+        <Input
+          prefix={<SearchOutlined style={{ color: C.muted }} />}
+          placeholder="Search by name, area, developer..."
+          value={filters.search}
+          onChange={e => setFilters(f => ({ ...f, search: e.target.value, page: 1 }))}
+          allowClear
+          style={{ flex: 1, minWidth: 200, borderRadius: 8 }}
+          size="large"
+        />
+
+        <Select
+          placeholder="Type"
+          value={filters.propertySubType || undefined}
+          onChange={v => setFilters(f => ({ ...f, propertySubType: v || '', page: 1 }))}
+          allowClear style={{ width: 130 }} size="large"
+        >
+          <Option value="off_plan">Off-Plan</Option>
+          <Option value="secondary">Secondary</Option>
+          <Option value="rental">Rental</Option>
+          <Option value="commercial">Commercial</Option>
+        </Select>
+
+        <Select
+          placeholder="Status"
+          value={filters.approvalStatus || undefined}
+          onChange={v => setFilters(f => ({ ...f, approvalStatus: v || '', page: 1 }))}
+          allowClear style={{ width: 120 }} size="large"
+        >
+          <Option value="pending">Pending</Option>
+          <Option value="approved">Approved</Option>
+          <Option value="rejected">Rejected</Option>
+        </Select>
+
+        <Select
+          placeholder="Hot 🔥"
+          value={filters.isHot || undefined}
+          onChange={v => setFilters(f => ({ ...f, isHot: v || '', page: 1 }))}
+          allowClear style={{ width: 110 }} size="large"
+        >
+          <Option value="true">Hot Only</Option>
+          <Option value="false">Not Hot</Option>
+        </Select>
+
+        <Badge count={activeFilterCount} offset={[-4, 4]}>
+          <Button
+            icon={<FilterOutlined />} size="large"
+            onClick={() => { setTempFilters({ ...filters }); setFilterOpen(true); }}
+            style={{
+              borderColor: activeFilterCount > 0 ? C.primary : undefined,
+              color: activeFilterCount > 0 ? C.primary : undefined,
+            }}
+          >
+            More Filters
+          </Button>
+        </Badge>
+
+        <Button icon={<ReloadOutlined />} size="large" onClick={fetchProperties} />
+
+        <Select
+          value={`${filters.sortBy}_${filters.sortOrder}`}
+          onChange={v => {
+            const [sortBy, sortOrder] = v.split('_');
+            setFilters(f => ({ ...f, sortBy, sortOrder, page: 1 }));
+          }}
+          style={{ width: 160 }} size="large"
+        >
+          <Option value="createdAt_desc">Newest First</Option>
+          <Option value="createdAt_asc">Oldest First</Option>
+          <Option value="price_asc">Price: Low → High</Option>
+          <Option value="price_desc">Price: High → Low</Option>
+        </Select>
+
+        <div style={{ display: 'flex', border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
+          <Button
+            type={viewMode === 'grid' ? 'primary' : 'text'}
+            icon={<AppstoreOutlined />}
+            onClick={() => setViewMode('grid')}
+            style={{ borderRadius: 0, border: 'none', background: viewMode === 'grid' ? C.primary : 'transparent' }}
+          />
+          <Button
+            type={viewMode === 'list' ? 'primary' : 'text'}
+            icon={<UnorderedListOutlined />}
+            onClick={() => setViewMode('list')}
+            style={{ borderRadius: 0, border: 'none', background: viewMode === 'list' ? C.primary : 'transparent' }}
+          />
+        </div>
+      </div>
+
+      {/* Active filter chips */}
+      {activeFilterCount > 0 && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+          {filters.propertySubType && (
+            <Tag closable onClose={() => setFilters(f => ({ ...f, propertySubType: '' }))} color="purple">
+              {typeLabels[filters.propertySubType]}
+            </Tag>
+          )}
+          {filters.approvalStatus && (
+            <Tag closable onClose={() => setFilters(f => ({ ...f, approvalStatus: '' }))} color="orange">
+              {filters.approvalStatus}
+            </Tag>
+          )}
+          {filters.isHot === 'true' && (
+            <Tag closable onClose={() => setFilters(f => ({ ...f, isHot: '' }))} color="red">🔥 Hot Only</Tag>
+          )}
+          {filters.isFeatured === 'true' && (
+            <Tag closable onClose={() => setFilters(f => ({ ...f, isFeatured: '' }))} color="gold">⭐ Featured</Tag>
+          )}
+          {(filters.minPrice || filters.maxPrice) && (
+            <Tag closable onClose={() => setFilters(f => ({ ...f, minPrice: '', maxPrice: '' }))} color="blue">
+              Price: {filters.minPrice || '0'} – {filters.maxPrice || '∞'}
+            </Tag>
+          )}
+          {filters.area && (
+            <Tag closable onClose={() => setFilters(f => ({ ...f, area: '' }))} color="cyan">{filters.area}</Tag>
+          )}
+          {filters.bedroomType && (
+            <Tag closable onClose={() => setFilters(f => ({ ...f, bedroomType: '' }))} color="geekblue">
+              {filters.bedroomType}
+            </Tag>
+          )}
+          <Button type="link" size="small" onClick={resetFilters} style={{ padding: 0, color: C.muted }}>
+            Clear all
+          </Button>
+        </div>
+      )}
+
+      {/* Content */}
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
+          <Spin size="large" />
+        </div>
+      ) : properties.length === 0 ? (
+        <div style={{
+          background: '#fff', borderRadius: 16, padding: 60,
+          textAlign: 'center', border: `1px solid ${C.border}`,
+        }}>
+          <Empty description="No properties found" />
+          <Button type="primary" style={{ marginTop: 16, background: C.primary }} onClick={resetFilters}>
+            Clear Filters
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr',
+            gap: 16,
+          }}>
+            {properties.map(p => (
+              <PropertyCard
+                key={p._id}
+                property={p}
+                onApprove={handleApprove}
+                onReject={openRejectModal}
+                onToggleHot={handleToggleHot}
+                onToggleFeatured={handleToggleFeatured}
+                onDelete={handleDelete}
+                onView={handleView}
+                
+              />
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'right', marginTop: 32 }}>
+            <Pagination
+              current={filters.page}
+              pageSize={filters.limit}
+              total={total}
+              showSizeChanger
+              pageSizeOptions={['12', '24', '48']}
+              onChange={(page, limit) => setFilters(f => ({ ...f, page, limit }))}
+              showTotal={(t, [s, e]) => `${s}–${e} of ${t}`}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Filter Drawer */}
+      <Drawer
+        title="Advanced Filters"
+        placement="right"
+        width={360}
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        extra={
+          <Space>
+            <Button onClick={resetFilters}>Reset</Button>
+            <Button type="primary" onClick={applyFilters} style={{ background: C.primary }}>Apply</Button>
+          </Space>
+        }
+      >
+        <Form layout="vertical" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <Form.Item label="Price Range (AED)">
+            <Input.Group compact>
+              <InputNumber
+                placeholder="Min"
+                value={tempFilters.minPrice || undefined}
+                onChange={v => setTempFilters(f => ({ ...f, minPrice: v || '' }))}
+                style={{ width: '50%' }}
+                formatter={v => v ? `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
+                min={0}
+              />
+              <InputNumber
+                placeholder="Max"
+                value={tempFilters.maxPrice || undefined}
+                onChange={v => setTempFilters(f => ({ ...f, maxPrice: v || '' }))}
+                style={{ width: '50%' }}
+                formatter={v => v ? `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
+                min={0}
+              />
+            </Input.Group>
+          </Form.Item>
+
+          <Form.Item label="Property Type">
+            <Select allowClear value={tempFilters.propertySubType || undefined}
+              onChange={v => setTempFilters(f => ({ ...f, propertySubType: v || '' }))}
+              placeholder="All types" style={{ width: '100%' }}>
+              <Option value="off_plan">Off-Plan</Option>
+              <Option value="secondary">Secondary</Option>
+              <Option value="rental">Rental</Option>
+              <Option value="commercial">Commercial</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Approval Status">
+            <Select allowClear value={tempFilters.approvalStatus || undefined}
+              onChange={v => setTempFilters(f => ({ ...f, approvalStatus: v || '' }))}
+              placeholder="Any" style={{ width: '100%' }}>
+              <Option value="pending">Pending</Option>
+              <Option value="approved">Approved</Option>
+              <Option value="rejected">Rejected</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Listing Status">
+            <Select allowClear value={tempFilters.listingStatus || undefined}
+              onChange={v => setTempFilters(f => ({ ...f, listingStatus: v || '' }))}
+              placeholder="Any" style={{ width: '100%' }}>
+              <Option value="active">Active</Option>
+              <Option value="inactive">Inactive</Option>
+              <Option value="pending">Pending</Option>
+              <Option value="rejected">Rejected</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Bedrooms">
+            <Select allowClear value={tempFilters.bedroomType || undefined}
+              onChange={v => setTempFilters(f => ({ ...f, bedroomType: v || '' }))}
+              placeholder="Any" style={{ width: '100%' }}>
+              {['studio','1bed','2bed','3bed','4bed','5bed','6bed','7bed','8plus'].map(b => (
+                <Option key={b} value={b}>{b === 'studio' ? 'Studio' : b.replace('bed', ' Bed')}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Furnishing">
+            <Select allowClear value={tempFilters.furnishing || undefined}
+              onChange={v => setTempFilters(f => ({ ...f, furnishing: v || '' }))}
+              placeholder="Any" style={{ width: '100%' }}>
+              <Option value="furnished">Furnished</Option>
+              <Option value="semi_furnished">Semi-Furnished</Option>
+              <Option value="unfurnished">Unfurnished</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Area / Location">
+            <Input
+              value={tempFilters.area}
+              onChange={e => setTempFilters(f => ({ ...f, area: e.target.value }))}
+              placeholder="e.g. Dubai Marina"
+            />
+          </Form.Item>
+
+          <Form.Item label="Hot Properties 🔥">
+            <Select allowClear value={tempFilters.isHot || undefined}
+              onChange={v => setTempFilters(f => ({ ...f, isHot: v || '' }))}
+              placeholder="All" style={{ width: '100%' }}>
+              <Option value="true">Hot Only</Option>
+              <Option value="false">Not Hot</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Featured ⭐">
+            <Select allowClear value={tempFilters.isFeatured || undefined}
+              onChange={v => setTempFilters(f => ({ ...f, isFeatured: v || '' }))}
+              placeholder="All" style={{ width: '100%' }}>
+              <Option value="true">Featured Only</Option>
+              <Option value="false">Not Featured</Option>
+            </Select>
+          </Form.Item>
         </Form>
-      </Modal>
+      </Drawer>
+      <Modal
+  title="Reject Property"
+  open={rejectModal.open}
+  onCancel={() => setRejectModal({ open: false, id: null, reason: '' })}
+  onOk={() => handleRejectConfirm()}
+>
+  <Input.TextArea
+    placeholder="Enter rejection reason..."
+    value={rejectModal.reason}
+    onChange={(e) =>
+      setRejectModal(prev => ({ ...prev, reason: e.target.value }))
+    }
+    rows={4}
+  />
+</Modal>
     </div>
   );
 };

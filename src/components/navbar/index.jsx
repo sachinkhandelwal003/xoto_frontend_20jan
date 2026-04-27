@@ -64,7 +64,8 @@ const roleSlugMap = {
   '8': 'developer',
   '9': 'agent',
   '22': 'vaultagent',
-  '21': 'xotovaultpartner'
+  '21': 'xotovaultpartner',
+  '24': 'GridAdvisor',
 };
 
 const Navbar = () => {
@@ -101,13 +102,19 @@ const Navbar = () => {
   const getDashboardLink = () => {
     if (!user) return "/login";
 
+    const roleCode = user.role?.code?.toString();
     const roleName = user.role?.name?.toLowerCase();
+
+    if (roleCode && roleSlugMap[roleCode]) {
+      return `/dashboard/${roleSlugMap[roleCode]}`;
+    }
 
     if (roleName === "vaultagent") return "/dashboard/vaultagent";
     if (roleName === "agent") return "/dashboard/agent";
     if (roleName === "agency") return "/dashboard/agency";
     if (roleName === "developer") return "/dashboard/developer";
     if (roleName === "customer") return "/dashboard/customer";
+    if (roleName === "gridadvisor") return "/dashboard/GridAdvisor";
     if (roleName === "superadmin" || roleName === "admin") return "/dashboard/superadmin";
     // if (roleName === "vaultparnter" || roleName === "xotovaultpartnerr") return "/dashboard/vault/xotovaultpartner";
     return "/dashboard/developer";

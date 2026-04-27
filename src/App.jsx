@@ -108,6 +108,8 @@ import MortgageCalculator from "./components/homepage/MortgageCalculator";
 import ProposalLink from "./components/ecommerce/vault/proposal/ProposalLink";
 import PopupManager from "./components/homepage/PopupManager";
 
+import AdvisorLogin from "./components/AdvisorGrid/AdvisorLogin";
+
 
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
@@ -295,6 +297,7 @@ function App() {
               <Route path="/training" element={<Training />} />
 
 
+
               {/* secure links */}
                             <Route path="/proposal/view/link/:id" element={<ProposalLink />} />
 
@@ -309,6 +312,7 @@ function App() {
                             <Route path="/ecommerce/checkout" element={<CheckoutPage />} />
                             <Route path="/ecommerce/payment/success" element={<PaymentSuccess />} />
 <Route path="/vault/vault-register" element={<VaultRegister />} />
+<Route path="/Grid/advisor/login" element={<AdvisorLogin />} />
               
 {/* <Route path="/vaultpartner" element={<VaultPartner />} /> */}
               <Route
@@ -388,7 +392,7 @@ function App() {
               <Route
                 path="/dashboard/:roleSlug/*"
                 element={
-                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17","18","21", "22"]}>
+                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17","18","21", "22", "24"]}>
                     <CmsApp />
                   </PrivateRoute>
                 }

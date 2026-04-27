@@ -22,45 +22,25 @@ import { useSelector } from "react-redux";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import { showToast } from "../../../manageApi/utils/toast";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
-const THEME = { primary: "#6d28d9" };
+const THEME      = { primary: "#6d28d9" };
 const UPLOAD_API = "https://xoto.ae/api/upload";
 
-// Helper: extract image URL from upload response
+// ─── Extract uploaded image URL ───────────────────────────────────────────────
 const extractPhotoUrl = (fileItem) => {
   const r = fileItem.response;
   if (!r) return null;
   return (
-    r.url ||
-    r.imageUrl ||
-    r.image_url ||
-    r.secure_url ||
-    r.link ||
-    r.path ||
-    r.filePath ||
-    r.fileUrl ||
-    r.data?.url ||
-    r.data?.imageUrl ||
-    r.data?.secure_url ||
-    r.data?.path ||
-    r.data?.link ||
-    r.file?.url ||
-    r.file?.imageUrl ||
-    r.file?.image_url ||
-    r.file?.secure_url ||
-    r.file?.path ||
-    r.file?.filePath ||
-    r.file?.fileUrl ||
-    r.file?.link ||
-    r.file?.location ||
-    r.file?.key ||
-    r.file?.filename ||
-    r.file?.name ||
-    r.result?.url ||
-    r.result?.secure_url ||
+    r.url || r.imageUrl || r.image_url || r.secure_url || r.link || r.path ||
+    r.filePath || r.fileUrl ||
+    r.data?.url || r.data?.imageUrl || r.data?.secure_url || r.data?.path || r.data?.link ||
+    r.file?.url || r.file?.imageUrl || r.file?.image_url || r.file?.secure_url ||
+    r.file?.path || r.file?.filePath || r.file?.fileUrl || r.file?.link ||
+    r.file?.location || r.file?.key || r.file?.filename || r.file?.name ||
+    r.result?.url || r.result?.secure_url ||
     null
   );
 };
@@ -69,10 +49,9 @@ const customUploadRequest = async ({ file, onSuccess, onError }) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch(UPLOAD_API, { method: "POST", body: formData });
+    const res  = await fetch(UPLOAD_API, { method: "POST", body: formData });
     const data = await res.json();
-    if (!res.ok || data.success === false)
-      throw new Error(data.message || "Upload failed");
+    if (!res.ok || data.success === false) throw new Error(data.message || "Upload failed");
     onSuccess(data, file);
   } catch (err) {
     console.error("Upload error:", err);
@@ -81,22 +60,21 @@ const customUploadRequest = async ({ file, onSuccess, onError }) => {
 };
 
 export default function DeveloperAddProperty() {
-  const navigate = useNavigate();
-  const { user, token } = useSelector((state) => state.auth);
+  const navigate   = useNavigate();
+  const { user }   = useSelector((state) => state.auth);
   const developerId = user?.id || user?._id || null;
 
-  const [form] = Form.useForm();
-  // ✅ Watch hasView from the SINGLE form instance
-  const hasView = Form.useWatch("hasView", form);
+  const [form]        = Form.useForm();
+  const hasView       = Form.useWatch("hasView", form);
   const [formLoading, setFormLoading] = useState(false);
+  const [photoError,  setPhotoError]  = useState("");
 
-  const [mainLogoFileList, setMainLogoFileList] = useState([]);
+  const [mainLogoFileList,   setMainLogoFileList]   = useState([]);
   const [photosArchitecture, setPhotosArchitecture] = useState([]);
-  const [photosInterior, setPhotosInterior] = useState([]);
-  const [photosLobby, setPhotosLobby] = useState([]);
-  const [photosOther, setPhotosOther] = useState([]);
-  const [brochureFileList, setBrochureFileList] = useState([]);
-  const [photoError, setPhotoError] = useState("");
+  const [photosInterior,     setPhotosInterior]     = useState([]);
+  const [photosLobby,        setPhotosLobby]        = useState([]);
+  const [photosOther,        setPhotosOther]        = useState([]);
+  const [brochureFileList,   setBrochureFileList]   = useState([]);
 
   useEffect(() => {
     if (!developerId) {
@@ -104,21 +82,16 @@ export default function DeveloperAddProperty() {
       navigate("/dashboard/developer");
     }
   }, [developerId, navigate]);
-useEffect(() => {
-  if (user) {
-    form.setFieldsValue({
-      developerName: 
-        user?.username ||
-        user?.companyName || 
-        user?.company_name ||
-        user?.name ||
-        user?.fullName ||
-        user?.full_name ||
-        user?.email ||   // fallback
-        "",
-    });
-  }
-}, [user, form]);
+
+  useEffect(() => {
+    if (user) {
+      form.setFieldsValue({
+        developerName:
+          user?.username || user?.companyName || user?.company_name ||
+          user?.name     || user?.fullName    || user?.full_name    || "",
+      });
+    }
+  }, [user, form]);
 
   const validateImageSize = (file) => {
     const isLt2M = file.size / 1024 / 1024 < 2;
@@ -126,40 +99,25 @@ useEffect(() => {
     return isLt2M || Upload.LIST_IGNORE;
   };
 
-  const isAnyUploading = () => {
-    const lists = [
-      mainLogoFileList,
-      photosArchitecture,
-      photosInterior,
-      photosLobby,
-      photosOther,
-      brochureFileList,
-    ];
-    return lists.some((list) => list.some((f) => f.status === "uploading"));
-  };
+  const isAnyUploading = () =>
+    [mainLogoFileList, photosArchitecture, photosInterior,
+     photosLobby, photosOther, brochureFileList]
+      .some((list) => list.some((f) => f.status === "uploading"));
 
   const collectUrls = (fileList) =>
-    fileList
-      .filter((f) => f.status === "done")
-      .map((f) => extractPhotoUrl(f))
-      .filter(Boolean);
+    fileList.filter((f) => f.status === "done").map(extractPhotoUrl).filter(Boolean);
 
+  // ── Submit ───────────────────────────────────────────────────────────────────
   const handleSave = async (values) => {
     if (isAnyUploading()) {
       showToast("error", "Please wait for all photos to finish uploading.");
       return;
     }
 
-    const allLists = [
-      mainLogoFileList,
-      photosArchitecture,
-      photosInterior,
-      photosLobby,
-      photosOther,
-      brochureFileList,
-    ];
-    const failed = allLists.some((list) => list.some((f) => f.status === "error"));
-    if (failed) {
+    const anyFailed = [mainLogoFileList, photosArchitecture, photosInterior,
+                       photosLobby, photosOther, brochureFileList]
+      .some((list) => list.some((f) => f.status === "error"));
+    if (anyFailed) {
       setPhotoError("Some media failed to upload. Please remove and re-upload them.");
       return;
     }
@@ -170,116 +128,134 @@ useEffect(() => {
       return;
     }
 
-    const photos = {
-      architecture: collectUrls(photosArchitecture),
-      interior: collectUrls(photosInterior),
-      lobby: collectUrls(photosLobby),
-      other: collectUrls(photosOther),
-    };
-
     let brochureUrl = "";
     if (brochureFileList.length > 0 && brochureFileList[0].status === "done") {
       brochureUrl = extractPhotoUrl(brochureFileList[0]) || "";
     }
 
- const payload = {
-  developer: developerId,
-  agent: null,
-  agency: null,
-  propertySubType: "off_plan",
-  transactionType: values.transactionType || "sell",
-  projectOption: "new",
-  propertyName: values.propertyName?.trim(),
-  developerName: user?.name || "",
-  description: values.description?.trim(),
+    // ── Payload — flat structure matching property.model.js ──────────────────
+    const payload = {
+      // Who creates
+      propertySubType: "off_plan",
+      transactionType: "sell",
+      projectOption:   "new",
 
-  location: {
-    area: values.area?.trim(),
-    city: values.city?.trim() || "Dubai",
-    country: values.country?.trim() || "UAE",
-    coordinates: {
-      lat: values.latitude || null,
-      lng: values.longitude || null,
-    },
-    proximity: {
-      airport: values.airportProximity || "",
-      metro: values.metroProximity || "",
-      mall: values.mallProximity || "",
-      school: values.schoolProximity || "",
-    },
-  },
+      // Basic info
+      propertyName:  values.propertyName?.trim(),
+      developerName: values.developerName || user?.name || "",
+      description:   values.description?.trim(),
 
-  unitNumber: values.unitNumber || "",
-  floorNumber: values.floorNumber || 0,
-  unitType: values.unitType || "apartment",
-  bedroomType: values.bedroomType || "1bed",
-  bedrooms: values.bedrooms || 0,
-  bathrooms: values.bathrooms || 0,
-  builtUpArea_min: values.builtUpArea_min || 0,
-  builtUpArea_max: values.builtUpArea_max || 0,
-  builtUpAreaUnit: values.builtUpAreaUnit || "sqft",
-  price_min: values.price_min || 0,
-  price_max: values.price_max || 0,
-  currency: values.currency || "AED",
+      // Unit details
+      unitNumber:     values.unitNumber  || "",
+      floorNumber:    values.floorNumber || 0,
+      unitType:       values.unitType    || "apartment",
+      bedroomType:    values.bedroomType || "1bed",
+      bedrooms:       values.bedrooms    || 0,
+      bathrooms:      values.bathrooms   || 0,
 
-  mainLogo: mainLogoUrls[0],
-  photos,
-  videoUrl: values.videoUrl || "",
-  brochure: brochureUrl,
+      // Dimensions
+      builtUpArea_min: values.builtUpArea_min || 0,
+      builtUpArea_max: values.builtUpArea_max || 0,
+      builtUpAreaUnit: values.builtUpAreaUnit || "sqft",
 
-  amenities: values.amenities || [],
-  facilities: {
-    swimmingPool: values.swimmingPool || false,
-    gym: values.gym || false,
-    parking: values.parking || false,
-    childrenPlayArea: values.childrenPlayArea || false,
-    gardens: values.gardens || false,
-    security: values.security || false,
-    concierge: values.concierge || false,
-  },
+      // Price
+      price_min: values.price_min || 0,
+      price_max: values.price_max || 0,
+      price:     values.price_min || 0,   // model uses price as primary field too
+      currency:  values.currency  || "AED",
 
-  hasView: values.hasView || false,
-  viewType: values.viewType || [],
-  parkingSpaces: values.parkingSpaces || 0,
-  furnishing: values.furnishing || "unfurnished",
-  ownershipType: values.ownershipType || "freehold",
-  availableFrom: values.availableFrom
-    ? values.availableFrom.format("YYYY-MM-DD")
-    : null,
+      // Location — FLAT (not nested), matching model fields directly
+      area:    values.area?.trim()    || "",
+      city:    values.city?.trim()    || "Dubai",
+      country: values.country?.trim() || "UAE",
+      coordinates: {
+        lat: values.latitude  || null,
+        lng: values.longitude || null,
+      },
+      proximity: {
+        airport: values.airportProximity || "",
+        metro:   values.metroProximity   || "",
+        mall:    values.mallProximity    || "",
+        school:  values.schoolProximity  || "",
+      },
 
-  totalUnits: values.totalUnits || 0,
-  floors: values.floors || 0,
-  completionDate: {
-    quarter: values.completionQuarter || null,
-    year: values.completionYear || null,
-    fullDate: values.completionFullDate
-      ? values.completionFullDate.format("YYYY-MM-DD")
-      : null,
-  },
-  projectStatus: values.projectStatus || "presale",
-  serviceChargeInfo: values.serviceChargeInfo || "",
-  readinessProgress: values.readinessProgress || "0%",
+      // Media
+      mainLogo: mainLogoUrls[0],
+      photos: {
+        architecture: collectUrls(photosArchitecture),
+        interior:     collectUrls(photosInterior),
+        lobby:        collectUrls(photosLobby),
+        other:        collectUrls(photosOther),
+      },
+      videoUrl: values.videoUrl || "",
+      brochure: brochureUrl,
 
-  paymentPlan: values.paymentPlan || [],
-  eoiAmount: values.eoiAmount || 0,
-  resaleConditions: values.resaleConditions || "",
+      // Amenities & Facilities
+      amenities: values.amenities || [],
+      facilities: {
+        swimmingPool:     values.swimmingPool     || false,
+        gym:              values.gym              || false,
+        parking:          values.parking          || false,
+        childrenPlayArea: values.childrenPlayArea || false,
+        gardens:          values.gardens          || false,
+        security:         values.security         || false,
+        concierge:        values.concierge        || false,
+        lounge:           values.lounge           || false,
+        smartHome:        values.smartHome        || false,
+      },
 
-  commission: values.commission || 0,
-  shareCommission: values.shareCommission || false,
-  shareCommissionPercentage: values.shareCommissionPercentage || 0,
-  isFeatured: values.isFeatured || false,
-  showContactOnlyVerified: values.showContactOnlyVerified || false,
-};
+      // Features
+      hasView:       values.hasView       || false,
+      viewType:      values.viewType      || [],
+      parkingSpaces: values.parkingSpaces || 0,
+      furnishing:    values.furnishing    || "unfurnished",
+      ownershipType: values.ownershipType || "freehold",
+      availableFrom: values.availableFrom
+        ? values.availableFrom.format("YYYY-MM-DD")
+        : null,
 
-Object.keys(payload).forEach((key) => {
-  if (payload[key] === undefined) delete payload[key];
-});
+      // Off-plan specific
+      totalUnits:        values.totalUnits        || 0,
+      floors:            values.floors            || 0,
+      projectStatus:     values.projectStatus     || "presale",
+      readinessProgress: values.readinessProgress || "0%",
+      serviceChargeInfo: values.serviceChargeInfo || "",
+      completionDate: {
+        quarter:  values.completionQuarter  || null,
+        year:     values.completionYear     || null,
+        fullDate: values.completionFullDate
+          ? values.completionFullDate.format("YYYY-MM-DD")
+          : null,
+      },
+
+      // Payment plan
+      paymentPlan:      values.paymentPlan || [],
+      eoiAmount:        values.eoiAmount   || 0,
+      resaleConditions: values.resaleConditions || "",
+
+      // Commission
+      commission:                values.commission                || 0,
+      shareCommission:           values.shareCommission           || false,
+      shareCommissionPercentage: values.shareCommissionPercentage || 0,
+
+      // Misc
+      isFeatured:              values.isFeatured              || false,
+      showContactOnlyVerified: values.showContactOnlyVerified || false,
+    };
+
+    // Remove undefined keys
+    Object.keys(payload).forEach((k) => {
+      if (payload[k] === undefined) delete payload[k];
+    });
 
     setPhotoError("");
 
     try {
       setFormLoading(true);
-      const res = await apiService.post("/properties/developer/property/create-offplan", payload);
+
+      // ✅ New unified endpoint — POST /property with propertySubType in body
+      const res = await apiService.post("/properties", payload)
+
       if (res) {
         showToast("success", "Property submitted. Waiting for admin approval.");
         navigate("/dashboard/developer/developer-projects");
@@ -287,18 +263,20 @@ Object.keys(payload).forEach((key) => {
         showToast("error", "Failed to save property.");
       }
     } catch (error) {
-  console.error("Save error:", error);
-} finally {
-  setFormLoading(false);
-}
+      console.error("Save error:", error);
+      showToast("error", error?.message || "Something went wrong.");
+    } finally {
+      setFormLoading(false);
+    }
   };
 
- const handleFinishFailed = ({ errorFields }) => {
-  if (errorFields?.length > 0) {
-    showToast("error", errorFields[0]?.errors?.[0] || "Please fill in all required fields.");
-  }
-};
+  const handleFinishFailed = ({ errorFields }) => {
+    if (errorFields?.length > 0) {
+      showToast("error", errorFields[0]?.errors?.[0] || "Please fill in all required fields.");
+    }
+  };
 
+  // ── Payment plan renderer ────────────────────────────────────────────────────
   const renderPaymentPlanFields = () => (
     <Form.List name="paymentPlan">
       {(fields, { add, remove }) => (
@@ -317,26 +295,17 @@ Object.keys(payload).forEach((key) => {
                   </Form.Item>
                 </Col>
                 <Col span={4} style={{ textAlign: "right" }}>
-                  <Button
-                    type="text"
-                    danger
-                    icon={<MinusCircleOutlined />}
-                    onClick={() => remove(name)}
-                  />
+                  <Button type="text" danger icon={<MinusCircleOutlined />} onClick={() => remove(name)} />
                 </Col>
               </Row>
+
               <Form.List name={[name, "stages"]}>
                 {(stageFields, { add: addStage, remove: removeStage }) => (
                   <>
-                    {stageFields.map(({ key: stageKey, name: stageName, ...stageRest }) => (
-                      <Row key={stageKey} gutter={16} align="middle">
+                    {stageFields.map(({ key: sk, name: sn, ...sr }) => (
+                      <Row key={sk} gutter={16} align="middle">
                         <Col span={6}>
-                          <Form.Item
-                            {...stageRest}
-                            name={[stageName, "stage"]}
-                            label="Stage"
-                            rules={[{ required: true, message: "Stage name required" }]}
-                          >
+                          <Form.Item {...sr} name={[sn, "stage"]} label="Stage" rules={[{ required: true }]}>
                             <Select placeholder="Select stage">
                               <Option value="on_booking">On Booking</Option>
                               <Option value="during_construction">During Construction</Option>
@@ -346,31 +315,17 @@ Object.keys(payload).forEach((key) => {
                           </Form.Item>
                         </Col>
                         <Col span={6}>
-                          <Form.Item
-                            {...stageRest}
-                            name={[stageName, "percentage"]}
-                            label="Percentage"
-                            rules={[{ required: true, message: "Percentage required" }]}
-                          >
+                          <Form.Item {...sr} name={[sn, "percentage"]} label="Percentage (%)" rules={[{ required: true }]}>
                             <InputNumber min={0} max={100} style={{ width: "100%" }} />
                           </Form.Item>
                         </Col>
                         <Col span={10}>
-                          <Form.Item
-                            {...stageRest}
-                            name={[stageName, "description"]}
-                            label="Description"
-                          >
-                            <Input placeholder="Optional description" />
+                          <Form.Item {...sr} name={[sn, "description"]} label="Description">
+                            <Input placeholder="Optional" />
                           </Form.Item>
                         </Col>
                         <Col span={2}>
-                          <Button
-                            type="text"
-                            danger
-                            icon={<MinusCircleOutlined />}
-                            onClick={() => removeStage(stageName)}
-                          />
+                          <Button type="text" danger icon={<MinusCircleOutlined />} onClick={() => removeStage(sn)} />
                         </Col>
                       </Row>
                     ))}
@@ -390,6 +345,7 @@ Object.keys(payload).forEach((key) => {
     </Form.List>
   );
 
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <Row justify="space-between" align="middle" className="mb-6">
@@ -408,77 +364,51 @@ Object.keys(payload).forEach((key) => {
       </Row>
 
       <Card className="shadow-sm rounded-xl">
-        {/* ✅ SINGLE Form — no nested <Form> anywhere below */}
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSave}
           onFinishFailed={handleFinishFailed}
           initialValues={{
-            projectType: "new",
-            currency: "AED",
+            currency:       "AED",
             builtUpAreaUnit: "sqft",
-            unitType: "apartment",
-            bedroomType: "1bed",
-            bedrooms: 1,
-            bathrooms: 1,
-            furnishing: "unfurnished",
-            ownershipType: "freehold",
-            projectStatus: "presale",
+            unitType:       "apartment",
+            bedroomType:    "1bed",
+            bedrooms:       1,
+            bathrooms:      1,
+            furnishing:     "unfurnished",
+            ownershipType:  "freehold",
+            projectStatus:  "presale",
             readinessProgress: "0%",
-            hasView: false,
-            viewType: [],
-            isFeatured: false,
+            hasView:        false,
+            viewType:       [],
+            isFeatured:     false,
             showContactOnlyVerified: false,
-            shareCommission: false,
+            shareCommission:           false,
             shareCommissionPercentage: 0,
           }}
         >
+
           {/* ── Basic Information ── */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>
-            Basic Information
-          </Divider>
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Basic Information</Divider>
           <Row gutter={16}>
-            
-              <Form.Item name="projectType" hidden initialValue="new">
-  <Input />
-</Form.Item>
-           
             <Col xs={24} md={12}>
-              <Form.Item
-                name="propertyName"
-                label="Property Name"
-                rules={[{ required: true, message: "Enter property name" }]}
-              >
+              <Form.Item name="propertyName" label="Property Name" rules={[{ required: true, message: "Enter property name" }]}>
                 <Input placeholder="e.g., Luxury Tower Downtown" />
               </Form.Item>
             </Col>
-            {/* ✅ developerName field was missing — added here */}
             <Col xs={24} md={6}>
-<Form.Item name="developerName" label="Developer Name">
-  <Input
-    readOnly
-    style={{
-      backgroundColor: "#f5f5f5",
-      cursor: "not-allowed",
-      color: "#555",
-    }}
-  />
-</Form.Item>
+              <Form.Item name="developerName" label="Developer Name">
+                <Input readOnly style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed", color: "#555" }} />
+              </Form.Item>
             </Col>
           </Row>
-          <Form.Item
-            name="description"
-            label="Description"
-            rules={[{ required: true, message: "Description is required" }]}
-          >
+          <Form.Item name="description" label="Description" rules={[{ required: true, message: "Description is required" }]}>
             <TextArea rows={4} placeholder="Describe the property..." />
           </Form.Item>
 
           {/* ── Property Details ── */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>
-            Property Details
-          </Divider>
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Property Details</Divider>
           <Row gutter={16}>
             <Col xs={12} md={6}>
               <Form.Item name="unitNumber" label="Unit Number">
@@ -502,11 +432,7 @@ Object.keys(payload).forEach((key) => {
               </Form.Item>
             </Col>
             <Col xs={12} md={6}>
-              <Form.Item
-                name="bedroomType"
-                label="Bedroom Type"
-                rules={[{ required: true }]}
-              >
+              <Form.Item name="bedroomType" label="Bedroom Type" rules={[{ required: true }]}>
                 <Select>
                   <Option value="studio">Studio</Option>
                   <Option value="1bed">1 Bedroom</Option>
@@ -572,10 +498,8 @@ Object.keys(payload).forEach((key) => {
             </Col>
           </Row>
 
-          {/* ── Location & Proximity ── */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>
-            Location & Proximity
-          </Divider>
+          {/* ── Location ── */}
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Location & Proximity</Divider>
           <Row gutter={16}>
             <Col xs={24} md={8}>
               <Form.Item name="area" label="Area" rules={[{ required: true, message: "Enter area name" }]}>
@@ -583,12 +507,12 @@ Object.keys(payload).forEach((key) => {
               </Form.Item>
             </Col>
             <Col xs={12} md={8}>
-              <Form.Item name="city" label="City" rules={[{ required: true }]}>
+              <Form.Item name="city" label="City" initialValue="Dubai">
                 <Input placeholder="Dubai" />
               </Form.Item>
             </Col>
             <Col xs={12} md={8}>
-              <Form.Item name="country" label="Country" rules={[{ required: true }]}>
+              <Form.Item name="country" label="Country" initialValue="UAE">
                 <Input placeholder="UAE" />
               </Form.Item>
             </Col>
@@ -606,32 +530,22 @@ Object.keys(payload).forEach((key) => {
             </Col>
           </Row>
           <Row gutter={16}>
-            <Col xs={12} md={6}>
-              <Form.Item name="airportProximity" label="Distance to Airport">
-                <Input placeholder="e.g., 15 minutes" />
-              </Form.Item>
-            </Col>
-            <Col xs={12} md={6}>
-              <Form.Item name="metroProximity" label="Distance to Metro">
-                <Input placeholder="e.g., 2 minutes walk" />
-              </Form.Item>
-            </Col>
-            <Col xs={12} md={6}>
-              <Form.Item name="mallProximity" label="Distance to Mall">
-                <Input placeholder="e.g., 5 minutes" />
-              </Form.Item>
-            </Col>
-            <Col xs={12} md={6}>
-              <Form.Item name="schoolProximity" label="Distance to School">
-                <Input placeholder="e.g., 10 minutes" />
-              </Form.Item>
-            </Col>
+            {[
+              ["airportProximity", "Distance to Airport", "e.g., 15 minutes"],
+              ["metroProximity",   "Distance to Metro",   "e.g., 2 minutes walk"],
+              ["mallProximity",    "Distance to Mall",    "e.g., 5 minutes"],
+              ["schoolProximity",  "Distance to School",  "e.g., 10 minutes"],
+            ].map(([name, label, placeholder]) => (
+              <Col xs={12} md={6} key={name}>
+                <Form.Item name={name} label={label}>
+                  <Input placeholder={placeholder} />
+                </Form.Item>
+              </Col>
+            ))}
           </Row>
 
           {/* ── Media ── */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>
-            Media
-          </Divider>
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Media</Divider>
           <Form.Item label="Main Logo" required>
             <Upload
               listType="picture-card"
@@ -647,28 +561,28 @@ Object.keys(payload).forEach((key) => {
               )}
             </Upload>
           </Form.Item>
-          <Form.Item label="Architecture Photos">
-            <Upload listType="picture-card" fileList={photosArchitecture} customRequest={customUploadRequest} beforeUpload={validateImageSize} accept="image/*" onChange={({ fileList }) => setPhotosArchitecture(fileList)} multiple>
-              <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
-            </Upload>
-          </Form.Item>
-          <Form.Item label="Interior Photos">
-            <Upload listType="picture-card" fileList={photosInterior} customRequest={customUploadRequest} beforeUpload={validateImageSize} accept="image/*" onChange={({ fileList }) => setPhotosInterior(fileList)} multiple>
-              <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
-            </Upload>
-          </Form.Item>
-          <Form.Item label="Lobby Photos">
-            <Upload listType="picture-card" fileList={photosLobby} customRequest={customUploadRequest} beforeUpload={validateImageSize} accept="image/*" onChange={({ fileList }) => setPhotosLobby(fileList)} multiple>
-              <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
-            </Upload>
-          </Form.Item>
-          <Form.Item label="Other Photos">
-            <Upload listType="picture-card" fileList={photosOther} customRequest={customUploadRequest} beforeUpload={validateImageSize} accept="image/*" onChange={({ fileList }) => setPhotosOther(fileList)} multiple>
-              <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
-            </Upload>
-          </Form.Item>
+          {[
+            ["Architecture Photos", photosArchitecture, setPhotosArchitecture],
+            ["Interior Photos",     photosInterior,     setPhotosInterior],
+            ["Lobby Photos",        photosLobby,        setPhotosLobby],
+            ["Other Photos",        photosOther,        setPhotosOther],
+          ].map(([label, state, setter]) => (
+            <Form.Item label={label} key={label}>
+              <Upload
+                listType="picture-card"
+                fileList={state}
+                customRequest={customUploadRequest}
+                beforeUpload={validateImageSize}
+                accept="image/*"
+                onChange={({ fileList }) => setter(fileList)}
+                multiple
+              >
+                <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
+              </Upload>
+            </Form.Item>
+          ))}
           <Form.Item name="videoUrl" label="Video URL">
-            <Input placeholder="https://..." />
+            <Input placeholder="https://youtube.com/..." />
           </Form.Item>
           <Form.Item label="Brochure (PDF)">
             <Upload
@@ -688,22 +602,22 @@ Object.keys(payload).forEach((key) => {
           </Form.Item>
 
           {/* ── Amenities & Facilities ── */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>
-            Amenities & Facilities
-          </Divider>
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Amenities & Facilities</Divider>
           <Form.Item name="amenities" label="Amenities">
             <Select mode="tags" placeholder="Type and press Enter" style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item label="Facilities">
             <Row gutter={[16, 8]}>
               {[
-                ["swimmingPool", "Swimming Pool"],
-                ["gym", "Gym"],
-                ["parking", "Parking"],
+                ["swimmingPool",     "Swimming Pool"],
+                ["gym",              "Gym"],
+                ["parking",          "Parking"],
                 ["childrenPlayArea", "Children Play Area"],
-                ["gardens", "Gardens"],
-                ["security", "Security"],
-                ["concierge", "Concierge"],
+                ["gardens",          "Gardens"],
+                ["security",         "Security"],
+                ["concierge",        "Concierge"],
+                ["lounge",           "Lounge"],
+                ["smartHome",        "Smart Home"],
               ].map(([name, label]) => (
                 <Col span={8} key={name}>
                   <Form.Item name={name} valuePropName="checked" noStyle>
@@ -715,18 +629,13 @@ Object.keys(payload).forEach((key) => {
           </Form.Item>
 
           {/* ── Additional Features ── */}
-          {/* ✅ NO nested <Form> tag here — using the outer form's context */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>
-            Additional Features
-          </Divider>
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Additional Features</Divider>
           <Row gutter={16}>
             <Col xs={12} md={6}>
               <Form.Item name="hasView" valuePropName="checked" label="Has View">
                 <Switch />
               </Form.Item>
             </Col>
-
-            {/* ✅ Conditional view type — works because hasView is watched on the correct form */}
             {hasView && (
               <Col xs={12} md={6}>
                 <Form.Item name="viewType" label="View Type">
@@ -741,7 +650,6 @@ Object.keys(payload).forEach((key) => {
                 </Form.Item>
               </Col>
             )}
-
             <Col xs={12} md={6}>
               <Form.Item name="parkingSpaces" label="Parking Spaces">
                 <InputNumber min={0} style={{ width: "100%" }} />
@@ -772,9 +680,7 @@ Object.keys(payload).forEach((key) => {
           </Row>
 
           {/* ── Project Details ── */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>
-            Project Details
-          </Divider>
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Project Details</Divider>
           <Row gutter={16}>
             <Col xs={12} md={6}>
               <Form.Item name="totalUnits" label="Total Units">
@@ -811,7 +717,7 @@ Object.keys(payload).forEach((key) => {
           <Row gutter={16}>
             <Col xs={12} md={6}>
               <Form.Item name="completionQuarter" label="Completion Quarter">
-                <Select>
+                <Select allowClear>
                   <Option value="Q1">Q1</Option>
                   <Option value="Q2">Q2</Option>
                   <Option value="Q3">Q3</Option>
@@ -830,27 +736,19 @@ Object.keys(payload).forEach((key) => {
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={16}>
-            <Col xs={24}>
-              <Form.Item name="serviceChargeInfo" label="Service Charge Info">
-                <Input placeholder="e.g., AED 15 per sqft annually" />
-              </Form.Item>
-            </Col>
-          </Row>
+          <Form.Item name="serviceChargeInfo" label="Service Charge Info">
+            <Input placeholder="e.g., AED 15 per sqft annually" />
+          </Form.Item>
 
           {/* ── Payment Plan ── */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>
-            Payment Plan
-          </Divider>
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Payment Plan</Divider>
           {renderPaymentPlanFields()}
 
           {/* ── Financial & Legal ── */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>
-            Financial & Legal
-          </Divider>
+          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Financial & Legal</Divider>
           <Row gutter={16}>
             <Col xs={12} md={6}>
-              <Form.Item name="eoiAmount" label="EOI Amount">
+              <Form.Item name="eoiAmount" label="EOI Amount (AED)">
                 <InputNumber style={{ width: "100%" }} />
               </Form.Item>
             </Col>
@@ -885,24 +783,14 @@ Object.keys(payload).forEach((key) => {
           </Form.Item>
 
           {/* ── Submit ── */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: "12px",
-              marginTop: "24px",
-              paddingBottom: "16px",
-            }}
-          >
-            <Button onClick={() => navigate("/dashboard/developer/developer-projects")}>
-              Cancel
-            </Button>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: 24, paddingBottom: 16 }}>
+            <Button onClick={() => navigate("/dashboard/developer/developer-projects")}>Cancel</Button>
             <Button
               type="primary"
               htmlType="submit"
               loading={formLoading}
-              style={{ backgroundColor: THEME.primary }}
               disabled={isAnyUploading()}
+              style={{ backgroundColor: THEME.primary }}
             >
               Save Property
             </Button>

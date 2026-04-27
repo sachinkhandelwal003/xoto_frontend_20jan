@@ -39,7 +39,7 @@ export default function DeveloperProjects() {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const res  = await apiService.get("/properties/developer/property/offplan", { page: 1, limit: 50 });
+      const res  = await apiService.get("/properties/", { page: 1, limit: 50 });
       const list = res?.data || [];
       const mapped = list.map((p, i) => ({
         key:           p._id || `row-${i}`,
