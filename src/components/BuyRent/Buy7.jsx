@@ -149,177 +149,113 @@ export default function HeroSection() {
   };
 
   /* ---------------- SUBMIT ---------------- */
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-//     const { countryCode, phone } = form;
-//     const config = getPhoneConfig(countryCode);
+    const { countryCode, phone } = form;
 
-//     // Validation
-//     if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.location_country) {
-//       toast.error(t("error")); // "Please fill all required fields"
-//       return;
-//     }
-
-//   const phoneError = validatePhone(countryCode, phone);
-// if (phoneError) {
-//   toast.error(phoneError);
-//   return;
-// }
-
-
-//     setLoading(true);
-//   const phoneObj = parsePhoneNumberFromString(
-//   `+${form.countryCode}${form.phone}`
-// );
-
-//     // Resolve Names
-//     const countryName = Country.getCountryByCode(form.location_country)?.name || "";
-//     const stateName = State.getStateByCodeAndCountry(form.state, form.location_country)?.name || "";
-
-//     try {
-//       const res = await apiService.post("/property/lead", {
-//         type: form.lookingFor ? form.lookingFor.toLowerCase() : "inquiry",
-//         name: {
-//           first_name: form.firstName.trim(),
-//           last_name: form.lastName.trim(),
-//         },
-//       mobile: {
-//   country_code: form.countryCode,
-//   number: form.phone,
-//   full: phoneObj.number, // +9715XXXXXXX
-// },
-
-//         email: form.email.trim().toLowerCase(),
-        
-//         // Location Data
-//         country: countryName,
-//         state: stateName,
-//         preferred_city: form.city || stateName, // Use City if available
-        
-//         budget: form.budget,
-//       });
-
-//       if (res?.success) {
-//         toast.success(t("success"));
-//         setForm({
-//           firstName: "", lastName: "", email: "", countryCode: "971", phone: "",
-//           lookingFor: "", budget: "", location_country: null, state: null, city: null
-//         });
-//       }
-//     } catch {
-//       toast.error(t("genericError"));
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  const { countryCode, phone } = form;
-
-  // Required field validation
-  if (
-    !form.firstName.trim() ||
-    !form.lastName.trim() ||
-    !form.email.trim() ||
-    !form.location_country
-  ) {
-    toast.error(t("error"));
-    return;
-  }
-
-  // Phone validation
-  const phoneError = validatePhone(countryCode, phone);
-  if (phoneError) {
-    toast.error(phoneError);
-    return;
-  }
-
-  setLoading(true);
-
-  const phoneObj = parsePhoneNumberFromString(
-    `+${form.countryCode}${form.phone}`
-  );
-
-  // Resolve location names
-  const countryName =
-    Country.getCountryByCode(form.location_country)?.name || "";
-  const stateName =
-    State.getStateByCodeAndCountry(
-      form.state,
-      form.location_country
-    )?.name || "";
-
-  try {
-    // 1️⃣ CREATE INQUIRY
-    const res = await apiService.post("/property/lead", {
-      type: form.lookingFor ? form.lookingFor.toLowerCase() : "inquiry",
-      name: {
-        first_name: form.firstName.trim(),
-        last_name: form.lastName.trim(),
-      },
-      mobile: {
-        country_code: form.countryCode,
-        number: form.phone,
-        full: phoneObj?.number,
-      },
-      email: form.email.trim().toLowerCase(),
-      country: countryName,
-      state: stateName,
-      preferred_city: form.city || stateName,
-      budget: form.budget,
-    });
-
-    if (res?.success) {
-      // 2️⃣ CREATE NOTIFICATION (sender must be STRING)
-      const notificationPayload = {
-        sender: form.email.trim().toLowerCase(), // ✅ STRING ONLY
-        receiverType: "admin",
-        senderType: "user",
-        notificationType: "NEW_INQUIRY",
-        title: "Property Inquiry",
-        message: "A user has submitted a new property inquiry.",
-      };
-
-      // Non-blocking notification (recommended)
-      try {
-        await apiService.post(
-          "/notifications/create-notification",
-          notificationPayload
-        );
-      } catch (notificationError) {
-        console.error("Notification failed", notificationError);
-      }
-
-      // 3️⃣ SUCCESS UI
-      toast.success(t("success"));
-
-      setForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        countryCode: "971",
-        phone: "",
-        lookingFor: "",
-        budget: "",
-        location_country: null,
-        state: null,
-        city: null,
-      });
+    // Required field validation
+    if (
+      !form.firstName.trim() ||
+      !form.lastName.trim() ||
+      !form.email.trim() ||
+      !form.location_country
+    ) {
+      toast.error(t("error"));
+      return;
     }
-  } catch (error) {
-    toast.error(t("genericError"));
-  } finally {
-    setLoading(false);
-  }
-};
+
+    // Phone validation
+    const phoneError = validatePhone(countryCode, phone);
+    if (phoneError) {
+      toast.error(phoneError);
+      return;
+    }
+
+    setLoading(true);
+
+    const phoneObj = parsePhoneNumberFromString(
+      `+${form.countryCode}${form.phone}`
+    );
+
+    // Resolve location names
+    const countryName =
+      Country.getCountryByCode(form.location_country)?.name || "";
+    const stateName =
+      State.getStateByCodeAndCountry(
+        form.state,
+        form.location_country
+      )?.name || "";
+
+    try {
+      // 1️⃣ CREATE INQUIRY
+      const res = await apiService.post("/property/lead", {
+        type: form.lookingFor ? form.lookingFor.toLowerCase() : "inquiry",
+        name: {
+          first_name: form.firstName.trim(),
+          last_name: form.lastName.trim(),
+        },
+        mobile: {
+          country_code: form.countryCode,
+          number: form.phone,
+          full: phoneObj?.number,
+        },
+        email: form.email.trim().toLowerCase(),
+        country: countryName,
+        state: stateName,
+        preferred_city: form.city || stateName,
+        budget: form.budget,
+      });
+
+      if (res?.success) {
+        // 2️⃣ CREATE NOTIFICATION (sender must be STRING)
+        const notificationPayload = {
+          sender: form.email.trim().toLowerCase(), // ✅ STRING ONLY
+          receiverType: "admin",
+          senderType: "user",
+          notificationType: "NEW_INQUIRY",
+          title: "Property Inquiry",
+          message: "A user has submitted a new property inquiry.",
+        };
+
+        // Non-blocking notification (recommended)
+        try {
+          await apiService.post(
+            "/notifications/create-notification",
+            notificationPayload
+          );
+        } catch (notificationError) {
+          console.error("Notification failed", notificationError);
+        }
+
+        // 3️⃣ SUCCESS UI
+        toast.success(t("success"));
+
+        setForm({
+          firstName: "",
+          lastName: "",
+          email: "",
+          countryCode: "971",
+          phone: "",
+          lookingFor: "",
+          budget: "",
+          location_country: null,
+          state: null,
+          city: null,
+        });
+      }
+    } catch (error) {
+      toast.error(t("genericError"));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
       <Toaster position="top-center" />
 
-      <section className="relative w-full bg-[var(--color-body)] py-16 overflow-hidden">
+      <section className="relative w-full bg-[var(--color-body)] py-16 overflow-hidden px-4 sm:px-0">
         <div className="absolute top-0 left-0 w-full z-0">
           <img src={waveint6} alt="" className="w-full" />
         </div>
@@ -377,8 +313,9 @@ const handleSubmit = async (e) => {
                 </div>
 
                 {/* Phone with Antd Select */}
-                <div className="flex gap-3">
-                  <div className="w-[120px] flex-shrink-0">
+                <div className="flex gap-2 sm:gap-3">
+                  {/* Reduced fixed width on mobile */}
+                  <div className="w-[100px] sm:w-[120px] flex-shrink-0">
                     <Select
                         value={form.countryCode}
                         onChange={handleCountryCodeChange}
@@ -390,7 +327,7 @@ const handleSubmit = async (e) => {
                     >
                         {phoneCountryOptions.map((item) => (
                         <Option key={item.iso} value={item.code}>
-                            <div className="flex items-center">
+                            <div className="flex items-center text-sm sm:text-base">
                             <img src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`} srcSet={`https://flagcdn.com/w40/${item.iso.toLowerCase()}.png 2x`} width="20" alt={item.name} style={{ marginRight: 8, borderRadius: 2 }} />
                             <span>+{item.code}</span>
                             </div>
@@ -398,11 +335,12 @@ const handleSubmit = async (e) => {
                         ))}
                     </Select>
                   </div>
-                  <input type="tel" name="phone" value={form.phone} onChange={handlePhoneChange} placeholder={`Phone (${getPhoneConfig(form.countryCode).digits} digits)`} className="flex-1 px-5 py-4 rounded-xl border border-gray-300" />
+                  {/* 🚨 CRITICAL FIX: Added min-w-0 to prevent input from overflowing flex container 🚨 */}
+                  <input type="tel" name="phone" value={form.phone} onChange={handlePhoneChange} placeholder={`Phone (${getPhoneConfig(form.countryCode).digits} digits)`} className="min-w-0 flex-1 px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-gray-300" />
                 </div>
 
                 {/* Country (Dynamic) & Looking For */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Select
                     placeholder="Select Country"
                     showSearch
@@ -416,7 +354,7 @@ const handleSubmit = async (e) => {
                     ))}
                   </Select>
 
-                  <select name="lookingFor" value={form.lookingFor} onChange={handleChange} className="w-full px-5 py-4 rounded-xl border border-gray-300 bg-white">
+                  <select name="lookingFor" value={form.lookingFor} onChange={handleChange} className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-gray-300 bg-white">
                     <option value="">{t("lookingFor")}</option>
                     <option value="Buy">Buy</option>
                     <option value="Sell">Sell</option>
@@ -425,7 +363,7 @@ const handleSubmit = async (e) => {
                 </div>
 
                 {/* State & City (Dynamic) */}
-                <div className="grid grid-cols-2 gap-4 mb-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
                     <Select
                         placeholder="State"
                         showSearch
@@ -456,9 +394,9 @@ const handleSubmit = async (e) => {
                 </div>
 
                 {/* Budget */}
-                <input name="budget" value={form.budget} onChange={handleChange} placeholder={t("budget")} className="w-full px-5 py-4 rounded-xl border border-gray-300" />
+                <input name="budget" value={form.budget} onChange={handleChange} placeholder={t("budget")} className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-gray-300" />
 
-                <button type="submit" disabled={loading} className="w-full bg-[var(--color-primary)] text-white font-bold py-5 rounded-xl transition hover:opacity-90">
+                <button type="submit" disabled={loading} className="w-full bg-[var(--color-primary)] text-white font-bold py-4 sm:py-5 rounded-xl transition hover:opacity-90">
                   {loading ? t("submitting") : t("submit")}
                 </button>
               </form>
@@ -473,10 +411,15 @@ const handleSubmit = async (e) => {
           border-radius: 0.75rem !important; /* rounded-xl */
           border-color: #d1d5db !important; /* border-gray-300 */
           height: 100% !important;
-          min-height: 58px !important; /* Matches py-4 inputs approx */
+          min-height: 50px !important; /* Adjusted slightly for mobile */
           display: flex !important;
           align-items: center !important;
           padding-left: 12px !important;
+        }
+        @media (min-width: 640px) {
+          .custom-select-hero7 .ant-select-selector {
+            min-height: 58px !important; /* Restored for desktop */
+          }
         }
         .custom-select-hero7 .ant-select-selector:hover {
           border-color: #9ca3af !important; 
