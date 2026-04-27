@@ -28,11 +28,13 @@ const Ai1 = () => {
 
     setLoading(true);
 
+    // 🚀 FIX: API URL format fixed to ensure data fetches properly
     apiService
-      .get("blogs/get-blog-by-id", { id: activeId }) 
+      .get(`/blogs/get-blog-by-id?id=${activeId}`) 
       .then((res) => {
         setBlog(res.data || res.blog || res);
         setLoading(false);
+        console.log("Fetched blog data:", res.data || res.blog || res);
       })
       .catch((err) => {
         console.error(err);
@@ -69,17 +71,14 @@ const Ai1 = () => {
           text-white
           overflow-hidden
         "
-        style={{ backgroundImage: `url(${Picture})` }}
+        style={{ backgroundImage: `url(${blog.coverImage || blog.featuredImage || Picture})` }}
       >
         {/* Dark Overlay */}
         <div className="absolute inset-0 bg-black/40"></div>
 
-        {/* 🚀 WAVE KA ORIGINAL SIZE WAPAS LAGA DIYA */}
-        {/* Bas bottom-[-1px] rakha hai taaki wo kaali line wapas na aaye */}
         <div className="absolute bottom-[-1px] left-0 w-24 sm:w-40 md:w-56 lg:w-64 h-6 sm:h-8 md:h-10 lg:h-12 bg-[var(--color-body)] z-10 clip-left-shape"></div>
         <div className="absolute bottom-[-1px] right-0 w-24 sm:w-40 md:w-56 lg:w-64 h-6 sm:h-8 md:h-10 lg:h-12 bg-[var(--color-body)] z-10 clip-right-shape"></div>
 
-        {/* 🚀 Original Polygon logic wapas */}
         <style>{`
           .clip-left-shape {
             clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
@@ -128,9 +127,12 @@ const Ai1 = () => {
                 <p className="text-base sm:text-lg md:text-xl font-bold text-white drop-shadow-md">
                   {blog.authorName || "Author Name"}
                 </p>
-                <p className="text-xs sm:text-sm text-white/80 font-medium tracking-wide">
-                  Author
-                </p>
+                {/* 🚀 FIX: Hardcoded "Author" hata kar API ka data daal diya hai */}
+                {blog.authorDesignation && (
+                  <p className="text-xs sm:text-sm text-white/80 font-medium tracking-wide">
+                    {blog.authorDesignation}
+                  </p>
+                )}
               </div>
             </div>
           </div>

@@ -31,7 +31,7 @@ const Article2 = () => {
                 className="
                   font-dmSans 
                   font-semibold
-                  text-[60px]
+                  text-[50px]
                   leading-[55px]
                   tracking-[-0.03em]
                   text-[#020202]

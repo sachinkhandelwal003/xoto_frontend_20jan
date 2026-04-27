@@ -392,35 +392,35 @@ const RegisterNowPage = () => {
 
               {/* Gender */}
               <Form.Item 
-  label={<>Gender <span className="text-red-500">*</span></>}
-  validateStatus={errors.gender && "error"} 
-  help={errors.gender?.message}
->
-  <Controller
-    name="gender"
-    control={control}
-    rules={{ required: "Gender is required" }}
-    render={({ field }) => (
-      <Select {...field} size="large" placeholder="Select gender" allowClear>
-        <Option value="male">Male</Option>
-        <Option value="female">Female</Option>
-        <Option value="other">Other</Option>
-      </Select>
-    )}
-  />
-</Form.Item>
+                label="Gender"
+                validateStatus={errors.gender && "error"} 
+                help={errors.gender?.message}
+              >
+                <Controller
+                  name="gender"
+                  control={control}
+                  render={({ field }) => (
+                    <Select {...field} size="large" placeholder="Select gender" allowClear>
+                      <Option value="male">Male</Option>
+                      <Option value="female">Female</Option>
+                      <Option value="other">Other</Option>
+                    </Select>
+                  )}
+                />
+              </Form.Item>
 
               {/* Nationality */}
               <Form.Item 
-  label={<>Nationality <span className="text-red-500">*</span></>}
-  validateStatus={errors.nationality && "error"} 
-  help={errors.nationality?.message}
->
-                <Controller name="nationality" control={control}
-                  rules={{ required: "Nationality is required" }}
+                label="Nationality"
+                validateStatus={errors.nationality && "error"} 
+                help={errors.nationality?.message}
+              >
+                <Controller 
+                  name="nationality" 
+                  control={control}
                   render={({ field }) => (
                     <Select {...field} size="large" placeholder="Select nationality"
-                      showSearch optionFilterProp="children"
+                      showSearch optionFilterProp="children" allowClear
                       filterOption={(input, option) =>
                         option?.children?.toLowerCase().includes(input.toLowerCase())
                       }>
@@ -428,28 +428,28 @@ const RegisterNowPage = () => {
                         <Option key={c.iso} value={c.name}>{c.name}</Option>
                       ))}
                     </Select>
-                  )} />
+                  )} 
+                />
               </Form.Item>
 
               {/* Residency Status */}
-           <Form.Item 
-  label={<>Residency Status <span className="text-red-500">*</span></>}
-  validateStatus={errors.residencyStatus && "error"} 
-  help={errors.residencyStatus?.message}
->
-  <Controller
-    name="residencyStatus"
-    control={control}
-    rules={{ required: "Residency status is required" }}
-    render={({ field }) => (
-      <Select {...field} size="large" placeholder="Select status" allowClear>
-        <Option value="national">National</Option>
-        <Option value="resident">Resident</Option>
-        <Option value="non_resident">Non Resident</Option>
-      </Select>
-    )}
-  />
-</Form.Item>
+              <Form.Item 
+                label="Residency Status"
+                validateStatus={errors.residencyStatus && "error"} 
+                help={errors.residencyStatus?.message}
+              >
+                <Controller
+                  name="residencyStatus"
+                  control={control}
+                  render={({ field }) => (
+                    <Select {...field} size="large" placeholder="Select status" allowClear>
+                      <Option value="national">National</Option>
+                      <Option value="resident">Resident</Option>
+                      <Option value="non_resident">Non Resident</Option>
+                    </Select>
+                  )}
+                />
+              </Form.Item>
 
             </div>
             {/* ────────────────────────────────────────── */}

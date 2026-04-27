@@ -111,6 +111,9 @@ import PopupManager from "./components/homepage/PopupManager";
 import AdvisorLogin from "./components/AdvisorGrid/AdvisorLogin";
 
 
+import EmployeeLogin from "./components/ecommerce/vault/EmployeeLogin";
+import ReferralPartnerLogin from "./components/GridReferralPartner/ReferralPartnerLogin";
+import ReferralPartnerRegister from "./components/GridReferralPartner/ReferralPartnerRegister";
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -333,8 +336,8 @@ function App() {
               <Route path="/ecommerce/b2c" element={<HomeB2C />} />
 
             
-  
-
+  <Route path="/referral-partner/login" element={<ReferralPartnerLogin />} />
+<Route path="/referral-partner/register" element={<ReferralPartnerRegister />} />
               <Route path="/developer/registration" element={<DeveloperRegistration />} />
               {/* <Route path="/developer/sidebar" element={<DeveloperSidebar />} /> */}
 
@@ -388,11 +391,12 @@ function App() {
                <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
   
-              
+                <Route path="/employee/login" element={<EmployeeLogin />} />
+
               <Route
                 path="/dashboard/:roleSlug/*"
                 element={
-                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17","18","21", "22", "24"]}>
+                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17","18","21", "22","23","26","24", "25"]}>
                     <CmsApp />
                   </PrivateRoute>
                 }

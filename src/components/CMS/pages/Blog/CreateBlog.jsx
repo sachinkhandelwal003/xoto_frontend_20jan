@@ -10,13 +10,16 @@ import {
   Button, Modal, Form, Input, Popconfirm, Card,
   Typography, Avatar, Row, Col, Statistic, Space, Divider,
   message, notification, Tooltip, Grid, Tag, Select, Badge,
-  Upload, Tabs, Alert, Switch, Slider, Pagination, Skeleton, Empty
+  Upload, Tabs, Alert, Switch, Slider, Skeleton, Empty
 } from 'antd';
 import {
   PlusOutlined, FileTextOutlined, DeleteOutlined,
   EditOutlined, SearchOutlined, CheckCircleOutlined, SyncOutlined,
   UserOutlined, PictureOutlined, EyeOutlined, ClockCircleOutlined,
-  UndoOutlined, ScissorOutlined, ZoomInOutlined, BookOutlined, CalendarOutlined
+  UndoOutlined, ScissorOutlined, ZoomInOutlined, BookOutlined, CalendarOutlined,
+  RocketOutlined, FireOutlined, StarOutlined, TagOutlined, FilterOutlined,
+  ArrowLeftOutlined, ArrowRightOutlined, SaveOutlined, GlobalOutlined,
+  AppstoreAddOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -25,229 +28,526 @@ const { useBreakpoint } = Grid;
 const { TextArea } = Input;
 const { TabPane } = Tabs;
 
+// ─────────────────────────────────────────────
+//  DESIGN TOKENS
+// ─────────────────────────────────────────────
 const THEME = {
-  primary: "#7c3aed",
+  primary: "#6d28d9",
+  primaryLight: "#8b5cf6",
+  primaryDark: "#4c1d95",
+  accent: "#f59e0b",
   success: "#10b981",
   error: "#ef4444",
   warning: "#f59e0b",
-  info: "#3b82f6"
+  info: "#3b82f6",
+  surface: "#ffffff",
+  bg: "#f8fafc",
+  border: "#e2e8f0",
+  text: "#0f172a", 
+  muted: "#64748b",
 };
 
 // ─────────────────────────────────────────────
-//  BLOG CONTENT CSS — fixes Tailwind reset for ul/ol/li
+//  GLOBAL STYLES (CLEAN SAAS UI)
 // ─────────────────────────────────────────────
-const BLOG_CONTENT_STYLES = `
-  .blog-preview-content ul,
-  .blog-render-content ul {
-    list-style-type: disc !important;
-    padding-left: 24px !important;
-    margin: 12px 0 !important;
+const GLOBAL_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+  .bm-root * { box-sizing: border-box; }
+
+  .bm-root {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #f8fafc;
+    min-height: 100vh;
+    padding: 32px 40px;
+    color: ${THEME.text};
   }
-  .blog-preview-content ol,
-  .blog-render-content ol {
-    list-style-type: decimal !important;
-    padding-left: 24px !important;
-    margin: 12px 0 !important;
+
+  /* ─── HEADER ─── */
+  .bm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
   }
-  .blog-preview-content li,
-  .blog-render-content li {
-    display: list-item !important;
-    margin: 6px 0 !important;
-    line-height: 1.7 !important;
+
+  .bm-header-title {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.5px !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
-  .blog-preview-content ul ul,
-  .blog-render-content ul ul {
-    list-style-type: circle !important;
-    padding-left: 20px !important;
+
+  .bm-header-sub {
+    font-size: 14px;
+    color: ${THEME.muted};
+    margin-top: 4px;
+    font-weight: 500;
   }
-  .blog-preview-content ul ul ul,
-  .blog-render-content ul ul ul {
-    list-style-type: square !important;
+
+  .bm-btn-primary {
+    background: #6d28d9 !important;
+    border: none !important;
+    height: 44px !important;
+    padding: 0 24px !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    box-shadow: 0 4px 12px rgba(109, 40, 217, 0.2) !important;
+    transition: all 0.2s ease !important;
   }
-  .blog-preview-content p,
-  .blog-render-content p {
-    margin: 10px 0;
+  .bm-btn-primary:hover {
+    background: #5b21b6 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(109, 40, 217, 0.3) !important;
   }
-  .blog-preview-content h1,
-  .blog-render-content h1 {
-    font-size: 28px;
-    font-weight: 700;
-    margin: 24px 0 12px;
+
+  /* ─── STATS ─── */
+  .bm-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
   }
-  .blog-preview-content h2,
-  .blog-render-content h2 {
-    font-size: 22px;
-    font-weight: 700;
-    margin: 20px 0 10px;
+
+  .bm-stat-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: all 0.2s ease;
   }
-  .blog-preview-content h3,
-  .blog-render-content h3 {
+  .bm-stat-card:hover {
+    box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+  }
+  
+  .bm-stat-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .bm-stat-label { 
+    font-size: 14px; 
+    color: #64748b; 
+    font-weight: 600; 
+  }
+
+  .bm-stat-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
     font-size: 18px;
+  }
+  .bm-stat-icon.purple { background: #f5f3ff; color: #6d28d9; }
+  .bm-stat-icon.green { background: #ecfdf5; color: #10b981; }
+  .bm-stat-icon.amber { background: #fffbeb; color: #f59e0b; }
+  .bm-stat-icon.blue { background: #eff6ff; color: #3b82f6; }
+
+  .bm-stat-value {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1;
+    letter-spacing: -0.5px;
+  }
+
+  /* ─── FILTER BAR ─── */
+  .bm-filters {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    margin-bottom: 24px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .bm-filters .ant-input-affix-wrapper, .bm-filters .ant-select-selector {
+    border-radius: 10px !important;
+    border-color: #e2e8f0 !important;
+    height: 42px !important;
+    font-weight: 500;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  /* ─── BLOG CARD ─── */
+  .bm-blog-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    transition: all 0.25s ease;
+    display: flex;
+    min-height: 220px;
+  }
+  .bm-blog-card:hover {
+    box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+    transform: translateY(-2px);
+    border-color: #cbd5e1;
+  }
+
+  .bm-blog-thumb {
+    width: 260px;
+    min-width: 260px;
+    background: #f1f5f9;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .bm-blog-thumb img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+  .bm-blog-card:hover .bm-blog-thumb img { transform: scale(1.03); }
+
+  .bm-blog-body {
+    padding: 24px 28px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .bm-blog-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .bm-blog-badges { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  .bm-cat-tag {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    padding: 4px 10px !important;
+  }
+
+  .bm-status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+  .bm-status-badge.published { background: #ecfdf5; color: #10b981; }
+  .bm-status-badge.draft { background: #fffbeb; color: #f59e0b; }
+
+  .bm-blog-actions { display: flex; gap: 8px; }
+
+  .bm-action-btn {
+    width: 36px !important; height: 36px !important;
+    border-radius: 8px !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #fff !important;
+    color: #64748b !important;
+    font-size: 15px !important;
+    transition: all 0.2s !important;
+    cursor: pointer;
+    padding: 0 !important;
+  }
+  .bm-action-btn:hover { background: #f8fafc !important; border-color: #cbd5e1 !important; color: #0f172a !important; }
+  .bm-action-btn.danger:hover { background: #fef2f2 !important; border-color: #fca5a5 !important; color: #ef4444 !important; }
+
+  .bm-blog-title {
+    font-size: 20px;
     font-weight: 700;
-    margin: 16px 0 8px;
+    color: #0f172a;
+    margin-bottom: 8px;
+    line-height: 1.3;
+    letter-spacing: -0.3px;
   }
-  .blog-preview-content blockquote,
-  .blog-render-content blockquote {
-    border-left: 4px solid #7c3aed;
-    padding-left: 16px;
-    margin: 16px 0;
-    color: #555;
-    font-style: italic;
+
+  .bm-blog-excerpt {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
-  .blog-preview-content a,
-  .blog-render-content a {
-    color: #7c3aed;
-    text-decoration: underline;
+
+  .bm-blog-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .bm-tag {
+    font-size: 12px !important;
+    border-radius: 6px !important;
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #6d28d9 !important;
+    padding: 2px 8px !important;
+    font-weight: 500 !important;
   }
-  .blog-preview-content img,
-  .blog-render-content img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 8px;
-    margin: 12px 0;
+
+  .bm-blog-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+    flex-wrap: wrap;
+    gap: 12px;
   }
-  .blog-preview-content table,
-  .blog-render-content table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 16px 0;
+
+  .bm-meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #64748b; font-weight: 500; }
+  .bm-meta-item strong { color: #0f172a; font-weight: 600; }
+
+  /* ─── MODAL (CLEAN & SIMPLE UI) ─── */
+  .bm-modal .ant-modal-content {
+    border-radius: 16px !important;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1) !important;
   }
-  .blog-preview-content th,
-  .blog-render-content th,
-  .blog-preview-content td,
-  .blog-render-content td {
-    border: 1px solid #e0e0e0;
-    padding: 8px 12px;
-    text-align: left;
+  .bm-modal .ant-modal-header {
+    background: #ffffff !important;
+    padding: 24px 32px 20px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    margin-bottom: 0 !important;
   }
-  .blog-preview-content th,
-  .blog-render-content th {
-    background: #f5f5f5;
-    font-weight: 600;
+  .bm-modal .ant-modal-title { 
+    color: #0f172a !important; 
+    font-family: 'Plus Jakarta Sans', sans-serif !important; 
+    font-size: 18px !important; 
+    font-weight: 700 !important; 
+  }
+  .bm-modal .ant-modal-close-x { color: #64748b !important; font-size: 16px; }
+  .bm-modal .ant-modal-body { padding: 24px 32px !important; }
+
+  /* ─── FOOTER ACTIONS ─── */
+  .bm-footer-bar { display: flex; justify-content: space-between; align-items: center; padding: 20px 0 0; border-top: 1px solid #f1f5f9; margin-top: 12px; }
+  .bm-save-draft-btn { height: 44px !important; padding: 0 24px !important; border-radius: 10px !important; border-color: #cbd5e1 !important; color: #475569 !important; font-weight: 600 !important; background: #fff !important; font-size: 14px !important;}
+  .bm-publish-btn { height: 44px !important; padding: 0 28px !important; border-radius: 10px !important; background: #6d28d9 !important; border: none !important; font-weight: 600 !important; font-size: 14px !important; color: #fff !important; }
+
+  /* ─── PREVIEW MODAL ─── */
+  .preview-modal .ant-modal-content { border-radius: 16px !important; overflow: hidden; }
+  .preview-modal .ant-modal-header { background: #ffffff !important; border-bottom: 1px solid #f1f5f9 !important; margin-bottom: 0 !important; padding: 20px 32px !important; }
+  .preview-modal .ant-modal-title { color: #0f172a !important; font-weight: 700 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 18px !important;}
+  .preview-modal .ant-modal-body { padding: 0 !important; }
+
+  /* ─── BLOG PREVIEW CONTENT (NEWSPAPER STYLE ONLY HERE) ─── */
+  .blog-preview-wrap { font-family: 'DM Sans', sans-serif; color: #0f172a; background: #fff; }
+  .blog-preview-hero { width: 100%; height: 360px; object-fit: cover; display: block; border-bottom: 1px solid #e2e8f0; }
+  .blog-preview-inner { padding: 48px 56px; max-width: 860px; margin: 0 auto; }
+
+  .blog-preview-content ul { list-style-type: disc !important; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
+  .blog-preview-content ol { list-style-type: decimal !important; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
+  .blog-preview-content li { display: list-item !important; list-style-position: outside !important; margin: 0 0 0.6em 0 !important; line-height: 1.8; color: #334155; font-size: 17px; }
+
+  .blog-preview-content h1 { font-family: 'Playfair Display', serif; font-size: 2.4em; font-weight: 800; margin: 1.4em 0 0.5em !important; line-height: 1.2; color: #0f172a; display: block; letter-spacing: -0.5px; }
+  .blog-preview-content h2 { font-family: 'Playfair Display', serif; font-size: 1.8em; font-weight: 700; margin: 1.2em 0 0.4em !important; line-height: 1.3; color: #0f172a; display: block; letter-spacing: -0.5px; }
+  .blog-preview-content h3 { font-family: 'Playfair Display', serif; font-size: 1.4em; font-weight: 700; margin: 1em 0 0.3em !important; color: #334155; display: block; }
+  .blog-preview-content p { margin: 0 0 1.2em 0 !important; line-height: 1.85; font-size: 17px; color: #334155; display: block; }
+  .blog-preview-content blockquote { border-left: 4px solid #6d28d9; padding: 16px 24px; margin: 1.5em 0 !important; background: #f8fafc; border-radius: 0 8px 8px 0; font-style: italic; color: #475569; font-size: 18px; font-family: 'Playfair Display', serif; }
+  .blog-preview-content a { color: #6d28d9; text-decoration: underline; font-weight: 600; }
+  .blog-preview-content img { max-width: 100%; border-radius: 12px; margin: 1.5em 0 !important; }
+
+  /* ─── PAGINATION ─── */
+  .bm-pagination { display: flex; justify-content: space-between; align-items: center; padding: 24px 0; flex-wrap: wrap; gap: 12px; }
+  .bm-page-info { font-size: 14px; color: #64748b; font-weight: 500; }
+  .bm-page-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .bm-page-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #475569; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .bm-page-btn:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
+  .bm-page-btn.active { background: #6d28d9; border-color: #6d28d9; color: #fff; }
+  .bm-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ─── EMPTY STATE ─── */
+  .bm-empty { text-align: center; padding: 80px 20px; }
+  .bm-empty-icon { font-size: 48px; color: #cbd5e1; margin-bottom: 16px; }
+  .bm-empty-title { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+  .bm-empty-sub { font-size: 14px; color: #64748b; }
+
+  /* ════════════════════════════════════════════════
+     RESPONSIVE MEDIA QUERIES
+     ════════════════════════════════════════════════ */
+  @media (max-width: 992px) {
+    .bm-stats { grid-template-columns: repeat(2, 1fr); }
+    .bm-blog-card { flex-direction: column; }
+    .bm-blog-thumb { width: 100%; min-width: unset; height: 200px; }
+    .blog-preview-inner { padding: 32px 40px; }
+  }
+  @media (max-width: 768px) {
+    .bm-root { padding: 16px; }
+    .bm-header { flex-direction: column; align-items: flex-start; }
+    .bm-header-title { font-size: 24px !important; }
+    .bm-header > button { width: 100%; }
+    .bm-filters { flex-direction: column; align-items: stretch; }
+    .bm-filters > * { width: 100% !important; max-width: none !important; }
+    .bm-modal .ant-modal-body { padding: 20px !important; }
+    .bm-modal .ant-modal-header { padding: 20px !important; }
+    .blog-preview-inner { padding: 24px 20px; }
+    .blog-preview-content h1 { font-size: 2em; }
+    .blog-preview-hero { height: 240px; }
+    .bm-footer-bar { flex-direction: column; align-items: stretch; gap: 16px; }
+    .bm-footer-bar .ant-space { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+    .bm-footer-bar .ant-space:last-child { display: flex; flex-direction: column; }
+    .bm-save-draft-btn, .bm-publish-btn { width: 100%; }
+  }
+  @media (max-width: 480px) {
+    .bm-stats { grid-template-columns: 1fr; }
+    .bm-blog-footer { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .bm-pagination { flex-direction: column; justify-content: center; gap: 16px; }
+    .bm-page-btns { justify-content: center; }
   }
 `;
 
 // ─────────────────────────────────────────────
-//  PASTE CLEANER & SMART AUTO-FILL
+//  PASTE CLEANING UTILITIES
 // ─────────────────────────────────────────────
-const cleanWordHtml = (html) => {
+const cleanWordHtml = (html) => { 
   if (!html) return '';
-  let c = html;
-  c = c.replace(/.*?<!\[endif\]-->/gs, '');
-  c = c.replace(/<o:p>.*?<\/o:p>/gs, '');
-  c = c.replace(/<style[^>]*>.*?<\/style>/gs, '');
-  c = c.replace(/<meta[^>]*>/gs, '');
-  c = c.replace(/<\?xml[^?]*\?>/gs, '');
-  c = c.replace(/mso-[^;:"']+;?/g, '');
-  return c;
+  let cleaned = html;
+  cleaned = cleaned.replace(/lang="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/class="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/<\/?span[^>]*>/gi, '');
+  cleaned = cleaned.replace(/(&nbsp;|\s){2,}/gi, ' ');
+
+  const pListPattern = /<p[^>]*>\s*([·●•▪o\-]|\&#183;)\s*([\s\S]*?)<\/p>/gi;
+  cleaned = cleaned.replace(pListPattern, '<li>$2</li>');
+
+  const liListPattern = /<li[^>]*>\s*([·●•▪o\-]|\&#183;)\s*([\s\S]*?)<\/li>/gi;
+  cleaned = cleaned.replace(liListPattern, '<li>$2</li>');
+
+  cleaned = cleaned.replace(/(<li>[\s\S]*?<\/li>\s*)+/gi, (match) => `<ul>\n${match}\n</ul>`);
+  cleaned = cleaned.replace(/<ul>\s*<ul>/gi, '<ul>');
+  cleaned = cleaned.replace(/<\/ul>\s*<\/ul>/gi, '</ul>');
+  cleaned = cleaned.replace(/<ol>\s*<ul>/gi, '<ol>');
+  cleaned = cleaned.replace(/<\/ul>\s*<\/ol>/gi, '</ol>');
+  cleaned = cleaned.replace(/<b([^>]*)>/gi, '<strong$1>');
+  cleaned = cleaned.replace(/<\/b>/gi, '</strong>');
+
+  return cleaned.trim();
 };
 
-const CATEGORY_KEYWORDS = {
-  'AI': ['artificial intelligence', 'machine learning', 'deep learning', 'neural network', 'chatgpt', 'llm', 'ai ', ' ai,', 'automation', 'nlp', 'generative'],
-  'Real Estate': ['property', 'real estate', 'housing', 'apartment', 'villa', 'rent', 'lease', 'mortgage', 'broker', 'land', 'plot', 'realty'],
-  'PropTech': ['proptech', 'property technology', 'smart home', 'iot', 'digital property', 'virtual tour', 'property app'],
-  'Technology': ['software', 'programming', 'javascript', 'react', 'node', 'cloud', 'saas', 'startup', 'tech', 'developer', 'api', 'database'],
-  'Business': ['business', 'startup', 'entrepreneur', 'investment', 'revenue', 'marketing', 'sales', 'strategy', 'growth'],
-    'Mortgage': ['mortgage', 'home loan', 'refinance', 'interest rate', 'lender', 'pre-approval', 'mortgage broker'],
-   'Landscaping': ['landscaping', 'garden design', 'outdoor space', 'hardscape', 'softscape', 'lawn care', 'irrigation'],
-  };
+const sanitizePastedHtml = (html) => {
+  if (!html) return '';
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  ['script', 'iframe', 'object', 'embed', 'applet', 'link', 'meta'].forEach(sel => {
+    tempDiv.querySelectorAll(sel).forEach(el => el.remove());
+  });
+  return tempDiv.innerHTML;
+};
 
-const COMMON_TAGS = [
-  'AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Mortgage', 'Landscaping', 'Marketing',
-  'UAE', 'Dubai', 'Sustainability', 'Innovation', 'Digital', 'Cloud',
-  'Investment', 'Architecture', 'Design', 'Smart Home', 'Automation'
-];
+const cleanPastedContent = (html) => {
+  if (!html) return '';
+  let c = cleanWordHtml(html);
+  c = sanitizePastedHtml(c);
+  c = c.replace(/\s*class="[^"]*"/gi, '');
+  return c.trim();
+};
 
-const smartExtract = (html) => {
-  if (!html) return {};
-  const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
-  let detectedCategory = 'Other';
-  let maxMatches = 0;
-  for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    const matches = keywords.filter(kw => text.includes(kw)).length;
-    if (matches > maxMatches) { maxMatches = matches; detectedCategory = cat; }
-  }
-  const detectedTags = COMMON_TAGS.filter(tag => text.includes(tag.toLowerCase())).slice(0, 6);
-  const headings = [];
-  const headingRegex = /<h([1-6])[^>]*>(.*?)<\/h\1>/gi;
-  let match;
-  while ((match = headingRegex.exec(html)) !== null) {
-    headings.push({ level: parseInt(match[1]), text: match[2].replace(/<[^>]*>/g, '').trim() });
-  }
-  const paraMatch = html.match(/<p[^>]*>(.*?)<\/p>/i);
-  let excerpt = '';
-  if (paraMatch) excerpt = paraMatch[1].replace(/<[^>]*>/g, '').trim().substring(0, 160);
-  const links = [];
-  const linkRegex = /<a[^>]+href="([^"]+)"[^>]*>(.*?)<\/a>/gi;
-  while ((match = linkRegex.exec(html)) !== null) {
-    links.push({ href: match[1], text: match[2].replace(/<[^>]*>/g, '').trim() });
-  }
-  const wordCount = text.split(/\s+/).length;
-  const readingTime = Math.ceil(wordCount / 200);
-  return { detectedCategory, detectedTags, headings, excerpt, links, wordCount, readingTime };
+const htmlToPlainText = (html) => {
+  if (!html) return '';
+  const d = document.createElement('div');
+  d.innerHTML = html;
+  return d.textContent || d.innerText || '';
 };
 
 const extractHeadings = (html) => {
   if (!html) return [];
   const headings = [];
-  const headingRegex = /<h([1-6])[^>]*>(.*?)<\/h\1>/gi;
-  let match;
-  while ((match = headingRegex.exec(html)) !== null) {
-    headings.push({ level: parseInt(match[1]), text: match[2].replace(/<[^>]*>/g, '').trim(), id: `heading-${headings.length}` });
+  const re = /<h([1-6])[^>]*>(.*?)<\/h\1>/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    headings.push({ level: parseInt(m[1]), text: m[2].replace(/<[^>]*>/g, '').trim(), id: `h-${headings.length}` });
   }
   return headings;
 };
 
 const extractExcerpt = (html, maxLength = 160) => {
   if (!html) return '';
-  const text = html.replace(/<[^>]*>/g, '');
-  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  const text = htmlToPlainText(html);
+  return text.length <= maxLength ? text : text.substring(0, maxLength).trim() + '...';
+};
+
+const smartExtract = (html) => {
+  if (!html) return {};
+  const text = htmlToPlainText(html).toLowerCase();
+  const CATS = {
+    'AI': ['artificial intelligence', 'machine learning', 'deep learning', 'chatgpt', 'llm', 'ai ', 'openai'],
+    'Real Estate': ['property', 'real estate', 'housing', 'apartment', 'villa', 'rent', 'mortgage', 'broker'],
+    'PropTech': ['proptech', 'property technology', 'smart home', 'iot', 'digital property'],
+    'Technology': ['software', 'programming', 'javascript', 'react', 'cloud', 'saas', 'startup', 'api'],
+    'Business': ['business', 'startup', 'entrepreneur', 'investment', 'revenue', 'marketing', 'sales'],
+    'Mortgage': ['mortgage', 'home loan', 'refinance', 'interest rate', 'lender'],
+    'Landscaping': ['landscaping', 'garden', 'outdoor', 'hardscape', 'lawn', 'irrigation'],
+  };
+  let detectedCategory = 'Other', maxMatches = 0;
+  for (const [cat, kws] of Object.entries(CATS)) {
+    const matches = kws.filter(kw => text.includes(kw)).length;
+    if (matches > maxMatches) { maxMatches = matches; detectedCategory = cat; }
+  }
+  const TAGS = ['AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Mortgage', 'Landscaping', 'Marketing', 'UAE', 'Dubai', 'Innovation', 'Digital', 'Cloud', 'Investment'];
+  const detectedTags = TAGS.filter(t => text.includes(t.toLowerCase())).slice(0, 6);
+  let excerpt = '';
+  const pm = html.match(/<p[^>]*>(.*?)<\/p>/i);
+  if (pm) excerpt = htmlToPlainText(pm[1]).trim().substring(0, 160);
+  else if (text) excerpt = text.substring(0, 160);
+  const wordCount = text.split(/\s+/).length;
+  return { detectedCategory, detectedTags, excerpt, wordCount, readingTime: Math.max(1, Math.ceil(wordCount / 200)) };
 };
 
 // ─────────────────────────────────────────────
 //  CROP HELPER
 // ─────────────────────────────────────────────
-const getCroppedImg = (imageSrc, pixelCrop) => {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.crossOrigin = 'anonymous';
-    image.src = imageSrc;
-    image.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = pixelCrop.width;
-      canvas.height = pixelCrop.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(
-        image,
-        pixelCrop.x, pixelCrop.y,
-        pixelCrop.width, pixelCrop.height,
-        0, 0,
-        pixelCrop.width, pixelCrop.height
-      );
-      canvas.toBlob(blob => {
-        if (!blob) return reject(new Error('Canvas is empty'));
-        resolve(blob);
-      }, 'image/jpeg', 0.92);
-    };
-    image.onerror = reject;
-  });
-};
+const getCroppedImg = (imageSrc, pixelCrop) => new Promise((resolve, reject) => {
+  const image = new Image();
+  image.crossOrigin = 'anonymous';
+  image.src = imageSrc;
+  image.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Canvas empty')), 'image/jpeg', 0.92);
+  };
+  image.onerror = reject;
+});
 
 // ─────────────────────────────────────────────
-//  IMAGE CROP MODAL COMPONENT
+//  IMAGE CROP MODAL
 // ─────────────────────────────────────────────
 const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [cropping, setCropping] = useState(false);
+  const screens = Grid.useBreakpoint();
 
   useEffect(() => {
-    if (open) {
-      setCrop({ x: 0, y: 0 });
-      setZoom(1);
-      setCroppedAreaPixels(null);
-    }
+    if (open) { setCrop({ x: 0, y: 0 }); setZoom(1); setCroppedAreaPixels(null); }
   }, [open, imageSrc]);
 
   const handleConfirm = async () => {
@@ -256,103 +556,62 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
     try {
       const blob = await getCroppedImg(imageSrc, croppedAreaPixels);
       onConfirm(blob);
-    } catch (e) {
-      message.error('Crop failed, please try again');
-    } finally {
-      setCropping(false);
-    }
+    } catch { message.error('Crop failed, please try again'); }
+    finally { setCropping(false); }
   };
 
   return (
     <Modal
       open={open}
-      title={
-        <Space>
-          <ScissorOutlined style={{ color: THEME.primary }} />
-          <span>{title || 'Crop Image'}</span>
-        </Space>
-      }
+      title={<Space><ScissorOutlined style={{ color: '#6d28d9' }} /><span style={{ color: '#0f172a' }}>{title || 'Crop Image'}</span></Space>}
       onCancel={onCancel}
-      width={620}
+      width={screens.xs ? '98%' : 620}
       centered
       destroyOnClose
+      className="bm-modal"
       footer={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
           <Space>
             <ZoomInOutlined style={{ color: '#888' }} />
-            <Slider
-              min={1}
-              max={3}
-              step={0.05}
-              value={zoom}
-              onChange={setZoom}
-              style={{ width: 160 }}
-              tooltip={{ formatter: v => `${Math.round(v * 100)}%` }}
-            />
-            <Text type="secondary" style={{ fontSize: 12 }}>{Math.round(zoom * 100)}%</Text>
+            <Slider min={1} max={3} step={0.05} value={zoom} onChange={setZoom} style={{ width: screens.xs ? 100 : 160 }} tooltip={{ formatter: v => `${Math.round(v * 100)}%` }} />
+            <Text type="secondary" style={{ fontSize: 13, fontWeight: 600 }}>{Math.round(zoom * 100)}%</Text>
           </Space>
           <Space>
-            <Button onClick={onCancel}>Cancel</Button>
-            <Button
-              type="primary"
-              icon={<ScissorOutlined />}
-              loading={cropping}
-              onClick={handleConfirm}
-              style={{ background: THEME.primary, borderColor: THEME.primary }}
-            >
+            <Button onClick={onCancel} style={{ fontWeight: 600, borderRadius: 8 }}>Cancel</Button>
+            <Button type="primary" icon={<ScissorOutlined />} loading={cropping} onClick={handleConfirm} style={{ background: THEME.primary, borderColor: THEME.primary, borderRadius: 8, fontWeight: 600 }}>
               Apply Crop
             </Button>
           </Space>
         </div>
       }
     >
-      <div style={{ position: 'relative', width: '100%', height: 380, background: '#1a1a2e', borderRadius: 10, overflow: 'hidden' }}>
-        {imageSrc ? (
-          <Cropper
-            image={imageSrc}
-            crop={crop}
-            zoom={zoom}
-            aspect={aspect}
-            onCropChange={setCrop}
-            onZoomChange={setZoom}
-            onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)}
-            style={{
-              containerStyle: { borderRadius: 10 },
-              cropAreaStyle: { border: '2px solid #7c3aed', boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)' },
-            }}
-          />
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <Text type="secondary">Loading image...</Text>
-          </div>
-        )}
+      <div style={{ position: 'relative', width: '100%', height: screens.xs ? 280 : 380, background: '#f8fafc', borderRadius: 12, overflow: 'hidden' }}>
+        {imageSrc
+          ? <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={aspect} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_, px) => setCroppedAreaPixels(px)} style={{ containerStyle: { borderRadius: 12 }, cropAreaStyle: { border: '2px solid #8b5cf6', boxShadow: '0 0 0 9999px rgba(0,0,0,0.65)' } }} />
+          : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><Text type="secondary">Loading image...</Text></div>
+        }
       </div>
-      <div style={{ marginTop: 10, textAlign: 'center' }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          Drag to reposition · Scroll or use slider to zoom
-        </Text>
+      <div style={{ marginTop: 12, textAlign: 'center' }}>
+        <Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>Drag to reposition · Scroll or slider to zoom</Text>
       </div>
     </Modal>
   );
 };
 
 // ─────────────────────────────────────────────
-//  UPLOAD WITH CROP — REUSABLE COMPONENT
+//  UPLOAD WITH CROP
 // ─────────────────────────────────────────────
 const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, label, extra, maxCount = 1 }) => {
   const [cropModal, setCropModal] = useState({ open: false, src: '' });
   const [pendingFile, setPendingFile] = useState(null);
 
   const handleBeforeUpload = (file) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type);
-    if (!allowed) { message.error('Only JPG, PNG, WEBP allowed'); return Upload.LIST_IGNORE; }
+    if (!['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type)) {
+      message.error('Only JPG, PNG, WEBP allowed'); return Upload.LIST_IGNORE;
+    }
     if (file.size / 1024 / 1024 > maxSizeMB) { message.error(`Max ${maxSizeMB}MB`); return Upload.LIST_IGNORE; }
-
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setPendingFile(file);
-      setCropModal({ open: true, src: e.target.result });
-    };
+    reader.onload = (e) => { setPendingFile(file); setCropModal({ open: true, src: e.target.result }); };
     reader.readAsDataURL(file);
     return Upload.LIST_IGNORE;
   };
@@ -361,18 +620,9 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
     const fileName = pendingFile?.name || 'image.jpg';
     const croppedFile = new File([blob], fileName, { type: 'image/jpeg' });
     const preview = URL.createObjectURL(blob);
-    const newFileObj = {
-      uid: `crop-${Date.now()}`,
-      name: fileName,
-      status: 'done',
-      originFileObj: croppedFile,
-      preview,
-      url: preview,
-    };
-    onChange([newFileObj]);
-    setCropModal({ open: false, src: '' });
-    setPendingFile(null);
-    message.success('Image cropped successfully!');
+    onChange([{ uid: `crop-${Date.now()}`, name: fileName, status: 'done', originFileObj: croppedFile, preview, url: preview }]);
+    setCropModal({ open: false, src: '' }); setPendingFile(null);
+    message.success('Image cropped!');
   };
 
   const handleEditCrop = (file) => {
@@ -384,27 +634,13 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
 
   const handlePreview = async (file) => {
     if (!file.url && !file.preview && file.originFileObj) {
-      file.preview = await new Promise((res) => {
-        const r = new FileReader();
-        r.readAsDataURL(file.originFileObj);
-        r.onload = () => res(r.result);
-      });
+      file.preview = await new Promise(res => { const r = new FileReader(); r.readAsDataURL(file.originFileObj); r.onload = () => res(r.result); });
     }
     const imageUrl = file.url || file.preview;
     Modal.confirm({
-      icon: null,
-      width: 600,
-      centered: true,
-      okButtonProps: { style: { display: 'none' } },
-      cancelButtonProps: { style: { display: 'none' } },
-      content: (
-        <div>
-          <img src={imageUrl} alt="preview" style={{ width: '100%' }} />
-          <div style={{ textAlign: 'center', marginTop: 16 }}>
-            <Button onClick={() => Modal.destroyAll()}>Close</Button>
-          </div>
-        </div>
-      ),
+      icon: null, width: 600, centered: true,
+      okButtonProps: { style: { display: 'none' } }, cancelButtonProps: { style: { display: 'none' } },
+      content: <div><img src={imageUrl} alt="preview" style={{ width: '100%', borderRadius: 12 }} /><div style={{ textAlign: 'center', marginTop: 16 }}><Button onClick={() => Modal.destroyAll()} style={{fontWeight: 600}}>Close</Button></div></div>,
       onCancel: () => Modal.destroyAll(),
     });
   };
@@ -415,27 +651,9 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
       <Tooltip title="Crop / Edit">
         <button
           onClick={(e) => { e.stopPropagation(); handleEditCrop(file); }}
-          style={{
-            position: 'absolute',
-            bottom: 4,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(124,58,237,0.92)',
-            border: 'none',
-            borderRadius: 6,
-            color: '#fff',
-            fontSize: 11,
-            fontWeight: 600,
-            padding: '2px 10px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            whiteSpace: 'nowrap',
-            zIndex: 10,
-          }}
+          style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', background: '#0f172a', border: 'none', borderRadius: 6, color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', zIndex: 10 }}
         >
-          <ScissorOutlined style={{ fontSize: 10 }} /> Edit
+          <ScissorOutlined style={{ fontSize: 10 }} /> EDIT
         </button>
       </Tooltip>
     </div>
@@ -443,63 +661,19 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
 
   return (
     <>
-      <Form.Item label={label} extra={extra}>
-        <Upload
-          listType="picture-card"
-          fileList={fileList}
-          onPreview={handlePreview}
-          onChange={({ fileList: fl }) => {
-            if (fl.length < fileList.length) onChange(fl);
-          }}
-          beforeUpload={handleBeforeUpload}
-          maxCount={maxCount}
-          itemRender={itemRender}
-          accept="image/jpeg,image/png,image/webp"
-        >
+      <Form.Item label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>{label}</span>} extra={<span style={{ fontSize: 12, color: '#64748b' }}>{extra}</span>}>
+        <Upload className="bm-upload" listType="picture-card" fileList={fileList} onPreview={handlePreview} onChange={({ fileList: fl }) => { if (fl.length < fileList.length) onChange(fl); }} beforeUpload={handleBeforeUpload} maxCount={maxCount} itemRender={itemRender} accept="image/jpeg,image/png,image/webp">
           {fileList.length < maxCount && (
-            <div>
-              <PlusOutlined />
-              <div style={{ marginTop: 8, fontSize: 12 }}>Upload</div>
+            <div style={{ textAlign: 'center' }}>
+              <PlusOutlined style={{ color: '#64748b', fontSize: 20 }} />
+              <div style={{ marginTop: 8, fontSize: 12, color: '#475569', fontWeight: 600 }}>UPLOAD</div>
             </div>
           )}
         </Upload>
       </Form.Item>
-
-      <ImageCropModal
-        open={cropModal.open}
-        imageSrc={cropModal.src}
-        aspect={aspect}
-        title={cropTitle}
-        onConfirm={handleCropConfirm}
-        onCancel={() => { setCropModal({ open: false, src: '' }); setPendingFile(null); }}
-      />
+      <ImageCropModal open={cropModal.open} imageSrc={cropModal.src} aspect={aspect} title={cropTitle} onConfirm={handleCropConfirm} onCancel={() => { setCropModal({ open: false, src: '' }); setPendingFile(null); }} />
     </>
   );
-};
-
-// ─────────────────────────────────────────────
-//  JODIT CONFIG — with bullet/list style support
-// ─────────────────────────────────────────────
-const editorConfig = {
-  readonly: false,
-  placeholder: 'Write here, or paste from Word/PDF. Formatting will be preserved automatically...',
-  height: 400,
-  enableDragAndDropFileToEditor: true,
-  uploader: { insertImageAsBase64URI: true },
-  toolbarSticky: false,
-  askBeforePasteHTML: false,
-  askBeforePasteFromWord: false,
-  defaultActionOnPaste: 'insert_as_html',
-  // ✅ FIX: Inject CSS inside the Jodit iframe so bullets show correctly while editing
-  editorCssClass: 'jodit-blog-editor',
-  extraCSS: `
-    ul { list-style-type: disc !important; padding-left: 24px !important; margin: 8px 0 !important; }
-    ol { list-style-type: decimal !important; padding-left: 24px !important; margin: 8px 0 !important; }
-    li { display: list-item !important; margin: 4px 0 !important; }
-    ul ul { list-style-type: circle !important; }
-    ul ul ul { list-style-type: square !important; }
-    blockquote { border-left: 4px solid #7c3aed; padding-left: 16px; margin: 16px 0; color: #555; font-style: italic; }
-  `,
 };
 
 // ─────────────────────────────────────────────
@@ -507,156 +681,277 @@ const editorConfig = {
 // ─────────────────────────────────────────────
 const BlogPreview = ({ data }) => {
   if (!data) return null;
-  const { title, subHeading, content, authorName, authorImage, tags, category,
-    featuredImage, coverImage, createdAt, readingTime, headings } = data;
+  const { title, subHeading, content, authorName, authorDesignation, authorImage, tags, category, featuredImage, coverImage, createdAt, readingTime, headings } = data;
+
+  const sanitized = content ? DOMPurify.sanitize(content, {
+    ALLOWED_TAGS: ['p','br','strong','b','em','i','u','strike','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th','div','span'],
+    ALLOWED_ATTR: ['href','src','alt','title','target','rel', 'style'],
+    ALLOW_DATA_ATTR: false
+  }) : '';
+
+  const heroImg = coverImage || featuredImage;
 
   return (
-    <div style={{ fontFamily: "'Georgia', serif", color: '#1a1a2e', background: '#fff' }}>
-      {/* ✅ FIX: Inject styles so ul/ol/li render correctly in preview — Tailwind resets these */}
-      <style>{BLOG_CONTENT_STYLES}</style>
-
-      {coverImage && (
-        <div style={{ width: '100%', height: 280, overflow: 'hidden', borderRadius: 12, marginBottom: 28, background: '#f0f0f0' }}>
-          <img src={coverImage} alt="cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    <div className="blog-preview-wrap">
+      {heroImg && <img src={heroImg} alt="cover" className="blog-preview-hero" />}
+      <div className="blog-preview-inner">
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+          {category && <span className="bm-cat-tag" style={{ background: '#f1f5f9', color: '#475569', padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 700, border: '1px solid #e2e8f0' }}>{category}</span>}
+          {tags?.slice(0, 5).map(t => <span key={t} className="bm-tag" style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', fontWeight: 600 }}>#{t}</span>)}
         </div>
-      )}
-      <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-        {category && <Tag color="purple" style={{ fontSize: 12, padding: '2px 10px', borderRadius: 20 }}>{category}</Tag>}
-        {tags?.map(tag => <Tag key={tag} color="blue" style={{ fontSize: 11, borderRadius: 20 }}>#{tag}</Tag>)}
-      </div>
-      <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.25, color: '#0f0f23', marginBottom: 12, fontFamily: "'Georgia', serif" }}>
-        {title || 'Untitled Post'}
-      </h1>
-      {subHeading && (
-        <p style={{ fontSize: 18, color: '#555', lineHeight: 1.6, marginBottom: 20, fontStyle: 'italic', borderLeft: '4px solid #7c3aed', paddingLeft: 16 }}>
-          {subHeading}
-        </p>
-      )}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0', borderTop: '1px solid #eee', borderBottom: '1px solid #eee', marginBottom: 24 }}>
-        <Avatar size={42} src={authorImage} icon={<UserOutlined />} style={{ backgroundColor: '#7c3aed' }} />
-        <div>
-          <div style={{ fontWeight: 600, fontSize: 14 }}>{authorName || 'Admin'}</div>
-          <div style={{ fontSize: 12, color: '#888', display: 'flex', gap: 16 }}>
-            {createdAt && <span><CalendarOutlined /> {moment(createdAt).format('MMM DD, YYYY')}</span>}
-            {readingTime && <span><ClockCircleOutlined /> {readingTime} min read</span>}
+
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 44, fontWeight: 800, lineHeight: 1.15, color: '#0f172a', marginBottom: 16, marginTop: 0, letterSpacing: '-0.5px' }}>
+          {title || 'Untitled Post'}
+        </h1>
+
+        {subHeading && (
+          <p style={{ fontSize: 18, color: '#475569', lineHeight: 1.6, marginBottom: 28, fontStyle: 'italic', borderLeft: '4px solid #6d28d9', paddingLeft: 20, background: '#f8fafc', borderRadius: '0 8px 8px 0', padding: '16px 24px' }}>
+            {subHeading}
+          </p>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '20px 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', marginBottom: 36 }}>
+          <Avatar size={54} src={authorImage} icon={<UserOutlined />} style={{ background: '#f1f5f9', color: '#64748b', flexShrink: 0 }} />
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>{authorName || 'Admin'}</div>
+            {authorDesignation && <div style={{ fontSize: 13, color: '#6d28d9', marginTop: 2, fontWeight: 600 }}>{authorDesignation}</div>}
+            <div style={{ fontSize: 13, color: '#64748b', display: 'flex', gap: 16, marginTop: 4 }}>
+              {createdAt && <span><CalendarOutlined style={{ marginRight: 6 }} />{moment(createdAt).format('MMM DD, YYYY')}</span>}
+              {readingTime && <span><ClockCircleOutlined style={{ marginRight: 6 }} />{readingTime} min read</span>}
+            </div>
           </div>
         </div>
-      </div>
-      {!coverImage && featuredImage && (
-        <div style={{ marginBottom: 24, borderRadius: 10, overflow: 'hidden' }}>
-          <img src={featuredImage} alt="featured" style={{ width: '100%', maxHeight: 400, objectFit: 'cover' }} />
-        </div>
-      )}
-      {headings && headings.length > 2 && (
-        <div style={{ background: '#f8f4ff', border: '1px solid #e0d0ff', borderRadius: 10, padding: '16px 20px', marginBottom: 28 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#7c3aed', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <BookOutlined /> Table of Contents
-          </div>
-          <ol style={{ margin: 0, paddingLeft: 20, listStyleType: 'decimal' }}>
-            {headings.filter(h => h.level <= 3).map((h, i) => (
-              <li key={i} style={{ marginLeft: `${(h.level - 1) * 16}px`, fontSize: 13, padding: '3px 0', color: '#5b21b6', display: 'list-item' }}>{h.text}</li>
-            ))}
-          </ol>
-        </div>
-      )}
 
-      {/* ✅ FIX: class="blog-preview-content" — CSS above targets this class */}
-      <div
-        className="blog-preview-content"
-        style={{ lineHeight: 1.85, fontSize: 16, color: '#1f1f1f' }}
-        dangerouslySetInnerHTML={{
-          __html: DOMPurify.sanitize(content || '', {
-            ADD_TAGS: ['iframe'],
-            ADD_ATTR: ['allow', 'allowfullscreen', 'target'],
-          }),
-        }}
-      />
+        {headings && headings.filter(h => h.level <= 3).length > 2 && (
+          <div className="bm-toc">
+            <div className="bm-toc-title"><BookOutlined style={{fontSize: 16}} /> Table of Contents</div>
+            <ol>
+              {headings.filter(h => h.level <= 3).map((h, i) => (
+                <li key={i} style={{ paddingLeft: (h.level - 1) * 16, listStyle: 'decimal' }}>{h.text}</li>
+              ))}
+            </ol>
+          </div>
+        )}
+
+        <div className="blog-preview-content" dangerouslySetInnerHTML={{ __html: sanitized }} />
+      </div>
     </div>
   );
 };
+
+// ─────────────────────────────────────────────
+//  EDITOR CONFIG
+// ─────────────────────────────────────────────
+const getEditorConfig = () => ({
+  readonly: false,
+  placeholder: 'Write your blog here, or paste from Word/PDF/Google Docs...',
+  height: 480,
+  enableDragAndDropFileToEditor: true,
+  uploader: { insertImageAsBase64URI: true, imagesExtensions: ['jpg', 'png', 'jpeg', 'gif', 'svg', 'webp'] },
+  toolbarSticky: false,
+
+  askBeforePasteHTML: false,
+  askBeforePasteFromWord: false,
+  defaultActionOnPaste: 'insert_as_html',
+  processPasteHTML: false,
+
+  removeButtons: ['file', 'video', 'print', 'about'],
+  spellcheck: true,
+  editorCssClass: 'jodit-clean-editor',
+
+  iframeStyle: `
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+    body {
+      font-family: 'DM Sans', sans-serif;
+      line-height: 1.7;
+      font-size: 16px;
+      color: #1e293b;
+      padding: 16px 20px;
+      margin: 0;
+    }
+    ul { list-style-type: disc !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
+    ol { list-style-type: decimal !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
+    li { display: list-item !important; list-style-position: outside !important; margin: 0.4em 0 !important; line-height: 1.8; }
+    ul ul { list-style-type: circle !important; }
+    ul ul ul { list-style-type: square !important; }
+    ol ol { list-style-type: lower-alpha !important; }
+    p { margin: 0.8em 0; }
+    h1 { font-family: 'Playfair Display', serif; font-size: 2.2em; font-weight: 800; margin: 1.2em 0 0.5em; color: #0f172a; }
+    h2 { font-family: 'Playfair Display', serif; font-size: 1.8em; font-weight: 700; margin: 1.1em 0 0.4em; color: #0f172a; }
+    h3 { font-family: 'Playfair Display', serif; font-size: 1.4em; font-weight: 600; margin: 1em 0 0.35em; color: #334155; }
+    blockquote { border-left: 4px solid #6d28d9; padding: 12px 20px; margin: 1.2em 0; color: #475569; font-style: italic; background: #f8fafc; border-radius: 0 8px 8px 0; font-family: 'Playfair Display', serif; }
+    img { max-width: 100%; border-radius: 8px; margin: 1em 0; }
+    strong, b { font-weight: 600; color: #0f172a; }
+    em, i { font-style: italic; }
+    a { color: #6d28d9; text-decoration: underline; font-weight: 500;}
+    pre, code { background: #f1f5f9; border-radius: 8px; padding: 2px 6px; font-family: monospace; color: #0f172a;}
+    pre { padding: 16px 20px; overflow-x: auto; }
+  `,
+
+  extraCSS: `
+    .jodit-clean-editor { font-family: 'DM Sans', sans-serif; line-height: 1.7; font-size: 16px; color: #1e293b; }
+    .jodit-clean-editor ul { list-style-type: disc !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
+    .jodit-clean-editor ol { list-style-type: decimal !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
+    .jodit-clean-editor li { display: list-item !important; list-style-position: outside !important; margin: 0.5em 0 !important; }
+    .jodit-clean-editor p { margin: 0.8em 0; }
+    .jodit-clean-editor h1, .jodit-clean-editor h2, .jodit-clean-editor h3 { font-family: 'Playfair Display', serif; margin: 1.2em 0 0.5em; font-weight: 700; }
+    .jodit-clean-editor blockquote { border-left: 4px solid #6d28d9; padding: 12px 20px; margin: 1.2em 0; color: #475569; font-style: italic; background: #f8fafc; border-radius: 0 8px 8px 0; font-family: 'Playfair Display', serif; }
+    .jodit-clean-editor img { max-width: 100%; border-radius: 8px; }
+  `
+});
 
 // ─────────────────────────────────────────────
 //  MAIN COMPONENT
 // ─────────────────────────────────────────────
 const BlogManagement = () => {
   const screens = useBreakpoint();
-  const quillRef = useRef(null);
+  const editorRef = useRef(null);
   const searchTimeout = useRef(null);
 
+  // ─── State ───
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [targetStatus, setTargetStatus] = useState('draft');
-
-  const [pagination, setPagination] = useState({
-    currentPage: 1, totalPages: 1, totalResults: 0, itemsPerPage: 10,
-  });
-
+  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalResults: 0, itemsPerPage: 10 });
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
-
   const [modalVisible, setModalVisible] = useState(false);
   const [previewModalVisible, setPreviewModalVisible] = useState(false);
   const [previewBlogData, setPreviewBlogData] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [form] = Form.useForm();
+
   const [contentValue, setContentValue] = useState('');
+  const contentRef = useRef('');
+
   const [autoSave, setAutoSave] = useState(true);
   const [lastSaved, setLastSaved] = useState(null);
   const [headings, setHeadings] = useState([]);
   const [smartFillApplied, setSmartFillApplied] = useState(false);
-
+  const [pasteProcessing, setPasteProcessing] = useState(false);
   const [featuredImageList, setFeaturedImageList] = useState([]);
   const [coverImageList, setCoverImageList] = useState([]);
   const [authorImageList, setAuthorImageList] = useState([]);
-
   const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, views: 0 });
 
-  const handleSmartPaste = useCallback((event) => {
-    const clipboardData = event.clipboardData;
-    const pastedHtml = clipboardData.getData('text/html');
-    const pastedText = clipboardData.getData('text/plain');
-    const finalHtml = pastedHtml || pastedText;
-    if (finalHtml) {
-      const extracted = smartExtract(cleanWordHtml(finalHtml));
-      const currentValues = form.getFieldsValue();
+  const handlePaste = useCallback(async (event) => {
+    const cd = event.clipboardData;
+    if (!cd) return;
+
+    const pastedHtml = cd.getData('text/html');
+    const pastedText = cd.getData('text/plain');
+
+    const isWordOrExternal = pastedHtml && (
+      pastedHtml.includes('urn:schemas-microsoft-com') ||
+      pastedHtml.includes('mso-') ||
+      pastedHtml.includes('google-docs') ||
+      pastedHtml.includes('docs.google') ||
+      pastedHtml.includes('xmlns:') ||
+      pastedHtml.length > pastedText.length * 3
+    );
+
+    if (!isWordOrExternal) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    setPasteProcessing(true);
+
+    try {
+      let cleanHtml = '';
+
+      if (pastedHtml) {
+        cleanHtml = cleanPastedContent(pastedHtml);
+        notification.info({ message: '✨ Content Cleaned', description: 'Word/Docs formatting removed automatically.', duration: 2, placement: 'topRight' });
+      } else if (pastedText) {
+        cleanHtml = pastedText.split(/\n\n+/).map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+      }
+
+      if (cleanHtml && editorRef.current) {
+        const joditInstance = editorRef.current.jodit || editorRef.current;
+        if (joditInstance && joditInstance.s) {
+          joditInstance.s.insertHTML(cleanHtml);
+          const newContent = joditInstance.value;
+          contentRef.current = newContent;
+          setContentValue(newContent);
+          setHeadings(extractHeadings(newContent));
+        } else {
+          const newContent = contentRef.current + cleanHtml;
+          contentRef.current = newContent;
+          setContentValue(newContent);
+          setHeadings(extractHeadings(newContent));
+        }
+      }
+
+      const extracted = smartExtract(cleanHtml);
+      const cur = form.getFieldsValue();
       const updates = {};
-      if (!currentValues.subHeading && extracted.excerpt) updates.subHeading = extracted.excerpt;
-      if ((!currentValues.category || currentValues.category === 'Other') && extracted.detectedCategory !== 'Other') updates.category = extracted.detectedCategory;
-      if ((!currentValues.tags || currentValues.tags.length === 0) && extracted.detectedTags.length > 0) updates.tags = extracted.detectedTags;
+      if (!cur.subHeading && extracted.excerpt) updates.subHeading = extracted.excerpt;
+      if ((!cur.category || cur.category === 'Other') && extracted.detectedCategory !== 'Other') {
+        updates.category = extracted.detectedCategory;
+        notification.success({ message: '🏷️ Category Detected', description: `Set to: ${extracted.detectedCategory}`, duration: 3, placement: 'topRight' });
+      }
+      if ((!cur.tags || cur.tags.length === 0) && extracted.detectedTags.length > 0) {
+        updates.tags = extracted.detectedTags;
+        notification.success({ message: '🔖 Tags Detected', description: extracted.detectedTags.join(', '), duration: 3, placement: 'topRight' });
+      }
       if (Object.keys(updates).length > 0) {
         form.setFieldsValue(updates);
         setSmartFillApplied(true);
-        notification.info({ message: '✨ Smart Fill Applied', description: 'Auto-filled detected fields.', placement: 'topRight', duration: 4 });
+        setTimeout(() => setSmartFillApplied(false), 5000);
       }
+    } catch (e) {
+      console.error(e);
+      message.error('Failed to process pasted content');
+    } finally {
+      setPasteProcessing(false);
     }
   }, [form]);
 
-  const handleEditorChange = (value) => {
+  const handleEditorChange = useCallback((value) => {
+    contentRef.current = value;
     setContentValue(value);
-    setHeadings(extractHeadings(value));
-    const sub = form.getFieldValue('subHeading');
-    if (!sub && value && value !== '<p><br></p>') {
-      const exc = extractExcerpt(value, 160);
-      if (exc) form.setFieldsValue({ subHeading: exc });
-    }
-  };
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (contentRef.current) {
+        setHeadings(extractHeadings(contentRef.current));
+        const subHeading = form.getFieldValue('subHeading');
+        if (!subHeading && contentRef.current && contentRef.current !== '<p><br></p>') {
+          const ex = extractExcerpt(contentRef.current, 160);
+          if (ex) form.setFieldsValue({ subHeading: ex });
+        }
+      }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [contentValue, form]);
 
   useEffect(() => {
     let t;
-    if (autoSave && contentValue && modalVisible) {
+    if (autoSave && contentValue && modalVisible && !pasteProcessing) {
       t = setTimeout(() => handleAutoSave(), 30000);
     }
     return () => clearTimeout(t);
-  }, [contentValue, autoSave, modalVisible]);
+  }, [contentValue, autoSave, modalVisible, pasteProcessing]);
 
   const handleAutoSave = async () => {
-    if (!contentValue || !modalVisible) return;
-    const vals = form.getFieldsValue();
-    if (!vals.title) return;
+    if (!contentRef.current || !modalVisible || pasteProcessing) return;
+    const values = form.getFieldsValue();
+    if (!values.title) return;
     const key = `blog_draft_${editingId || 'new'}`;
-    localStorage.setItem(key, JSON.stringify({ ...vals, content: contentValue, headings, timestamp: new Date().toISOString() }));
+    localStorage.setItem(key, JSON.stringify({
+      ...values,
+      content: contentRef.current,
+      headings,
+      featuredImage: featuredImageList,
+      coverImage: coverImageList,
+      authorImage: authorImageList,
+      timestamp: new Date().toISOString()
+    }));
     setLastSaved(new Date());
   };
 
@@ -665,18 +960,27 @@ const BlogManagement = () => {
     const raw = localStorage.getItem(key);
     if (!raw) return;
     try {
-      const d = JSON.parse(raw);
+      const draft = JSON.parse(raw);
+      const draftTime = moment(draft.timestamp);
+      if (moment().diff(draftTime, 'hours') > 24) { localStorage.removeItem(key); return; }
       Modal.confirm({
-        title: 'Draft Found',
-        content: `Restore draft saved at ${moment(d.timestamp).format('HH:mm, MMM DD')}?`,
+        title: <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: THEME.text }}>Draft Found</span>,
+        content: <span style={{color: '#475569'}}>Restore draft saved {draftTime.format('MMM DD [at] HH:mm')}?</span>,
+        okButtonProps: { style: { background: THEME.primary, borderColor: THEME.primary, borderRadius: 8, fontWeight: 600 } },
+        cancelButtonProps: { style: { borderRadius: 8, fontWeight: 500 } },
         onOk: () => {
-          form.setFieldsValue({ title: d.title, subHeading: d.subHeading, tags: d.tags, category: d.category, authorName: d.authorName });
-          setContentValue(d.content || '');
-          setHeadings(d.headings || []);
-          message.success('Draft restored');
+          form.setFieldsValue({ title: draft.title, subHeading: draft.subHeading, tags: draft.tags, category: draft.category, authorName: draft.authorName, authorDesignation: draft.authorDesignation });
+          const draftContent = draft.content || '';
+          contentRef.current = draftContent;
+          setContentValue(draftContent);
+          setHeadings(draft.headings || []);
+          setFeaturedImageList(draft.featuredImage || []);
+          setCoverImageList(draft.coverImage || []);
+          setAuthorImageList(draft.authorImage || []);
+          message.success('Draft restored!');
         }
       });
-    } catch (_) {}
+    } catch (e) { console.error(e); }
   };
 
   const fetchBlogs = useCallback(async (page = 1, limit = 10, searchVal = "", category = "", status = "") => {
@@ -686,49 +990,27 @@ const BlogManagement = () => {
       if (searchVal?.trim()) url += `&search=${encodeURIComponent(searchVal.trim())}`;
       if (category) url += `&category=${encodeURIComponent(category)}`;
       if (status) url += `&isPublished=${status === 'published'}`;
-      const response = await apiService.get(url);
-      if (response.success) {
-        setBlogs(response.data || []);
-        setPagination({
-          currentPage: response.pagination?.page || page,
-          totalPages: response.pagination?.totalPages || 1,
-          totalResults: response.pagination?.total || response.data?.length || 0,
-          itemsPerPage: response.pagination?.limit || limit,
-        });
-        setStats({
-          total: response.pagination?.total || 0,
-          published: response.data.filter(b => b.isPublished).length,
-          drafts: response.data.filter(b => !b.isPublished).length,
-          views: response.data.reduce((s, b) => s + (b.viewCount || 0), 0),
-        });
+      const res = await apiService.get(url);
+      if (res.success) {
+        setBlogs(res.data || []);
+        setPagination({ currentPage: res.pagination?.page || page, totalPages: res.pagination?.totalPages || 1, totalResults: res.pagination?.total || res.data?.length || 0, itemsPerPage: res.pagination?.limit || limit });
+        setStats({ total: res.pagination?.total || 0, published: res.data?.filter(b => b.isPublished).length || 0, drafts: res.data?.filter(b => !b.isPublished).length || 0, views: res.data?.reduce((s, b) => s + (b.viewCount || 0), 0) || 0 });
       }
-    } catch (e) {
-      if (showToast) showToast('Failed to load blogs', 'error');
-      else message.error('Failed to load blogs');
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); message.error('Failed to load blogs'); }
+    finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchBlogs(1, 10, "", "", ""); }, [fetchBlogs]);
 
   const handleSearch = (e) => {
-    const val = e.target.value;
-    setSearchText(val);
+    const val = e.target.value; setSearchText(val);
     clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => {
-      fetchBlogs(1, pagination.itemsPerPage, val, selectedCategory, selectedStatus);
-    }, 500);
+    searchTimeout.current = setTimeout(() => fetchBlogs(1, pagination.itemsPerPage, val, selectedCategory, selectedStatus), 500);
   };
 
   const handleFilterChange = (type, val) => {
-    if (type === 'category') {
-      setSelectedCategory(val);
-      fetchBlogs(1, pagination.itemsPerPage, searchText, val, selectedStatus);
-    } else if (type === 'status') {
-      setSelectedStatus(val);
-      fetchBlogs(1, pagination.itemsPerPage, searchText, selectedCategory, val);
-    }
+    if (type === 'category') { setSelectedCategory(val); fetchBlogs(1, pagination.itemsPerPage, searchText, val, selectedStatus); }
+    else { setSelectedStatus(val); fetchBlogs(1, pagination.itemsPerPage, searchText, selectedCategory, val); }
   };
 
   const handleClearFilters = () => {
@@ -739,74 +1021,64 @@ const BlogManagement = () => {
   const fetchBlogById = async (id) => {
     setLoading(true);
     try {
-      const response = await apiService.get(`/blogs/get-blog-by-id?id=${id}`);
-      if (response.success && response.data) {
-        const blog = response.data;
-        let finalContent = blog.content || '';
-        if (finalContent === '<p><br></p>') finalContent = '';
-        form.setFieldsValue({
-          title: blog.title || '',
-          subHeading: blog.subHeading || '',
-          tags: blog.tags || [],
-          category: blog.category || 'Other',
-          authorName: blog.authorName || 'Admin',
-        });
-        setContentValue(finalContent);
-        setHeadings(extractHeadings(finalContent));
-        setFeaturedImageList(blog.featuredImage ? [{ uid: '-1', name: 'featured', status: 'done', url: blog.featuredImage, preview: blog.featuredImage }] : []);
-        setCoverImageList(blog.coverImage ? [{ uid: '-2', name: 'cover', status: 'done', url: blog.coverImage, preview: blog.coverImage }] : []);
-        setAuthorImageList(blog.authorImage ? [{ uid: '-3', name: 'author', status: 'done', url: blog.authorImage, preview: blog.authorImage }] : []);
+      const res = await apiService.get(`/blogs/get-blog-by-id?id=${id}`);
+      if (res.success && res.data) {
+        const b = res.data;
+        form.setFieldsValue({ title: b.title || '', subHeading: b.subHeading || '', tags: b.tags || [], category: b.category || 'Other', authorName: b.authorName || 'Admin', authorDesignation: b.authorDesignation || 'Content Writer' });
+        const blogContent = b.content || '';
+        contentRef.current = blogContent;
+        setContentValue(blogContent);
+        setHeadings(extractHeadings(blogContent));
+        setFeaturedImageList(b.featuredImage ? [{ uid: '-1', name: 'featured', status: 'done', url: b.featuredImage, preview: b.featuredImage }] : []);
+        setCoverImageList(b.coverImage ? [{ uid: '-2', name: 'cover', status: 'done', url: b.coverImage, preview: b.coverImage }] : []);
+        setAuthorImageList(b.authorImage ? [{ uid: '-3', name: 'author', status: 'done', url: b.authorImage, preview: b.authorImage }] : []);
         setEditingId(id);
         setModalVisible(true);
         setTimeout(() => loadDraft(), 100);
-      } else {
-        message.error(response.message || 'Failed to fetch details');
-      }
-    } catch (err) {
-      message.error('Failed to fetch blog details');
-    } finally {
-      setLoading(false);
-    }
+      } else message.error(res.message || 'Failed to fetch blog');
+    } catch (e) { console.error(e); message.error('Failed to fetch blog'); }
+    finally { setLoading(false); }
   };
 
   const uploadFile = async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await apiService.post('/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-    if (response.success) return response.url || response.file?.url;
-    throw new Error(response.message || 'Upload failed');
+    const fd = new FormData(); fd.append('file', file);
+    const res = await apiService.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+    if (res.success) return res.url || res.file?.url;
+    throw new Error(res.message || 'Upload failed');
   };
 
   const processImage = async (imageList) => {
     if (!imageList || imageList.length === 0) return '';
     if (imageList[0].originFileObj) return await uploadFile(imageList[0].originFileObj);
     if (imageList[0].url && !imageList[0].url.startsWith('blob:')) return imageList[0].url;
-    if (imageList[0].originFileObj) return await uploadFile(imageList[0].originFileObj);
     return '';
   };
 
   const handleSave = async (values) => {
-    if (!contentValue || contentValue === '<p><br></p>') {
-      message.error('Please add content to your blog'); return;
-    }
+    const currentContent = contentRef.current;
+    if (!currentContent || currentContent === '<p><br></p>') { message.error('Please add blog content'); return; }
     if (targetStatus === 'published') {
-      if (featuredImageList.length === 0) { message.error('Featured Image is mandatory for publishing.'); return; }
-      if (coverImageList.length === 0) { message.error('Cover Image is mandatory for publishing.'); return; }
-      if (authorImageList.length === 0) { message.error('Author Image is mandatory for publishing.'); return; }
-      if (!values.authorName) { message.error('Author Name is mandatory for publishing.'); return; }
+      if (!featuredImageList.length) { message.error('Featured Image required for publishing'); return; }
+      if (!coverImageList.length) { message.error('Cover Image required for publishing'); return; }
+      if (!authorImageList.length) { message.error('Author Image required for publishing'); return; }
+      if (!values.authorName) { message.error('Author Name required for publishing'); return; }
     }
     setSaving(true);
     try {
-      const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([
-        processImage(featuredImageList),
-        processImage(coverImageList),
-        processImage(authorImageList),
-      ]);
+      const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([processImage(featuredImageList), processImage(coverImageList), processImage(authorImageList)]);
+
+      const cleanedContent = DOMPurify.sanitize(cleanPastedContent(currentContent), {
+        ALLOWED_TAGS: ['p','br','strong','b','em','i','u','strike','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th'],
+        ALLOWED_ATTR: ['href','src','alt','title','target','rel', 'style'],
+        ALLOW_DATA_ATTR: false
+      });
+
       const payload = {
         title: values.title,
-        subHeading: values.subHeading || extractExcerpt(contentValue, 160),
-        content: contentValue,
+        subHeading: values.subHeading || extractExcerpt(cleanedContent, 160),
+        content: cleanedContent,
         authorName: values.authorName || 'Admin',
+        authorDesignation: values.authorDesignation || 'Content Writer',
         authorImage: authorImgUrl,
         isPublished: targetStatus === 'published',
         tags: values.tags || [],
@@ -815,250 +1087,264 @@ const BlogManagement = () => {
         coverImage: coverUrl,
       };
       if (targetStatus === 'published') payload.publishedAt = new Date().toISOString();
-      const response = editingId
+
+      const res = editingId
         ? await apiService.put(`/blogs/edit-blog-by-id?id=${editingId}`, payload)
         : await apiService.post('/blogs/create-blog', payload);
-      if (response.success) {
-        notification.success({ message: editingId ? 'Blog Updated' : 'Blog Created', description: `"${values.title}" saved successfully`, placement: 'topRight' });
+
+      if (res.success) {
+        notification.success({
+          message: <span style={{fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif"}}>{editingId ? 'Blog Updated' : 'Blog Created'}</span>,
+          description: <span style={{color: '#475569'}}>"{values.title}" {targetStatus === 'published' ? 'published' : 'saved as draft'} successfully</span>,
+          placement: 'topRight', duration: 4
+        });
         localStorage.removeItem(`blog_draft_${editingId || 'new'}`);
         closeModal();
         fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus);
-      } else {
-        message.error(response.message || 'Operation failed');
-      }
-    } catch (err) {
-      message.error(err.message || 'Failed to save blog');
-    } finally {
-      setSaving(false);
-    }
+      } else message.error(res.message || 'Operation failed');
+    } catch (e) { console.error(e); message.error(e.message || 'Failed to save blog'); }
+    finally { setSaving(false); }
   };
 
   const deleteBlog = async (id) => {
     try {
-      const response = await apiService.delete(`/blogs/delete-blog-by-id?id=${id}`);
-      if (response.success) {
-        message.success('Blog deleted successfully');
-        fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus);
-      } else {
-        message.error(response.message || 'Delete failed');
-      }
-    } catch (err) {
-      message.error('Failed to delete blog');
-    }
+      const res = await apiService.delete(`/blogs/delete-blog-by-id?id=${id}`);
+      if (res.success) { message.success('Blog deleted'); fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus); }
+      else message.error(res.message || 'Delete failed');
+    } catch (e) { console.error(e); message.error('Failed to delete'); }
   };
 
   const handleCardPreview = async (record) => {
     const hide = message.loading('Loading preview...', 0);
     try {
-      const response = await apiService.get(`/blogs/get-blog-by-id?id=${record._id}`);
-      showPreview(response.success && response.data ? response.data : record, false);
-    } catch {
-      showPreview(record, false);
-    } finally {
-      hide();
-    }
+      const res = await apiService.get(`/blogs/get-blog-by-id?id=${record._id}`);
+      showPreview(res.success && res.data ? res.data : record, false);
+    } catch { showPreview(record, false); }
+    finally { hide(); }
   };
 
-  const showPreview = (blogData = {}, isLiveFormPreview = false) => {
-    if (isLiveFormPreview) {
-      const formVals = form.getFieldsValue();
+  const showPreview = (blogData = {}, isLive = false) => {
+    if (isLive) {
+      const fv = form.getFieldsValue();
       setPreviewBlogData({
-        title: formVals.title || 'Untitled',
-        subHeading: formVals.subHeading,
-        content: contentValue,
-        authorName: formVals.authorName,
-        tags: formVals.tags,
-        category: formVals.category,
+        title: fv.title || 'Untitled',
+        subHeading: fv.subHeading,
+        content: contentRef.current,
+        authorName: fv.authorName,
+        authorDesignation: fv.authorDesignation,
+        tags: fv.tags,
+        category: fv.category,
         featuredImage: featuredImageList[0]?.url || featuredImageList[0]?.preview,
         coverImage: coverImageList[0]?.url || coverImageList[0]?.preview,
         authorImage: authorImageList[0]?.url || authorImageList[0]?.preview,
         headings,
         createdAt: new Date(),
-        readingTime: Math.ceil((contentValue || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200),
+        readingTime: Math.max(1, Math.ceil((contentRef.current || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200)),
       });
     } else {
       setPreviewBlogData({
         ...blogData,
         headings: extractHeadings(blogData?.content || ''),
-        readingTime: Math.ceil((blogData?.content || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200),
+        readingTime: Math.max(1, Math.ceil((blogData?.content || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200))
       });
     }
     setPreviewModalVisible(true);
   };
 
   const closeModal = () => {
-    setModalVisible(false); setEditingId(null);
-    setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
-    setContentValue(''); setHeadings([]);
-    setSmartFillApplied(false); setLastSaved(null);
+    setModalVisible(false);
+    setEditingId(null);
+    setFeaturedImageList([]);
+    setCoverImageList([]);
+    setAuthorImageList([]);
+    contentRef.current = '';
+    setContentValue('');
+    setHeadings([]);
+    setSmartFillApplied(false);
+    setLastSaved(null);
     form.resetFields();
   };
 
-  return (
-    <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
-      {/* ✅ FIX: Global style tag — fixes Tailwind CSS reset for bullet points everywhere */}
-      <style>{BLOG_CONTENT_STYLES}</style>
+  const openCreate = () => {
+    setEditingId(null);
+    form.resetFields();
+    setFeaturedImageList([]);
+    setCoverImageList([]);
+    setAuthorImageList([]);
+    contentRef.current = '';
+    setContentValue('');
+    setHeadings([]);
+    setSmartFillApplied(false);
+    setModalVisible(true);
+    setTimeout(() => loadDraft(), 100);
+  };
 
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+  const statCards = [
+    { label: 'Total Posts', value: stats.total, icon: <FileTextOutlined />, color: 'purple' },
+    { label: 'Published', value: stats.published, icon: <CheckCircleOutlined />, color: 'green' },
+    { label: 'Drafts', value: stats.drafts, icon: <SyncOutlined />, color: 'amber' },
+    { label: 'Total Views', value: stats.views, icon: <EyeOutlined />, color: 'blue' },
+  ];
+
+  const PAGE_RANGE = Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+    .slice(Math.max(0, pagination.currentPage - 3), pagination.currentPage + 2);
+
+  return (
+    <>
+      <style>{GLOBAL_STYLES}</style>
+      <div className="bm-root">
+        {/* Header */}
+        <div className="bm-header">
           <div>
-            <Title level={3} style={{ margin: 0 }}> Blog Management</Title>
-            <Text type="secondary">Create, manage, and publish content</Text>
+            <h1 className="bm-header-title">
+              <AppstoreAddOutlined style={{ color: THEME.primary }} /> 
+              Blog Management
+            </h1>
+            <p className="bm-header-sub">Create, manage & publish — with smart paste from Word, PDF & Google Docs</p>
           </div>
-          <Button
-            type="primary" size="large" icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingId(null); form.resetFields();
-              setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
-              setContentValue(''); setHeadings([]); setSmartFillApplied(false);
-              setModalVisible(true);
-              setTimeout(() => loadDraft(), 100);
-            }}
-            style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}
-          >
+          <Button type="primary" size="large" icon={<PlusOutlined />} onClick={openCreate} className="bm-btn-primary">
             Create New Post
           </Button>
         </div>
 
-        <Row gutter={[16, 16]}>
-          {[
-            { title: 'Total Posts', value: stats.total, icon: <FileTextOutlined style={{ color: THEME.primary }} /> },
-            { title: 'Published', value: stats.published, icon: <CheckCircleOutlined style={{ color: THEME.success }} /> },
-            { title: 'Drafts', value: stats.drafts, icon: <SyncOutlined style={{ color: THEME.warning }} /> },
-            { title: 'Total Views', value: stats.views, icon: <EyeOutlined style={{ color: THEME.info }} /> },
-          ].map(s => (
-            <Col xs={24} sm={12} md={6} key={s.title}>
-              <Card className="shadow-sm"><Statistic title={s.title} value={s.value} prefix={s.icon} /></Card>
-            </Col>
+        {/* Stats */}
+        <div className="bm-stats">
+          {statCards.map(s => (
+            <div key={s.label} className="bm-stat-card">
+              <div className="bm-stat-top">
+                <div className="bm-stat-label">{s.label}</div>
+                <div className={`bm-stat-icon ${s.color}`}>{s.icon}</div>
+              </div>
+              <div className="bm-stat-value">{s.value.toLocaleString()}</div>
+            </div>
           ))}
-        </Row>
-      </div>
+        </div>
 
-      {/* Filters */}
-      <Card className="shadow-sm mb-4" bodyStyle={{ padding: '16px 24px' }}>
-        <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={8}>
-            <Input prefix={<SearchOutlined className="text-gray-400" />} placeholder="Search title, content, tags..." value={searchText} onChange={handleSearch} allowClear size="large" />
-          </Col>
-          <Col xs={12} md={4}>
-            <Select placeholder="Category" value={selectedCategory} onChange={(v) => handleFilterChange('category', v)} allowClear size="large" style={{ width: '100%' }}>
-              <Option value="AI">🤖 AI</Option>
-              <Option value="Real Estate">🏠 Real Estate</Option>
-              <Option value="PropTech">📱 PropTech</Option>
-              <Option value="Technology">💻 Technology</Option>
-              <Option value="Business">💼 Business</Option>
-              <Option value="Mortgage">🏦 Mortgage</Option>
-              <Option value="Landscaping">🌳 Landscaping</Option>
-              <Option value="Other">📌 Other</Option>
-            </Select>
-          </Col>
-          <Col xs={12} md={4}>
-            <Select placeholder="Status" value={selectedStatus} onChange={(v) => handleFilterChange('status', v)} allowClear size="large" style={{ width: '100%' }}>
-              <Option value="published">✅ Published</Option>
-              <Option value="draft">📝 Draft</Option>
-            </Select>
-          </Col>
-          <Col xs={24} md={8}>
-            <Button icon={<UndoOutlined />} onClick={handleClearFilters}>Clear Filters</Button>
-          </Col>
-        </Row>
-      </Card>
+        {/* Filters */}
+        <div className="bm-filters">
+          <Input
+            size="large"
+            prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+            placeholder="Search posts by title or tag..."
+            value={searchText}
+            onChange={handleSearch}
+            allowClear
+            style={{ flex: 1, minWidth: 200 }}
+          />
+          <Select size="large" placeholder="Category" value={selectedCategory || undefined} onChange={v => handleFilterChange('category', v)} allowClear style={{ flex: '1 1 150px', minWidth: 150 }}>
+            {[['AI','🤖 AI'],['Real Estate','🏠 Real Estate'],['PropTech','📱 PropTech'],['Technology','💻 Technology'],['Business','💼 Business'],['Mortgage','🏦 Mortgage'],['Landscaping','🌳 Landscaping'],['Other','📄 Other']].map(([v,l]) => <Option key={v} value={v}>{l}</Option>)}
+          </Select>
+          <Select size="large" placeholder="Status" value={selectedStatus || undefined} onChange={v => handleFilterChange('status', v)} allowClear style={{ flex: '1 1 130px', minWidth: 130 }}>
+            <Option value="published">✅ Published</Option>
+            <Option value="draft">📝 Draft</Option>
+          </Select>
+          <Button size="large" icon={<UndoOutlined />} onClick={handleClearFilters} style={{ borderRadius: 10, borderColor: '#e2e8f0', color: '#64748b', flex: '1 1 auto', minWidth: 100, fontWeight: 600 }}>Clear</Button>
+        </div>
 
-      {/* Blog List */}
-      <div className="blog-list-container">
+        {/* Blog List */}
         {loading ? (
-          <div style={{ marginTop: 30 }}>
-            <Skeleton active avatar={{ size: 120, shape: 'square' }} paragraph={{ rows: 4 }} />
-            <Skeleton active avatar={{ size: 120, shape: 'square' }} paragraph={{ rows: 4 }} style={{ marginTop: 20 }} />
+          <div>
+            {[1,2,3].map(i => (
+              <Card key={i} style={{ borderRadius: 16, marginBottom: 20, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }} bodyStyle={{ padding: 24 }}>
+                <Skeleton active avatar={{ size: 80, shape: 'square' }} paragraph={{ rows: 3 }} />
+              </Card>
+            ))}
           </div>
         ) : blogs.length === 0 ? (
-          <Card className="shadow-sm"><Empty description="No blogs found" /></Card>
+          <div className="bm-empty">
+            <div className="bm-empty-icon"><FileTextOutlined /></div>
+            <div className="bm-empty-title">No posts found</div>
+            <div className="bm-empty-sub">Create your first blog post or clear the filters</div>
+          </div>
         ) : (
           <>
             {blogs.map(record => (
-              <Card
-                key={record._id} hoverable className="mb-4 shadow-sm"
-                bodyStyle={{ padding: 0, overflow: 'hidden', borderRadius: 8, border: '1px solid #f0f0f0' }}
-                style={{ marginBottom: 24 }}
-              >
-                <Row>
-                  <Col xs={24} sm={24} md={8} lg={7} xl={6}>
-                    <div style={{ width: '100%', height: '100%', minHeight: 260, backgroundColor: '#f9f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {record.featuredImage
-                        ? <img src={record.featuredImage} alt={record.title} style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: 260 }} />
-                        : <FileTextOutlined style={{ fontSize: 64, color: '#d9d9d9' }} />
-                      }
-                    </div>
-                  </Col>
-                  <Col xs={24} sm={24} md={16} lg={17} xl={18} style={{ padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                        <Space wrap>
-                          <Tag color="purple" style={{ padding: '4px 12px', fontSize: 13, borderRadius: 20 }}>{record.category || 'Uncategorized'}</Tag>
-                          <Badge status={record.isPublished ? 'success' : 'warning'} text={<span style={{ fontWeight: 600, color: record.isPublished ? THEME.success : THEME.warning }}>{record.isPublished ? 'Published' : 'Draft'}</span>} />
-                        </Space>
-                        <Space size="middle">
-                          <Tooltip title="Edit Post"><Button shape="circle" icon={<EditOutlined />} onClick={() => fetchBlogById(record._id)} /></Tooltip>
-                          <Tooltip title="Preview Post"><Button shape="circle" icon={<EyeOutlined />} onClick={() => handleCardPreview(record)} /></Tooltip>
-                          <Popconfirm title="Are you sure you want to delete this post?" onConfirm={() => deleteBlog(record._id)}>
-                            <Tooltip title="Delete"><Button shape="circle" danger icon={<DeleteOutlined />} /></Tooltip>
-                          </Popconfirm>
-                        </Space>
+              <div key={record._id} className="bm-blog-card">
+                <div className="bm-blog-thumb">
+                  {record.featuredImage
+                    ? <img src={record.featuredImage} alt={record.title} />
+                    : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 42, color: '#cbd5e1' }}><FileTextOutlined /></div>
+                  }
+                </div>
+                <div className="bm-blog-body">
+                  <div>
+                    <div className="bm-blog-top">
+                      <div className="bm-blog-badges">
+                        <span className="bm-cat-tag">{record.category || 'Uncategorized'}</span>
+                        <span className={`bm-status-badge ${record.isPublished ? 'published' : 'draft'}`}>
+                          {record.isPublished ? <><CheckCircleOutlined /> Published</> : <><SyncOutlined /> Draft</>}
+                        </span>
                       </div>
-                      <Title level={3} style={{ marginTop: 0, marginBottom: 8, color: '#1a1a2e', fontWeight: 700 }}>{record.title || 'Untitled Post'}</Title>
-                      <Text type="secondary" style={{ display: 'block', marginBottom: 20, fontSize: 15, lineHeight: 1.6, color: '#555' }}>
-                        {record.subHeading || 'No excerpt available...'}
-                      </Text>
-                      <div style={{ marginBottom: 20 }}>
-                        {record.tags?.slice(0, 5).map(t => <Tag key={t} color="blue" style={{ borderRadius: 4 }}>#{t}</Tag>)}
-                        {record.tags?.length > 5 && <Tag style={{ borderRadius: 4 }}>+{record.tags.length - 5} more</Tag>}
+                      <div className="bm-blog-actions">
+                        <Tooltip title="Edit"><button className="bm-action-btn" onClick={() => fetchBlogById(record._id)}><EditOutlined /></button></Tooltip>
+                        <Tooltip title="Preview"><button className="bm-action-btn" onClick={() => handleCardPreview(record)}><EyeOutlined /></button></Tooltip>
+                        <Popconfirm 
+                          title={<span style={{fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif"}}>Delete Post</span>} 
+                          description={<span style={{color: '#475569'}}>This action cannot be undone.</span>} 
+                          onConfirm={() => deleteBlog(record._id)} 
+                          okText="Delete" 
+                          okButtonProps={{ danger: true, style: { fontWeight: 600, borderRadius: 8 } }} 
+                          cancelButtonProps={{ style: { borderRadius: 8, fontWeight: 500 } }}>
+                          <Tooltip title="Delete"><button className="bm-action-btn danger"><DeleteOutlined /></button></Tooltip>
+                        </Popconfirm>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: 16, flexWrap: 'wrap', gap: 12 }}>
-                      <Space size="large">
-                        <Space>
-                          <Avatar size="default" src={record.authorImage} icon={<UserOutlined />} style={{ backgroundColor: THEME.primary }} />
-                          <Text strong style={{ fontSize: 14, color: '#333' }}>{record.authorName || 'Admin'}</Text>
-                        </Space>
-                        <Space>
-                          <CalendarOutlined style={{ color: '#888' }} />
-                          <Text type="secondary" style={{ fontSize: 14 }}>{moment(record.createdAt).format('MMM DD, YYYY')}</Text>
-                        </Space>
-                      </Space>
-                      <Space size="large">
-                        <Space><ClockCircleOutlined style={{ color: '#888' }} /><Text type="secondary" style={{ fontSize: 14 }}>{record.readingTime || 2} min read</Text></Space>
-                        <Space><EyeOutlined style={{ color: '#888' }} /><Text type="secondary" style={{ fontSize: 14 }}>{record.viewCount || 0} views</Text></Space>
-                      </Space>
+                    <div className="bm-blog-title">{record.title || 'Untitled Post'}</div>
+                    <div className="bm-blog-excerpt">{record.subHeading || 'No excerpt available...'}</div>
+                    <div className="bm-blog-tags">
+                      {record.tags?.slice(0, 5).map(tag => <span key={tag} className="bm-tag">#{tag}</span>)}
+                      {record.tags?.length > 5 && <span className="bm-tag">+{record.tags.length - 5}</span>}
                     </div>
-                  </Col>
-                </Row>
-              </Card>
+                  </div>
+                  <div className="bm-blog-footer">
+                    <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                      <div className="bm-meta-item">
+                        <Avatar size={24} src={record.authorImage} icon={<UserOutlined />} style={{ background: '#e2e8f0', color: '#64748b' }} />
+                        <strong>{record.authorName || 'Admin'}</strong>
+                      </div>
+                      <div className="bm-meta-item"><CalendarOutlined />{moment(record.createdAt).format('MMM DD, YYYY')}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                      <div className="bm-meta-item"><ClockCircleOutlined />{record.readingTime || 2} min read</div>
+                      <div className="bm-meta-item"><EyeOutlined />{(record.viewCount || 0).toLocaleString()} views</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
 
             {/* Pagination */}
-            <div className="flex flex-col md:flex-row justify-between items-center mt-8 gap-4">
-              <div className="text-sm text-gray-600">
-                Showing {(pagination.currentPage - 1) * pagination.itemsPerPage + 1} to {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalResults)} of {pagination.totalResults}
+            <div className="bm-pagination">
+              <div className="bm-page-info">
+                Showing {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}–{Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalResults)} of {pagination.totalResults} posts
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => fetchBlogs(pagination.currentPage - 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)} disabled={pagination.currentPage === 1} className="px-3 py-1 border rounded-md text-gray-600 disabled:opacity-50">←</button>
-                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).slice(Math.max(0, pagination.currentPage - 3), pagination.currentPage + 2).map(page => (
-                  <button key={page} onClick={() => fetchBlogs(page, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)} className={`px-4 py-1 rounded-md border ${pagination.currentPage === page ? 'bg-purple-700 text-white border-purple-700' : 'text-gray-700 border-gray-300 hover:bg-gray-100'}`}>{page}</button>
+              <div className="bm-page-btns">
+                <button className="bm-page-btn" disabled={pagination.currentPage === 1} onClick={() => fetchBlogs(pagination.currentPage - 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}>
+                  <ArrowLeftOutlined />
+                </button>
+                {PAGE_RANGE.map(p => (
+                  <button key={p} className={`bm-page-btn ${pagination.currentPage === p ? 'active' : ''}`} onClick={() => fetchBlogs(p, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}>{p}</button>
                 ))}
-                <button onClick={() => fetchBlogs(pagination.currentPage + 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)} disabled={pagination.currentPage === pagination.totalPages} className="px-3 py-1 border rounded-md text-gray-600 disabled:opacity-50">→</button>
+                <button className="bm-page-btn" disabled={pagination.currentPage === pagination.totalPages} onClick={() => fetchBlogs(pagination.currentPage + 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}>
+                  <ArrowRightOutlined />
+                </button>
               </div>
             </div>
           </>
         )}
       </div>
 
-      {/* CREATE / EDIT MODAL */}
+      {/* ─── CREATE / EDIT MODAL (CLEAN UI) ─── */}
       <Modal
         title={
-          <div style={{ fontWeight: 700, fontSize: 16 }}>
-            {editingId ? <EditOutlined /> : <PlusOutlined />} {editingId ? 'Edit Post' : 'Create New Post'}
-            {lastSaved && autoSave && <Text type="secondary" style={{ fontSize: 12, marginLeft: 12 }}>Saved {moment(lastSaved).format('HH:mm:ss')}</Text>}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+            <span>{editingId ? <><EditOutlined style={{ marginRight: 8 }} />Edit Post</> : <><RocketOutlined style={{ marginRight: 8 }} />Create New Post</>}</span>
+            {lastSaved && autoSave && (
+              <div className="bm-autosave" style={{ marginRight: 32 }}>
+                <div className="bm-autosave-dot" />
+                Saved {moment(lastSaved).format('HH:mm:ss')}
+              </div>
+            )}
           </div>
         }
         open={modalVisible}
@@ -1066,139 +1352,162 @@ const BlogManagement = () => {
         footer={null}
         centered
         destroyOnClose
-        width={screens.xs ? '95%' : 1050}
-        bodyStyle={{ maxHeight: '82vh', overflowY: 'auto' }}
+        className="bm-modal"
+        width={screens.xs ? '98%' : 1060}
+        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto' }}
       >
-        <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ category: 'Other', authorName: 'Admin' }}>
-          <Tabs defaultActiveKey="content">
-
-            {/* ── CONTENT TAB ── */}
-            <TabPane tab={<span><EditOutlined /> Content</span>} key="content">
-              <Form.Item name="title" label="Post Title" rules={[{ required: true, message: 'Title is required' }]}>
-                <Input placeholder="Enter an engaging title" size="large" />
-              </Form.Item>
-              <Form.Item name="subHeading" label="Subheading / Excerpt">
-                <TextArea rows={2} placeholder="Auto-filled from content — or write your own (max 160 chars)" maxLength={160} showCount />
-              </Form.Item>
+        <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ category: 'Other', authorName: 'Admin', authorDesignation: 'Content Writer' }}>
+          <Tabs defaultActiveKey="content" size="large" tabBarStyle={{ fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            {/* ─── CONTENT TAB ─── */}
+            <TabPane tab={<span><EditOutlined />  Content</span>} key="content">
               <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="tags" label="Tags">
-                    <Select mode="tags" size="large" placeholder="Add tags" tokenSeparators={[',']}>
-                      {['AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Mortgage', 'Landscaping', 'Marketing', 'UAE', 'Dubai'].map(tag => <Option key={tag} value={tag}>{tag}</Option>)}
+                <Col span={24}>
+                  <Form.Item name="title" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Post Title</span>} rules={[{ required: true, message: 'Title is required' }]}>
+                    <Input placeholder="Enter an engaging, SEO-friendly title..." size="large" style={{ borderRadius: 8, fontSize: 15, fontWeight: 500, padding: '10px 14px' }} />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Form.Item name="subHeading" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Subheading / Excerpt</span>}>
+                <TextArea rows={2} placeholder="Auto-extracted from content, or write your own (max 160 chars)" maxLength={160} showCount style={{ borderRadius: 8, fontWeight: 500, fontSize: 14, padding: '10px 14px' }} />
+              </Form.Item>
+
+              <Row gutter={24}>
+                <Col xs={24} md={12}>
+                  <Form.Item name="tags" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Tags</span>}>
+                    <Select mode="tags" size="large" placeholder="Add tags (press Enter)" tokenSeparators={[',']} style={{ borderRadius: 8, fontWeight: 500 }}>
+                      {['AI','Real Estate','PropTech','Technology','Business','Mortgage','Landscaping','Marketing','UAE','Dubai','Innovation'].map(t => <Option key={t} value={t}>{t}</Option>)}
                     </Select>
                   </Form.Item>
                 </Col>
-                <Col span={12}>
-                  <Form.Item name="category" label="Category">
-                    <Select size="large" placeholder="Select category">
-                      <Option value="AI">🤖 Artificial Intelligence</Option>
-                      <Option value="Real Estate">🏠 Real Estate</Option>
-                      <Option value="PropTech">📱 Property Technology</Option>
-                      <Option value="Technology">💻 Technology</Option>
-                      <Option value="Business">💼 Business</Option>
-                      <Option value="Landscaping">🌳 Landscaping</Option>
-                      <Option value="Mortgage">🏦 Mortgage</Option>
-
-                      <Option value="Other">📄 Other</Option>
+                <Col xs={24} md={12}>
+                  <Form.Item name="category" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Category</span>}>
+                    <Select size="large" placeholder="Select category" style={{fontWeight: 500}}>
+                      {[['AI','🤖'],['Real Estate','🏠'],['PropTech','📱'],['Technology','💻'],['Business','💼'],['Mortgage','🏦'],['Landscaping','🌳'],['Other','📄']].map(([v,e]) => <Option key={v} value={v}>{e} {v}</Option>)}
                     </Select>
                   </Form.Item>
                 </Col>
               </Row>
-              <Form.Item label="Blog Content" required>
-                <Alert message="📋 Paste from Word, PDF, Google Docs — formatting preserved & tags auto-fill!" type="info" showIcon className="mb-3" />
-                {smartFillApplied && <Alert message="✨ Smart Fill Active — fields auto-detected" type="success" showIcon closable onClose={() => setSmartFillApplied(false)} className="mb-3" />}
-                {/* ✅ FIX: onPaste on wrapper div so smart paste still works */}
-                <div className="border rounded-lg" onPaste={handleSmartPaste}>
-                  <JoditEditor ref={quillRef} value={contentValue} config={editorConfig} onChange={handleEditorChange} />
+
+              <Form.Item label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Blog Content <span style={{ color: '#ef4444' }}>*</span></span>}>
+                
+                <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginBottom: 16, borderLeft: '4px solid #8b5cf6' }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a', marginBottom: 4 }}>✨ Smart Paste Enabled</div>
+                  <div style={{ fontSize: 13, color: '#475569', fontWeight: 500 }}>Directly type in the editor below, or paste from Word/Google Docs for auto-cleaning!</div>
                 </div>
-                <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button icon={<EyeOutlined />} onClick={() => showPreview({}, true)} disabled={!contentValue || contentValue === '<p><br></p>'}>Live Preview</Button>
+
+                {smartFillApplied && (
+                  <Alert message={<span style={{fontWeight: 600}}>✨ Smart Fill Applied — Category & tags auto-detected!</span>} type="success" showIcon closable onClose={() => setSmartFillApplied(false)} style={{ marginBottom: 12, borderRadius: 8 }} />
+                )}
+                {pasteProcessing && (
+                  <Alert message={<span style={{fontWeight: 600}}>⏳ Processing paste content...</span>} type="info" showIcon style={{ marginBottom: 12, borderRadius: 8 }} />
+                )}
+
+                <div
+                  onPaste={handlePaste}
+                  style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}
+                >
+                  <JoditEditor
+                    ref={editorRef}
+                    value={contentValue}
+                    config={getEditorConfig()}
+                    onBlur={handleEditorChange}
+                    onChange={handleEditorChange}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+                  <Button
+                    icon={<EyeOutlined />}
+                    onClick={() => showPreview({}, true)}
+                    disabled={!contentRef.current || contentRef.current === '<p><br></p>'}
+                    style={{ borderRadius: 8, borderColor: '#e2e8f0', color: '#4c1d95', fontWeight: 600, height: 40, padding: '0 20px', background: '#f8fafc' }}
+                  >
+                    Live Preview
+                  </Button>
                 </div>
               </Form.Item>
             </TabPane>
 
-            {/* ── MEDIA TAB ── */}
-            <TabPane tab={<span><PictureOutlined /> Media</span>} key="media">
-              <Row gutter={16}>
-                <Col span={12}>
-                  <UploadWithCrop
-                    fileList={featuredImageList}
-                    onChange={setFeaturedImageList}
-                    aspect={3 / 2}
-                    cropTitle="Crop Featured Image (3:2)"
-                    maxSizeMB={5}
-                    label="Featured Image (Thumbnail)"
-                    extra="Recommended: 1200 × 800px · Max 5MB"
-                  />
+            {/* ─── MEDIA TAB ─── */}
+            <TabPane tab={<span><PictureOutlined />  Media</span>} key="media">
+              <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginBottom: 24, borderLeft: '4px solid #3b82f6' }}>
+                <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>📸 Image Guidelines</div>
+                <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>Use high-quality images. Featured image shows in blog listings; Cover image is the full-width hero banner.</div>
+              </div>
+              
+              <Row gutter={[32, 24]}>
+                <Col xs={24} md={12}>
+                  <UploadWithCrop fileList={featuredImageList} onChange={setFeaturedImageList} aspect={3/2} cropTitle="Crop Featured Image (3:2)" maxSizeMB={5} label="Featured Image (Card Thumbnail)" extra="Recommended: 1200 × 800px · Max 5MB" />
                 </Col>
-                <Col span={12}>
-                  <UploadWithCrop
-                    fileList={coverImageList}
-                    onChange={setCoverImageList}
-                    aspect={16 / 9}
-                    cropTitle="Crop Cover Image (16:9)"
-                    maxSizeMB={5}
-                    label="Cover Image (Hero Banner)"
-                    extra="Recommended: 1920 × 1080px · Max 5MB"
-                  />
+                <Col xs={24} md={12}>
+                  <UploadWithCrop fileList={coverImageList} onChange={setCoverImageList} aspect={16/9} cropTitle="Crop Cover / Hero Image (16:9)" maxSizeMB={5} label="Cover Image (Hero Banner)" extra="Recommended: 1920 × 1080px · Max 5MB" />
                 </Col>
               </Row>
             </TabPane>
 
-            {/* ── AUTHOR TAB ── */}
-            <TabPane tab={<span><UserOutlined /> Author</span>} key="author">
-              <Row gutter={16}>
-                <Col span={16}>
-                  <Form.Item name="authorName" label="Author Name">
-                    <Input prefix={<UserOutlined />} placeholder="Author name" />
+            {/* ─── AUTHOR TAB ─── */}
+            <TabPane tab={<span><UserOutlined />  Author</span>} key="author">
+              <Row gutter={32} align="top">
+                <Col xs={24} md={14}>
+                  <Form.Item name="authorName" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Author Name</span>}>
+                    <Input prefix={<UserOutlined style={{ color: '#94a3b8' }} />} placeholder="Author's full name" size="large" style={{ borderRadius: 8, fontWeight: 500 }} />
                   </Form.Item>
+                  <Form.Item name="authorDesignation" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Author Designation</span>}>
+                    <Input prefix={<TagOutlined style={{ color: '#94a3b8' }} />} placeholder="e.g. Content Writer, Senior Editor, Guest Author" size="large" style={{ borderRadius: 8, fontWeight: 500 }} />
+                  </Form.Item>
+                  
+                  <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginTop: 24, borderLeft: '4px solid #10b981' }}>
+                    <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>ℹ️ Author Info</div>
+                    <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>Author name, designation, and image appear below the post title. Optional for drafts, required for publishing.</div>
+                  </div>
                 </Col>
-                <Col span={8}>
-                  <UploadWithCrop
-                    fileList={authorImageList}
-                    onChange={setAuthorImageList}
-                    aspect={1}
-                    cropTitle="Crop Author Avatar (1:1)"
-                    maxSizeMB={2}
-                    label="Author Avatar"
-                    extra="Recommended: 400 × 400px · Max 2MB"
-                  />
+                <Col xs={24} md={10}>
+                  <UploadWithCrop fileList={authorImageList} onChange={setAuthorImageList} aspect={1} cropTitle="Crop Author Avatar (1:1)" maxSizeMB={2} label="Author Avatar" extra="Recommended: 400 × 400px · Max 2MB" />
                 </Col>
               </Row>
             </TabPane>
           </Tabs>
 
-          <Divider />
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* Footer */}
+          <div className="bm-footer-bar">
             <Space>
-              <Switch checked={autoSave} onChange={setAutoSave} />
-              <Text type="secondary">Auto-save (30s)</Text>
+              <Switch checked={autoSave} onChange={setAutoSave} style={{ background: autoSave ? '#0f172a' : undefined }} />
+              <Text style={{ fontSize: 14, color: '#475569', fontWeight: 500 }}>Auto-save</Text>
             </Space>
-            <Space>
-              <Button size="large" onClick={() => { setTargetStatus('draft'); form.submit(); }} loading={saving}>Save as Draft</Button>
-              <Button type="primary" onClick={() => { setTargetStatus('published'); form.submit(); }} loading={saving} size="large" icon={editingId ? <CheckCircleOutlined /> : <PlusOutlined />} style={{ backgroundColor: THEME.primary, borderColor: THEME.primary }}>
-                {editingId ? 'Update & Publish' : 'Publish Blog'}
+            <Space size={12} style={{ flexWrap: 'wrap' }}>
+              <Button size="large" icon={<SaveOutlined />} onClick={() => { setTargetStatus('draft'); form.submit(); }} loading={saving && targetStatus === 'draft'} className="bm-save-draft-btn">
+                Save Draft
+              </Button>
+              <Button type="primary" size="large" icon={editingId ? <CheckCircleOutlined /> : <RocketOutlined />} onClick={() => { setTargetStatus('published'); form.submit(); }} loading={saving && targetStatus === 'published'} className="bm-publish-btn">
+                {editingId ? 'Update & Publish' : 'Publish Post'}
               </Button>
             </Space>
           </div>
         </Form>
       </Modal>
 
-      {/* BLOG PREVIEW MODAL */}
+      {/* ─── PREVIEW MODAL ─── */}
       <Modal
         open={previewModalVisible}
         onCancel={() => setPreviewModalVisible(false)}
-        footer={null}
-        width={screens.xs ? '95%' : 860}
-        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: '24px 32px' }}
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text type="secondary" style={{ fontSize: 13, fontWeight: 500, display: screens.xs ? 'none' : 'block' }}>This is how your blog will appear to readers</Text>
+            <Button onClick={() => setPreviewModalVisible(false)} style={{ borderRadius: 8, fontWeight: 600, width: screens.xs ? '100%' : 'auto', height: 40 }}>Close Preview</Button>
+          </div>
+        }
+        width={screens.xs ? '98%' : 900}
+        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: 0 }}
         centered
+        className="preview-modal"
+        zIndex={1100}
+        title={<span style={{ color: '#0f172a' }}><EyeOutlined style={{ marginRight: 8 }} />Blog Preview</span>}
       >
         <BlogPreview data={previewBlogData} />
       </Modal>
-    </div>
+    </>
   );
 };
 
 export default BlogManagement;
-/////////////blog management
