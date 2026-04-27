@@ -18,82 +18,82 @@ const Ecommerce = () => {
     <div className="bg-gray-50 font-sans" dir="ltr">
       
       {/* ================= HERO SECTION ================= */}
-      <section className="relative flex items-center justify-center py-28 overflow-hidden h-[70vh]">
-        {/* Background */}
-        <div className="absolute inset-0">
-          <img
-            src={heroBg}
-            alt="Hero Background"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-          
-        </div>
+   <section className="relative flex items-center justify-center py-28 overflow-hidden h-[70vh]">
+  {/* Background */}
+  <div className="absolute inset-0">
+    <img
+      src={heroBg}
+      alt="Hero Background"
+      className="w-full h-full object-cover"
+    />
+    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+  </div>
+
   {/* Bottom clipping shapes */}
-      <div className="absolute bottom-0 left-0 w-72 h-12 bg-[var(--color-body)] z-[3] clip-left-shape" />
-      <div className="absolute bottom-0 right-0 w-72 h-12 bg-[var(--color-body)] z-[3] clip-right-shape" />
+  <div className="absolute bottom-0 left-0 bg-[var(--color-body)] z-[3] clip-left-shape" />
+  <div className="absolute bottom-0 right-0 bg-[var(--color-body)] z-[3] clip-right-shape" />
 
-      <style>{`
-          .clip-left-shape {
-             position: absolute;
-          bottom: 0; left: 0;
-          width: 30vw;
-          max-width: 320px;
-          min-width: 120px;
-          height: clamp(28px, 3.5vw, 48px);
-          background: var(--color-body);
-          z-index: 5;
-          clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
-          }
-          .clip-right-shape {
-            position: absolute;
-          bottom: 0; right: 0;
-          width: 30vw;
-          max-width: 320px;
-          min-width: 120px;
-          height: clamp(28px, 3.5vw, 48px);
-          background: var(--color-body);
-          z-index: 5;
-          clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
-        }
-        @media (min-width: 360px) {
-          .xs\\:text-\\[2\\.25rem\\] { font-size: 2.25rem !important; }
-        }
-      `}</style>
+  <style>{`
+    .clip-left-shape {
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 30vw;
+      max-width: 320px;
+      min-width: 120px;
+      height: clamp(28px, 3.5vw, 48px);
+      background: var(--color-body);
+      z-index: 5;
+      clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
+    }
+    .clip-right-shape {
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 30vw;
+      max-width: 320px;
+      min-width: 120px;
+      height: clamp(28px, 3.5vw, 48px);
+      background: var(--color-body);
+      z-index: 5;
+      clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
+    }
+    @media (min-width: 360px) {
+      .xs\\:text-\\[2\\.25rem\\] { font-size: 2.25rem !important; }
+    }
+  `}</style>
 
-        {/* Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-6 text-center text-white ">
-<motion.h1
-  initial={{ opacity: 0, y: 30 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.8 }}
-  className="heading-light mb-6"
-  style={{ fontSize: '54px', lineHeight: '1.15' }}
->
-  {t("hero.title")}
-</motion.h1>
+  {/* Content */}
+  <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 text-center text-white">
+    <motion.h1
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+      className="heading-light mb-4 sm:mb-6"
+      style={{ fontSize: 'clamp(2rem, 5vw, 54px)', lineHeight: '1.15' }}
+    >
+      {t("hero.title")}
+    </motion.h1>
 
-          <p className="text-lg md:text-xl text-white/90 mb-10 max-w-2xl mx-auto">
-            {t("hero.subtitle")}
-          </p>
+    <p className="text-base sm:text-lg md:text-xl text-white/90 mb-8 sm:mb-10 max-w-2xl mx-auto">
+      {t("hero.subtitle")}
+    </p>
 
-          <div className="flex flex-wrap gap-4 justify-center pt-4">
-            <Link
-              to="/ecommerce/filter"
-              className="bg-[var(--color-primary)] px-8 py-3 rounded-md shadow-lg"
-            >
-              {t("hero.explore")}
-            </Link>
+    <div className="flex flex-row flex-nowrap gap-3 sm:gap-4 justify-center pt-2 sm:pt-4 max-w-sm sm:max-w-none mx-auto">
+      <Link
+        to="/ecommerce/filter"
+        className="bg-[var(--color-primary)] px-4 sm:px-8 py-2.5 sm:py-3 rounded-md shadow-lg text-sm sm:text-base flex-1 sm:flex-none whitespace-nowrap text-center"
+      >
+        {t("hero.explore")}
+      </Link>
 
-            <Link
-              to="/ecommerce/seller"
-              className="border-2 border-white px-8 py-3 rounded-md hover:bg-white hover:text-black transition"
-            >
-              {t("hero.vendor")}
-            </Link>
-          </div>
-        </div>
-      </section>
+      <Link
+        to="/ecommerce/seller"
+        className="border-2 border-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-md hover:bg-white hover:text-black transition text-sm sm:text-base flex-1 sm:flex-none whitespace-nowrap text-center"
+      >
+        {t("hero.vendor")}
+      </Link>
+    </div>
+  </div>
+</section>
 
       {/* ================= CATEGORIES & PRODUCTS ================= */}
       <Category />
