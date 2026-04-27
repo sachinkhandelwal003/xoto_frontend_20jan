@@ -226,8 +226,12 @@ export default function HeroSection({ openSellModal, setOpenSellModal }) {
 
         <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 text-center text-white">
           {/* Responsive heading: smaller on mobile */}
-          <h1 className="mx-auto mb-8 max-w-5xl heading-light flex flex-col items-center gap-2 sm:gap-4"
-    style={{ fontSize: '54px', lineHeight: '1.15' }}>
+          <h1 className = "mx-auto mb-8 max-w-5xl heading-light flex flex-col items-center gap-2 sm:gap-4 text-center"
+  style={{ 
+    fontSize: 'clamp(28px, 8vw, 54px)', 
+    lineHeight: '1.15' 
+  }}
+>
   <span>{t("hero.title.line1")}</span>
   <span>{t("hero.title.line2")}</span>
 </h1>
@@ -615,7 +619,6 @@ export default function HeroSection({ openSellModal, setOpenSellModal }) {
           background: var(--color-body);
           z-index: 3;
           clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
-          background: white;
           decoration: none;
           bottom: -1px;
         }
@@ -630,7 +633,6 @@ export default function HeroSection({ openSellModal, setOpenSellModal }) {
           background: var(--color-body);
           z-index: 3;
           clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
-          background: white;
           bottom: -1px;
           box-shadow: 0 -3px 0 white;
         }

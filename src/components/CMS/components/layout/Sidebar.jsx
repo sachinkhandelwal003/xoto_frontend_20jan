@@ -4,7 +4,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useCmsContext } from '../../contexts/CmsContext';
 import { FiX, FiChevronDown } from 'react-icons/fi';
 import { useFreelancer } from '../../../../../src/context/FreelancerContext';
-
+import { apiService } from '../../../../manageApi/utils/custom.apiservice';
 import logoNew from '../../../../assets/img/logoNew.png';
 import favicon from '../../../../assets/img/logonewww.png';
 import { icon } from '@fortawesome/fontawesome-svg-core';
@@ -394,15 +394,15 @@ const CUSTOM_ROLE_LINKS = {
  {
   title: "Mortgages",
   icon: "fas fa-file-invoice-dollar",   // ✅ Distinct icon
-  path: "/dashboard/{roleSlug}/mortgage",
+  path: "/dashboard/{roleSlug}/mortgage-ops",
   submenus: [
     { 
       title: "Create Mortgage", 
-      path: "/dashboard/{roleSlug}/mortgage/create" 
+      path: "/dashboard/{roleSlug}/mortgage-ops/create" 
     },
     { 
       title: "All Mortgages", 
-      path: "/dashboard/{roleSlug}/mortgage/list" 
+      path: "/dashboard/{roleSlug}/mortgage-ops/list" 
     },
   ],
 },
@@ -470,6 +470,12 @@ const CUSTOM_ROLE_LINKS = {
     ,
   ],
 "21": [
+    {
+    title: "Create Lead",
+    icon: "fas fa-plus-circle",
+    path: "/dashboard/{roleSlug}/leads/partner/create",
+    // no submenu – direct link
+  },
   {
     title: "Vault Partners",
     icon: "fas fa-users",
@@ -484,6 +490,7 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-university",
       path: "/dashboard/{roleSlug}/bank/products",
     },
+   
   {
     title: "All Leads",
     icon: "fas fa-file-alt",
@@ -501,6 +508,40 @@ const CUSTOM_ROLE_LINKS = {
 
     },
      {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Cases", path: "/dashboard/{roleSlug}/case/create" },
+        { title: "View Cases", path: "/dashboard/{roleSlug}/case/view" },
+                { title: "Process Cases", path: "/dashboard/{roleSlug}/case/view/all" },
+
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+],
+
+"26": [
+  {
+    title: "My Leads",
+    icon : "fas fa-file-alt",
+    path : "/dashboard/{roleSlug}/leads",  
+  },
+   {
+      title: "Proposals",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Proposals", path: "/dashboard/{roleSlug}/proposals/create" },
+        { title: "View Proposals", path: "/dashboard/{roleSlug}/proposals/view" },
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+
+       
+    {
       title: "Case",
       icon: "fas fa-folder-open",
       path: "/dashboard/{roleSlug}/cases",
@@ -533,8 +574,8 @@ const roleSlugMap = {
   '18': "vault-admin", //vault
   '22': "vaultagent",
   '21': "vaultpartner",
-  '23': "vault-advisor",
-  '26': "vault-ops",
+  '26': "vault-advisor",
+  '23': "vault-ops",
    
  
 
@@ -554,7 +595,8 @@ const ROLE_MODULE_ORDER = {
   '15': ['Dashboard', 'Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
   '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners', 'Advisors', 'Mortgages'],
   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
-  '21': ['Dashboard', 'Vault Partners', 'All Leads',],
+  '21': ['Dashboard','Create Lead',  'Vault Partners', 'All Leads',],
+    '26': ['Dashboard', 'All Leads','Case','Proposals'],
 };
 
 
@@ -596,6 +638,31 @@ const Sidebar = () => {
 
   const roleSlug = roleSlugMap[roleCode] ?? 'dashboard';
   const basePath = `/dashboard/${roleSlug}`;
+const [partnerCategory, setPartnerCategory] = useState(null);
+
+useEffect(() => {
+  if (roleCode !== '21' || !token) return;
+
+  const loadPartnerProfile = async () => {
+    try {
+      const response = await apiService.get('/profile/get-profile-data');
+
+          console.log('FULL RESPONSE:', JSON.stringify(response, null, 2));
+
+      const category = response?.data?.partnerCategory
+        ?.toString()
+        .trim()
+        .toLowerCase();
+      console.log('partnerCategory:', category);
+      setPartnerCategory(category || null);
+    } catch (error) {
+      console.error('partner profile fetch failed:', error);
+      setPartnerCategory(null);
+    }
+  };
+
+  loadPartnerProfile();
+}, [roleCode, token]);
 
   const isFreelancer = roleCode === '7';
   const isPendingApproval = isFreelancer && freelancer && freelancer.status_info?.status !== 1;
@@ -635,6 +702,9 @@ const Sidebar = () => {
         submenus: processedSubmenus
       };
     });
+if (roleCode === '21' && partnerCategory !== 'individual') {
+  delete modulesMap['Create Lead'];
+}
 
     // 3. Sorting
     const ordered = [];
@@ -659,7 +729,7 @@ const Sidebar = () => {
     return [...tree, ...ordered.filter(
       m => !HIDE_MODULES.includes(m.title)
     )];
-  }, [permissions, basePath, isPendingApproval, roleCode, user, token, roleSlug]);
+  },  [permissions, basePath, isPendingApproval, roleCode, user, token, roleSlug, partnerCategory]);
 
   // --- RENDER ---
   const toggleModule = (mod) => setOpenModule(openModule === mod ? null : mod);

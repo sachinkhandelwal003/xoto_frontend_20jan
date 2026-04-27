@@ -424,7 +424,7 @@ const GLOBAL_STYLES = `
 // ─────────────────────────────────────────────
 //  PASTE CLEANING UTILITIES
 // ─────────────────────────────────────────────
-const cleanWordHtml = (html) => {
+const cleanWordHtml = (html) => { 
   if (!html) return '';
   let cleaned = html;
   cleaned = cleaned.replace(/lang="[^"]*"/gi, '');
