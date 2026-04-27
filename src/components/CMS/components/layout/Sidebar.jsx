@@ -514,7 +514,24 @@ const CUSTOM_ROLE_LINKS = {
 
     },
 ],
-
+// Baaki purane roles ke neeche ye paste karo:
+  "25": [
+    {
+      title: "Total Leads",
+      icon: "fas fa-wallet",
+      path: "/dashboard/{roleSlug}/earnings",
+    },
+    {
+      title: "Active Leads",
+      icon: "fas fa-user-cog",
+      path: "/dashboard/{roleSlug}/profile",
+    },
+    {
+      title: "Recent Leads",
+      icon: "fas fa-user-cog",
+      path: "/dashboard/{roleSlug}/profile",
+    }
+  ],
 };
 
 
@@ -535,6 +552,7 @@ const roleSlugMap = {
   '21': "vaultpartner",
   '23': "vault-advisor",
   '26': "vault-ops",
+  '25': "gridReferralPartner",
    
  
 
@@ -555,6 +573,7 @@ const ROLE_MODULE_ORDER = {
   '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners', 'Advisors', 'Mortgages'],
   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
   '21': ['Dashboard', 'Vault Partners', 'All Leads',],
+  '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],
 };
 
 

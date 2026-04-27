@@ -222,7 +222,8 @@ import CreateCase from "../ecommerce/vault/case/Index";
 import ViewCases from "../ecommerce/vault/case/ViewCases";
 import DetailedViewCases from "../ecommerce/vault/case/DetailedViewCases";
 import ProcessCasesUpdates from "../ecommerce/vault/case/ProcessCasesUpdates";
-
+// import ReferralPartnerLogin from "../GridReferralPartner/ReferralPartnerLogin";
+import ReferralPartnerDashboard from "./pages/ReferralPartnerDashboard"
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -239,7 +240,7 @@ const roleSlugMap = {
   22: "vaultagent" ,
   26: "vault-advisor",
   23: "vault-ops",
-
+25:"gridReferralPartner",
 21:"vaultpartner"
 };
 
@@ -260,7 +261,7 @@ const dashboardMap = {
   26: <AdvisorDashboard />,
   23: <MortgageOpsDashboard />,
 
-
+25: <ReferralPartnerDashboard />,
     12: <SupervisorDashboard />,
     16:<AgentDashboard/>,
     17:<DeveloperDashboard/>,
@@ -584,7 +585,8 @@ const CmsRoutes = () => {
       {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
       {/* <Route path="team" element={<DeveloperTeam/>}/> */}
 
-
+{/* Grid Referral Partner   */}
+<Route path="/grid-referral-partner" element={<ReferralPartnerDashboard />} />
 
 {/* vault */}
 
