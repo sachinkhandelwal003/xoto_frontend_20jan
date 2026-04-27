@@ -555,6 +555,25 @@ const CUSTOM_ROLE_LINKS = {
 
     },
 ],
+"23": [
+ 
+  
+
+       
+    {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Queue Cases", path: "/dashboard/{roleSlug}/case/queue/view" },
+                { title: "My Assigned Cases", path: "/dashboard/{roleSlug}/case/assigned/all" },
+
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+],
+
 
 };
 

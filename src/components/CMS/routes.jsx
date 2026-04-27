@@ -227,6 +227,8 @@ import ViewCases from "../ecommerce/vault/case/ViewCases";
 import DetailedViewCases from "../ecommerce/vault/case/DetailedViewCases";
 import ProcessCasesUpdates from "../ecommerce/vault/case/ProcessCasesUpdates";
 import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
+import QueueCases from "../ecommerce/vault/case/QueueCases";
+import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
 
 const roleSlugMap = {
   0: "superadmin",
@@ -608,6 +610,9 @@ const CmsRoutes = () => {
 
             <Route path="/case/create" element={< CreateCase />} />
             <Route path="/case/view" element={< ViewCases />} />
+                        <Route path="/case/queue/view" element={< QueueCases />} />
+            <Route path="/case/assigned/all" element={< OpsAssignedcases />} />
+
                         <Route path="/case/view/all" element={< ProcessCasesUpdates />} />
 
             <Route path="/case/view/:caseId" element={< DetailedViewCases/>} />

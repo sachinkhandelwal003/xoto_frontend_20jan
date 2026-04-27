@@ -1,3 +1,4 @@
+// CreateCase.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../../../manageApi/utils/custom.apiservice';
 import { useSelector } from 'react-redux';
@@ -5,46 +6,76 @@ import {
   Card, Steps, Button, Typography, Row, Col, Avatar,
   Tag, Descriptions, Divider, Spin, message, Modal, Input, Select,
   Form, DatePicker, InputNumber, Alert, Badge, Progress,
-  Statistic, Table, Space, Switch
+  Statistic, Table, Space, Switch, Upload, List, Tooltip
 } from 'antd';
 import dayjs from 'dayjs';
 import {
   UserOutlined, FileTextOutlined, BankOutlined,
-  CheckCircleOutlined, InfoCircleOutlined,
-  EyeOutlined, HomeOutlined,
-  DollarCircleOutlined, PlusOutlined, SaveOutlined,
-  WalletOutlined
+  CheckCircleOutlined, InfoCircleOutlined, WarningOutlined,
+  EyeOutlined, HomeOutlined, DollarCircleOutlined, 
+  PlusOutlined, SaveOutlined, DeleteOutlined, EditOutlined,
+  UploadOutlined, InboxOutlined, LinkOutlined,LineChartOutlined 
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
+const { Dragger } = Upload;
 
 const THEME_COLOR = "#5C039B";
 
-// ✅ FIX 1: Parser regex — (,*) ki jagah sirf , use karo
-const aedFormatter = (value) => `AED ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-const aedParser   = (value) => value.replace(/AED\s?|,/g, '');
+// Formatter for AED currency
+const aedFormatter = (value) => {
+  if (!value) return '';
+  return `AED ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+const aedParser = (value) => {
+  if (!value) return 0;
+  return parseFloat(value.replace(/AED\s?|,/g, '')) || 0;
+};
+
+// Generate unique case reference
+const generateCaseReference = () => {
+  const year = new Date().getFullYear();
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  return `XOTO-CASE-${year}-${random}`;
+};
 
 const CreateCase = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [fetchingProposals, setFetchingProposals] = useState(false);
-  const { user, token, permissions } = useSelector((s) => s.auth);
+  const { user } = useSelector((s) => s.auth);
+  const [form] = Form.useForm();
 
   const [acceptedProposals, setAcceptedProposals] = useState([]);
   const [selectedProposal, setSelectedProposal] = useState(null);
+  const [selectedProposalData, setSelectedProposalData] = useState(null);
   const [selectedLead, setSelectedLead] = useState(null);
   const [createdCaseId, setCreatedCaseId] = useState(null);
-
   const [showBankSelectionModal, setShowBankSelectionModal] = useState(false);
   const [selectedBankFromProposal, setSelectedBankFromProposal] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [uploadedDocuments, setUploadedDocuments] = useState([]);
+  const [uploadingDocs, setUploadingDocs] = useState(false);
+
+  // Form validation rules
+  const validateField = (field, value) => {
+    const newErrors = { ...fieldErrors };
+    if (!value || (typeof value === 'string' && !value.trim())) {
+      newErrors[field] = true;
+    } else {
+      delete newErrors[field];
+    }
+    setFieldErrors(newErrors);
+    return !newErrors[field];
+  };
 
   const [caseData, setCaseData] = useState({
-    caseReference: '',
+    caseReference: generateCaseReference(),
     clientInfo: {
-      fullName: '', preferredName: '', gender: null, dateOfBirth: null,
+      fullName: '', preferredName: '', gender: 'Male', dateOfBirth: null,
       nationality: '', maritalStatus: 'Single', numberOfDependents: 0,
       email: '', mobile: '', homePhone: null, workPhone: null, whatsapp: null,
     },
@@ -81,56 +112,107 @@ const CreateCase = () => {
       transactionDetails: { purchasePrice: 0, agreementDate: null, handoverDate: null, depositPaid: 0, depositPaidDate: null, agentCommission: 0, dldFees: 0, registrationFees: 0, totalClosingCosts: 0 },
     },
     loanInfo: {
-      requestedAmount: 0, approvedAmount: 0, tenureYears: 25, tenureMonths: 300,
-      interestRateType: 'Fixed', interestRatePercentage: 0, processingFee: 0, valuationFee: 0,
+      requestedAmount: 0, approvedAmount: null, tenureYears: 25, tenureMonths: 300,
+      interestRateType: 'Fixed', interestRatePercentage: 0, processingFee: 0, valuationFee: 2500,
       earlySettlementFeePercentage: 1, earlySettlementAllowedAfterYears: 3,
       lifeInsuranceRequired: true, propertyInsuranceRequired: true,
       monthlyInstallment: { principalAndInterest: 0, lifeInsurance: 0, propertyInsurance: 0, totalMonthlyPayment: 0 },
-      selectedBank: '', selectedBankProduct: '', alternativeBanksConsidered: [],
+      selectedBank: '', selectedBankProduct: '',
     },
-    internalNotes: '', customerNotes: '', pendingDocumentTypes: [],
+    internalNotes: '', customerNotes: '',
   });
 
-  // ✅ FIX 2: updateExpenseTotals — functional update use karo stale closure avoid karne ke liye
-  const updateExpenseTotals = useCallback(() => {
+  // Calculate EMI
+  const calculateEMI = (principal, annualRate, tenureYears) => {
+    if (!principal || principal <= 0 || !annualRate || annualRate <= 0) return 0;
+    const monthlyRate = annualRate / 100 / 12;
+    const months = tenureYears * 12;
+    if (monthlyRate === 0) return principal / months;
+    const emi = principal * monthlyRate * Math.pow(1 + monthlyRate, months) / 
+                (Math.pow(1 + monthlyRate, months) - 1);
+    return Math.round(emi);
+  };
+
+  // Update DBR and all calculations
+  const updateFinancialCalculations = useCallback(() => {
     setCaseData(prev => {
-      const expenses = prev.expenseDetails;
-      const totalLiabilities =
-        (expenses.monthlyRent || 0) +
-        (expenses.monthlyOtherLoanInstallments || 0) +
-        (expenses.monthlyCreditCardPayments || 0) +
-        (expenses.monthlyLivingExpenses || 0);
-
-      const totalMonthlyIncome = prev.incomeDetails.totalMonthlyIncome || 0;
-      const dbr = totalMonthlyIncome > 0 ? (totalLiabilities / totalMonthlyIncome) * 100 : 0;
+      const monthlyIncome = prev.incomeDetails.totalMonthlyIncome || 0;
+      const monthlyExpenses = (prev.expenseDetails.monthlyRent || 0) +
+                              (prev.expenseDetails.monthlyOtherLoanInstallments || 0) +
+                              (prev.expenseDetails.monthlyCreditCardPayments || 0) +
+                              (prev.expenseDetails.monthlyLivingExpenses || 0);
+      
+      const propertyValue = prev.propertyInfo.propertyValue || 0;
+      const downPayment = prev.propertyInfo.downPayment || 0;
+      const loanAmount = propertyValue - downPayment;
+      const ltv = propertyValue > 0 ? (loanAmount / propertyValue) * 100 : 0;
+      
+      const interestRate = prev.loanInfo.interestRatePercentage || 0;
+      const tenureYears = prev.loanInfo.tenureYears || 25;
+      const emi = calculateEMI(loanAmount, interestRate, tenureYears);
+      
+      const totalMonthlyOutgoing = monthlyExpenses + emi;
+      const dbr = monthlyIncome > 0 ? (totalMonthlyOutgoing / monthlyIncome) * 100 : 0;
       const dbrStatus = dbr <= 50 ? 'Eligible' : dbr <= 60 ? 'Borderline' : 'Ineligible';
-
+      
+      const dldFee = propertyValue * 0.04;
+      const registrationFee = loanAmount * 0.0025;
+      const valuationFee = prev.loanInfo.valuationFee || 2500;
+      const processingFee = prev.loanInfo.processingFee || 0;
+      const totalUpfrontCost = dldFee + registrationFee + valuationFee + processingFee;
+      
       return {
         ...prev,
+        propertyInfo: {
+          ...prev.propertyInfo,
+          loanAmount: Math.round(loanAmount),
+          ltvPercentage: parseFloat(ltv.toFixed(2)),
+          transactionDetails: {
+            ...prev.propertyInfo.transactionDetails,
+            dldFees: Math.round(dldFee),
+            registrationFees: Math.round(registrationFee),
+            totalClosingCosts: Math.round(totalUpfrontCost)
+          }
+        },
+        loanInfo: {
+          ...prev.loanInfo,
+          requestedAmount: Math.round(loanAmount),
+          monthlyInstallment: {
+            ...prev.loanInfo.monthlyInstallment,
+            principalAndInterest: emi,
+            totalMonthlyPayment: emi
+          }
+        },
         expenseDetails: {
           ...prev.expenseDetails,
-          totalMonthlyLiabilities: totalLiabilities,
+          totalMonthlyLiabilities: monthlyExpenses,
           dbrPercentage: parseFloat(dbr.toFixed(2)),
-          dbrStatus,
-        },
+          dbrStatus
+        }
       };
     });
   }, []);
 
   useEffect(() => {
-    updateExpenseTotals();
+    updateFinancialCalculations();
   }, [
     caseData.incomeDetails.totalMonthlyIncome,
     caseData.expenseDetails.monthlyRent,
     caseData.expenseDetails.monthlyCreditCardPayments,
     caseData.expenseDetails.monthlyLivingExpenses,
     caseData.expenseDetails.monthlyOtherLoanInstallments,
+    caseData.propertyInfo.propertyValue,
+    caseData.propertyInfo.downPayment,
+    caseData.loanInfo.interestRatePercentage,
+    caseData.loanInfo.tenureYears,
+    updateFinancialCalculations
   ]);
 
   const [showAddLoanModal, setShowAddLoanModal] = useState(false);
   const [editingLoan, setEditingLoan] = useState(null);
   const [loanForm] = Form.useForm();
 
+  // Fetch accepted proposals
   const fetchAcceptedProposals = useCallback(async () => {
     setFetchingProposals(true);
     try {
@@ -146,185 +228,102 @@ const CreateCase = () => {
     }
   }, []);
 
-  const fetchLeadDetails = async (leadId) => {
+  // Fetch proposal details by ID
+  const fetchProposalDetails = async (proposalId) => {
     setLoading(true);
     try {
-      let url = '';
-      if (user?.role?.code === '18') {
-        url = `/vault/lead/admin/all?page=1&limit=1&leadId=${leadId}`;
-      } else {
-        url = `/vault/lead/partner/get?page=1&limit=1&leadId=${leadId}`;
-      }
-      const res = await apiService.get(url);
-      if (res?.success && res.data?.length > 0) {
-        const lead = res.data[0];
-        setSelectedLead(lead);
-        populateCaseFromLeadAndProposal(lead, selectedProposal);
-      } else {
-        message.warning("Lead not found");
+      const res = await apiService.get(`/vault/lead/proposals/${proposalId}`);
+      if (res?.success) {
+        setSelectedProposalData(res.data);
+        const lead = res.data.proposal?.leadId;
+        if (lead) {
+          setSelectedLead(lead);
+          populateCaseFromProposal(res.data.proposal, lead);
+        }
       }
     } catch (err) {
-      message.error("Failed to fetch lead details");
+      message.error("Failed to fetch proposal details");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpload = async (documentType, file) => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('entityType', 'Case');
-      formData.append('entityId', createdCaseId);
-      formData.append('documentType', documentType);
-      formData.append('documentCategory', 'other');
-      await apiService.post('/vault/lead/documents/upload', formData);
-      message.success(`${documentType} uploaded`);
-    } catch (err) {
-      message.error("Upload failed");
-    }
-  };
-
-  const populateCaseFromLeadAndProposal = (lead, proposal) => {
-    if (!lead) return;
-
-    const caseRef = `CASE-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-    const selectedBankProductToUse = selectedBankFromProposal || proposal?.selectedBankProducts?.[0];
-    const selectedBankProduct = selectedBankProductToUse?.bankProductId || {};
-
+  // Populate case data from selected proposal
+  const populateCaseFromProposal = (proposal, lead) => {
+    if (!lead || !proposal) return;
+    
+    const selectedBankProductToUse = selectedBankFromProposal || proposal.selectedBankProducts?.[0];
+    const bankProduct = selectedBankProductToUse?.bankProductId || {};
     const propertyValue = lead.propertyDetails?.propertyValue || 0;
-    const loanAmount = lead.propertyDetails?.loanAmountRequired || 0;
-    const downPayment = propertyValue - loanAmount;
-    const ltvPercentage = loanAmount > 0 ? (loanAmount / propertyValue) * 100 : 80;
-
-    let dateOfBirth = null;
-    if (lead.customerInfo?.dateOfBirth) {
-      dateOfBirth = dayjs(lead.customerInfo.dateOfBirth);
-    }
-
-    const salary = lead.customerInfo?.monthlySalary || 0;
-
-    setCaseData({
-      caseReference: caseRef,
+    const downPayment = lead.propertyDetails?.downPaymentAmount || 0;
+    
+    setCaseData(prev => ({
+      ...prev,
+      caseReference: generateCaseReference(),
       clientInfo: {
+        ...prev.clientInfo,
         fullName: lead.customerInfo?.fullName || '',
-        preferredName: lead.customerInfo?.preferredName || null,
-        gender: null,
-        dateOfBirth,
-        nationality: lead.customerInfo?.nationality || '',
-        maritalStatus: lead.customerInfo?.maritalStatus || 'Single',
-        numberOfDependents: lead.customerInfo?.numberOfDependents || 0,
         email: lead.customerInfo?.email || '',
         mobile: lead.customerInfo?.mobileNumber || '',
-        homePhone: lead.customerInfo?.alternativePhone || null,
-        workPhone: null,
-        whatsapp: lead.customerInfo?.whatsappNumber || null,
-      },
-      currentAddress: {
-        building: '', apartment: '',
-        area: lead.propertyDetails?.propertyAddress?.area || '',
-        city: 'Dubai', country: 'UAE', residenceType: null, yearsAtAddress: null,
-      },
-      previousAddress: {
-        building: '', apartment: '', area: '', city: 'Dubai', country: 'UAE',
-        residenceType: null, yearsAtAddress: null,
-      },
-      employmentDetails: {
-        employerName: lead.customerInfo?.employer || '',
-        industry: null,
-        designation: lead.customerInfo?.occupation || '',
-        employmentType: 'Salaried',
-        yearsWithEmployer: null,
-        monthsWithEmployer: 0,
-        probationPeriod: 'Completed',
-        workAddress: null, workPhone: null, employerEmail: null,
-      },
-      incomeDetails: {
-        basicSalary: salary,
-        housingAllowance: 0,
-        transportAllowance: 0,
-        otherAllowances: 0,
-        totalMonthlySalary: salary,
-        annualBonus: 0,
-        otherIncome: 0,
-        totalMonthlyIncome: salary,
-        salaryTransferBank: null,
-        salaryTransferType: null,
-      },
-      expenseDetails: {
-        monthlyRent: 0, monthlyOtherLoanInstallments: 0, monthlyCreditCardPayments: 0,
-        monthlyLivingExpenses: 0, totalMonthlyLiabilities: 0, dbrPercentage: 0,
-        dbrStatus: 'Eligible', existingLoans: [],
+        nationality: lead.customerInfo?.nationality || '',
+        dateOfBirth: lead.customerInfo?.dateOfBirth ? dayjs(lead.customerInfo.dateOfBirth) : null,
+        maritalStatus: lead.customerInfo?.maritalStatus || 'Single',
+        numberOfDependents: lead.customerInfo?.numberOfDependents || 0,
       },
       propertyInfo: {
-        propertyType: lead.propertyDetails?.propertyType || 'Ready',
-        propertySubtype: lead.propertyDetails?.propertySubtype || 'Apartment',
+        ...prev.propertyInfo,
         propertyValue,
-        valuationAmount: propertyValue,
-        ltvPercentage,
-        loanAmount,
         downPayment,
-        downPaymentSource: null,
         propertyAddress: {
-          building: lead.propertyDetails?.propertyAddress?.building || '',
-          apartment: null, floor: null,
+          ...prev.propertyInfo.propertyAddress,
           area: lead.propertyDetails?.propertyAddress?.area || '',
-          city: 'Dubai', emirate: 'Dubai',
-        },
-        propertyDetails: { bedrooms: null, bathrooms: null, areaSqft: null, areaSqm: null, yearBuilt: null, view: null, furnishing: null, parkingSpaces: 0 },
-        ownershipDetails: {
-          currentOwner: lead.customerInfo?.fullName || '',
-          ownerType: 'Individual', titleDeedNumber: null, titleDeedUrl: null, nocAvailable: false,
         },
         transactionDetails: {
+          ...prev.propertyInfo.transactionDetails,
           purchasePrice: propertyValue,
           agreementDate: dayjs(),
-          handoverDate: lead.propertyDetails?.completionDate ? dayjs(lead.propertyDetails.completionDate) : null,
-          depositPaid: 0, depositPaidDate: null, agentCommission: 0,
-          dldFees: propertyValue * 0.04,
-          registrationFees: 4000,
-          totalClosingCosts: (propertyValue * 0.04) + 4000 + 2500,
         },
+        ownershipDetails: {
+          ...prev.propertyInfo.ownershipDetails,
+          currentOwner: lead.customerInfo?.fullName || '',
+        }
       },
       loanInfo: {
-        requestedAmount: loanAmount,
-        approvedAmount: loanAmount,
-        tenureYears: lead.loanRequirements?.preferredTenureYears || 25,
-        tenureMonths: (lead.loanRequirements?.preferredTenureYears || 25) * 12,
-        interestRateType: selectedBankProduct?.offerSummary?.productType === 'FIXED' ? 'Fixed' : 'Variable',
-        interestRatePercentage: selectedBankProduct?.offerSummary?.initialRate || selectedBankProductToUse?.snapshotRate || 4.25,
-        processingFee: selectedBankProduct?.costBreakdown?.bankProcessingFee || 2500,
-        valuationFee: selectedBankProduct?.costBreakdown?.valuationFee || 2500,
-        earlySettlementFeePercentage: 1,
-        earlySettlementAllowedAfterYears: 3,
-        lifeInsuranceRequired: selectedBankProduct?.insurance?.lifeInsuranceRequired || false,
-        propertyInsuranceRequired: selectedBankProduct?.insurance?.propertyInsuranceRequired || true,
-        monthlyInstallment: {
-          principalAndInterest: selectedBankProduct?.offerSummary?.monthlyEMI || 0,
-          lifeInsurance: 0, propertyInsurance: 0,
-          totalMonthlyPayment: selectedBankProduct?.offerSummary?.monthlyEMI || 0,
-        },
-        selectedBank: selectedBankProduct?.bankInfo?.bankName || '',
-        selectedBankProduct: selectedBankProduct?._id || '',
-        alternativeBanksConsidered: [],
+        ...prev.loanInfo,
+        selectedBank: selectedBankProductToUse?.bankName || bankProduct?.bankInfo?.bankName || '',
+        selectedBankProduct: selectedBankProductToUse?.bankProductId?._id || '',
+        interestRatePercentage: selectedBankProductToUse?.snapshotRate || bankProduct?.offerSummary?.initialRate || 4.25,
       },
-      internalNotes: proposal?.coverNote || '',
-      customerNotes: '',
-      pendingDocumentTypes: [],
-    });
+      incomeDetails: {
+        ...prev.incomeDetails,
+        basicSalary: lead.customerInfo?.monthlySalary || 0,
+        totalMonthlySalary: lead.customerInfo?.monthlySalary || 0,
+        totalMonthlyIncome: lead.customerInfo?.monthlySalary || 0,
+      },
+      employmentDetails: {
+        ...prev.employmentDetails,
+        employerName: lead.customerInfo?.employer || '',
+        designation: lead.customerInfo?.occupation || '',
+      },
+      internalNotes: proposal.coverNote || '',
+    }));
   };
 
-  useEffect(() => { fetchAcceptedProposals(); }, [fetchAcceptedProposals]);
+  useEffect(() => {
+    fetchAcceptedProposals();
+  }, [fetchAcceptedProposals]);
 
   useEffect(() => {
-    if (selectedProposal && selectedProposal.leadId?._id) {
-      fetchLeadDetails(selectedProposal.leadId._id);
+    if (selectedProposal) {
+      fetchProposalDetails(selectedProposal._id);
     }
   }, [selectedProposal, selectedBankFromProposal]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    // Validate current step fields
     if (currentStep === 0 && !selectedProposal) {
-      return message.warning("Please select an accepted proposal first.");
+      message.warning("Please select an accepted proposal first.");
+      return;
     }
     if (currentStep === 0 && selectedProposal) {
       const bankProducts = selectedProposal.selectedBankProducts || [];
@@ -336,7 +335,48 @@ const CreateCase = () => {
         setCurrentStep(prev => prev + 1);
         return;
       }
+      setCurrentStep(prev => prev + 1);
+      return;
     }
+    
+    // Step 1 validation - Client Info
+    if (currentStep === 1) {
+      const required = ['fullName', 'email', 'mobile', 'nationality', 'gender', 'dateOfBirth'];
+      let hasError = false;
+      required.forEach(field => {
+        if (!caseData.clientInfo[field]) {
+          validateField(field, null);
+          hasError = true;
+        }
+      });
+      if (hasError) {
+        message.error("Please fill all required fields");
+        return;
+      }
+    }
+    
+    // Step 2 validation - Income
+    if (currentStep === 2 && (!caseData.incomeDetails.totalMonthlyIncome || caseData.incomeDetails.totalMonthlyIncome <= 0)) {
+      message.error("Please enter valid monthly income");
+      return;
+    }
+    
+    // Step 3 validation - Property & Loan
+    if (currentStep === 3) {
+      if (!caseData.propertyInfo.propertyValue || caseData.propertyInfo.propertyValue <= 0) {
+        message.error("Please enter property value");
+        return;
+      }
+      if (!caseData.loanInfo.interestRatePercentage || caseData.loanInfo.interestRatePercentage <= 0) {
+        message.error("Please enter interest rate");
+        return;
+      }
+      if (!caseData.loanInfo.selectedBankProduct) {
+        message.error("Please select a bank product");
+        return;
+      }
+    }
+    
     setCurrentStep(prev => prev + 1);
   };
 
@@ -345,18 +385,15 @@ const CreateCase = () => {
   const handleBankSelection = (selectedBankProduct) => {
     setSelectedBankFromProposal(selectedBankProduct);
     setShowBankSelectionModal(false);
-    if (selectedLead && selectedProposal) {
-      const updatedProposal = { ...selectedProposal, selectedBankProducts: [selectedBankProduct] };
-      populateCaseFromLeadAndProposal(selectedLead, updatedProposal);
+    if (selectedProposalData?.proposal && selectedLead) {
+      populateCaseFromProposal(selectedProposalData.proposal, selectedLead);
     }
     setCurrentStep(prev => prev + 1);
   };
 
   const handleCaseDataChange = (section, field, value) => {
-    setCaseData(prev => ({
-      ...prev,
-      [section]: { ...prev[section], [field]: value },
-    }));
+    setCaseData(prev => ({ ...prev, [section]: { ...prev[section], [field]: value } }));
+    validateField(`${section}.${field}`, value);
   };
 
   const handleNestedChange = (section, nested, field, value) => {
@@ -364,20 +401,19 @@ const CreateCase = () => {
       ...prev,
       [section]: {
         ...prev[section],
-        [nested]: { ...prev[section][nested], [field]: value },
-      },
+        [nested]: {
+          ...prev[section][nested],
+          [field]: value
+        }
+      }
     }));
   };
 
-  // ✅ FIX 3: Income total — single setCaseData call with all updates together
   const handleIncomeChange = (field, val) => {
     setCaseData(prev => {
       const updated = { ...prev.incomeDetails, [field]: val || 0 };
-      const total =
-        (updated.basicSalary || 0) +
-        (updated.housingAllowance || 0) +
-        (updated.transportAllowance || 0) +
-        (updated.otherAllowances || 0);
+      const total = (updated.basicSalary || 0) + (updated.housingAllowance || 0) + 
+                    (updated.transportAllowance || 0) + (updated.otherAllowances || 0);
       return {
         ...prev,
         incomeDetails: {
@@ -398,7 +434,6 @@ const CreateCase = () => {
         monthlyInstallment: values.monthlyInstallment,
         tenureRemainingMonths: values.tenureRemainingMonths,
       };
-
       setCaseData(prev => {
         let updatedLoans;
         if (editingLoan !== null) {
@@ -417,7 +452,6 @@ const CreateCase = () => {
           },
         };
       });
-
       loanForm.resetFields();
       setShowAddLoanModal(false);
       setEditingLoan(null);
@@ -446,6 +480,24 @@ const CreateCase = () => {
     });
   };
 
+  const handleDocumentUpload = async (file, docType) => {
+    setUploadingDocs(true);
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('documentType', docType);
+    formData.append('entityType', 'Case');
+    
+    try {
+      // For now, just track uploaded documents
+      setUploadedDocuments(prev => [...prev, { name: file.name, type: docType, status: 'uploaded' }]);
+      message.success(`${docType} uploaded successfully`);
+    } catch (error) {
+      message.error(`Failed to upload ${docType}`);
+    } finally {
+      setUploadingDocs(false);
+    }
+  };
+
   const submitCase = async () => {
     setSubmitting(true);
     try {
@@ -456,45 +508,140 @@ const CreateCase = () => {
         return date;
       };
 
-      const selectedBankProductId =
-        selectedBankFromProposal?.bankProductId?._id ||
-        selectedBankFromProposal?.bankProductId ||
-        caseData.loanInfo.selectedBankProduct;
-
       const payload = {
         proposalId: selectedProposal?._id,
         sourceLeadId: selectedLead?._id,
-        clientInfo: { ...caseData.clientInfo, dateOfBirth: formatDateForApi(caseData.clientInfo.dateOfBirth) },
-        currentAddress: caseData.currentAddress.building ? caseData.currentAddress : null,
-        previousAddress: caseData.previousAddress.building ? caseData.previousAddress : null,
-        employmentDetails: { ...caseData.employmentDetails },
-        incomeDetails: { ...caseData.incomeDetails },
-        expenseDetails: { ...caseData.expenseDetails },
+        caseReference: caseData.caseReference,
+        
+        clientInfo: {
+          fullName: caseData.clientInfo.fullName,
+          preferredName: caseData.clientInfo.preferredName,
+          gender: caseData.clientInfo.gender || 'Male',
+          dateOfBirth: formatDateForApi(caseData.clientInfo.dateOfBirth),
+          nationality: caseData.clientInfo.nationality,
+          maritalStatus: caseData.clientInfo.maritalStatus,
+          numberOfDependents: caseData.clientInfo.numberOfDependents,
+          email: caseData.clientInfo.email,
+          mobile: caseData.clientInfo.mobile,
+          homePhone: caseData.clientInfo.homePhone,
+          workPhone: caseData.clientInfo.workPhone,
+          whatsapp: caseData.clientInfo.whatsapp,
+        },
+        
+        currentAddress: caseData.currentAddress?.building ? caseData.currentAddress : null,
+        previousAddress: caseData.previousAddress?.building ? caseData.previousAddress : null,
+        
+        employmentDetails: {
+          employerName: caseData.employmentDetails.employerName,
+          industry: caseData.employmentDetails.industry,
+          designation: caseData.employmentDetails.designation,
+          employmentType: caseData.employmentDetails.employmentType,
+          yearsWithEmployer: caseData.employmentDetails.yearsWithEmployer,
+          monthsWithEmployer: caseData.employmentDetails.monthsWithEmployer,
+          probationPeriod: caseData.employmentDetails.probationPeriod,
+          workAddress: caseData.employmentDetails.workAddress,
+          workPhone: caseData.employmentDetails.workPhone,
+          employerEmail: caseData.employmentDetails.employerEmail,
+        },
+        
+        incomeDetails: {
+          basicSalary: caseData.incomeDetails.basicSalary,
+          housingAllowance: caseData.incomeDetails.housingAllowance,
+          transportAllowance: caseData.incomeDetails.transportAllowance,
+          otherAllowances: caseData.incomeDetails.otherAllowances,
+          totalMonthlySalary: caseData.incomeDetails.totalMonthlySalary,
+          annualBonus: caseData.incomeDetails.annualBonus,
+          otherIncome: caseData.incomeDetails.otherIncome,
+          totalMonthlyIncome: caseData.incomeDetails.totalMonthlyIncome,
+          salaryTransferBank: caseData.incomeDetails.salaryTransferBank,
+          salaryTransferType: caseData.incomeDetails.salaryTransferType,
+        },
+        
+        expenseDetails: {
+          monthlyRent: caseData.expenseDetails.monthlyRent,
+          monthlyOtherLoanInstallments: caseData.expenseDetails.monthlyOtherLoanInstallments,
+          monthlyCreditCardPayments: caseData.expenseDetails.monthlyCreditCardPayments,
+          monthlyLivingExpenses: caseData.expenseDetails.monthlyLivingExpenses,
+          totalMonthlyLiabilities: caseData.expenseDetails.totalMonthlyLiabilities,
+          dbrPercentage: caseData.expenseDetails.dbrPercentage,
+          dbrStatus: caseData.expenseDetails.dbrStatus,
+          existingLoans: caseData.expenseDetails.existingLoans,
+        },
+        
         propertyInfo: {
-          ...caseData.propertyInfo,
+          propertyType: caseData.propertyInfo.propertyType,
+          propertySubtype: caseData.propertyInfo.propertySubtype,
+          propertyValue: caseData.propertyInfo.propertyValue,
+          valuationAmount: caseData.propertyInfo.valuationAmount,
+          ltvPercentage: caseData.propertyInfo.ltvPercentage,
+          loanAmount: caseData.propertyInfo.loanAmount,
+          downPayment: caseData.propertyInfo.downPayment,
+          downPaymentSource: caseData.propertyInfo.downPaymentSource,
+          propertyAddress: caseData.propertyInfo.propertyAddress,
+          propertyDetails: caseData.propertyInfo.propertyDetails,
+          ownershipDetails: {
+            currentOwner: caseData.propertyInfo.ownershipDetails.currentOwner || caseData.clientInfo.fullName,
+            ownerType: caseData.propertyInfo.ownershipDetails.ownerType,
+            titleDeedNumber: caseData.propertyInfo.ownershipDetails.titleDeedNumber,
+            titleDeedUrl: caseData.propertyInfo.ownershipDetails.titleDeedUrl,
+            nocAvailable: caseData.propertyInfo.ownershipDetails.nocAvailable,
+          },
           transactionDetails: {
-            ...caseData.propertyInfo.transactionDetails,
-            agreementDate: formatDateForApi(caseData.propertyInfo.transactionDetails?.agreementDate),
+            purchasePrice: caseData.propertyInfo.transactionDetails?.purchasePrice || caseData.propertyInfo.propertyValue,
+            agreementDate: formatDateForApi(caseData.propertyInfo.transactionDetails?.agreementDate) || new Date(),
             handoverDate: formatDateForApi(caseData.propertyInfo.transactionDetails?.handoverDate),
+            depositPaid: caseData.propertyInfo.transactionDetails?.depositPaid || 0,
+            depositPaidDate: formatDateForApi(caseData.propertyInfo.transactionDetails?.depositPaidDate),
+            agentCommission: caseData.propertyInfo.transactionDetails?.agentCommission || 0,
+            dldFees: caseData.propertyInfo.transactionDetails?.dldFees || 0,
+            registrationFees: caseData.propertyInfo.transactionDetails?.registrationFees || 0,
+            totalClosingCosts: caseData.propertyInfo.transactionDetails?.totalClosingCosts || 0,
           },
         },
+        
         loanInfo: {
-          ...caseData.loanInfo,
-          selectedBankProduct: selectedBankProductId,
-          alternativeBanksConsidered: caseData.loanInfo.alternativeBanksConsidered || [],
+          requestedAmount: caseData.loanInfo.requestedAmount,
+          approvedAmount: caseData.loanInfo.approvedAmount,
+          tenureYears: caseData.loanInfo.tenureYears,
+          tenureMonths: caseData.loanInfo.tenureYears * 12,
+          interestRateType: caseData.loanInfo.interestRateType,
+          interestRatePercentage: caseData.loanInfo.interestRatePercentage,
+          processingFee: caseData.loanInfo.processingFee,
+          valuationFee: caseData.loanInfo.valuationFee,
+          earlySettlementFeePercentage: caseData.loanInfo.earlySettlementFeePercentage,
+          earlySettlementAllowedAfterYears: caseData.loanInfo.earlySettlementAllowedAfterYears,
+          lifeInsuranceRequired: caseData.loanInfo.lifeInsuranceRequired,
+          propertyInsuranceRequired: caseData.loanInfo.propertyInsuranceRequired,
+          monthlyInstallment: caseData.loanInfo.monthlyInstallment,
+          selectedBank: caseData.loanInfo.selectedBank,
+          selectedBankProduct: caseData.loanInfo.selectedBankProduct,
         },
+        
+        currentStatus: 'Draft',
+        internalNotes: caseData.internalNotes,
+        customerNotes: caseData.customerNotes,
       };
 
       const response = await apiService.post('/vault/cases', payload);
-
+      
       if (response?.success) {
         setCreatedCaseId(response.data._id);
-        message.success("Case created successfully!");
+        message.success(`Case created successfully! ${response.data.documentsCopied} documents copied from lead.`);
         setCurrentStep(0);
         setSelectedProposal(null);
         setSelectedLead(null);
         setSelectedBankFromProposal(null);
+        setSelectedProposalData(null);
+        setUploadedDocuments([]);
         fetchAcceptedProposals();
+        // Reset form
+        setCaseData({
+          ...caseData,
+          caseReference: generateCaseReference(),
+          clientInfo: { ...caseData.clientInfo, fullName: '', email: '', mobile: '', nationality: '', dateOfBirth: null },
+          propertyInfo: { ...caseData.propertyInfo, propertyValue: 0, downPayment: 0 },
+          loanInfo: { ...caseData.loanInfo, interestRatePercentage: 0, selectedBank: '', selectedBankProduct: '' },
+        });
       } else {
         message.error(response?.message || "Failed to create case");
       }
@@ -506,34 +653,53 @@ const CreateCase = () => {
     }
   };
 
-  // ─── STEP 0: Select Proposal ───────────────────────────────────────
+  // Document checklist items
+  const documentChecklist = [
+    { key: 'bank_application_form', label: 'Bank Application Form', required: true },
+    { key: 'emirates_id_front', label: 'Emirates ID (Front)', required: true },
+    { key: 'emirates_id_back', label: 'Emirates ID (Back)', required: true },
+    { key: 'passport', label: 'Passport Copy', required: true },
+    { key: 'visa', label: 'Residence Visa', required: false },
+    { key: 'bank_statements', label: 'Bank Statements (6 months)', required: true },
+    { key: 'salary_certificate', label: 'Salary Certificate', required: true },
+    { key: 'payslips', label: 'Recent Payslips', required: false },
+    { key: 'title_deed', label: 'Title Deed', required: true },
+    { key: 'consent_form', label: 'Consent Form', required: true },
+  ];
+
+  // STEP 0: Select Accepted Proposal
   const renderStep0 = () => (
     <div style={{ animation: 'fadeIn 0.5s' }}>
-      <Title level={4} style={{ color: THEME_COLOR, marginBottom: 24 }}>
-        Select Accepted Proposal to Convert to Case
-      </Title>
+      <Title level={4} style={{ color: THEME_COLOR, marginBottom: 24 }}>Select Accepted Proposal to Convert to Case</Title>
       {fetchingProposals ? (
         <div style={{ textAlign: 'center', padding: 40 }}><Spin size="large" /></div>
       ) : acceptedProposals.length === 0 ? (
-        <Alert message="No Accepted Proposals Found" description="There are no accepted proposals available to convert into cases." type="info" showIcon style={{ borderRadius: 12 }} />
+        <Alert 
+          message="No Accepted Proposals Found" 
+          description="There are no accepted proposals available to convert into cases. Please ensure you have accepted proposals first." 
+          type="info" 
+          showIcon 
+          style={{ borderRadius: 12 }}
+        />
       ) : (
         <Row gutter={[16, 16]}>
           {acceptedProposals.map(proposal => (
             <Col xs={24} md={12} lg={8} key={proposal._id}>
-              <Card
-                hoverable
-                onClick={() => setSelectedProposal(proposal)}
-                style={{
-                  borderColor: selectedProposal?._id === proposal._id ? THEME_COLOR : '#f0f0f0',
-                  borderWidth: selectedProposal?._id === proposal._id ? 2 : 1,
-                  borderRadius: 12,
+              <Card 
+                hoverable 
+                onClick={() => setSelectedProposal(proposal)} 
+                style={{ 
+                  borderColor: selectedProposal?._id === proposal._id ? THEME_COLOR : '#f0f0f0', 
+                  borderWidth: selectedProposal?._id === proposal._id ? 2 : 1, 
+                  borderRadius: 12, 
+                  cursor: 'pointer' 
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                   <Avatar icon={<UserOutlined />} style={{ backgroundColor: THEME_COLOR }} />
                   <div style={{ flex: 1 }}>
-                    <Text strong style={{ display: 'block', fontSize: 16 }}>{proposal.leadId?.customerInfo?.fullName}</Text>
-                    <Text type="secondary" style={{ fontSize: 12 }}>{proposal.leadId?.customerInfo?.email}</Text>
+                    <Text strong style={{ display: 'block', fontSize: 16 }}>{proposal.leadId?.customerInfo?.fullName || 'Unknown Customer'}</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{proposal.leadId?.customerInfo?.email || 'No email'}</Text>
                   </div>
                   <Badge status="success" text="Accepted" />
                 </div>
@@ -541,18 +707,18 @@ const CreateCase = () => {
                 <Row gutter={[8, 8]}>
                   <Col span={12}>
                     <Text type="secondary" style={{ fontSize: 11 }}>Property Value</Text>
-                    <div><b>AED {proposal.leadId?.propertyDetails?.propertyValue?.toLocaleString()}</b></div>
+                    <div><b>AED {proposal.clientRequirements?.targetPropertyValue?.toLocaleString() || 0}</b></div>
                   </Col>
                   <Col span={12}>
                     <Text type="secondary" style={{ fontSize: 11 }}>Loan Amount</Text>
-                    <div><b>AED {proposal.leadId?.propertyDetails?.loanAmountRequired?.toLocaleString()}</b></div>
+                    <div><b>AED {proposal.customerFinancialSummary?.estimatedLoanAmount?.toLocaleString() || 0}</b></div>
                   </Col>
                   <Col span={24}>
                     <Text type="secondary" style={{ fontSize: 11 }}>Selected Banks ({proposal.selectedBankProducts?.length || 0})</Text>
-                    <div>
+                    <div style={{ marginTop: 4 }}>
                       {proposal.selectedBankProducts?.map((p, idx) => (
-                        <Tag key={idx} color="purple" style={{ marginTop: 4 }}>
-                          {p.bankProductId?.bankInfo?.bankName} ({p.snapshotRate || p.bankProductId?.offerSummary?.initialRate}%)
+                        <Tag key={idx} color="purple" style={{ marginTop: 4, marginRight: 4 }}>
+                          {p.bankName || p.bankProductId?.bankInfo?.bankName} ({p.snapshotRate || p.bankProductId?.offerSummary?.initialRate}%)
                         </Tag>
                       ))}
                     </div>
@@ -566,118 +732,175 @@ const CreateCase = () => {
     </div>
   );
 
-  // ─── STEP 1: Client Information ────────────────────────────────────
+  // STEP 1: Client Information
   const renderStep1 = () => (
     <div style={{ animation: 'fadeIn 0.5s' }}>
       <Title level={4} style={{ color: THEME_COLOR, marginBottom: 24 }}>Client Information</Title>
       <Row gutter={[24, 24]}>
         <Col span={24}>
-          <Card title="Personal Details" styles={{ body: { padding: 24 } }}>
+          <Card title="Personal Details" bodyStyle={{ padding: 24 }}>
             <Row gutter={[16, 16]}>
-              <Col span={12}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Full Name <span style={{ color: 'red' }}>*</span></Text>
-                <Input value={caseData.clientInfo.fullName} onChange={(e) => handleCaseDataChange('clientInfo', 'fullName', e.target.value)} placeholder="Enter full name" style={{ marginTop: 4 }} />
+                <Input 
+                  size="large" 
+                  value={caseData.clientInfo.fullName} 
+                  onChange={(e) => handleCaseDataChange('clientInfo', 'fullName', e.target.value)} 
+                  placeholder="Enter full name" 
+                  status={fieldErrors['fullName'] ? 'error' : ''} 
+                  style={{ marginTop: 4 }} 
+                />
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Preferred Name</Text>
-                <Input value={caseData.clientInfo.preferredName} onChange={(e) => handleCaseDataChange('clientInfo', 'preferredName', e.target.value)} placeholder="Enter preferred name" style={{ marginTop: 4 }} />
+                <Input 
+                  size="large" 
+                  value={caseData.clientInfo.preferredName} 
+                  onChange={(e) => handleCaseDataChange('clientInfo', 'preferredName', e.target.value)} 
+                  placeholder="Enter preferred name" 
+                  style={{ marginTop: 4 }} 
+                />
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Gender <span style={{ color: 'red' }}>*</span></Text>
-                <Select value={caseData.clientInfo.gender} onChange={(val) => handleCaseDataChange('clientInfo', 'gender', val)} style={{ width: '100%', marginTop: 4 }} placeholder="Select gender">
+                <Select 
+                  size="large" 
+                  value={caseData.clientInfo.gender} 
+                  onChange={(val) => handleCaseDataChange('clientInfo', 'gender', val)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  placeholder="Select gender"
+                >
                   <Option value="Male">Male</Option>
                   <Option value="Female">Female</Option>
                 </Select>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Date of Birth <span style={{ color: 'red' }}>*</span></Text>
-                <DatePicker value={caseData.clientInfo.dateOfBirth} onChange={(date) => handleCaseDataChange('clientInfo', 'dateOfBirth', date)} style={{ width: '100%', marginTop: 4 }} format="DD/MM/YYYY" placeholder="Select date of birth" />
+                <DatePicker 
+                  size="large" 
+                  value={caseData.clientInfo.dateOfBirth} 
+                  onChange={(date) => handleCaseDataChange('clientInfo', 'dateOfBirth', date)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  format="DD/MM/YYYY" 
+                  placeholder="Select date of birth" 
+                />
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Nationality <span style={{ color: 'red' }}>*</span></Text>
-                <Input value={caseData.clientInfo.nationality} onChange={(e) => handleCaseDataChange('clientInfo', 'nationality', e.target.value)} placeholder="Enter nationality" style={{ marginTop: 4 }} />
+                <Input 
+                  size="large" 
+                  value={caseData.clientInfo.nationality} 
+                  onChange={(e) => handleCaseDataChange('clientInfo', 'nationality', e.target.value)} 
+                  placeholder="Enter nationality" 
+                  style={{ marginTop: 4 }} 
+                />
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Marital Status</Text>
-                <Select value={caseData.clientInfo.maritalStatus} onChange={(val) => handleCaseDataChange('clientInfo', 'maritalStatus', val)} style={{ width: '100%', marginTop: 4 }}>
+                <Select 
+                  size="large" 
+                  value={caseData.clientInfo.maritalStatus} 
+                  onChange={(val) => handleCaseDataChange('clientInfo', 'maritalStatus', val)} 
+                  style={{ width: '100%', marginTop: 4 }}
+                >
                   <Option value="Single">Single</Option>
                   <Option value="Married">Married</Option>
                   <Option value="Divorced">Divorced</Option>
                   <Option value="Widowed">Widowed</Option>
                 </Select>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Number of Dependents</Text>
-                <InputNumber value={caseData.clientInfo.numberOfDependents} onChange={(val) => handleCaseDataChange('clientInfo', 'numberOfDependents', val)} style={{ width: '100%', marginTop: 4 }} min={0} max={20} />
+                <InputNumber 
+                  size="large" 
+                  value={caseData.clientInfo.numberOfDependents} 
+                  onChange={(val) => handleCaseDataChange('clientInfo', 'numberOfDependents', val)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  min={0} 
+                  max={20} 
+                />
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Email <span style={{ color: 'red' }}>*</span></Text>
-                <Input value={caseData.clientInfo.email} onChange={(e) => handleCaseDataChange('clientInfo', 'email', e.target.value)} placeholder="Enter email" style={{ marginTop: 4 }} />
+                <Input 
+                  size="large" 
+                  value={caseData.clientInfo.email} 
+                  onChange={(e) => handleCaseDataChange('clientInfo', 'email', e.target.value)} 
+                  placeholder="Enter email" 
+                  status={fieldErrors['email'] ? 'error' : ''} 
+                  style={{ marginTop: 4 }} 
+                />
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Mobile Number <span style={{ color: 'red' }}>*</span></Text>
-                <Input value={caseData.clientInfo.mobile} onChange={(e) => handleCaseDataChange('clientInfo', 'mobile', e.target.value)} placeholder="Enter mobile number" style={{ marginTop: 4 }} />
+                <Input 
+                  size="large" 
+                  value={caseData.clientInfo.mobile} 
+                  onChange={(e) => handleCaseDataChange('clientInfo', 'mobile', e.target.value)} 
+                  placeholder="Enter mobile number" 
+                  status={fieldErrors['mobile'] ? 'error' : ''} 
+                  style={{ marginTop: 4 }} 
+                />
               </Col>
             </Row>
           </Card>
         </Col>
 
         <Col span={24}>
-          <Card title="Current Address" styles={{ body: { padding: 24 } }}>
+          <Card title="Employment Details" bodyStyle={{ padding: 24 }}>
             <Row gutter={[16, 16]}>
-              <Col span={12}>
-                <Text strong>Building Name</Text>
-                <Input value={caseData.currentAddress.building} onChange={(e) => setCaseData(prev => ({ ...prev, currentAddress: { ...prev.currentAddress, building: e.target.value } }))} placeholder="Enter building name" style={{ marginTop: 4 }} />
-              </Col>
-              <Col span={12}>
-                <Text strong>Apartment/Unit</Text>
-                <Input value={caseData.currentAddress.apartment} onChange={(e) => setCaseData(prev => ({ ...prev, currentAddress: { ...prev.currentAddress, apartment: e.target.value } }))} placeholder="Enter apartment number" style={{ marginTop: 4 }} />
-              </Col>
-              <Col span={12}>
-                <Text strong>Area <span style={{ color: 'red' }}>*</span></Text>
-                <Input value={caseData.currentAddress.area} onChange={(e) => setCaseData(prev => ({ ...prev, currentAddress: { ...prev.currentAddress, area: e.target.value } }))} placeholder="Enter area" style={{ marginTop: 4 }} />
-              </Col>
-              <Col span={6}>
-                <Text strong>Residence Type</Text>
-                <Select value={caseData.currentAddress.residenceType} onChange={(val) => setCaseData(prev => ({ ...prev, currentAddress: { ...prev.currentAddress, residenceType: val } }))} style={{ width: '100%', marginTop: 4 }} placeholder="Select type">
-                  <Option value="Owned">Owned</Option>
-                  <Option value="Rented">Rented</Option>
-                  <Option value="Company Provided">Company Provided</Option>
-                </Select>
-              </Col>
-              <Col span={6}>
-                <Text strong>Years at Address</Text>
-                <InputNumber value={caseData.currentAddress.yearsAtAddress} onChange={(val) => setCaseData(prev => ({ ...prev, currentAddress: { ...prev.currentAddress, yearsAtAddress: val } }))} style={{ width: '100%', marginTop: 4 }} min={0} max={50} placeholder="Years" />
-              </Col>
-            </Row>
-          </Card>
-        </Col>
-
-        <Col span={24}>
-          <Card title="Employment Details" styles={{ body: { padding: 24 } }}>
-            <Row gutter={[16, 16]}>
-              <Col span={12}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Employer Name <span style={{ color: 'red' }}>*</span></Text>
-                <Input value={caseData.employmentDetails.employerName} onChange={(e) => handleCaseDataChange('employmentDetails', 'employerName', e.target.value)} placeholder="Enter employer name" style={{ marginTop: 4 }} />
+                <Input 
+                  size="large" 
+                  value={caseData.employmentDetails.employerName} 
+                  onChange={(e) => handleCaseDataChange('employmentDetails', 'employerName', e.target.value)} 
+                  placeholder="Enter employer name" 
+                  style={{ marginTop: 4 }} 
+                />
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Designation <span style={{ color: 'red' }}>*</span></Text>
-                <Input value={caseData.employmentDetails.designation} onChange={(e) => handleCaseDataChange('employmentDetails', 'designation', e.target.value)} placeholder="Enter job title" style={{ marginTop: 4 }} />
+                <Input 
+                  size="large" 
+                  value={caseData.employmentDetails.designation} 
+                  onChange={(e) => handleCaseDataChange('employmentDetails', 'designation', e.target.value)} 
+                  placeholder="Enter job title" 
+                  style={{ marginTop: 4 }} 
+                />
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Employment Type</Text>
-                <Select value={caseData.employmentDetails.employmentType} onChange={(val) => handleCaseDataChange('employmentDetails', 'employmentType', val)} style={{ width: '100%', marginTop: 4 }}>
+                <Select 
+                  size="large" 
+                  value={caseData.employmentDetails.employmentType} 
+                  onChange={(val) => handleCaseDataChange('employmentDetails', 'employmentType', val)} 
+                  style={{ width: '100%', marginTop: 4 }}
+                >
                   <Option value="Salaried">Salaried</Option>
                   <Option value="Self-Employed">Self-Employed</Option>
                 </Select>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Years with Employer</Text>
-                <InputNumber value={caseData.employmentDetails.yearsWithEmployer} onChange={(val) => handleCaseDataChange('employmentDetails', 'yearsWithEmployer', val)} style={{ width: '100%', marginTop: 4 }} min={0} max={50} placeholder="Years" />
+                <InputNumber 
+                  size="large" 
+                  value={caseData.employmentDetails.yearsWithEmployer} 
+                  onChange={(val) => handleCaseDataChange('employmentDetails', 'yearsWithEmployer', val)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  min={0} 
+                  max={50} 
+                  placeholder="Years" 
+                />
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Text strong>Probation Period</Text>
-                <Select value={caseData.employmentDetails.probationPeriod} onChange={(val) => handleCaseDataChange('employmentDetails', 'probationPeriod', val)} style={{ width: '100%', marginTop: 4 }}>
+                <Select 
+                  size="large" 
+                  value={caseData.employmentDetails.probationPeriod} 
+                  onChange={(val) => handleCaseDataChange('employmentDetails', 'probationPeriod', val)} 
+                  style={{ width: '100%', marginTop: 4 }}
+                >
                   <Option value="Completed">Completed</Option>
                   <Option value="Ongoing">Ongoing</Option>
                   <Option value="Not Applicable">Not Applicable</Option>
@@ -690,382 +913,469 @@ const CreateCase = () => {
     </div>
   );
 
-  // ─── STEP 2: Income & Expenses ─────────────────────────────────────
-  // ✅ FIX 4: `return ( +` ka stray `+` hata diya
-  const renderStep2 = () => {
-    return (
-      <div style={{ animation: 'fadeIn 0.5s' }}>
-        <Title level={4} style={{ color: THEME_COLOR, marginBottom: 24 }}>Income & Financial Assessment</Title>
+  // STEP 2: Income & Expenses
+  const renderStep2 = () => (
+    <div style={{ animation: 'fadeIn 0.5s' }}>
+      <Title level={4} style={{ color: THEME_COLOR, marginBottom: 24 }}>Income & Financial Assessment</Title>
+      <Row gutter={[24, 24]}>
+        <Col xs={24} lg={14}>
+          <Card title="Income Details" bodyStyle={{ padding: 24 }} style={{ marginBottom: 24 }}>
+            <Row gutter={[16, 16]}>
+              <Col span={24}>
+                <Text strong>Basic Salary (Monthly) <span style={{ color: 'red' }}>*</span></Text>
+                <InputNumber 
+                  size="large" 
+                  value={caseData.incomeDetails.basicSalary} 
+                  onChange={(val) => handleIncomeChange('basicSalary', val)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  placeholder="Enter basic salary" 
+                  min={0} 
+                />
+              </Col>
+              <Col span={12}>
+                <Text strong>Housing Allowance</Text>
+                <InputNumber 
+                  size="large" 
+                  value={caseData.incomeDetails.housingAllowance} 
+                  onChange={(val) => handleIncomeChange('housingAllowance', val)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  min={0} 
+                />
+              </Col>
+              <Col span={12}>
+                <Text strong>Transport Allowance</Text>
+                <InputNumber 
+                  size="large" 
+                  value={caseData.incomeDetails.transportAllowance} 
+                  onChange={(val) => handleIncomeChange('transportAllowance', val)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  min={0} 
+                />
+              </Col>
+              <Col span={24}>
+                <Text strong>Other Allowances</Text>
+                <InputNumber 
+                  size="large" 
+                  value={caseData.incomeDetails.otherAllowances} 
+                  onChange={(val) => handleIncomeChange('otherAllowances', val)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  min={0} 
+                />
+              </Col>
+            </Row>
+          </Card>
 
-        <Row gutter={[24, 24]}>
-          <Col span={12}>
-            <Card title="Income Details" styles={{ body: { padding: 24 } }}>
-              <Row gutter={[16, 16]}>
-                <Col span={24}>
-                  <Text strong>Basic Salary (Monthly) <span style={{ color: 'red' }}>*</span></Text>
-                  <InputNumber
-                    value={caseData.incomeDetails.basicSalary}
-                    onChange={(val) => handleIncomeChange('basicSalary', val)}
-                    style={{ width: '100%', marginTop: 4 }}
-                    formatter={aedFormatter}
-                    parser={aedParser}
-                    placeholder="Enter basic salary"
-                    min={0}
-                  />
+          <Card title="Monthly Expenses" bodyStyle={{ padding: 24 }} style={{ marginBottom: 24 }}>
+            <Row gutter={[16, 16]}>
+              <Col span={24}>
+                <Text strong>Monthly Rent</Text>
+                <InputNumber 
+                  size="large" 
+                  value={caseData.expenseDetails.monthlyRent} 
+                  onChange={(val) => handleCaseDataChange('expenseDetails', 'monthlyRent', val || 0)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  min={0} 
+                />
+              </Col>
+              <Col span={24}>
+                <Text strong>Credit Card Payments (Monthly)</Text>
+                <InputNumber 
+                  size="large" 
+                  value={caseData.expenseDetails.monthlyCreditCardPayments} 
+                  onChange={(val) => handleCaseDataChange('expenseDetails', 'monthlyCreditCardPayments', val || 0)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  min={0} 
+                />
+              </Col>
+              <Col span={24}>
+                <Text strong>Monthly Living Expenses</Text>
+                <InputNumber 
+                  size="large" 
+                  value={caseData.expenseDetails.monthlyLivingExpenses} 
+                  onChange={(val) => handleCaseDataChange('expenseDetails', 'monthlyLivingExpenses', val || 0)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  min={0} 
+                />
+              </Col>
+            </Row>
+          </Card>
+
+          <Card 
+            title="Existing Loans & Liabilities" 
+            extra={
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={() => { setEditingLoan(null); loanForm.resetFields(); setShowAddLoanModal(true); }} 
+                style={{ background: THEME_COLOR }}
+              >
+                Add Loan
+              </Button>
+            } 
+            bodyStyle={{ padding: 24 }}
+          >
+            <Table 
+              dataSource={caseData.expenseDetails.existingLoans} 
+              columns={[
+                { title: 'Type', dataIndex: 'type', key: 'type', width: 100, render: (val) => <Tag color="blue">{val}</Tag> },
+                { title: 'Bank/Institution', dataIndex: 'bank', key: 'bank', width: 150 },
+                { title: 'Outstanding Amount', dataIndex: 'outstandingAmount', key: 'outstandingAmount', width: 150, render: (val) => `AED ${(val || 0).toLocaleString()}` },
+                { title: 'Monthly Installment', dataIndex: 'monthlyInstallment', key: 'monthlyInstallment', width: 150, render: (val) => `AED ${(val || 0).toLocaleString()}` },
+                { title: 'Remaining Months', dataIndex: 'tenureRemainingMonths', key: 'tenureRemainingMonths', width: 120 },
+                { title: 'Actions', key: 'actions', width: 100, render: (_, __, index) => (
+                  <Space>
+                    <Button size="small" icon={<EditOutlined />} onClick={() => handleEditLoan(index)} />
+                    <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleRemoveLoan(index)} />
+                  </Space>
+                ) },
+              ]} 
+              rowKey={(_, index) => index} 
+              pagination={false} 
+              locale={{ emptyText: 'No existing loans added' }} 
+              scroll={{ x: 800 }} 
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={10}>
+          <Card 
+            title={<span><LineChartOutlined style={{ color: THEME_COLOR }} /> DBR Analysis & Tracker</span>} 
+            bodyStyle={{ padding: 24 }} 
+            headStyle={{ background: '#f8f5ff' }}
+          >
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <Progress 
+                type="dashboard" 
+                percent={Math.min(caseData.expenseDetails.dbrPercentage || 0, 100)} 
+                strokeColor={caseData.expenseDetails.dbrPercentage <= 50 ? '#10b981' : caseData.expenseDetails.dbrPercentage <= 60 ? '#f59e0b' : '#ef4444'} 
+                format={(percent) => (
+                  <div>
+                    <div style={{ fontSize: 28, fontWeight: 'bold' }}>{caseData.expenseDetails.dbrPercentage || 0}%</div>
+                    <div style={{ fontSize: 12, color: '#666' }}>DBR Score</div>
+                  </div>
+                )} 
+                width={180} 
+                strokeWidth={12} 
+              />
+            </div>
+            
+            <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 8, marginBottom: 16 }}>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Text type="secondary">Total Monthly Income</Text>
+                  <div style={{ fontSize: 18, fontWeight: 'bold', color: '#10b981' }}>
+                    AED {caseData.incomeDetails.totalMonthlyIncome?.toLocaleString() || 0}
+                  </div>
                 </Col>
                 <Col span={12}>
-                  <Text strong>Housing Allowance</Text>
-                  <InputNumber
-                    value={caseData.incomeDetails.housingAllowance}
-                    onChange={(val) => handleIncomeChange('housingAllowance', val)}
-                    style={{ width: '100%', marginTop: 4 }}
-                    formatter={aedFormatter}
-                    parser={aedParser}
-                    min={0}
-                  />
-                </Col>
-                <Col span={12}>
-                  <Text strong>Transport Allowance</Text>
-                  <InputNumber
-                    value={caseData.incomeDetails.transportAllowance}
-                    onChange={(val) => handleIncomeChange('transportAllowance', val)}
-                    style={{ width: '100%', marginTop: 4 }}
-                    formatter={aedFormatter}
-                    parser={aedParser}
-                    min={0}
-                  />
-                </Col>
-                <Col span={24}>
-                  <Text strong>Other Allowances</Text>
-                  <InputNumber
-                    value={caseData.incomeDetails.otherAllowances}
-                    onChange={(val) => handleIncomeChange('otherAllowances', val)}
-                    style={{ width: '100%', marginTop: 4 }}
-                    formatter={aedFormatter}
-                    parser={aedParser}
-                    min={0}
-                  />
-                </Col>
-                <Col span={24}>
-                  <Divider />
-                  <div style={{ textAlign: 'center' }}>
-                    <Statistic
-                      title="Total Monthly Income"
-                      value={caseData.incomeDetails.totalMonthlyIncome || 0}
-                      precision={0}
-                      prefix="AED"
-                      valueStyle={{ color: THEME_COLOR, fontSize: 24 }}
-                    />
+                  <Text type="secondary">Total Monthly Liabilities</Text>
+                  <div style={{ fontSize: 18, fontWeight: 'bold', color: '#ef4444' }}>
+                    AED {caseData.expenseDetails.totalMonthlyLiabilities?.toLocaleString() || 0}
                   </div>
                 </Col>
               </Row>
-            </Card>
-          </Col>
-
-          <Col span={12}>
-            <Card title="Monthly Expenses" styles={{ body: { padding: 24 } }}>
-              <Row gutter={[16, 16]}>
-                <Col span={24}>
-                  <Text strong>Monthly Rent/Mortgage</Text>
-                  <InputNumber
-                    value={caseData.expenseDetails.monthlyRent}
-                    onChange={(val) => handleCaseDataChange('expenseDetails', 'monthlyRent', val || 0)}
-                    style={{ width: '100%', marginTop: 4 }}
-                    formatter={aedFormatter}
-                    parser={aedParser}
-                    min={0}
-                  />
+            </div>
+            
+            <div style={{ background: '#f8f5ff', padding: 16, borderRadius: 8, marginBottom: 16 }}>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Text type="secondary">Proposed EMI</Text>
+                  <div style={{ fontSize: 18, fontWeight: 'bold' }}>
+                    AED {caseData.loanInfo.monthlyInstallment?.principalAndInterest?.toLocaleString() || 0}
+                  </div>
                 </Col>
-                <Col span={24}>
-                  <Text strong>Credit Card Payments (Monthly)</Text>
-                  <InputNumber
-                    value={caseData.expenseDetails.monthlyCreditCardPayments}
-                    onChange={(val) => handleCaseDataChange('expenseDetails', 'monthlyCreditCardPayments', val || 0)}
-                    style={{ width: '100%', marginTop: 4 }}
-                    formatter={aedFormatter}
-                    parser={aedParser}
-                    min={0}
-                  />
-                </Col>
-                <Col span={24}>
-                  <Text strong>Monthly Living Expenses</Text>
-                  <InputNumber
-                    value={caseData.expenseDetails.monthlyLivingExpenses}
-                    onChange={(val) => handleCaseDataChange('expenseDetails', 'monthlyLivingExpenses', val || 0)}
-                    style={{ width: '100%', marginTop: 4 }}
-                    formatter={aedFormatter}
-                    parser={aedParser}
-                    min={0}
-                  />
+                <Col span={12}>
+                  <Text type="secondary">Total Outgoing</Text>
+                  <div style={{ fontSize: 18, fontWeight: 'bold', color: '#e74c3c' }}>
+                    AED {((caseData.expenseDetails.totalMonthlyLiabilities || 0) + (caseData.loanInfo.monthlyInstallment?.principalAndInterest || 0)).toLocaleString()}
+                  </div>
                 </Col>
               </Row>
-            </Card>
-          </Col>
+            </div>
+            
+            <Alert 
+              message={
+                caseData.expenseDetails.dbrStatus === 'Eligible' ? '✅ Eligible' : 
+                caseData.expenseDetails.dbrStatus === 'Borderline' ? '⚠️ Borderline' : '❌ Not Eligible'
+              } 
+              description={
+                caseData.expenseDetails.dbrStatus === 'Eligible' ? 'DBR is within acceptable limits. Loan approval likely.' : 
+                caseData.expenseDetails.dbrStatus === 'Borderline' ? 'DBR is borderline. May need additional documentation.' : 
+                'DBR exceeds limits. Consider reducing liabilities or increasing income.'
+              } 
+              type={caseData.expenseDetails.dbrStatus === 'Eligible' ? 'success' : caseData.expenseDetails.dbrStatus === 'Borderline' ? 'warning' : 'error'} 
+              showIcon 
+              style={{ marginTop: 8 }} 
+            />
+            
+            <Divider />
+            <div style={{ marginTop: 16 }}>
+              <Text strong>DBR Threshold Guidelines:</Text>
+              <ul style={{ marginTop: 8, paddingLeft: 20 }}>
+                <li><Tag color="green">≤ 50%</Tag> - <Text type="secondary">Eligible (Expatriates)</Text></li>
+                <li><Tag color="green">≤ 55%</Tag> - <Text type="secondary">Eligible (UAE Nationals)</Text></li>
+                <li><Tag color="orange">50-60%</Tag> - <Text type="secondary">Borderline - May require review</Text></li>
+                <li><Tag color="red">&gt; 60%</Tag> - <Text type="secondary">Ineligible - Loan unlikely to be approved</Text></li>
+              </ul>
+            </div>
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
 
-          <Col span={24}>
-            <Card
-              title="Existing Loans & Liabilities"
-              extra={
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingLoan(null); loanForm.resetFields(); setShowAddLoanModal(true); }} style={{ background: THEME_COLOR }}>
-                  Add Loan
-                </Button>
-              }
-              styles={{ body: { padding: 24 } }}
-            >
-              <Table
-                dataSource={caseData.expenseDetails.existingLoans}
-                columns={[
-                  { title: 'Type', dataIndex: 'type', key: 'type', render: (val) => <Tag color="blue">{val}</Tag> },
-                  { title: 'Bank/Institution', dataIndex: 'bank', key: 'bank' },
-                  { title: 'Outstanding Amount', dataIndex: 'outstandingAmount', key: 'outstandingAmount', render: (val) => `AED ${(val || 0).toLocaleString()}` },
-                  { title: 'Monthly Installment', dataIndex: 'monthlyInstallment', key: 'monthlyInstallment', render: (val) => `AED ${(val || 0).toLocaleString()}` },
-                  { title: 'Remaining Months', dataIndex: 'tenureRemainingMonths', key: 'tenureRemainingMonths' },
-                  {
-                    title: 'Actions', key: 'actions',
-                    render: (_, __, index) => (
-                      <Space>
-                        <Button size="small" onClick={() => handleEditLoan(index)}>Edit</Button>
-                        <Button size="small" danger onClick={() => handleRemoveLoan(index)}>Remove</Button>
-                      </Space>
-                    ),
-                  },
-                ]}
-                rowKey={(_, index) => index}
-                pagination={false}
-                locale={{ emptyText: 'No existing loans added' }}
-              />
-            </Card>
-          </Col>
-
-          <Col span={24}>
-            <Card title="Debt Burden Ratio (DBR) Analysis" styles={{ body: { padding: 24 }, header: { background: '#f8f5ff' } }}>
-              <Row gutter={[24, 24]}>
-                <Col span={8}>
-                  <Statistic title="Total Monthly Income" value={caseData.incomeDetails.totalMonthlyIncome || 0} prefix="AED" valueStyle={{ color: '#10b981' }} />
-                </Col>
-                <Col span={8}>
-                  <Statistic title="Total Monthly Liabilities" value={caseData.expenseDetails.totalMonthlyLiabilities || 0} prefix="AED" valueStyle={{ color: '#ef4444' }} />
-                </Col>
-                <Col span={8}>
-                  <Statistic
-                    title="DBR Percentage"
-                    value={caseData.expenseDetails.dbrPercentage || 0}
-                    suffix="%"
-                    precision={1}
-                    valueStyle={{
-                      color: caseData.expenseDetails.dbrStatus === 'Eligible' ? '#10b981' :
-                             caseData.expenseDetails.dbrStatus === 'Borderline' ? '#f59e0b' : '#ef4444',
-                      fontWeight: 'bold'
-                    }}
-                  />
-                  <Badge
-                    status={caseData.expenseDetails.dbrStatus === 'Eligible' ? 'success' : caseData.expenseDetails.dbrStatus === 'Borderline' ? 'warning' : 'error'}
-                    text={caseData.expenseDetails.dbrStatus}
-                    style={{ marginTop: 8 }}
-                  />
-                </Col>
-              </Row>
-              {caseData.expenseDetails.dbrPercentage > 50 && (
-                <Alert
-                  message="High DBR Detected"
-                  description={`DBR of ${caseData.expenseDetails.dbrPercentage?.toFixed(1)}% exceeds the ideal 50% threshold. Loan approval may be challenging.`}
-                  type="warning"
-                  showIcon
-                  style={{ marginTop: 16 }}
-                />
-              )}
-            </Card>
-          </Col>
-        </Row>
-      </div>
-    );
-  };
-
-  // ─── STEP 3: Property & Loan ───────────────────────────────────────
+  // STEP 3: Property & Loan Details
   const renderStep3 = () => (
     <div style={{ animation: 'fadeIn 0.5s' }}>
       <Title level={4} style={{ color: THEME_COLOR, marginBottom: 24 }}>Property & Loan Details</Title>
-
       <Row gutter={[24, 24]}>
         <Col span={24}>
-          <Card title="Property Information" styles={{ body: { padding: 24 } }}>
+          <Card title="Property Information" bodyStyle={{ padding: 24 }}>
             <Row gutter={[16, 16]}>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={6}>
                 <Text strong>Property Type</Text>
-                <Select value={caseData.propertyInfo.propertyType} onChange={(val) => handleCaseDataChange('propertyInfo', 'propertyType', val)} style={{ width: '100%', marginTop: 4 }}>
+                <Select 
+                  size="large" 
+                  value={caseData.propertyInfo.propertyType} 
+                  onChange={(val) => handleCaseDataChange('propertyInfo', 'propertyType', val)} 
+                  style={{ width: '100%', marginTop: 4 }}
+                >
                   <Option value="Ready">Ready</Option>
                   <Option value="Off-plan">Off-plan</Option>
                   <Option value="Commercial">Commercial</Option>
                 </Select>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={6}>
                 <Text strong>Property Subtype</Text>
-                <Select value={caseData.propertyInfo.propertySubtype} onChange={(val) => handleCaseDataChange('propertyInfo', 'propertySubtype', val)} style={{ width: '100%', marginTop: 4 }}>
+                <Select 
+                  size="large" 
+                  value={caseData.propertyInfo.propertySubtype} 
+                  onChange={(val) => handleCaseDataChange('propertyInfo', 'propertySubtype', val)} 
+                  style={{ width: '100%', marginTop: 4 }}
+                >
                   <Option value="Apartment">Apartment</Option>
                   <Option value="Villa">Villa</Option>
                   <Option value="Townhouse">Townhouse</Option>
                   <Option value="Penthouse">Penthouse</Option>
                 </Select>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={6}>
                 <Text strong>Property Value <span style={{ color: 'red' }}>*</span></Text>
-                <InputNumber
-                  value={caseData.propertyInfo.propertyValue}
-                  onChange={(val) => {
-                    const loanAmt = caseData.propertyInfo.loanAmount;
-                    const ltv = val > 0 ? (loanAmt / val) * 100 : 80;
-                    setCaseData(prev => ({ ...prev, propertyInfo: { ...prev.propertyInfo, propertyValue: val || 0, ltvPercentage: parseFloat(ltv.toFixed(2)) } }));
-                  }}
-                  style={{ width: '100%', marginTop: 4 }}
-                  formatter={aedFormatter}
-                  parser={aedParser}
-                  min={0}
+                <InputNumber 
+                  size="large" 
+                  value={caseData.propertyInfo.propertyValue} 
+                  onChange={(val) => handleCaseDataChange('propertyInfo', 'propertyValue', val || 0)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  min={0} 
                 />
               </Col>
-              <Col span={8}>
-                <Text strong>Building Name</Text>
-                <Input value={caseData.propertyInfo.propertyAddress?.building} onChange={(e) => handleNestedChange('propertyInfo', 'propertyAddress', 'building', e.target.value)} placeholder="Enter building name" style={{ marginTop: 4 }} />
-              </Col>
-              <Col span={8}>
-                <Text strong>Area <span style={{ color: 'red' }}>*</span></Text>
-                <Input value={caseData.propertyInfo.propertyAddress?.area} onChange={(e) => handleNestedChange('propertyInfo', 'propertyAddress', 'area', e.target.value)} placeholder="Enter area" style={{ marginTop: 4 }} />
-              </Col>
-              <Col span={8}>
-                <Text strong>Purchase Price <span style={{ color: 'red' }}>*</span></Text>
-                <InputNumber
-                  value={caseData.propertyInfo.transactionDetails?.purchasePrice}
-                  onChange={(val) => handleNestedChange('propertyInfo', 'transactionDetails', 'purchasePrice', val || 0)}
-                  style={{ width: '100%', marginTop: 4 }}
-                  formatter={aedFormatter}
-                  parser={aedParser}
-                  min={0}
-                />
-              </Col>
-              <Col span={12}>
-                <Text strong>Agreement Date</Text>
-                <DatePicker value={caseData.propertyInfo.transactionDetails?.agreementDate} onChange={(date) => handleNestedChange('propertyInfo', 'transactionDetails', 'agreementDate', date)} style={{ width: '100%', marginTop: 4 }} format="DD/MM/YYYY" />
-              </Col>
-              <Col span={12}>
-                <Text strong>Handover Date (for Off-plan)</Text>
-                <DatePicker value={caseData.propertyInfo.transactionDetails?.handoverDate} onChange={(date) => handleNestedChange('propertyInfo', 'transactionDetails', 'handoverDate', date)} style={{ width: '100%', marginTop: 4 }} format="DD/MM/YYYY" />
-              </Col>
-            </Row>
-
-            <Divider />
-
-            <Row gutter={[16, 16]}>
-              <Col span={8}>
-                <Text strong>Loan Amount</Text>
-                <InputNumber
-                  value={caseData.propertyInfo.loanAmount}
-                  onChange={(val) => {
-                    const propValue = caseData.propertyInfo.propertyValue;
-                    const ltv = propValue > 0 ? ((val || 0) / propValue) * 100 : 0;
-                    setCaseData(prev => ({
-                      ...prev,
-                      propertyInfo: { ...prev.propertyInfo, loanAmount: val || 0, ltvPercentage: parseFloat(ltv.toFixed(2)), downPayment: propValue - (val || 0) },
-                    }));
-                  }}
-                  style={{ width: '100%', marginTop: 4 }}
-                  formatter={aedFormatter}
-                  parser={aedParser}
-                  min={0}
-                />
-              </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={6}>
                 <Text strong>Down Payment</Text>
-                <InputNumber value={caseData.propertyInfo.downPayment} style={{ width: '100%', marginTop: 4 }} formatter={aedFormatter} parser={aedParser} disabled />
+                <InputNumber 
+                  size="large" 
+                  value={caseData.propertyInfo.downPayment} 
+                  onChange={(val) => handleCaseDataChange('propertyInfo', 'downPayment', val || 0)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  min={0} 
+                />
               </Col>
-              <Col span={8}>
-                <Text strong>LTV Percentage</Text>
-                <InputNumber value={caseData.propertyInfo.ltvPercentage} style={{ width: '100%', marginTop: 4 }} suffix="%" disabled precision={2} />
+              <Col xs={24} sm={12} md={6}>
+                <Text strong>Building Name</Text>
+                <Input 
+                  size="large" 
+                  value={caseData.propertyInfo.propertyAddress?.building} 
+                  onChange={(e) => handleNestedChange('propertyInfo', 'propertyAddress', 'building', e.target.value)} 
+                  placeholder="Enter building name" 
+                  style={{ marginTop: 4 }} 
+                />
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Text strong>Area <span style={{ color: 'red' }}>*</span></Text>
+                <Input 
+                  size="large" 
+                  value={caseData.propertyInfo.propertyAddress?.area} 
+                  onChange={(e) => handleNestedChange('propertyInfo', 'propertyAddress', 'area', e.target.value)} 
+                  placeholder="Enter area" 
+                  style={{ marginTop: 4 }} 
+                />
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Text strong>Purchase Price</Text>
+                <InputNumber 
+                  size="large" 
+                  value={caseData.propertyInfo.transactionDetails?.purchasePrice} 
+                  onChange={(val) => handleNestedChange('propertyInfo', 'transactionDetails', 'purchasePrice', val || 0)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  min={0} 
+                />
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Text strong>Agreement Date</Text>
+                <DatePicker 
+                  size="large" 
+                  value={caseData.propertyInfo.transactionDetails?.agreementDate} 
+                  onChange={(date) => handleNestedChange('propertyInfo', 'transactionDetails', 'agreementDate', date)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  format="DD/MM/YYYY" 
+                />
               </Col>
             </Row>
           </Card>
         </Col>
 
         <Col span={24}>
-          <Card
-            title="Loan Details"
-            extra={selectedBankFromProposal && (
-              <Tag color="green" style={{ fontSize: 14 }}>
-                Selected Bank: {selectedBankFromProposal?.bankProductId?.bankInfo?.bankName || caseData.loanInfo.selectedBank}
-              </Tag>
-            )}
-            styles={{ body: { padding: 24 } }}
+          <Card 
+            title="Loan Details" 
+            extra={
+              selectedBankFromProposal && (
+                <Tag color="green" style={{ fontSize: 14 }}>
+                  Selected Bank: {selectedBankFromProposal?.bankName || caseData.loanInfo.selectedBank}
+                </Tag>
+              )
+            } 
+            bodyStyle={{ padding: 24 }}
           >
             <Row gutter={[16, 16]}>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={6}>
                 <Text strong>Selected Bank</Text>
-                <Input value={caseData.loanInfo.selectedBank} onChange={(e) => handleCaseDataChange('loanInfo', 'selectedBank', e.target.value)} style={{ marginTop: 4 }} disabled={!!selectedBankFromProposal} />
+                <Input 
+                  size="large" 
+                  value={caseData.loanInfo.selectedBank} 
+                  style={{ marginTop: 4 }} 
+                  disabled 
+                />
               </Col>
-              <Col span={8}>
-                <Text strong>Bank Product</Text>
-                <Input value={caseData.loanInfo.selectedBankProduct} onChange={(e) => handleCaseDataChange('loanInfo', 'selectedBankProduct', e.target.value)} style={{ marginTop: 4 }} disabled={!!selectedBankFromProposal} />
+              <Col xs={24} sm={12} md={6}>
+                <Text strong>Interest Rate (%) <span style={{ color: 'red' }}>*</span></Text>
+                <InputNumber 
+                  size="large" 
+                  value={caseData.loanInfo.interestRatePercentage} 
+                  onChange={(val) => handleCaseDataChange('loanInfo', 'interestRatePercentage', val || 0)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  step={0.01} 
+                  min={0} 
+                />
               </Col>
-              <Col span={8}>
-                <Text strong>Interest Rate (%)</Text>
-                <InputNumber value={caseData.loanInfo.interestRatePercentage} onChange={(val) => handleCaseDataChange('loanInfo', 'interestRatePercentage', val || 0)} style={{ width: '100%', marginTop: 4 }} step={0.01} min={0} />
-              </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={6}>
                 <Text strong>Tenure (Years)</Text>
-                <InputNumber
-                  value={caseData.loanInfo.tenureYears}
-                  onChange={(val) => {
-                    setCaseData(prev => ({ ...prev, loanInfo: { ...prev.loanInfo, tenureYears: val || 0, tenureMonths: (val || 0) * 12 } }));
-                  }}
-                  style={{ width: '100%', marginTop: 4 }}
-                  min={5}
-                  max={30}
+                <InputNumber 
+                  size="large" 
+                  value={caseData.loanInfo.tenureYears} 
+                  onChange={(val) => handleCaseDataChange('loanInfo', 'tenureYears', val || 0)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  min={5} 
+                  max={30} 
                 />
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={6}>
                 <Text strong>Monthly EMI</Text>
-                <InputNumber
-                  value={caseData.loanInfo.monthlyInstallment?.principalAndInterest}
-                  onChange={(val) => {
-                    setCaseData(prev => ({
-                      ...prev,
-                      loanInfo: { ...prev.loanInfo, monthlyInstallment: { ...prev.loanInfo.monthlyInstallment, principalAndInterest: val || 0, totalMonthlyPayment: val || 0 } },
-                    }));
-                  }}
-                  style={{ width: '100%', marginTop: 4 }}
-                  formatter={aedFormatter}
-                  parser={aedParser}
-                  min={0}
+                <InputNumber 
+                  size="large" 
+                  value={caseData.loanInfo.monthlyInstallment?.principalAndInterest} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  disabled 
                 />
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={6}>
                 <Text strong>Interest Rate Type</Text>
-                <Select value={caseData.loanInfo.interestRateType} onChange={(val) => handleCaseDataChange('loanInfo', 'interestRateType', val)} style={{ width: '100%', marginTop: 4 }}>
+                <Select 
+                  size="large" 
+                  value={caseData.loanInfo.interestRateType} 
+                  onChange={(val) => handleCaseDataChange('loanInfo', 'interestRateType', val)} 
+                  style={{ width: '100%', marginTop: 4 }}
+                >
                   <Option value="Fixed">Fixed</Option>
                   <Option value="Variable">Variable</Option>
                 </Select>
               </Col>
-            </Row>
-
-            <Divider />
-
-            <Row gutter={[16, 16]}>
-              <Col span={12}>
-                <Text strong>Processing Fee</Text>
-                <InputNumber value={caseData.loanInfo.processingFee} onChange={(val) => handleCaseDataChange('loanInfo', 'processingFee', val || 0)} style={{ width: '100%', marginTop: 4 }} formatter={aedFormatter} parser={aedParser} min={0} />
+              <Col xs={24} sm={12} md={6}>
+                <Text strong>Loan Amount</Text>
+                <InputNumber 
+                  size="large" 
+                  value={caseData.propertyInfo.loanAmount} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  disabled 
+                />
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12} md={6}>
+                <Text strong>LTV Percentage</Text>
+                <InputNumber 
+                  size="large" 
+                  value={caseData.propertyInfo.ltvPercentage} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  suffix="%" 
+                  disabled 
+                  precision={2} 
+                />
+              </Col>
+              <Col xs={24} sm={12} md={6}>
                 <Text strong>Valuation Fee</Text>
-                <InputNumber value={caseData.loanInfo.valuationFee} onChange={(val) => handleCaseDataChange('loanInfo', 'valuationFee', val || 0)} style={{ width: '100%', marginTop: 4 }} formatter={aedFormatter} parser={aedParser} min={0} />
+                <InputNumber 
+                  size="large" 
+                  value={caseData.loanInfo.valuationFee} 
+                  onChange={(val) => handleCaseDataChange('loanInfo', 'valuationFee', val || 0)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  min={0} 
+                />
               </Col>
-              <Col span={12}>
+            </Row>
+            <Divider />
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={12} md={6}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                  <Switch checked={caseData.loanInfo.lifeInsuranceRequired} onChange={(val) => handleCaseDataChange('loanInfo', 'lifeInsuranceRequired', val)} />
+                  <Switch 
+                    checked={caseData.loanInfo.lifeInsuranceRequired} 
+                    onChange={(val) => handleCaseDataChange('loanInfo', 'lifeInsuranceRequired', val)} 
+                  />
                   <Text strong>Life Insurance Required</Text>
                 </div>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12} md={6}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                  <Switch checked={caseData.loanInfo.propertyInsuranceRequired} onChange={(val) => handleCaseDataChange('loanInfo', 'propertyInsuranceRequired', val)} />
+                  <Switch 
+                    checked={caseData.loanInfo.propertyInsuranceRequired} 
+                    onChange={(val) => handleCaseDataChange('loanInfo', 'propertyInsuranceRequired', val)} 
+                  />
                   <Text strong>Property Insurance Required</Text>
                 </div>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Text strong>Processing Fee</Text>
+                <InputNumber 
+                  size="large" 
+                  value={caseData.loanInfo.processingFee} 
+                  onChange={(val) => handleCaseDataChange('loanInfo', 'processingFee', val || 0)} 
+                  style={{ width: '100%', marginTop: 4 }} 
+                  formatter={aedFormatter} 
+                  parser={aedParser} 
+                  min={0} 
+                />
               </Col>
             </Row>
           </Card>
@@ -1074,81 +1384,190 @@ const CreateCase = () => {
     </div>
   );
 
-  // ─── STEP 4: Documents ─────────────────────────────────────────────
+  // STEP 4: Documents Upload
   const renderStepDocuments = () => (
     <div style={{ animation: 'fadeIn 0.5s' }}>
       <Title level={4} style={{ color: THEME_COLOR, marginBottom: 24 }}>Documents Upload</Title>
-      <Alert message="Upload Required Documents" description="You must upload all required documents before submitting the case." type="info" showIcon style={{ marginBottom: 20 }} />
-      {caseData.pendingDocumentTypes?.length === 0 ? (
-        <Alert type="success" message="All documents uploaded ✅" />
-      ) : (
-        (caseData.pendingDocumentTypes || ['bank_application_form', 'emirates_id_front', 'emirates_id_back', 'passport', 'visa', 'bank_statements', 'salary_certificate', 'payslips', 'title_deed', 'consent_form']).map(doc => (
-          <Card key={doc} style={{ marginBottom: 10 }}>
-            <b>{doc}</b>
-            <input type="file" onChange={(e) => handleUpload(doc, e.target.files[0])} style={{ marginTop: 10, display: 'block' }} />
-          </Card>
-        ))
-      )}
+      <Alert 
+        message="Documents from Lead Will Be Copied Automatically" 
+        description="Documents uploaded in the Lead stage will be automatically copied to this case. Additional documents can be uploaded here." 
+        type="info" 
+        showIcon 
+        style={{ marginBottom: 20, borderRadius: 12 }}
+      />
+      
+      <Card title="Required Documents Checklist" bodyStyle={{ padding: 24 }}>
+        <Row gutter={[16, 16]}>
+          {documentChecklist.map(doc => (
+            <Col xs={24} sm={12} md={8} lg={6} key={doc.key}>
+              <Card 
+                size="small" 
+                style={{ 
+                  backgroundColor: uploadedDocuments.some(d => d.type === doc.key) ? '#f6ffed' : '#fafafa', 
+                  border: `1px solid ${uploadedDocuments.some(d => d.type === doc.key) ? '#b7eb8f' : '#e8e8e8'}`,
+                  borderRadius: 8 
+                }}
+              >
+                <Text strong style={{ textTransform: 'capitalize', fontSize: 13 }}>
+                  {doc.label}
+                  {doc.required && <span style={{ color: 'red' }}>*</span>}
+                </Text>
+                <div style={{ marginTop: 12 }}>
+                  {uploadedDocuments.some(d => d.type === doc.key) ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <CheckCircleOutlined style={{ color: '#10b981' }} />
+                      <Text type="secondary" style={{ fontSize: 12 }}>Uploaded</Text>
+                    </div>
+                  ) : (
+                    <Upload
+                      beforeUpload={(file) => {
+                        handleDocumentUpload(file, doc.key);
+                        return false;
+                      }}
+                      showUploadList={false}
+                    >
+                      <Button icon={<UploadOutlined />} size="small" block>
+                        Upload
+                      </Button>
+                    </Upload>
+                  )}
+                </div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      </Card>
+      
+      <Alert 
+        message="Note: Documents from Lead will be automatically copied when case is created" 
+        description="You don't need to re-upload documents that were already uploaded in the Lead stage. They will be automatically linked to this case." 
+        type="success" 
+        showIcon 
+        style={{ marginTop: 20, borderRadius: 12 }}
+      />
     </div>
   );
 
-  // ─── STEP 5: Notes & Review ────────────────────────────────────────
-  const renderStep4 = () => (
+  // STEP 5: Notes & Review
+  const renderStepReview = () => (
     <div style={{ animation: 'fadeIn 0.5s' }}>
       <Title level={4} style={{ color: THEME_COLOR, marginBottom: 24 }}>Notes & Final Review</Title>
       <Row gutter={[24, 24]}>
-        <Col span={12}>
-          <Card title="Internal Notes (Xoto Team Only)" styles={{ body: { padding: 24 } }}>
-            <TextArea rows={6} value={caseData.internalNotes} onChange={(e) => setCaseData(prev => ({ ...prev, internalNotes: e.target.value }))} placeholder="Add internal notes for Xoto team..." style={{ borderRadius: 8 }} />
+        <Col xs={24} lg={12}>
+          <Card title="Internal Notes (Xoto Team Only)" bodyStyle={{ padding: 24 }}>
+            <TextArea 
+              rows={6} 
+              value={caseData.internalNotes} 
+              onChange={(e) => setCaseData(prev => ({ ...prev, internalNotes: e.target.value }))} 
+              placeholder="Add internal notes for Xoto team..." 
+              style={{ borderRadius: 8, fontSize: 14 }} 
+            />
           </Card>
         </Col>
-        <Col span={12}>
-          <Card title="Customer Notes (Visible to Customer)" styles={{ body: { padding: 24 } }}>
-            <TextArea rows={6} value={caseData.customerNotes} onChange={(e) => setCaseData(prev => ({ ...prev, customerNotes: e.target.value }))} placeholder="Add notes that will be shared with the customer..." style={{ borderRadius: 8 }} />
+        <Col xs={24} lg={12}>
+          <Card title="Customer Notes (Visible to Customer)" bodyStyle={{ padding: 24 }}>
+            <TextArea 
+              rows={6} 
+              value={caseData.customerNotes} 
+              onChange={(e) => setCaseData(prev => ({ ...prev, customerNotes: e.target.value }))} 
+              placeholder="Add notes that will be shared with the customer..." 
+              style={{ borderRadius: 8, fontSize: 14 }} 
+            />
           </Card>
         </Col>
         <Col span={24}>
-          <Card title="Case Summary" styles={{ body: { padding: 24 }, header: { background: '#f8f5ff' } }}>
+          <Card title="Case Summary" bodyStyle={{ padding: 24 }} headStyle={{ background: '#f8f5ff' }}>
             <Row gutter={[16, 16]}>
-              <Col span={8}><Statistic title="Case Reference" value={caseData.caseReference} valueStyle={{ fontSize: 16 }} /></Col>
-              <Col span={8}><Statistic title="Client Name" value={caseData.clientInfo.fullName || 'Not set'} /></Col>
-              <Col span={8}><Statistic title="Loan Amount" value={caseData.propertyInfo.loanAmount || 0} prefix="AED" precision={0} /></Col>
-              <Col span={8}><Statistic title="Property Value" value={caseData.propertyInfo.propertyValue || 0} prefix="AED" precision={0} /></Col>
-              <Col span={8}><Statistic title="Selected Bank" value={caseData.loanInfo.selectedBank || 'Not selected'} /></Col>
-              <Col span={8}><Statistic title="Interest Rate" value={caseData.loanInfo.interestRatePercentage || 0} suffix="%" /></Col>
+              <Col xs={12} sm={8} md={6}>
+                <Statistic title="Case Reference" value={caseData.caseReference || 'Pending'} valueStyle={{ fontSize: 12 }} />
+              </Col>
+              <Col xs={12} sm={8} md={6}>
+                <Statistic title="Client Name" value={caseData.clientInfo.fullName || 'Not set'} />
+              </Col>
+              <Col xs={12} sm={8} md={6}>
+                <Statistic title="Property Value" value={caseData.propertyInfo.propertyValue || 0} prefix="AED" precision={0} />
+              </Col>
+              <Col xs={12} sm={8} md={6}>
+                <Statistic title="Loan Amount" value={caseData.propertyInfo.loanAmount || 0} prefix="AED" precision={0} />
+              </Col>
+              <Col xs={12} sm={8} md={6}>
+                <Statistic title="Selected Bank" value={caseData.loanInfo.selectedBank || 'Not selected'} />
+              </Col>
+              <Col xs={12} sm={8} md={6}>
+                <Statistic title="Interest Rate" value={caseData.loanInfo.interestRatePercentage || 0} suffix="%" />
+              </Col>
+              <Col xs={12} sm={8} md={6}>
+                <Statistic title="LTV" value={caseData.propertyInfo.ltvPercentage || 0} suffix="%" />
+              </Col>
+              <Col xs={12} sm={8} md={6}>
+                <Statistic 
+                  title="DBR" 
+                  value={caseData.expenseDetails.dbrPercentage || 0} 
+                  suffix="%" 
+                  valueStyle={{ color: caseData.expenseDetails.dbrPercentage <= 50 ? '#10b981' : '#ef4444' }} 
+                />
+              </Col>
             </Row>
             <Divider />
-            <Alert message="Ready to Create Case" description="Please review all information carefully before creating the case." type="success" showIcon />
+            <Alert 
+              message={(() => {
+                const missingFields = [];
+                if (!caseData.clientInfo.fullName) missingFields.push('Client Name');
+                if (!caseData.propertyInfo.propertyValue) missingFields.push('Property Value');
+                if (!caseData.loanInfo.interestRatePercentage) missingFields.push('Interest Rate');
+                return missingFields.length > 0 ? `⚠️ Missing: ${missingFields.join(', ')}` : '✅ Ready to Create Case';
+              })()} 
+              description={(() => {
+                if (!caseData.clientInfo.fullName) return "Please complete all required fields before creating the case.";
+                if (caseData.expenseDetails.dbrPercentage > 60) return "⚠️ High DBR detected. Loan approval may be challenging.";
+                return "Please review all information carefully before creating the case. Documents from Lead will be automatically copied.";
+              })()} 
+              type={(!caseData.clientInfo.fullName || !caseData.propertyInfo.propertyValue) ? 'warning' : (caseData.expenseDetails.dbrPercentage > 60 ? 'warning' : 'success')} 
+              showIcon 
+              style={{ marginTop: 16 }} 
+            />
           </Card>
         </Col>
       </Row>
     </div>
   );
 
-  // ─── Bank Selection Modal ──────────────────────────────────────────
+  // Bank Selection Modal
   const renderBankSelectionModal = () => (
-    <Modal
-      title="Select Bank for Case Creation"
-      open={showBankSelectionModal}
-      onCancel={() => { setShowBankSelectionModal(false); setSelectedProposal(null); }}
-      footer={null}
-      width={600}
+    <Modal 
+      title="Select Bank for Case Creation" 
+      open={showBankSelectionModal} 
+      onCancel={() => { setShowBankSelectionModal(false); setSelectedProposal(null); }} 
+      footer={null} 
+      width={600} 
       closable={false}
     >
-      <Alert message="Multiple Banks Selected in Proposal" description="This proposal contains multiple bank options. Please select which bank to use for this case." type="info" showIcon style={{ marginBottom: 20 }} />
+      <Alert 
+        message="Multiple Banks Selected in Proposal" 
+        description="This proposal contains multiple bank options. Please select which bank to use for this case." 
+        type="info" 
+        showIcon 
+        style={{ marginBottom: 20, borderRadius: 8 }} 
+      />
       <Row gutter={[16, 16]}>
         {selectedProposal?.selectedBankProducts?.map((bankProduct, index) => (
           <Col span={24} key={index}>
-            <Card hoverable onClick={() => handleBankSelection(bankProduct)} style={{ borderRadius: 12, cursor: 'pointer' }}>
+            <Card 
+              hoverable 
+              onClick={() => handleBankSelection(bankProduct)} 
+              style={{ borderRadius: 12, cursor: 'pointer', border: `1px solid ${THEME_COLOR}20` }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <BankOutlined style={{ fontSize: 32, color: THEME_COLOR }} />
                 <div style={{ flex: 1 }}>
-                  <Text strong style={{ fontSize: 16 }}>{bankProduct.bankProductId?.bankInfo?.bankName || 'Bank Name'}</Text>
+                  <Text strong style={{ fontSize: 16 }}>{bankProduct.bankName || bankProduct.bankProductId?.bankInfo?.bankName}</Text>
                   <div style={{ marginTop: 8 }}>
                     <Tag color="blue">Rate: {bankProduct.snapshotRate || bankProduct.bankProductId?.offerSummary?.initialRate}%</Tag>
-                    <Tag color="green">Max LTV: {bankProduct.snapshotMaxLtv || bankProduct.bankProductId?.offerSummary?.maxLTV}%</Tag>
+                    <Tag color="green">Max LTV: {bankProduct.snapshotMaxLtv || bankProduct.bankProductId?.loanDetails?.maxLoanToValue}%</Tag>
                   </div>
-                  <Text type="secondary" style={{ fontSize: 12 }}>EMI: AED {(bankProduct.bankProductId?.offerSummary?.monthlyEMI || 0).toLocaleString()}/month</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    EMI: AED {(bankProduct.bankProductId?.offerSummary?.monthlyEMI || bankProduct.snapshotEmi || 0).toLocaleString()}/month
+                  </Text>
                 </div>
                 <CheckCircleOutlined style={{ fontSize: 20, color: '#10b981' }} />
               </div>
@@ -1162,88 +1581,118 @@ const CreateCase = () => {
     </Modal>
   );
 
-  // ─── Main Render ───────────────────────────────────────────────────
+  // Loan Modal
+  const renderLoanModal = () => (
+    <Modal 
+      title={editingLoan !== null ? "Edit Existing Loan" : "Add Existing Loan"} 
+      open={showAddLoanModal} 
+      onCancel={() => { setShowAddLoanModal(false); setEditingLoan(null); loanForm.resetFields(); }} 
+      footer={[
+        <Button key="cancel" onClick={() => { setShowAddLoanModal(false); setEditingLoan(null); loanForm.resetFields(); }}>Cancel</Button>,
+        <Button key="submit" type="primary" onClick={handleAddLoan} style={{ background: THEME_COLOR }}>
+          {editingLoan !== null ? "Update" : "Add"} Loan
+        </Button>
+      ]} 
+      width={600}
+    >
+      <Form form={loanForm} layout="vertical">
+        <Form.Item name="type" label="Loan Type" rules={[{ required: true }]}>
+          <Select size="large" placeholder="Select loan type">
+            <Option value="Car Loan">Car Loan</Option>
+            <Option value="Personal Loan">Personal Loan</Option>
+            <Option value="Other">Other</Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name="bank" label="Bank/Institution" rules={[{ required: true }]}>
+          <Input size="large" placeholder="Enter bank name" />
+        </Form.Item>
+        <Form.Item name="outstandingAmount" label="Outstanding Amount" rules={[{ required: true }]}>
+          <InputNumber size="large" style={{ width: '100%' }} formatter={aedFormatter} parser={aedParser} placeholder="Enter outstanding amount" min={0} />
+        </Form.Item>
+        <Form.Item name="monthlyInstallment" label="Monthly Installment" rules={[{ required: true }]}>
+          <InputNumber size="large" style={{ width: '100%' }} formatter={aedFormatter} parser={aedParser} placeholder="Enter monthly installment" min={0} />
+        </Form.Item>
+        <Form.Item name="tenureRemainingMonths" label="Remaining Tenure (Months)" rules={[{ required: true }]}>
+          <InputNumber size="large" style={{ width: '100%' }} min={1} max={360} placeholder="Enter remaining months" />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+
   return (
     <div style={{ padding: '24px', background: '#fdfbff', minHeight: '100vh' }}>
+      <style>{`
+        @keyframes fadeIn { 
+          from { opacity: 0; transform: translateY(10px); } 
+          to { opacity: 1; transform: translateY(0); } 
+        }
+        .ant-card { border-radius: 16px; }
+      `}</style>
+      
       <div style={{ marginBottom: 32 }}>
         <Title level={2} style={{ color: '#1e1b4b', margin: 0, fontWeight: 800 }}>Create Case from Proposal</Title>
-        <Text type="secondary">Convert an accepted proposal into a formal case for processing.</Text>
+        <Text type="secondary">Convert an accepted proposal into a formal case for processing. Documents from Lead will be automatically copied.</Text>
       </div>
 
       <Card style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', marginBottom: 24 }}>
-        <Steps
-          current={currentStep}
-          style={{ marginBottom: 40 }}
+        <Steps 
+          current={currentStep} 
+          style={{ marginBottom: 40 }} 
           items={[
             { title: 'Select Proposal' },
             { title: 'Client Info' },
-            { title: 'Income & Expenses' },
+            { title: 'Income & DBR' },
             { title: 'Property & Loan' },
             { title: 'Documents' },
-            { title: 'Review & Create' }
-          ]}
+            { title: 'Review' }
+          ]} 
         />
-
+        
         <div style={{ minHeight: 500 }}>
           {currentStep === 0 && renderStep0()}
           {currentStep === 1 && renderStep1()}
           {currentStep === 2 && renderStep2()}
           {currentStep === 3 && renderStep3()}
           {currentStep === 4 && renderStepDocuments()}
-          {currentStep === 5 && renderStep4()}
+          {currentStep === 5 && renderStepReview()}
         </div>
-
+        
         <div style={{ marginTop: 40, display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #eee', paddingTop: 24 }}>
-          <Button disabled={currentStep === 0} onClick={handlePrev} style={{ borderRadius: 6, height: 40, padding: '0 24px' }}>
+          <Button 
+            disabled={currentStep === 0} 
+            onClick={handlePrev} 
+            size="large" 
+            style={{ borderRadius: 8, height: 44, padding: '0 32px' }}
+          >
             Previous
           </Button>
+          
           {currentStep < 5 ? (
-            <Button type="primary" onClick={handleNext} style={{ background: THEME_COLOR, borderColor: THEME_COLOR, borderRadius: 6, height: 40, padding: '0 32px' }}>
+            <Button 
+              type="primary" 
+              onClick={handleNext} 
+              size="large" 
+              style={{ background: THEME_COLOR, borderColor: THEME_COLOR, borderRadius: 8, height: 44, padding: '0 32px' }}
+            >
               Continue
             </Button>
           ) : (
-            <Button type="primary" onClick={submitCase} loading={submitting} style={{ background: '#10b981', borderColor: '#10b981' }} icon={<SaveOutlined />}>
-              Create Case
+            <Button 
+              type="primary" 
+              onClick={submitCase} 
+              loading={submitting} 
+              size="large" 
+              style={{ background: '#10b981', borderColor: '#10b981', borderRadius: 8, height: 44, padding: '0 32px' }} 
+              icon={<SaveOutlined />}
+            >
+              {submitting ? 'Creating...' : 'Create Case'}
             </Button>
           )}
         </div>
       </Card>
 
       {renderBankSelectionModal()}
-
-      {/* Add/Edit Loan Modal */}
-      <Modal
-        title={editingLoan !== null ? "Edit Existing Loan" : "Add Existing Loan"}
-        open={showAddLoanModal}
-        onCancel={() => { setShowAddLoanModal(false); setEditingLoan(null); loanForm.resetFields(); }}
-        footer={[
-          <Button key="cancel" onClick={() => { setShowAddLoanModal(false); setEditingLoan(null); loanForm.resetFields(); }}>Cancel</Button>,
-          <Button key="submit" type="primary" onClick={handleAddLoan} style={{ background: THEME_COLOR }}>{editingLoan !== null ? "Update" : "Add"} Loan</Button>,
-        ]}
-        width={600}
-      >
-        <Form form={loanForm} layout="vertical">
-          <Form.Item name="type" label="Loan Type" rules={[{ required: true }]}>
-            <Select placeholder="Select loan type">
-              <Option value="Car Loan">Car Loan</Option>
-              <Option value="Personal Loan">Personal Loan</Option>
-              <Option value="Other">Other</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="bank" label="Bank/Institution" rules={[{ required: true }]}>
-            <Input placeholder="Enter bank name" />
-          </Form.Item>
-          <Form.Item name="outstandingAmount" label="Outstanding Amount" rules={[{ required: true }]}>
-            <InputNumber style={{ width: '100%' }} formatter={aedFormatter} parser={aedParser} placeholder="Enter outstanding amount" min={0} />
-          </Form.Item>
-          <Form.Item name="monthlyInstallment" label="Monthly Installment" rules={[{ required: true }]}>
-            <InputNumber style={{ width: '100%' }} formatter={aedFormatter} parser={aedParser} placeholder="Enter monthly installment" min={0} />
-          </Form.Item>
-          <Form.Item name="tenureRemainingMonths" label="Remaining Tenure (Months)" rules={[{ required: true }]}>
-            <InputNumber style={{ width: '100%' }} min={1} max={360} placeholder="Enter remaining months" />
-          </Form.Item>
-        </Form>
-      </Modal>
+      {renderLoanModal()}
     </div>
   );
 };

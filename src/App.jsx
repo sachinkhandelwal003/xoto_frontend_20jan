@@ -225,7 +225,8 @@ const hideFooter =
   location.pathname.includes("/freelancer/registration") ||
   location.pathname.includes("/ecommerce/seller") ||
   location.pathname.includes("/admin/login") ||
-  location.pathname.startsWith("/dashboard");
+  location.pathname.startsWith("/dashboard")||
+    location.pathname.startsWith("/proposal/view/link"); // ✅ ADD THIS
 
 
   
