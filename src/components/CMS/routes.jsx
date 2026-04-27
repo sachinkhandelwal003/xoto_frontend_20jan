@@ -172,6 +172,14 @@ import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 import CreateSecondaryProperty from "./pages/Properties/CreateSecondaryProperty";
 import SecondaryPlans from "./pages/Properties/SecondaryPlans";
 import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail";
+
+
+import CreateAdvisor from "../Create Users/Createadvisor";
+import AllAdvisors from "../Create Users/Alladvisors";
+import AdvisorDetail from "../Create Users/Advisordetail";
+import AllLeadsPage from "../GridAdmin.jsx/Allleadspage";
+import AdvisorLeadsPage from "../AdvisorGrid/Advisorleadspage";
+
 {/*Xoto Vault*/ }
 import VaultAdminDashboard from "../ecommerce/B2C/VaultAdminDashboard";
 import VaultAgents from "../ecommerce/B2C/VaultAgents";
@@ -226,9 +234,16 @@ import CreateCase from "../ecommerce/vault/case/Index";
 import ViewCases from "../ecommerce/vault/case/ViewCases";
 import DetailedViewCases from "../ecommerce/vault/case/DetailedViewCases";
 import ProcessCasesUpdates from "../ecommerce/vault/case/ProcessCasesUpdates";
+// import ReferralPartnerLogin from "../GridReferralPartner/ReferralPartnerLogin";
+import ReferralPartnerDashboard from "./pages/ReferralPartnerDashboard"
 import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
 import QueueCases from "../ecommerce/vault/case/QueueCases";
 import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
+
+import GridAdvisorDashboard from "./pages/GridAdvisorDashboard";
+import GridAdvisorProfile from "./pages/dashboardPages/Profiles/GridAdvisorProfile";
+
+
 
 const roleSlugMap = {
   0: "superadmin",
@@ -245,9 +260,12 @@ const roleSlugMap = {
   18: "vault-admin",
   22: "vaultagent" ,
   26: "vault-advisor",
+  23: "vault-ops",
+25:"gridReferralPartner",
   23: "vault-mortgage-ops",
 
-21:"vaultpartner"
+21:"vaultpartner",
+24:"GridAdvisor"
 };
 
 const dashboardMap = {
@@ -267,14 +285,15 @@ const dashboardMap = {
   26: <AdvisorDashboard />,
   23: <MortgageOpsDashboard />,
 
-
+25: <ReferralPartnerDashboard />,
     12: <SupervisorDashboard />,
     16:<AgentDashboard/>,
     17:<DeveloperDashboard/>,
     15:<AgencyDashboard/>,
-    18:<VaultAdminDashboard/>,
+  18:<VaultAdminDashboard/>,
 // 21:<VaultPartnerDashboard/>
-21:<VaultpartnerDashboard/>
+21:<VaultpartnerDashboard/>,
+24: <GridAdvisorDashboard />
 };
 
 const componentMap = {
@@ -549,7 +568,10 @@ const CmsRoutes = () => {
       <Route path="/properties" element={<AdminPropertyListings />} />
       <Route path="/properties/:id" element={<AdminPropertyDetail />} />
       <Route path="/properties/create-offplan" element={<AdminOffPlanCreate />} />
-      <Route path="/property-list/property-detail/:id" element={<PropertyDetailPage />} />
+      <Route path="developer/property/:id" element={<PropertyDetailPage />} />
+
+
+      <Route path="/GridAdmin/propertyleads" element={<AllLeadsPage />} />
 
 
       {/* Agency */}
@@ -596,6 +618,15 @@ const CmsRoutes = () => {
       {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
       {/* <Route path="team" element={<DeveloperTeam/>}/> */}
 
+{/* Grid Referral Partner   */}
+<Route path="/grid-referral-partner" element={<ReferralPartnerDashboard />} />
+
+<Route path="advisors/:id" element={<AdvisorDetail />} />   
+<Route path="advisors" element={<AllAdvisors />} />         
+<Route path="create-advisor" element={<CreateAdvisor />} />
+<Route path="dashboard/myprofile" element={<GridAdvisorProfile />} />
+<Route path="gridAdvisorLeads" element={<AdvisorLeadsPage />} />
+
 
 
 {/* vault */}
@@ -622,9 +653,11 @@ const CmsRoutes = () => {
 
 
 
-      <Route path="/rental/properties" element={< CreateRentalProperty />} />
-      <Route path="/rental/propertieslist" element={< RentalPropertyList />} />
-      <Route path="/rental/leadlist" element={< AdminLeadList />} />
+      <Route path="/rental/properties" element={<CreateRentalProperty />} />
+      <Route path="/rental/properties/create" element={<CreateRentalProperty />} />
+      <Route path="/rental/properties/edit/:id" element={<CreateRentalProperty />} />
+      <Route path="/rental/propertieslist" element={<RentalPropertyList />} />
+      <Route path="/rental/leadlist" element={<AdminLeadList />} />
 
 
     </Routes>
