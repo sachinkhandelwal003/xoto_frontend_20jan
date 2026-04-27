@@ -263,37 +263,54 @@ export default function HeroSection() {
           <img src={waveint} alt="" className="w-full" />
         </div>
 
-        <div className="max-w-8xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* LEFT CONTENT */}
-          <div className="z-20 flex flex-col gap-[20px] text-center lg:text-left items-center lg:items-start">
-            {/* Added responsive margins and text sizes */}
-            <h1 className="font-['DM_Sans'] font-semibold text-[40px] lg:text-[60px] leading-[1.2] tracking-[-0.03em] text-[#020202] max-w-[494px] lg:ml-20">
-              {t("heroTitle")}
-            </h1>
-            <p className="font-['DM_Sans'] font-semibold text-[18px] lg:text-[24px] leading-[1.4] text-[#547593] max-w-[482px] lg:ml-20">
-              {t("heroSub")}
-            </p>
-            <img src={image} alt="" className="w-full max-w-[400px] lg:max-w-[590px] mt-[24px]" />
-          </div>
+        <div className="max-w-8xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        {/* LEFT CONTENT */}
+<div className="z-20 flex flex-col gap-[20px] items-center lg:items-start">
+  <h1 className="font-['DM_Sans'] font-semibold tracking-[-0.03em] text-[#020202] 
+                 text-[32px] leading-tight 
+                 sm:text-[42px] 
+                 lg:text-[60px] lg:leading-[60px] lg:max-w-[494px] lg:ml-20
+                 text-center lg:text-left">
+    {t("heroTitle")}
+  </h1>
 
+  <p className="font-['DM_Sans'] font-semibold text-[#547593] 
+                text-[16px] leading-normal px-4
+                lg:text-[24px] lg:leading-[33px] lg:max-w-[482px] lg:ml-20 lg:px-0
+                text-center lg:text-left">
+    {t("heroSub")}
+  </p>
+
+  <img 
+    src={image} 
+    alt="" 
+    className="w-full max-w-[590px] sm:max-w-[420px] lg:max-w-[590px] mt-[16px] lg:mt-[24px] mx-0 lg:mx-0" 
+  />  
+</div>
           {/* RIGHT FORM */}
-          <div className="z-20 w-full">
-            {/* Changed p-8 to p-5 sm:p-8 for better mobile fit */}
-            <div className="bg-white shadow-[0_0_30px_rgba(92,3,155,0.3)] rounded-3xl p-5 sm:p-8 max-w-lg mx-auto border border-purple-100">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{t("formTitle")}</h2>
-              <p className="text-gray-700 mb-6 sm:mb-8 text-sm sm:text-base">{t("formSub")}</p>
+          <div className="z-20">
+            <div className="bg-white shadow-[0_0_30px_rgba(92,3,155,0.3)] rounded-3xl p-8 max-w-lg mx-auto border border-purple-100">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">{t("formTitle")}</h2> 
+              <p className="text-gray-800 font-semibold mb-8 ">{t("formSub")}</p>
 
-              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">                                                  
                 
                 {/* Name */}
-                {/* Made grid responsive: 1 column on mobile, 2 on bigger screens */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <input name="firstName" value={form.firstName} onChange={handleChange} placeholder={t("firstName")} className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-gray-300" />
-                  <input name="lastName" value={form.lastName} onChange={handleChange} placeholder={t("lastName")} className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-gray-300" />
-                </div>
-
+                <div className="grid grid-cols-2 gap-4">
+    <div className="flex flex-col gap-2">
+    
+      <input name="firstName" value={form.firstName} onChange={handleChange} placeholder={t("firstName")} className="w-full px-5 py-4 rounded-xl border border-gray-300" />
+    </div>
+    <div className="flex flex-col gap-2">
+      
+      <input name="lastName" value={form.lastName} onChange={handleChange} placeholder={t("lastName")} className="w-full px-5 py-4 rounded-xl border border-gray-300" />
+    </div>
+  </div>
                 {/* Email */}
-                <input type="email" name="email" value={form.email} onChange={handleChange} placeholder={t("email")} className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-gray-300" />
+                <div className="flex flex-col gap-2">
+              
+                  <input type="email" name="email" value={form.email} onChange={handleChange} placeholder={t("email")} className="w-full px-5 py-4 rounded-xl border border-gray-300" />
+                </div>
 
                 {/* Phone with Antd Select */}
                 <div className="flex gap-2 sm:gap-3">
