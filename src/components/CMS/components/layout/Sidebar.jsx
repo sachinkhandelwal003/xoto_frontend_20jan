@@ -71,17 +71,17 @@ const CUSTOM_ROLE_LINKS = {
   "1": [
 
   /* ── Listings & Approvals ── */
-  {
-    title: "Listings",
-    path: "/dashboard/{roleSlug}/property-list",
-    icon: "fas fa-building",
-    submenus: [
-      { title: "All Listings",       path: "/dashboard/{roleSlug}/property-list" },
-      { title: "Approval Queue",     path: "/dashboard/{roleSlug}/listings/approval-queue" },
-      { title: "Edit Review Queue",  path: "/dashboard/{roleSlug}/listings/edit-review-queue" },
-      { title: "Create Listing",     path: "/dashboard/{roleSlug}/listings/create" },
-    ]
-  },
+{
+  title: "Listings",
+  path: "/dashboard/{roleSlug}/property-list",
+  icon: "fas fa-building",
+  submenus: [
+    { title: "All Listings",          path: "/dashboard/{roleSlug}/admin/property" },
+    { title: "Approval Queue",        path: "/dashboard/{roleSlug}/listings/approval-queue" },
+    { title: "Edit Review Queue",     path: "/dashboard/{roleSlug}/listings/edit-review-queue" },
+    { title: "Create Rental Properties", path: "/dashboard/{roleSlug}/rental/properties" },
+  ]
+},
 
   /* ── Enquiry Handling ── */
   {

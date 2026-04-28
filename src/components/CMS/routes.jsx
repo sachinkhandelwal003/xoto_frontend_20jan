@@ -665,6 +665,7 @@ const CmsRoutes = () => {
       <Route path="/rental/properties/edit/:id" element={<CreateRentalProperty />} />
       <Route path="/rental/propertieslist" element={<RentalPropertyList />} />
       <Route path="/rental/leadlist" element={<AdminLeadList />} />
+      <Route path="/admin/property" element={<Propertymanagement />} />
 
 
     </Routes>
