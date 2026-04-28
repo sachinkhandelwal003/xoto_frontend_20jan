@@ -4,8 +4,8 @@
     "subtitle": "Discover exclusive properties with the best value in Dubai's premium locations."
   },
   "modal": {
-    "title": "Schedule Property Visit",
-    "subtitle": "Fill in your details and we'll arrange a private viewing for you!"
+    "title": "We are Here To Help You",
+    "subtitle": "Fill in your contact details, our expert advisor will get in touch with you."
   },
   "form": {
     "firstName": "First Name",
@@ -24,7 +24,7 @@
     "terms": "I accept the Terms & Conditions and Privacy Policy."
   },
   "actions": {
-    "submit": "Schedule Property Visit",
+    "submit": "Submit",
     "loading": "Scheduling Visit..."
   },
   "card": {

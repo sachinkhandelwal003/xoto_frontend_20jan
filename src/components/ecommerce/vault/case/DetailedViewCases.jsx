@@ -503,7 +503,7 @@ const DetailedViewCases = () => {
     return (
       <div style={{ padding: 48, textAlign: 'center' }}>
         <Title level={4}>Case not found</Title>
-        <Button onClick={() => navigate(`/dashboard/${roleSlug}/vault/cases`)}>Back to Cases</Button>
+        <Button onClick={() => navigate(-1)}>Back to Cases</Button>
       </div>
     );
   }
@@ -516,7 +516,7 @@ const DetailedViewCases = () => {
 
         {/* Back Button */}
         <button
-          onClick={() => navigate(`/dashboard/${roleSlug}/vault/cases`)}
+          onClick={() => navigate(-1)}
           style={{
             display: 'inline-flex',
             alignItems: 'center',

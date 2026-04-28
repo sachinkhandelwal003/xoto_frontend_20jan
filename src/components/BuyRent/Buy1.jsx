@@ -271,7 +271,7 @@ export default function HeroSection({ openSellModal, setOpenSellModal }) {
             max-width: 320px;
             min-width: 120px;
             height: clamp(28px, 3.5vw, 48px);
-            background: var(--color-body);
+            background: #f2ebf7;
             z-index: 3;
             clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
             decoration: none;
@@ -285,7 +285,7 @@ export default function HeroSection({ openSellModal, setOpenSellModal }) {
             max-width: 320px;
             min-width: 120px;
             height: clamp(28px, 3.5vw, 48px);
-            background: var(--color-body);
+            background: #f2ebf7;
             z-index: 3;
             clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
             bottom: -1px;
