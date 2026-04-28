@@ -461,7 +461,7 @@ const FormField = ({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-const CreateAdvisor = () => {
+const GridCreateadvisor = () => {
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [focused, setFocused] = useState("");
@@ -885,4 +885,4 @@ const handleSubmit = async (e) => {
   );
 };
 
-export default CreateAdvisor;
+export default GridCreateadvisor;

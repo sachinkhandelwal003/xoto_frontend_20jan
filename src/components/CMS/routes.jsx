@@ -174,7 +174,7 @@ import SecondaryPlans from "./pages/Properties/SecondaryPlans";
 import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail";
 
 
-import CreateAdvisor from "../Create Users/Createadvisor";
+import GridCreateadvisor from "../Create Users/GridCreateadvisor";
 import AllAdvisors from "../Create Users/Alladvisors";
 import AdvisorDetail from "../Create Users/Advisordetail";
 import AllLeadsPage from "../GridAdmin.jsx/Allleadspage";
@@ -523,7 +523,7 @@ const CmsRoutes = () => {
 {/* <Route path="proposals/create" element={<CreateProposal />} /> */}
 <Route path="proposals/create/:leadId" element={<ProposalForm />} />
 <Route path="proposals/all" element={<AllProposals />} />
-<Route path="advisor/create" element={<CreateAdvisor />} />
+<Route path="advisor/create" element={<GridCreateadvisor />} />
 <Route path="advisor/list"   element={<AdvisorList />} />
 <Route path="advisor/:id" element={<VaultAdvisorDetail />} />
 <Route path="mortgage-ops/create" element={<VaultCreateMortgage />} />
