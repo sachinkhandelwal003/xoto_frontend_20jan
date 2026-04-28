@@ -174,7 +174,7 @@ import SecondaryPlans from "./pages/Properties/SecondaryPlans";
 import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail";
 
 
-import CreateAdvisor from "../Create Users/Createadvisor";
+import GridCreateadvisor from "../Create Users/GridCreateadvisor";
 import AllAdvisors from "../Create Users/Alladvisors";
 import AdvisorDetail from "../Create Users/Advisordetail";
 import AllLeadsPage from "../GridAdmin.jsx/Allleadspage";
@@ -238,6 +238,8 @@ import ProcessCasesUpdates from "../ecommerce/vault/case/ProcessCasesUpdates";
 // import ReferralPartnerLogin from "../GridReferralPartner/ReferralPartnerLogin";
 import ReferralPartnerDashboard from "./pages/ReferralPartnerDashboard"
 import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
+import QueueCases from "../ecommerce/vault/case/QueueCases";
+import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
 
 import GridAdvisorDashboard from "./pages/GridAdvisorDashboard";
 import GridAdvisorProfile from "./pages/dashboardPages/Profiles/GridAdvisorProfile";
@@ -522,7 +524,7 @@ const CmsRoutes = () => {
 {/* <Route path="proposals/create" element={<CreateProposal />} /> */}
 <Route path="proposals/create/:leadId" element={<ProposalForm />} />
 <Route path="proposals/all" element={<AllProposals />} />
-<Route path="advisor/create" element={<CreateAdvisor />} />
+<Route path="advisor/create" element={<GridCreateadvisor />} />
 <Route path="advisor/list"   element={<AdvisorList />} />
 <Route path="advisor/:id" element={<VaultAdvisorDetail />} />
 <Route path="mortgage-ops/create" element={<VaultCreateMortgage />} />
@@ -643,6 +645,9 @@ const CmsRoutes = () => {
 
             <Route path="/case/create" element={< CreateCase />} />
             <Route path="/case/view" element={< ViewCases />} />
+                        <Route path="/case/queue/view" element={< QueueCases />} />
+            <Route path="/case/assigned/all" element={< OpsAssignedcases />} />
+
                         <Route path="/case/view/all" element={< ProcessCasesUpdates />} />
 
             <Route path="/case/view/:caseId" element={< DetailedViewCases/>} />

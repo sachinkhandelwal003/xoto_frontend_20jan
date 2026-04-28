@@ -114,7 +114,7 @@ useEffect(() => {
   const fetchProperties = async () => {
     try {
       setFetchLoading(true);
-const res = await apiService.get("/properties/hot", { _t: Date.now() });
+const res = await apiService.get("/properties/hot");
       console.log("FULL RES:", res);
       console.log("RES.DATA:", res?.data);
       console.log("RES.DATA.DATA:", res?.data?.data);

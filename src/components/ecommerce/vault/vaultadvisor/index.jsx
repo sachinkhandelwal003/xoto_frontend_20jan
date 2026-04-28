@@ -1,5 +1,6 @@
 // src/pages/Leads/AdvisorMyLeads.jsx
 import React, { useState, useEffect, useCallback } from "react";
+import { useSelector } from "react-redux";
 import {
   Button, Tag, message, Space, DatePicker, Select, Input,
   Tooltip, Badge, Drawer, Modal, Form
@@ -23,6 +24,32 @@ const P  = "#5C039B";
 const PM = "#7C3AED";
 const PL = "#F5F0FF";
 const PB = "#E9D5FF";
+
+
+
+
+const roleSlugMap = {
+  '0': 'superadmin',
+  '1': 'admin',
+  '2': "customer",
+  '5': 'vendor-b2c',
+  '6': 'vendor-b2b',
+  '7': 'freelancer',
+  '11': 'accountant',
+  '12': 'supervisor',
+  '15': "agency",        // Agency
+  '16': "agent",         // Agent
+  '17': "developer",
+  '18': "vault-admin", //vault
+  '22': "vaultagent",
+  '21': "vaultpartner",
+  '26': "vault-advisor",
+  '23': "vault-ops",
+   
+ 
+
+
+};
 
 // ─── Static config ──────────────────────────────────────────────────────────
 const STATUS_CFG = {
@@ -73,13 +100,14 @@ const AdvisorLeads = () => {
   const [statusTarget, setStatusTarget]     = useState(null); // lead record
   const [statusNotes, setStatusNotes]       = useState("");
   const [statusLoading, setStatusLoading]   = useState(false);
-
+const [selectedStatus, setSelectedStatus] = useState("");
   const activeCount = Object.entries(applied).filter(([, v]) => v !== "" && v !== undefined).length;
 
   const statsNew       = data.filter((r) => r.currentStatus === "New").length;
   const statsActive    = data.filter((r) => r.currentStatus && !["Disbursed", "Not Proceeding"].includes(r.currentStatus)).length;
   const statsDisbursed = data.filter((r) => r.currentStatus === "Disbursed").length;
-
+const { user } = useSelector((s) => s.auth);
+const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchLeads = useCallback(async (page = currentPage, limit = itemsPerPage, f = applied) => {
     try {
@@ -152,11 +180,11 @@ const AdvisorLeads = () => {
   };
 
   const handleViewDetail = (id) => {
-    if (id) navigate(`/dashboard/vaultagentlead-admin-detail/vault/lead/${id}`);
+    if (id) navigate(`/dashboard/${roleSlug}/vault/lead/${id}`);
     else message.warning("Lead ID not available");
   };
 
-  // ── Open "Mark as Contacted" modal ────────────────────────────────────────
+  // ── Open "Mark as {selectedStatus}" modal ────────────────────────────────────────
   const openStatusModal = (record) => {
     setStatusTarget(record);
     setStatusNotes("");
@@ -166,24 +194,33 @@ const AdvisorLeads = () => {
   // ── Submit status → Contacted ─────────────────────────────────────────────
   // API: PUT /vault/lead/advisor/lead/:leadId/status
   // Body: { status: "Contacted", notes: "..." }
-  const handleMarkContacted = async () => {
-    if (!statusTarget?._id) return;
-    setStatusLoading(true);
-    try {
-      await apiService.put(`/vault/lead/advisor/lead/${statusTarget._id}/status`, {
-        status: "Contacted",
-        notes : statusNotes.trim() || undefined,
-      });
-      message.success("Lead marked as Contacted!");
-      setStatusModal(false);
-      setStatusTarget(null);
-      fetchLeads(currentPage, itemsPerPage, applied); // refresh list
-    } catch (err) {
-      message.error(err?.response?.data?.message || "Status update failed");
-    } finally {
-      setStatusLoading(false);
-    }
-  };
+ const handleUpdateStatus = async (status) => {
+  if (!statusTarget?._id) return;
+
+  setStatusLoading(true);
+  try {
+    await apiService.put(
+      `/vault/lead/advisor/lead/${statusTarget._id}/status`,
+      {
+        status: status, // 🔥 dynamic
+        notes: statusNotes.trim() || undefined,
+      }
+    );
+
+    message.success(`Lead marked as ${status}!`);
+    setStatusModal(false);f
+    setStatusTarget(null);
+
+    fetchLeads(currentPage, itemsPerPage, applied);
+
+  } catch (err) {
+    message.error(
+      err?.response?.data?.message || "Status update failed"
+    );
+  } finally {
+    setStatusLoading(false);
+  }
+};
 
   // ── Navigate to document upload page ─────────────────────────────────────
 const handleAddDocs = (leadId) => {
@@ -326,15 +363,17 @@ const handleAddDocs = (leadId) => {
               </Button>
             </Tooltip>
 
-            {/* Mark as Contacted — visible when lead not yet contacted */}
+            {/* Mark as {selectedStatus} — visible when lead not yet contacted */}
             {canMarkContacted && (
-              <Tooltip title="Mark as Contacted">
+              <Tooltip title="Mark as {selectedStatus}">
                 <Button
                   type="text"
                   icon={<PhoneOutlined />}
                   size="small"
-                  onClick={() => openStatusModal(r)}
-                  style={{
+onClick={() => {
+  openStatusModal(r);
+  setSelectedStatus("Contacted");
+}}                  style={{
                     color: "#C2410C", fontWeight: 600, fontSize: 12,
                     background: "#FFF7ED", borderRadius: 8,
                     border: "1px solid #FED7AA",
@@ -344,7 +383,29 @@ const handleAddDocs = (leadId) => {
                 </Button>
               </Tooltip>
             )}
-
+{status === "Contacted" && (
+  <Tooltip title="Mark as Qualified">
+    <Button
+      type="text"
+      icon={<CheckCircleOutlined />}
+      size="small"
+      onClick={() => {
+        openStatusModal(r);
+        setSelectedStatus("Qualified");
+      }}
+      style={{
+        color: "#4338CA",
+        fontWeight: 600,
+        fontSize: 12,
+        background: "#EEF2FF",
+        borderRadius: 8,
+        border: "1px solid #C7D2FE",
+      }}
+    >
+      Qualified
+    </Button>
+  </Tooltip>
+)}
             {/* Add Docs — Referral Only + status === Contacted */}
             {showAddDocs && (
               <Tooltip title="Upload Documents for this Lead">
@@ -586,7 +647,7 @@ const handleAddDocs = (leadId) => {
       </Drawer>
 
       {/* ════════════════════════════════════════════════════════════
-          MARK AS CONTACTED MODAL
+          Mark as {selectedStatus} MODAL
           API: PUT /vault/lead/advisor/lead/:leadId/status
           Body: { status: "Contacted", notes: "..." }
       ════════════════════════════════════════════════════════════ */}
@@ -599,7 +660,7 @@ const handleAddDocs = (leadId) => {
               <PhoneOutlined style={{ color: "#C2410C", fontSize: 16 }} />
             </div>
             <div>
-              <div style={{ fontWeight: 700, color: "#111827" }}>Mark as Contacted</div>
+              <div style={{ fontWeight: 700, color: "#111827" }}>Mark as {selectedStatus}</div>
               {statusTarget && (
                 <div style={{ fontSize: 12, color: "#9CA3AF", fontWeight: 400 }}>
                   {statusTarget.customerInfo?.fullName || "—"} • {statusTarget.customerInfo?.mobileNumber || ""}
@@ -610,7 +671,7 @@ const handleAddDocs = (leadId) => {
         }
         footer={[
           <Button key="cancel" onClick={() => setStatusModal(false)} disabled={statusLoading} style={{ borderRadius: 10 }}>Cancel</Button>,
-          <Button key="submit" type="primary" loading={statusLoading} onClick={handleMarkContacted}
+          <Button key="submit" type="primary" loading={statusLoading} onClick={() => handleUpdateStatus(selectedStatus)}
             style={{ background: "#C2410C", borderColor: "#C2410C", borderRadius: 10, fontWeight: 600 }}
             icon={<PhoneOutlined />}>
             Confirm — Contacted

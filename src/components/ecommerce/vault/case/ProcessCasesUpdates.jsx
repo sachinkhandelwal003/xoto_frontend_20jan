@@ -114,7 +114,6 @@ const ProcessCasesUpdates = () => {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState('Submitted to Xoto');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   
@@ -130,7 +129,7 @@ const ProcessCasesUpdates = () => {
   const fetchCases = useCallback(async (page, status) => {
     setLoading(true);
     try {
-      const res = await apiService.get(`/vault/cases?page=${page}&limit=12&status=${status}`);
+      const res = await apiService.get(`/vault/cases?page=${page}&limit=12`);
       if (res?.success) {
         setCases(res.data || []);
         setTotalItems(res.pagination?.total || 0);
@@ -143,11 +142,10 @@ const ProcessCasesUpdates = () => {
   }, []);
 
   useEffect(() => {
-    fetchCases(currentPage, activeTab);
-  }, [currentPage, activeTab, fetchCases]);
+    fetchCases(currentPage);
+  }, [currentPage, fetchCases]);
 
   const handleTabChange = (key) => {
-    setActiveTab(key);
     setCurrentPage(1);
   };
 
@@ -190,7 +188,7 @@ const ProcessCasesUpdates = () => {
         });
         
         setStatusModalVisible(false);
-        fetchCases(currentPage, activeTab);
+        fetchCases(currentPage);
       } else {
         message.error(response?.message || "Failed to update case status");
       }
@@ -566,25 +564,7 @@ const ProcessCasesUpdates = () => {
       {/* Summary Cards */}
       {renderSummaryCards()}
 
-      {/* Tabs - Excluding Draft */}
-      <Card style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', marginBottom: 24 }} bodyStyle={{ padding: '16px 24px' }}>
-        <Tabs 
-          activeKey={activeTab} 
-          onChange={handleTabChange} 
-          tabBarGutter={16}
-          items={CASE_STATUSES.map(status => ({
-            label: (
-              <span style={{ fontSize: 14, fontWeight: activeTab === status ? 600 : 400 }}>
-                {getStatusIcon(status)} {status}
-                {cases.filter(c => c.currentStatus === status).length > 0 && (
-                  <Badge count={cases.filter(c => c.currentStatus === status).length} style={{ marginLeft: 8, backgroundColor: THEME_COLOR }} />
-                )}
-              </span>
-            ),
-            key: status
-          }))}
-        />
-      </Card>
+     
 
       {/* Cases Grid */}
       {loading ? (
@@ -595,7 +575,7 @@ const ProcessCasesUpdates = () => {
         <Empty
           description={
             <span>
-              No cases found for status: <strong>{activeTab}</strong>
+              No cases found for status:
               <br />
               <Text type="secondary" style={{ fontSize: 12 }}>Cases in Draft status are managed in the "Create Case" section.</Text>
             </span>

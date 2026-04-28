@@ -613,6 +613,25 @@ const CUSTOM_ROLE_LINKS = {
 
     },
 ],
+"23": [
+ 
+  
+
+       
+    {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Queue Cases", path: "/dashboard/{roleSlug}/case/queue/view" },
+                { title: "My Assigned Cases", path: "/dashboard/{roleSlug}/case/assigned/all" },
+
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+],
+
 
 "23": [
   {
@@ -651,8 +670,7 @@ const roleSlugMap = {
   '23': "vault-advisor",
   '26': "vault-ops",
   '25': "gridReferralPartner",
-  '26': "vault-advisor",
-  '23': "vault-ops",
+  
    
  
 
@@ -672,10 +690,8 @@ const ROLE_MODULE_ORDER = {
   '15': ['Dashboard', 'Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
   '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners', 'Advisors', 'Mortgages'],
   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
-  '21': ['Dashboard', 'Vault Partners', 'All Leads',],
   '24': ['Dashboard', 'My Leads', 'Property Catalogue', 'Calculator', 'Leaderboard'],
   '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],
-  '21': ['Dashboard','Create Lead',  'Vault Partners', 'All Leads',],
     '26': ['Dashboard', 'All Leads','Case','Proposals'],
     '23': ['Dashboard', 'Mortgage Cases'], 
 };
