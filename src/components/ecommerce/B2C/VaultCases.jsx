@@ -162,7 +162,7 @@ const VaultCases = () => {
       {/* Status Modal */}
       {statusModal && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)",
-          display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000 }}>
+          display:"flex", alignItems:"center", justifyContent:"center" }}>
           <div style={{ background:"#fff", borderRadius:16, padding:"1.5rem",
             width:400, maxWidth:"92vw", boxShadow:"0 24px 64px rgba(0,0,0,0.2)" }}>
             <div style={{ fontWeight:800, fontSize:16, color:DTEXT, marginBottom:4 }}>Move to Any Stage</div>
