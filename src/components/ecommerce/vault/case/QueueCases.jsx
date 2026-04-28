@@ -668,7 +668,7 @@ const QueueCases = () => {
           background: toast.type === "success" ? "#059669" : "#DC2626",
           color: "#fff", padding: "12px 16px", borderRadius: 10,
           fontSize: 13, fontWeight: 600, boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-          zIndex: 10000
+          
         }}>
           {toast.type === "success" ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
           {toast.message}
