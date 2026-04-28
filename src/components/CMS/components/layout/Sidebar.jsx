@@ -684,7 +684,7 @@ const ROLE_MODULE_ORDER = {
   '25':['Dashboard' , 'Total leads ' , 'Active Leads' , 'Recent Leads'],
   '21': ['Dashboard','Create Lead',  'Vault Partners', 'All Leads',],
   '24': ['Dashboard', 'My Leads', 'Property Catalogue', 'Calculator', 'Leaderboard'],
-  '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],
+  // '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],
     '26': ['Dashboard', 'All Leads','Case','Proposals'],
 };
 
