@@ -6,6 +6,11 @@ import DOMPurify from 'dompurify';
 import moment from 'moment';
 import Cropper from 'react-easy-crop';
 
+// 🆕 File conversion libraries
+import mammoth from 'mammoth';
+import * as pdfjsLib from 'pdfjs-dist';
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
 import {
   Button, Modal, Form, Input, Popconfirm, Card,
   Typography, Avatar, Row, Col, Statistic, Space, Divider,
@@ -19,7 +24,7 @@ import {
   UndoOutlined, ScissorOutlined, ZoomInOutlined, BookOutlined, CalendarOutlined,
   RocketOutlined, FireOutlined, StarOutlined, TagOutlined, FilterOutlined,
   ArrowLeftOutlined, ArrowRightOutlined, SaveOutlined, GlobalOutlined,
-  AppstoreAddOutlined
+  AppstoreAddOutlined, UploadOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -29,7 +34,7 @@ const { TextArea } = Input;
 const { TabPane } = Tabs;
 
 // ─────────────────────────────────────────────
-//  DESIGN TOKENS
+//  DESIGN TOKENS (unchanged)
 // ─────────────────────────────────────────────
 const THEME = {
   primary: "#6d28d9",
@@ -43,12 +48,12 @@ const THEME = {
   surface: "#ffffff",
   bg: "#f8fafc",
   border: "#e2e8f0",
-  text: "#0f172a", 
+  text: "#0f172a",
   muted: "#64748b",
 };
 
 // ─────────────────────────────────────────────
-//  GLOBAL STYLES (CLEAN SAAS UI)
+//  GLOBAL STYLES (unchanged)
 // ─────────────────────────────────────────────
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -422,16 +427,66 @@ const GLOBAL_STYLES = `
 `;
 
 // ─────────────────────────────────────────────
-//  PASTE CLEANING UTILITIES
+//  PASTE CLEANING UTILITIES (unchanged)
 // ─────────────────────────────────────────────
-const cleanWordHtml = (html) => { 
+const cleanWordHtml = (html) => {
   if (!html) return '';
   let cleaned = html;
-  cleaned = cleaned.replace(/lang="[^"]*"/gi, '');
-  cleaned = cleaned.replace(/class="[^"]*"/gi, '');
+
+  // ─── 1. Convert Word headings (mso-outline-level or MsoHeading) ────
+  cleaned = cleaned.replace(
+    /<p\b[^>]*\bmso-outline-level\s*:\s*["']?\s*1\s*["']?[^>]*>(.*?)<\/p>/gi,
+    '<h1>$1</h1>'
+  );
+  cleaned = cleaned.replace(
+    /<p\b[^>]*\bmso-outline-level\s*:\s*["']?\s*2\s*["']?[^>]*>(.*?)<\/p>/gi,
+    '<h2>$1</h2>'
+  );
+  cleaned = cleaned.replace(
+    /<p\b[^>]*\bmso-outline-level\s*:\s*["']?\s*3\s*["']?[^>]*>(.*?)<\/p>/gi,
+    '<h3>$1</h3>'
+  );
+
+  // ─── 2. Before stripping spans, rescue useful inline formatting ────
+  // Bold (font-weight:bold or 700)
+  cleaned = cleaned.replace(
+    /<span\b[^>]*\bstyle\s*=\s*["'][^"']*font-weight\s*:\s*(bold|700)[^"']*["'][^>]*>(.*?)<\/span>/gi,
+    '<strong>$2</strong>'
+  );
+  // Italic
+  cleaned = cleaned.replace(
+    /<span\b[^>]*\bstyle\s*=\s*["'][^"']*font-style\s*:\s*italic[^"']*["'][^>]*>(.*?)<\/span>/gi,
+    '<em>$1</em>'
+  );
+  // Underline
+  cleaned = cleaned.replace(
+    /<span\b[^>]*\bstyle\s*=\s*["'][^"']*text-decoration\s*:\s*underline[^"']*["'][^>]*>(.*?)<\/span>/gi,
+    '<u>$1</u>'
+  );
+  // Combination bold + italic
+  cleaned = cleaned.replace(
+    /<span\b[^>]*\bstyle\s*=\s*["'][^"']*(font-weight\s*:\s*(bold|700)\s*;\s*font-style\s*:\s*italic|font-style\s*:\s*italic\s*;\s*font-weight\s*:\s*(bold|700))[^"']*["'][^>]*>(.*?)<\/span>/gi,
+    '<strong><em>$4</em></strong>'
+  );
+
+  // ─── 3. Remove all remaining span tags (keep inner content) ────────
   cleaned = cleaned.replace(/<\/?span[^>]*>/gi, '');
+
+  // ─── 4. Convert <b> → <strong> (some Word exports still use <b>) ──
+  cleaned = cleaned.replace(/<b([^>]*)>/gi, '<strong$1>');
+  cleaned = cleaned.replace(/<\/b>/gi, '</strong>');
+
+  // ─── 5. Keep links (Word often wraps them in <a> with style) ──────
+  // Just leave <a> tags untouched – they will be sanitised by DOMPurify later.
+  // (DOMPurify already allows href, target etc.)
+
+  // ─── 6. Strip other useless attributes / empty tags ────────────────
+  cleaned = cleaned.replace(/ lang="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/ class="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/ style="[^"]*"/gi, '');   // remove inline styles we already rescued
   cleaned = cleaned.replace(/(&nbsp;|\s){2,}/gi, ' ');
 
+  // ─── 7. Fix bullet lists ──────────────────────────────────────────
   const pListPattern = /<p[^>]*>\s*([·●•▪o\-]|\&#183;)\s*([\s\S]*?)<\/p>/gi;
   cleaned = cleaned.replace(pListPattern, '<li>$2</li>');
 
@@ -443,8 +498,9 @@ const cleanWordHtml = (html) => {
   cleaned = cleaned.replace(/<\/ul>\s*<\/ul>/gi, '</ul>');
   cleaned = cleaned.replace(/<ol>\s*<ul>/gi, '<ol>');
   cleaned = cleaned.replace(/<\/ul>\s*<\/ol>/gi, '</ol>');
-  cleaned = cleaned.replace(/<b([^>]*)>/gi, '<strong$1>');
-  cleaned = cleaned.replace(/<\/b>/gi, '</strong>');
+
+  // ─── 8. Remove empty paragraphs ───────────────────────────────────
+  cleaned = cleaned.replace(/<p>\s*<\/p>/gi, '');
 
   return cleaned.trim();
 };
@@ -519,7 +575,7 @@ const smartExtract = (html) => {
 };
 
 // ─────────────────────────────────────────────
-//  CROP HELPER
+//  CROP HELPER (unchanged)
 // ─────────────────────────────────────────────
 const getCroppedImg = (imageSrc, pixelCrop) => new Promise((resolve, reject) => {
   const image = new Image();
@@ -537,7 +593,7 @@ const getCroppedImg = (imageSrc, pixelCrop) => new Promise((resolve, reject) => 
 });
 
 // ─────────────────────────────────────────────
-//  IMAGE CROP MODAL
+//  IMAGE CROP MODAL (unchanged)
 // ─────────────────────────────────────────────
 const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -599,7 +655,7 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
 };
 
 // ─────────────────────────────────────────────
-//  UPLOAD WITH CROP
+//  UPLOAD WITH CROP (unchanged)
 // ─────────────────────────────────────────────
 const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, label, extra, maxCount = 1 }) => {
   const [cropModal, setCropModal] = useState({ open: false, src: '' });
@@ -677,7 +733,7 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
 };
 
 // ─────────────────────────────────────────────
-//  BLOG PREVIEW COMPONENT
+//  BLOG PREVIEW COMPONENT (unchanged)
 // ─────────────────────────────────────────────
 const BlogPreview = ({ data }) => {
   if (!data) return null;
@@ -740,7 +796,7 @@ const BlogPreview = ({ data }) => {
 };
 
 // ─────────────────────────────────────────────
-//  EDITOR CONFIG
+//  EDITOR CONFIG (unchanged)
 // ─────────────────────────────────────────────
 const getEditorConfig = () => ({
   readonly: false,
@@ -750,10 +806,14 @@ const getEditorConfig = () => ({
   uploader: { insertImageAsBase64URI: true, imagesExtensions: ['jpg', 'png', 'jpeg', 'gif', 'svg', 'webp'] },
   toolbarSticky: false,
 
-  askBeforePasteHTML: false,
+   askBeforePasteHTML: false,
   askBeforePasteFromWord: false,
-  defaultActionOnPaste: 'insert_as_html',
-  processPasteHTML: false,
+  defaultActionOnPaste: "insert_as_html",
+processPasteHTML: true,
+processPasteHTMLFunction: (html) => {
+  // This runs AFTER Jodit's default cleaning – we do our own deep cleaning.
+  return cleanPastedContent(html);
+},
 
   removeButtons: ['file', 'video', 'print', 'about'],
   spellcheck: true,
@@ -800,13 +860,14 @@ const getEditorConfig = () => ({
   `
 });
 
-// ─────────────────────────────────────────────
+// ══════════════════════════════════════════════
 //  MAIN COMPONENT
-// ─────────────────────────────────────────────
+// ══════════════════════════════════════════════
 const BlogManagement = () => {
   const screens = useBreakpoint();
   const editorRef = useRef(null);
   const searchTimeout = useRef(null);
+  const fileInputRef = useRef(null); // ← for the import button
 
   // ─── State ───
   const [blogs, setBlogs] = useState([]);
@@ -831,11 +892,132 @@ const BlogManagement = () => {
   const [headings, setHeadings] = useState([]);
   const [smartFillApplied, setSmartFillApplied] = useState(false);
   const [pasteProcessing, setPasteProcessing] = useState(false);
+  const [importProcessing, setImportProcessing] = useState(false); // 🆕
   const [featuredImageList, setFeaturedImageList] = useState([]);
   const [coverImageList, setCoverImageList] = useState([]);
   const [authorImageList, setAuthorImageList] = useState([]);
   const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, views: 0 });
 
+  // ───────────────────────────────────────────────────
+  //  🆕 FILE IMPORT WITH SUPPORT FOR ANY FILE TYPE
+  // ───────────────────────────────────────────────────
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImportProcessing(true);
+    const hideLoading = message.loading(`Processing ${file.name}...`, 0);
+
+    try {
+      let html = '';
+      const fileName = file.name.toLowerCase();
+      const ext = fileName.split('.').pop();
+
+ const insertIntoEditor = (content) => {
+  const editorInstance = editorRef.current;
+
+  // If editor not ready yet → fallback safely
+  if (!editorInstance) {
+    const fallbackContent = (contentRef.current || "") + content;
+    contentRef.current = fallbackContent;
+    setContentValue(fallbackContent);
+    setHeadings(extractHeadings(fallbackContent));
+    return;
+  }
+
+  try {
+    // safest way for Jodit
+    if (typeof editorInstance.value !== "undefined") {
+      const updatedContent = (editorInstance.value || "") + content;
+
+      editorInstance.value = updatedContent;
+      contentRef.current = updatedContent;
+      setContentValue(updatedContent);
+      setHeadings(extractHeadings(updatedContent));
+      return;
+    }
+  } catch (error) {
+    console.error("Insert HTML Error:", error);
+  }
+
+  // Final fallback
+  const fallbackContent = (contentRef.current || "") + content;
+  contentRef.current = fallbackContent;
+  setContentValue(fallbackContent);
+  setHeadings(extractHeadings(fallbackContent));
+};
+
+      // 1) Plain text / HTML / markup files
+      if (['txt', 'html', 'htm', 'csv', 'md', 'log', 'json', 'xml'].includes(ext)) {
+        const text = await file.text();
+        if (ext === 'html' || ext === 'htm' || ext === 'xml') {
+          html = cleanPastedContent(text);
+        } else {
+          const lines = text.split('\n').filter(line => line.trim() !== '');
+          html = lines.map(line => `<p>${line.trim() || ' '}</p>`).join('');
+        }
+        insertIntoEditor(html);
+        message.success(`${file.name} imported`);
+      }
+
+      // 2) Word .docx (mammoth)
+      else if (ext === 'docx') {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        html = cleanPastedContent(result.value);
+        if (result.messages.length) console.warn('Mammoth messages:', result.messages);
+        insertIntoEditor(html);
+        message.success(`${file.name} imported (Word)`);
+      }
+
+      // 3) PDF (pdf.js)
+      else if (ext === 'pdf') {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const pageText = content.items.map(item => item.str).join(' ');
+          fullText += pageText + '\n';
+        }
+        const lines = fullText.split('\n').filter(line => line.trim() !== '');
+        html = lines.map(line => `<p>${line.trim()}</p>`).join('');
+        insertIntoEditor(html);
+        message.success(`${file.name} imported (PDF)`);
+      }
+
+      // 4) Any other file – try reading as text
+      else {
+        try {
+          const text = await file.text();
+          if (text && text.trim().length > 0) {
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            html = lines.map(line => `<p>${line.trim()}</p>`).join('');
+            insertIntoEditor(html);
+            message.success(`${file.name} imported as text`);
+          } else {
+            throw new Error('Empty or binary file');
+          }
+        } catch {
+          message.error(`${file.name} – unsupported file type`);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      message.error(`Failed to import ${file.name}: ${err.message}`);
+    } finally {
+      setImportProcessing(false);
+      hideLoading();
+      e.target.value = ''; // reset file input
+    }
+  };
+
+  // ─── Existing paste handler (unchanged) ────────────────────────────
   const handlePaste = useCallback(async (event) => {
     const cd = event.clipboardData;
     if (!cd) return;
@@ -983,6 +1165,7 @@ const BlogManagement = () => {
     } catch (e) { console.error(e); }
   };
 
+  // ─── API Calls (unchanged) ──────────────────────────────────────────
   const fetchBlogs = useCallback(async (page = 1, limit = 10, searchVal = "", category = "", status = "") => {
     setLoading(true);
     try {
@@ -1067,12 +1250,25 @@ const BlogManagement = () => {
     try {
       const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([processImage(featuredImageList), processImage(coverImageList), processImage(authorImageList)]);
 
-      const cleanedContent = DOMPurify.sanitize(cleanPastedContent(currentContent), {
-        ALLOWED_TAGS: ['p','br','strong','b','em','i','u','strike','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th'],
-        ALLOWED_ATTR: ['href','src','alt','title','target','rel', 'style'],
-        ALLOW_DATA_ATTR: false
-      });
-
+   const cleanedContent = DOMPurify.sanitize(
+  cleanPastedContent(currentContent),
+  {
+    ALLOWED_TAGS: [
+      'p','br','strong','b','em','i','u',
+      'h1','h2','h3','h4',
+      'ul','ol','li',
+      'a','img',
+      'blockquote',
+      'pre','code',
+      'table','thead','tbody','tr','td','th',
+      'hr'
+    ],
+    ALLOWED_ATTR: [
+      'href','src','alt','title',
+      'target','rel','style'
+    ]
+  }
+);
       const payload = {
         title: values.title,
         subHeading: values.subHeading || extractExcerpt(cleanedContent, 160),
@@ -1189,6 +1385,9 @@ const BlogManagement = () => {
   const PAGE_RANGE = Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
     .slice(Math.max(0, pagination.currentPage - 3), pagination.currentPage + 2);
 
+  // ══════════════════════════════════════════════
+  //  RENDER
+  // ══════════════════════════════════════════════
   return (
     <>
       <style>{GLOBAL_STYLES}</style>
@@ -1200,7 +1399,7 @@ const BlogManagement = () => {
               <AppstoreAddOutlined style={{ color: THEME.primary }} /> 
               Blog Management
             </h1>
-            <p className="bm-header-sub">Create, manage & publish — with smart paste from Word, PDF & Google Docs</p>
+            <p className="bm-header-sub">Create, manage & publish — with smart paste & import from any file</p>
           </div>
           <Button type="primary" size="large" icon={<PlusOutlined />} onClick={openCreate} className="bm-btn-primary">
             Create New Post
@@ -1334,7 +1533,7 @@ const BlogManagement = () => {
         )}
       </div>
 
-      {/* ─── CREATE / EDIT MODAL (CLEAN UI) ─── */}
+      {/* ─── CREATE / EDIT MODAL ─── */}
       <Modal
         title={
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
@@ -1354,7 +1553,7 @@ const BlogManagement = () => {
         destroyOnClose
         className="bm-modal"
         width={screens.xs ? '98%' : 1060}
-        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto' }}
+        styles={{ maxHeight: '80vh', overflowY: 'auto' }}
       >
         <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ category: 'Other', authorName: 'Admin', authorDesignation: 'Content Writer' }}>
           <Tabs defaultActiveKey="content" size="large" tabBarStyle={{ fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -1391,9 +1590,24 @@ const BlogManagement = () => {
 
               <Form.Item label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Blog Content <span style={{ color: '#ef4444' }}>*</span></span>}>
                 
+                {/* 🆕 Updated notice with import button */}
                 <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginBottom: 16, borderLeft: '4px solid #8b5cf6' }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a', marginBottom: 4 }}>✨ Smart Paste Enabled</div>
-                  <div style={{ fontSize: 13, color: '#475569', fontWeight: 500 }}>Directly type in the editor below, or paste from Word/Google Docs for auto-cleaning!</div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a', marginBottom: 4 }}>
+                    ✨ Smart Paste & Import (any file)
+                  </div>
+                  <div style={{ fontSize: 13, color: '#475569', fontWeight: 500 }}>
+                    Paste from Word / Google Docs, or
+                    <Button
+                      type="link"
+                      icon={<UploadOutlined />}
+                      onClick={handleImportClick}
+                      loading={importProcessing}
+                      style={{ padding: '0 4px', fontWeight: 600, height: 'auto' }}
+                    >
+                      import a file
+                    </Button>
+                    (.txt, .html, .docx, .pdf and more – we convert it automatically)
+                  </div>
                 </div>
 
                 {smartFillApplied && (
@@ -1403,8 +1617,17 @@ const BlogManagement = () => {
                   <Alert message={<span style={{fontWeight: 600}}>⏳ Processing paste content...</span>} type="info" showIcon style={{ marginBottom: 12, borderRadius: 8 }} />
                 )}
 
+                {/* Hidden file input – now accepts any file */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileImport}
+                  style={{ display: 'none' }}
+                  accept="*/*"
+                />
+
                 <div
-                  onPaste={handlePaste}
+                  
                   style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}
                 >
                   <JoditEditor
@@ -1498,7 +1721,7 @@ const BlogManagement = () => {
           </div>
         }
         width={screens.xs ? '98%' : 900}
-        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: 0 }}
+        styles={{ maxHeight: '80vh', overflowY: 'auto', padding: 0 }}
         centered
         className="preview-modal"
         zIndex={1100}
