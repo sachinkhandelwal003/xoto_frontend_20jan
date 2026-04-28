@@ -236,7 +236,11 @@ import DetailedViewCases from "../ecommerce/vault/case/DetailedViewCases";
 import ProcessCasesUpdates from "../ecommerce/vault/case/ProcessCasesUpdates";
 // import ReferralPartnerLogin from "../GridReferralPartner/ReferralPartnerLogin";
 import ReferralPartnerDashboard from "./pages/ReferralPartnerDashboard"
+import TotalLeads from "../GridReferralPartner/GridDashboardpages/TotalLeads";
+import ActiveLeads from "../GridReferralPartner/GridDashboardpages/ActiveLeads";
+import RecentLeads from "../GridReferralPartner/GridDashboardpages/RecentLeads";
 import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
+// import VaultLeadDetail from "../ecommerce/vault/Lead/VaultLeadDetail";
 import QueueCases from "../ecommerce/vault/case/QueueCases";
 import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
 
@@ -620,6 +624,9 @@ const CmsRoutes = () => {
 
 {/* Grid Referral Partner   */}
 <Route path="/grid-referral-partner" element={<ReferralPartnerDashboard />} />
+<Route path="/total-leads" element={<TotalLeads />} />
+<Route path="/active-leads" element={<ActiveLeads />} />
+<Route path="/recent-leads" element={<RecentLeads />} />
 
 <Route path="advisors/:id" element={<AdvisorDetail />} />   
 <Route path="advisors" element={<AllAdvisors />} />         
