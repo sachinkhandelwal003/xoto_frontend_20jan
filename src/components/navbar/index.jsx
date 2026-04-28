@@ -65,6 +65,7 @@ const roleSlugMap = {
   '9': 'agent',
   '22': 'vaultagent',
   '21': 'xotovaultpartner',
+  '24': 'GridAdvisor',
   '25': 'gridReferralPartner' 
 };
 
@@ -102,12 +103,16 @@ const Navbar = () => {
   const getDashboardLink = () => {
     if (!user) return "/login";
 
-    const roleName = user.role?.name?.toLowerCase();
     const roleCode = user.role?.code?.toString();
+    const roleName = user.role?.name?.toLowerCase();
 
     // 🌟 ADDED REFERRAL PARTNER LOGIC 🌟
     if (roleCode === '25' || roleName === "gridreferralpartner" || roleName === "referral-partner") {
       return "/dashboard/referral-partner";
+    }
+
+    if (roleCode && roleSlugMap[roleCode]) {
+      return `/dashboard/${roleSlugMap[roleCode]}`;
     }
 
     if (roleName === "vaultagent") return "/dashboard/vaultagent";
@@ -115,6 +120,7 @@ const Navbar = () => {
     if (roleName === "agency") return "/dashboard/agency";
     if (roleName === "developer") return "/dashboard/developer";
     if (roleName === "customer") return "/dashboard/customer";
+    if (roleName === "gridadvisor") return "/dashboard/GridAdvisor";
     if (roleName === "gridReferralPartner") return "/dashboard/grid-referral-partner";
     if (roleName === "superadmin" || roleName === "admin") return "/dashboard/superadmin";
     // if (roleName === "vaultparnter" || roleName === "xotovaultpartnerr") return "/dashboard/vault/xotovaultpartner";

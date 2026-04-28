@@ -16,53 +16,97 @@ import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────
 const C = {
-  primary     : "#5C039B",
-  primaryMid  : "#7C3AED",
+  primary: "#5C039B",
+  primaryMid: "#7C3AED",
   primaryLight: "#9333EA",
-  primaryGlow : "rgba(92,3,155,0.12)",
-  primarySoft : "#F5F0FF",
-  primaryBord : "#E9D5FF",
-  green       : "#10B981",
-  greenSoft   : "#ECFDF5",
-  greenBord   : "#A7F3D0",
-  red         : "#EF4444",
-  redSoft     : "#FEF2F2",
-  redBord     : "#FECACA",
-  amber       : "#F59E0B",
-  amberSoft   : "#FFFBEB",
-  amberBord   : "#FDE68A",
-  blue        : "#3B82F6",
-  blueSoft    : "#EFF6FF",
-  gray        : "#6B7280",
-  grayLight   : "#F9FAFB",
-  grayBord    : "#E5E7EB",
-  text        : "#111827",
-  textSub     : "#374151",
-  textMuted   : "#9CA3AF",
-  white       : "#FFFFFF",
-  bg          : "#F4F0FA",
+  primaryGlow: "rgba(92,3,155,0.12)",
+  primarySoft: "#F5F0FF",
+  primaryBord: "#E9D5FF",
+  green: "#10B981",
+  greenSoft: "#ECFDF5",
+  greenBord: "#A7F3D0",
+  red: "#EF4444",
+  redSoft: "#FEF2F2",
+  redBord: "#FECACA",
+  amber: "#F59E0B",
+  amberSoft: "#FFFBEB",
+  amberBord: "#FDE68A",
+  blue: "#3B82F6",
+  blueSoft: "#EFF6FF",
+  gray: "#6B7280",
+  grayLight: "#F9FAFB",
+  grayBord: "#E5E7EB",
+  text: "#111827",
+  textSub: "#374151",
+  textMuted: "#9CA3AF",
+  white: "#FFFFFF",
+  bg: "#F4F0FA",
 };
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
-const show      = (v) => (v !== null && v !== undefined && v !== "") ? v : null;
-const fmt       = (n) => n ? Number(n).toLocaleString("en-AE") : "—";
-const fmtDate   = (s) => { try { return s ? new Date(s).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : null; } catch { return null; } };
-const fmtDT     = (s) => { try { return s ? new Date(s).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : null; } catch { return null; } };
+const show = (v) => (v !== null && v !== undefined && v !== "") ? v : null;
+const fmt = (n) => n ? Number(n).toLocaleString("en-AE") : "—";
+const fmtDate = (s) => { try { return s ? new Date(s).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : null; } catch { return null; } };
+const fmtDT = (s) => { try { return s ? new Date(s).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : null; } catch { return null; } };
 const boolLabel = (v) => v === true ? "Yes" : v === false ? "No" : null;
-const isPdf     = (url) => url?.toLowerCase()?.includes(".pdf");
-const capWords  = (s) => s ? s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : null;
+const isPdf = (url) => url?.toLowerCase()?.includes(".pdf");
+const capWords = (s) => s ? s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : null;
+
+// Helper to safely extract name from object or return raw value
+const normalizeText = (val) => {
+  if (!val) return "—";
+  if (typeof val === "object") {
+    // Handle nested name object
+    if (val.name) {
+      if (typeof val.name === "object" && val.name.first_name) {
+        return `${val.name.first_name || ""} ${val.name.last_name || ""}`.trim() || "—";
+      }
+      if (typeof val.name === "string") return val.name;
+    }
+    // Handle fullName property
+    if (val.fullName) return val.fullName;
+    // Handle email property
+    if (val.email) return val.email;
+    // Handle _id as fallback
+    if (val._id) return val._id;
+    return "—";
+  }
+  return val;
+};
+
+// Safely get created by name from various possible structures
+const getCreatedByName = (sourceInfo) => {
+  if (!sourceInfo) return "—";
+  if (sourceInfo.createdByName && typeof sourceInfo.createdByName === "string") {
+    return sourceInfo.createdByName;
+  }
+  if (sourceInfo.createdById) {
+    if (typeof sourceInfo.createdById === "object") {
+      if (sourceInfo.createdById.name) {
+        if (typeof sourceInfo.createdById.name === "object") {
+          return `${sourceInfo.createdById.name.first_name || ""} ${sourceInfo.createdById.name.last_name || ""}`.trim() || "—";
+        }
+        return sourceInfo.createdById.name;
+      }
+      if (sourceInfo.createdById.email) return sourceInfo.createdById.email;
+      if (sourceInfo.createdById._id) return sourceInfo.createdById._id;
+    }
+    if (typeof sourceInfo.createdById === "string") return sourceInfo.createdById;
+  }
+  return "—";
+};
 
 // ─── Status config ─────────────────────────────────────────────────────────
 const STATUS_CFG = {
-  "New"                      : { bg: "#EFF6FF", color: "#1D4ED8", border: "#93C5FD" },
-  "Assigned"                 : { bg: C.primarySoft, color: C.primary, border: C.primaryBord },
-  "Contacted"                : { bg: "#FFF7ED", color: "#C2410C", border: "#FED7AA" },
-  "Qualified"                : { bg: "#EEF2FF", color: "#4338CA", border: "#C7D2FE" },
-  "Collecting Documentation" : { bg: C.amberSoft, color: "#B45309", border: C.amberBord },
-  "Documents Complete"       : { bg: "#ECFEFF", color: "#0E7490", border: "#A5F3FC" },
-  "Application Opened"       : { bg: "#FFF5F3", color: "#C2410C", border: C.redBord },
-  "Not Proceeding"           : { bg: C.redSoft, color: C.red, border: C.redBord },
-  "Disbursed"                : { bg: C.greenSoft, color: C.green, border: C.greenBord },
+  "New": { bg: "#EFF6FF", color: "#1D4ED8", border: "#93C5FD" },
+  "Assigned": { bg: C.primarySoft, color: C.primary, border: C.primaryBord },
+  "Contacted": { bg: "#FFF7ED", color: "#C2410C", border: "#FED7AA" },
+  "Qualified": { bg: "#EEF2FF", color: "#4338CA", border: "#C7D2FE" },
+  "Collecting Documentation": { bg: C.amberSoft, color: "#B45309", border: C.amberBord },
+  "Documents Complete": { bg: "#ECFEFF", color: "#0E7490", border: "#A5F3FC" },
+  "Application Opened": { bg: "#FFF5F3", color: "#C2410C", border: C.redBord },
+  "Not Proceeding": { bg: C.redSoft, color: C.red, border: C.redBord },
+  "Disbursed": { bg: C.greenSoft, color: C.green, border: C.greenBord },
 };
 
 const STATUS_OPTIONS = [
@@ -72,32 +116,31 @@ const STATUS_OPTIONS = [
 
 // ══════════════════════════════════════════════════════════════════════════
 export default function VaultAgentLeadDetail() {
-  const { id }   = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
 
-  const [lead,           setLead]           = useState(null);
-  const [documents,      setDocuments]      = useState([]);
-  const [loading,        setLoading]        = useState(true);
-  const [docsLoading,    setDocsLoading]    = useState(false);
-  const [error,          setError]          = useState("");
-  const [activeTab,      setActiveTab]      = useState("overview");
-  const [leadStatus,     setLeadStatus]     = useState("");
-  const [statusNote,     setStatusNote]     = useState("");
+  const [lead, setLead] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("overview");
+  const [leadStatus, setLeadStatus] = useState("");
+  const [statusNote, setStatusNote] = useState("");
   const [statusUpdating, setStatusUpdating] = useState(false);
-  const [selectedDoc,    setSelectedDoc]    = useState(null);
-  const [modalOpen,      setModalOpen]      = useState(false);
-  const [modalLoading,   setModalLoading]   = useState(false);
-  const [verifying,      setVerifying]      = useState(false);
-  const [rejecting,      setRejecting]      = useState(false);
-  const [showRejectInput,setShowRejectInput]= useState(false);
-  const [rejectReason,   setRejectReason]   = useState("");
-  const [qualityScore,   setQualityScore]   = useState(95);
-  const [docOverrides,   setDocOverrides]   = useState({});
-  const [flashMsg,       setFlashMsg]       = useState({ type: "", text: "" });
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [showRejectInput, setShowRejectInput] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [qualityScore, setQualityScore] = useState(95);
+  const [docOverrides, setDocOverrides] = useState({});
+  const [flashMsg, setFlashMsg] = useState({ type: "", text: "" });
   const [editModalOpen, setEditModalOpen] = useState(false);
-const [editSubmitting, setEditSubmitting] = useState(false);
-const [form] = Form.useForm();
-
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [form] = Form.useForm();
 
   const flash = (type, text) => {
     setFlashMsg({ type, text });
@@ -108,8 +151,7 @@ const [form] = Form.useForm();
   const fetchLead = async () => {
     try {
       setLoading(true); setError("");
-      const res  = await apiService.get(`/vault/lead/${id}`);
-      // API returns { success: true, data: { ...leadObject } }
+      const res = await apiService.get(`/vault/lead/${id}`);
       const data = res?.data?.data || res?.data || null;
       setLead(data);
       setLeadStatus(data?.currentStatus || "");
@@ -123,17 +165,18 @@ const [form] = Form.useForm();
   const fetchDocs = async () => {
     try {
       setDocsLoading(true);
-      const res  = await apiService.get(`/vault/lead/documents/${id}`);
-      const raw  = res?.data;
+      const res = await apiService.get(`/vault/lead/documents/${id}`);
+      const raw = res?.data;
       const docs = Array.isArray(raw) ? raw
         : Array.isArray(raw?.data) ? raw.data
-        : Array.isArray(raw?.documents) ? raw.documents
-        : Array.isArray(raw?.data?.documents) ? raw.data.documents : [];
+          : Array.isArray(raw?.documents) ? raw.documents
+            : Array.isArray(raw?.data?.documents) ? raw.data.documents : [];
       setDocuments(docs);
     } catch { /* silent */ }
     finally { setDocsLoading(false); }
   };
- const handleEditSubmit = async () => {
+
+  const handleEditSubmit = async () => {
     try {
       const values = await form.validateFields();
       setEditSubmitting(true);
@@ -160,13 +203,12 @@ const [form] = Form.useForm();
         commissionInfo: values.commissionInfo,
       };
 
-      // ✅ Correct endpoint
       await apiService.put(`/vault/lead/advisor/lead/${id}/info`, payload);
       message.success('Lead updated successfully');
       setEditModalOpen(false);
-      fetchLead(); // refresh data
+      fetchLead();
     } catch (err) {
-      if (err?.errorFields) return; // form validation error
+      if (err?.errorFields) return;
       message.error(err?.response?.data?.message || 'Update failed');
     } finally {
       setEditSubmitting(false);
@@ -175,7 +217,6 @@ const [form] = Form.useForm();
 
   useEffect(() => { if (id) { fetchLead(); fetchDocs(); } }, [id]);
 
-
   // ── Status Update ─────────────────────────────────────────────────────
   const handleStatusUpdate = async () => {
     if (!leadStatus) { flash("error", "Please select a status"); return; }
@@ -183,7 +224,7 @@ const [form] = Form.useForm();
       setStatusUpdating(true);
       await apiService.put(`/vault/lead/admin/${id}/status`, {
         status: leadStatus,
-        notes : statusNote.trim() || undefined,
+        notes: statusNote.trim() || undefined,
       });
       flash("success", `Status updated to "${leadStatus}"`);
       setStatusNote("");
@@ -199,7 +240,7 @@ const [form] = Form.useForm();
   const openDocModal = (doc) => {
     const fileUrl = doc.fileUrl || doc.url || doc.documentUrl || doc.file_url;
     if (!fileUrl) { message.warning("File URL not available"); return; }
-    const docId   = doc._id || doc.id;
+    const docId = doc._id || doc.id;
     const override = docOverrides[docId];
     setSelectedDoc({ ...doc, fileUrl, ...(override || {}) });
     setModalOpen(true);
@@ -244,68 +285,70 @@ const [form] = Form.useForm();
       flash("error", err?.response?.data?.message || "Rejection failed");
     } finally { setRejecting(false); }
   };
-useEffect(() => {
-  if (editModalOpen && lead) {
-    const ci = lead.customerInfo || {};
-    const pd = lead.propertyDetails || {};
-    const pa = pd.propertyAddress || {};
-    const lr = lead.loanRequirements || {};
-    const si = lead.sourceInfo || {};
-    const ci2 = lead.commissionInfo || {};
 
-    form.setFieldsValue({
-      customerInfo: {
-        fullName: ci.fullName,
-        email: ci.email,
-        mobileNumber: ci.mobileNumber,
-        alternativePhone: ci.alternativePhone,
-        whatsappNumber: ci.whatsappNumber,
-        dateOfBirth: ci.dateOfBirth ? dayjs(ci.dateOfBirth) : null,
-        nationality: ci.nationality,
-        maritalStatus: ci.maritalStatus,
-        numberOfDependents: ci.numberOfDependents,
-        occupation: ci.occupation,
-        employer: ci.employer,
-        monthlySalary: ci.monthlySalary,
-        preferredName: ci.preferredName,
-      },
-      propertyDetails: {
-        propertyType: pd.propertyType,
-        propertySubtype: pd.propertySubtype,
-        propertyValue: pd.propertyValue,
-        downPaymentAmount: pd.downPaymentAmount,
-        loanAmountRequired: pd.loanAmountRequired,
-        propertyAgeYears: pd.propertyAgeYears,
-        isOffPlan: pd.isOffPlan,
-        completionDate: pd.completionDate ? dayjs(pd.completionDate) : null,
-        propertyAddress: {
-          building: pa.building,
-          area: pa.area,
-          city: pa.city,
+  useEffect(() => {
+    if (editModalOpen && lead) {
+      const ci = lead.customerInfo || {};
+      const pd = lead.propertyDetails || {};
+      const pa = pd.propertyAddress || {};
+      const lr = lead.loanRequirements || {};
+      const si = lead.sourceInfo || {};
+      const ci2 = lead.commissionInfo || {};
+
+      form.setFieldsValue({
+        customerInfo: {
+          fullName: ci.fullName,
+          email: ci.email,
+          mobileNumber: ci.mobileNumber,
+          alternativePhone: ci.alternativePhone,
+          whatsappNumber: ci.whatsappNumber,
+          dateOfBirth: ci.dateOfBirth ? dayjs(ci.dateOfBirth) : null,
+          nationality: ci.nationality,
+          maritalStatus: ci.maritalStatus,
+          numberOfDependents: ci.numberOfDependents,
+          occupation: ci.occupation,
+          employer: ci.employer,
+          monthlySalary: ci.monthlySalary,
+          preferredName: ci.preferredName,
         },
-      },
-      loanRequirements: {
-        preferredTenureYears: lr.preferredTenureYears,
-        preferredInterestRateType: lr.preferredInterestRateType,
-        preferredBanks: lr.preferredBanks || [],
-        feeFinancingPreference: lr.feeFinancingPreference,
-        lifeInsurancePreference: lr.lifeInsurancePreference,
-        propertyInsurancePreference: lr.propertyInsurancePreference,
-        specialRequirements: lr.specialRequirements,
-      },
-      referralType: lead.referralType,
-      loanAmountRange: lead.loanAmountRange,
-      source: si.source,
-      notesToXoto: lead.notesToXoto,
-      currentStatus: lead.currentStatus,
-      commissionInfo: {
-        commissionEligible: ci2.commissionEligible,
-        commissionStatus: ci2.commissionStatus,
-        commissionAmount: ci2.commissionAmount,
-      },
-    });
-  }
-}, [editModalOpen, lead, form]);
+        propertyDetails: {
+          propertyType: pd.propertyType,
+          propertySubtype: pd.propertySubtype,
+          propertyValue: pd.propertyValue,
+          downPaymentAmount: pd.downPaymentAmount,
+          loanAmountRequired: pd.loanAmountRequired,
+          propertyAgeYears: pd.propertyAgeYears,
+          isOffPlan: pd.isOffPlan,
+          completionDate: pd.completionDate ? dayjs(pd.completionDate) : null,
+          propertyAddress: {
+            building: pa.building,
+            area: pa.area,
+            city: pa.city,
+          },
+        },
+        loanRequirements: {
+          preferredTenureYears: lr.preferredTenureYears,
+          preferredInterestRateType: lr.preferredInterestRateType,
+          preferredBanks: lr.preferredBanks || [],
+          feeFinancingPreference: lr.feeFinancingPreference,
+          lifeInsurancePreference: lr.lifeInsurancePreference,
+          propertyInsurancePreference: lr.propertyInsurancePreference,
+          specialRequirements: lr.specialRequirements,
+        },
+        referralType: lead.referralType,
+        loanAmountRange: lead.loanAmountRange,
+        source: si.source,
+        notesToXoto: lead.notesToXoto,
+        currentStatus: lead.currentStatus,
+        commissionInfo: {
+          commissionEligible: ci2.commissionEligible,
+          commissionStatus: ci2.commissionStatus,
+          commissionAmount: ci2.commissionAmount,
+        },
+      });
+    }
+  }, [editModalOpen, lead, form]);
+
   // ── Loading / Error ────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
@@ -330,45 +373,61 @@ useEffect(() => {
   );
 
   // ══════════════════════════════════════════════════════════════════════
-  // ── Destructure API response (matching actual shape) ──────────────────
+  // ── Destructure API response with safe defaults ───────────────────────
   // ══════════════════════════════════════════════════════════════════════
-  const ci  = lead.customerInfo       || {};   // fullName, email, mobileNumber, etc.
-  const pd  = lead.propertyDetails    || {};   // propertyValue, loanAmountRequired, etc.
-  const pa  = pd.propertyAddress      || {};   // building, area, city
-  const dc  = lead.documentCollection || {};   // collectionPercentage, readyForSubmission, etc.
-  const si  = lead.sourceInfo         || {};   // source, createdByName, createdByRole
-  const at  = lead.assignedTo         || {};   // advisorId, advisorName, assignedAt ← ACTUAL API FIELD
-  const sla = lead.sla                || {};   // breached, deadline, firstContactAt
-  const lr  = lead.loanRequirements   || {};   // preferredTenureYears, preferredBanks, etc.
-  const cv  = lead.conversionInfo     || {};   // convertedToCase, caseId
-  const ci2 = lead.commissionInfo     || {};   // commissionEligible, commissionStatus, commissionAmount
-  const dup = lead.duplicateCheck     || {};   // isDuplicate, matchingPhoneFound
+  const ci = lead.customerInfo || {};
+  const pd = lead.propertyDetails || {};
+  const pa = pd.propertyAddress || {};
+  const dc = lead.documentCollection || {};
+  const si = lead.sourceInfo || {};
+  const at = lead.assignedTo || {};
+  const sla = lead.sla || {};
+  const lr = lead.loanRequirements || {};
+  const cv = lead.conversionInfo || {};
+  const ci2 = lead.commissionInfo || {};
+  const dup = lead.duplicateCheck || {};
 
   const currentStatus = lead.currentStatus || "New";
-  const statusCfg     = STATUS_CFG[currentStatus] || STATUS_CFG["New"];
+  const statusCfg = STATUS_CFG[currentStatus] || STATUS_CFG["New"];
 
   // Property address string
   const propertyAddr = [pa.building, pa.area, pa.city].filter(Boolean).join(", ");
 
-  // Document counts — use API's documentCollection fields
-  const docsUploaded = dc.documentsUploaded   ?? documents.length;
-  const docsVerified = dc.documentsVerified   ?? documents.filter((d) => (d.status || d.verification_status) === "Verified").length;
-  const docsPending  = dc.documentsPending    ?? documents.filter((d) => { const s = d.status || d.verification_status; return !s || s === "Pending"; }).length;
-  const docsRejected = dc.documentsRejected   ?? documents.filter((d) => (d.status || d.verification_status) === "Rejected").length;
+  // Document counts
+  const docsUploaded = dc.documentsUploaded ?? documents.length;
+  const docsVerified = dc.documentsVerified ?? documents.filter((d) => (d.status || d.verification_status) === "Verified").length;
+  const docsPending = dc.documentsPending ?? documents.filter((d) => { const s = d.status || d.verification_status; return !s || s === "Pending"; }).length;
+  const docsRejected = dc.documentsRejected ?? documents.filter((d) => (d.status || d.verification_status) === "Rejected").length;
   const docsRequired = dc.totalDocumentsRequired ?? 7;
 
   // SLA status
   const isSlaBreached = sla.breached === true;
-  const slaDeadline   = sla.deadline;
+  const slaDeadline = sla.deadline;
 
-  // ── Tabs ──────────────────────────────────────────────────────────────
+  // Get assigned by name safely
+  const assignedByName = (() => {
+    if (!at.assignedBy) return null;
+    if (typeof at.assignedBy === "string") return at.assignedBy;
+    if (typeof at.assignedBy === "object") {
+      if (at.assignedBy.name) {
+        if (typeof at.assignedBy.name === "object") {
+          return `${at.assignedBy.name.first_name || ""} ${at.assignedBy.name.last_name || ""}`.trim();
+        }
+        return at.assignedBy.name;
+      }
+      if (at.assignedBy.email) return at.assignedBy.email;
+    }
+    return null;
+  })();
+
+  // Tabs
   const TABS = [
-    { id: "overview",  label: "Overview",   icon: Layers        },
-    { id: "property",  label: "Property",   icon: Home          },
-    { id: "documents", label: "Documents",  icon: FileText      },
-    { id: "financial", label: "Financial",  icon: DollarSign    },
-    { id: "status",    label: "Status",     icon: ClipboardList },
-    { id: "system",    label: "System",     icon: Shield        },
+    { id: "overview", label: "Overview", icon: Layers },
+    { id: "property", label: "Property", icon: Home },
+    { id: "documents", label: "Documents", icon: FileText },
+    { id: "financial", label: "Financial", icon: DollarSign },
+    { id: "status", label: "Status", icon: ClipboardList },
+    { id: "system", label: "System", icon: Shield },
   ];
 
   // ─────────────────────────────────────────────────────────────────────
@@ -388,34 +447,36 @@ useEffect(() => {
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px" }}>
 
-        {/* ── Back ── */}
-        <button
-          onClick={() => navigate(-1)}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 20, padding: "8px 16px", background: C.white, border: `1px solid ${C.grayBord}`, borderRadius: 10, fontSize: 13, fontWeight: 600, color: C.textSub, cursor: "pointer", transition: "all .2s" }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.primaryBord; e.currentTarget.style.color = C.primary; e.currentTarget.style.background = C.primarySoft; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.grayBord; e.currentTarget.style.color = C.textSub; e.currentTarget.style.background = C.white; }}
-        >
-          <ChevronLeft size={15} /> Back to Vault Leads
-        </button>
-         <button
-    onClick={() => setEditModalOpen(true)}
-    style={{
-      display: 'inline-flex', alignItems: 'center', gap: 6,
-      padding: '8px 16px', background: C.white, border: `1px solid ${C.grayBord}`,
-      borderRadius: 10, fontSize: 13, fontWeight: 600, color: C.primary,
-      cursor: 'pointer', transition: 'all .2s',
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.borderColor = C.primaryBord;
-      e.currentTarget.style.background = C.primarySoft;
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.borderColor = C.grayBord;
-      e.currentTarget.style.background = C.white;
-    }}
-  >
-    <Edit3 size={15} /> Edit Lead
-  </button>
+        {/* ── Back & Edit Buttons ── */}
+        <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", background: C.white, border: `1px solid ${C.grayBord}`, borderRadius: 10, fontSize: 13, fontWeight: 600, color: C.textSub, cursor: "pointer", transition: "all .2s" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.primaryBord; e.currentTarget.style.color = C.primary; e.currentTarget.style.background = C.primarySoft; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.grayBord; e.currentTarget.style.color = C.textSub; e.currentTarget.style.background = C.white; }}
+          >
+            <ChevronLeft size={15} /> Back to Vault Leads
+          </button>
+          <button
+            onClick={() => setEditModalOpen(true)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '8px 16px', background: C.white, border: `1px solid ${C.grayBord}`,
+              borderRadius: 10, fontSize: 13, fontWeight: 600, color: C.primary,
+              cursor: 'pointer', transition: 'all .2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = C.primaryBord;
+              e.currentTarget.style.background = C.primarySoft;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = C.grayBord;
+              e.currentTarget.style.background = C.white;
+            }}
+          >
+            <Edit3 size={15} /> Edit Lead
+          </button>
+        </div>
 
         {/* ── Flash ── */}
         {flashMsg.text && (
@@ -456,12 +517,12 @@ useEffect(() => {
                 {lead.loanAmountRange && <StatusPill bg={C.amberSoft} color="#B45309" label={lead.loanAmountRange} />}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
-                <InfoChip icon={Mail}       value={ci.email} />
-                <InfoChip icon={Phone}      value={ci.mobileNumber} />
-                <InfoChip icon={MapPin}     value={propertyAddr || null} />
+                <InfoChip icon={Mail} value={ci.email} />
+                <InfoChip icon={Phone} value={ci.mobileNumber} />
+                <InfoChip icon={MapPin} value={propertyAddr || null} />
                 <InfoChip icon={DollarSign} value={pd.loanAmountRequired ? `Loan: AED ${fmt(pd.loanAmountRequired)}` : pd.propertyValue ? `Property: AED ${fmt(pd.propertyValue)}` : null} />
-                <InfoChip icon={Calendar}   value={lead.createdAt ? `Created ${fmtDate(lead.createdAt)}` : null} />
-                <InfoChip icon={Hash}       value={lead._id ? `ID: …${lead._id.slice(-6)}` : null} />
+                <InfoChip icon={Calendar} value={lead.createdAt ? `Created ${fmtDate(lead.createdAt)}` : null} />
+                <InfoChip icon={Hash} value={lead._id ? `ID: …${lead._id.slice(-6)}` : null} />
               </div>
             </div>
 
@@ -470,7 +531,7 @@ useEffect(() => {
               {at.advisorName ? (
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ fontSize: 10, color: C.textMuted, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Assigned To</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{at.advisorName}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{normalizeText(at.advisorName)}</div>
                   {at.assignedAt && <div style={{ fontSize: 11, color: C.gray, marginTop: 2 }}>{fmtDate(at.assignedAt)}</div>}
                 </div>
               ) : (
@@ -487,11 +548,11 @@ useEffect(() => {
             STATS ROW
         ════════════════════════════════════════════════════════════ */}
         <div className="pd-stats" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 16 }}>
-          <StatTile icon={DollarSign} color={C.primary} label="Loan Amount"    value={pd.loanAmountRequired ? `AED ${fmt(pd.loanAmountRequired)}` : "—"} />
-          <StatTile icon={TrendingUp} color={C.green}   label="Property Value" value={pd.propertyValue      ? `AED ${fmt(pd.propertyValue)}`      : "—"} />
-          <StatTile icon={FileText}   color="#0891B2"   label="Documents"      value={`${docsUploaded} / ${docsRequired}`} />
-          <StatTile icon={Percent}    color={C.amber}   label="Collection"     value={`${dc.collectionPercentage ?? 0}%`} />
-          <StatTile icon={Clock}      color={isSlaBreached ? C.red : C.green} label="SLA" value={isSlaBreached ? "Breached" : "On Track"} />
+          <StatTile icon={DollarSign} color={C.primary} label="Loan Amount" value={pd.loanAmountRequired ? `AED ${fmt(pd.loanAmountRequired)}` : "—"} />
+          <StatTile icon={TrendingUp} color={C.green} label="Property Value" value={pd.propertyValue ? `AED ${fmt(pd.propertyValue)}` : "—"} />
+          <StatTile icon={FileText} color="#0891B2" label="Documents" value={`${docsUploaded} / ${docsRequired}`} />
+          <StatTile icon={Percent} color={C.amber} label="Collection" value={`${dc.collectionPercentage ?? 0}%`} />
+          <StatTile icon={Clock} color={isSlaBreached ? C.red : C.green} label="SLA" value={isSlaBreached ? "Breached" : "On Track"} />
         </div>
 
         {/* ════════════════════════════════════════════════════════════
@@ -500,7 +561,7 @@ useEffect(() => {
         <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.grayBord}`, padding: "4px 6px", display: "flex", gap: 2, marginBottom: 16, overflowX: "auto" }}>
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
-            const Icon   = tab.icon;
+            const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
@@ -529,42 +590,42 @@ useEffect(() => {
             <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
 
               <Section icon={User} title="Client Information">
-                <DRow label="Full Name"       value={show(ci.fullName)} />
-                <DRow label="Preferred Name"  value={show(ci.preferredName)} />
-                <DRow label="Email"           value={show(ci.email)} copy />
-                <DRow label="Mobile"          value={show(ci.mobileNumber)} copy />
-                <DRow label="Alt. Phone"      value={show(ci.alternativePhone)} />
-                <DRow label="WhatsApp"        value={show(ci.whatsappNumber)} copy />
-                <DRow label="Date of Birth"   value={fmtDate(ci.dateOfBirth)} />
-                <DRow label="Nationality"     value={show(ci.nationality)} />
-                <DRow label="Marital Status"  value={show(ci.maritalStatus)} />
-                <DRow label="Dependents"      value={show(ci.numberOfDependents)} />
-                <DRow label="Occupation"      value={show(ci.occupation)} />
-                <DRow label="Employer"        value={show(ci.employer)} />
-                <DRow label="Monthly Salary"  value={ci.monthlySalary ? `AED ${fmt(ci.monthlySalary)}` : null} />
+                <DRow label="Full Name" value={show(ci.fullName)} />
+                <DRow label="Preferred Name" value={show(ci.preferredName)} />
+                <DRow label="Email" value={show(ci.email)} copy />
+                <DRow label="Mobile" value={show(ci.mobileNumber)} copy />
+                <DRow label="Alt. Phone" value={show(ci.alternativePhone)} />
+                <DRow label="WhatsApp" value={show(ci.whatsappNumber)} copy />
+                <DRow label="Date of Birth" value={fmtDate(ci.dateOfBirth)} />
+                <DRow label="Nationality" value={show(ci.nationality)} />
+                <DRow label="Marital Status" value={show(ci.maritalStatus)} />
+                <DRow label="Dependents" value={show(ci.numberOfDependents)} />
+                <DRow label="Occupation" value={show(ci.occupation)} />
+                <DRow label="Employer" value={show(ci.employer)} />
+                <DRow label="Monthly Salary" value={ci.monthlySalary ? `AED ${fmt(ci.monthlySalary)}` : null} />
               </Section>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {/* Lead source */}
                 <Section icon={FilePlus} title="Lead Source">
-                  <DRow label="Source"          value={show(capWords(si.source))} />
-                  <DRow label="Submission"       value={show(capWords(si.submissionMethod))} />
-                  <DRow label="Created By"       value={show(si.createdByName)} />
-                  <DRow label="Role"             value={show(capWords(si.createdByRole))} />
-                  <DRow label="Agent ID"         value={show(si.createdById)} copy />
-                  <DRow label="Submitted At"     value={fmtDT(si.createdAt)} />
-                  <DRow label="Referral Type"    value={show(lead.referralType)} />
-                  <DRow label="Loan Range"       value={show(lead.loanAmountRange)} />
+                  <DRow label="Source" value={show(capWords(si.source))} />
+                  <DRow label="Submission" value={show(capWords(si.submissionMethod))} />
+                  <DRow label="Created By" value={getCreatedByName(si)} />
+                  <DRow label="Role" value={show(capWords(si.createdByRole))} />
+                  <DRow label="Agent ID" value={show(si.createdById?._id || si.createdById)} copy />
+                  <DRow label="Submitted At" value={fmtDT(si.createdAt)} />
+                  <DRow label="Referral Type" value={show(lead.referralType)} />
+                  <DRow label="Loan Range" value={show(lead.loanAmountRange)} />
                 </Section>
 
                 {/* Assigned advisor */}
                 <Section icon={User} title="Assigned Advisor">
                   {at.advisorName || at.advisorId ? (
                     <>
-                      <DRow label="Advisor Name"  value={show(at.advisorName)} />
-                      <DRow label="Advisor ID"    value={show(at.advisorId)} copy />
-                      <DRow label="Assigned At"   value={fmtDT(at.assignedAt)} />
-                      <DRow label="Assigned By"   value={show(at.assignedBy)} copy />
+                      <DRow label="Advisor Name" value={normalizeText(at.advisorName)} />
+                      <DRow label="Advisor ID" value={show(at.advisorId)} copy />
+                      <DRow label="Assigned At" value={fmtDT(at.assignedAt)} />
+                      <DRow label="Assigned By" value={assignedByName || show(at.assignedBy)} />
                     </>
                   ) : <EmptyNote msg="No advisor assigned yet" />}
                 </Section>
@@ -588,30 +649,30 @@ useEffect(() => {
             <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
 
               <Section icon={Home} title="Property Details">
-                <DRow label="Property Type"    value={show(pd.propertyType)} />
+                <DRow label="Property Type" value={show(pd.propertyType)} />
                 <DRow label="Property Subtype" value={show(pd.propertySubtype)} />
-                <DRow label="Property Value"   value={pd.propertyValue    ? `AED ${fmt(pd.propertyValue)}`    : null} />
-                <DRow label="Down Payment"     value={pd.downPaymentAmount ? `AED ${fmt(pd.downPaymentAmount)}` : null} />
-                <DRow label="Loan Amount"      value={pd.loanAmountRequired ? `AED ${fmt(pd.loanAmountRequired)}` : null} />
-                <DRow label="Property Age"     value={pd.propertyAgeYears !== null ? show(pd.propertyAgeYears) : null} />
-                <DRow label="Off-Plan"         value={boolLabel(pd.isOffPlan)} />
-                <DRow label="Completion Date"  value={fmtDate(pd.completionDate)} />
+                <DRow label="Property Value" value={pd.propertyValue ? `AED ${fmt(pd.propertyValue)}` : null} />
+                <DRow label="Down Payment" value={pd.downPaymentAmount ? `AED ${fmt(pd.downPaymentAmount)}` : null} />
+                <DRow label="Loan Amount" value={pd.loanAmountRequired ? `AED ${fmt(pd.loanAmountRequired)}` : null} />
+                <DRow label="Property Age" value={pd.propertyAgeYears !== null ? show(pd.propertyAgeYears) : null} />
+                <DRow label="Off-Plan" value={boolLabel(pd.isOffPlan)} />
+                <DRow label="Completion Date" value={fmtDate(pd.completionDate)} />
               </Section>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <Section icon={MapPin} title="Property Address">
                   <DRow label="Building" value={show(pa.building)} />
-                  <DRow label="Area"     value={show(pa.area)} />
-                  <DRow label="City"     value={show(pa.city)} />
+                  <DRow label="Area" value={show(pa.area)} />
+                  <DRow label="City" value={show(pa.city)} />
                 </Section>
 
                 <Section icon={Target} title="Loan Requirements">
-                  <DRow label="Preferred Tenure"    value={lr.preferredTenureYears ? `${lr.preferredTenureYears} years` : null} />
-                  <DRow label="Rate Type"           value={show(lr.preferredInterestRateType)} />
-                  <DRow label="Preferred Banks"     value={lr.preferredBanks?.length ? lr.preferredBanks.join(", ") : "No preference"} />
-                  <DRow label="Fee Financing"       value={boolLabel(lr.feeFinancingPreference)} highlight={lr.feeFinancingPreference} />
-                  <DRow label="Life Insurance"      value={boolLabel(lr.lifeInsurancePreference)} highlight={lr.lifeInsurancePreference} />
-                  <DRow label="Property Insurance"  value={boolLabel(lr.propertyInsurancePreference)} highlight={lr.propertyInsurancePreference} />
+                  <DRow label="Preferred Tenure" value={lr.preferredTenureYears ? `${lr.preferredTenureYears} years` : null} />
+                  <DRow label="Rate Type" value={show(lr.preferredInterestRateType)} />
+                  <DRow label="Preferred Banks" value={lr.preferredBanks?.length ? lr.preferredBanks.join(", ") : "No preference"} />
+                  <DRow label="Fee Financing" value={boolLabel(lr.feeFinancingPreference)} highlight={lr.feeFinancingPreference} />
+                  <DRow label="Life Insurance" value={boolLabel(lr.lifeInsurancePreference)} highlight={lr.lifeInsurancePreference} />
+                  <DRow label="Property Insurance" value={boolLabel(lr.propertyInsurancePreference)} highlight={lr.propertyInsurancePreference} />
                   {lr.specialRequirements && <DRow label="Special Requirements" value={show(lr.specialRequirements)} />}
                 </Section>
               </div>
@@ -626,11 +687,11 @@ useEffect(() => {
               {/* Doc stats from API */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
                 {[
-                  { label: "Required",  value: docsRequired,          color: C.gray   },
-                  { label: "Uploaded",  value: docsUploaded,          color: C.primary },
-                  { label: "Verified",  value: docsVerified,          color: C.green  },
-                  { label: "Pending",   value: docsPending,           color: C.amber  },
-                  { label: "Rejected",  value: docsRejected,          color: C.red    },
+                  { label: "Required", value: docsRequired, color: C.gray },
+                  { label: "Uploaded", value: docsUploaded, color: C.primary },
+                  { label: "Verified", value: docsVerified, color: C.green },
+                  { label: "Pending", value: docsPending, color: C.amber },
+                  { label: "Rejected", value: docsRejected, color: C.red },
                 ].map((s) => (
                   <div key={s.label} className="pd-stat" style={{ background: C.white, borderRadius: 12, padding: "14px 16px", border: `1px solid ${C.grayBord}`, transition: "all .2s", textAlign: "center" }}>
                     <div style={{ fontSize: 26, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
@@ -674,7 +735,7 @@ useEffect(() => {
                 ) : documents.length > 0 ? (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
                     {documents.map((doc, i) => {
-                      const docId    = doc._id || doc.id;
+                      const docId = doc._id || doc.id;
                       const override = docOverrides[docId];
                       return <DocCard key={docId || i} doc={override ? { ...doc, ...override } : doc} onView={openDocModal} />;
                     })}
@@ -690,28 +751,28 @@ useEffect(() => {
 
               <Section icon={DollarSign} title="Commission Information">
                 <DRow label="Commission Eligible" value={boolLabel(ci2.commissionEligible)} highlight={ci2.commissionEligible} />
-                <DRow label="Commission Status"   value={show(ci2.commissionStatus)} badge={ci2.commissionStatus === "Pending" ? { bg: C.amberSoft, color: "#B45309" } : ci2.commissionStatus === "Paid" ? { bg: C.greenSoft, color: C.green } : undefined} />
-                <DRow label="Commission Amount"   value={ci2.commissionAmount ? `AED ${fmt(ci2.commissionAmount)}` : null} />
+                <DRow label="Commission Status" value={show(ci2.commissionStatus)} badge={ci2.commissionStatus === "Pending" ? { bg: C.amberSoft, color: "#B45309" } : ci2.commissionStatus === "Paid" ? { bg: C.greenSoft, color: C.green } : undefined} />
+                <DRow label="Commission Amount" value={ci2.commissionAmount ? `AED ${fmt(ci2.commissionAmount)}` : null} />
                 <DRow label="Expected Commission" value={lead.expectedCommission ? `AED ${fmt(lead.expectedCommission)}` : null} />
-                <DRow label="Commission Tier"     value={show(lead.commissionTier) ? `${lead.commissionTier}%` : null} />
-                <DRow label="Loan Amount Range"   value={show(lead.loanAmountRange)} />
-                <DRow label="Payment Date"        value={fmtDate(ci2.expectedPaymentDate)} />
-                <DRow label="Paid At"             value={fmtDT(ci2.paidAt)} />
+                <DRow label="Commission Tier" value={lead.commissionTier ? `${lead.commissionTier}%` : null} />
+                <DRow label="Loan Amount Range" value={show(lead.loanAmountRange)} />
+                <DRow label="Payment Date" value={fmtDate(ci2.expectedPaymentDate)} />
+                <DRow label="Paid At" value={fmtDT(ci2.paidAt)} />
               </Section>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <Section icon={BarChart2} title="Commission Calculation">
                   <DRow label="Bank Commission to Xoto" value={ci2.calculation?.bankCommissionToXoto ? `${ci2.calculation.bankCommissionToXoto}%` : null} />
-                  <DRow label="Agent Percentage"        value={ci2.calculation?.agentPercentage ? `${ci2.calculation.agentPercentage}%` : null} />
-                  <DRow label="Formula"                 value={show(ci2.calculation?.formula)} />
+                  <DRow label="Agent Percentage" value={ci2.calculation?.agentPercentage ? `${ci2.calculation.agentPercentage}%` : null} />
+                  <DRow label="Formula" value={show(ci2.calculation?.formula)} />
                 </Section>
 
                 <Section icon={GitBranch} title="Conversion Status">
                   <DRow label="Converted to Case" value={boolLabel(cv.convertedToCase)} highlight={cv.convertedToCase} />
-                  <DRow label="Case ID"           value={show(cv.caseId)} copy />
-                  <DRow label="Converted At"      value={fmtDT(cv.convertedAt)} />
-                  <DRow label="Converted By"      value={show(cv.convertedByName)} />
-                  <DRow label="Converted Role"    value={show(capWords(cv.convertedByRole))} />
+                  <DRow label="Case ID" value={show(cv.caseId)} copy />
+                  <DRow label="Converted At" value={fmtDT(cv.convertedAt)} />
+                  <DRow label="Converted By" value={show(cv.convertedByName)} />
+                  <DRow label="Converted Role" value={show(capWords(cv.convertedByRole))} />
                 </Section>
               </div>
 
@@ -733,7 +794,7 @@ useEffect(() => {
                 {/* Status selector */}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
                   {STATUS_OPTIONS.map((opt) => {
-                    const cfg    = STATUS_CFG[opt] || {};
+                    const cfg = STATUS_CFG[opt] || {};
                     const active = leadStatus === opt;
                     return (
                       <button key={opt} className="status-btn" onClick={() => setLeadStatus(opt)}
@@ -766,21 +827,21 @@ useEffect(() => {
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {/* SLA Info */}
                 <Section icon={Clock} title="SLA Information">
-                  <DRow label="SLA Breached"       value={boolLabel(sla.breached)} highlight={!sla.breached} />
-                  <DRow label="Deadline"           value={fmtDT(sla.deadline)} expired={isSlaBreached} />
-                  <DRow label="First Contact At"   value={fmtDT(sla.firstContactAt)} />
-                  <DRow label="Qualified At"       value={fmtDT(sla.qualificationAt)} />
-                  <DRow label="Breached At"        value={fmtDT(sla.breachedAt)} />
-                  <DRow label="Reminders Sent"     value={show(sla.reminderCount)} />
-                  <DRow label="Last Reminder"      value={fmtDT(sla.lastReminderSentAt)} />
+                  <DRow label="SLA Breached" value={boolLabel(sla.breached)} highlight={!sla.breached} />
+                  <DRow label="Deadline" value={fmtDT(sla.deadline)} expired={isSlaBreached} />
+                  <DRow label="First Contact At" value={fmtDT(sla.firstContactAt)} />
+                  <DRow label="Qualified At" value={fmtDT(sla.qualificationAt)} />
+                  <DRow label="Breached At" value={fmtDT(sla.breachedAt)} />
+                  <DRow label="Reminders Sent" value={show(sla.reminderCount)} />
+                  <DRow label="Last Reminder" value={fmtDT(sla.lastReminderSentAt)} />
                 </Section>
 
                 {/* Duplicate check */}
                 <Section icon={Activity} title="Duplicate Check">
-                  <DRow label="Is Duplicate"       value={boolLabel(dup.isDuplicate)} highlight={!dup.isDuplicate} />
-                  <DRow label="Phone Match Found"  value={boolLabel(dup.matchingPhoneFound)} highlight={!dup.matchingPhoneFound} />
-                  <DRow label="Lookback Days"      value={show(dup.lookbackDays) ? `${dup.lookbackDays} days` : null} />
-                  <DRow label="Checked At"         value={fmtDT(dup.checkPerformedAt)} />
+                  <DRow label="Is Duplicate" value={boolLabel(dup.isDuplicate)} highlight={!dup.isDuplicate} />
+                  <DRow label="Phone Match Found" value={boolLabel(dup.matchingPhoneFound)} highlight={!dup.matchingPhoneFound} />
+                  <DRow label="Lookback Days" value={dup.lookbackDays ? `${dup.lookbackDays} days` : null} />
+                  <DRow label="Checked At" value={fmtDT(dup.checkPerformedAt)} />
                 </Section>
               </div>
             </div>
@@ -791,26 +852,26 @@ useEffect(() => {
             <div className="pd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
 
               <Section icon={Shield} title="System Information">
-                <DRow label="Lead ID"       value={show(lead._id)} copy mono />
-                <DRow label="Customer ID"   value={show(lead.customerId)} copy />
-                <DRow label="Version"       value={lead.__v !== undefined ? `v${lead.__v}` : null} />
-                <DRow label="Source"        value={show(capWords(si.source))} />
-                <DRow label="Source IP"     value={show(si.sourceIp)} />
-                <DRow label="User Agent"    value={show(si.userAgent)} />
-                <DRow label="Created At"    value={fmtDT(lead.createdAt)} />
-                <DRow label="Updated At"    value={fmtDT(lead.updatedAt)} />
-                <DRow label="Deleted"       value={boolLabel(lead.isDeleted)} highlight={!lead.isDeleted} />
-                <DRow label="Deleted At"    value={fmtDT(lead.deletedAt)} />
+                <DRow label="Lead ID" value={show(lead._id)} copy mono />
+                <DRow label="Customer ID" value={show(lead.customerId)} copy />
+                <DRow label="Version" value={lead.__v !== undefined ? `v${lead.__v}` : null} />
+                <DRow label="Source" value={show(capWords(si.source))} />
+                <DRow label="Source IP" value={show(si.sourceIp)} />
+                <DRow label="User Agent" value={show(si.userAgent)} />
+                <DRow label="Created At" value={fmtDT(lead.createdAt)} />
+                <DRow label="Updated At" value={fmtDT(lead.updatedAt)} />
+                <DRow label="Deleted" value={boolLabel(lead.isDeleted)} highlight={!lead.isDeleted} />
+                <DRow label="Deleted At" value={fmtDT(lead.deletedAt)} />
               </Section>
 
               <Section icon={Activity} title="Lead Flags">
-                <FlagRow label="Docs Ready for Submission" value={dc.readyForSubmission}   icon={FileText}    />
-                <FlagRow label="Advisor Assigned"          value={!!(at.advisorId)}        icon={User}        />
-                <FlagRow label="SLA On Track"              value={!sla.breached}           icon={Clock}       />
-                <FlagRow label="Commission Eligible"       value={ci2.commissionEligible}  icon={DollarSign}  />
-                <FlagRow label="Converted to Case"         value={cv.convertedToCase}      icon={GitBranch}   />
-                <FlagRow label="Is Duplicate"              value={dup.isDuplicate}         icon={Activity}    invert />
-                <FlagRow label="Deleted"                   value={lead.isDeleted}          icon={XCircle}     invert />
+                <FlagRow label="Docs Ready for Submission" value={dc.readyForSubmission} icon={FileText} />
+                <FlagRow label="Advisor Assigned" value={!!(at.advisorId)} icon={User} />
+                <FlagRow label="SLA On Track" value={!sla.breached} icon={Clock} />
+                <FlagRow label="Commission Eligible" value={ci2.commissionEligible} icon={DollarSign} />
+                <FlagRow label="Converted to Case" value={cv.convertedToCase} icon={GitBranch} />
+                <FlagRow label="Is Duplicate" value={dup.isDuplicate} icon={Activity} invert />
+                <FlagRow label="Deleted" value={lead.isDeleted} icon={XCircle} invert />
               </Section>
 
             </div>
@@ -837,7 +898,7 @@ useEffect(() => {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 {(() => {
-                  const ds  = selectedDoc?.status || selectedDoc?.verification_status;
+                  const ds = selectedDoc?.status || selectedDoc?.verification_status;
                   const cfg = { Verified: { color: C.green, bg: C.greenSoft }, Rejected: { color: C.red, bg: C.redSoft }, Pending: { color: C.amber, bg: C.amberSoft } }[ds];
                   return ds && cfg ? <span style={{ fontSize: 12, fontWeight: 700, color: cfg.color, background: cfg.bg, padding: "4px 12px", borderRadius: 99 }}>{ds}</span> : null;
                 })()}
@@ -893,230 +954,232 @@ useEffect(() => {
           </div>
         </div>
       )}
-       <Modal
-  title={
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <Edit3 size={18} color={C.primary} />
-      <span style={{ fontWeight: 700, fontSize: 16 }}>Edit Lead</span>
-    </div>
-  }
-  open={editModalOpen}
-  onCancel={() => setEditModalOpen(false)}
-  width={960}
-  footer={null}
-  destroyOnClose
->
-  <Form
-    form={form}
-    layout="vertical"
-    style={{ maxHeight: '70vh', overflowY: 'auto', paddingRight: 4 }}
-  >
-    {/* ----- Client Information ----- */}
-    <div style={{ marginBottom: 20 }}>
-      <h4 style={{ margin: '0 0 12px', color: C.primary }}>Client Information</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-        <Form.Item name={['customerInfo', 'fullName']} label="Full Name" rules={[{ required: true }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'preferredName']} label="Preferred Name">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'email']} label="Email">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'mobileNumber']} label="Mobile">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'alternativePhone']} label="Alt. Phone">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'whatsappNumber']} label="WhatsApp">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'dateOfBirth']} label="Date of Birth">
-          <DatePicker style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'nationality']} label="Nationality">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'maritalStatus']} label="Marital Status">
-          <Select allowClear>
-            <Select.Option value="Single">Single</Select.Option>
-            <Select.Option value="Married">Married</Select.Option>
-            <Select.Option value="Other">Other</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'numberOfDependents']} label="Dependents">
-          <InputNumber min={0} style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'occupation']} label="Occupation">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'employer']} label="Employer">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['customerInfo', 'monthlySalary']} label="Monthly Salary">
-          <InputNumber min={0} style={{ width: '100%' }} addonBefore="AED" />
-        </Form.Item>
-      </div>
-    </div>
-
-    {/* ----- Property Details ----- */}
-    <div style={{ marginBottom: 20 }}>
-      <h4 style={{ margin: '0 0 12px', color: C.primary }}>Property Details</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-        <Form.Item name={['propertyDetails', 'propertyType']} label="Property Type">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'propertySubtype']} label="Subtype">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'propertyValue']} label="Property Value">
-          <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'downPaymentAmount']} label="Down Payment">
-          <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'loanAmountRequired']} label="Loan Required">
-          <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'propertyAgeYears']} label="Property Age (years)">
-          <InputNumber min={0} style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'isOffPlan']} label="Off-Plan?">
-          <Select allowClear>
-            <Select.Option value={true}>Yes</Select.Option>
-            <Select.Option value={false}>No</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'completionDate']} label="Completion Date">
-          <DatePicker style={{ width: '100%' }} />
-        </Form.Item>
-      </div>
-      <h4 style={{ margin: '16px 0 8px' }}>Property Address</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
-        <Form.Item name={['propertyDetails', 'propertyAddress', 'building']} label="Building">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'propertyAddress', 'area']} label="Area">
-          <Input />
-        </Form.Item>
-        <Form.Item name={['propertyDetails', 'propertyAddress', 'city']} label="City">
-          <Input />
-        </Form.Item>
-      </div>
-    </div>
-
-    {/* ----- Loan Requirements ----- */}
-    <div style={{ marginBottom: 20 }}>
-      <h4 style={{ margin: '0 0 12px', color: C.primary }}>Loan Requirements</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-        <Form.Item name={['loanRequirements', 'preferredTenureYears']} label="Tenure (years)">
-          <InputNumber min={1} max={25} style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item name={['loanRequirements', 'preferredInterestRateType']} label="Rate Type">
-          <Select allowClear>
-            <Select.Option value="Fixed">Fixed</Select.Option>
-            <Select.Option value="Variable">Variable</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['loanRequirements', 'preferredBanks']} label="Preferred Banks (comma separated)">
-          <Select mode="tags" style={{ width: '100%' }} placeholder="Select or type bank" />
-        </Form.Item>
-        <Form.Item name={['loanRequirements', 'feeFinancingPreference']} label="Fee Financing?">
-          <Select allowClear>
-            <Select.Option value={true}>Yes</Select.Option>
-            <Select.Option value={false}>No</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['loanRequirements', 'lifeInsurancePreference']} label="Life Insurance?">
-          <Select allowClear>
-            <Select.Option value={true}>Yes</Select.Option>
-            <Select.Option value={false}>No</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['loanRequirements', 'propertyInsurancePreference']} label="Property Insurance?">
-          <Select allowClear>
-            <Select.Option value={true}>Yes</Select.Option>
-            <Select.Option value={false}>No</Select.Option>
-          </Select>
-        </Form.Item>
-      </div>
-      <Form.Item name={['loanRequirements', 'specialRequirements']} label="Special Requirements">
-        <Input.TextArea rows={2} />
-      </Form.Item>
-    </div>
-
-    {/* ----- Commission & Lead Info ----- */}
-    <div>
-      <h4 style={{ margin: '0 0 12px', color: C.primary }}>Commission & Lead Info</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-        <Form.Item name={['commissionInfo', 'commissionEligible']} label="Commission Eligible?">
-          <Select allowClear>
-            <Select.Option value={true}>Yes</Select.Option>
-            <Select.Option value={false}>No</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['commissionInfo', 'commissionStatus']} label="Commission Status">
-          <Select allowClear>
-            <Select.Option value="Pending">Pending</Select.Option>
-            <Select.Option value="Paid">Paid</Select.Option>
-            <Select.Option value="Cancelled">Cancelled</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name={['commissionInfo', 'commissionAmount']} label="Commission Amount">
-          <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
-        </Form.Item>
-        <Form.Item name="referralType" label="Referral Type">
-          <Select allowClear>
-            <Select.Option value="Referral Only">Referral Only</Select.Option>
-            <Select.Option value="Docs Provided">Docs Provided</Select.Option>
-            <Select.Option value="Full Application">Full Application</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name="loanAmountRange" label="Loan Amount Range">
-          <Select allowClear>
-            <Select.Option value="< 500K">{'< 500K'}</Select.Option>
-            <Select.Option value="500K-1M">500K-1M</Select.Option>
-            <Select.Option value="1M-2M">1M-2M</Select.Option>
-            <Select.Option value="2M-5M">2M-5M</Select.Option>
-            <Select.Option value="> 5M">{'> 5M'}</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name="source" label="Source">
-          <Select allowClear>
-            <Select.Option value="website">Website</Select.Option>
-            <Select.Option value="freelance_agent">Freelance Agent</Select.Option>
-            <Select.Option value="partner">Partner</Select.Option>
-            <Select.Option value="admin">Admin</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item name="currentStatus" label="Status">
-          <Select allowClear>
-            {STATUS_OPTIONS.map(opt => (
-              <Select.Option key={opt} value={opt}>{opt}</Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
-      </div>
-      <Form.Item name="notesToXoto" label="Notes to Xoto">
-        <Input.TextArea rows={3} />
-      </Form.Item>
-    </div>
-
-    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24, borderTop: `1px solid ${C.grayBord}`, paddingTop: 16 }}>
-      <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
-      <Button
-        type="primary"
-        loading={editSubmitting}
-        onClick={handleEditSubmit}
-        icon={<Edit3 size={14} />}
+      
+      {/* Edit Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Edit3 size={18} color={C.primary} />
+            <span style={{ fontWeight: 700, fontSize: 16 }}>Edit Lead</span>
+          </div>
+        }
+        open={editModalOpen}
+        onCancel={() => setEditModalOpen(false)}
+        width={960}
+        footer={null}
+        destroyOnClose
       >
-        Save Changes
-      </Button>
-    </div>
-  </Form>
-</Modal>
+        <Form
+          form={form}
+          layout="vertical"
+          style={{ maxHeight: '70vh', overflowY: 'auto', paddingRight: 4 }}
+        >
+          {/* ----- Client Information ----- */}
+          <div style={{ marginBottom: 20 }}>
+            <h4 style={{ margin: '0 0 12px', color: C.primary }}>Client Information</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+              <Form.Item name={['customerInfo', 'fullName']} label="Full Name" rules={[{ required: true }]}>
+                <Input />
+              </Form.Item>
+              <Form.Item name={['customerInfo', 'preferredName']} label="Preferred Name">
+                <Input />
+              </Form.Item>
+              <Form.Item name={['customerInfo', 'email']} label="Email">
+                <Input />
+              </Form.Item>
+              <Form.Item name={['customerInfo', 'mobileNumber']} label="Mobile">
+                <Input />
+              </Form.Item>
+              <Form.Item name={['customerInfo', 'alternativePhone']} label="Alt. Phone">
+                <Input />
+              </Form.Item>
+              <Form.Item name={['customerInfo', 'whatsappNumber']} label="WhatsApp">
+                <Input />
+              </Form.Item>
+              <Form.Item name={['customerInfo', 'dateOfBirth']} label="Date of Birth">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item name={['customerInfo', 'nationality']} label="Nationality">
+                <Input />
+              </Form.Item>
+              <Form.Item name={['customerInfo', 'maritalStatus']} label="Marital Status">
+                <Select allowClear>
+                  <Select.Option value="Single">Single</Select.Option>
+                  <Select.Option value="Married">Married</Select.Option>
+                  <Select.Option value="Other">Other</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name={['customerInfo', 'numberOfDependents']} label="Dependents">
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item name={['customerInfo', 'occupation']} label="Occupation">
+                <Input />
+              </Form.Item>
+              <Form.Item name={['customerInfo', 'employer']} label="Employer">
+                <Input />
+              </Form.Item>
+              <Form.Item name={['customerInfo', 'monthlySalary']} label="Monthly Salary">
+                <InputNumber min={0} style={{ width: '100%' }} addonBefore="AED" />
+              </Form.Item>
+            </div>
+          </div>
+
+          {/* ----- Property Details ----- */}
+          <div style={{ marginBottom: 20 }}>
+            <h4 style={{ margin: '0 0 12px', color: C.primary }}>Property Details</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+              <Form.Item name={['propertyDetails', 'propertyType']} label="Property Type">
+                <Input />
+              </Form.Item>
+              <Form.Item name={['propertyDetails', 'propertySubtype']} label="Subtype">
+                <Input />
+              </Form.Item>
+              <Form.Item name={['propertyDetails', 'propertyValue']} label="Property Value">
+                <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
+              </Form.Item>
+              <Form.Item name={['propertyDetails', 'downPaymentAmount']} label="Down Payment">
+                <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
+              </Form.Item>
+              <Form.Item name={['propertyDetails', 'loanAmountRequired']} label="Loan Required">
+                <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
+              </Form.Item>
+              <Form.Item name={['propertyDetails', 'propertyAgeYears']} label="Property Age (years)">
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item name={['propertyDetails', 'isOffPlan']} label="Off-Plan?">
+                <Select allowClear>
+                  <Select.Option value={true}>Yes</Select.Option>
+                  <Select.Option value={false}>No</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name={['propertyDetails', 'completionDate']} label="Completion Date">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </div>
+            <h4 style={{ margin: '16px 0 8px' }}>Property Address</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
+              <Form.Item name={['propertyDetails', 'propertyAddress', 'building']} label="Building">
+                <Input />
+              </Form.Item>
+              <Form.Item name={['propertyDetails', 'propertyAddress', 'area']} label="Area">
+                <Input />
+              </Form.Item>
+              <Form.Item name={['propertyDetails', 'propertyAddress', 'city']} label="City">
+                <Input />
+              </Form.Item>
+            </div>
+          </div>
+
+          {/* ----- Loan Requirements ----- */}
+          <div style={{ marginBottom: 20 }}>
+            <h4 style={{ margin: '0 0 12px', color: C.primary }}>Loan Requirements</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+              <Form.Item name={['loanRequirements', 'preferredTenureYears']} label="Tenure (years)">
+                <InputNumber min={1} max={25} style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item name={['loanRequirements', 'preferredInterestRateType']} label="Rate Type">
+                <Select allowClear>
+                  <Select.Option value="Fixed">Fixed</Select.Option>
+                  <Select.Option value="Variable">Variable</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name={['loanRequirements', 'preferredBanks']} label="Preferred Banks (comma separated)">
+                <Select mode="tags" style={{ width: '100%' }} placeholder="Select or type bank" />
+              </Form.Item>
+              <Form.Item name={['loanRequirements', 'feeFinancingPreference']} label="Fee Financing?">
+                <Select allowClear>
+                  <Select.Option value={true}>Yes</Select.Option>
+                  <Select.Option value={false}>No</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name={['loanRequirements', 'lifeInsurancePreference']} label="Life Insurance?">
+                <Select allowClear>
+                  <Select.Option value={true}>Yes</Select.Option>
+                  <Select.Option value={false}>No</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name={['loanRequirements', 'propertyInsurancePreference']} label="Property Insurance?">
+                <Select allowClear>
+                  <Select.Option value={true}>Yes</Select.Option>
+                  <Select.Option value={false}>No</Select.Option>
+                </Select>
+              </Form.Item>
+            </div>
+            <Form.Item name={['loanRequirements', 'specialRequirements']} label="Special Requirements">
+              <Input.TextArea rows={2} />
+            </Form.Item>
+          </div>
+
+          {/* ----- Commission & Lead Info ----- */}
+          <div>
+            <h4 style={{ margin: '0 0 12px', color: C.primary }}>Commission & Lead Info</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+              <Form.Item name={['commissionInfo', 'commissionEligible']} label="Commission Eligible?">
+                <Select allowClear>
+                  <Select.Option value={true}>Yes</Select.Option>
+                  <Select.Option value={false}>No</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name={['commissionInfo', 'commissionStatus']} label="Commission Status">
+                <Select allowClear>
+                  <Select.Option value="Pending">Pending</Select.Option>
+                  <Select.Option value="Paid">Paid</Select.Option>
+                  <Select.Option value="Cancelled">Cancelled</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name={['commissionInfo', 'commissionAmount']} label="Commission Amount">
+                <InputNumber style={{ width: '100%' }} addonBefore="AED" min={0} />
+              </Form.Item>
+              <Form.Item name="referralType" label="Referral Type">
+                <Select allowClear>
+                  <Select.Option value="Referral Only">Referral Only</Select.Option>
+                  <Select.Option value="Docs Provided">Docs Provided</Select.Option>
+                  <Select.Option value="Full Application">Full Application</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name="loanAmountRange" label="Loan Amount Range">
+                <Select allowClear>
+                  <Select.Option value="< 500K">{'< 500K'}</Select.Option>
+                  <Select.Option value="500K-1M">500K-1M</Select.Option>
+                  <Select.Option value="1M-2M">1M-2M</Select.Option>
+                  <Select.Option value="2M-5M">2M-5M</Select.Option>
+                  <Select.Option value="> 5M">{'> 5M'}</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name="source" label="Source">
+                <Select allowClear>
+                  <Select.Option value="website">Website</Select.Option>
+                  <Select.Option value="freelance_agent">Freelance Agent</Select.Option>
+                  <Select.Option value="partner">Partner</Select.Option>
+                  <Select.Option value="admin">Admin</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name="currentStatus" label="Status">
+                <Select allowClear>
+                  {STATUS_OPTIONS.map(opt => (
+                    <Select.Option key={opt} value={opt}>{opt}</Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </div>
+            <Form.Item name="notesToXoto" label="Notes to Xoto">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24, borderTop: `1px solid ${C.grayBord}`, paddingTop: 16 }}>
+            <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
+            <Button
+              type="primary"
+              loading={editSubmitting}
+              onClick={handleEditSubmit}
+              icon={<Edit3 size={14} />}
+            >
+              Save Changes
+            </Button>
+          </div>
+        </Form>
+      </Modal>
     </div>
   );
 }
@@ -1141,19 +1204,38 @@ function Section({ icon: Icon, title, children }) {
 
 function DRow({ label, value, copy, link, badge, highlight, expired, mono }) {
   const [copied, setCopied] = useState(false);
-  const display   = value ?? "—";
-  const isMissing = display === "—" || value === null || value === undefined;
+  
+  // Handle object values safely
+  let displayValue = value ?? "—";
+  if (typeof displayValue === "object" && displayValue !== null) {
+    if (displayValue.name) {
+      if (typeof displayValue.name === "object") {
+        displayValue = `${displayValue.name.first_name || ""} ${displayValue.name.last_name || ""}`.trim() || "—";
+      } else {
+        displayValue = displayValue.name;
+      }
+    } else if (displayValue.email) {
+      displayValue = displayValue.email;
+    } else if (displayValue._id) {
+      displayValue = displayValue._id;
+    } else {
+      displayValue = JSON.stringify(displayValue);
+    }
+  }
+  
+  const isMissing = displayValue === "—" || displayValue === null || displayValue === undefined || displayValue === "";
+  
   return (
     <div className="pd-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.grayLight}` }}>
       <span style={{ fontSize: 12, color: C.gray, fontWeight: 500, minWidth: 150, flexShrink: 0 }}>{label}</span>
       <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, justifyContent: "flex-end", flexWrap: "wrap" }}>
         {badge && !isMissing ? (
-          <span style={{ padding: "2px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: badge.bg, color: badge.color }}>{display}</span>
+          <span style={{ padding: "2px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: badge.bg, color: badge.color }}>{displayValue}</span>
         ) : link && !isMissing ? (
-          <a href={link} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: C.primary, fontWeight: 500, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>{display} <ExternalLink size={11} /></a>
+          <a href={link} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: C.primary, fontWeight: 500, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>{displayValue} <ExternalLink size={11} /></a>
         ) : (
           <span style={{ fontSize: 13, fontWeight: isMissing ? 400 : 500, color: expired ? C.red : highlight ? C.green : isMissing ? C.textMuted : C.text, fontFamily: mono && !isMissing ? "'Courier New', monospace" : undefined, wordBreak: "break-all", textAlign: "right" }}>
-            {expired && !isMissing ? <span style={{ display: "flex", alignItems: "center", gap: 4 }}><AlertTriangle size={12} color={C.red} /> {display}</span> : display}
+            {expired && !isMissing ? <span style={{ display: "flex", alignItems: "center", gap: 4 }}><AlertTriangle size={12} color={C.red} /> {displayValue}</span> : displayValue}
           </span>
         )}
         {copy && value && (
@@ -1209,7 +1291,7 @@ function EmptyNote({ msg }) {
 
 function FlagRow({ label, value, icon: Icon, invert = false }) {
   const isTrue = value === true, isFalse = value === false;
-  const good   = invert ? isFalse : isTrue;
+  const good = invert ? isFalse : isTrue;
   return (
     <div className="pd-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.grayLight}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.textSub, fontWeight: 500 }}>
@@ -1228,12 +1310,12 @@ function FlagRow({ label, value, icon: Icon, invert = false }) {
 }
 
 function DocCard({ doc, onView }) {
-  const fileUrl  = doc.fileUrl || doc.url || doc.documentUrl || doc.file_url;
+  const fileUrl = doc.fileUrl || doc.url || doc.documentUrl || doc.file_url;
   const fileName = doc.fileName || doc.file_name || doc.name || "Unnamed Document";
-  const docType  = doc.documentType || doc.document_type || doc.type;
-  const status   = doc.status || doc.verification_status;
+  const docType = doc.documentType || doc.document_type || doc.type;
+  const status = doc.status || doc.verification_status;
   const uploadAt = doc.uploadedAt || doc.created_at || doc.createdAt;
-  const sCfg     = { Verified: { color: C.green, bg: C.greenSoft, border: C.greenBord }, Rejected: { color: C.red, bg: C.redSoft, border: C.redBord }, Pending: { color: C.amber, bg: C.amberSoft, border: C.amberBord } }[status] || { color: C.gray, bg: C.grayLight, border: C.grayBord };
+  const sCfg = { Verified: { color: C.green, bg: C.greenSoft, border: C.greenBord }, Rejected: { color: C.red, bg: C.redSoft, border: C.redBord }, Pending: { color: C.amber, bg: C.amberSoft, border: C.amberBord } }[status] || { color: C.gray, bg: C.grayLight, border: C.grayBord };
   return (
     <div className="doc-card" style={{ background: C.white, borderRadius: 12, border: `1px solid ${status === "Verified" ? C.greenBord : status === "Rejected" ? C.redBord : C.grayBord}`, padding: 16, display: "flex", flexDirection: "column", gap: 10, transition: "all .2s", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
       <div style={{ display: "flex", gap: 12 }}>
@@ -1242,7 +1324,7 @@ function DocCard({ doc, onView }) {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 13, color: C.text, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{fileName}</div>
-          {docType  && <div style={{ fontSize: 11, color: C.primary, marginTop: 2 }}>{docType}</div>}
+          {docType && <div style={{ fontSize: 11, color: C.primary, marginTop: 2 }}>{docType}</div>}
           {uploadAt && <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>{fmtDate(uploadAt)}</div>}
         </div>
       </div>
@@ -1255,7 +1337,6 @@ function DocCard({ doc, onView }) {
       <button onClick={() => onView(doc)} disabled={!fileUrl} style={{ marginTop: "auto", width: "100%", padding: "9px 0", background: fileUrl ? `linear-gradient(135deg, ${C.primary}, ${C.primaryMid})` : C.grayBord, color: fileUrl ? "#fff" : C.textMuted, border: "none", borderRadius: 9, fontWeight: 600, fontSize: 13, cursor: fileUrl ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
         <Eye size={14} /> View Document
       </button>
-     
     </div>
   );
 }

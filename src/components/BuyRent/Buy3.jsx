@@ -110,56 +110,52 @@ const Property = () => {
     });
   }, []);
 
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        setFetchLoading(true);
+useEffect(() => {
+  const fetchProperties = async () => {
+    try {
+      setFetchLoading(true);
+const res = await apiService.get("/properties/hot");
+      console.log("FULL RES:", res);
+      console.log("RES.DATA:", res?.data);
+      console.log("RES.DATA.DATA:", res?.data?.data);
+const list = Array.isArray(res?.data) ? res.data : [];
 
-        // Correct endpoint (no extra /api/)
-const res = await apiService.get("/property/get-all-properties", {
-  page: 1,
-  limit: 10,
-  isFeatured: false
-});
+      const transformedProperties = list.map((item) => ({
+        id: item._id,
+        imgUrl:
+          item.photos?.architecture?.[0] ||
+          item.photos?.interior?.[0]     ||
+          item.photos?.other?.[0]        ||
+          item.mainLogo                  ||
+          "https://via.placeholder.com/400x300?text=No+Image",
+        title:     item.propertyName || "Unnamed Property",
+        price:     item.price
+          ? `${item.currency || "AED"} ${Number(item.price).toLocaleString()}`
+          : "Price on Request",
+        location:  item.area && item.city
+          ? `${item.area}, ${item.city}`
+          : "Dubai, UAE",
+        bedrooms:  item.bedrooms  || 0,
+        bathrooms: item.bathrooms || 0,
+        area:      item.builtUpArea
+          ? `${item.builtUpArea} ${item.builtUpAreaUnit || "sqft"}`
+          : "N/A",
+        tag:   item.propertySubType || item.transactionType || "Sell",
+        liked: false,
+      }));
 
-if (res && Array.isArray(res.data)) {
+      setProperties(transformedProperties);
+    } catch (err) {
+      console.error("Error fetching hot properties:", err);
+      openNotification("error", "Failed to Load Properties", "Please try again later.");
+      setProperties([]);
+    } finally {
+      setFetchLoading(false);
+    }
+  };
 
-  const list = res.data;
-
-  const limited = list.slice(0, 3); // ✅ only 3
-
-  const transformedProperties = limited.map((item) => ({
-    id: item._id,
-    imgUrl: item.photos?.[0] || item.mainLogo || "https://via.placeholder.com/400x300?text=No+Image",
-    title: item.propertyName || "Unnamed Property",
-    price: item.price
-      ? `${item.currency || "AED"} ${Number(item.price).toLocaleString()}`
-      : "Price on Request",
-    location: item.area && item.city ? `${item.area}, ${item.city}` : "Dubai, UAE",
-    bedrooms: item.bedrooms || 0,
-    bathrooms: item.bathrooms || 0,
-    area: item.builtUpArea
-      ? `${item.builtUpArea} ${item.builtUpAreaUnit || "sqft"}`
-      : "N/A",
-    tag: item.propertyType === "rent" ? "Rent" : "Sell",
-    liked: false,
-  }));
-
-  setProperties(transformedProperties);
-}else {
-          throw new Error("Invalid API response format");
-        }
-      } catch (err) {
-        console.error("Error fetching properties:", err);
-        openNotification("error", "Failed to Load Properties", "Please try again later.");
-        setProperties([]);
-      } finally {
-        setFetchLoading(false);
-      }
-    };
-
-    fetchProperties();
-  }, []);
+  fetchProperties();
+}, []);
 
   // --- HANDLERS ---
 
@@ -174,17 +170,14 @@ if (res && Array.isArray(res.data)) {
     setFormData((prev) => ({ ...prev, country_code: value, mobile: prev.mobile.slice(0, limit) }));
   };
 
-  const handlePhoneChange = (e) => {
-    const value = e.target.value.replace(/\D/g, "");
-    const maxLength = PHONE_LENGTH_RULES[formData.country_code] || 15;
-    const validatedValue = value.slice(0, maxLength);
-    const phoneObj = parsePhoneNumberFromString(
-  `+${formData.country_code}${formData.mobile}`
-);
-
-    setFormData((prev) => ({ ...prev, mobile: validatedValue }));
-    if (errors.mobile) setErrors((prev) => ({ ...prev, mobile: "" }));
-  };
+const handlePhoneChange = (e) => {
+  const value = e.target.value.replace(/\D/g, "");
+  const maxLength = PHONE_LENGTH_RULES[formData.country_code] || 15;
+  const validatedValue = value.slice(0, maxLength);
+  // ✅ phoneObj wali line bilkul hata do — zaroorat nahi yahan
+  setFormData((prev) => ({ ...prev, mobile: validatedValue }));
+  if (errors.mobile) setErrors((prev) => ({ ...prev, mobile: "" }));
+};
 
   // Location Handlers
   const handleLocationCountryChange = (isoCode) => {
@@ -241,51 +234,54 @@ if (phoneError) {
     return isValid;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    setLoading(true);
+  setLoading(true);
 
-    // Resolve Names
-    const countryName = Country.getCountryByCode(formData.location_country)?.name || "";
-    const stateName = State.getStateByCodeAndCountry(formData.state, formData.location_country)?.name || formData.state;
-    const finalLocationString = `${formData.city || stateName}, ${stateName}, ${countryName}`;
+  // ✅ phoneObj yahan define karo
+  const phoneObj = parsePhoneNumberFromString(
+    `+${formData.country_code}${formData.mobile}`
+  );
 
-    const payload = {
-      type: "schedule_visit",
-      name: { first_name: formData.first_name.trim(), last_name: formData.last_name.trim() },
-      mobile: {
-  country_code: formData.country_code,
-  number: formData.mobile,
-  full: phoneObj.number, // +9715XXXXXXXX
-},
+  const countryName = Country.getCountryByCode(formData.location_country)?.name || "";
+  const stateName = State.getStateByCodeAndCountry(formData.state, formData.location_country)?.name || formData.state;
+  const finalLocationString = `${formData.city || stateName}, ${stateName}, ${countryName}`;
 
-      email: formData.email.toLowerCase().trim(),
-      occupation: formData.occupation,
-      location: finalLocationString,
-      city: formData.city, 
-      preferred_city: formData.city || stateName,
-      preferred_contact: formData.preferred_contact,
-    };
-
-    try {
-      const res = await apiService.post("/property/lead", payload);
-      if (res.success) {
-        openNotification("success", "Request Submitted", t("toast.success"));
-        setOpenModal(false);
-        setFormData({
-          first_name: "", last_name: "", email: "", country_code: "971", mobile: "",
-          occupation: "", location_country: null, state: null, city: null, preferred_contact: "whatsapp",
-        });
-        setErrors({});
-      }
-    } catch (err) {
-      openNotification("error", "Submission Failed", err.response?.data?.message || t("toast.error"));
-    } finally {
-      setLoading(false);
-    }
+  const payload = {
+    type: "schedule_visit",
+    name: { first_name: formData.first_name.trim(), last_name: formData.last_name.trim() },
+    mobile: {
+      country_code: formData.country_code,
+      number: formData.mobile,
+      full: phoneObj?.number ?? `+${formData.country_code}${formData.mobile}`, // ✅ safe
+    },
+    email: formData.email.toLowerCase().trim(),
+    occupation: formData.occupation,
+    location: finalLocationString,
+    city: formData.city,
+    preferred_city: formData.city || stateName,
+    preferred_contact: formData.preferred_contact,
   };
+
+  try {
+    const res = await apiService.post("/property/lead", payload);
+    if (res.success) {
+      openNotification("success", "Request Submitted", t("toast.success"));
+      setOpenModal(false);
+      setFormData({
+        first_name: "", last_name: "", email: "", country_code: "971", mobile: "",
+        occupation: "", location_country: null, state: null, city: null, preferred_contact: "whatsapp",
+      });
+      setErrors({});
+    }
+  } catch (err) {
+    openNotification("error", "Submission Failed", err.response?.data?.message || t("toast.error"));
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <>
