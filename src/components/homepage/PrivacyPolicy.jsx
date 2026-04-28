@@ -220,7 +220,7 @@ const PrivacyPolicyPage = () => {
                 <p><span className="font-semibold text-gray-900">"Xoto Group", "we", "us", or "our"</span> means:</p>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="bg-gray-50 rounded-xl p-4 border-l-4" style={{ borderLeftColor: themeColor }}>
-                    <h4 className="font-bold text-gray-900">Xoto Prophet Real Estate LLC</h4>
+                    <h4 className="font-bold text-gray-900">Xoto Proptech Real Estate LLC</h4>
                     <p className="text-sm text-gray-600 mt-1">License No. 1567404</p>
                     <p className="text-xs text-gray-500 mt-2">Real Estate Buying/Selling Brokerage, Leasing Property Brokerage, Mortgage Commission</p>
                   </div>
@@ -488,7 +488,7 @@ const PrivacyPolicyPage = () => {
                       <Phone className="h-5 w-5 text-gray-500 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="font-medium text-gray-900">Phone</p>
-                        <a href="tel:+97142369625" className="text-sm hover:underline" style={{ color: themeColor }}>+971 42369625</a>
+                        <a href="tel:+97143486807" className="text-sm hover:underline" style={{ color: themeColor }}>+971 42369625</a>
                       </div>
                     </div>
                   </div>

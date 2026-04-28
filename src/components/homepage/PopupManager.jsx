@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import dubaiImg from "../../assets/img/home/popup.png";
 
 const INACTIVITY_DELAY = 20000;
-const SCROLL_THRESHOLD = 600;
+const SCROLL_THRESHOLD = 20;
 
 const PopupManager = () => {
   const navigate = useNavigate();
@@ -38,24 +38,22 @@ const showPopup = () => {
     if (isVisibleRef.current) return;
     startInactivityTimer();
   };
-
-  const handleScroll = () => {
-    if (isVisibleRef.current) return;
-    scrollCountRef.current += 1;
-    if (scrollCountRef.current >= SCROLL_THRESHOLD) showPopup();
-  };
+const handleScroll = () => {
+  if (hasShownRef.current) return;
+  if (window.scrollY >= 500) showPopup();
+};
 
   useEffect(() => {
-    const activityEvents = ["mousemove", "mousedown", "keypress", "touchstart"];
-    activityEvents.forEach((e) => window.addEventListener(e, handleActivity));
-    // window.addEventListener("scroll", handleScroll);
-    startInactivityTimer();
-    return () => {
-      clearTimeout(timerRef.current);
-      activityEvents.forEach((e) => window.removeEventListener(e, handleActivity));
-      // window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
+  const activityEvents = ["mousemove", "mousedown", "keypress", "touchstart"];
+  activityEvents.forEach((e) => window.addEventListener(e, handleActivity));
+  window.addEventListener("scroll", handleScroll);  // ✅ uncommented
+  startInactivityTimer();
+  return () => {
+    clearTimeout(timerRef.current);
+    activityEvents.forEach((e) => window.removeEventListener(e, handleActivity));
+    window.removeEventListener("scroll", handleScroll);  // ✅ uncommented
+  };
+}, []);
 
   const handleClose = () => {
    setPopupVisible(false);

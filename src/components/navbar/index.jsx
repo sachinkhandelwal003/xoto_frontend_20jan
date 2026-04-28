@@ -64,7 +64,9 @@ const roleSlugMap = {
   '8': 'developer',
   '9': 'agent',
   '22': 'vaultagent',
-  '21': 'xotovaultpartner'
+  '21': 'xotovaultpartner',
+  '24': 'GridAdvisor',
+  '25': 'gridReferralPartner' 
 };
 
 const Navbar = () => {
@@ -101,15 +103,29 @@ const Navbar = () => {
   const getDashboardLink = () => {
     if (!user) return "/login";
 
+    const roleCode = user.role?.code?.toString();
     const roleName = user.role?.name?.toLowerCase();
+
+    // 🌟 ADDED REFERRAL PARTNER LOGIC 🌟
+    if (roleCode === '25' || roleName === "gridreferralpartner" || roleName === "referral-partner") {
+      return "/dashboard/referral-partner";
+    }
+
+    if (roleCode && roleSlugMap[roleCode]) {
+      return `/dashboard/${roleSlugMap[roleCode]}`;
+    }
 
     if (roleName === "vaultagent") return "/dashboard/vaultagent";
     if (roleName === "agent") return "/dashboard/agent";
     if (roleName === "agency") return "/dashboard/agency";
     if (roleName === "developer") return "/dashboard/developer";
     if (roleName === "customer") return "/dashboard/customer";
+    if (roleName === "gridadvisor") return "/dashboard/GridAdvisor";
+    if (roleName === "gridReferralPartner") return "/dashboard/grid-referral-partner";
     if (roleName === "superadmin" || roleName === "admin") return "/dashboard/superadmin";
     // if (roleName === "vaultparnter" || roleName === "xotovaultpartnerr") return "/dashboard/vault/xotovaultpartner";
+    
+    // Default fallback
     return "/dashboard/developer";
   };
 
@@ -188,7 +204,7 @@ const Navbar = () => {
                   className={({ isActive }) =>
                     `px-3 py-2 font-medium transition-all relative h-full flex items-center ${
                       isActive 
-                      ? "text-[#5C039B]" // ❌ Underline classes removed here
+                      ? "text-[#5C039B]" 
                       : "text-gray-700 hover:text-[#5C039B]"
                     }`
                   }
