@@ -242,6 +242,8 @@ import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
 
 import GridAdvisorDashboard from "./pages/GridAdvisorDashboard";
 import GridAdvisorProfile from "./pages/dashboardPages/Profiles/GridAdvisorProfile";
+import OpsAssignedReview from "../ecommerce/vault/case/OpsAssignedReview";
+import VaultCreateadvisor from "../ecommerce/B2C/VaultCreateadviosor";
 
 
 
@@ -529,6 +531,11 @@ const CmsRoutes = () => {
 <Route path="mortgage/create" element={<VaultCreateMortgage />} />
 <Route path="mortgage/list"   element={<VaultMortgageList />} />
 <Route path="mortgage/:id" element={<VaultMortgagedetail />} />
+<Route path="create/vault-advisor" element={<VaultCreateadvisor />} />
+
+<Route path="mortgage-ops/create" element={<VaultCreateMortgage />} />
+<Route path="mortgage-ops/list"   element={<VaultMortgageList />} />
+<Route path="mortgage-ops/:id" element={<VaultMortgagedetail />} />
 <Route path="mortgage/dashboard" element={<MortgageOpsDashboard />} />
 <Route path="advisor/dashboard" element={<AdvisorDashboard />} />
 
@@ -646,6 +653,7 @@ const CmsRoutes = () => {
 
             <Route path="/case/view/:caseId" element={< DetailedViewCases/>} />
 
+            <Route path="/case/assigned/view/:caseId" element={< OpsAssignedReview/>} />
 
 
 

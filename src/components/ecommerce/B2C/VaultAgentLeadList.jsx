@@ -260,16 +260,16 @@ const VaultAgentLeadList = () => {
         );
       },
     },
-    {
-      key  : "loanAmountRequired",
-      title: "Loan Amount",
-      render: (_, r) => {
-        const amt = r?.propertyDetails?.loanAmountRequired;
-        return amt
-          ? <span style={{ fontWeight: 600, color: "#059669", fontSize: 13 }}>AED {fmt(amt)}</span>
-          : <span style={{ color: "#D1D5DB" }}>—</span>;
-      },
-    },
+    // {
+    //   key  : "loanAmountRequired",
+    //   title: "Loan Amount",
+    //   render: (_, r) => {
+    //     const amt = r?.propertyDetails?.loanAmountRequired;
+    //     return amt
+    //       ? <span style={{ fontWeight: 600, color: "#059669", fontSize: 13 }}>AED {fmt(amt)}</span>
+    //       : <span style={{ color: "#D1D5DB" }}>—</span>;
+    //   },
+    // },
     {
       key  : "referralType",
       title: "Referral Type",
@@ -441,19 +441,7 @@ const hasAdvisor = !!r?.assignedTo?.advisorId;
             </Tooltip>
 
             {/* Upload docs */}
-            {showUpload && (
-              <Tooltip title="Upload Documents">
-                <Button
-                  size="small"
-                  type="primary"
-                  icon={<UploadOutlined />}
-                  onClick={() => handleUploadDocs(leadId)}
-                  style={{ background: P, borderColor: P, borderRadius: 8, fontSize: 11, fontWeight: 500 }}
-                >
-                  Add Docs
-                </Button>
-              </Tooltip>
-            )}
+          
           </Space>
         );
       },

@@ -317,7 +317,6 @@ const VaultLeadDocumentUpload = () => {
       else setLoading(true);
 
       const [leadRes, docsRes] = await Promise.all([
-        apiService.get(`/vault/lead/admin/${leadId}`),
         apiService.get(`/vault/lead/documents/${leadId}`),
       ]);
 

@@ -416,7 +416,7 @@ const CUSTOM_ROLE_LINKS = {
   submenus: [
     { 
       title: "Create Advisor", 
-      path: "/dashboard/{roleSlug}/advisor/create" 
+      path: "/dashboard/{roleSlug}/create/vault-advisor" 
     },
     { 
       title: "All Advisors", 
@@ -654,6 +654,8 @@ const roleSlugMap = {
   '24': "GridAdvisor",
   '23': "vault-advisor",
   // '26': "vault-ops",
+  '26': "vault-advisor",
+  // '23': "vault-ops",
   '25': "gridReferralPartner",
   '26': "vault-advisor",
   // '23': "vault-ops",
