@@ -85,9 +85,8 @@ export default function HeroSection() {
   initial={{ opacity: 0, y: 30 }}
   animate={{ opacity: 1, y: 0 }}
   transition={{ duration: 0.8 }}
-  className="mb-6 heading-light"
-  style={{ fontSize: '54px', lineHeight: '1.15' }}
->
+ className="mb-6 heading-light text-[32px] leading-[1.2] md:text-[54px] md:leading-[1.15]"
+  >
   {t("hero.title")} <br />
   <span className="text-white">{t("hero.subtitle")}</span>
 </motion.h1>

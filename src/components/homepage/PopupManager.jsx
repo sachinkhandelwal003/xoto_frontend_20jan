@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import dubaiImg from "../../assets/img/home/popup.png";
 
 const INACTIVITY_DELAY = 20000;
-const SCROLL_THRESHOLD = 20;
+// const SCROLL_THRESHOLD = 25;
 
 const PopupManager = () => {
   const navigate = useNavigate();
@@ -40,7 +40,12 @@ const showPopup = () => {
   };
 const handleScroll = () => {
   if (hasShownRef.current) return;
-  if (window.scrollY >= 500) showPopup();
+  
+  scrollCountRef.current += 1;        // har scroll pe +1
+  
+  if (scrollCountRef.current >= 100) {  // 100 scroll ke baad} 
+    showPopup();     
+  }
 };
 
   useEffect(() => {
@@ -76,7 +81,7 @@ const handleScroll = () => {
         onClick={handleClose}
       >
         <div
-          className="relative w-full max-w-[820px] flex flex-col sm:flex-row rounded-[5px] overflow-hidden shadow-2xl animate-fadeIn border-2 border-[#115a81] bg-white my-auto"
+          className="relative w-full max-w-205 flex flex-col sm:flex-row rounded-[5px] overflow-hidden shadow-2xl animate-fadeIn border-2 border-[#115a81] bg-white my-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close Button */}
@@ -88,7 +93,7 @@ const handleScroll = () => {
           </button>
 
           {/* TOP on mobile / RIGHT on desktop: Image */}
-        <div className="w-full sm:w-[50%] sm:order-2 relative font-['DM_Sans'] h-[250px] sm:h-auto sm:min-h-[480px]">
+        <div className="w-full sm:w-[50%] sm:order-2 relative font-['DM_Sans'] h-62.5 sm:h-auto sm:min-h-120">
   <img
     src={dubaiImg}
     alt="Hot Property Deals"
@@ -105,7 +110,7 @@ const handleScroll = () => {
               </p>
               <button
                 onClick={() => { handleClose(); navigate("/Property#buy3"); }}
-                className="mt-4 mb-[19px] cursor-pointer w-full border border-white h-[36px] rounded-lg py-1.5 text-[16.77px] leading-[16.77px] bg-white text-[#5C039B]"
+                className="mt-4 mb-4.75 cursor-pointer w-full border border-white h-9 rounded-lg py-1.5 text-[16.77px] leading-[16.77px] bg-white text-[#5C039B]"
               >
                 View Now
               </button>
@@ -114,7 +119,7 @@ const handleScroll = () => {
 
           {/* BOTTOM on mobile / LEFT on desktop: Form */}
           <div className="w-full sm:w-[50%] sm:order-1 bg-white p-5 sm:p-8 flex flex-col justify-center font-['DM_Sans']">
-            <h2 className="text-3xl sm:text-[40px] font-black leading-tight sm:leading-[41px] text-black flex flex-col justify-center mb-1">
+            <h2 className="text-3xl sm:text-[40px] font-black leading-tight sm:leading-10.25 text-black flex flex-col justify-center mb-1">
               <span>Not Sure Where</span>
               <span>To Start?</span>
             </h2>
@@ -158,7 +163,7 @@ const handleScroll = () => {
                   name="countryCode"
                   value={form.countryCode}
                   onChange={handleChange}
-                  className="flex-shrink-0 border rounded-lg px-1.5 sm:px-2 py-2 text-xs sm:text-sm focus:outline-none bg-white"
+                  className="shrink-0 border rounded-lg px-1.5 sm:px-2 py-2 text-xs sm:text-sm focus:outline-none bg-white"
                   style={{ borderColor: '#115a81', width: 'clamp(88px, 33%, 120px)' }}
                 >
                   <option value="+971">🇦🇪 +971</option>
