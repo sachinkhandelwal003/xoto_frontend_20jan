@@ -65,14 +65,14 @@ export default function HeroSectionInterior() {
         <div className="flex flex-row items-center justify-center gap-2 sm:gap-6 mx-auto w-full px-2 sm:px-0">
           
           <Link to="/estimate/calculator/interior" className="flex-1 sm:flex-none">
-            <button className="w-full group inline-flex items-center justify-center gap-1.5 sm:gap-3 rounded-md bg-[#5C039B] px-2 sm:px-6 py-3 sm:py-4 text-[13px] sm:text-xl font-medium text-white shadow-xl transition-all hover:bg-purple-700 hover:-translate-y-1 whitespace-nowrap">
+            <button className="w-full group inline-flex items-center justify-center gap-1.5 sm:gap-3  rounded-md bg-transparent border-2 px-2 sm:px-6 py-3 sm:py-4 text-[13px] sm:text-xl font-medium text-white shadow-xl transition-all hover:bg-[#5C039B] hover:text-white hover:border-[#5C039B] transition ">
               <span>{t("buttons.estimate")}</span>
               <ArrowRight className="h-4 w-4 sm:h-6 sm:w-6 group-hover:translate-x-1" />
             </button>
           </Link>
 
           <Link to="/ecommerce/b2c" className="flex-1 sm:flex-none">
-            <button className="w-full bg-transparent hover:bg-white/10 text-white px-2 sm:px-8 py-3 sm:py-4 rounded-md text-[13px] sm:text-lg font-medium shadow-xl transition-all flex items-center justify-center border-2 border-white/40 hover:border-white whitespace-nowrap">
+            <button className="w-full bg-transparent hover:bg-[#5C039B] hover:text-white hover:border-[#5C039B] text-white px-2 sm:px-8 py-3 sm:py-4 rounded-md text-[13px] sm:text-lg font-medium shadow-xl transition-all flex items-center justify-center border-2  hover:border-[#5C039B] whitespace-nowrap">
               {t("buttons.store")}
             </button>
           </Link>

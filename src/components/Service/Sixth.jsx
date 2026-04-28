@@ -262,7 +262,7 @@ export default function Sixth() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-2 items-center lg:items-start justify-center lg:justify-start">
-              <button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto px-8 py-4 bg-[#5C039B] hover:bg-[#4a027c] rounded-xl text-white font-semibold text-base shadow-lg transition">
+              <button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto px-8 py-4 border-2 border-[#5C039B] text-[#5C039B] rounded-xl font-semibold text-base hover:bg-[#5C039B] hover:text-white transition">
                 {t("hero.primaryCta")}
               </button>
 

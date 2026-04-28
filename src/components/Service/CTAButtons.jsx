@@ -28,13 +28,17 @@ export default function CTAButtons() {
           flex-1 sm:flex-none
           px-2 sm:px-8               /* Mobile par padding thodi kam ki */
           py-2.5 sm:py-3
-          bg-[var(--color-primary)]
+          bg-transparent
           text-white
           font-normal sm:font-medium /* FONT FIX: Mobile pe normal, web pe medium */
           text-xs sm:text-base       /* SIZE FIX: Mobile pe text chhota rahega */
           rounded-lg
+          border border-white/70
           shadow-md
           transition-all duration-300
+          hover:bg-[var(--color-primary)]
+          hover:border-[#5C039B]
+          hover:shadow-lg
           whitespace-nowrap
         "
       >
