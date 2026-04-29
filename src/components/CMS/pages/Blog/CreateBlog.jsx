@@ -1,6 +1,31 @@
+/**
+ * BlogManagement.jsx — Full-featured Blog CMS
+ *
+ * NEW FEATURES ADDED:
+ * ─────────────────────────────────────────────────────────────────────
+ *  1. IMPORT FILE BUTTON — supports: .docx, .pdf, .txt, .html, .md, .rtf
+ *     • DOCX  → rich HTML via mammoth.js  (npm install mammoth)
+ *     • PDF   → text extraction via pdfjs-dist  (npm install pdfjs-dist)
+ *     • TXT   → paragraphs
+ *     • HTML  → sanitised HTML
+ *     • MD    → Markdown → HTML (bold, italic, lists, headings, code …)
+ *     • RTF   → plain-text fallback
+ *
+ *  2. FORMAT-PRESERVING PASTE
+ *     • Bold, Italic, Underline, Strikethrough survive from ANY source
+ *     • Bullet/numbered lists survive
+ *     • Headings survive
+ *     • Word / Google-Docs junk (mso-*, namespace tags, class noise) is
+ *       stripped while semantic structure is kept
+ *     • Works identically on every OS / browser
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Required packages (run once):
+ *   npm install mammoth pdfjs-dist
+ */
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
-import { showToast } from '../../../../manageApi/utils/toast';
 import JoditEditor from 'jodit-react';
 import DOMPurify from 'dompurify';
 import moment from 'moment';
@@ -13,21 +38,22 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.j
 
 import {
   Button, Modal, Form, Input, Popconfirm, Card,
-  Typography, Avatar, Row, Col, Statistic, Space, Divider,
-  message, notification, Tooltip, Grid, Tag, Select, Badge,
-  Upload, Tabs, Alert, Switch, Slider, Skeleton, Empty
+  Typography, Avatar, Row, Col, Space,
+  message, notification, Tooltip, Grid, Select,
+  Upload, Tabs, Alert, Switch, Slider, Skeleton, Spin,
 } from 'antd';
 import {
   PlusOutlined, FileTextOutlined, DeleteOutlined,
   EditOutlined, SearchOutlined, CheckCircleOutlined, SyncOutlined,
   UserOutlined, PictureOutlined, EyeOutlined, ClockCircleOutlined,
   UndoOutlined, ScissorOutlined, ZoomInOutlined, BookOutlined, CalendarOutlined,
-  RocketOutlined, FireOutlined, StarOutlined, TagOutlined, FilterOutlined,
-  ArrowLeftOutlined, ArrowRightOutlined, SaveOutlined, GlobalOutlined,
-  AppstoreAddOutlined, UploadOutlined
+  RocketOutlined, TagOutlined,
+  ArrowLeftOutlined, ArrowRightOutlined, SaveOutlined,
+  AppstoreAddOutlined, ImportOutlined, LoadingOutlined,
+  FilePdfOutlined, FileWordOutlined, FileMarkdownOutlined,
 } from '@ant-design/icons';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 const { useBreakpoint } = Grid;
 const { TextArea } = Input;
@@ -37,366 +63,242 @@ const { TabPane } = Tabs;
 //  DESIGN TOKENS (unchanged)
 // ─────────────────────────────────────────────
 const THEME = {
-  primary: "#6d28d9",
-  primaryLight: "#8b5cf6",
-  primaryDark: "#4c1d95",
-  accent: "#f59e0b",
-  success: "#10b981",
-  error: "#ef4444",
-  warning: "#f59e0b",
-  info: "#3b82f6",
-  surface: "#ffffff",
-  bg: "#f8fafc",
-  border: "#e2e8f0",
-  text: "#0f172a",
-  muted: "#64748b",
+  primary: '#6d28d9',
+  primaryLight: '#8b5cf6',
+  primaryDark: '#4c1d95',
+  accent: '#f59e0b',
+  success: '#10b981',
+  error: '#ef4444',
+  warning: '#f59e0b',
+  info: '#3b82f6',
+  surface: '#ffffff',
+  bg: '#f8fafc',
+  border: '#e2e8f0',
+  text: '#0f172a',
+  muted: '#64748b',
 };
 
 // ─────────────────────────────────────────────
-//  GLOBAL STYLES (unchanged)
+//  GLOBAL STYLES
 // ─────────────────────────────────────────────
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
   .bm-root * { box-sizing: border-box; }
-
   .bm-root {
     font-family: 'Plus Jakarta Sans', sans-serif;
     background: #f8fafc;
     min-height: 100vh;
     padding: 32px 40px;
-    color: ${THEME.text};
+    color: #0f172a;
   }
 
-  /* ─── HEADER ─── */
+  /* ── HEADER ── */
   .bm-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 32px;
-    flex-wrap: wrap;
-    gap: 16px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 32px; flex-wrap: wrap; gap: 16px;
   }
-
   .bm-header-title {
     font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: 28px !important;
-    font-weight: 800 !important;
-    color: #0f172a !important;
-    margin: 0 !important;
-    line-height: 1.2 !important;
-    letter-spacing: -0.5px !important;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    font-size: 28px !important; font-weight: 800 !important;
+    color: #0f172a !important; margin: 0 !important;
+    line-height: 1.2 !important; letter-spacing: -0.5px !important;
+    display: flex; align-items: center; gap: 10px;
   }
-
-  .bm-header-sub {
-    font-size: 14px;
-    color: ${THEME.muted};
-    margin-top: 4px;
-    font-weight: 500;
-  }
+  .bm-header-sub { font-size: 14px; color: #64748b; margin-top: 4px; font-weight: 500; }
 
   .bm-btn-primary {
-    background: #6d28d9 !important;
-    border: none !important;
-    height: 44px !important;
-    padding: 0 24px !important;
-    border-radius: 10px !important;
-    font-weight: 600 !important;
-    font-size: 14px !important;
-    box-shadow: 0 4px 12px rgba(109, 40, 217, 0.2) !important;
-    transition: all 0.2s ease !important;
+    background: #6d28d9 !important; border: none !important;
+    height: 44px !important; padding: 0 24px !important;
+    border-radius: 10px !important; font-weight: 600 !important;
+    font-size: 14px !important; box-shadow: 0 4px 12px rgba(109,40,217,.2) !important;
+    transition: all .2s ease !important;
   }
   .bm-btn-primary:hover {
-    background: #5b21b6 !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 6px 16px rgba(109, 40, 217, 0.3) !important;
+    background: #5b21b6 !important; transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(109,40,217,.3) !important;
   }
 
-  /* ─── STATS ─── */
-  .bm-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    margin-bottom: 32px;
-  }
-
+  /* ── STATS ── */
+  .bm-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; margin-bottom: 32px; }
   .bm-stat-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 24px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    transition: all 0.2s ease;
+    background: #fff; border-radius: 16px; padding: 24px;
+    border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,.02);
+    display: flex; flex-direction: column; justify-content: center; transition: all .2s ease;
   }
-  .bm-stat-card:hover {
-    box-shadow: 0 10px 24px rgba(0,0,0,0.06);
-    border-color: #cbd5e1;
-    transform: translateY(-2px);
-  }
-  
-  .bm-stat-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-  }
-
-  .bm-stat-label { 
-    font-size: 14px; 
-    color: #64748b; 
-    font-weight: 600; 
-  }
-
-  .bm-stat-icon {
-    width: 36px; height: 36px;
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-  }
+  .bm-stat-card:hover { box-shadow: 0 10px 24px rgba(0,0,0,.06); border-color: #cbd5e1; transform: translateY(-2px); }
+  .bm-stat-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .bm-stat-label { font-size: 14px; color: #64748b; font-weight: 600; }
+  .bm-stat-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
   .bm-stat-icon.purple { background: #f5f3ff; color: #6d28d9; }
-  .bm-stat-icon.green { background: #ecfdf5; color: #10b981; }
-  .bm-stat-icon.amber { background: #fffbeb; color: #f59e0b; }
-  .bm-stat-icon.blue { background: #eff6ff; color: #3b82f6; }
+  .bm-stat-icon.green  { background: #ecfdf5; color: #10b981; }
+  .bm-stat-icon.amber  { background: #fffbeb; color: #f59e0b; }
+  .bm-stat-icon.blue   { background: #eff6ff; color: #3b82f6; }
+  .bm-stat-value { font-family: 'Plus Jakarta Sans',sans-serif; font-size: 32px; font-weight: 800; color: #0f172a; line-height: 1; letter-spacing: -0.5px; }
 
-  .bm-stat-value {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 32px;
-    font-weight: 800;
-    color: #0f172a;
-    line-height: 1;
-    letter-spacing: -0.5px;
-  }
-
-  /* ─── FILTER BAR ─── */
+  /* ── FILTERS ── */
   .bm-filters {
-    background: #fff;
-    border-radius: 16px;
-    padding: 16px 20px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-    margin-bottom: 24px;
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    align-items: center;
+    background: #fff; border-radius: 16px; padding: 16px 20px;
+    border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,.02);
+    margin-bottom: 24px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
   }
-
   .bm-filters .ant-input-affix-wrapper, .bm-filters .ant-select-selector {
-    border-radius: 10px !important;
-    border-color: #e2e8f0 !important;
-    height: 42px !important;
-    font-weight: 500;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    border-radius: 10px !important; border-color: #e2e8f0 !important;
+    height: 42px !important; font-weight: 500; font-family: 'Plus Jakarta Sans',sans-serif;
   }
 
-  /* ─── BLOG CARD ─── */
+  /* ── BLOG CARD ── */
   .bm-blog-card {
-    background: #fff;
-    border-radius: 16px;
-    border: 1px solid #e2e8f0;
-    overflow: hidden;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-    transition: all 0.25s ease;
-    display: flex;
-    min-height: 220px;
+    background: #fff; border-radius: 16px; border: 1px solid #e2e8f0;
+    overflow: hidden; margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.02); transition: all .25s ease;
+    display: flex; min-height: 220px;
   }
-  .bm-blog-card:hover {
-    box-shadow: 0 12px 32px rgba(0,0,0,0.06);
-    transform: translateY(-2px);
-    border-color: #cbd5e1;
-  }
-
-  .bm-blog-thumb {
-    width: 260px;
-    min-width: 260px;
-    background: #f1f5f9;
-    position: relative;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-
-  .bm-blog-thumb img {
-    width: 100%; height: 100%; object-fit: cover;
-    transition: transform 0.4s ease;
-  }
+  .bm-blog-card:hover { box-shadow: 0 12px 32px rgba(0,0,0,.06); transform: translateY(-2px); border-color: #cbd5e1; }
+  .bm-blog-thumb { width: 260px; min-width: 260px; background: #f1f5f9; position: relative; overflow: hidden; flex-shrink: 0; }
+  .bm-blog-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
   .bm-blog-card:hover .bm-blog-thumb img { transform: scale(1.03); }
-
-  .bm-blog-body {
-    padding: 24px 28px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-
-  .bm-blog-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-  }
-
+  .bm-blog-body { padding: 24px 28px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+  .bm-blog-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
   .bm-blog-badges { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-
-  .bm-cat-tag {
-    background: #f1f5f9 !important;
-    color: #475569 !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 6px !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    padding: 4px 10px !important;
-  }
-
-  .bm-status-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 12px; font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 6px;
-  }
+  .bm-cat-tag { background: #f1f5f9 !important; color: #475569 !important; border: 1px solid #e2e8f0 !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 600 !important; padding: 4px 10px !important; }
+  .bm-status-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; }
   .bm-status-badge.published { background: #ecfdf5; color: #10b981; }
-  .bm-status-badge.draft { background: #fffbeb; color: #f59e0b; }
-
+  .bm-status-badge.draft     { background: #fffbeb; color: #f59e0b; }
   .bm-blog-actions { display: flex; gap: 8px; }
-
   .bm-action-btn {
-    width: 36px !important; height: 36px !important;
-    border-radius: 8px !important;
+    width: 36px !important; height: 36px !important; border-radius: 8px !important;
     display: flex !important; align-items: center !important; justify-content: center !important;
-    border: 1px solid #e2e8f0 !important;
-    background: #fff !important;
-    color: #64748b !important;
-    font-size: 15px !important;
-    transition: all 0.2s !important;
-    cursor: pointer;
-    padding: 0 !important;
+    border: 1px solid #e2e8f0 !important; background: #fff !important; color: #64748b !important;
+    font-size: 15px !important; transition: all .2s !important; cursor: pointer; padding: 0 !important;
   }
   .bm-action-btn:hover { background: #f8fafc !important; border-color: #cbd5e1 !important; color: #0f172a !important; }
   .bm-action-btn.danger:hover { background: #fef2f2 !important; border-color: #fca5a5 !important; color: #ef4444 !important; }
-
-  .bm-blog-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: #0f172a;
-    margin-bottom: 8px;
-    line-height: 1.3;
-    letter-spacing: -0.3px;
-  }
-
-  .bm-blog-excerpt {
-    font-size: 14px;
-    color: #64748b;
-    line-height: 1.6;
-    margin-bottom: 16px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
+  .bm-blog-title { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 8px; line-height: 1.3; letter-spacing: -0.3px; }
+  .bm-blog-excerpt { font-size: 14px; color: #64748b; line-height: 1.6; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .bm-blog-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-  .bm-tag {
-    font-size: 12px !important;
-    border-radius: 6px !important;
-    background: #f8fafc !important;
-    border-color: #e2e8f0 !important;
-    color: #6d28d9 !important;
-    padding: 2px 8px !important;
-    font-weight: 500 !important;
-  }
-
-  .bm-blog-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 16px;
-    border-top: 1px solid #f1f5f9;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
+  .bm-tag { font-size: 12px !important; border-radius: 6px !important; background: #f8fafc !important; border-color: #e2e8f0 !important; color: #6d28d9 !important; padding: 2px 8px !important; font-weight: 500 !important; }
+  .bm-blog-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid #f1f5f9; flex-wrap: wrap; gap: 12px; }
   .bm-meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #64748b; font-weight: 500; }
   .bm-meta-item strong { color: #0f172a; font-weight: 600; }
 
-  /* ─── MODAL (CLEAN & SIMPLE UI) ─── */
-  .bm-modal .ant-modal-content {
-    border-radius: 16px !important;
-    overflow: hidden;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1) !important;
-  }
-  .bm-modal .ant-modal-header {
-    background: #ffffff !important;
-    padding: 24px 32px 20px !important;
-    border-bottom: 1px solid #f1f5f9 !important;
-    margin-bottom: 0 !important;
-  }
-  .bm-modal .ant-modal-title { 
-    color: #0f172a !important; 
-    font-family: 'Plus Jakarta Sans', sans-serif !important; 
-    font-size: 18px !important; 
-    font-weight: 700 !important; 
-  }
+  /* ── MODAL ── */
+  .bm-modal .ant-modal-content { border-radius: 16px !important; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 20px 40px -10px rgba(0,0,0,.1) !important; }
+  .bm-modal .ant-modal-header { background: #ffffff !important; padding: 24px 32px 20px !important; border-bottom: 1px solid #f1f5f9 !important; margin-bottom: 0 !important; }
+  .bm-modal .ant-modal-title { color: #0f172a !important; font-family: 'Plus Jakarta Sans',sans-serif !important; font-size: 18px !important; font-weight: 700 !important; }
   .bm-modal .ant-modal-close-x { color: #64748b !important; font-size: 16px; }
   .bm-modal .ant-modal-body { padding: 24px 32px !important; }
 
-  /* ─── FOOTER ACTIONS ─── */
+  /* ── FOOTER ACTIONS ── */
   .bm-footer-bar { display: flex; justify-content: space-between; align-items: center; padding: 20px 0 0; border-top: 1px solid #f1f5f9; margin-top: 12px; }
-  .bm-save-draft-btn { height: 44px !important; padding: 0 24px !important; border-radius: 10px !important; border-color: #cbd5e1 !important; color: #475569 !important; font-weight: 600 !important; background: #fff !important; font-size: 14px !important;}
+  .bm-save-draft-btn { height: 44px !important; padding: 0 24px !important; border-radius: 10px !important; border-color: #cbd5e1 !important; color: #475569 !important; font-weight: 600 !important; background: #fff !important; font-size: 14px !important; }
   .bm-publish-btn { height: 44px !important; padding: 0 28px !important; border-radius: 10px !important; background: #6d28d9 !important; border: none !important; font-weight: 600 !important; font-size: 14px !important; color: #fff !important; }
 
-  /* ─── PREVIEW MODAL ─── */
+  /* ── IMPORT ZONE (redesigned) ── */
+  .bm-import-zone {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .bm-import-zone-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 0.5px solid #f1f5f9;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .bm-import-zone-left { display: flex; align-items: center; gap: 12px; }
+  .bm-import-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: #eff6ff; display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0;
+  }
+  .bm-import-icon svg { width: 16px; height: 16px; stroke: #3b82f6; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .bm-import-zone-title { font-size: 13px; font-weight: 600; color: #0f172a; margin: 0 0 2px; }
+  .bm-import-zone-sub { font-size: 12px; color: #64748b; margin: 0; font-weight: 400; }
+  .bm-import-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .bm-import-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+  .bm-import-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .bm-import-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .bm-formats-row {
+    display: flex; align-items: center; gap: 6px; padding: 10px 16px;
+    flex-wrap: wrap; border-bottom: 0.5px solid #f1f5f9;
+  }
+  .bm-formats-label { font-size: 11px; color: #94a3b8; font-weight: 500; margin-right: 2px; letter-spacing: 0.2px; }
+  .bm-format-badge {
+    font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px;
+    letter-spacing: 0.2px; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .bm-format-badge svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .bm-format-badge.docx { background: #dbeafe; color: #1d4ed8; }
+  .bm-format-badge.pdf  { background: #fee2e2; color: #b91c1c; }
+  .bm-format-badge.txt  { background: #f1f5f9; color: #475569; }
+  .bm-format-badge.html { background: #fef3c7; color: #92400e; }
+  .bm-format-badge.md   { background: #dcfce7; color: #166534; }
+  .bm-format-badge.rtf  { background: #f5f3ff; color: #5b21b6; }
+  .bm-import-paste-hint {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    background: #f8fafc;
+    font-size: 11px; color: #94a3b8; font-weight: 500;
+  }
+  .bm-import-paste-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; flex-shrink: 0; }
+
+  /* ── PREVIEW MODAL ── */
   .preview-modal .ant-modal-content { border-radius: 16px !important; overflow: hidden; }
   .preview-modal .ant-modal-header { background: #ffffff !important; border-bottom: 1px solid #f1f5f9 !important; margin-bottom: 0 !important; padding: 20px 32px !important; }
-  .preview-modal .ant-modal-title { color: #0f172a !important; font-weight: 700 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 18px !important;}
+  .preview-modal .ant-modal-title { color: #0f172a !important; font-weight: 700 !important; font-family: 'Plus Jakarta Sans',sans-serif !important; font-size: 18px !important; }
   .preview-modal .ant-modal-body { padding: 0 !important; }
 
-  /* ─── BLOG PREVIEW CONTENT (NEWSPAPER STYLE ONLY HERE) ─── */
-  .blog-preview-wrap { font-family: 'DM Sans', sans-serif; color: #0f172a; background: #fff; }
+  /* ── BLOG PREVIEW CONTENT ── */
+  .blog-preview-wrap { font-family: 'DM Sans',sans-serif; color: #0f172a; background: #fff; }
   .blog-preview-hero { width: 100%; height: 360px; object-fit: cover; display: block; border-bottom: 1px solid #e2e8f0; }
   .blog-preview-inner { padding: 48px 56px; max-width: 860px; margin: 0 auto; }
-
   .blog-preview-content ul { list-style-type: disc !important; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
   .blog-preview-content ol { list-style-type: decimal !important; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
-  .blog-preview-content li { display: list-item !important; list-style-position: outside !important; margin: 0 0 0.6em 0 !important; line-height: 1.8; color: #334155; font-size: 17px; }
-
-  .blog-preview-content h1 { font-family: 'Playfair Display', serif; font-size: 2.4em; font-weight: 800; margin: 1.4em 0 0.5em !important; line-height: 1.2; color: #0f172a; display: block; letter-spacing: -0.5px; }
-  .blog-preview-content h2 { font-family: 'Playfair Display', serif; font-size: 1.8em; font-weight: 700; margin: 1.2em 0 0.4em !important; line-height: 1.3; color: #0f172a; display: block; letter-spacing: -0.5px; }
-  .blog-preview-content h3 { font-family: 'Playfair Display', serif; font-size: 1.4em; font-weight: 700; margin: 1em 0 0.3em !important; color: #334155; display: block; }
+  .blog-preview-content li { display: list-item !important; list-style-position: outside !important; margin: 0 0 .6em 0 !important; line-height: 1.8; color: #334155; font-size: 17px; }
+  .blog-preview-content h1 { font-family: 'Playfair Display',serif; font-size: 2.4em; font-weight: 800; margin: 1.4em 0 .5em !important; line-height: 1.2; color: #0f172a; display: block; letter-spacing: -0.5px; }
+  .blog-preview-content h2 { font-family: 'Playfair Display',serif; font-size: 1.8em; font-weight: 700; margin: 1.2em 0 .4em !important; line-height: 1.3; color: #0f172a; display: block; letter-spacing: -0.5px; }
+  .blog-preview-content h3 { font-family: 'Playfair Display',serif; font-size: 1.4em; font-weight: 700; margin: 1em 0 .3em !important; color: #334155; display: block; }
   .blog-preview-content p { margin: 0 0 1.2em 0 !important; line-height: 1.85; font-size: 17px; color: #334155; display: block; }
-  .blog-preview-content blockquote { border-left: 4px solid #6d28d9; padding: 16px 24px; margin: 1.5em 0 !important; background: #f8fafc; border-radius: 0 8px 8px 0; font-style: italic; color: #475569; font-size: 18px; font-family: 'Playfair Display', serif; }
+  .blog-preview-content blockquote { border-left: 4px solid #6d28d9; padding: 16px 24px; margin: 1.5em 0 !important; background: #f8fafc; border-radius: 0 8px 8px 0; font-style: italic; color: #475569; font-size: 18px; font-family: 'Playfair Display',serif; }
   .blog-preview-content a { color: #6d28d9; text-decoration: underline; font-weight: 600; }
   .blog-preview-content img { max-width: 100%; border-radius: 12px; margin: 1.5em 0 !important; }
+  .blog-preview-content strong, .blog-preview-content b { font-weight: 700 !important; color: #0f172a !important; }
+  .blog-preview-content em, .blog-preview-content i { font-style: italic !important; }
+  .blog-preview-content u { text-decoration: underline !important; }
+  .blog-preview-content s, .blog-preview-content strike { text-decoration: line-through !important; }
 
-  /* ─── PAGINATION ─── */
+  /* ── PAGINATION ── */
   .bm-pagination { display: flex; justify-content: space-between; align-items: center; padding: 24px 0; flex-wrap: wrap; gap: 12px; }
   .bm-page-info { font-size: 14px; color: #64748b; font-weight: 500; }
   .bm-page-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-  .bm-page-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #475569; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .bm-page-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #475569; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; }
   .bm-page-btn:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
   .bm-page-btn.active { background: #6d28d9; border-color: #6d28d9; color: #fff; }
-  .bm-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .bm-page-btn:disabled { opacity: .4; cursor: not-allowed; }
 
-  /* ─── EMPTY STATE ─── */
+  /* ── EMPTY STATE ── */
   .bm-empty { text-align: center; padding: 80px 20px; }
   .bm-empty-icon { font-size: 48px; color: #cbd5e1; margin-bottom: 16px; }
   .bm-empty-title { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
   .bm-empty-sub { font-size: 14px; color: #64748b; }
 
-  /* ════════════════════════════════════════════════
-     RESPONSIVE MEDIA QUERIES
-     ════════════════════════════════════════════════ */
+  /* ── RESPONSIVE ── */
   @media (max-width: 992px) {
-    .bm-stats { grid-template-columns: repeat(2, 1fr); }
+    .bm-stats { grid-template-columns: repeat(2,1fr); }
     .bm-blog-card { flex-direction: column; }
     .bm-blog-thumb { width: 100%; min-width: unset; height: 200px; }
     .blog-preview-inner { padding: 32px 40px; }
@@ -414,8 +316,6 @@ const GLOBAL_STYLES = `
     .blog-preview-content h1 { font-size: 2em; }
     .blog-preview-hero { height: 240px; }
     .bm-footer-bar { flex-direction: column; align-items: stretch; gap: 16px; }
-    .bm-footer-bar .ant-space { width: 100%; justify-content: space-between; flex-wrap: wrap; }
-    .bm-footer-bar .ant-space:last-child { display: flex; flex-direction: column; }
     .bm-save-draft-btn, .bm-publish-btn { width: 100%; }
   }
   @media (max-width: 480px) {
@@ -426,103 +326,627 @@ const GLOBAL_STYLES = `
   }
 `;
 
-// ─────────────────────────────────────────────
-//  PASTE CLEANING UTILITIES (unchanged)
-// ─────────────────────────────────────────────
-const cleanWordHtml = (html) => {
+// ═══════════════════════════════════════════════════════════════════
+//  ① FORMATTING-PRESERVING HTML CLEANER
+//     Strips Word/Docs junk while keeping bold, italic, lists, headings
+// ═══════════════════════════════════════════════════════════════════
+const cleanExternalHtml = (html) => {
   if (!html) return '';
-  let cleaned = html;
 
-  // ─── 1. Convert Word headings (mso-outline-level or MsoHeading) ────
-  cleaned = cleaned.replace(
-    /<p\b[^>]*\bmso-outline-level\s*:\s*["']?\s*1\s*["']?[^>]*>(.*?)<\/p>/gi,
-    '<h1>$1</h1>'
-  );
-  cleaned = cleaned.replace(
-    /<p\b[^>]*\bmso-outline-level\s*:\s*["']?\s*2\s*["']?[^>]*>(.*?)<\/p>/gi,
-    '<h2>$1</h2>'
-  );
-  cleaned = cleaned.replace(
-    /<p\b[^>]*\bmso-outline-level\s*:\s*["']?\s*3\s*["']?[^>]*>(.*?)<\/p>/gi,
-    '<h3>$1</h3>'
-  );
+  // ── Remove Word/IE conditional comments and embedded styles ──────
+  let cleaned = html
+    .replace(/<!--\[if[^\]]*\]>[\s\S]*?<!\[endif\]-->/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<meta[^>]*>/gi, '')
+    .replace(/<link[^>]*>/gi, '')
+    .replace(/<\?xml[^?]*\?>/gi, '');
 
-  // ─── 2. Before stripping spans, rescue useful inline formatting ────
-  // Bold (font-weight:bold or 700)
-  cleaned = cleaned.replace(
-    /<span\b[^>]*\bstyle\s*=\s*["'][^"']*font-weight\s*:\s*(bold|700)[^"']*["'][^>]*>(.*?)<\/span>/gi,
-    '<strong>$2</strong>'
-  );
-  // Italic
-  cleaned = cleaned.replace(
-    /<span\b[^>]*\bstyle\s*=\s*["'][^"']*font-style\s*:\s*italic[^"']*["'][^>]*>(.*?)<\/span>/gi,
-    '<em>$1</em>'
-  );
-  // Underline
-  cleaned = cleaned.replace(
-    /<span\b[^>]*\bstyle\s*=\s*["'][^"']*text-decoration\s*:\s*underline[^"']*["'][^>]*>(.*?)<\/span>/gi,
-    '<u>$1</u>'
-  );
-  // Combination bold + italic
-  cleaned = cleaned.replace(
-    /<span\b[^>]*\bstyle\s*=\s*["'][^"']*(font-weight\s*:\s*(bold|700)\s*;\s*font-style\s*:\s*italic|font-style\s*:\s*italic\s*;\s*font-weight\s*:\s*(bold|700))[^"']*["'][^>]*>(.*?)<\/span>/gi,
-    '<strong><em>$4</em></strong>'
-  );
+  // ── Remove Word XML namespace tags (o:p, w:*, etc.) ─────────────
+  cleaned = cleaned.replace(/<\/?\w+:\w+[^>]*>/gi, '');
+  cleaned = cleaned.replace(/\s+xmlns[\w:]*="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/\s+lang="[^"]*"/gi, '');
 
-  // ─── 3. Remove all remaining span tags (keep inner content) ────────
-  cleaned = cleaned.replace(/<\/?span[^>]*>/gi, '');
+  // ── DOM-based semantic cleaning ──────────────────────────────────
+  const div = document.createElement('div');
+  div.innerHTML = cleaned;
 
-  // ─── 4. Convert <b> → <strong> (some Word exports still use <b>) ──
-  cleaned = cleaned.replace(/<b([^>]*)>/gi, '<strong$1>');
-  cleaned = cleaned.replace(/<\/b>/gi, '</strong>');
+  // Remove dangerous elements
+  div.querySelectorAll('script,iframe,object,embed,applet,head,style,link,meta').forEach(el => el.remove());
 
-  // ─── 5. Keep links (Word often wraps them in <a> with style) ──────
-  // Just leave <a> tags untouched – they will be sanitised by DOMPurify later.
-  // (DOMPurify already allows href, target etc.)
-
-  // ─── 6. Strip other useless attributes / empty tags ────────────────
-  cleaned = cleaned.replace(/ lang="[^"]*"/gi, '');
-  cleaned = cleaned.replace(/ class="[^"]*"/gi, '');
-  cleaned = cleaned.replace(/ style="[^"]*"/gi, '');   // remove inline styles we already rescued
-  cleaned = cleaned.replace(/(&nbsp;|\s){2,}/gi, ' ');
-
-  // ─── 7. Fix bullet lists ──────────────────────────────────────────
-  const pListPattern = /<p[^>]*>\s*([·●•▪o\-]|\&#183;)\s*([\s\S]*?)<\/p>/gi;
-  cleaned = cleaned.replace(pListPattern, '<li>$2</li>');
-
-  const liListPattern = /<li[^>]*>\s*([·●•▪o\-]|\&#183;)\s*([\s\S]*?)<\/li>/gi;
-  cleaned = cleaned.replace(liListPattern, '<li>$2</li>');
-
-  cleaned = cleaned.replace(/(<li>[\s\S]*?<\/li>\s*)+/gi, (match) => `<ul>\n${match}\n</ul>`);
-  cleaned = cleaned.replace(/<ul>\s*<ul>/gi, '<ul>');
-  cleaned = cleaned.replace(/<\/ul>\s*<\/ul>/gi, '</ul>');
-  cleaned = cleaned.replace(/<ol>\s*<ul>/gi, '<ol>');
-  cleaned = cleaned.replace(/<\/ul>\s*<\/ol>/gi, '</ol>');
-
-  // ─── 8. Remove empty paragraphs ───────────────────────────────────
-  cleaned = cleaned.replace(/<p>\s*<\/p>/gi, '');
-
-  return cleaned.trim();
-};
-
-const sanitizePastedHtml = (html) => {
-  if (!html) return '';
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
-  ['script', 'iframe', 'object', 'embed', 'applet', 'link', 'meta'].forEach(sel => {
-    tempDiv.querySelectorAll(sel).forEach(el => el.remove());
+  // Remove class, id, name attrs (Word class soup is useless)
+  div.querySelectorAll('[class],[id],[name]').forEach(el => {
+    el.removeAttribute('class');
+    el.removeAttribute('id');
+    el.removeAttribute('name');
   });
-  return tempDiv.innerHTML;
+
+  // ── Process nodes: extract formatting from style attrs ───────────
+  const processNode = (node) => {
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+    // Recurse children first (bottom-up)
+    Array.from(node.children).forEach(processNode);
+
+    const tag = node.tagName.toLowerCase();
+    const style = node.getAttribute('style') || '';
+
+    const isBold = /font-weight\s*:\s*(bold|[6-9]\d{2})/i.test(style);
+    const isItalic = /font-style\s*:\s*italic/i.test(style);
+    const isUnderline = /text-decoration[^;]*:\s*[^;]*underline/i.test(style);
+    const isStrike = /text-decoration[^;]*:\s*[^;]*line-through/i.test(style);
+
+    // Keep text-align if present, strip everything else
+    const alignMatch = style.match(/text-align\s*:\s*(left|center|right|justify)/i);
+    node.removeAttribute('style');
+    if (alignMatch) node.setAttribute('style', `text-align:${alignMatch[1]}`);
+
+    if (tag === 'span' || tag === 'font') {
+      const parent = node.parentNode;
+      if (!parent) return;
+
+      if (isBold || isItalic || isUnderline || isStrike) {
+        // Wrap children in semantic tags, then unwrap the span
+        let inner = node.innerHTML;
+        // Apply in reverse so nesting order is correct
+        if (isStrike)    inner = `<s>${inner}</s>`;
+        if (isUnderline) inner = `<u>${inner}</u>`;
+        if (isItalic)    inner = `<em>${inner}</em>`;
+        if (isBold)      inner = `<strong>${inner}</strong>`;
+
+        const temp = document.createElement('span');
+        temp.innerHTML = inner;
+        while (temp.firstChild) parent.insertBefore(temp.firstChild, node);
+        parent.removeChild(node);
+      } else {
+        // No formatting → just unwrap
+        while (node.firstChild) parent.insertBefore(node.firstChild, node);
+        parent.removeChild(node);
+      }
+    }
+  };
+
+  Array.from(div.children).forEach(processNode);
+
+  // ── Convert legacy <b>/<i> to <strong>/<em> ──────────────────────
+  div.querySelectorAll('b').forEach(el => {
+    const s = document.createElement('strong');
+    s.innerHTML = el.innerHTML;
+    el.parentNode?.replaceChild(s, el);
+  });
+  div.querySelectorAll('i').forEach(el => {
+    const em = document.createElement('em');
+    em.innerHTML = el.innerHTML;
+    el.parentNode?.replaceChild(em, el);
+  });
+
+  // ── Remove empty <p> paragraphs Word generates ───────────────────
+  div.querySelectorAll('p').forEach(p => {
+    if (!p.textContent.trim() && !p.querySelector('img')) p.remove();
+  });
+
+  // ── Final DOMPurify pass (security + allow all semantic tags) ────
+  return DOMPurify.sanitize(div.innerHTML, {
+    ALLOWED_TAGS: [
+      'p','br','strong','em','u','s','strike','del',
+      'h1','h2','h3','h4','h5','h6',
+      'ul','ol','li','a','img','blockquote','pre','code',
+      'hr','table','thead','tbody','tr','td','th','div',
+    ],
+    ALLOWED_ATTR: ['href','src','alt','title','target','rel','style'],
+    ALLOW_DATA_ATTR: false,
+  });
 };
 
-const cleanPastedContent = (html) => {
+// ── Sanitise regular HTML pastes (from webpages, etc.) ──────────────
+const sanitiseRegularHtml = (html) => {
   if (!html) return '';
-  let c = cleanWordHtml(html);
-  c = sanitizePastedHtml(c);
-  c = c.replace(/\s*class="[^"]*"/gi, '');
-  return c.trim();
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'p','br','strong','b','em','i','u','s','strike','del',
+      'h1','h2','h3','h4','h5','h6',
+      'ul','ol','li','a','img','blockquote','pre','code',
+      'hr','table','thead','tbody','tr','td','th','div','span',
+    ],
+    ALLOWED_ATTR: ['href','src','alt','title','target','rel','style'],
+    ALLOW_DATA_ATTR: false,
+  });
 };
 
+// ═══════════════════════════════════════════════════════════════════
+//  ② MARKDOWN → HTML  (preserves bold, italic, lists, headings, code)
+// ═══════════════════════════════════════════════════════════════════
+const markdownToHtml = (md) => {
+  if (!md) return '';
+  let html = md
+    // Escape HTML entities first
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const lines = html.split('\n');
+  const out = [];
+  let inUl = false, inOl = false, inPre = false, preBuffer = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+
+    // Fenced code blocks
+    if (/^```/.test(line)) {
+      if (!inPre) {
+        inPre = true; preBuffer = [];
+      } else {
+        inPre = false;
+        out.push(`<pre><code>${preBuffer.join('\n')}</code></pre>`);
+        preBuffer = [];
+      }
+      continue;
+    }
+    if (inPre) { preBuffer.push(line); continue; }
+
+    // Close lists if not a list line
+    const isUl = /^[\s]*[-*+] /.test(line);
+    const isOl = /^[\s]*\d+\. /.test(line);
+    if (!isUl && inUl) { out.push('</ul>'); inUl = false; }
+    if (!isOl && inOl) { out.push('</ol>'); inOl = false; }
+
+    // Headings
+    if (/^###### /.test(line)) { out.push(`<h6>${inlineFormat(line.slice(7))}</h6>`); continue; }
+    if (/^##### /.test(line))  { out.push(`<h5>${inlineFormat(line.slice(6))}</h5>`); continue; }
+    if (/^#### /.test(line))   { out.push(`<h4>${inlineFormat(line.slice(5))}</h4>`); continue; }
+    if (/^### /.test(line))    { out.push(`<h3>${inlineFormat(line.slice(4))}</h3>`); continue; }
+    if (/^## /.test(line))     { out.push(`<h2>${inlineFormat(line.slice(3))}</h2>`); continue; }
+    if (/^# /.test(line))      { out.push(`<h1>${inlineFormat(line.slice(2))}</h1>`); continue; }
+
+    // Blockquote
+    if (/^> /.test(line)) { out.push(`<blockquote>${inlineFormat(line.slice(2))}</blockquote>`); continue; }
+
+    // Horizontal rule
+    if (/^(---|\*\*\*|___)$/.test(line.trim())) { out.push('<hr>'); continue; }
+
+    // Unordered list
+    if (isUl) {
+      if (!inUl) { out.push('<ul>'); inUl = true; }
+      out.push(`<li>${inlineFormat(line.replace(/^[\s]*[-*+] /, ''))}</li>`);
+      continue;
+    }
+
+    // Ordered list
+    if (isOl) {
+      if (!inOl) { out.push('<ol>'); inOl = true; }
+      out.push(`<li>${inlineFormat(line.replace(/^[\s]*\d+\. /, ''))}</li>`);
+      continue;
+    }
+
+    // Empty line
+    if (!line.trim()) continue;
+
+    // Paragraph
+    out.push(`<p>${inlineFormat(line)}</p>`);
+  }
+
+  if (inUl) out.push('</ul>');
+  if (inOl) out.push('</ol>');
+  if (inPre) out.push(`<pre><code>${preBuffer.join('\n')}</code></pre>`);
+
+  return out.join('\n');
+};
+
+const inlineFormat = (text) =>
+  text
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/___(.+?)___/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.+?)__/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/_(.+?)_/g, '<em>$1</em>')
+    .replace(/~~(.+?)~~/g, '<s>$1</s>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+// ═══════════════════════════════════════════════════════════════════
+//  ③ RTF → PLAIN TEXT  (improved control-code stripper)
+// ═══════════════════════════════════════════════════════════════════
+const rtfToText = (rtf) => {
+  if (!rtf) return '';
+  let text = rtf;
+  // Remove RTF header and info groups
+  text = text.replace(/\{\\info[\s\S]*?\}/gi, '');
+  // Remove binary blobs (pictures etc.)
+  text = text.replace(/\{\\pict[\s\S]*?\}/gi, '');
+  // Decode bold/italic markers before stripping (rough)
+  text = text.replace(/\\b\s+([^\\{]+)/g, '**$1**');
+  text = text.replace(/\\i\s+([^\\{]+)/g, '_$1_');
+  // Paragraph breaks
+  text = text.replace(/\\par[\s\r\n]/g, '\n\n');
+  text = text.replace(/\\line[\s\r\n]/g, '\n');
+  // Remove all other control words and groups
+  text = text.replace(/\{[^{}]*\}/g, '');
+  text = text.replace(/\\[a-z]+\-?\d*\s?/gi, '');
+  text = text.replace(/\\'[0-9a-f]{2}/gi, '');
+  text = text.replace(/[{}\\]/g, '');
+  // Collapse whitespace
+  text = text.replace(/\r\n|\r/g, '\n');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  return text.trim();
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  ④ POST-PROCESS HTML — normalise after any import/parse
+//     • removes empty paragraphs & nbsp-only lines
+//     • merges adjacent same-type lists
+//     • unwraps pointless wrapper divs
+//     • detects plain-text list patterns and converts them
+//     • final DOMPurify pass
+// ═══════════════════════════════════════════════════════════════════
+const postProcessHtml = (html) => {
+  if (!html || !html.trim()) return '';
+
+  const div = document.createElement('div');
+  div.innerHTML = html;
+
+  // ── 1. Remove dangerous / structural noise ──────────────────────
+  div.querySelectorAll('script,iframe,style,link,meta,head').forEach(el => el.remove());
+
+  // ── 2. Unwrap wrapper divs that serve no purpose ────────────────
+  // A div that only wraps a single block element → hoist the child
+  let changed = true;
+  while (changed) {
+    changed = false;
+    div.querySelectorAll('div').forEach(d => {
+      const blockTags = ['P','H1','H2','H3','H4','H5','H6','UL','OL','BLOCKQUOTE','PRE','HR','TABLE'];
+      const kids = Array.from(d.childNodes).filter(n =>
+        n.nodeType === Node.ELEMENT_NODE || (n.nodeType === Node.TEXT_NODE && n.textContent.trim())
+      );
+      if (kids.length === 1 && blockTags.includes(kids[0].nodeName)) {
+        const parent = d.parentNode;
+        if (parent) {
+          while (d.firstChild) parent.insertBefore(d.firstChild, d);
+          parent.removeChild(d);
+          changed = true;
+        }
+      }
+    });
+  }
+
+  // ── 3. Remove empty / whitespace-only / nbsp-only paragraphs ────
+  div.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6').forEach(el => {
+    const text = el.textContent.replace(/\u00a0/g, '').trim();
+    if (!text && !el.querySelector('img, svg, picture')) el.remove();
+  });
+
+  // ── 4. Detect plain-text bullet patterns inside <p> tags ────────
+  //    e.g.  <p>• Item one</p>  or  <p>- Item</p>  or  <p>* Item</p>
+  const bulletRe = /^[\s]*([•·▪▸◦\-\*])\s+(.+)$/;
+  const numRe    = /^[\s]*(\d+)[.)]\s+(.+)$/;
+
+  // Collect consecutive bullet <p>s and convert to <ul>/<ol>
+  const children = Array.from(div.children);
+  let i = 0;
+  while (i < children.length) {
+    const el = children[i];
+    if (el.tagName === 'P') {
+      const txt = el.textContent.trim();
+      if (bulletRe.test(txt)) {
+        // Collect run of bullet paragraphs
+        const ul = document.createElement('ul');
+        while (i < children.length && bulletRe.test(children[i]?.textContent?.trim())) {
+          const m = children[i].textContent.trim().match(bulletRe);
+          const li = document.createElement('li');
+          li.innerHTML = inlineFormat(m[2]);
+          ul.appendChild(li);
+          const old = children[i];
+          i++;
+          old.remove();
+        }
+        div.insertBefore(ul, div.children[i] || null);
+        children.splice(i - ul.children.length, ul.children.length, ul);
+        continue;
+      }
+      if (numRe.test(txt)) {
+        const ol = document.createElement('ol');
+        while (i < children.length && numRe.test(children[i]?.textContent?.trim())) {
+          const m = children[i].textContent.trim().match(numRe);
+          const li = document.createElement('li');
+          li.innerHTML = inlineFormat(m[2]);
+          ol.appendChild(li);
+          const old = children[i];
+          i++;
+          old.remove();
+        }
+        div.insertBefore(ol, div.children[i] || null);
+        children.splice(i - ol.children.length, ol.children.length, ol);
+        continue;
+      }
+    }
+    i++;
+  }
+
+  // ── 5. Merge adjacent lists of the same type ────────────────────
+  div.querySelectorAll('ul + ul, ol + ol').forEach(list => {
+    const prev = list.previousElementSibling;
+    if (prev && prev.tagName === list.tagName) {
+      while (list.firstChild) prev.appendChild(list.firstChild);
+      list.remove();
+    }
+  });
+
+  // ── 6. Convert ALL-CAPS short lines → <h2> (common in PDF exports)
+  div.querySelectorAll('p, div').forEach(el => {
+    const txt = el.textContent.trim();
+    if (
+      txt.length > 3 && txt.length < 80 &&
+      txt === txt.toUpperCase() &&
+      !/[.!?,;:]{2,}/.test(txt) &&        // not a sentence
+      !el.querySelector('img')
+    ) {
+      const h2 = document.createElement('h2');
+      h2.textContent = txt.charAt(0) + txt.slice(1).toLowerCase();
+      el.parentNode?.replaceChild(h2, el);
+    }
+  });
+
+  // ── 7. Detect short standalone bold lines → headings ────────────
+  div.querySelectorAll('p').forEach(el => {
+    const kids = Array.from(el.childNodes);
+    if (
+      kids.length === 1 &&
+      kids[0].nodeType === Node.ELEMENT_NODE &&
+      kids[0].tagName === 'STRONG'
+    ) {
+      const txt = kids[0].textContent.trim();
+      if (txt.length > 3 && txt.length < 100 && !txt.endsWith('.')) {
+        const h3 = document.createElement('h3');
+        h3.textContent = txt;
+        el.parentNode?.replaceChild(h3, el);
+      }
+    }
+  });
+
+  // ── 8. Final DOMPurify sanitisation ─────────────────────────────
+  return DOMPurify.sanitize(div.innerHTML, {
+    ALLOWED_TAGS: [
+      'p','br','strong','em','u','s','del',
+      'h1','h2','h3','h4','h5','h6',
+      'ul','ol','li','a','img',
+      'blockquote','pre','code','hr',
+      'table','thead','tbody','tr','td','th',
+    ],
+    ALLOWED_ATTR: ['href','src','alt','title','target','rel','style'],
+    ALLOW_DATA_ATTR: false,
+  });
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  ⑤ FILE → HTML  (dispatches by extension, then post-processes)
+// ═══════════════════════════════════════════════════════════════════
+const convertFileToHtml = async (file) => {
+  const name = file.name || '';
+  const ext = name.split('.').pop().toLowerCase();
+
+  // ── DOCX via mammoth.js ─────────────────────────────────────────
+  if (ext === 'docx') {
+    let mammoth;
+    try {
+      mammoth = (await import('mammoth')).default;
+    } catch {
+      throw new Error('mammoth not installed. Run: npm install mammoth');
+    }
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.convertToHtml(
+      { arrayBuffer },
+      {
+        styleMap: [
+          // Common heading names across Word versions / languages
+          "p[style-name='Heading 1']          => h1:fresh",
+          "p[style-name='Heading 2']          => h2:fresh",
+          "p[style-name='Heading 3']          => h3:fresh",
+          "p[style-name='Heading 4']          => h4:fresh",
+          "p[style-name='Heading 5']          => h5:fresh",
+          "p[style-name='Heading 6']          => h6:fresh",
+          "p[style-name='heading 1']          => h1:fresh",
+          "p[style-name='heading 2']          => h2:fresh",
+          "p[style-name='heading 3']          => h3:fresh",
+          "p[style-name='Title']              => h1:fresh",
+          "p[style-name='Subtitle']           => h2:fresh",
+          "p[style-name='Quote']              => blockquote:fresh",
+          "p[style-name='Intense Quote']      => blockquote:fresh",
+          "p[style-name='List Paragraph']     => p:fresh",
+          // Inline formatting
+          "b                                  => strong",
+          "i                                  => em",
+          "u                                  => u",
+          "strike                             => s",
+        ],
+        convertImage: mammoth.images.imgElement(img =>
+          img.read('base64').then(data => ({
+            src: `data:${img.contentType};base64,${data}`,
+          }))
+        ),
+        ignoreEmptyParagraphs: true,
+      }
+    );
+    if (result.messages?.length) console.info('[mammoth warnings]', result.messages);
+    return postProcessHtml(result.value);
+  }
+
+  // ── PDF via pdfjs-dist ──────────────────────────────────────────
+  if (ext === 'pdf') {
+    let pdfjsLib;
+    try {
+      pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    } catch {
+      try {
+        pdfjsLib = await import('pdfjs-dist');
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+      } catch {
+        throw new Error('pdfjs-dist not installed. Run: npm install pdfjs-dist');
+      }
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+    const allLines = [];  // { text, fontSize, bold, y }
+
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const textContent = await page.getTextContent({ includeMarkedContent: false });
+
+      // Collect items with font size info
+      const rawItems = textContent.items.filter(it => it.str?.trim());
+
+      // Group by Y position (same line = same rounded Y)
+      const yMap = {};
+      rawItems.forEach(item => {
+        const y = Math.round(item.transform[5]);
+        if (!yMap[y]) yMap[y] = [];
+        yMap[y].push(item);
+      });
+
+      // Sort Y top→bottom and build line objects
+      Object.keys(yMap)
+        .map(Number)
+        .sort((a, b) => b - a)
+        .forEach(y => {
+          const items = yMap[y];
+          const text = items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
+          if (!text) return;
+          // Estimate fontSize from transform matrix (element [3] = scaleY)
+          const fontSize = Math.abs(items[0]?.transform?.[3] || 12);
+          const isBold = (items[0]?.fontName || '').toLowerCase().includes('bold');
+          allLines.push({ text, fontSize, isBold, pageBreakBefore: y > 700 && p > 1 });
+        });
+
+      // Page separator (blank line between pages)
+      allLines.push({ text: '', fontSize: 0, isBold: false, separator: true });
+    }
+
+    // Determine "body" font size (mode of all sizes)
+    const sizeFreq = {};
+    allLines.forEach(l => {
+      if (l.fontSize > 0) sizeFreq[Math.round(l.fontSize)] = (sizeFreq[Math.round(l.fontSize)] || 0) + 1;
+    });
+    const bodyFontSize = parseFloat(
+      Object.entries(sizeFreq).sort((a, b) => b[1] - a[1])[0]?.[0] || 12
+    );
+
+    // Convert lines → HTML
+    const htmlParts = [];
+    let paraBuffer = [];
+
+    const flushPara = () => {
+      if (!paraBuffer.length) return;
+      htmlParts.push(`<p>${paraBuffer.join(' ')}</p>`);
+      paraBuffer = [];
+    };
+
+    allLines.forEach(line => {
+      if (!line.text || line.separator) {
+        flushPara();
+        return;
+      }
+
+      const txt = line.text.trim();
+      const fs  = Math.round(line.fontSize);
+      const bodyFs = Math.round(bodyFontSize);
+
+      // Heading detection by font size relative to body
+      if (fs >= bodyFs * 1.8 || (fs >= bodyFs * 1.4 && line.isBold && txt.length < 80)) {
+        flushPara();
+        htmlParts.push(`<h1>${txt}</h1>`);
+        return;
+      }
+      if (fs >= bodyFs * 1.4 || (fs >= bodyFs * 1.2 && line.isBold && txt.length < 80)) {
+        flushPara();
+        htmlParts.push(`<h2>${txt}</h2>`);
+        return;
+      }
+      if (fs >= bodyFs * 1.15 && line.isBold && txt.length < 100) {
+        flushPara();
+        htmlParts.push(`<h3>${txt}</h3>`);
+        return;
+      }
+
+      // Bullet detection
+      const bulletMatch = txt.match(/^([•·▪▸◦\-\*])\s+(.+)$/);
+      const numMatch    = txt.match(/^(\d+)[.)]\s+(.+)$/);
+      if (bulletMatch) {
+        flushPara();
+        htmlParts.push(`<ul><li>${bulletMatch[2]}</li></ul>`);
+        return;
+      }
+      if (numMatch) {
+        flushPara();
+        htmlParts.push(`<ol><li>${numMatch[2]}</li></ol>`);
+        return;
+      }
+
+      // Regular body text → accumulate into paragraph
+      // End paragraph when line ends with full stop / question / exclamation
+      paraBuffer.push(line.isBold ? `<strong>${txt}</strong>` : txt);
+      if (/[.!?:]\s*$/.test(txt) && txt.length > 40) flushPara();
+    });
+
+    flushPara();
+    return postProcessHtml(htmlParts.join('\n'));
+  }
+
+  // ── Plain text ──────────────────────────────────────────────────
+  if (ext === 'txt') {
+    const text = await file.text();
+    // Detect if it looks like Markdown (has # headings or * bullets)
+    if (/^#{1,6}\s/m.test(text) || /^\s*[-*] /m.test(text)) {
+      return postProcessHtml(markdownToHtml(text));
+    }
+    const html = text
+      .split(/\n\n+/)
+      .filter(p => p.trim())
+      .map(block => {
+        const trimmed = block.trim();
+        // Short line, no period → might be a heading
+        if (trimmed.length < 80 && !trimmed.includes('.') && trimmed === trimmed.toUpperCase()) {
+          return `<h2>${trimmed.charAt(0) + trimmed.slice(1).toLowerCase()}</h2>`;
+        }
+        return `<p>${trimmed.replace(/\n/g, ' ')}</p>`;
+      })
+      .join('\n');
+    return postProcessHtml(html);
+  }
+
+  // ── HTML / HTM ─────────────────────────────────────────────────
+  if (ext === 'html' || ext === 'htm') {
+    const text = await file.text();
+    const bodyMatch = text.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    const raw = bodyMatch ? bodyMatch[1] : text;
+    return postProcessHtml(cleanExternalHtml(raw));
+  }
+
+  // ── Markdown ───────────────────────────────────────────────────
+  if (ext === 'md' || ext === 'markdown') {
+    const text = await file.text();
+    return postProcessHtml(markdownToHtml(text));
+  }
+
+  // ── RTF ────────────────────────────────────────────────────────
+  if (ext === 'rtf') {
+    const text = await file.text();
+    const plain = rtfToText(text);
+    // After stripping, treat as plain text
+    const html = plain
+      .split(/\n\n+/)
+      .filter(p => p.trim())
+      .map(p => `<p>${p.replace(/\n/g, ' ')}</p>`)
+      .join('\n');
+    return postProcessHtml(html);
+  }
+
+  throw new Error(`Unsupported file type: .${ext}`);
+};
+
+// ─────────────────────────────────────────────
+//  HELPER UTILITIES  (unchanged from original)
+// ─────────────────────────────────────────────
 const htmlToPlainText = (html) => {
   if (!html) return '';
   const d = document.createElement('div');
@@ -551,20 +975,20 @@ const smartExtract = (html) => {
   if (!html) return {};
   const text = htmlToPlainText(html).toLowerCase();
   const CATS = {
-    'AI': ['artificial intelligence', 'machine learning', 'deep learning', 'chatgpt', 'llm', 'ai ', 'openai'],
-    'Real Estate': ['property', 'real estate', 'housing', 'apartment', 'villa', 'rent', 'mortgage', 'broker'],
-    'PropTech': ['proptech', 'property technology', 'smart home', 'iot', 'digital property'],
-    'Technology': ['software', 'programming', 'javascript', 'react', 'cloud', 'saas', 'startup', 'api'],
-    'Business': ['business', 'startup', 'entrepreneur', 'investment', 'revenue', 'marketing', 'sales'],
-    'Mortgage': ['mortgage', 'home loan', 'refinance', 'interest rate', 'lender'],
-    'Landscaping': ['landscaping', 'garden', 'outdoor', 'hardscape', 'lawn', 'irrigation'],
+    'AI': ['artificial intelligence','machine learning','deep learning','chatgpt','llm','ai ','openai'],
+    'Real Estate': ['property','real estate','housing','apartment','villa','rent','mortgage','broker'],
+    'PropTech': ['proptech','property technology','smart home','iot','digital property'],
+    'Technology': ['software','programming','javascript','react','cloud','saas','startup','api'],
+    'Business': ['business','startup','entrepreneur','investment','revenue','marketing','sales'],
+    'Mortgage': ['mortgage','home loan','refinance','interest rate','lender'],
+    'Landscaping': ['landscaping','garden','outdoor','hardscape','lawn','irrigation'],
   };
   let detectedCategory = 'Other', maxMatches = 0;
   for (const [cat, kws] of Object.entries(CATS)) {
     const matches = kws.filter(kw => text.includes(kw)).length;
     if (matches > maxMatches) { maxMatches = matches; detectedCategory = cat; }
   }
-  const TAGS = ['AI', 'Real Estate', 'PropTech', 'Technology', 'Business', 'Mortgage', 'Landscaping', 'Marketing', 'UAE', 'Dubai', 'Innovation', 'Digital', 'Cloud', 'Investment'];
+  const TAGS = ['AI','Real Estate','PropTech','Technology','Business','Mortgage','Landscaping','Marketing','UAE','Dubai','Innovation','Digital','Cloud','Investment'];
   const detectedTags = TAGS.filter(t => text.includes(t.toLowerCase())).slice(0, 6);
   let excerpt = '';
   const pm = html.match(/<p[^>]*>(.*?)<\/p>/i);
@@ -583,8 +1007,7 @@ const getCroppedImg = (imageSrc, pixelCrop) => new Promise((resolve, reject) => 
   image.src = imageSrc;
   image.onload = () => {
     const canvas = document.createElement('canvas');
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
+    canvas.width = pixelCrop.width; canvas.height = pixelCrop.height;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
     canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Canvas empty')), 'image/jpeg', 0.92);
@@ -602,29 +1025,18 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
   const [cropping, setCropping] = useState(false);
   const screens = Grid.useBreakpoint();
 
-  useEffect(() => {
-    if (open) { setCrop({ x: 0, y: 0 }); setZoom(1); setCroppedAreaPixels(null); }
-  }, [open, imageSrc]);
+  useEffect(() => { if (open) { setCrop({ x: 0, y: 0 }); setZoom(1); setCroppedAreaPixels(null); } }, [open, imageSrc]);
 
   const handleConfirm = async () => {
     if (!croppedAreaPixels) return;
     setCropping(true);
-    try {
-      const blob = await getCroppedImg(imageSrc, croppedAreaPixels);
-      onConfirm(blob);
-    } catch { message.error('Crop failed, please try again'); }
+    try { const blob = await getCroppedImg(imageSrc, croppedAreaPixels); onConfirm(blob); }
+    catch { message.error('Crop failed, please try again'); }
     finally { setCropping(false); }
   };
 
   return (
-    <Modal
-      open={open}
-      title={<Space><ScissorOutlined style={{ color: '#6d28d9' }} /><span style={{ color: '#0f172a' }}>{title || 'Crop Image'}</span></Space>}
-      onCancel={onCancel}
-      width={screens.xs ? '98%' : 620}
-      centered
-      destroyOnClose
-      className="bm-modal"
+    <Modal open={open} title={<Space><ScissorOutlined style={{ color: '#6d28d9' }} /><span style={{ color: '#0f172a' }}>{title || 'Crop Image'}</span></Space>} onCancel={onCancel} width={screens.xs ? '98%' : 620} centered destroyOnClose className="bm-modal"
       footer={
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
           <Space>
@@ -634,22 +1046,16 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
           </Space>
           <Space>
             <Button onClick={onCancel} style={{ fontWeight: 600, borderRadius: 8 }}>Cancel</Button>
-            <Button type="primary" icon={<ScissorOutlined />} loading={cropping} onClick={handleConfirm} style={{ background: THEME.primary, borderColor: THEME.primary, borderRadius: 8, fontWeight: 600 }}>
-              Apply Crop
-            </Button>
+            <Button type="primary" icon={<ScissorOutlined />} loading={cropping} onClick={handleConfirm} style={{ background: THEME.primary, borderColor: THEME.primary, borderRadius: 8, fontWeight: 600 }}>Apply Crop</Button>
           </Space>
         </div>
-      }
-    >
+      }>
       <div style={{ position: 'relative', width: '100%', height: screens.xs ? 280 : 380, background: '#f8fafc', borderRadius: 12, overflow: 'hidden' }}>
         {imageSrc
-          ? <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={aspect} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_, px) => setCroppedAreaPixels(px)} style={{ containerStyle: { borderRadius: 12 }, cropAreaStyle: { border: '2px solid #8b5cf6', boxShadow: '0 0 0 9999px rgba(0,0,0,0.65)' } }} />
-          : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><Text type="secondary">Loading image...</Text></div>
-        }
+          ? <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={aspect} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_, px) => setCroppedAreaPixels(px)} style={{ containerStyle: { borderRadius: 12 }, cropAreaStyle: { border: '2px solid #8b5cf6', boxShadow: '0 0 0 9999px rgba(0,0,0,.65)' } }} />
+          : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><Text type="secondary">Loading image…</Text></div>}
       </div>
-      <div style={{ marginTop: 12, textAlign: 'center' }}>
-        <Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>Drag to reposition · Scroll or slider to zoom</Text>
-      </div>
+      <div style={{ marginTop: 12, textAlign: 'center' }}><Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>Drag to reposition · Scroll or slider to zoom</Text></div>
     </Modal>
   );
 };
@@ -662,12 +1068,10 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
   const [pendingFile, setPendingFile] = useState(null);
 
   const handleBeforeUpload = (file) => {
-    if (!['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type)) {
-      message.error('Only JPG, PNG, WEBP allowed'); return Upload.LIST_IGNORE;
-    }
+    if (!['image/jpeg','image/png','image/jpg','image/webp'].includes(file.type)) { message.error('Only JPG, PNG, WEBP allowed'); return Upload.LIST_IGNORE; }
     if (file.size / 1024 / 1024 > maxSizeMB) { message.error(`Max ${maxSizeMB}MB`); return Upload.LIST_IGNORE; }
     const reader = new FileReader();
-    reader.onload = (e) => { setPendingFile(file); setCropModal({ open: true, src: e.target.result }); };
+    reader.onload = e => { setPendingFile(file); setCropModal({ open: true, src: e.target.result }); };
     reader.readAsDataURL(file);
     return Upload.LIST_IGNORE;
   };
@@ -693,22 +1097,14 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
       file.preview = await new Promise(res => { const r = new FileReader(); r.readAsDataURL(file.originFileObj); r.onload = () => res(r.result); });
     }
     const imageUrl = file.url || file.preview;
-    Modal.confirm({
-      icon: null, width: 600, centered: true,
-      okButtonProps: { style: { display: 'none' } }, cancelButtonProps: { style: { display: 'none' } },
-      content: <div><img src={imageUrl} alt="preview" style={{ width: '100%', borderRadius: 12 }} /><div style={{ textAlign: 'center', marginTop: 16 }}><Button onClick={() => Modal.destroyAll()} style={{fontWeight: 600}}>Close</Button></div></div>,
-      onCancel: () => Modal.destroyAll(),
-    });
+    Modal.confirm({ icon: null, width: 600, centered: true, okButtonProps: { style: { display: 'none' } }, cancelButtonProps: { style: { display: 'none' } }, content: <div><img src={imageUrl} alt="preview" style={{ width: '100%', borderRadius: 12 }} /><div style={{ textAlign: 'center', marginTop: 16 }}><Button onClick={() => Modal.destroyAll()} style={{ fontWeight: 600 }}>Close</Button></div></div>, onCancel: () => Modal.destroyAll() });
   };
 
   const itemRender = (originNode, file) => (
     <div style={{ position: 'relative', display: 'inline-block' }}>
       {originNode}
       <Tooltip title="Crop / Edit">
-        <button
-          onClick={(e) => { e.stopPropagation(); handleEditCrop(file); }}
-          style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', background: '#0f172a', border: 'none', borderRadius: 6, color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', zIndex: 10 }}
-        >
+        <button onClick={e => { e.stopPropagation(); handleEditCrop(file); }} style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', background: '#0f172a', border: 'none', borderRadius: 6, color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', zIndex: 10 }}>
           <ScissorOutlined style={{ fontSize: 10 }} /> EDIT
         </button>
       </Tooltip>
@@ -718,13 +1114,8 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
   return (
     <>
       <Form.Item label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>{label}</span>} extra={<span style={{ fontSize: 12, color: '#64748b' }}>{extra}</span>}>
-        <Upload className="bm-upload" listType="picture-card" fileList={fileList} onPreview={handlePreview} onChange={({ fileList: fl }) => { if (fl.length < fileList.length) onChange(fl); }} beforeUpload={handleBeforeUpload} maxCount={maxCount} itemRender={itemRender} accept="image/jpeg,image/png,image/webp">
-          {fileList.length < maxCount && (
-            <div style={{ textAlign: 'center' }}>
-              <PlusOutlined style={{ color: '#64748b', fontSize: 20 }} />
-              <div style={{ marginTop: 8, fontSize: 12, color: '#475569', fontWeight: 600 }}>UPLOAD</div>
-            </div>
-          )}
+        <Upload listType="picture-card" fileList={fileList} onPreview={handlePreview} onChange={({ fileList: fl }) => { if (fl.length < fileList.length) onChange(fl); }} beforeUpload={handleBeforeUpload} maxCount={maxCount} itemRender={itemRender} accept="image/jpeg,image/png,image/webp">
+          {fileList.length < maxCount && <div style={{ textAlign: 'center' }}><PlusOutlined style={{ color: '#64748b', fontSize: 20 }} /><div style={{ marginTop: 8, fontSize: 12, color: '#475569', fontWeight: 600 }}>UPLOAD</div></div>}
         </Upload>
       </Form.Item>
       <ImageCropModal open={cropModal.open} imageSrc={cropModal.src} aspect={aspect} title={cropTitle} onConfirm={handleCropConfirm} onCancel={() => { setCropModal({ open: false, src: '' }); setPendingFile(null); }} />
@@ -740,13 +1131,12 @@ const BlogPreview = ({ data }) => {
   const { title, subHeading, content, authorName, authorDesignation, authorImage, tags, category, featuredImage, coverImage, createdAt, readingTime, headings } = data;
 
   const sanitized = content ? DOMPurify.sanitize(content, {
-    ALLOWED_TAGS: ['p','br','strong','b','em','i','u','strike','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th','div','span'],
-    ALLOWED_ATTR: ['href','src','alt','title','target','rel', 'style'],
-    ALLOW_DATA_ATTR: false
+    ALLOWED_TAGS: ['p','br','strong','b','em','i','u','s','strike','del','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th','div','span'],
+    ALLOWED_ATTR: ['href','src','alt','title','target','rel','style'],
+    ALLOW_DATA_ATTR: false,
   }) : '';
 
   const heroImg = coverImage || featuredImage;
-
   return (
     <div className="blog-preview-wrap">
       {heroImg && <img src={heroImg} alt="cover" className="blog-preview-hero" />}
@@ -755,17 +1145,8 @@ const BlogPreview = ({ data }) => {
           {category && <span className="bm-cat-tag" style={{ background: '#f1f5f9', color: '#475569', padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 700, border: '1px solid #e2e8f0' }}>{category}</span>}
           {tags?.slice(0, 5).map(t => <span key={t} className="bm-tag" style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', fontWeight: 600 }}>#{t}</span>)}
         </div>
-
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 44, fontWeight: 800, lineHeight: 1.15, color: '#0f172a', marginBottom: 16, marginTop: 0, letterSpacing: '-0.5px' }}>
-          {title || 'Untitled Post'}
-        </h1>
-
-        {subHeading && (
-          <p style={{ fontSize: 18, color: '#475569', lineHeight: 1.6, marginBottom: 28, fontStyle: 'italic', borderLeft: '4px solid #6d28d9', paddingLeft: 20, background: '#f8fafc', borderRadius: '0 8px 8px 0', padding: '16px 24px' }}>
-            {subHeading}
-          </p>
-        )}
-
+        <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 44, fontWeight: 800, lineHeight: 1.15, color: '#0f172a', marginBottom: 16, marginTop: 0, letterSpacing: '-0.5px' }}>{title || 'Untitled Post'}</h1>
+        {subHeading && <p style={{ fontSize: 18, color: '#475569', lineHeight: 1.6, marginBottom: 28, fontStyle: 'italic', borderLeft: '4px solid #6d28d9', paddingLeft: 20, background: '#f8fafc', borderRadius: '0 8px 8px 0', padding: '16px 24px' }}>{subHeading}</p>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '20px 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', marginBottom: 36 }}>
           <Avatar size={54} src={authorImage} icon={<UserOutlined />} style={{ background: '#f1f5f9', color: '#64748b', flexShrink: 0 }} />
           <div>
@@ -777,18 +1158,14 @@ const BlogPreview = ({ data }) => {
             </div>
           </div>
         </div>
-
         {headings && headings.filter(h => h.level <= 3).length > 2 && (
-          <div className="bm-toc">
-            <div className="bm-toc-title"><BookOutlined style={{fontSize: 16}} /> Table of Contents</div>
-            <ol>
-              {headings.filter(h => h.level <= 3).map((h, i) => (
-                <li key={i} style={{ paddingLeft: (h.level - 1) * 16, listStyle: 'decimal' }}>{h.text}</li>
-              ))}
+          <div style={{ background: '#f8fafc', borderRadius: 12, padding: 20, marginBottom: 32, border: '1px solid #e2e8f0' }}>
+            <div style={{ fontWeight: 700, marginBottom: 12, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}><BookOutlined /> Table of Contents</div>
+            <ol style={{ paddingLeft: 20, margin: 0 }}>
+              {headings.filter(h => h.level <= 3).map((h, i) => <li key={i} style={{ paddingLeft: (h.level - 1) * 16, listStyle: 'decimal', marginBottom: 6, color: '#475569', fontWeight: 500 }}>{h.text}</li>)}
             </ol>
           </div>
         )}
-
         <div className="blog-preview-content" dangerouslySetInnerHTML={{ __html: sanitized }} />
       </div>
     </div>
@@ -796,68 +1173,64 @@ const BlogPreview = ({ data }) => {
 };
 
 // ─────────────────────────────────────────────
-//  EDITOR CONFIG (unchanged)
+//  JODIT EDITOR CONFIG  (format-preserving paste)
 // ─────────────────────────────────────────────
 const getEditorConfig = () => ({
   readonly: false,
-  placeholder: 'Write your blog here, or paste from Word/PDF/Google Docs...',
+  placeholder: 'Write your blog here, or paste / import from Word, PDF, Google Docs…',
   height: 480,
   enableDragAndDropFileToEditor: true,
-  uploader: { insertImageAsBase64URI: true, imagesExtensions: ['jpg', 'png', 'jpeg', 'gif', 'svg', 'webp'] },
+  uploader: { insertImageAsBase64URI: true, imagesExtensions: ['jpg','png','jpeg','gif','svg','webp'] },
   toolbarSticky: false,
 
-   askBeforePasteHTML: false,
+  // Let our wrapper's onPaste handle ALL rich-text pastes
+  askBeforePasteHTML: false,
   askBeforePasteFromWord: false,
-  defaultActionOnPaste: "insert_as_html",
-processPasteHTML: true,
-processPasteHTMLFunction: (html) => {
-  // This runs AFTER Jodit's default cleaning – we do our own deep cleaning.
-  return cleanPastedContent(html);
-},
+  defaultActionOnPaste: 'insert_as_html',
+  processPasteHTML: false,   // we sanitise before inserting
 
-  removeButtons: ['file', 'video', 'print', 'about'],
+  removeButtons: ['file','video','print','about'],
   spellcheck: true,
   editorCssClass: 'jodit-clean-editor',
 
   iframeStyle: `
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
-    body {
-      font-family: 'DM Sans', sans-serif;
-      line-height: 1.7;
-      font-size: 16px;
-      color: #1e293b;
-      padding: 16px 20px;
-      margin: 0;
-    }
+    body { font-family: 'DM Sans',sans-serif; line-height: 1.7; font-size: 16px; color: #1e293b; padding: 16px 20px; margin: 0; }
     ul { list-style-type: disc !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
     ol { list-style-type: decimal !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
-    li { display: list-item !important; list-style-position: outside !important; margin: 0.4em 0 !important; line-height: 1.8; }
+    li { display: list-item !important; list-style-position: outside !important; margin: .4em 0 !important; line-height: 1.8; }
     ul ul { list-style-type: circle !important; }
     ul ul ul { list-style-type: square !important; }
     ol ol { list-style-type: lower-alpha !important; }
-    p { margin: 0.8em 0; }
-    h1 { font-family: 'Playfair Display', serif; font-size: 2.2em; font-weight: 800; margin: 1.2em 0 0.5em; color: #0f172a; }
-    h2 { font-family: 'Playfair Display', serif; font-size: 1.8em; font-weight: 700; margin: 1.1em 0 0.4em; color: #0f172a; }
-    h3 { font-family: 'Playfair Display', serif; font-size: 1.4em; font-weight: 600; margin: 1em 0 0.35em; color: #334155; }
-    blockquote { border-left: 4px solid #6d28d9; padding: 12px 20px; margin: 1.2em 0; color: #475569; font-style: italic; background: #f8fafc; border-radius: 0 8px 8px 0; font-family: 'Playfair Display', serif; }
+    p { margin: .8em 0; }
+    h1 { font-family: 'Playfair Display',serif; font-size: 2.2em; font-weight: 800; margin: 1.2em 0 .5em; color: #0f172a; }
+    h2 { font-family: 'Playfair Display',serif; font-size: 1.8em; font-weight: 700; margin: 1.1em 0 .4em; color: #0f172a; }
+    h3 { font-family: 'Playfair Display',serif; font-size: 1.4em; font-weight: 600; margin: 1em 0 .35em; color: #334155; }
+    blockquote { border-left: 4px solid #6d28d9; padding: 12px 20px; margin: 1.2em 0; color: #475569; font-style: italic; background: #f8fafc; border-radius: 0 8px 8px 0; font-family: 'Playfair Display',serif; }
     img { max-width: 100%; border-radius: 8px; margin: 1em 0; }
-    strong, b { font-weight: 600; color: #0f172a; }
-    em, i { font-style: italic; }
-    a { color: #6d28d9; text-decoration: underline; font-weight: 500;}
-    pre, code { background: #f1f5f9; border-radius: 8px; padding: 2px 6px; font-family: monospace; color: #0f172a;}
+    strong, b { font-weight: 700 !important; color: #0f172a !important; }
+    em, i { font-style: italic !important; }
+    u { text-decoration: underline !important; }
+    s, strike { text-decoration: line-through !important; }
+    a { color: #6d28d9; text-decoration: underline; font-weight: 500; }
+    pre, code { background: #f1f5f9; border-radius: 8px; padding: 2px 6px; font-family: monospace; color: #0f172a; }
     pre { padding: 16px 20px; overflow-x: auto; }
   `,
 
   extraCSS: `
-    .jodit-clean-editor { font-family: 'DM Sans', sans-serif; line-height: 1.7; font-size: 16px; color: #1e293b; }
+    .jodit-clean-editor { font-family: 'DM Sans',sans-serif; line-height: 1.7; font-size: 16px; color: #1e293b; }
     .jodit-clean-editor ul { list-style-type: disc !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
     .jodit-clean-editor ol { list-style-type: decimal !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
-    .jodit-clean-editor li { display: list-item !important; list-style-position: outside !important; margin: 0.5em 0 !important; }
-    .jodit-clean-editor p { margin: 0.8em 0; }
-    .jodit-clean-editor h1, .jodit-clean-editor h2, .jodit-clean-editor h3 { font-family: 'Playfair Display', serif; margin: 1.2em 0 0.5em; font-weight: 700; }
-    .jodit-clean-editor blockquote { border-left: 4px solid #6d28d9; padding: 12px 20px; margin: 1.2em 0; color: #475569; font-style: italic; background: #f8fafc; border-radius: 0 8px 8px 0; font-family: 'Playfair Display', serif; }
+    .jodit-clean-editor li { display: list-item !important; list-style-position: outside !important; margin: .5em 0 !important; }
+    .jodit-clean-editor p { margin: .8em 0; }
+    .jodit-clean-editor strong, .jodit-clean-editor b { font-weight: 700 !important; }
+    .jodit-clean-editor em, .jodit-clean-editor i { font-style: italic !important; }
+    .jodit-clean-editor u { text-decoration: underline !important; }
+    .jodit-clean-editor s { text-decoration: line-through !important; }
+    .jodit-clean-editor h1,.jodit-clean-editor h2,.jodit-clean-editor h3 { font-family: 'Playfair Display',serif; margin: 1.2em 0 .5em; font-weight: 700; }
+    .jodit-clean-editor blockquote { border-left: 4px solid #6d28d9; padding: 12px 20px; margin: 1.2em 0; color: #475569; font-style: italic; background: #f8fafc; border-radius: 0 8px 8px 0; font-family: 'Playfair Display',serif; }
     .jodit-clean-editor img { max-width: 100%; border-radius: 8px; }
-  `
+  `,
 });
 
 // ══════════════════════════════════════════════
@@ -866,13 +1239,14 @@ processPasteHTMLFunction: (html) => {
 const BlogManagement = () => {
   const screens = useBreakpoint();
   const editorRef = useRef(null);
+  const fileInputRef = useRef(null);   // ← hidden file input for Import
   const searchTimeout = useRef(null);
-  const fileInputRef = useRef(null); // ← for the import button
 
-  // ─── State ───
+  // ── State ────────────────────────────────────────────────────────
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fileImporting, setFileImporting] = useState(false);  // ← NEW
   const [targetStatus, setTargetStatus] = useState('draft');
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalResults: 0, itemsPerPage: 10 });
   const [searchText, setSearchText] = useState('');
@@ -898,126 +1272,65 @@ const BlogManagement = () => {
   const [authorImageList, setAuthorImageList] = useState([]);
   const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, views: 0 });
 
-  // ───────────────────────────────────────────────────
-  //  🆕 FILE IMPORT WITH SUPPORT FOR ANY FILE TYPE
-  // ───────────────────────────────────────────────────
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileImport = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setImportProcessing(true);
-    const hideLoading = message.loading(`Processing ${file.name}...`, 0);
-
-    try {
-      let html = '';
-      const fileName = file.name.toLowerCase();
-      const ext = fileName.split('.').pop();
-
- const insertIntoEditor = (content) => {
-  const editorInstance = editorRef.current;
-
-  // If editor not ready yet → fallback safely
-  if (!editorInstance) {
-    const fallbackContent = (contentRef.current || "") + content;
-    contentRef.current = fallbackContent;
-    setContentValue(fallbackContent);
-    setHeadings(extractHeadings(fallbackContent));
-    return;
-  }
-
-  try {
-    // safest way for Jodit
-    if (typeof editorInstance.value !== "undefined") {
-      const updatedContent = (editorInstance.value || "") + content;
-
-      editorInstance.value = updatedContent;
-      contentRef.current = updatedContent;
-      setContentValue(updatedContent);
-      setHeadings(extractHeadings(updatedContent));
-      return;
+  // ── Helper: insert HTML into Jodit at cursor ────────────────────
+  const insertHtmlIntoEditor = useCallback((html) => {
+    if (!html) return;
+    const joditInstance = editorRef.current?.jodit || editorRef.current;
+    if (joditInstance?.s?.insertHTML) {
+      joditInstance.s.focus();
+      joditInstance.s.setCursorAfter(joditInstance.editor.lastChild || joditInstance.editor);
+      joditInstance.s.insertHTML(html);
+      const newVal = joditInstance.value;
+      contentRef.current = newVal;
+      setContentValue(newVal);
+      setHeadings(extractHeadings(newVal));
+    } else {
+      const newVal = (contentRef.current || '') + html;
+      contentRef.current = newVal;
+      setContentValue(newVal);
+      setHeadings(extractHeadings(newVal));
     }
-  } catch (error) {
-    console.error("Insert HTML Error:", error);
-  }
+  }, []);
 
-  // Final fallback
-  const fallbackContent = (contentRef.current || "") + content;
-  contentRef.current = fallbackContent;
-  setContentValue(fallbackContent);
-  setHeadings(extractHeadings(fallbackContent));
-};
-
-      // 1) Plain text / HTML / markup files
-      if (['txt', 'html', 'htm', 'csv', 'md', 'log', 'json', 'xml'].includes(ext)) {
-        const text = await file.text();
-        if (ext === 'html' || ext === 'htm' || ext === 'xml') {
-          html = cleanPastedContent(text);
-        } else {
-          const lines = text.split('\n').filter(line => line.trim() !== '');
-          html = lines.map(line => `<p>${line.trim() || ' '}</p>`).join('');
-        }
-        insertIntoEditor(html);
-        message.success(`${file.name} imported`);
-      }
-
-      // 2) Word .docx (mammoth)
-      else if (ext === 'docx') {
-        const arrayBuffer = await file.arrayBuffer();
-        const result = await mammoth.convertToHtml({ arrayBuffer });
-        html = cleanPastedContent(result.value);
-        if (result.messages.length) console.warn('Mammoth messages:', result.messages);
-        insertIntoEditor(html);
-        message.success(`${file.name} imported (Word)`);
-      }
-
-      // 3) PDF (pdf.js)
-      else if (ext === 'pdf') {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let fullText = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          const pageText = content.items.map(item => item.str).join(' ');
-          fullText += pageText + '\n';
-        }
-        const lines = fullText.split('\n').filter(line => line.trim() !== '');
-        html = lines.map(line => `<p>${line.trim()}</p>`).join('');
-        insertIntoEditor(html);
-        message.success(`${file.name} imported (PDF)`);
-      }
-
-      // 4) Any other file – try reading as text
-      else {
-        try {
-          const text = await file.text();
-          if (text && text.trim().length > 0) {
-            const lines = text.split('\n').filter(line => line.trim() !== '');
-            html = lines.map(line => `<p>${line.trim()}</p>`).join('');
-            insertIntoEditor(html);
-            message.success(`${file.name} imported as text`);
-          } else {
-            throw new Error('Empty or binary file');
-          }
-        } catch {
-          message.error(`${file.name} – unsupported file type`);
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      message.error(`Failed to import ${file.name}: ${err.message}`);
-    } finally {
-      setImportProcessing(false);
-      hideLoading();
-      e.target.value = ''; // reset file input
+  const replaceEditorContent = useCallback((html) => {
+    if (!html) return;
+    const joditInstance = editorRef.current?.jodit || editorRef.current;
+    if (joditInstance && typeof joditInstance.value !== 'undefined') {
+      joditInstance.value = html;
     }
-  };
+    contentRef.current = html;
+    setContentValue(html);
+    setHeadings(extractHeadings(html));
+  }, []);
 
-  // ─── Existing paste handler (unchanged) ────────────────────────────
+  // ── Helper: apply smart metadata from HTML ─────────────────────
+  const applySmartFill = useCallback((html) => {
+    const extracted = smartExtract(html);
+    const cur = form.getFieldsValue();
+    const updates = {};
+    if (!cur.subHeading && extracted.excerpt) updates.subHeading = extracted.excerpt;
+    if ((!cur.category || cur.category === 'Other') && extracted.detectedCategory !== 'Other') {
+      updates.category = extracted.detectedCategory;
+      notification.success({ message: '🏷️ Category Detected', description: `Set to: ${extracted.detectedCategory}`, duration: 3, placement: 'topRight' });
+    }
+    if ((!cur.tags || cur.tags.length === 0) && extracted.detectedTags.length > 0) {
+      updates.tags = extracted.detectedTags;
+      notification.success({ message: '🔖 Tags Detected', description: extracted.detectedTags.join(', '), duration: 3, placement: 'topRight' });
+    }
+    if (Object.keys(updates).length > 0) {
+      form.setFieldsValue(updates);
+      setSmartFillApplied(true);
+      setTimeout(() => setSmartFillApplied(false), 5000);
+    }
+  }, [form]);
+
+  // ══════════════════════════════════════════════════════════════════
+  //  FORMAT-PRESERVING PASTE HANDLER
+  //  • Intercepts ALL pastes that carry HTML
+  //  • Word/Docs → clean junk, preserve formatting
+  //  • Regular HTML → sanitise only
+  //  • Plain text → let Jodit handle natively
+  // ══════════════════════════════════════════════════════════════════
   const handlePaste = useCallback(async (event) => {
     const cd = event.clipboardData;
     if (!cd) return;
@@ -1025,79 +1338,128 @@ const BlogManagement = () => {
     const pastedHtml = cd.getData('text/html');
     const pastedText = cd.getData('text/plain');
 
-    const isWordOrExternal = pastedHtml && (
-      pastedHtml.includes('urn:schemas-microsoft-com') ||
-      pastedHtml.includes('mso-') ||
-      pastedHtml.includes('google-docs') ||
-      pastedHtml.includes('docs.google') ||
-      pastedHtml.includes('xmlns:') ||
-      pastedHtml.length > pastedText.length * 3
-    );
+    // No HTML in clipboard → allow Jodit's own plain-text paste
+    if (!pastedHtml) return;
 
-    if (!isWordOrExternal) {
-      return;
-    }
+    // Detect source
+    const isWordDoc = pastedHtml.includes('urn:schemas-microsoft-com') || pastedHtml.includes('mso-');
+    const isGoogleDoc = pastedHtml.includes('google-docs') || pastedHtml.includes('docs.google');
+    const isExternalHeavy = pastedHtml.includes('xmlns:') || pastedHtml.length > (pastedText.length || 1) * 4;
 
+    // We always take over HTML pastes so formatting is consistent
     event.preventDefault();
     event.stopPropagation();
     setPasteProcessing(true);
 
     try {
-      let cleanHtml = '';
+      let cleanHtml;
 
-      if (pastedHtml) {
-        cleanHtml = cleanPastedContent(pastedHtml);
-        notification.info({ message: '✨ Content Cleaned', description: 'Word/Docs formatting removed automatically.', duration: 2, placement: 'topRight' });
-      } else if (pastedText) {
-        cleanHtml = pastedText.split(/\n\n+/).map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
-      }
-
-      if (cleanHtml && editorRef.current) {
-        const joditInstance = editorRef.current.jodit || editorRef.current;
-        if (joditInstance && joditInstance.s) {
-          joditInstance.s.insertHTML(cleanHtml);
-          const newContent = joditInstance.value;
-          contentRef.current = newContent;
-          setContentValue(newContent);
-          setHeadings(extractHeadings(newContent));
-        } else {
-          const newContent = contentRef.current + cleanHtml;
-          contentRef.current = newContent;
-          setContentValue(newContent);
-          setHeadings(extractHeadings(newContent));
-        }
+      if (isWordDoc || isGoogleDoc || isExternalHeavy) {
+        // Deep clean: strip Word/Docs junk, preserve semantic formatting
+        cleanHtml = cleanExternalHtml(pastedHtml);
+        notification.info({
+          message: '✨ Smart Paste Applied',
+          description: 'Junk formatting stripped — bold, italic & lists preserved.',
+          duration: 2,
+          placement: 'topRight',
+        });
+      } else {
+        // Light sanitise: preserve ALL formatting from regular HTML sources
+        cleanHtml = sanitiseRegularHtml(pastedHtml);
       }
 
-      const extracted = smartExtract(cleanHtml);
-      const cur = form.getFieldsValue();
-      const updates = {};
-      if (!cur.subHeading && extracted.excerpt) updates.subHeading = extracted.excerpt;
-      if ((!cur.category || cur.category === 'Other') && extracted.detectedCategory !== 'Other') {
-        updates.category = extracted.detectedCategory;
-        notification.success({ message: '🏷️ Category Detected', description: `Set to: ${extracted.detectedCategory}`, duration: 3, placement: 'topRight' });
-      }
-      if ((!cur.tags || cur.tags.length === 0) && extracted.detectedTags.length > 0) {
-        updates.tags = extracted.detectedTags;
-        notification.success({ message: '🔖 Tags Detected', description: extracted.detectedTags.join(', '), duration: 3, placement: 'topRight' });
-      }
-      if (Object.keys(updates).length > 0) {
-        form.setFieldsValue(updates);
-        setSmartFillApplied(true);
-        setTimeout(() => setSmartFillApplied(false), 5000);
+      if (cleanHtml) {
+        insertHtmlIntoEditor(cleanHtml);
+        applySmartFill(cleanHtml);
       }
     } catch (e) {
-      console.error(e);
+      console.error('[paste error]', e);
       message.error('Failed to process pasted content');
     } finally {
       setPasteProcessing(false);
     }
-  }, [form]);
+  }, [insertHtmlIntoEditor, applySmartFill]);
 
+  // ══════════════════════════════════════════════════════════════════
+  //  FILE IMPORT HANDLER
+  // ══════════════════════════════════════════════════════════════════
+  const handleImportFile = useCallback(async (file) => {
+    if (!file) return;
+    setFileImporting(true);
+
+    const SUPPORTED = ['docx','pdf','txt','html','htm','md','markdown','rtf'];
+    const ext = file.name.split('.').pop().toLowerCase();
+
+    if (!SUPPORTED.includes(ext)) {
+      message.error(`Unsupported format: .${ext} — supported: ${SUPPORTED.join(', ')}`);
+      setFileImporting(false);
+      return;
+    }
+
+    try {
+      const html = await convertFileToHtml(file);
+
+      if (!html || !html.trim()) {
+        message.warning(`No readable content found in ${file.name}`);
+        return;
+      }
+
+      // Ask whether to replace or append if editor already has content
+      const currentContent = contentRef.current;
+      const hasContent = currentContent && currentContent !== '<p><br></p>' && currentContent.trim().length > 10;
+
+      if (hasContent) {
+        Modal.confirm({
+          title: <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 700, color: '#0f172a' }}>Import "{file.name}"</span>,
+          content: <span style={{ color: '#475569' }}>The editor already has content. Do you want to replace it or append to it?</span>,
+          okText: 'Replace',
+          cancelText: 'Append',
+          okButtonProps: { style: { background: '#6d28d9', borderColor: '#6d28d9', borderRadius: 8, fontWeight: 600 } },
+          cancelButtonProps: { style: { borderRadius: 8, fontWeight: 600 } },
+          centered: true,
+          onOk: () => {
+            replaceEditorContent(html);
+            applySmartFill(html);
+            notification.success({ message: `📄 "${file.name}" Imported`, description: 'Content replaced in editor.', placement: 'topRight', duration: 3 });
+          },
+          onCancel: () => {
+            insertHtmlIntoEditor(html);
+            applySmartFill(html);
+            notification.success({ message: `📄 "${file.name}" Imported`, description: 'Content appended to editor.', placement: 'topRight', duration: 3 });
+          },
+        });
+      } else {
+        replaceEditorContent(html);
+        applySmartFill(html);
+        notification.success({
+          message: `📄 "${file.name}" Imported`,
+          description: `${ext.toUpperCase()} file loaded — formatting preserved.`,
+          placement: 'topRight',
+          duration: 4,
+        });
+      }
+    } catch (e) {
+      console.error('[file import error]', e);
+      message.error(e.message || `Failed to import ${file.name}`);
+    } finally {
+      setFileImporting(false);
+      // Reset file input so same file can be selected again
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }, [replaceEditorContent, insertHtmlIntoEditor, applySmartFill]);
+
+  const handleFileInputChange = useCallback((e) => {
+    const file = e.target.files?.[0];
+    if (file) handleImportFile(file);
+  }, [handleImportFile]);
+
+  // ── Editor change ───────────────────────────────────────────────
   const handleEditorChange = useCallback((value) => {
     contentRef.current = value;
     setContentValue(value);
   }, []);
 
+  // ── Auto-extract heading + subheading ──────────────────────────
   useEffect(() => {
     const t = setTimeout(() => {
       if (contentRef.current) {
@@ -1112,12 +1474,14 @@ const BlogManagement = () => {
     return () => clearTimeout(t);
   }, [contentValue, form]);
 
+  // ── Auto-save to localStorage ──────────────────────────────────
   useEffect(() => {
     let t;
     if (autoSave && contentValue && modalVisible && !pasteProcessing) {
       t = setTimeout(() => handleAutoSave(), 30000);
     }
     return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contentValue, autoSave, modalVisible, pasteProcessing]);
 
   const handleAutoSave = async () => {
@@ -1132,7 +1496,7 @@ const BlogManagement = () => {
       featuredImage: featuredImageList,
       coverImage: coverImageList,
       authorImage: authorImageList,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     }));
     setLastSaved(new Date());
   };
@@ -1146,27 +1510,25 @@ const BlogManagement = () => {
       const draftTime = moment(draft.timestamp);
       if (moment().diff(draftTime, 'hours') > 24) { localStorage.removeItem(key); return; }
       Modal.confirm({
-        title: <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: THEME.text }}>Draft Found</span>,
-        content: <span style={{color: '#475569'}}>Restore draft saved {draftTime.format('MMM DD [at] HH:mm')}?</span>,
+        title: <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 700, color: THEME.text }}>Draft Found</span>,
+        content: <span style={{ color: '#475569' }}>Restore draft saved {draftTime.format('MMM DD [at] HH:mm')}?</span>,
         okButtonProps: { style: { background: THEME.primary, borderColor: THEME.primary, borderRadius: 8, fontWeight: 600 } },
         cancelButtonProps: { style: { borderRadius: 8, fontWeight: 500 } },
         onOk: () => {
           form.setFieldsValue({ title: draft.title, subHeading: draft.subHeading, tags: draft.tags, category: draft.category, authorName: draft.authorName, authorDesignation: draft.authorDesignation });
-          const draftContent = draft.content || '';
-          contentRef.current = draftContent;
-          setContentValue(draftContent);
-          setHeadings(draft.headings || []);
+          const dc = draft.content || '';
+          contentRef.current = dc; setContentValue(dc); setHeadings(draft.headings || []);
           setFeaturedImageList(draft.featuredImage || []);
           setCoverImageList(draft.coverImage || []);
           setAuthorImageList(draft.authorImage || []);
           message.success('Draft restored!');
-        }
+        },
       });
     } catch (e) { console.error(e); }
   };
 
-  // ─── API Calls (unchanged) ──────────────────────────────────────────
-  const fetchBlogs = useCallback(async (page = 1, limit = 10, searchVal = "", category = "", status = "") => {
+  // ── API calls ──────────────────────────────────────────────────
+  const fetchBlogs = useCallback(async (page = 1, limit = 10, searchVal = '', category = '', status = '') => {
     setLoading(true);
     try {
       let url = `/blogs/get-all-blogs?page=${page}&limit=${limit}`;
@@ -1183,7 +1545,7 @@ const BlogManagement = () => {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchBlogs(1, 10, "", "", ""); }, [fetchBlogs]);
+  useEffect(() => { fetchBlogs(1, 10, '', '', ''); }, [fetchBlogs]);
 
   const handleSearch = (e) => {
     const val = e.target.value; setSearchText(val);
@@ -1198,7 +1560,7 @@ const BlogManagement = () => {
 
   const handleClearFilters = () => {
     setSearchText(''); setSelectedCategory(''); setSelectedStatus('');
-    fetchBlogs(1, pagination.itemsPerPage, "", "", "");
+    fetchBlogs(1, pagination.itemsPerPage, '', '', '');
   };
 
   const fetchBlogById = async (id) => {
@@ -1209,14 +1571,11 @@ const BlogManagement = () => {
         const b = res.data;
         form.setFieldsValue({ title: b.title || '', subHeading: b.subHeading || '', tags: b.tags || [], category: b.category || 'Other', authorName: b.authorName || 'Admin', authorDesignation: b.authorDesignation || 'Content Writer' });
         const blogContent = b.content || '';
-        contentRef.current = blogContent;
-        setContentValue(blogContent);
-        setHeadings(extractHeadings(blogContent));
+        contentRef.current = blogContent; setContentValue(blogContent); setHeadings(extractHeadings(blogContent));
         setFeaturedImageList(b.featuredImage ? [{ uid: '-1', name: 'featured', status: 'done', url: b.featuredImage, preview: b.featuredImage }] : []);
         setCoverImageList(b.coverImage ? [{ uid: '-2', name: 'cover', status: 'done', url: b.coverImage, preview: b.coverImage }] : []);
         setAuthorImageList(b.authorImage ? [{ uid: '-3', name: 'author', status: 'done', url: b.authorImage, preview: b.authorImage }] : []);
-        setEditingId(id);
-        setModalVisible(true);
+        setEditingId(id); setModalVisible(true);
         setTimeout(() => loadDraft(), 100);
       } else message.error(res.message || 'Failed to fetch blog');
     } catch (e) { console.error(e); message.error('Failed to fetch blog'); }
@@ -1249,26 +1608,11 @@ const BlogManagement = () => {
     setSaving(true);
     try {
       const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([processImage(featuredImageList), processImage(coverImageList), processImage(authorImageList)]);
-
-   const cleanedContent = DOMPurify.sanitize(
-  cleanPastedContent(currentContent),
-  {
-    ALLOWED_TAGS: [
-      'p','br','strong','b','em','i','u',
-      'h1','h2','h3','h4',
-      'ul','ol','li',
-      'a','img',
-      'blockquote',
-      'pre','code',
-      'table','thead','tbody','tr','td','th',
-      'hr'
-    ],
-    ALLOWED_ATTR: [
-      'href','src','alt','title',
-      'target','rel','style'
-    ]
-  }
-);
+      const cleanedContent = DOMPurify.sanitize(currentContent, {
+        ALLOWED_TAGS: ['p','br','strong','b','em','i','u','s','strike','del','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th'],
+        ALLOWED_ATTR: ['href','src','alt','title','target','rel','style'],
+        ALLOW_DATA_ATTR: false,
+      });
       const payload = {
         title: values.title,
         subHeading: values.subHeading || extractExcerpt(cleanedContent, 160),
@@ -1283,17 +1627,11 @@ const BlogManagement = () => {
         coverImage: coverUrl,
       };
       if (targetStatus === 'published') payload.publishedAt = new Date().toISOString();
-
       const res = editingId
         ? await apiService.put(`/blogs/edit-blog-by-id?id=${editingId}`, payload)
         : await apiService.post('/blogs/create-blog', payload);
-
       if (res.success) {
-        notification.success({
-          message: <span style={{fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif"}}>{editingId ? 'Blog Updated' : 'Blog Created'}</span>,
-          description: <span style={{color: '#475569'}}>"{values.title}" {targetStatus === 'published' ? 'published' : 'saved as draft'} successfully</span>,
-          placement: 'topRight', duration: 4
-        });
+        notification.success({ message: <span style={{ fontWeight: 700, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{editingId ? 'Blog Updated' : 'Blog Created'}</span>, description: <span style={{ color: '#475569' }}>"{values.title}" {targetStatus === 'published' ? 'published' : 'saved as draft'} successfully</span>, placement: 'topRight', duration: 4 });
         localStorage.removeItem(`blog_draft_${editingId || 'new'}`);
         closeModal();
         fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus);
@@ -1311,7 +1649,7 @@ const BlogManagement = () => {
   };
 
   const handleCardPreview = async (record) => {
-    const hide = message.loading('Loading preview...', 0);
+    const hide = message.loading('Loading preview…', 0);
     try {
       const res = await apiService.get(`/blogs/get-blog-by-id?id=${record._id}`);
       showPreview(res.success && res.data ? res.data : record, false);
@@ -1338,100 +1676,81 @@ const BlogManagement = () => {
         readingTime: Math.max(1, Math.ceil((contentRef.current || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200)),
       });
     } else {
-      setPreviewBlogData({
-        ...blogData,
-        headings: extractHeadings(blogData?.content || ''),
-        readingTime: Math.max(1, Math.ceil((blogData?.content || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200))
-      });
+      setPreviewBlogData({ ...blogData, headings: extractHeadings(blogData?.content || ''), readingTime: Math.max(1, Math.ceil((blogData?.content || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200)) });
     }
     setPreviewModalVisible(true);
   };
 
   const closeModal = () => {
-    setModalVisible(false);
-    setEditingId(null);
-    setFeaturedImageList([]);
-    setCoverImageList([]);
-    setAuthorImageList([]);
-    contentRef.current = '';
-    setContentValue('');
-    setHeadings([]);
-    setSmartFillApplied(false);
-    setLastSaved(null);
+    setModalVisible(false); setEditingId(null);
+    setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
+    contentRef.current = ''; setContentValue(''); setHeadings([]);
+    setSmartFillApplied(false); setLastSaved(null);
     form.resetFields();
   };
 
   const openCreate = () => {
-    setEditingId(null);
-    form.resetFields();
-    setFeaturedImageList([]);
-    setCoverImageList([]);
-    setAuthorImageList([]);
-    contentRef.current = '';
-    setContentValue('');
-    setHeadings([]);
-    setSmartFillApplied(false);
-    setModalVisible(true);
+    setEditingId(null); form.resetFields();
+    setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
+    contentRef.current = ''; setContentValue(''); setHeadings([]);
+    setSmartFillApplied(false); setModalVisible(true);
     setTimeout(() => loadDraft(), 100);
   };
 
   const statCards = [
-    { label: 'Total Posts', value: stats.total, icon: <FileTextOutlined />, color: 'purple' },
-    { label: 'Published', value: stats.published, icon: <CheckCircleOutlined />, color: 'green' },
-    { label: 'Drafts', value: stats.drafts, icon: <SyncOutlined />, color: 'amber' },
-    { label: 'Total Views', value: stats.views, icon: <EyeOutlined />, color: 'blue' },
+    { label: 'Total Posts',  value: stats.total,     icon: <FileTextOutlined />,     color: 'purple' },
+    { label: 'Published',    value: stats.published,  icon: <CheckCircleOutlined />,  color: 'green'  },
+    { label: 'Drafts',       value: stats.drafts,     icon: <SyncOutlined />,         color: 'amber'  },
+    { label: 'Total Views',  value: stats.views,      icon: <EyeOutlined />,          color: 'blue'   },
   ];
 
   const PAGE_RANGE = Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
     .slice(Math.max(0, pagination.currentPage - 3), pagination.currentPage + 2);
 
-  // ══════════════════════════════════════════════
-  //  RENDER
-  // ══════════════════════════════════════════════
+  // ── Render ─────────────────────────────────────────────────────
   return (
     <>
       <style>{GLOBAL_STYLES}</style>
+
+      {/* Hidden file input for Import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".docx,.pdf,.txt,.html,.htm,.md,.markdown,.rtf"
+        style={{ display: 'none' }}
+        onChange={handleFileInputChange}
+      />
+
       <div className="bm-root">
-        {/* Header */}
+        {/* ── Header ── */}
         <div className="bm-header">
           <div>
             <h1 className="bm-header-title">
-              <AppstoreAddOutlined style={{ color: THEME.primary }} /> 
+              <AppstoreAddOutlined style={{ color: THEME.primary }} />
               Blog Management
             </h1>
-            <p className="bm-header-sub">Create, manage & publish — with smart paste & import from any file</p>
+            <p className="bm-header-sub">Create, manage & publish — smart paste + file import from Word, PDF, Google Docs</p>
           </div>
           <Button type="primary" size="large" icon={<PlusOutlined />} onClick={openCreate} className="bm-btn-primary">
             Create New Post
           </Button>
         </div>
 
-        {/* Stats */}
+        {/* ── Stats ── */}
         <div className="bm-stats">
           {statCards.map(s => (
             <div key={s.label} className="bm-stat-card">
-              <div className="bm-stat-top">
-                <div className="bm-stat-label">{s.label}</div>
-                <div className={`bm-stat-icon ${s.color}`}>{s.icon}</div>
-              </div>
+              <div className="bm-stat-top"><div className="bm-stat-label">{s.label}</div><div className={`bm-stat-icon ${s.color}`}>{s.icon}</div></div>
               <div className="bm-stat-value">{s.value.toLocaleString()}</div>
             </div>
           ))}
         </div>
 
-        {/* Filters */}
+        {/* ── Filters ── */}
         <div className="bm-filters">
-          <Input
-            size="large"
-            prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
-            placeholder="Search posts by title or tag..."
-            value={searchText}
-            onChange={handleSearch}
-            allowClear
-            style={{ flex: 1, minWidth: 200 }}
-          />
+          <Input size="large" prefix={<SearchOutlined style={{ color: '#94a3b8' }} />} placeholder="Search posts by title or tag…" value={searchText} onChange={handleSearch} allowClear style={{ flex: 1, minWidth: 200 }} />
           <Select size="large" placeholder="Category" value={selectedCategory || undefined} onChange={v => handleFilterChange('category', v)} allowClear style={{ flex: '1 1 150px', minWidth: 150 }}>
-            {[['AI','🤖 AI'],['Real Estate','🏠 Real Estate'],['PropTech','📱 PropTech'],['Technology','💻 Technology'],['Business','💼 Business'],['Mortgage','🏦 Mortgage'],['Landscaping','🌳 Landscaping'],['Other','📄 Other']].map(([v,l]) => <Option key={v} value={v}>{l}</Option>)}
+            {[['AI','🤖 AI'],['Real Estate','🏠 Real Estate'],['PropTech','📱 PropTech'],['Technology','💻 Technology'],['Business','💼 Business'],['Mortgage','🏦 Mortgage'],['Landscaping','🌳 Landscaping'],['Other','📄 Other']].map(([v, l]) => <Option key={v} value={v}>{l}</Option>)}
           </Select>
           <Select size="large" placeholder="Status" value={selectedStatus || undefined} onChange={v => handleFilterChange('status', v)} allowClear style={{ flex: '1 1 130px', minWidth: 130 }}>
             <Option value="published">✅ Published</Option>
@@ -1440,11 +1759,11 @@ const BlogManagement = () => {
           <Button size="large" icon={<UndoOutlined />} onClick={handleClearFilters} style={{ borderRadius: 10, borderColor: '#e2e8f0', color: '#64748b', flex: '1 1 auto', minWidth: 100, fontWeight: 600 }}>Clear</Button>
         </div>
 
-        {/* Blog List */}
+        {/* ── Blog List ── */}
         {loading ? (
           <div>
-            {[1,2,3].map(i => (
-              <Card key={i} style={{ borderRadius: 16, marginBottom: 20, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }} bodyStyle={{ padding: 24 }}>
+            {[1, 2, 3].map(i => (
+              <Card key={i} style={{ borderRadius: 16, marginBottom: 20, border: '1px solid #e2e8f0' }} bodyStyle={{ padding: 24 }}>
                 <Skeleton active avatar={{ size: 80, shape: 'square' }} paragraph={{ rows: 3 }} />
               </Card>
             ))}
@@ -1462,8 +1781,7 @@ const BlogManagement = () => {
                 <div className="bm-blog-thumb">
                   {record.featuredImage
                     ? <img src={record.featuredImage} alt={record.title} />
-                    : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 42, color: '#cbd5e1' }}><FileTextOutlined /></div>
-                  }
+                    : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 42, color: '#cbd5e1' }}><FileTextOutlined /></div>}
                 </div>
                 <div className="bm-blog-body">
                   <div>
@@ -1477,19 +1795,13 @@ const BlogManagement = () => {
                       <div className="bm-blog-actions">
                         <Tooltip title="Edit"><button className="bm-action-btn" onClick={() => fetchBlogById(record._id)}><EditOutlined /></button></Tooltip>
                         <Tooltip title="Preview"><button className="bm-action-btn" onClick={() => handleCardPreview(record)}><EyeOutlined /></button></Tooltip>
-                        <Popconfirm 
-                          title={<span style={{fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif"}}>Delete Post</span>} 
-                          description={<span style={{color: '#475569'}}>This action cannot be undone.</span>} 
-                          onConfirm={() => deleteBlog(record._id)} 
-                          okText="Delete" 
-                          okButtonProps={{ danger: true, style: { fontWeight: 600, borderRadius: 8 } }} 
-                          cancelButtonProps={{ style: { borderRadius: 8, fontWeight: 500 } }}>
+                        <Popconfirm title={<span style={{ fontWeight: 700 }}>Delete Post</span>} description="This action cannot be undone." onConfirm={() => deleteBlog(record._id)} okText="Delete" okButtonProps={{ danger: true, style: { fontWeight: 600, borderRadius: 8 } }} cancelButtonProps={{ style: { borderRadius: 8, fontWeight: 500 } }}>
                           <Tooltip title="Delete"><button className="bm-action-btn danger"><DeleteOutlined /></button></Tooltip>
                         </Popconfirm>
                       </div>
                     </div>
                     <div className="bm-blog-title">{record.title || 'Untitled Post'}</div>
-                    <div className="bm-blog-excerpt">{record.subHeading || 'No excerpt available...'}</div>
+                    <div className="bm-blog-excerpt">{record.subHeading || 'No excerpt available…'}</div>
                     <div className="bm-blog-tags">
                       {record.tags?.slice(0, 5).map(tag => <span key={tag} className="bm-tag">#{tag}</span>)}
                       {record.tags?.length > 5 && <span className="bm-tag">+{record.tags.length - 5}</span>}
@@ -1497,10 +1809,7 @@ const BlogManagement = () => {
                   </div>
                   <div className="bm-blog-footer">
                     <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                      <div className="bm-meta-item">
-                        <Avatar size={24} src={record.authorImage} icon={<UserOutlined />} style={{ background: '#e2e8f0', color: '#64748b' }} />
-                        <strong>{record.authorName || 'Admin'}</strong>
-                      </div>
+                      <div className="bm-meta-item"><Avatar size={24} src={record.authorImage} icon={<UserOutlined />} style={{ background: '#e2e8f0', color: '#64748b' }} /><strong>{record.authorName || 'Admin'}</strong></div>
                       <div className="bm-meta-item"><CalendarOutlined />{moment(record.createdAt).format('MMM DD, YYYY')}</div>
                     </div>
                     <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
@@ -1514,35 +1823,29 @@ const BlogManagement = () => {
 
             {/* Pagination */}
             <div className="bm-pagination">
-              <div className="bm-page-info">
-                Showing {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}–{Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalResults)} of {pagination.totalResults} posts
-              </div>
+              <div className="bm-page-info">Showing {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}–{Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalResults)} of {pagination.totalResults} posts</div>
               <div className="bm-page-btns">
-                <button className="bm-page-btn" disabled={pagination.currentPage === 1} onClick={() => fetchBlogs(pagination.currentPage - 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}>
-                  <ArrowLeftOutlined />
-                </button>
-                {PAGE_RANGE.map(p => (
-                  <button key={p} className={`bm-page-btn ${pagination.currentPage === p ? 'active' : ''}`} onClick={() => fetchBlogs(p, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}>{p}</button>
-                ))}
-                <button className="bm-page-btn" disabled={pagination.currentPage === pagination.totalPages} onClick={() => fetchBlogs(pagination.currentPage + 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}>
-                  <ArrowRightOutlined />
-                </button>
+                <button className="bm-page-btn" disabled={pagination.currentPage === 1} onClick={() => fetchBlogs(pagination.currentPage - 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}><ArrowLeftOutlined /></button>
+                {PAGE_RANGE.map(p => <button key={p} className={`bm-page-btn ${pagination.currentPage === p ? 'active' : ''}`} onClick={() => fetchBlogs(p, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}>{p}</button>)}
+                <button className="bm-page-btn" disabled={pagination.currentPage === pagination.totalPages} onClick={() => fetchBlogs(pagination.currentPage + 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}><ArrowRightOutlined /></button>
               </div>
             </div>
           </>
         )}
       </div>
 
-      {/* ─── CREATE / EDIT MODAL ─── */}
+      {/* ══════════════════════════════════════════════════════════════
+           CREATE / EDIT MODAL
+         ══════════════════════════════════════════════════════════════ */}
       <Modal
         title={
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
             <span>{editingId ? <><EditOutlined style={{ marginRight: 8 }} />Edit Post</> : <><RocketOutlined style={{ marginRight: 8 }} />Create New Post</>}</span>
             {lastSaved && autoSave && (
-              <div className="bm-autosave" style={{ marginRight: 32 }}>
-                <div className="bm-autosave-dot" />
+              <span style={{ fontSize: 12, color: '#64748b', fontWeight: 500, marginRight: 32 }}>
+                <CheckCircleOutlined style={{ color: '#10b981', marginRight: 4 }} />
                 Saved {moment(lastSaved).format('HH:mm:ss')}
-              </div>
+              </span>
             )}
           </div>
         }
@@ -1556,13 +1859,14 @@ const BlogManagement = () => {
         styles={{ maxHeight: '80vh', overflowY: 'auto' }}
       >
         <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ category: 'Other', authorName: 'Admin', authorDesignation: 'Content Writer' }}>
-          <Tabs defaultActiveKey="content" size="large" tabBarStyle={{ fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            {/* ─── CONTENT TAB ─── */}
+          <Tabs defaultActiveKey="content" size="large" tabBarStyle={{ fontWeight: 600, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+
+            {/* ── CONTENT TAB ── */}
             <TabPane tab={<span><EditOutlined />  Content</span>} key="content">
               <Row gutter={16}>
                 <Col span={24}>
                   <Form.Item name="title" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Post Title</span>} rules={[{ required: true, message: 'Title is required' }]}>
-                    <Input placeholder="Enter an engaging, SEO-friendly title..." size="large" style={{ borderRadius: 8, fontSize: 15, fontWeight: 500, padding: '10px 14px' }} />
+                    <Input placeholder="Enter an engaging, SEO-friendly title…" size="large" style={{ borderRadius: 8, fontSize: 15, fontWeight: 500, padding: '10px 14px' }} />
                   </Form.Item>
                 </Col>
               </Row>
@@ -1581,51 +1885,95 @@ const BlogManagement = () => {
                 </Col>
                 <Col xs={24} md={12}>
                   <Form.Item name="category" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Category</span>}>
-                    <Select size="large" placeholder="Select category" style={{fontWeight: 500}}>
-                      {[['AI','🤖'],['Real Estate','🏠'],['PropTech','📱'],['Technology','💻'],['Business','💼'],['Mortgage','🏦'],['Landscaping','🌳'],['Other','📄']].map(([v,e]) => <Option key={v} value={v}>{e} {v}</Option>)}
+                    <Select size="large" placeholder="Select category" style={{ fontWeight: 500 }}>
+                      {[['AI','🤖'],['Real Estate','🏠'],['PropTech','📱'],['Technology','💻'],['Business','💼'],['Mortgage','🏦'],['Landscaping','🌳'],['Other','📄']].map(([v, e]) => <Option key={v} value={v}>{e} {v}</Option>)}
                     </Select>
                   </Form.Item>
                 </Col>
               </Row>
 
+              {/* ════════════════════════════════════════════════════
+                   IMPORT FILE ZONE  (redesigned)
+                ════════════════════════════════════════════════════ */}
               <Form.Item label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Blog Content <span style={{ color: '#ef4444' }}>*</span></span>}>
-                
-                {/* 🆕 Updated notice with import button */}
-                <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginBottom: 16, borderLeft: '4px solid #8b5cf6' }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a', marginBottom: 4 }}>
-                    ✨ Smart Paste & Import (any file)
-                  </div>
-                  <div style={{ fontSize: 13, color: '#475569', fontWeight: 500 }}>
-                    Paste from Word / Google Docs, or
-                    <Button
-                      type="link"
-                      icon={<UploadOutlined />}
-                      onClick={handleImportClick}
-                      loading={importProcessing}
-                      style={{ padding: '0 4px', fontWeight: 600, height: 'auto' }}
+
+                <div className="bm-import-zone">
+                  {/* Top row: icon + title + button */}
+                  <div className="bm-import-zone-top">
+                    <div className="bm-import-zone-left">
+                      <div className="bm-import-icon">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="17 8 12 3 7 8"/>
+                          <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="bm-import-zone-title">Import file</p>
+                        <p className="bm-import-zone-sub">Bold, italic, lists and headings are preserved</p>
+                      </div>
+                    </div>
+                    <button
+                      className="bm-import-btn"
+                      disabled={fileImporting}
+                      onClick={() => fileInputRef.current?.click()}
+                      type="button"
                     >
-                      import a file
-                    </Button>
-                    (.txt, .html, .docx, .pdf and more – we convert it automatically)
+                      {fileImporting ? (
+                        <LoadingOutlined style={{ fontSize: 13 }} spin />
+                      ) : (
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="17 8 12 3 7 8"/>
+                          <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                      )}
+                      {fileImporting ? 'Importing…' : 'Choose file'}
+                    </button>
+                  </div>
+
+                  {/* Format badges row */}
+                  <div className="bm-formats-row">
+                    <span className="bm-formats-label">Supported</span>
+                    <span className="bm-format-badge docx">
+                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      DOCX
+                    </span>
+                    <span className="bm-format-badge pdf">
+                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      PDF
+                    </span>
+                    <span className="bm-format-badge md">
+                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      MD
+                    </span>
+                    <span className="bm-format-badge html">
+                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      HTML
+                    </span>
+                    <span className="bm-format-badge txt">TXT</span>
+                    <span className="bm-format-badge rtf">RTF</span>
+                  </div>
+
+                  {/* Smart paste hint strip */}
+                  <div className="bm-import-paste-hint">
+                    <div className="bm-import-paste-dot" />
+                    Smart paste active — copy from Word or Google Docs and paste directly into the editor below
                   </div>
                 </div>
 
+                {/* Alerts */}
                 {smartFillApplied && (
-                  <Alert message={<span style={{fontWeight: 600}}>✨ Smart Fill Applied — Category & tags auto-detected!</span>} type="success" showIcon closable onClose={() => setSmartFillApplied(false)} style={{ marginBottom: 12, borderRadius: 8 }} />
+                  <Alert message={<span style={{ fontWeight: 600 }}>✨ Smart Fill Applied — Category & tags auto-detected!</span>} type="success" showIcon closable onClose={() => setSmartFillApplied(false)} style={{ marginBottom: 12, borderRadius: 8 }} />
                 )}
                 {pasteProcessing && (
-                  <Alert message={<span style={{fontWeight: 600}}>⏳ Processing paste content...</span>} type="info" showIcon style={{ marginBottom: 12, borderRadius: 8 }} />
+                  <Alert message={<span style={{ fontWeight: 600 }}>⏳ Processing paste — preserving formatting…</span>} type="info" showIcon style={{ marginBottom: 12, borderRadius: 8 }} />
+                )}
+                {fileImporting && (
+                  <Alert message={<span style={{ fontWeight: 600 }}>📄 Importing file — extracting formatted content…</span>} type="info" showIcon icon={<Spin indicator={<LoadingOutlined />} />} style={{ marginBottom: 12, borderRadius: 8 }} />
                 )}
 
-                {/* Hidden file input – now accepts any file */}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileImport}
-                  style={{ display: 'none' }}
-                  accept="*/*"
-                />
-
+                {/* Editor wrapper — onPaste intercepts ALL rich pastes */}
                 <div
                   
                   style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}
@@ -1639,7 +1987,7 @@ const BlogManagement = () => {
                   />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, gap: 10 }}>
                   <Button
                     icon={<EyeOutlined />}
                     onClick={() => showPreview({}, true)}
@@ -1652,24 +2000,23 @@ const BlogManagement = () => {
               </Form.Item>
             </TabPane>
 
-            {/* ─── MEDIA TAB ─── */}
+            {/* ── MEDIA TAB ── */}
             <TabPane tab={<span><PictureOutlined />  Media</span>} key="media">
               <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginBottom: 24, borderLeft: '4px solid #3b82f6' }}>
                 <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>📸 Image Guidelines</div>
-                <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>Use high-quality images. Featured image shows in blog listings; Cover image is the full-width hero banner.</div>
+                <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>Featured image shows in blog listings; Cover image is the full-width hero banner.</div>
               </div>
-              
               <Row gutter={[32, 24]}>
                 <Col xs={24} md={12}>
-                  <UploadWithCrop fileList={featuredImageList} onChange={setFeaturedImageList} aspect={3/2} cropTitle="Crop Featured Image (3:2)" maxSizeMB={5} label="Featured Image (Card Thumbnail)" extra="Recommended: 1200 × 800px · Max 5MB" />
+                  <UploadWithCrop fileList={featuredImageList} onChange={setFeaturedImageList} aspect={3 / 2} cropTitle="Crop Featured Image (3:2)" maxSizeMB={5} label="Featured Image (Card Thumbnail)" extra="Recommended: 1200 × 800px · Max 5MB" />
                 </Col>
                 <Col xs={24} md={12}>
-                  <UploadWithCrop fileList={coverImageList} onChange={setCoverImageList} aspect={16/9} cropTitle="Crop Cover / Hero Image (16:9)" maxSizeMB={5} label="Cover Image (Hero Banner)" extra="Recommended: 1920 × 1080px · Max 5MB" />
+                  <UploadWithCrop fileList={coverImageList} onChange={setCoverImageList} aspect={16 / 9} cropTitle="Crop Cover / Hero Image (16:9)" maxSizeMB={5} label="Cover Image (Hero Banner)" extra="Recommended: 1920 × 1080px · Max 5MB" />
                 </Col>
               </Row>
             </TabPane>
 
-            {/* ─── AUTHOR TAB ─── */}
+            {/* ── AUTHOR TAB ── */}
             <TabPane tab={<span><UserOutlined />  Author</span>} key="author">
               <Row gutter={32} align="top">
                 <Col xs={24} md={14}>
@@ -1679,10 +2026,9 @@ const BlogManagement = () => {
                   <Form.Item name="authorDesignation" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Author Designation</span>}>
                     <Input prefix={<TagOutlined style={{ color: '#94a3b8' }} />} placeholder="e.g. Content Writer, Senior Editor, Guest Author" size="large" style={{ borderRadius: 8, fontWeight: 500 }} />
                   </Form.Item>
-                  
                   <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginTop: 24, borderLeft: '4px solid #10b981' }}>
                     <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>ℹ️ Author Info</div>
-                    <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>Author name, designation, and image appear below the post title. Optional for drafts, required for publishing.</div>
+                    <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>Optional for drafts, required for publishing.</div>
                   </div>
                 </Col>
                 <Col xs={24} md={10}>
@@ -1710,7 +2056,7 @@ const BlogManagement = () => {
         </Form>
       </Modal>
 
-      {/* ─── PREVIEW MODAL ─── */}
+      {/* ── PREVIEW MODAL ── */}
       <Modal
         open={previewModalVisible}
         onCancel={() => setPreviewModalVisible(false)}
