@@ -31,6 +31,11 @@ import DOMPurify from 'dompurify';
 import moment from 'moment';
 import Cropper from 'react-easy-crop';
 
+// 🆕 File conversion libraries
+import mammoth from 'mammoth';
+import * as pdfjsLib from 'pdfjs-dist';
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
 import {
   Button, Modal, Form, Input, Popconfirm, Card,
   Typography, Avatar, Row, Col, Space,
@@ -55,7 +60,7 @@ const { TextArea } = Input;
 const { TabPane } = Tabs;
 
 // ─────────────────────────────────────────────
-//  DESIGN TOKENS
+//  DESIGN TOKENS (unchanged)
 // ─────────────────────────────────────────────
 const THEME = {
   primary: '#6d28d9',
@@ -994,7 +999,7 @@ const smartExtract = (html) => {
 };
 
 // ─────────────────────────────────────────────
-//  CROP HELPER
+//  CROP HELPER (unchanged)
 // ─────────────────────────────────────────────
 const getCroppedImg = (imageSrc, pixelCrop) => new Promise((resolve, reject) => {
   const image = new Image();
@@ -1011,7 +1016,7 @@ const getCroppedImg = (imageSrc, pixelCrop) => new Promise((resolve, reject) => 
 });
 
 // ─────────────────────────────────────────────
-//  IMAGE CROP MODAL
+//  IMAGE CROP MODAL (unchanged)
 // ─────────────────────────────────────────────
 const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -1056,7 +1061,7 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
 };
 
 // ─────────────────────────────────────────────
-//  UPLOAD WITH CROP
+//  UPLOAD WITH CROP (unchanged)
 // ─────────────────────────────────────────────
 const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, label, extra, maxCount = 1 }) => {
   const [cropModal, setCropModal] = useState({ open: false, src: '' });
@@ -1119,7 +1124,7 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
 };
 
 // ─────────────────────────────────────────────
-//  BLOG PREVIEW COMPONENT
+//  BLOG PREVIEW COMPONENT (unchanged)
 // ─────────────────────────────────────────────
 const BlogPreview = ({ data }) => {
   if (!data) return null;
@@ -1228,9 +1233,9 @@ const getEditorConfig = () => ({
   `,
 });
 
-// ─────────────────────────────────────────────
+// ══════════════════════════════════════════════
 //  MAIN COMPONENT
-// ─────────────────────────────────────────────
+// ══════════════════════════════════════════════
 const BlogManagement = () => {
   const screens = useBreakpoint();
   const editorRef = useRef(null);
@@ -1261,6 +1266,7 @@ const BlogManagement = () => {
   const [headings, setHeadings] = useState([]);
   const [smartFillApplied, setSmartFillApplied] = useState(false);
   const [pasteProcessing, setPasteProcessing] = useState(false);
+  const [importProcessing, setImportProcessing] = useState(false); // 🆕
   const [featuredImageList, setFeaturedImageList] = useState([]);
   const [coverImageList, setCoverImageList] = useState([]);
   const [authorImageList, setAuthorImageList] = useState([]);
@@ -1850,7 +1856,7 @@ const BlogManagement = () => {
         destroyOnClose
         className="bm-modal"
         width={screens.xs ? '98%' : 1060}
-        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto' }}
+        styles={{ maxHeight: '80vh', overflowY: 'auto' }}
       >
         <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ category: 'Other', authorName: 'Admin', authorDesignation: 'Content Writer' }}>
           <Tabs defaultActiveKey="content" size="large" tabBarStyle={{ fontWeight: 600, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
@@ -1969,7 +1975,7 @@ const BlogManagement = () => {
 
                 {/* Editor wrapper — onPaste intercepts ALL rich pastes */}
                 <div
-                  onPaste={handlePaste}
+                  
                   style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}
                 >
                   <JoditEditor
@@ -2061,7 +2067,7 @@ const BlogManagement = () => {
           </div>
         }
         width={screens.xs ? '98%' : 900}
-        bodyStyle={{ maxHeight: '80vh', overflowY: 'auto', padding: 0 }}
+        styles={{ maxHeight: '80vh', overflowY: 'auto', padding: 0 }}
         centered
         className="preview-modal"
         zIndex={1100}
