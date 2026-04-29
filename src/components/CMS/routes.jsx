@@ -260,8 +260,8 @@ const roleSlugMap = {
   7: "freelancer",
   11: "accountant",
   12: "supervisor",
-  15: "agency",        // Agency
-  16: "agent",         // Agent
+  15: "agency",        
+  16: "agent",         
   17: "developer",
   18: "vault-admin",
   22: "vaultagent" ,
