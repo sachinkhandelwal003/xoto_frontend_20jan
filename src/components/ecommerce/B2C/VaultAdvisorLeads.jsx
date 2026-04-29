@@ -109,7 +109,7 @@ const StatCard = ({ icon: Icon, label, value, accent }) => (
 const needsDocs = (lead) => lead.referralType && lead.referralType !== 'Referral Only';
 
 /* ── Main Component ─────────────────────────────────────────────────────────── */
-const VaultLeads = () => {
+const VaultAdvisorLeads = () => {
   const navigate = useNavigate();
   const { user } = useSelector((s) => s.auth);
   const roleCode = user?.role?.code;
@@ -122,9 +122,8 @@ const VaultLeads = () => {
   const limit = 10;
 
   // API endpoint based on role
-  const apiEndpoint = isAdvisor 
-    ? '/vault/lead/advisor/my-leads' 
-    : '/vault/lead/my-leads';
+  const apiEndpoint =  '/vault/lead/advisor/my-leads' 
+   
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['vault-leads', page, isAdvisor],
@@ -431,4 +430,4 @@ const VaultLeads = () => {
   );
 };
 
-export default VaultLeads;
+export default VaultAdvisorLeads;

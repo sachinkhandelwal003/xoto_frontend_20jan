@@ -244,6 +244,9 @@ import GridAdvisorDashboard from "./pages/GridAdvisorDashboard";
 import GridAdvisorProfile from "./pages/dashboardPages/Profiles/GridAdvisorProfile";
 import OpsAssignedReview from "../ecommerce/vault/case/OpsAssignedReview";
 import VaultCreateadvisor from "../ecommerce/B2C/VaultCreateadviosor";
+import AdminManagecases from "../ecommerce/vault/case/AdminManagecases";
+import AdvisorLeads from "../ecommerce/vault/vaultadvisor";
+import VaultAdvisorLeads from "../ecommerce/B2C/VaultAdvisorLeads";
 
 
 
@@ -517,6 +520,8 @@ const CmsRoutes = () => {
 <Route path="AgentVaultlisting" element={<AgentVaultListing />} />
 <Route path="leads/create" element={<VaultCreateLeads />} />
 <Route path="leads" element={<VaultLeads />} />
+<Route path="leads/advisor" element={<AdvisorLeads />} />
+
 <Route path="leads/:leadId" element={<VaultLeadDetails />} />
 <Route path="leads/:leadId/documents" element={<VaultLeadDocuments />} />
 <Route path="/lead-documents/:leadId"element={<VaultAgentDocument/>} />
@@ -646,6 +651,8 @@ const CmsRoutes = () => {
 
             <Route path="/case/create" element={< CreateCase />} />
             <Route path="/case/view" element={< ViewCases />} />
+                        <Route path="/case/manage" element={< AdminManagecases />} />
+
                         <Route path="/case/queue/view" element={< QueueCases />} />
             <Route path="/case/assigned/all" element={< OpsAssignedcases />} />
 

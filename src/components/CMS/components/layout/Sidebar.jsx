@@ -461,6 +461,7 @@ const CUSTOM_ROLE_LINKS = {
         { title: "Create Cases", path: "/dashboard/{roleSlug}/case/create" },
         { title: "View Cases", path: "/dashboard/{roleSlug}/case/view" },
                 { title: "Process Cases", path: "/dashboard/{roleSlug}/case/view/all" },
+                { title: "Manage Cases", path: "/dashboard/{roleSlug}/case/manage" },
 
         // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
       ],
@@ -495,7 +496,7 @@ const CUSTOM_ROLE_LINKS = {
         path: "/dashboard/{roleSlug}/leads/create"
       },
       {
-  title: "All Leads",
+  title: "My  Leads",
   path: "/dashboard/{roleSlug}/leads" 
 }
     ]
@@ -584,7 +585,7 @@ const CUSTOM_ROLE_LINKS = {
   {
     title: "My Leads",
     icon : "fas fa-file-alt",
-    path : "/dashboard/{roleSlug}/leads",  
+    path : "/dashboard/{roleSlug}/leads/advisor",  
   },
    {
       title: "Proposals",
@@ -652,10 +653,10 @@ const roleSlugMap = {
   '22': "vaultagent",
   '21': "vaultpartner",
   '24': "GridAdvisor",
-  '23': "vault-advisor",
+  // '23': "vault-advisor",
   // '26': "vault-ops",
   // '26': "vault-advisor",
-  // '23': "vault-ops",
+  '23': "vault-ops",
   '25': "gridReferralPartner",
   '26': "vault-advisor",
   // '23': "vault-ops",
