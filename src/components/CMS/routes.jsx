@@ -245,7 +245,6 @@ import GridAdvisorDashboard from "./pages/GridAdvisorDashboard";
 import GridAdvisorProfile from "./pages/dashboardPages/Profiles/GridAdvisorProfile";
 
 
-
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
