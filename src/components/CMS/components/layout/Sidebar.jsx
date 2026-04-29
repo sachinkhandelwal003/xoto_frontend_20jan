@@ -71,17 +71,17 @@ const CUSTOM_ROLE_LINKS = {
   "1": [
 
   /* ── Listings & Approvals ── */
-  {
-    title: "Listings",
-    path: "/dashboard/{roleSlug}/property-list",
-    icon: "fas fa-building",
-    submenus: [
-      { title: "All Listings",       path: "/dashboard/{roleSlug}/property-list" },
-      { title: "Approval Queue",     path: "/dashboard/{roleSlug}/listings/approval-queue" },
-      { title: "Edit Review Queue",  path: "/dashboard/{roleSlug}/listings/edit-review-queue" },
-      { title: "Create Listing",     path: "/dashboard/{roleSlug}/listings/create" },
-    ]
-  },
+{
+  title: "Listings",
+  path: "/dashboard/{roleSlug}/property-list",
+  icon: "fas fa-building",
+  submenus: [
+    { title: "All Listings",          path: "/dashboard/{roleSlug}/admin/property" },
+    { title: "Approval Queue",        path: "/dashboard/{roleSlug}/listings/approval-queue" },
+    { title: "Edit Review Queue",     path: "/dashboard/{roleSlug}/listings/edit-review-queue" },
+    { title: "Create Rental Properties", path: "/dashboard/{roleSlug}/rental/properties" },
+  ]
+},
 
   /* ── Enquiry Handling ── */
   {
@@ -416,7 +416,7 @@ const CUSTOM_ROLE_LINKS = {
   submenus: [
     { 
       title: "Create Advisor", 
-      path: "/dashboard/{roleSlug}/advisor/create" 
+      path: "/dashboard/{roleSlug}/create/vault-advisor" 
     },
     { 
       title: "All Advisors", 
@@ -566,17 +566,17 @@ const CUSTOM_ROLE_LINKS = {
     {
       title: "Total Leads",
       icon: "fas fa-wallet",
-      path: "/dashboard/{roleSlug}/earnings",
+      path: "/dashboard/{roleSlug}/total-leads",
     },
     {
       title: "Active Leads",
       icon: "fas fa-user-cog",
-      path: "/dashboard/{roleSlug}/profile",
+      path: "/dashboard/{roleSlug}/active-leads",
     },
     {
       title: "Recent Leads",
       icon: "fas fa-user-cog",
-      path: "/dashboard/{roleSlug}/profile",
+      path: "/dashboard/{roleSlug}/recent-leads",
     }
   ],
 
@@ -668,8 +668,12 @@ const roleSlugMap = {
   '21': "vaultpartner",
   '24': "GridAdvisor",
   '23': "vault-advisor",
-  '26': "vault-ops",
+  // '26': "vault-ops",
+  // '26': "vault-advisor",
+  // '23': "vault-ops",
   '25': "gridReferralPartner",
+  '26': "vault-advisor",
+  // '23': "vault-ops",
   
    
  
@@ -690,8 +694,12 @@ const ROLE_MODULE_ORDER = {
   '15': ['Dashboard', 'Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
   '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners', 'Advisors', 'Mortgages'],
   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
+  // '21': ['Dashboard', 'Vault Partners', 'All Leads'],
+
+  '25':['Dashboard' , 'Total leads ' , 'Active Leads' , 'Recent Leads'],
+  '21': ['Dashboard','Create Lead',  'Vault Partners', 'All Leads',],
   '24': ['Dashboard', 'My Leads', 'Property Catalogue', 'Calculator', 'Leaderboard'],
-  '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],
+  // '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],
     '26': ['Dashboard', 'All Leads','Case','Proposals'],
     '23': ['Dashboard', 'Mortgage Cases'], 
 };
@@ -949,4 +957,4 @@ if (roleCode === '21' && partnerCategory !== 'individual') {
   );
 };
 
-export default Sidebar;
+export default Sidebar; 

@@ -97,7 +97,7 @@ export default function XotoLandingPage() {
           {/* CTA Button */}
           <Link
             to="/login"
-            className="mt-8 px-6 sm:px-10 py-3 sm:py-4 bg-[#5C039B] text-white font-semibold rounded-xl shadow-xl transition-all duration-300 hover:bg-purple-700 hover:scale-105 flex items-center gap-2 text-sm sm:text-base"
+            className="mt-8 px-6 sm:px-10 py-3 sm:py-4 bg-transparent border-2 text-white font-semibold rounded-xl shadow-xl transition-all duration-300 hover:bg-[#5C039B] hover:text-white hover:border-[#5C039B] hover:scale-105 flex items-center gap-2 text-sm sm:text-base"
           >
             {t("hero.cta")}
           </Link>

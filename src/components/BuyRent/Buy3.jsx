@@ -23,6 +23,49 @@ import {
 
 
 const { Option } = Select;
+const HOT_PROPERTIES_LIMIT = 6;
+const HOT_PROPERTIES_CACHE_KEY = "xoto_hot_properties";
+
+const readCachedHotProperties = () => {
+  try {
+    const cached = localStorage.getItem(HOT_PROPERTIES_CACHE_KEY);
+    const parsed = cached ? JSON.parse(cached) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const extractProperties = (res) => {
+  const candidates = [
+    res?.data,
+    res?.data?.data,
+    res?.data?.properties,
+    res?.properties,
+  ];
+
+  return candidates.find(Array.isArray) || [];
+};
+
+const transformProperty = (item) => ({
+  id: item._id,
+  imgUrl:
+    item.photos?.architecture?.[0] ||
+    item.photos?.interior?.[0] ||
+    item.photos?.other?.[0] ||
+    item.mainLogo ||
+    "https://via.placeholder.com/400x300?text=No+Image",
+  title: item.propertyName || "Unnamed Property",
+  price: item.price
+    ? `${item.currency || "AED"} ${Number(item.price).toLocaleString()}`
+    : "Price on Request",
+  location: item.area && item.city ? `${item.area}, ${item.city}` : "Dubai, UAE",
+  bedrooms: item.bedrooms || 0,
+  bathrooms: item.bathrooms || 0,
+  area: item.builtUpArea ? `${item.builtUpArea} ${item.builtUpAreaUnit || "sqft"}` : "N/A",
+  tag: item.propertySubType || item.transactionType || "Sell",
+  liked: false,
+});
 
 // 1. Strict Phone Length Rules
 const PHONE_LENGTH_RULES = {
@@ -71,8 +114,8 @@ const Property = () => {
   const { t } = useTranslation("buy3");
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [properties, setProperties] = useState([]);
-  const [fetchLoading, setFetchLoading] = useState(true);
+  const [properties, setProperties] = useState(() => readCachedHotProperties());
+  const [fetchLoading, setFetchLoading] = useState(() => readCachedHotProperties().length === 0);
   const [api, contextHolder] = notification.useNotification();
 
   // 2. Form State (Added location fields)
@@ -110,51 +153,39 @@ const Property = () => {
     });
   }, []);
 
+  useEffect(() => {
+  if (openModal) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "auto";
+  }
+
+  return () => {
+    document.body.style.overflow = "auto";
+  };
+}, [openModal]);
+
 useEffect(() => {
   const fetchProperties = async () => {
     try {
-      setFetchLoading(true);
-const res = await apiService.get("/properties/hot");
-      console.log("FULL RES:", res);
-      console.log("RES.DATA:", res?.data);
-      console.log("RES.DATA.DATA:", res?.data?.data);
-const list = Array.isArray(res?.data) ? res.data : [];
-
-      const transformedProperties = list.map((item) => ({
-        id: item._id,
-        imgUrl:
-          item.photos?.architecture?.[0] ||
-          item.photos?.interior?.[0]     ||
-          item.photos?.other?.[0]        ||
-          item.mainLogo                  ||
-          "https://via.placeholder.com/400x300?text=No+Image",
-        title:     item.propertyName || "Unnamed Property",
-        price:     item.price
-          ? `${item.currency || "AED"} ${Number(item.price).toLocaleString()}`
-          : "Price on Request",
-        location:  item.area && item.city
-          ? `${item.area}, ${item.city}`
-          : "Dubai, UAE",
-        bedrooms:  item.bedrooms  || 0,
-        bathrooms: item.bathrooms || 0,
-        area:      item.builtUpArea
-          ? `${item.builtUpArea} ${item.builtUpAreaUnit || "sqft"}`
-          : "N/A",
-        tag:   item.propertySubType || item.transactionType || "Sell",
-        liked: false,
-      }));
+      if (properties.length === 0) setFetchLoading(true);
+      const res = await apiService.get("/properties/hot", { limit: HOT_PROPERTIES_LIMIT });
+      const list = extractProperties(res).slice(0, HOT_PROPERTIES_LIMIT);
+      const transformedProperties = list.map(transformProperty);
 
       setProperties(transformedProperties);
+      localStorage.setItem(HOT_PROPERTIES_CACHE_KEY, JSON.stringify(transformedProperties));
     } catch (err) {
       console.error("Error fetching hot properties:", err);
       openNotification("error", "Failed to Load Properties", "Please try again later.");
-      setProperties([]);
+      if (properties.length === 0) setProperties([]);
     } finally {
       setFetchLoading(false);
     }
   };
 
   fetchProperties();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 
   // --- HANDLERS ---
@@ -225,10 +256,10 @@ if (phoneError) {
 }
 
 
-    if (!formData.occupation.trim()) { newErrors.occupation = "Required"; isValid = false; }
-    if (!formData.location_country) { newErrors.location_country = "Country Required"; isValid = false; }
-    if (!formData.state) { newErrors.state = "State Required"; isValid = false; }
-    if (citiesList.length > 0 && !formData.city) { newErrors.city = "City Required"; isValid = false; }
+    // if (!formData.occupation.trim()) { newErrors.occupation = "Required"; isValid = false; }
+    // if (!formData.location_country) { newErrors.location_country = "Country Required"; isValid = false; }
+    // if (!formData.state) { newErrors.state = "State Required"; isValid = false; }
+    // if (citiesList.length > 0 && !formData.city) { newErrors.city = "City Required"; isValid = false; }
 
     setErrors(newErrors);
     return isValid;
@@ -250,7 +281,7 @@ const handleSubmit = async (e) => {
   const finalLocationString = `${formData.city || stateName}, ${stateName}, ${countryName}`;
 
   const payload = {
-    type: "schedule_visit",
+    type: "hot_property",
     name: { first_name: formData.first_name.trim(), last_name: formData.last_name.trim() },
     mobile: {
       country_code: formData.country_code,
@@ -400,16 +431,16 @@ const handleSubmit = async (e) => {
                 </div>
 
                 {/* Occupation */}
-                <div className="relative">
+                {/* <div className="relative">
                   <input name="occupation" value={formData.occupation} onChange={handleChange} placeholder={t("form.occupation")} className={`premium-input pl-12 ${errors.occupation ? 'border-red-500 bg-red-50' : ''}`} />
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600"><Briefcase size={20} /></div>
                   {errors.occupation && <p className="text-red-500 text-xs mt-1 absolute">{errors.occupation}</p>}
-                </div>
+                </div> */}
 
                 {/* Location Dropdowns */}
                 <div className="space-y-4">
                     {/* Country */}
-                    <div className="relative">
+                    {/* <div className="relative">
                         <Select
                             placeholder="Select Country"
                             showSearch
@@ -424,11 +455,11 @@ const handleSubmit = async (e) => {
                             ))}
                         </Select>
                         {errors.location_country && <p className="text-red-500 text-xs mt-3 absolute">{errors.location_country}</p>}
-                    </div>
+                    </div> */}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 md:mt-6 p-3">
                         {/* State */}
-                        <div className="relative">
+                        {/* <div className="relative">
                             <Select
                                 placeholder="Select State"
                                 showSearch
@@ -443,10 +474,10 @@ const handleSubmit = async (e) => {
                                 ))}
                             </Select>
                             {errors.state && <p className="text-red-500 text-xs mt-2 absolute">{errors.state}</p>}
-                        </div>
+                        </div> */}
 
                         {/* City */}
-                        <div className="relative">
+                        {/* <div className="relative">
                             <Select
                                 placeholder="Select City"
                                 showSearch
@@ -461,7 +492,7 @@ const handleSubmit = async (e) => {
                                 ))}
                             </Select>
                             {errors.city && <p className="text-red-500 text-xs mt-3 absolute">{errors.city}</p>}
-                        </div>
+                        </div> */}
                     </div>
                 </div>
 

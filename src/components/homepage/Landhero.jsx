@@ -85,9 +85,8 @@ export default function HeroSection() {
   initial={{ opacity: 0, y: 30 }}
   animate={{ opacity: 1, y: 0 }}
   transition={{ duration: 0.8 }}
-  className="mb-6 heading-light"
-  style={{ fontSize: '54px', lineHeight: '1.15' }}
->
+ className="mb-6 heading-light text-[32px] leading-[1.2] md:text-[54px] md:leading-[1.15]"
+  >
   {t("hero.title")} <br />
   <span className="text-white">{t("hero.subtitle")}</span>
 </motion.h1>
@@ -129,7 +128,7 @@ export default function HeroSection() {
             transition={{ delay: 0.8 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-[var(--color-primary)] text-white px-12 py-4 rounded-lg text-lg shadow-xl"
+            className="bg-transparent text-white px-12 py-4 rounded-lg text-lg shadow-xl border-2 border-white/70 hover:bg-[#5C039B] hover:text-white hover:border-[#5C039B]"
           >
             {t("cta.estimate")}
           </motion.button>

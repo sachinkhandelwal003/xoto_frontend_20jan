@@ -80,14 +80,14 @@ const Ecommerce = () => {
     <div className="flex flex-row flex-nowrap gap-3 sm:gap-4 justify-center pt-2 sm:pt-4 max-w-sm sm:max-w-none mx-auto">
       <Link
         to="/ecommerce/filter"
-        className="bg-[var(--color-primary)] px-4 sm:px-8 py-2.5 sm:py-3 rounded-md shadow-lg text-sm sm:text-base flex-1 sm:flex-none whitespace-nowrap text-center"
+        className="bg-transparent text-white border-2 border-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-md shadow-lg text-sm sm:text-base flex-1 sm:flex-none whitespace-nowrap text-center hover:bg-[#5C039B] hover:text-white hover:border-[#5C039B] transition"
       >
         {t("hero.explore")}
       </Link>
 
       <Link
         to="/ecommerce/seller"
-        className="border-2 border-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-md hover:bg-white hover:text-black transition text-sm sm:text-base flex-1 sm:flex-none whitespace-nowrap text-center"
+        className="border-2 border-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-md hover:bg-[#5C039B] hover:text-white hover:border-[#5C039B] transition text-sm sm:text-base flex-1 sm:flex-none whitespace-nowrap text-center"
       >
         {t("hero.vendor")}
       </Link>

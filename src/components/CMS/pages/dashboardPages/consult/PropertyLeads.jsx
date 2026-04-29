@@ -10,7 +10,7 @@ import {
   CheckCircleOutlined, EyeOutlined, DeleteOutlined, BellOutlined,
   UsergroupAddOutlined, BankOutlined,
   EnvironmentOutlined, RiseOutlined, BuildOutlined, QuestionCircleOutlined,
-  SolutionOutlined
+  SolutionOutlined, FireOutlined
 } from '@ant-design/icons';
 import { apiService } from '../../../../../manageApi/utils/custom.apiservice';
 import { showSuccessAlert, showConfirmDialog } from '../../../../../manageApi/utils/sweetAlert';
@@ -31,6 +31,7 @@ const typeConfig = {
   buy: { label: 'Buy', color: 'blue', icon: <HomeOutlined /> },
   sell: { label: 'Sell', color: 'purple', icon: <DollarCircleOutlined /> },
   rent: { label: 'Rent', color: 'cyan', icon: <BankOutlined /> },
+  hot_property: { label: 'Hot Property', color: 'red', icon: <FireOutlined /> },
   schedule_visit: { label: 'Visit', color: 'orange', icon: <CalendarOutlined /> },
   partner: { label: 'Partner', color: 'green', icon: <UsergroupAddOutlined /> },
   mortgage: { label: 'Mortgage', color: 'gold', icon: <BankOutlined /> },
@@ -300,6 +301,12 @@ const PropertyLeads = () => {
           <Descriptions title="Visit Details" bordered column={1} size="small" className="bg-white p-4 rounded border">
             <Descriptions.Item label="Visitor Occupation">{lead.occupation || 'N/A'}</Descriptions.Item>
             <Descriptions.Item label="Current Location">{lead.location || 'N/A'}</Descriptions.Item>
+          </Descriptions>
+        );
+      case 'hot_property':
+        return (
+          <Descriptions title="Hot Property Details" bordered column={1} size="small" className="bg-white p-4 rounded border">
+            <Descriptions.Item label="Property Name">{lead.property_name || 'N/A'}</Descriptions.Item>
           </Descriptions>
         );
 

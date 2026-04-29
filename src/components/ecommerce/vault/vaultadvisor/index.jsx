@@ -214,9 +214,7 @@ const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
     fetchLeads(currentPage, itemsPerPage, applied);
 
   } catch (err) {
-    message.error(
-      err?.response?.data?.message || "Status update failed"
-    );
+   
   } finally {
     setStatusLoading(false);
   }

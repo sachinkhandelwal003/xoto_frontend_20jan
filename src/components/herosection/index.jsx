@@ -30,14 +30,42 @@ useEffect(() => {
     <section className="relative w-full min-h-[80vh] overflow-hidden flex items-center justify-center text-white pt-24 pb-16 md:pt-28 md:pb-20 xl:pt-32 xl:pb-24">
 
       {/* UAE FLAG — scales down on mobile */}
-      <div className="absolute top-[1px] left-0 z-10 w-[120px] sm:w-[200px] md:w-[280px] lg:w-[334px] pointer-events-none">
-        <img src={flag} alt="UAE Flag" className="w-full h-auto object-contain" style={{ maxHeight: '361px' }} />
-      </div>
+     <div className="absolute top-[1px] left-0 z-10 
+  w-[90px] 
+  sm:w-[110px] 
+  md:w-[150px] 
+  lg:w-[190px] 
+  xl:w-[230px] 
+  pointer-events-none">
+  
+  <img 
+    src={flag} 
+    alt="UAE Flag" 
+    className="w-full h-auto object-contain"
+  />
+</div>
 
       {/* EXCLUSIVE DEALS LAYER — scales down on mobile */}
-      <div className="absolute top-[0px] sm:top-[20px] md:top-[-13px] right-0 z-10 w-[100px] sm:w-[150px] md:w-[200px] lg:w-[242px] cursor-pointer">
-        <img src={layer} alt="Exclusive Deals" className="w-full h-auto object-contain" onClick={() => navigate("/Property#buy3")} />
-      </div>
+   <div className="absolute 
+  top-[0px] 
+  sm:top-[20px] 
+  md:top-[-10px] 
+  right-0 
+  z-10 
+  w-[60px] 
+  sm:w-[90px] 
+  md:w-[130px] 
+  lg:w-[160px] 
+  xl:w-[180px] 
+  cursor-pointer"
+>
+  <img 
+    src={layer} 
+    alt="Exclusive Deals" 
+    className="w-full h-auto object-contain"
+    onClick={() => navigate("/Property#buy3")}
+  />
+</div>
 
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/40 z-[1]" />
