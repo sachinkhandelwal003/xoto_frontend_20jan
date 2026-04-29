@@ -216,6 +216,10 @@ import VaultMortgageList from "../ecommerce/B2C/VaultMortgageList";
 import VaultMortgagedetail from "../ecommerce/B2C/VaultMortgagedetail";
 import MortgageOpsDashboard from "../ecommerce/B2C/MortgageOpsDashboard";
 import AdvisorDashboard from "../ecommerce/B2C/AdvisorDashboard";
+import IndividualLeadCreate from "../ecommerce/vault/individualpartner/IndividualLead";
+import AdvisorLeads from "../ecommerce/vault/vaultadvisor/index";
+import AdvisorLeadUploadDocuments from "../ecommerce/vault/vaultadvisor/UploadDocuments";
+import MortgageOpsCaseDetail from "../ecommerce/vault/case/OpsCaseDetails";
 
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
@@ -540,6 +544,9 @@ const CmsRoutes = () => {
 <Route path="advisor/dashboard" element={<AdvisorDashboard />} />
 
 
+{/* Mortgage ops case details */}
+
+<Route path= "mortgage-ops/case/:caseId" element={<MortgageOpsCaseDetail/>} />
 
 
 <Route path="vault/agent-leads" element={<VaultAgentLeadList />} />
