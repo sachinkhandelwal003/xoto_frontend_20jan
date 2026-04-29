@@ -538,21 +538,180 @@ const inlineFormat = (text) =>
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
 
 // ═══════════════════════════════════════════════════════════════════
-//  ③ RTF → PLAIN TEXT  (basic strip of RTF control codes)
+//  ③ RTF → PLAIN TEXT  (improved control-code stripper)
 // ═══════════════════════════════════════════════════════════════════
 const rtfToText = (rtf) => {
   if (!rtf) return '';
-  return rtf
-    .replace(/\{[^{}]*\}/g, '')           // simple groups
-    .replace(/\\[a-z]+\d*[ ]?/g, ' ')     // control words
-    .replace(/\\'[0-9a-f]{2}/gi, '')       // hex escapes
-    .replace(/[{}\\]/g, '')                // remaining braces/backslashes
-    .replace(/\s{2,}/g, '\n\n')
-    .trim();
+  let text = rtf;
+  // Remove RTF header and info groups
+  text = text.replace(/\{\\info[\s\S]*?\}/gi, '');
+  // Remove binary blobs (pictures etc.)
+  text = text.replace(/\{\\pict[\s\S]*?\}/gi, '');
+  // Decode bold/italic markers before stripping (rough)
+  text = text.replace(/\\b\s+([^\\{]+)/g, '**$1**');
+  text = text.replace(/\\i\s+([^\\{]+)/g, '_$1_');
+  // Paragraph breaks
+  text = text.replace(/\\par[\s\r\n]/g, '\n\n');
+  text = text.replace(/\\line[\s\r\n]/g, '\n');
+  // Remove all other control words and groups
+  text = text.replace(/\{[^{}]*\}/g, '');
+  text = text.replace(/\\[a-z]+\-?\d*\s?/gi, '');
+  text = text.replace(/\\'[0-9a-f]{2}/gi, '');
+  text = text.replace(/[{}\\]/g, '');
+  // Collapse whitespace
+  text = text.replace(/\r\n|\r/g, '\n');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  return text.trim();
 };
 
 // ═══════════════════════════════════════════════════════════════════
-//  ④ FILE → HTML  (dispatches by extension)
+//  ④ POST-PROCESS HTML — normalise after any import/parse
+//     • removes empty paragraphs & nbsp-only lines
+//     • merges adjacent same-type lists
+//     • unwraps pointless wrapper divs
+//     • detects plain-text list patterns and converts them
+//     • final DOMPurify pass
+// ═══════════════════════════════════════════════════════════════════
+const postProcessHtml = (html) => {
+  if (!html || !html.trim()) return '';
+
+  const div = document.createElement('div');
+  div.innerHTML = html;
+
+  // ── 1. Remove dangerous / structural noise ──────────────────────
+  div.querySelectorAll('script,iframe,style,link,meta,head').forEach(el => el.remove());
+
+  // ── 2. Unwrap wrapper divs that serve no purpose ────────────────
+  // A div that only wraps a single block element → hoist the child
+  let changed = true;
+  while (changed) {
+    changed = false;
+    div.querySelectorAll('div').forEach(d => {
+      const blockTags = ['P','H1','H2','H3','H4','H5','H6','UL','OL','BLOCKQUOTE','PRE','HR','TABLE'];
+      const kids = Array.from(d.childNodes).filter(n =>
+        n.nodeType === Node.ELEMENT_NODE || (n.nodeType === Node.TEXT_NODE && n.textContent.trim())
+      );
+      if (kids.length === 1 && blockTags.includes(kids[0].nodeName)) {
+        const parent = d.parentNode;
+        if (parent) {
+          while (d.firstChild) parent.insertBefore(d.firstChild, d);
+          parent.removeChild(d);
+          changed = true;
+        }
+      }
+    });
+  }
+
+  // ── 3. Remove empty / whitespace-only / nbsp-only paragraphs ────
+  div.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6').forEach(el => {
+    const text = el.textContent.replace(/\u00a0/g, '').trim();
+    if (!text && !el.querySelector('img, svg, picture')) el.remove();
+  });
+
+  // ── 4. Detect plain-text bullet patterns inside <p> tags ────────
+  //    e.g.  <p>• Item one</p>  or  <p>- Item</p>  or  <p>* Item</p>
+  const bulletRe = /^[\s]*([•·▪▸◦\-\*])\s+(.+)$/;
+  const numRe    = /^[\s]*(\d+)[.)]\s+(.+)$/;
+
+  // Collect consecutive bullet <p>s and convert to <ul>/<ol>
+  const children = Array.from(div.children);
+  let i = 0;
+  while (i < children.length) {
+    const el = children[i];
+    if (el.tagName === 'P') {
+      const txt = el.textContent.trim();
+      if (bulletRe.test(txt)) {
+        // Collect run of bullet paragraphs
+        const ul = document.createElement('ul');
+        while (i < children.length && bulletRe.test(children[i]?.textContent?.trim())) {
+          const m = children[i].textContent.trim().match(bulletRe);
+          const li = document.createElement('li');
+          li.innerHTML = inlineFormat(m[2]);
+          ul.appendChild(li);
+          const old = children[i];
+          i++;
+          old.remove();
+        }
+        div.insertBefore(ul, div.children[i] || null);
+        children.splice(i - ul.children.length, ul.children.length, ul);
+        continue;
+      }
+      if (numRe.test(txt)) {
+        const ol = document.createElement('ol');
+        while (i < children.length && numRe.test(children[i]?.textContent?.trim())) {
+          const m = children[i].textContent.trim().match(numRe);
+          const li = document.createElement('li');
+          li.innerHTML = inlineFormat(m[2]);
+          ol.appendChild(li);
+          const old = children[i];
+          i++;
+          old.remove();
+        }
+        div.insertBefore(ol, div.children[i] || null);
+        children.splice(i - ol.children.length, ol.children.length, ol);
+        continue;
+      }
+    }
+    i++;
+  }
+
+  // ── 5. Merge adjacent lists of the same type ────────────────────
+  div.querySelectorAll('ul + ul, ol + ol').forEach(list => {
+    const prev = list.previousElementSibling;
+    if (prev && prev.tagName === list.tagName) {
+      while (list.firstChild) prev.appendChild(list.firstChild);
+      list.remove();
+    }
+  });
+
+  // ── 6. Convert ALL-CAPS short lines → <h2> (common in PDF exports)
+  div.querySelectorAll('p, div').forEach(el => {
+    const txt = el.textContent.trim();
+    if (
+      txt.length > 3 && txt.length < 80 &&
+      txt === txt.toUpperCase() &&
+      !/[.!?,;:]{2,}/.test(txt) &&        // not a sentence
+      !el.querySelector('img')
+    ) {
+      const h2 = document.createElement('h2');
+      h2.textContent = txt.charAt(0) + txt.slice(1).toLowerCase();
+      el.parentNode?.replaceChild(h2, el);
+    }
+  });
+
+  // ── 7. Detect short standalone bold lines → headings ────────────
+  div.querySelectorAll('p').forEach(el => {
+    const kids = Array.from(el.childNodes);
+    if (
+      kids.length === 1 &&
+      kids[0].nodeType === Node.ELEMENT_NODE &&
+      kids[0].tagName === 'STRONG'
+    ) {
+      const txt = kids[0].textContent.trim();
+      if (txt.length > 3 && txt.length < 100 && !txt.endsWith('.')) {
+        const h3 = document.createElement('h3');
+        h3.textContent = txt;
+        el.parentNode?.replaceChild(h3, el);
+      }
+    }
+  });
+
+  // ── 8. Final DOMPurify sanitisation ─────────────────────────────
+  return DOMPurify.sanitize(div.innerHTML, {
+    ALLOWED_TAGS: [
+      'p','br','strong','em','u','s','del',
+      'h1','h2','h3','h4','h5','h6',
+      'ul','ol','li','a','img',
+      'blockquote','pre','code','hr',
+      'table','thead','tbody','tr','td','th',
+    ],
+    ALLOWED_ATTR: ['href','src','alt','title','target','rel','style'],
+    ALLOW_DATA_ATTR: false,
+  });
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  ⑤ FILE → HTML  (dispatches by extension, then post-processes)
 // ═══════════════════════════════════════════════════════════════════
 const convertFileToHtml = async (file) => {
   const name = file.name || '';
@@ -571,25 +730,37 @@ const convertFileToHtml = async (file) => {
       { arrayBuffer },
       {
         styleMap: [
-          "p[style-name='Heading 1'] => h1:fresh",
-          "p[style-name='Heading 2'] => h2:fresh",
-          "p[style-name='Heading 3'] => h3:fresh",
-          "p[style-name='Heading 4'] => h4:fresh",
-          "p[style-name='Quote']     => blockquote:fresh",
-          "b                         => strong",
-          "i                         => em",
+          // Common heading names across Word versions / languages
+          "p[style-name='Heading 1']          => h1:fresh",
+          "p[style-name='Heading 2']          => h2:fresh",
+          "p[style-name='Heading 3']          => h3:fresh",
+          "p[style-name='Heading 4']          => h4:fresh",
+          "p[style-name='Heading 5']          => h5:fresh",
+          "p[style-name='Heading 6']          => h6:fresh",
+          "p[style-name='heading 1']          => h1:fresh",
+          "p[style-name='heading 2']          => h2:fresh",
+          "p[style-name='heading 3']          => h3:fresh",
+          "p[style-name='Title']              => h1:fresh",
+          "p[style-name='Subtitle']           => h2:fresh",
+          "p[style-name='Quote']              => blockquote:fresh",
+          "p[style-name='Intense Quote']      => blockquote:fresh",
+          "p[style-name='List Paragraph']     => p:fresh",
+          // Inline formatting
+          "b                                  => strong",
+          "i                                  => em",
+          "u                                  => u",
+          "strike                             => s",
         ],
         convertImage: mammoth.images.imgElement(img =>
           img.read('base64').then(data => ({
             src: `data:${img.contentType};base64,${data}`,
           }))
         ),
+        ignoreEmptyParagraphs: true,
       }
     );
-    if (result.messages?.length) {
-      console.info('[mammoth warnings]', result.messages);
-    }
-    return sanitiseRegularHtml(result.value);
+    if (result.messages?.length) console.info('[mammoth warnings]', result.messages);
+    return postProcessHtml(result.value);
   }
 
   // ── PDF via pdfjs-dist ──────────────────────────────────────────
@@ -597,11 +768,9 @@ const convertFileToHtml = async (file) => {
     let pdfjsLib;
     try {
       pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
-      // Use CDN worker so no extra webpack config needed
       pdfjsLib.GlobalWorkerOptions.workerSrc =
         `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
     } catch {
-      // Fallback: try to import default build
       try {
         pdfjsLib = await import('pdfjs-dist');
         pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -613,52 +782,131 @@ const convertFileToHtml = async (file) => {
 
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-    const pageHtmlChunks = [];
+    const allLines = [];  // { text, fontSize, bold, y }
 
     for (let p = 1; p <= pdf.numPages; p++) {
       const page = await pdf.getPage(p);
-      const textContent = await page.getTextContent();
+      const textContent = await page.getTextContent({ includeMarkedContent: false });
 
-      // Group items into lines based on y-position
-      const lineMap = {};
-      textContent.items.forEach(item => {
+      // Collect items with font size info
+      const rawItems = textContent.items.filter(it => it.str?.trim());
+
+      // Group by Y position (same line = same rounded Y)
+      const yMap = {};
+      rawItems.forEach(item => {
         const y = Math.round(item.transform[5]);
-        if (!lineMap[y]) lineMap[y] = [];
-        lineMap[y].push(item);
+        if (!yMap[y]) yMap[y] = [];
+        yMap[y].push(item);
       });
 
-      const sortedYs = Object.keys(lineMap)
+      // Sort Y top→bottom and build line objects
+      Object.keys(yMap)
         .map(Number)
-        .sort((a, b) => b - a); // top-to-bottom
+        .sort((a, b) => b - a)
+        .forEach(y => {
+          const items = yMap[y];
+          const text = items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
+          if (!text) return;
+          // Estimate fontSize from transform matrix (element [3] = scaleY)
+          const fontSize = Math.abs(items[0]?.transform?.[3] || 12);
+          const isBold = (items[0]?.fontName || '').toLowerCase().includes('bold');
+          allLines.push({ text, fontSize, isBold, pageBreakBefore: y > 700 && p > 1 });
+        });
 
-      const lines = sortedYs.map(y =>
-        lineMap[y].map(i => i.str).join(' ').trim()
-      ).filter(Boolean);
-
-      // Group consecutive lines into paragraphs (blank line = new paragraph)
-      let para = [];
-      lines.forEach(line => {
-        if (line) {
-          para.push(line);
-        } else if (para.length) {
-          pageHtmlChunks.push(`<p>${para.join(' ')}</p>`);
-          para = [];
-        }
-      });
-      if (para.length) pageHtmlChunks.push(`<p>${para.join(' ')}</p>`);
+      // Page separator (blank line between pages)
+      allLines.push({ text: '', fontSize: 0, isBold: false, separator: true });
     }
 
-    return pageHtmlChunks.join('\n');
+    // Determine "body" font size (mode of all sizes)
+    const sizeFreq = {};
+    allLines.forEach(l => {
+      if (l.fontSize > 0) sizeFreq[Math.round(l.fontSize)] = (sizeFreq[Math.round(l.fontSize)] || 0) + 1;
+    });
+    const bodyFontSize = parseFloat(
+      Object.entries(sizeFreq).sort((a, b) => b[1] - a[1])[0]?.[0] || 12
+    );
+
+    // Convert lines → HTML
+    const htmlParts = [];
+    let paraBuffer = [];
+
+    const flushPara = () => {
+      if (!paraBuffer.length) return;
+      htmlParts.push(`<p>${paraBuffer.join(' ')}</p>`);
+      paraBuffer = [];
+    };
+
+    allLines.forEach(line => {
+      if (!line.text || line.separator) {
+        flushPara();
+        return;
+      }
+
+      const txt = line.text.trim();
+      const fs  = Math.round(line.fontSize);
+      const bodyFs = Math.round(bodyFontSize);
+
+      // Heading detection by font size relative to body
+      if (fs >= bodyFs * 1.8 || (fs >= bodyFs * 1.4 && line.isBold && txt.length < 80)) {
+        flushPara();
+        htmlParts.push(`<h1>${txt}</h1>`);
+        return;
+      }
+      if (fs >= bodyFs * 1.4 || (fs >= bodyFs * 1.2 && line.isBold && txt.length < 80)) {
+        flushPara();
+        htmlParts.push(`<h2>${txt}</h2>`);
+        return;
+      }
+      if (fs >= bodyFs * 1.15 && line.isBold && txt.length < 100) {
+        flushPara();
+        htmlParts.push(`<h3>${txt}</h3>`);
+        return;
+      }
+
+      // Bullet detection
+      const bulletMatch = txt.match(/^([•·▪▸◦\-\*])\s+(.+)$/);
+      const numMatch    = txt.match(/^(\d+)[.)]\s+(.+)$/);
+      if (bulletMatch) {
+        flushPara();
+        htmlParts.push(`<ul><li>${bulletMatch[2]}</li></ul>`);
+        return;
+      }
+      if (numMatch) {
+        flushPara();
+        htmlParts.push(`<ol><li>${numMatch[2]}</li></ol>`);
+        return;
+      }
+
+      // Regular body text → accumulate into paragraph
+      // End paragraph when line ends with full stop / question / exclamation
+      paraBuffer.push(line.isBold ? `<strong>${txt}</strong>` : txt);
+      if (/[.!?:]\s*$/.test(txt) && txt.length > 40) flushPara();
+    });
+
+    flushPara();
+    return postProcessHtml(htmlParts.join('\n'));
   }
 
   // ── Plain text ──────────────────────────────────────────────────
   if (ext === 'txt') {
     const text = await file.text();
-    return text
+    // Detect if it looks like Markdown (has # headings or * bullets)
+    if (/^#{1,6}\s/m.test(text) || /^\s*[-*] /m.test(text)) {
+      return postProcessHtml(markdownToHtml(text));
+    }
+    const html = text
       .split(/\n\n+/)
       .filter(p => p.trim())
-      .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+      .map(block => {
+        const trimmed = block.trim();
+        // Short line, no period → might be a heading
+        if (trimmed.length < 80 && !trimmed.includes('.') && trimmed === trimmed.toUpperCase()) {
+          return `<h2>${trimmed.charAt(0) + trimmed.slice(1).toLowerCase()}</h2>`;
+        }
+        return `<p>${trimmed.replace(/\n/g, ' ')}</p>`;
+      })
       .join('\n');
+    return postProcessHtml(html);
   }
 
   // ── HTML / HTM ─────────────────────────────────────────────────
@@ -666,24 +914,26 @@ const convertFileToHtml = async (file) => {
     const text = await file.text();
     const bodyMatch = text.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
     const raw = bodyMatch ? bodyMatch[1] : text;
-    return sanitiseRegularHtml(raw);
+    return postProcessHtml(cleanExternalHtml(raw));
   }
 
   // ── Markdown ───────────────────────────────────────────────────
   if (ext === 'md' || ext === 'markdown') {
     const text = await file.text();
-    return markdownToHtml(text);
+    return postProcessHtml(markdownToHtml(text));
   }
 
   // ── RTF ────────────────────────────────────────────────────────
   if (ext === 'rtf') {
     const text = await file.text();
     const plain = rtfToText(text);
-    return plain
+    // After stripping, treat as plain text
+    const html = plain
       .split(/\n\n+/)
       .filter(p => p.trim())
-      .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+      .map(p => `<p>${p.replace(/\n/g, ' ')}</p>`)
       .join('\n');
+    return postProcessHtml(html);
   }
 
   throw new Error(`Unsupported file type: .${ext}`);
@@ -1021,13 +1271,14 @@ const BlogManagement = () => {
     if (!html) return;
     const joditInstance = editorRef.current?.jodit || editorRef.current;
     if (joditInstance?.s?.insertHTML) {
+      joditInstance.s.focus();
+      joditInstance.s.setCursorAfter(joditInstance.editor.lastChild || joditInstance.editor);
       joditInstance.s.insertHTML(html);
       const newVal = joditInstance.value;
       contentRef.current = newVal;
       setContentValue(newVal);
       setHeadings(extractHeadings(newVal));
     } else {
-      // Fallback: append
       const newVal = (contentRef.current || '') + html;
       contentRef.current = newVal;
       setContentValue(newVal);
@@ -1035,8 +1286,12 @@ const BlogManagement = () => {
     }
   }, []);
 
-  // ── Helper: replace full editor content ────────────────────────
   const replaceEditorContent = useCallback((html) => {
+    if (!html) return;
+    const joditInstance = editorRef.current?.jodit || editorRef.current;
+    if (joditInstance && typeof joditInstance.value !== 'undefined') {
+      joditInstance.value = html;
+    }
     contentRef.current = html;
     setContentValue(html);
     setHeadings(extractHeadings(html));
