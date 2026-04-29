@@ -37,7 +37,7 @@ const Second = () => {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
           
           {/* 1. MODE BUTTONS */}
-          <div className="flex justify-center mb-12">
+          {/* <div className="flex justify-center mb-12">
             <div
               className="
                 flex flex-nowrap sm:flex-wrap
@@ -74,7 +74,7 @@ const Second = () => {
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* 2. MAIN CONTENT ROW */}
           <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16 mb-16">

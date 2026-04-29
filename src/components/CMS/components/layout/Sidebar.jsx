@@ -560,6 +560,11 @@ const CUSTOM_ROLE_LINKS = {
     title: "My Leads",
     icon: "fas fa-users",
     path: "/dashboard/{roleSlug}/gridAdvisorLeads",
+  },
+  {
+    title: "Property Catalogue",
+    icon: "fas fa-building",
+    path: "/dashboard/{roleSlug}/property-catalogue",
   }
 ],
 // Baaki purane roles ke neeche ye paste karo:
@@ -614,25 +619,52 @@ const CUSTOM_ROLE_LINKS = {
 
     },
 ],
+// "23": [
+   
+//     {
+//       title: "Case",
+//       icon: "fas fa-folder-open",
+//       path: "/dashboard/{roleSlug}/cases",
+//       submenus: [
+//         { title: "Queue Cases", path: "/dashboard/{roleSlug}/case/queue/view" },
+//                 { title: "My Assigned Cases", path: "/dashboard/{roleSlug}/case/assigned/all" },
+
+//         // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+//       ],
+
+//     },
+// ],
+
+
 "23": [
- 
-  
-
-       
-    {
-      title: "Case",
-      icon: "fas fa-folder-open",
-      path: "/dashboard/{roleSlug}/cases",
-      submenus: [
-        { title: "Queue Cases", path: "/dashboard/{roleSlug}/case/queue/view" },
-                { title: "My Assigned Cases", path: "/dashboard/{roleSlug}/case/assigned/all" },
-
-        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
-      ],
-
-    },
+  {
+    title: "Mortgage Cases",
+    icon: "fas fa-file-invoice-dollar",   // same icon as mortgage, or use fas fa-gavel
+    path: "/dashboard/{roleSlug}/mortgage-ops",
+    submenus: [
+      {
+        title: "All Cases",
+        path: "/dashboard/{roleSlug}/mortgage-ops/case/:caseId"
+      },
+      // Optional: Add a direct case detail link if needed, but usually you'd navigate from the list.
+    ]
+  } 
 ],
 
+"23": [
+  {
+    title: "Mortgage Cases",
+    icon: "fas fa-file-invoice-dollar",   // same icon as mortgage, or use fas fa-gavel
+    path: "/dashboard/{roleSlug}/mortgage-ops",
+    submenus: [
+      {
+        title: "All Cases",
+        path: "/dashboard/{roleSlug}/mortgage-ops/case/:caseId"
+      },
+      // Optional: Add a direct case detail link if needed, but usually you'd navigate from the list.
+    ]
+  } 
+],
 
 };
 
@@ -687,6 +719,7 @@ const ROLE_MODULE_ORDER = {
   '24': ['Dashboard', 'My Leads', 'Property Catalogue', 'Calculator', 'Leaderboard'],
   // '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],
     '26': ['Dashboard', 'All Leads','Case','Proposals'],
+    '23': ['Dashboard', 'Mortgage Cases'], 
 };
 
 
