@@ -809,8 +809,11 @@ const getEditorConfig = () => ({
    askBeforePasteHTML: false,
   askBeforePasteFromWord: false,
   defaultActionOnPaste: "insert_as_html",
-processPasteHTML: false,
-
+processPasteHTML: true,
+processPasteHTMLFunction: (html) => {
+  // This runs AFTER Jodit's default cleaning – we do our own deep cleaning.
+  return cleanPastedContent(html);
+},
 
   removeButtons: ['file', 'video', 'print', 'about'],
   spellcheck: true,
