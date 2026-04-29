@@ -559,6 +559,11 @@ const CUSTOM_ROLE_LINKS = {
     title: "My Leads",
     icon: "fas fa-users",
     path: "/dashboard/{roleSlug}/gridAdvisorLeads",
+  },
+  {
+    title: "Property Catalogue",
+    icon: "fas fa-building",
+    path: "/dashboard/{roleSlug}/property-catalogue",
   }
 ],
 // Baaki purane roles ke neeche ye paste karo:
