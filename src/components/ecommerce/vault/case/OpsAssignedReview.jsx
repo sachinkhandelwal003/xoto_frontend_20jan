@@ -488,84 +488,145 @@ const OpsAssignedReview = () => {
   };
 
   // Update case status with loading animation - FIXED to use correct API endpoint
-  const handleUpdateStatus = async (status, shouldCloseModal = true) => {
-    if (!status) return;
+ // Update case status with loading animation - FIXED to handle all amounts correctly
+const handleUpdateStatus = async (status, shouldCloseModal = true) => {
+  if (!status) return;
+  
+  // Set specific loading state for Under Review
+  if (status === 'Under Review') {
+    setUnderReviewLoading(true);
+  }
+  
+  setUpdating(true);
+  try {
+    const payload = {
+      status: status,
+      notes: statusNotes
+    };
     
-    // Set specific loading state for Under Review
-    if (status === 'Under Review') {
-      setUnderReviewLoading(true);
+    // ✅ Handle Bank Application - Bank Reference Number
+    if (status === 'Bank Application' && bankReference) {
+      payload.bankReference = bankReference;
     }
     
-    setUpdating(true);
-    try {
-      const payload = {
-        status: status,
-        notes: statusNotes
-      };
-      
-      if (status === 'Bank Application' && bankReference) {
-        payload.bankReference = bankReference;
-      }
-      
-      if (status === 'Disbursed' && approvedAmount) {
-        payload.approvedAmount = parseFloat(approvedAmount);
-      }
-
-      // Use the update status endpoint
-      const response = await apiService.put(`/vault/cases/${caseId}/status`, payload);
-      
-      if (response?.success) {
-        const statusMessages = {
-          'Pre-Approved': `✅ Case Pre-Approved! Amount: ${approvedAmount ? `AED ${approvedAmount}` : 'Pending'}`,
-          'Valuation': `🏠 Valuation requested from bank.`,
-          'FOL Processed': `📄 FOL being processed by bank`,
-          'FOL Issued': `📨 FOL Issued! Amount: ${folAmount || approvedAmount || 'N/A'}`,
-          'FOL Signed': `✍️ FOL Signed by client`,
-          'Disbursed': `💰 Case Disbursed! Amount: ${approvedAmount || 'N/A'}`,
-          'Collecting Documentation': `📋 Additional documents requested from client`,
-          'Rejected': `❌ Case rejected by bank. Reason: ${statusNotes || 'N/A'}`,
-          'Lost': `📉 Case lost`,
-          'Under Review': `🔍 Case under review`,
-          'Bank Application': `🏦 Submitted to bank. Ref: ${bankReference || 'N/A'}`
-        };
-        
-        message.success(statusMessages[status] || `Case status updated to ${status}`);
-        
-        if (shouldCloseModal) {
-          setStatusModalVisible(false);
-        }
-        setSelectedStatus('');
-        setStatusNotes('');
-        setApprovedAmount('');
-        setBankReference('');
-        fetchData();
-        
-        if (status === 'Disbursed') {
-          setTimeout(() => {
-            message.success({
-              content: '🎉 Congratulations! Case disbursed successfully! 🎉',
-              duration: 5,
-            });
-          }, 500);
-        }
-        
-        // Clear Under Review loading after 2 seconds
-        if (status === 'Under Review') {
-          setTimeout(() => {
-            setUnderReviewLoading(false);
-          }, 2000);
-        }
+    // ✅ Handle Pre-Approved - Pre-Approved Amount
+    if (status === 'Pre-Approved' && approvedAmount) {
+      payload.approvedAmount = parseFloat(approvedAmount);
+    }
+    
+    // ✅ Handle FOL Issued - FOL Amount
+    if (status === 'FOL Issued' && folAmount) {
+      payload.approvedAmount = parseFloat(folAmount);
+    }
+    
+    // ✅ Handle Disbursed - Disbursed Amount
+    if (status === 'Disbursed' && approvedAmount) {
+      payload.disbursedAmount = parseFloat(approvedAmount);
+    }
+    
+    // ✅ Handle FOL Signed - No amount, just status
+    if (status === 'FOL Signed') {
+      // No amount needed, just status update
+    }
+    
+    // ✅ Handle Valuation - No amount, just status
+    if (status === 'Valuation') {
+      // No amount needed, just status update
+    }
+    
+    // ✅ Handle FOL Processed - No amount, just status
+    if (status === 'FOL Processed') {
+      // No amount needed, just status update
+    }
+    
+    // Use the update status endpoint
+    const response = await apiService.put(`/vault/cases/${caseId}/status`, payload);
+    
+    if (response?.success) {
+      // Display appropriate success messages with amounts
+      let successMessage = '';
+      if (status === 'Pre-Approved') {
+        successMessage = approvedAmount 
+          ? `✅ Case Pre-Approved! Amount: AED ${parseFloat(approvedAmount).toLocaleString()}`
+          : '✅ Case Pre-Approved!';
+      } else if (status === 'FOL Issued') {
+        successMessage = folAmount 
+          ? `📨 FOL Issued! Amount: AED ${parseFloat(folAmount).toLocaleString()}`
+          : '📨 FOL Issued!';
+      } else if (status === 'Disbursed') {
+        successMessage = approvedAmount 
+          ? `💰 Case Disbursed! Amount: AED ${parseFloat(approvedAmount).toLocaleString()}`
+          : '💰 Case Disbursed!';
+      } else if (status === 'Valuation') {
+        successMessage = '🏠 Valuation requested from bank.';
+      } else if (status === 'FOL Processed') {
+        successMessage = '📄 FOL being processed by bank';
+      } else if (status === 'FOL Signed') {
+        successMessage = '✍️ FOL Signed by client';
+      } else if (status === 'Collecting Documentation') {
+        successMessage = '📋 Additional documents requested from client';
+      } else if (status === 'Rejected') {
+        successMessage = `❌ Case rejected by bank. Reason: ${statusNotes || 'N/A'}`;
+      } else if (status === 'Lost') {
+        successMessage = `📉 Case lost. Reason: ${statusNotes || 'N/A'}`;
+      } else if (status === 'Under Review') {
+        successMessage = '🔍 Case under review by Ops team';
+      } else if (status === 'Bank Application') {
+        successMessage = bankReference 
+          ? `🏦 Submitted to bank. Reference: ${bankReference}`
+          : '🏦 Case submitted to bank successfully';
+      } else if (status === 'Returned - Pending Correction') {
+        successMessage = '⚠️ Case returned for correction. Submitter notified.';
+      } else if (status === 'Resubmitted-After Correction') {
+        successMessage = '🔄 Case resubmitted after correction. Waiting for Ops review.';
       } else {
-        message.error(response?.message || "Failed to update status");
-        setUnderReviewLoading(false);
+        successMessage = `Case status updated to ${status}`;
       }
-    } catch (err) {
-      message.error(err.response?.data?.message || "Failed to update status");
+      
+      message.success(successMessage);
+      
+      if (shouldCloseModal) {
+        setStatusModalVisible(false);
+      }
+      
+      // Reset all form fields
+      setSelectedStatus('');
+      setStatusNotes('');
+      setApprovedAmount('');
+      setBankReference('');
+      setFolAmount('');
+      
+      // Refresh data
+      fetchData();
+      
+      // Show additional celebration for Disbursed
+      if (status === 'Disbursed') {
+        setTimeout(() => {
+          message.success({
+            content: '🎉 Congratulations! Case disbursed successfully! Commission will be processed. 🎉',
+            duration: 5,
+          });
+        }, 500);
+      }
+      
+      // Clear Under Review loading after 2 seconds
+      if (status === 'Under Review') {
+        setTimeout(() => {
+          setUnderReviewLoading(false);
+        }, 2000);
+      }
+    } else {
+      message.error(response?.message || "Failed to update status");
       setUnderReviewLoading(false);
-    } finally {
-      setUpdating(false);
     }
-  };
+  } catch (err) {
+    console.error("Status update error:", err);
+    message.error(err.response?.data?.message || "Failed to update status");
+    setUnderReviewLoading(false);
+  } finally {
+    setUpdating(false);
+  }
+};
 
   // Return case for correction
   const handleReturnCase = async () => {
