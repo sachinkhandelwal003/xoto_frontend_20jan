@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef, useMemo} from 'react';
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
 import JoditEditor from 'jodit-react';
@@ -2108,4 +2107,4 @@ const insertHtmlIntoEditor = useCallback((html) => {
   );
 };
 
-export default BlogManagement;
+export default BlogManagement;   
