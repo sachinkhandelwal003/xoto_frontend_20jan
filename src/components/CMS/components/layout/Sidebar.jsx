@@ -564,19 +564,29 @@ const CUSTOM_ROLE_LINKS = {
 // Baaki purane roles ke neeche ye paste karo:
   "25": [
     {
-      title: "Total Leads",
-      icon: "fas fa-wallet",
-      path: "/dashboard/{roleSlug}/total-leads",
+      title: "Referrals",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/referrals",
+      submenus: [
+        { 
+          title: "Submit Lead", 
+          path: "/dashboard/{roleSlug}/submit-leads" 
+        },
+        { 
+          title: "My Referrals", 
+          path: "/dashboard/{roleSlug}/all-referrals" 
+        }
+      ]
     },
     {
-      title: "Active Leads",
-      icon: "fas fa-user-cog",
-      path: "/dashboard/{roleSlug}/active-leads",
+      title: "Leaderboard",
+      icon: "fas fa-trophy",
+      path: "/dashboard/{roleSlug}/leaderboard"
     },
     {
-      title: "Recent Leads",
+      title: "Profile",
       icon: "fas fa-user-cog",
-      path: "/dashboard/{roleSlug}/recent-leads",
+      path: "/dashboard/{roleSlug}/profile"
     }
   ],
 
@@ -682,7 +692,7 @@ const ROLE_MODULE_ORDER = {
   '25':['Dashboard' , 'Total leads ' , 'Active Leads' , 'Recent Leads'],
   '21': ['Dashboard','Create Lead',  'Vault Partners', 'All Leads',],
   '24': ['Dashboard', 'My Leads', 'Property Catalogue', 'Calculator', 'Leaderboard'],
-  '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],
+  // '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],
     '26': ['Dashboard', 'All Leads','Case','Proposals'],
 };
 
