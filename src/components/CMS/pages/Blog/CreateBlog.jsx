@@ -1,38 +1,5 @@
-/**
- * BlogManagement.jsx — Full-featured Blog CMS  (FULLY FIXED)
- *
- * ALL FIXES APPLIED:
- * ─────────────────────────────────────────────────────────────────────
- *  1. targetStatus race-condition fix  → useRef instead of useState
- *     so the correct status is always read inside handleSave
- *
- *  2. onPaste handler now wired to the editor wrapper div
- *     (was defined but never attached — paste cleaning was dead code)
- *
- *  3. JoditEditor key prop  → forces remount on every modal open/close
- *     so stale content never bleeds between create ↔ edit sessions
- *
- *  4. replaceEditorContent / insertHtmlIntoEditor  → fixed Jodit
- *     instance access pattern compatible with jodit-react v3/v4
- *
- *  5. Modal body styles prop  → correct `styles={{ body:{…} }}` format
- *     (was passing maxHeight/overflow at top level — had no effect)
- *
- *  6. Button loading indicators  → use targetStatusRef, not async state
- *
- *  7. fetchBlogById  → awaits content hydration before opening modal,
- *     editorKey incremented to guarantee a clean editor mount
- *
- *  8. Form reset order  → fields cleared before modal opens (not after)
- *
- *  9. Auto-save guard  → skips when pasteProcessing or fileImporting
- *
- * 10. IMPORT FILE BUTTON — supports: .docx, .pdf, .txt, .html, .md, .rtf
- * 11. FORMAT-PRESERVING PASTE from Word / Google Docs / any browser
- * ─────────────────────────────────────────────────────────────────────
- */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo} from 'react';
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
 import JoditEditor from 'jodit-react';
 import DOMPurify from 'dompurify';
@@ -64,7 +31,7 @@ const { Text } = Typography;
 const { Option } = Select;
 const { useBreakpoint } = Grid;
 const { TextArea } = Input;
-const { TabPane } = Tabs;
+// const { TabPane } = Tabs;  
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS (unchanged)
@@ -259,7 +226,7 @@ const GLOBAL_STYLES = `
   .blog-preview-hero { width: 100%; height: 360px; object-fit: cover; display: block; border-bottom: 1px solid #e2e8f0; }
   .blog-preview-inner { padding: 48px 56px; max-width: 860px; margin: 0 auto; }
   .blog-preview-content ul { list-style-type: disc !important; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
-  .blog-preview-content ol { list-style-type: decimal !important; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
+.blog-preview-content ol { list-style-type: decimal; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
   .blog-preview-content li { display: list-item !important; list-style-position: outside !important; margin: 0 0 .6em 0 !important; line-height: 1.8; color: #334155; font-size: 17px; }
   .blog-preview-content h1 { font-family: 'Playfair Display',serif; font-size: 2.4em; font-weight: 800; margin: 1.4em 0 .5em !important; line-height: 1.2; color: #0f172a; display: block; letter-spacing: -0.5px; }
   .blog-preview-content h2 { font-family: 'Playfair Display',serif; font-size: 1.8em; font-weight: 700; margin: 1.2em 0 .4em !important; line-height: 1.3; color: #0f172a; display: block; letter-spacing: -0.5px; }
@@ -865,90 +832,112 @@ const getEditorConfig = () => ({
   toolbarSticky: false,
   toolbarAdaptive: false,
 
+  // ← YEH ADD KARO — iframe mode force karta hai
+  // taki iframeStyle 100% apply ho
+  iframe: true,
+
   askBeforePasteHTML: false,
   askBeforePasteFromWord: false,
-  defaultActionOnPaste: "insert_clear_html",
+  defaultActionOnPaste: "insert_as_html",  // ← "insert_clear_html" se change karo
   processPasteHTML: false,
 
   enter: "P",
   enterBlock: "p",
 
   buttons: [
-    'bold',
-    'italic',
-    'underline',
-    'strikethrough',
-    '|',
-
-    'ul',
-    'ol',
-    '|',
-
-    'outdent',
-    'indent',
-    '|',
-
-    'paragraph',
-    'font',
-    'fontsize',
-    '|',
-
-    'align',
-    '|',
-
-    'image',
-    'table',
-    'link',
-    '|',
-
-    'undo',
-    'redo',
-    '|',
-
-    'fullsize',
-    'preview',
-    'source'
+    'bold', 'italic', 'underline', 'strikethrough', '|',
+    'ul', 'ol', '|',
+    'outdent', 'indent', '|',
+    'paragraph', 'font', 'fontsize', '|',
+    'align', '|',
+    'image', 'table', 'link', '|',
+    'undo', 'redo', '|',
+    'fullsize', 'preview', 'source'
   ],
 
- extraCSS: `
-  .jodit-wysiwyg ul,
-  .jodit-wysiwyg ol {
-    padding-left: 40px !important;
-    margin: 12px 0 !important;
-    display: block !important;
-    list-style-position: outside !important;
-  }
+  iframeStyle: `
+    html, body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      color: #1e293b;
+      padding: 16px 20px 16px 36px;
+      margin: 0;
+    }
+    ul, ol {
+      display: block !important;
+      padding-left: 24px !important;
+      margin: 10px 0 !important;
+      overflow: visible !important;
+    }
+    ul  { list-style-type: disc    !important; }
+    ol  { list-style-type: decimal !important; }
+    ul ul   { list-style-type: circle !important; }
+    ul ul ul { list-style-type: square !important; }
+    ol ol   { list-style-type: lower-alpha !important; }
+    li {
+      display: list-item !important;
+      list-style-position: inside !important;
+      margin: 6px 0 !important;
+      padding-left: 4px !important;
+      line-height: 1.7 !important;
+      font-size: 16px !important;
+    }
+    li::marker {
+      font-size: 16px !important;
+      font-weight: bold !important;
+      color: #000 !important;
+    }
+    li p { display: inline !important; margin: 0 !important; }
+    p  { margin: 8px 0 !important; }
+    h1 { font-size: 2em;   font-weight: 800; margin: 1em 0 0.4em !important; color: #0f172a; }
+    h2 { font-size: 1.6em; font-weight: 700; margin: 1em 0 0.35em !important; color: #0f172a; }
+    h3 { font-size: 1.3em; font-weight: 600; margin: 1em 0 0.3em !important;  color: #334155; }
+    strong, b { font-weight: 700 !important; color: #0f172a !important; }
+    em, i     { font-style: italic !important; }
+    u         { text-decoration: underline !important; }
+    s, strike { text-decoration: line-through !important; }
+    a         { color: #6d28d9; text-decoration: underline; }
+    blockquote { border-left: 4px solid #6d28d9; padding: 12px 20px; margin: 12px 0 !important; background: #f8fafc; border-radius: 0 8px 8px 0; font-style: italic; color: #475569; }
+    img  { max-width: 100%; border-radius: 8px; margin: 8px 0; display: block; }
+    pre  { background: #f1f5f9; border-radius: 8px; padding: 14px 18px; overflow-x: auto; font-family: monospace; font-size: 14px; }
+    code { background: #f1f5f9; border-radius: 4px; padding: 2px 6px; font-family: monospace; font-size: 14px; color: #6d28d9; }
+  `,
 
-  .jodit-wysiwyg ul {
-    list-style-type: disc !important;
-  }
-
-  .jodit-wysiwyg ol {
-    list-style-type: decimal !important;
-  }
-
-  .jodit-wysiwyg li {
-    display: list-item !important;
-    margin: 8px 0 !important;
-    padding-left: 8px !important;
-    line-height: 1.7 !important;
-    font-size: 16px !important;
-  }
-
-  /* MOST IMPORTANT FIX */
-  .jodit-wysiwyg li::marker {
-    font-size: 18px !important;
-    font-weight: bold !important;
-    color: #000 !important;
-  }
-
-  .jodit-wysiwyg li p {
-    display: inline !important;
-    margin: 0 !important;
-  }
-`,
+  extraCSS: `
+    .jodit-wysiwyg ul, .jodit-wysiwyg ol { padding-left: 24px !important; margin: 10px 0 !important; display: block !important; overflow: visible !important; }
+    .jodit-wysiwyg ul { list-style-type: disc !important; }
+    .jodit-wysiwyg ol { list-style-type: decimal !important; }
+    .jodit-wysiwyg li { display: list-item !important; list-style-position: inside !important; margin: 6px 0 !important; padding-left: 4px !important; line-height: 1.7 !important; font-size: 16px !important; }
+    .jodit-wysiwyg li::marker { font-size: 16px !important; font-weight: bold !important; color: #000 !important; }
+    .jodit-wysiwyg li p { display: inline !important; margin: 0 !important; }
+    .jodit-container .jodit-workplace ul,
+.jodit-wysiwyg ul {
+  list-style-type: disc !important;
+  padding-left:px !important;
+  margin:px 0 !important;
+  display: block !important;
+}
+.jodit-container .jodit-workplace ol,
+.jodit-wysiwyg ol {
+  list-style-type: decimal !important;
+  padding-left: 24px !important;
+  margin: 8px 0 !important;
+  display: block !important;
+}
+.jodit-container .jodit-workplace li,
+.jodit-wysiwyg li {
+  display: list-item !important;
+  list-style-position: inside !important;
+  margin: 4px 0 !important;
+  line-height: 1.7 !important;
+}
+/* Allow inline list-style-type to override (for alpha, roman etc.) */
+.blog-preview-content [style*="list-style-type"] {
+  list-style-type: inherit;
+}
+  `,
 });
-
 // ══════════════════════════════════════════════
 //  MAIN COMPONENT
 // ══════════════════════════════════════════════
@@ -957,6 +946,9 @@ const BlogManagement = () => {
   const editorRef = useRef(null);
   const fileInputRef = useRef(null);
   const searchTimeout = useRef(null);
+  const contentDebounceRef = useRef(null);
+  const editorConfig = useMemo(() => getEditorConfig(), []);
+
 
   // ── FIX #1: targetStatus as a ref so handleSave always reads the
   //   correct value — useState is async and causes race conditions
@@ -1664,189 +1656,294 @@ const insertHtmlIntoEditor = useCallback((html) => {
           onFinish={handleSave}
           initialValues={{ category: 'Other', authorName: 'Admin', authorDesignation: 'Content Writer' }}
         >
-          <Tabs defaultActiveKey="content" size="large"
-            tabBarStyle={{ fontWeight: 600, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-
-            {/* ── CONTENT TAB ── */}
-            <TabPane tab={<span><EditOutlined />  Content</span>} key="content">
-              <Row gutter={16}>
-                <Col span={24}>
-                  <Form.Item name="title"
-                    label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Post Title</span>}
-                    rules={[{ required: true, message: 'Title is required' }]}>
-                    <Input placeholder="Enter an engaging, SEO-friendly title…" size="large"
-                      style={{ borderRadius: 8, fontSize: 15, fontWeight: 500, padding: '10px 14px' }} />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item name="subHeading"
-                label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Subheading / Excerpt</span>}>
-                <TextArea rows={2} placeholder="Auto-extracted from content, or write your own (max 160 chars)"
-                  maxLength={160} showCount style={{ borderRadius: 8, fontWeight: 500, fontSize: 14, padding: '10px 14px' }} />
-              </Form.Item>
-
-              <Row gutter={24}>
-                <Col xs={24} md={12}>
-                  <Form.Item name="tags"
-                    label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Tags</span>}>
-                    <Select mode="tags" size="large" placeholder="Add tags (press Enter)" tokenSeparators={[',']} style={{ borderRadius: 8, fontWeight: 500 }}>
-                      {['AI','Real Estate','PropTech','Technology','Business','Mortgage','Landscaping','Marketing','UAE','Dubai','Innovation'].map(t => <Option key={t} value={t}>{t}</Option>)}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item name="category"
-                    label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Category</span>}>
-                    <Select size="large" placeholder="Select category" style={{ fontWeight: 500 }}>
-                      {[['AI','🤖'],['Real Estate','🏠'],['PropTech','📱'],['Technology','💻'],['Business','💼'],['Mortgage','🏦'],['Landscaping','🌳'],['Other','📄']].map(([v, e]) => <Option key={v} value={v}>{e} {v}</Option>)}
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              {/* CONTENT EDITOR SECTION */}
+          <Tabs
+  defaultActiveKey="content"
+  size="large"
+  tabBarStyle={{ fontWeight: 600, fontFamily: "'Plus Jakarta Sans',sans-serif" }}
+  
+  items={[
+    {
+      key: 'content',
+      label: <span><EditOutlined /> Content</span>,
+      children: (
+        <>
+          <Row gutter={16}>
+            <Col span={24}>
               <Form.Item
-                label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Blog Content <span style={{ color: '#ef4444' }}>*</span></span>}>
+                name="title"
+                label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Post Title</span>}
+                rules={[{ required: true, message: 'Title is required' }]}
+              >
+                <Input
+                  placeholder="Enter an engaging, SEO-friendly title…"
+                  size="large"
+                  style={{ borderRadius: 8, fontSize: 15, fontWeight: 500, padding: '10px 14px' }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
-                {/* Import Zone */}
-                <div className="bm-import-zone">
-                  <div className="bm-import-zone-top">
-                    <div className="bm-import-zone-left">
-                      <div className="bm-import-icon">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                          <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="bm-import-zone-title">Import file</p>
-                        <p className="bm-import-zone-sub">Bold, italic, lists and headings are preserved</p>
-                      </div>
-                    </div>
-                    <button className="bm-import-btn" disabled={fileImporting}
-                      onClick={() => fileInputRef.current?.click()} type="button">
-                      {fileImporting ? <LoadingOutlined style={{ fontSize: 13 }} spin /> : (
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                          <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                        </svg>
-                      )}
-                      {fileImporting ? 'Importing…' : 'Choose file'}
-                    </button>
+          <Form.Item
+            name="subHeading"
+            label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Subheading / Excerpt</span>}
+          >
+            <TextArea
+              rows={2}
+              placeholder="Auto-extracted from content, or write your own (max 160 chars)"
+              maxLength={160}
+              showCount
+              style={{ borderRadius: 8, fontWeight: 500, fontSize: 14, padding: '10px 14px' }}
+            />
+          </Form.Item>
+
+          <Row gutter={24}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="tags"
+                label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Tags</span>}
+              >
+                <Select
+                  mode="tags"
+                  size="large"
+                  placeholder="Add tags (press Enter)"
+                  tokenSeparators={[',']}
+                  style={{ borderRadius: 8, fontWeight: 500 }}
+                >
+                  {['AI','Real Estate','PropTech','Technology','Business','Mortgage','Landscaping','Marketing','UAE','Dubai','Innovation'].map(t => (
+                    <Option key={t} value={t}>{t}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="category"
+                label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Category</span>}
+              >
+                <Select size="large" placeholder="Select category" style={{ fontWeight: 500 }}>
+                  {[
+                    ['AI','🤖'], ['Real Estate','🏠'], ['PropTech','📱'],
+                    ['Technology','💻'], ['Business','💼'], ['Mortgage','🏦'],
+                    ['Landscaping','🌳'], ['Other','📄']
+                  ].map(([v, e]) => (
+                    <Option key={v} value={v}>{e} {v}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* CONTENT EDITOR SECTION */}
+          <Form.Item
+            label={
+              <span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>
+                Blog Content <span style={{ color: '#ef4444' }}>*</span>
+              </span>
+            }
+          >
+            {/* Import Zone */}
+            <div className="bm-import-zone">
+              <div className="bm-import-zone-top">
+                <div className="bm-import-zone-left">
+                  <div className="bm-import-icon">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
                   </div>
-                  <div className="bm-formats-row">
-                    <span className="bm-formats-label">Supported</span>
-                    <span className="bm-format-badge docx">DOCX</span>
-                    <span className="bm-format-badge pdf">PDF</span>
-                    <span className="bm-format-badge md">MD</span>
-                    <span className="bm-format-badge html">HTML</span>
-                    <span className="bm-format-badge txt">TXT</span>
-                    <span className="bm-format-badge rtf">RTF</span>
-                  </div>
-                  <div className="bm-import-paste-hint">
-                    <div className="bm-import-paste-dot" />
-                    Smart paste active — copy from Word or Google Docs and paste directly into the editor below
+                  <div>
+                    <p className="bm-import-zone-title">Import file</p>
+                    <p className="bm-import-zone-sub">Bold, italic, lists and headings are preserved</p>
                   </div>
                 </div>
-
-                {/* Alerts */}
-                {smartFillApplied && (
-                  <Alert message={<span style={{ fontWeight: 600 }}>✨ Smart Fill Applied — Category & tags auto-detected!</span>}
-                    type="success" showIcon closable onClose={() => setSmartFillApplied(false)}
-                    style={{ marginBottom: 12, borderRadius: 8 }} />
-                )}
-                {pasteProcessing && (
-                  <Alert message={<span style={{ fontWeight: 600 }}>⏳ Processing paste — preserving formatting…</span>}
-                    type="info" showIcon style={{ marginBottom: 12, borderRadius: 8 }} />
-                )}
-                {fileImporting && (
-                  <Alert
-                    message={<span style={{ fontWeight: 600 }}>📄 Importing file — extracting formatted content…</span>}
-                    type="info" showIcon icon={<Spin indicator={<LoadingOutlined />} />}
-                    style={{ marginBottom: 12, borderRadius: 8 }} />
-                )}
-
-                {/*
-                  FIX #2: onPaste is NOW wired to the wrapper div.
-                  FIX #3: key={editorKey} forces remount when editing different blogs.
-                */}
-                <div
-                  
-                  style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}
+                <button
+                  className="bm-import-btn"
+                  disabled={fileImporting}
+                  onClick={() => fileInputRef.current?.click()}
+                  type="button"
                 >
-                  <JoditEditor
+                  {fileImporting ? (
+                    <LoadingOutlined style={{ fontSize: 13 }} spin />
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                  )}
+                  {fileImporting ? 'Importing…' : 'Choose file'}
+                </button>
+              </div>
+              <div className="bm-formats-row">
+                <span className="bm-formats-label">Supported</span>
+                <span className="bm-format-badge docx">DOCX</span>
+                <span className="bm-format-badge pdf">PDF</span>
+                <span className="bm-format-badge md">MD</span>
+                <span className="bm-format-badge html">HTML</span>
+                <span className="bm-format-badge txt">TXT</span>
+                <span className="bm-format-badge rtf">RTF</span>
+              </div>
+              <div className="bm-import-paste-hint">
+                <div className="bm-import-paste-dot" />
+                Smart paste active — copy from Word or Google Docs and paste directly into the editor below
+              </div>
+            </div>
+
+            {/* Alerts */}
+            {smartFillApplied && (
+              <Alert
+                message={<span style={{ fontWeight: 600 }}>✨ Smart Fill Applied — Category & tags auto-detected!</span>}
+                type="success"
+                showIcon
+                closable
+                onClose={() => setSmartFillApplied(false)}
+                style={{ marginBottom: 12, borderRadius: 8 }}
+              />
+            )}
+            {pasteProcessing && (
+              <Alert
+                message={<span style={{ fontWeight: 600 }}>⏳ Processing paste — preserving formatting…</span>}
+                type="info"
+                showIcon
+                style={{ marginBottom: 12, borderRadius: 8 }}
+              />
+            )}
+            {fileImporting && (
+              <Alert
+                message={<span style={{ fontWeight: 600 }}>📄 Importing file — extracting formatted content…</span>}
+                type="info"
+                showIcon
+                icon={<Spin indicator={<LoadingOutlined />} />}
+                style={{ marginBottom: 12, borderRadius: 8 }}
+              />
+            )}
+
+            {/* Editor wrapper with paste handler */}
+            <div
+              onPaste={handlePaste}
+              style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}
+            >
+             <JoditEditor
+  key={editorKey}
   ref={editorRef}
-  value={contentValue}
-  config={getEditorConfig()}
+  value={contentRef.current}    // ← सिर्फ initial mount पर पढ़ेगा
+  config={editorConfig}
   onChange={(newContent) => {
-    contentRef.current = newContent;
-    setContentValue(newContent);
-    setHeadings(extractHeadings(newContent));
+    contentRef.current = newContent;     // ← sync, instant
+    clearTimeout(contentDebounceRef.current);
+    contentDebounceRef.current = setTimeout(() => {
+      setHeadings(extractHeadings(newContent));  // ← setContentValue हटाया
+    }, 1000);
   }}
 />
-                </div>
+            </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, gap: 10 }}>
-                  <Button
-                    icon={<EyeOutlined />}
-                    onClick={() => showPreview({}, true)}
-                    disabled={!contentRef.current || contentRef.current === '<p><br></p>'}
-                    style={{ borderRadius: 8, borderColor: '#e2e8f0', color: '#4c1d95', fontWeight: 600, height: 40, padding: '0 20px', background: '#f8fafc' }}>
-                    Live Preview
-                  </Button>
-                </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, gap: 10 }}>
+              <Button
+                icon={<EyeOutlined />}
+                onClick={() => showPreview({}, true)}
+                disabled={!contentRef.current || contentRef.current === '<p><br></p>'}
+                style={{ borderRadius: 8, borderColor: '#e2e8f0', color: '#4c1d95', fontWeight: 600, height: 40, padding: '0 20px', background: '#f8fafc' }}
+              >
+                Live Preview
+              </Button>
+            </div>
+          </Form.Item>
+        </>
+      )
+    },
+    {
+      key: 'media',
+      label: <span><PictureOutlined /> Media</span>,
+      children: (
+        <>
+          <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginBottom: 24, borderLeft: '4px solid #3b82f6' }}>
+            <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>📸 Image Guidelines</div>
+            <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>
+              Featured image shows in blog listings; Cover image is the full-width hero banner.
+            </div>
+          </div>
+          <Row gutter={[32, 24]}>
+            <Col xs={24} md={12}>
+              <UploadWithCrop
+                fileList={featuredImageList}
+                onChange={setFeaturedImageList}
+                aspect={3/2}
+                cropTitle="Crop Featured Image (3:2)"
+                maxSizeMB={5}
+                label="Featured Image (Card Thumbnail)"
+                extra="Recommended: 1200 × 800px · Max 5MB"
+              />
+            </Col>
+            <Col xs={24} md={12}>
+              <UploadWithCrop
+                fileList={coverImageList}
+                onChange={setCoverImageList}
+                aspect={16/9}
+                cropTitle="Crop Cover / Hero Image (16:9)"
+                maxSizeMB={5}
+                label="Cover Image (Hero Banner)"
+                extra="Recommended: 1920 × 1080px · Max 5MB"
+              />
+            </Col>
+          </Row>
+        </>
+      )
+    },
+    {
+      key: 'author',
+      label: <span><UserOutlined /> Author</span>,
+      children: (
+        <>
+          <Row gutter={32} align="top">
+            <Col xs={24} md={14}>
+              <Form.Item
+                name="authorName"
+                label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Author Name</span>}
+              >
+                <Input
+                  prefix={<UserOutlined style={{ color: '#94a3b8' }} />}
+                  placeholder="Author's full name"
+                  size="large"
+                  style={{ borderRadius: 8, fontWeight: 500 }}
+                />
               </Form.Item>
-            </TabPane>
-
-            {/* ── MEDIA TAB ── */}
-            <TabPane tab={<span><PictureOutlined />  Media</span>} key="media">
-              <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginBottom: 24, borderLeft: '4px solid #3b82f6' }}>
-                <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>📸 Image Guidelines</div>
-                <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>Featured image shows in blog listings; Cover image is the full-width hero banner.</div>
+              <Form.Item
+                name="authorDesignation"
+                label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Author Designation</span>}
+              >
+                <Input
+                  prefix={<TagOutlined style={{ color: '#94a3b8' }} />}
+                  placeholder="e.g. Content Writer, Senior Editor, Guest Author"
+                  size="large"
+                  style={{ borderRadius: 8, fontWeight: 500 }}
+                />
+              </Form.Item>
+              <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginTop: 24, borderLeft: '4px solid #10b981' }}>
+                <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>ℹ️ Author Info</div>
+                <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>
+                  Optional for drafts, required for publishing.
+                </div>
               </div>
-              <Row gutter={[32, 24]}>
-                <Col xs={24} md={12}>
-                  <UploadWithCrop fileList={featuredImageList} onChange={setFeaturedImageList}
-                    aspect={3/2} cropTitle="Crop Featured Image (3:2)" maxSizeMB={5}
-                    label="Featured Image (Card Thumbnail)" extra="Recommended: 1200 × 800px · Max 5MB" />
-                </Col>
-                <Col xs={24} md={12}>
-                  <UploadWithCrop fileList={coverImageList} onChange={setCoverImageList}
-                    aspect={16/9} cropTitle="Crop Cover / Hero Image (16:9)" maxSizeMB={5}
-                    label="Cover Image (Hero Banner)" extra="Recommended: 1920 × 1080px · Max 5MB" />
-                </Col>
-              </Row>
-            </TabPane>
-
-            {/* ── AUTHOR TAB ── */}
-            <TabPane tab={<span><UserOutlined />  Author</span>} key="author">
-              <Row gutter={32} align="top">
-                <Col xs={24} md={14}>
-                  <Form.Item name="authorName"
-                    label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Author Name</span>}>
-                    <Input prefix={<UserOutlined style={{ color: '#94a3b8' }} />}
-                      placeholder="Author's full name" size="large" style={{ borderRadius: 8, fontWeight: 500 }} />
-                  </Form.Item>
-                  <Form.Item name="authorDesignation"
-                    label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Author Designation</span>}>
-                    <Input prefix={<TagOutlined style={{ color: '#94a3b8' }} />}
-                      placeholder="e.g. Content Writer, Senior Editor, Guest Author"
-                      size="large" style={{ borderRadius: 8, fontWeight: 500 }} />
-                  </Form.Item>
-                  <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginTop: 24, borderLeft: '4px solid #10b981' }}>
-                    <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>ℹ️ Author Info</div>
-                    <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>Optional for drafts, required for publishing.</div>
-                  </div>
-                </Col>
-                <Col xs={24} md={10}>
-                  <UploadWithCrop fileList={authorImageList} onChange={setAuthorImageList}
-                    aspect={1} cropTitle="Crop Author Avatar (1:1)" maxSizeMB={2}
-                    label="Author Avatar" extra="Recommended: 400 × 400px · Max 2MB" />
-                </Col>
-              </Row>
-            </TabPane>
-          </Tabs>
+            </Col>
+            <Col xs={24} md={10}>
+              <UploadWithCrop
+                fileList={authorImageList}
+                onChange={setAuthorImageList}
+                aspect={1}
+                cropTitle="Crop Author Avatar (1:1)"
+                maxSizeMB={2}
+                label="Author Avatar"
+                extra="Recommended: 400 × 400px · Max 2MB"
+              />
+            </Col>
+          </Row>
+        </>
+      )
+    }
+  ]}
+/>
 
           {/* Footer Actions */}
           <div className="bm-footer-bar">
