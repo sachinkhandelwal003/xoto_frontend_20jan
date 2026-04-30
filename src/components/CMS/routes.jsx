@@ -178,6 +178,7 @@ import AllAdvisors from "../Create Users/Alladvisors";
 import AdvisorDetail from "../Create Users/Advisordetail";
 import AllLeadsPage from "../GridAdmin.jsx/Allleadspage";
 import AdvisorLeadsPage from "../AdvisorGrid/Advisorleadspage";
+import PropertyCatalogue from "../AdvisorGrid/Propertycatalogue";
 
 {/*Xoto Vault*/ }
 import VaultAdminDashboard from "../ecommerce/B2C/VaultAdminDashboard";
@@ -638,6 +639,7 @@ const CmsRoutes = () => {
 <Route path="create-advisor" element={<CreateAdvisor />} />
 <Route path="dashboard/myprofile" element={<GridAdvisorProfile />} />
 <Route path="gridAdvisorLeads" element={<AdvisorLeadsPage />} />
+<Route path="property-catalogue" element={<PropertyCatalogue />} />
 
 
 

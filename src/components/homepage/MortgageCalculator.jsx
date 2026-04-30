@@ -126,7 +126,7 @@ const LoanSummaryModal = ({ isOpen, onClose, data }) => {
   const youCanBorrow = data.affordability * 0.85;
 
   return (
-    <ModalWrapper isOpen={isOpen} onClose={onClose} title="Loan Summary" subtitle="Detailed breakdown of your costs">
+    <ModalWrapper isOpen={isOpen} onClose={onClose} title="Cost & Affordability Breakdown" subtitle="Detailed breakdown of your costs">
       <div className="space-y-5">
         <div className="space-y-3">
           <div className="flex justify-between text-slate-600 font-medium">
@@ -144,23 +144,23 @@ const LoanSummaryModal = ({ isOpen, onClose, data }) => {
         </div>
 
         <div className="bg-purple-50 border border-purple-100 rounded-2xl p-5 text-center">
-          <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-1">Estimated Borrowing Limit</p>
+          <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-1">Maximum Home Price</p>
           <p className="text-3xl font-bold text-purple-700 tracking-tight">{formatCurrency(youCanBorrow)}</p>
         </div>
 
         <div className="flex justify-between items-center py-3 px-4 bg-slate-50 rounded-xl border border-slate-100">
-          <span className="text-slate-600 font-medium">Monthly payment</span>
+          <span className="text-slate-600 font-medium">Estimated Monthly EMI</span>
           <span className="font-bold text-xl text-emerald-600">{formatCurrency(data.monthly)}</span>
         </div>
 
         <div className="space-y-2">
           <div className="flex gap-3 items-start p-3 bg-blue-50 text-blue-800 rounded-xl text-xs font-medium leading-relaxed">
             <FaInfoCircle className="mt-0.5 shrink-0" />
-            <p>Calculator assumes stress test of 3-month EIBOR + 2%.</p>
+            <p>Includes a buffer for potential rate increase</p>
           </div>
           <div className="flex gap-3 items-start p-3 bg-amber-50 text-amber-800 rounded-xl text-xs font-medium leading-relaxed">
             <span className="shrink-0 font-bold">ⓘ</span>
-            <p>Maximum mortgage term in UAE is 25 years up to age 65 (or 70 for self-employed).</p>
+            <p>Most home loans in the UAE go up to 25 years, based on your age (up to 65, or 70 if self-employed).</p>
           </div>
         </div>
 
