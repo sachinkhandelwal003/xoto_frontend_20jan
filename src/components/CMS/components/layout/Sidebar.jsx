@@ -629,7 +629,7 @@ const CUSTOM_ROLE_LINKS = {
         { title: "Queue Cases", path: "/dashboard/{roleSlug}/case/queue/view" },
                 { title: "My Assigned Cases", path: "/dashboard/{roleSlug}/case/assigned/all" },
 
-        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+        { title: "Disbursed Cases", path: "/dashboard/{roleSlug}/case/disbursed" },
       ],
 
     },

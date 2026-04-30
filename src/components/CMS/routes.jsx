@@ -248,6 +248,8 @@ import VaultCreateadvisor from "../ecommerce/B2C/VaultCreateadviosor";
 import AdminManagecases from "../ecommerce/vault/case/AdminManagecases";
 // import AdvisorLeads from "../ecommerce/vault/vaultadvisor";
 import VaultAdvisorLeads from "../ecommerce/B2C/VaultAdvisorLeads";
+import DisbursedCases from "../ecommerce/vault/case/DisbursedCases";
+import DisbursedFullAmountCases from "../ecommerce/vault/case/DisbursedFullAmountCases";
 
 
 
@@ -660,8 +662,11 @@ const CmsRoutes = () => {
             <Route path="/case/assigned/all" element={< OpsAssignedcases />} />
 
                         <Route path="/case/view/all" element={< ProcessCasesUpdates />} />
+                                                <Route path="/case/disbursed" element={< DisbursedCases />} />
+
 
             <Route path="/case/view/:caseId" element={< DetailedViewCases/>} />
+            <Route path="/case/amount/view/:caseId" element={< DisbursedFullAmountCases/>} />
 
             <Route path="/case/assigned/view/:caseId" element={< OpsAssignedReview/>} />
 
