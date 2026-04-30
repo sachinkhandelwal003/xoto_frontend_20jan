@@ -828,115 +828,219 @@ const BlogPreview = ({ data }) => {
 // ─────────────────────────────────────────────
 const getEditorConfig = () => ({
   readonly: false,
-  height: 500,
-  toolbarSticky: false,
+  height: 550,
+  minHeight: 400,
+  
+  // iframe: false रखो — true होने पर बहुत से buttons टूट जाते हैं
+  iframe: false,
+  
+  toolbarSticky: true,
+  toolbarStickyOffset: 0,
   toolbarAdaptive: false,
-
-  // ← YEH ADD KARO — iframe mode force karta hai
-  // taki iframeStyle 100% apply ho
-  iframe: true,
+  showCharsCounter: true,
+  showWordsCounter: true,
+  showXPathInStatusbar: false,
 
   askBeforePasteHTML: false,
   askBeforePasteFromWord: false,
-  defaultActionOnPaste: "insert_as_html",  // ← "insert_clear_html" se change karo
+  defaultActionOnPaste: 'insert_as_html',
   processPasteHTML: false,
 
-  enter: "P",
-  enterBlock: "p",
+  enter: 'P',
 
+  // ── FULL TOOLBAR ──────────────────────────────────────────────
   buttons: [
     'bold', 'italic', 'underline', 'strikethrough', '|',
+    'superscript', 'subscript', '|',
     'ul', 'ol', '|',
     'outdent', 'indent', '|',
-    'paragraph', 'font', 'fontsize', '|',
+    'font', 'fontsize', 'brush', 'paragraph', '|',
+    'image', 'video', 'table', 'link', '|',
     'align', '|',
-    'image', 'table', 'link', '|',
     'undo', 'redo', '|',
-    'fullsize', 'preview', 'source'
+    'hr', 'eraser', 'copyformat', '|',
+    'symbol', 'fullsize', '|',
+    'preview', 'print', '|',
+    'source',
   ],
 
-  iframeStyle: `
-    html, body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: 16px;
-      line-height: 1.7;
-      color: #1e293b;
-      padding: 16px 20px 16px 36px;
-      margin: 0;
-    }
-    ul, ol {
-      display: block !important;
-      padding-left: 24px !important;
-      margin: 10px 0 !important;
-      overflow: visible !important;
-    }
-    ul  { list-style-type: disc    !important; }
-    ol  { list-style-type: decimal !important; }
-    ul ul   { list-style-type: circle !important; }
+  buttonsMD: [
+    'bold', 'italic', 'underline', '|',
+    'ul', 'ol', '|',
+    'font', 'fontsize', 'brush', 'paragraph', '|',
+    'image', 'table', 'link', '|',
+    'align', 'undo', 'redo', '|',
+    'fullsize', 'source',
+  ],
+
+  buttonsSM: [
+    'bold', 'italic', 'underline', '|',
+    'ul', 'ol', '|',
+    'image', 'link', '|',
+    'align', 'undo', 'redo',
+  ],
+
+  buttonsXS: [
+    'bold', 'italic', '|',
+    'ul', 'ol', '|',
+    'undo', 'redo',
+  ],
+
+  // ── FONT OPTIONS ─────────────────────────────────────────────
+  fontValues: {
+    'Plus Jakarta Sans,sans-serif': 'Plus Jakarta Sans',
+    'Arial,sans-serif':             'Arial',
+    'Georgia,serif':                'Georgia',
+    'Times New Roman,serif':        'Times New Roman',
+    'Courier New,monospace':        'Courier New',
+    'Verdana,sans-serif':           'Verdana',
+    'Trebuchet MS,sans-serif':      'Trebuchet MS',
+    'Playfair Display,serif':       'Playfair Display',
+  },
+
+  fontSizeValues: ['8','9','10','11','12','14','16','18','20','22','24','28','32','36','40','48','56','64','72'],
+
+  // ── COLOR PICKER ─────────────────────────────────────────────
+  colorPickerDefaultTab: 'color',
+  colors: {
+    greyscale:  ['#000000','#434343','#666666','#999999','#b7b7b7','#cccccc','#d9d9d9','#efefef','#f3f3f3','#ffffff'],
+    palette:    ['#980000','#ff0000','#ff9900','#ffff00','#00f0f0','#00ffff','#4a86e8','#0000ff','#9900ff','#ff00ff'],
+    full: [
+      '#e6b8a2','#dd7e6b','#cc4125','#a61c00','#85200c','#5b0f00',
+      '#f9cb9c','#f6b26b','#e69138','#b45309','#783f04','#3d1f00',
+      '#ffe599','#ffd966','#f1c232','#bf9000','#7f6000','#3d3d00',
+      '#b6d7a8','#93c47d','#6aa84f','#38761d','#274e13','#0c2704',
+      '#a4c2f4','#6d9eeb','#3c78d8','#1155cc','#1c4587','#073763',
+      '#b4a7d6','#8e7cc3','#674ea7','#351c75','#20124d','#0a0033',
+      '#ea9999','#e06666','#cc0000','#990000','#660000','#330000',
+    ],
+  },
+
+  // ── IMAGE CONFIG ─────────────────────────────────────────────
+  image: {
+    openOnDblClick: true,
+    editSrc: true,
+    useImageEditor: false,
+    editTitle: true,
+    editAlt: true,
+    editLink: true,
+    editSize: true,
+    editBorderRadius: true,
+    editMargins: true,
+    editStyle: true,
+    editClass: false,
+    editId: false,
+    showPreview: true,
+    selectImageAfterClose: true,
+  },
+
+  // ── LINK CONFIG ───────────────────────────────────────────────
+  link: {
+    openInNewTabCheckbox: true,
+    noFollowCheckbox: true,
+  },
+
+  // ── TABLE CONFIG ──────────────────────────────────────────────
+  table: {
+    allowCellResize: true,
+    useExtraClassesOptions: false,
+  },
+
+  // ── PLACEHOLDER ───────────────────────────────────────────────
+  placeholder: 'Start writing your blog post here…\n\nTips:\n• Paste from Word or Google Docs — formatting is preserved\n• Use Import File button above for .docx, .pdf, .md files',
+
+  // ── EDITOR CSS (non-iframe mode) ──────────────────────────────
+  style: {
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
+    fontSize:   '16px',
+    lineHeight: '1.75',
+    color:      '#1e293b',
+    padding:    '20px 28px',
+    minHeight:  '400px',
+  },
+
+  extraCSS: `
+    /* Lists */
+    ul { list-style-type: disc    !important; padding-left: 28px !important; margin: 10px 0 !important; display: block !important; }
+    ol { list-style-type: decimal !important; padding-left: 28px !important; margin: 10px 0 !important; display: block !important; }
+    ul ul   { list-style-type: circle  !important; }
     ul ul ul { list-style-type: square !important; }
     ol ol   { list-style-type: lower-alpha !important; }
     li {
       display: list-item !important;
-      list-style-position: inside !important;
-      margin: 6px 0 !important;
-      padding-left: 4px !important;
-      line-height: 1.7 !important;
+      list-style-position: outside !important;
+      margin: 5px 0 !important;
+      line-height: 1.75 !important;
       font-size: 16px !important;
-    }
-    li::marker {
-      font-size: 16px !important;
-      font-weight: bold !important;
-      color: #000 !important;
     }
     li p { display: inline !important; margin: 0 !important; }
-    p  { margin: 8px 0 !important; }
-    h1 { font-size: 2em;   font-weight: 800; margin: 1em 0 0.4em !important; color: #0f172a; }
-    h2 { font-size: 1.6em; font-weight: 700; margin: 1em 0 0.35em !important; color: #0f172a; }
-    h3 { font-size: 1.3em; font-weight: 600; margin: 1em 0 0.3em !important;  color: #334155; }
-    strong, b { font-weight: 700 !important; color: #0f172a !important; }
+
+    /* Headings */
+    h1 { font-size: 2em;   font-weight: 800; margin: 0.8em 0 0.4em !important; color: #0f172a; line-height: 1.2; }
+    h2 { font-size: 1.6em; font-weight: 700; margin: 0.8em 0 0.35em !important; color: #0f172a; line-height: 1.3; }
+    h3 { font-size: 1.3em; font-weight: 600; margin: 0.8em 0 0.3em !important;  color: #334155; }
+    h4 { font-size: 1.1em; font-weight: 600; margin: 0.6em 0 0.25em !important; color: #334155; }
+    h5 { font-size: 1em;   font-weight: 600; margin: 0.6em 0 0.2em !important;  color: #475569; }
+    h6 { font-size: 0.9em; font-weight: 600; margin: 0.6em 0 0.2em !important;  color: #64748b; }
+
+    /* Inline */
+    strong, b { font-weight: 700  !important; color: #0f172a  !important; }
     em, i     { font-style: italic !important; }
-    u         { text-decoration: underline !important; }
+    u         { text-decoration: underline    !important; }
     s, strike { text-decoration: line-through !important; }
-    a         { color: #6d28d9; text-decoration: underline; }
-    blockquote { border-left: 4px solid #6d28d9; padding: 12px 20px; margin: 12px 0 !important; background: #f8fafc; border-radius: 0 8px 8px 0; font-style: italic; color: #475569; }
-    img  { max-width: 100%; border-radius: 8px; margin: 8px 0; display: block; }
-    pre  { background: #f1f5f9; border-radius: 8px; padding: 14px 18px; overflow-x: auto; font-family: monospace; font-size: 14px; }
-    code { background: #f1f5f9; border-radius: 4px; padding: 2px 6px; font-family: monospace; font-size: 14px; color: #6d28d9; }
+    sup { vertical-align: super; font-size: 0.75em; }
+    sub { vertical-align: sub;   font-size: 0.75em; }
+
+    /* Links */
+    a { color: #6d28d9; text-decoration: underline; font-weight: 500; }
+    a:hover { color: #4c1d95; }
+
+    /* Blockquote */
+    blockquote {
+      border-left: 4px solid #6d28d9;
+      padding: 14px 22px;
+      margin: 16px 0 !important;
+      background: #f8fafc;
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: #475569;
+      font-size: 17px;
+    }
+
+    /* Code */
+    pre  { background: #1e293b; border-radius: 8px; padding: 16px 20px; overflow-x: auto; font-family: 'Courier New',monospace; font-size: 14px; color: #e2e8f0; margin: 14px 0 !important; }
+    code { background: #f1f5f9; border-radius: 4px; padding: 2px 7px; font-family: 'Courier New',monospace; font-size: 14px; color: #6d28d9; }
+    pre code { background: none; padding: 0; color: #e2e8f0; }
+
+    /* Table */
+    table { border-collapse: collapse; width: 100%; margin: 16px 0 !important; border-radius: 8px; overflow: hidden; }
+    th { background: #6d28d9; color: #fff; font-weight: 700; padding: 12px 16px; text-align: left; font-size: 14px; }
+    td { border: 1px solid #e2e8f0; padding: 10px 16px; font-size: 14px; color: #334155; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    tr:hover td { background: #f1f5f9; }
+
+    /* Image */
+    img { max-width: 100%; border-radius: 10px; margin: 12px 0; display: block; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+    /* HR */
+    hr { border: none; border-top: 2px solid #e2e8f0; margin: 24px 0 !important; }
+
+    /* Paragraph */
+    p { margin: 8px 0 !important; line-height: 1.75; }
+
+    /* Jodit UI polish */
+    .jodit-toolbar__box { border-bottom: 1px solid #e2e8f0 !important; background: #f8fafc !important; }
+    .jodit-toolbar-button { border-radius: 6px !important; }
+    .jodit-toolbar-button:hover { background: #ede9fe !important; color: #6d28d9 !important; }
+    .jodit-toolbar-button.jodit-toolbar-button_variant_initial.jodit-toolbar-button_text-icons_true { color: #374151 !important; }
+    .jodit-status-bar { background: #f8fafc !important; border-top: 1px solid #e2e8f0 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 12px !important; color: #64748b !important; }
   `,
 
-  extraCSS: `
-    .jodit-wysiwyg ul, .jodit-wysiwyg ol { padding-left: 24px !important; margin: 10px 0 !important; display: block !important; overflow: visible !important; }
-    .jodit-wysiwyg ul { list-style-type: disc !important; }
-    .jodit-wysiwyg ol { list-style-type: decimal !important; }
-    .jodit-wysiwyg li { display: list-item !important; list-style-position: inside !important; margin: 6px 0 !important; padding-left: 4px !important; line-height: 1.7 !important; font-size: 16px !important; }
-    .jodit-wysiwyg li::marker { font-size: 16px !important; font-weight: bold !important; color: #000 !important; }
-    .jodit-wysiwyg li p { display: inline !important; margin: 0 !important; }
-    .jodit-container .jodit-workplace ul,
-.jodit-wysiwyg ul {
-  list-style-type: disc !important;
-  padding-left:px !important;
-  margin:px 0 !important;
-  display: block !important;
-}
-.jodit-container .jodit-workplace ol,
-.jodit-wysiwyg ol {
-  list-style-type: decimal !important;
-  padding-left: 24px !important;
-  margin: 8px 0 !important;
-  display: block !important;
-}
-.jodit-container .jodit-workplace li,
-.jodit-wysiwyg li {
-  display: list-item !important;
-  list-style-position: inside !important;
-  margin: 4px 0 !important;
-  line-height: 1.7 !important;
-}
-/* Allow inline list-style-type to override (for alpha, roman etc.) */
-.blog-preview-content [style*="list-style-type"] {
-  list-style-type: inherit;
-}
-  `,
+  // ── SPELLCHECK & MISC ─────────────────────────────────────────
+  spellcheck: true,
+  disablePlugins: [],
+  enableDragAndDropFileToEditor: true,
+  uploader: { insertImageAsBase64URI: true },   // image drag-drop base64 में insert
 });
 // ══════════════════════════════════════════════
 //  MAIN COMPONENT
@@ -1824,17 +1928,17 @@ const insertHtmlIntoEditor = useCallback((html) => {
               onPaste={handlePaste}
               style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}
             >
-             <JoditEditor
+            <JoditEditor
   key={editorKey}
   ref={editorRef}
-  value={contentRef.current}    // ← सिर्फ initial mount पर पढ़ेगा
+  value={contentRef.current}
   config={editorConfig}
   onChange={(newContent) => {
-    contentRef.current = newContent;     // ← sync, instant
+    contentRef.current = newContent;
     clearTimeout(contentDebounceRef.current);
     contentDebounceRef.current = setTimeout(() => {
-      setHeadings(extractHeadings(newContent));  // ← setContentValue हटाया
-    }, 1000);
+      setHeadings(extractHeadings(newContent));
+    }, 800);
   }}
 />
             </div>
