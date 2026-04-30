@@ -5,14 +5,15 @@ import { apiService } from "../../../../manageApi/utils/custom.apiservice";
 import {
   Card, Tag, Button, Spin, Alert, Descriptions, Row, Col, 
   Statistic, Divider, Tabs, Table as AntTable, Typography, 
-  Timeline, Badge, Space, Progress, Modal
+  Timeline, Badge, Space, Progress, Modal, message
 } from "antd";
 import {
   DollarOutlined, BankOutlined, HomeOutlined, UserOutlined,
   CheckCircleOutlined, ClockCircleOutlined, RiseOutlined,
   FallOutlined, PercentageOutlined, WalletOutlined, FileTextOutlined,
   CalculatorOutlined, TrophyOutlined, GiftOutlined, CalendarOutlined,
-  ArrowLeftOutlined, DownloadOutlined, PrinterOutlined, EyeOutlined
+  ArrowLeftOutlined, DownloadOutlined, PrinterOutlined, EyeOutlined,
+  InfoCircleOutlined, FundOutlined
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 
@@ -47,13 +48,13 @@ const DisbursedFullAmountCases = () => {
   const { user } = useSelector((s) => s.auth);
   const roleSlug = roleSlugMap[user?.role?.code] ?? "superadmin";
 
-  const [data, setData] = useState(null);
+  const [caseData, setCaseData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('summary');
 
   const formatCurrency = (value) => {
-    if (!value) return "AED 0";
-    return `AED ${value.toLocaleString()}`;
+    if (!value && value !== 0) return "AED 0";
+    return `AED ${Number(value).toLocaleString()}`;
   };
 
   const formatDate = (date) => {
@@ -66,8 +67,8 @@ const DisbursedFullAmountCases = () => {
       setLoading(true);
       try {
         const response = await apiService.get(`/vault/cases/ops/bank-decision/${caseId}/amount-details`);
-        if (response?.success) {
-          setData(response.data);
+        if (response) {
+          setCaseData(response.data);
         } else {
           message.error("Failed to load amount details");
         }
@@ -85,7 +86,7 @@ const DisbursedFullAmountCases = () => {
   }, [caseId]);
 
   const handleBack = () => {
-    navigate(`/dashboard/${roleSlug}/disbursed-cases`);
+    navigate(-1);
   };
 
   const handlePrint = () => {
@@ -93,23 +94,22 @@ const DisbursedFullAmountCases = () => {
   };
 
   const handleExport = () => {
-    // Generate JSON export
     const exportData = {
-      caseReference: data?.data?.caseReference,
-      caseId: data?.data?.caseId,
+      caseReference: caseData?.data?.caseReference,
+      caseId: caseData?.data?.caseId,
       exportedAt: new Date().toISOString(),
-      amountComparison: data?.data?.amountComparison,
-      bankOffer: data?.data?.bankOffer,
-      commissionCalculation: data?.data?.commissionCalculation,
-      summary: data?.data?.summary,
-      rawData: data?.data?.rawData
+      amountComparison: caseData?.data?.amountComparison,
+      bankOffer: caseData?.data?.bankOffer,
+      commissionCalculation: caseData?.data?.commissionCalculation,
+      summary: caseData?.data?.summary,
+      rawData: caseData?.data?.rawData
     };
     
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `amount-details-${data?.data?.caseReference}.json`;
+    a.download = `amount-details-${caseData?.data?.caseReference || caseId}.json`;
     a.click();
     URL.revokeObjectURL(url);
     message.success("Export completed");
@@ -123,21 +123,20 @@ const DisbursedFullAmountCases = () => {
     );
   }
 
-  if (!data?.data) {
+  if (!caseData) {
     return (
-      <div style={{ padding: 48, textAlign: "center", background: "#F9FAFB", minHeight: "100vh" }}>
-        <Alert message="Case Not Found" description="The requested case could not be found" type="error" showIcon />
-        <Button onClick={handleBack} style={{ marginTop: 24 }}>Back to Disbursed Cases</Button>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F9FAFB" }}>
+        <Alert message="No Data Found" description="Unable to load amount details for this case" type="error" showIcon />
       </div>
     );
   }
 
-  const caseData = data.data;
-  const comparison = caseData.amountComparison || {};
-  const bankOffer = caseData.bankOffer || {};
-  const commission = caseData.commissionCalculation || {};
-  const summary = caseData.summary || {};
-  const timeline = caseData.amountTimeline || [];
+  const data = caseData;
+  const comparison = data.amountComparison || {};
+  const bankOffer = data.bankOffer || {};
+  const commission = data.commissionCalculation || {};
+  const summary = data.summary || {};
+  const timeline = data.amountTimeline || [];
 
   // Amount Comparison Data
   const amountComparisonData = [
@@ -149,21 +148,22 @@ const DisbursedFullAmountCases = () => {
 
   // Loan Details Data
   const loanDetailsData = [
-    { key: '1', label: 'Bank Name', value: bankOffer.bankName, icon: <BankOutlined /> },
-    { key: '2', label: 'Interest Rate', value: `${bankOffer.interestRate}% (${bankOffer.interestRateType})`, icon: <PercentageOutlined /> },
-    { key: '3', label: 'Loan Tenure', value: `${bankOffer.tenureYears} years`, icon: <CalendarOutlined /> },
+    { key: '1', label: 'Bank Name', value: bankOffer.bankName || 'N/A', icon: <BankOutlined /> },
+    { key: '2', label: 'Interest Rate', value: `${bankOffer.interestRate || 0}% (${bankOffer.interestRateType || 'Fixed'})`, icon: <PercentageOutlined /> },
+    { key: '3', label: 'Loan Tenure', value: `${bankOffer.tenureYears || 0} years`, icon: <CalendarOutlined /> },
     { key: '4', label: 'Monthly EMI', value: formatCurrency(bankOffer.monthlyEMI), icon: <CalculatorOutlined /> },
     { key: '5', label: 'Processing Fee', value: formatCurrency(bankOffer.processingFee), icon: <FileTextOutlined /> },
     { key: '6', label: 'Valuation Fee', value: formatCurrency(bankOffer.valuationFee), icon: <FileTextOutlined /> },
-    { key: '7', label: 'Early Settlement Fee', value: `${bankOffer.earlySettlementFee}%`, icon: <PercentageOutlined /> },
+    { key: '7', label: 'Early Settlement Fee', value: `${bankOffer.earlySettlementFee || 0}%`, icon: <PercentageOutlined /> },
+    { key: '8', label: 'DBR Percentage', value: `${bankOffer.dbrPercentage || 0}%`, icon: <FundOutlined /> },
   ];
 
   // Financial Summary Data
   const financialSummaryData = [
     { key: '1', label: 'Property Value', value: formatCurrency(summary.propertyValue), icon: <HomeOutlined /> },
     { key: '2', label: 'Down Payment', value: formatCurrency(summary.downPayment), icon: <DollarOutlined /> },
-    { key: '3', label: 'LTV Ratio', value: `${summary.ltvPercentage}%`, icon: <PercentageOutlined /> },
-    { key: '4', label: 'DBR', value: `${summary.dbrPercentage}% (${summary.dbrStatus})`, icon: <PercentageOutlined /> },
+    { key: '3', label: 'LTV Ratio', value: `${summary.ltvPercentage || 0}%`, icon: <PercentageOutlined /> },
+    { key: '4', label: 'DBR', value: `${summary.dbrPercentage || 0}% (${summary.dbrStatus || 'N/A'})`, icon: <PercentageOutlined /> },
     { key: '5', label: 'Total Upfront Cost', value: formatCurrency(summary.totalUpfrontCost), icon: <WalletOutlined /> },
     { key: '6', label: 'Total Interest Payable', value: formatCurrency(summary.totalInterestPayable), icon: <RiseOutlined /> },
     { key: '7', label: 'Total Amount Payable', value: formatCurrency(summary.totalAmountPayable), icon: <DollarOutlined /> },
@@ -172,14 +172,14 @@ const DisbursedFullAmountCases = () => {
   // Commission Data
   const commissionData = [
     { key: '1', label: 'Disbursed Amount', value: formatCurrency(commission.loanAmount), icon: <DollarOutlined /> },
-    { key: '2', label: 'Loan Tier', value: commission.loanTier, icon: <TrophyOutlined /> },
-    { key: '3', label: 'Xoto Commission Rate', value: commission.xotoCommissionRate, icon: <PercentageOutlined /> },
+    { key: '2', label: 'Loan Tier', value: commission.loanTier || 'N/A', icon: <TrophyOutlined /> },
+    { key: '3', label: 'Xoto Commission Rate', value: commission.xotoCommissionRate || 'N/A', icon: <PercentageOutlined /> },
     { key: '4', label: 'Xoto Commission Amount', value: formatCurrency(commission.xotoCommissionFromBank), icon: <BankOutlined /> },
-    { key: '5', label: 'Recipient', value: `${commission.recipientType} (${commission.recipientName || 'N/A'})`, icon: <UserOutlined /> },
-    { key: '6', label: 'Recipient Percentage', value: `${commission.recipientPercentage}%`, icon: <PercentageOutlined /> },
+    { key: '5', label: 'Recipient', value: `${commission.recipientType || 'N/A'} (${commission.recipientName || 'N/A'})`, icon: <UserOutlined /> },
+    { key: '6', label: 'Recipient Percentage', value: `${commission.recipientPercentage || 0}%`, icon: <PercentageOutlined /> },
     { key: '7', label: 'Commission Amount', value: formatCurrency(commission.commissionAmount), icon: <GiftOutlined />, highlight: true },
-    { key: '8', label: 'Formula', value: commission.formula, icon: <CalculatorOutlined /> },
-    { key: '9', label: 'Status', value: commission.status, icon: <ClockCircleOutlined /> },
+    { key: '8', label: 'Formula', value: commission.formula || 'N/A', icon: <CalculatorOutlined /> },
+    { key: '9', label: 'Status', value: commission.status || 'Pending', icon: <ClockCircleOutlined /> },
   ];
 
   const columnsConfig = [
@@ -206,7 +206,12 @@ const DisbursedFullAmountCases = () => {
                 <Title level={3} style={{ margin: 0, color: "#1e1b4b" }}>
                   Amount Details
                 </Title>
-                <Text type="secondary">Case: {caseData.caseReference}</Text>
+                <Space>
+                  <Text type="secondary">Case ID: </Text>
+                  <Text code style={{ fontSize: 13 }}>{data.caseId}</Text>
+                  <Text type="secondary">| Reference: </Text>
+                  <Text strong style={{ color: PURPLE }}>{data.caseReference}</Text>
+                </Space>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
@@ -218,9 +223,9 @@ const DisbursedFullAmountCases = () => {
 
         {/* Status Banner */}
         <Alert
-          message={`Case Status: ${caseData.currentStatus}`}
+          message={`Case Status: ${data.currentStatus || 'Disbursed'}`}
           description={comparison.message || 'Loan disbursed successfully'}
-          type={caseData.currentStatus === 'Disbursed' ? 'success' : 'info'}
+          type={data.currentStatus === 'Disbursed' ? 'success' : 'info'}
           showIcon
           style={{ marginBottom: 24, borderRadius: 12 }}
         />
@@ -231,7 +236,7 @@ const DisbursedFullAmountCases = () => {
             <Card style={{ borderRadius: 16, textAlign: 'center' }}>
               <Statistic
                 title="Requested Amount"
-                value={comparison.requestedAmount}
+                value={comparison.requestedAmount || 0}
                 prefix={<BankOutlined />}
                 valueStyle={{ fontSize: 20 }}
                 formatter={(value) => formatCurrency(value)}
@@ -242,7 +247,7 @@ const DisbursedFullAmountCases = () => {
             <Card style={{ borderRadius: 16, textAlign: 'center', border: `1px solid ${WARNING_COLOR}` }}>
               <Statistic
                 title="Approved Amount"
-                value={comparison.approvedAmount}
+                value={comparison.approvedAmount || 0}
                 prefix={<CheckCircleOutlined style={{ color: WARNING_COLOR }} />}
                 valueStyle={{ color: WARNING_COLOR, fontSize: 20 }}
                 formatter={(value) => formatCurrency(value)}
@@ -253,7 +258,7 @@ const DisbursedFullAmountCases = () => {
             <Card style={{ borderRadius: 16, textAlign: 'center', background: `linear-gradient(135deg, ${SUCCESS_COLOR}08 0%, #fff 100%)` }}>
               <Statistic
                 title="Disbursed Amount"
-                value={comparison.disbursedAmount}
+                value={comparison.disbursedAmount || 0}
                 prefix={<DollarOutlined style={{ color: SUCCESS_COLOR }} />}
                 valueStyle={{ color: SUCCESS_COLOR, fontSize: 20 }}
                 formatter={(value) => formatCurrency(value)}
@@ -264,7 +269,7 @@ const DisbursedFullAmountCases = () => {
             <Card style={{ borderRadius: 16, textAlign: 'center' }}>
               <Statistic
                 title="Monthly EMI"
-                value={bankOffer.monthlyEMI}
+                value={bankOffer.monthlyEMI || 0}
                 prefix={<CalculatorOutlined />}
                 valueStyle={{ fontSize: 20 }}
                 formatter={(value) => formatCurrency(value)}
@@ -274,7 +279,7 @@ const DisbursedFullAmountCases = () => {
         </Row>
 
         {/* Comparison Banner */}
-        {comparison.amountDifference !== 0 && (
+        {comparison.amountDifference !== 0 && comparison.amountDifference !== undefined && (
           <Alert
             message={`Amount Difference: ${formatCurrency(Math.abs(comparison.amountDifference))}`}
             description={comparison.message}
@@ -337,7 +342,7 @@ const DisbursedFullAmountCases = () => {
                 <div style={{ textAlign: 'center' }}>
                   <Text strong style={{ color: SUCCESS_COLOR }}>Commission Calculation Summary</Text>
                   <div style={{ marginTop: 8, fontSize: 14 }}>
-                    {formatCurrency(commission.xotoCommissionFromBank)} × {commission.recipientPercentage}% = <Text strong style={{ color: SUCCESS_COLOR, fontSize: 18 }}>{formatCurrency(commission.commissionAmount)}</Text>
+                    {formatCurrency(commission.xotoCommissionFromBank)} × {commission.recipientPercentage || 0}% = <Text strong style={{ color: SUCCESS_COLOR, fontSize: 18 }}>{formatCurrency(commission.commissionAmount)}</Text>
                   </div>
                   <Text type="secondary" style={{ fontSize: 12 }}>Commission will be processed within 30 days after disbursement confirmation</Text>
                 </div>
@@ -346,33 +351,34 @@ const DisbursedFullAmountCases = () => {
 
             <TabPane tab={<span><ClockCircleOutlined /> Timeline</span>} key="timeline">
               <div style={{ marginTop: 16 }}>
-                {timeline.map((item, idx) => (
-                  <div key={idx} style={{ 
-                    display: 'flex', 
-                    marginBottom: 16, 
-                    padding: 16, 
-                    background: item.isFinal ? '#f0fdf4' : '#f8fafc', 
-                    borderRadius: 12,
-                    borderLeft: `4px solid ${item.isFinal ? SUCCESS_COLOR : PURPLE}`
-                  }}>
-                    <div style={{ minWidth: 180 }}>
-                      <Text strong>{formatDate(item.date)}</Text>
+                {timeline && timeline.length > 0 ? (
+                  timeline.map((item, idx) => (
+                    <div key={idx} style={{ 
+                      display: 'flex', 
+                      marginBottom: 16, 
+                      padding: 16, 
+                      background: item.isFinal ? '#f0fdf4' : '#f8fafc', 
+                      borderRadius: 12,
+                      borderLeft: `4px solid ${item.isFinal ? SUCCESS_COLOR : PURPLE}`
+                    }}>
+                      <div style={{ minWidth: 180 }}>
+                        <Text strong>{formatDate(item.date)}</Text>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <Text>{item.event}</Text>
+                        {item.reference && (
+                          <div style={{ marginTop: 4 }}>
+                            <Text type="secondary" style={{ fontSize: 12 }}>Reference: {item.reference}</Text>
+                          </div>
+                        )}
+                        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
+                          By: {item.addedBy}
+                        </Text>
+                      </div>
+                      {item.isFinal && <Tag color="success">Final Step</Tag>}
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <Text>{item.event}</Text>
-                      {item.reference && (
-                        <div style={{ marginTop: 4 }}>
-                          <Text type="secondary" style={{ fontSize: 12 }}>Reference: {item.reference}</Text>
-                        </div>
-                      )}
-                      <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
-                        By: {item.addedBy}
-                      </Text>
-                    </div>
-                    {item.isFinal && <Tag color="success">Final Step</Tag>}
-                  </div>
-                ))}
-                {timeline.length === 0 && (
+                  ))
+                ) : (
                   <div style={{ textAlign: 'center', padding: 40 }}>
                     <Text type="secondary">No timeline events found</Text>
                   </div>
@@ -424,7 +430,7 @@ const DisbursedFullAmountCases = () => {
               <EyeOutlined /> View Raw Data
             </summary>
             <pre style={{ marginTop: 16, padding: 16, background: '#f8fafc', borderRadius: 8, overflow: 'auto', fontSize: 12 }}>
-              {JSON.stringify(caseData.rawData, null, 2)}
+              {JSON.stringify(data.rawData || data, null, 2)}
             </pre>
           </details>
         </Card>
