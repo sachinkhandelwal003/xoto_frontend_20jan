@@ -288,7 +288,7 @@ const AdvisorLogin = () => {
     setGeneralError("");
 
     try {
-      await login("/grid-advisor/login", {
+      await login("/gridadvisor/login", {
         email: values.email,
         password: values.password,
       });

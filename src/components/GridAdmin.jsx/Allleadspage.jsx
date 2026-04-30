@@ -23,6 +23,7 @@ const TYPE_COLORS = {
   consultation:   { bg: '#fef3c7', color: '#92400e', label: 'Consultation' },
   enquiry:        { bg: '#f3f4f6', color: '#374151', label: 'Enquiry' },
   schedule_visit: { bg: '#e0f2fe', color: '#075985', label: 'Site Visit' },
+  hot_property:   { bg: '#fee2e2', color: '#dc2626', label: 'Hot Property' },
   partner:        { bg: '#f5f3ff', color: '#4c1d95', label: 'Partner' },
   investor:       { bg: '#fff7ed', color: '#9a3412', label: 'Investor' },
   developer:      { bg: '#f0fdf4', color: '#14532d', label: 'Developer' },
@@ -371,62 +372,96 @@ const LeadDetailDrawer = ({ lead, visible, onClose }) => {
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
+const PAGE_KEY = 'allLeads_page';
+const LIMIT_KEY = 'allLeads_limit';
+
 const AllLeadsPage = () => {
   const [leads,       setLeads]       = useState([]);
   const [loading,     setLoading]     = useState(false);
-  const [pagination,  setPagination]  = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
-  const [assignLead,  setAssignLead]  = useState(null);   // lead to assign
-  const [viewLead,    setViewLead]    = useState(null);    // lead to view
-  const [filters,     setFilters]     = useState({});
+  const [allLeads,    setAllLeads]    = useState([]);
+  
+  // ✅ sessionStorage se saved page/limit restore karo
+  const [pagination, setPagination] = useState({
+    page:       parseInt(sessionStorage.getItem(PAGE_KEY)  || '1'),
+    limit:      parseInt(sessionStorage.getItem(LIMIT_KEY) || '10'),
+    total:      0,
+    totalPages: 0,
+  });
 
-  // Stats
+  const [assignLead, setAssignLead] = useState(null);
+  const [viewLead,   setViewLead]   = useState(null);
+  const [filters,    setFilters]    = useState({});
   const [stats, setStats] = useState({ total: 0, unassigned: 0, converted: 0, hot: 0 });
 
-const fetchLeads = useCallback(async (page = 1, limit = 10, extraFilters = {}) => {
-  setLoading(true);
-  try {
-    const query = new URLSearchParams();
-    query.set("page",  page);
-    query.set("limit", limit);
-    if (extraFilters.search) query.set("search", extraFilters.search);
-    if (extraFilters.status) query.set("status", extraFilters.status);
-    if (extraFilters.type)   query.set("type",   extraFilters.type);
+  const applyPage = (data, page, limit) => {
+    const start  = (page - 1) * limit;
+    const sliced = data.slice(start, start + limit);
+    setLeads(sliced);
+    
+    // ✅ Page yaad rakho
+    sessionStorage.setItem(PAGE_KEY,  page);
+    sessionStorage.setItem(LIMIT_KEY, limit);
 
-    const res       = await apiService.get(`/property/lead?${query.toString()}`);
-const leadsData = (res?.data || []).filter(l => l.type !== 'mortgage'); 
-const pagData   = res?.pagination || {};   
-
-    setLeads(leadsData);
-    setPagination(pagData);
-
-    const unassigned = leadsData.filter(l => !l.assignedAdvisor).length;
-    const converted  = leadsData.filter(l => l.status === 'converted').length;
-    setStats({
-      total:      pagData?.total || leadsData.length,
-      unassigned,
-      converted,
-      hot: leadsData.filter(l => l.status === 'submit' && !l.assignedAdvisor).length,
+    setPagination({
+      page,
+      limit,
+      total:      data.length,
+      totalPages: Math.ceil(data.length / limit),
     });
-  } catch {
-    message.error('Failed to fetch leads');
-  } finally {
-    setLoading(false);
-  }
-}, []);
+  };
+
+  const fetchLeads = useCallback(async (extraFilters = {}, goToPage = null) => {
+    setLoading(true);
+    try {
+      const query = new URLSearchParams();
+      query.set("page",  1);
+      query.set("limit", 1000);
+      if (extraFilters.search) query.set("search", extraFilters.search);
+      if (extraFilters.status) query.set("status", extraFilters.status);
+      if (extraFilters.type)   query.set("type",   extraFilters.type);
+
+      const res      = await apiService.get(`/property/lead?${query.toString()}`);
+      const filtered = (res?.data || []).filter(l => l.type !== 'mortgage');
+
+      setAllLeads(filtered);
+
+      // ✅ goToPage diya toh wahan jao, warna saved page pe raho
+      const savedPage  = parseInt(sessionStorage.getItem(PAGE_KEY)  || '1');
+      const savedLimit = parseInt(sessionStorage.getItem(LIMIT_KEY) || '10');
+      const targetPage = goToPage ?? savedPage;
+
+      // ✅ Agar saved page ab valid nahi (data kam ho gaya) toh page 1 pe jao
+      const maxPage = Math.ceil(filtered.length / savedLimit) || 1;
+      const finalPage = targetPage > maxPage ? 1 : targetPage;
+
+      applyPage(filtered, finalPage, savedLimit);
+
+      setStats({
+        total:      filtered.length,
+        unassigned: filtered.filter(l => !l.assignedAdvisor).length,
+        converted:  filtered.filter(l => l.status === 'converted').length,
+        hot:        filtered.filter(l => l.status === 'submit' && !l.assignedAdvisor).length,
+      });
+    } catch {
+      message.error('Failed to fetch leads');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => { fetchLeads(); }, []);
 
   const handlePageChange = (page, limit) => {
-    fetchLeads(page, limit, filters);
-    setPagination(prev => ({ ...prev, page, limit }));
+    applyPage(allLeads, page, limit);
   };
 
   const handleFilter = (newFilters) => {
     const merged = { ...filters, ...newFilters };
     setFilters(merged);
-    fetchLeads(1, pagination.limit, merged);
+    fetchLeads(merged, 1); // filter lagane pe page 1 pe jao
   };
 
+useEffect(() => { fetchLeads(); }, []);
   // ── Columns ──────────────────────────────────────────────────────────────────
   const columns = [
     {
@@ -460,16 +495,16 @@ const pagData   = res?.pagination || {};
       filterOptions: Object.entries(STATUS_COLORS).map(([k, v]) => ({ value: k, label: v.label })),
       render: (val) => <StatusBadge status={val} />
     },
-    {
-      title: 'Location',
-      key: 'area',
-      render: (val, row) => (
-        <span style={{ fontSize: 12, color: '#6b7280' }}>
-          <EnvironmentOutlined style={{ marginRight: 4, color: PRIMARY }} />
-          {row.area || row.preferred_city || '—'}
-        </span>
-      )
-    },
+    // {
+    //   title: 'Location',
+    //   key: 'area',
+    //   render: (val, row) => (
+    //     <span style={{ fontSize: 12, color: '#6b7280' }}>
+    //       <EnvironmentOutlined style={{ marginRight: 4, color: PRIMARY }} />
+    //       {row.area || row.preferred_city || '—'}
+    //     </span>
+    //   )
+    // },
     {
       title: 'Budget',
       key: 'budget',
@@ -558,12 +593,12 @@ const pagData   = res?.pagination || {};
           </p>
         </div>
         <Button
-          icon={<ReloadOutlined />}
-          onClick={() => fetchLeads(pagination.page, pagination.limit, filters)}
-          style={{ borderColor: PRIMARY, color: PRIMARY }}
-        >
-          Refresh
-        </Button>
+  icon={<ReloadOutlined />}
+  onClick={() => fetchLeads(filters)}   // ✅ sirf filters pass karo
+  style={{ borderColor: PRIMARY, color: PRIMARY }}
+>
+  Refresh
+</Button>
       </div>
 
       {/* ── Stat Cards ── */}
@@ -610,11 +645,11 @@ const pagData   = res?.pagination || {};
 
       {/* ── Assign Modal ── */}
       <AssignModal
-        lead={assignLead}
-        visible={!!assignLead}
-        onClose={() => setAssignLead(null)}
-        onAssigned={() => fetchLeads(pagination.page, pagination.limit, filters)}
-      />
+  lead={assignLead}
+  visible={!!assignLead}
+  onClose={() => setAssignLead(null)}
+  onAssigned={() => fetchLeads(filters)}  
+/>
 
       {/* ── Detail Drawer ── */}
       <LeadDetailDrawer

@@ -64,11 +64,9 @@ const Second = () => {
                     font-medium text-white
                     rounded-xl whitespace-nowrap
                     border transition-all duration-200 ease-out
-                    ${
-                      active === mode
-                        ? "bg-[var(--color-primary)] border-transparent shadow-md sm:shadow-lg sm:scale-[1.03]"
-                        : "bg-transparent border-white hover:bg-[#5C039B] hover:border-transparent"
-                    }
+                 hover:bg-[var(--color-primary)]
+          hover:border-[#5C039B]
+          hover:shadow-lg
                   `}
                   style={dmSans}
                 >

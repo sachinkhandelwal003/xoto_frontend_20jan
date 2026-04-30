@@ -18,7 +18,7 @@ export default function HomeLoanHero() {
       dir={isRTL ? "rtl" : "ltr"}
       // Changed h-140 to min-h-[60vh] to make the container responsive
       className="relative hero-bg bg-cover bg-center w-full min-h-[60vh] md:min-h-[80vh] flex items-center justify-center text-center overflow-hidden"
-      style={customFontStyles} /* <-- Font yahan apply ho raha hai */
+      style={customFontStyles} // 
     >
       {/* Optional: Added a subtle dark overlay so white text is always readable over the image */}
       <div className="absolute inset-0 bg-black/30 z-[1]"></div>

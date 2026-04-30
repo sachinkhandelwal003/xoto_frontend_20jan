@@ -26,8 +26,33 @@ const CASE_STATUSES = ['Draft'];
 
 // Role slug mapping for navigation
 const roleSlugMap = {
-  0: "superadmin", 1: "admin", 2: "customer",
-  15: "agency", 16: "agent", 17: "developer", 18: "vault-admin"
+  '0': 'superadmin',
+  '1': 'admin',
+  '2': "customer",
+  '5': 'vendor-b2c',
+  '6': 'vendor-b2b',
+  '7': 'freelancer',
+  '11': 'accountant',
+  '12': 'supervisor',
+  '15': "agency",        // Agency
+  '16': "agent",         // Agent
+  '17': "developer",
+  '18': "vault-admin", //vault
+  '22': "vaultagent",
+  '21': "vaultpartner",
+  '24': "GridAdvisor",
+  '23': "vault-advisor",
+  // '26': "vault-ops",
+  // '26': "vault-advisor",
+  // '23': "vault-ops",
+  '25': "gridReferralPartner",
+  '26': "vault-advisor",
+  // '23': "vault-ops",
+  
+   
+ 
+
+
 };
 
 const ViewCases = () => {

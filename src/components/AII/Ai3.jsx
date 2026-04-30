@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { apiService } from "../../manageApi/utils/custom.apiservice";
 import { useBlogContext } from "../../context/BlogContext";
-import { FaFacebookF, FaTwitter, FaLinkedinIn } from "react-icons/fa";
+import { FaFacebookF, FaTwitter, FaLinkedinIn, FaInstagram } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6"
 
 const Ai3 = () => {
@@ -201,14 +201,17 @@ const Ai3 = () => {
     </a>
 
     {/* X (Twitter) Link */}
-    <a 
-      href="https://twitter.com" 
-      target="_blank" 
-      rel="noopener noreferrer"
-      className="flex items-center justify-center gap-2 bg-black text-white p-3 rounded-md hover:opacity-90 transition"
-    >
-      <FaXTwitter /> Twitter
-    </a>
+   <a 
+  href="https://www.instagram.com/xotoproptech/" 
+  target="_blank" 
+  rel="noopener noreferrer"
+  className="flex items-center justify-center gap-2 text-white p-3 rounded-md transition hover:opacity-90"
+  style={{
+    background: "linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)"
+  }}
+>
+  <FaInstagram /> Instagram
+</a>
 
     {/* LinkedIn Link */}
     <a 

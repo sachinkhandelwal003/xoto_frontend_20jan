@@ -220,6 +220,7 @@ import AdvisorDashboard from "../ecommerce/B2C/AdvisorDashboard";
 import IndividualLeadCreate from "../ecommerce/vault/individualpartner/IndividualLead";
 import AdvisorLeads from "../ecommerce/vault/vaultadvisor/index";
 import AdvisorLeadUploadDocuments from "../ecommerce/vault/vaultadvisor/UploadDocuments";
+import MortgageOpsCaseDetail from "../ecommerce/vault/case/OpsCaseDetails";
 
 // import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 // import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
@@ -240,12 +241,16 @@ import TotalLeads from "../GridReferralPartner/GridDashboardpages/TotalLeads";
 import ActiveLeads from "../GridReferralPartner/GridDashboardpages/CreateReferralLead";
 import RecentLeads from "../GridReferralPartner/GridDashboardpages/RecentLeads";
 import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
-// import VaultLeadDetail from "../ecommerce/vault/Lead/VaultLeadDetail";
 import QueueCases from "../ecommerce/vault/case/QueueCases";
 import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
 
 import GridAdvisorDashboard from "./pages/GridAdvisorDashboard";
 import GridAdvisorProfile from "./pages/dashboardPages/Profiles/GridAdvisorProfile";
+import OpsAssignedReview from "../ecommerce/vault/case/OpsAssignedReview";
+import VaultCreateadvisor from "../ecommerce/B2C/VaultCreateadviosor";
+import AdminManagecases from "../ecommerce/vault/case/AdminManagecases";
+// import AdvisorLeads from "../ecommerce/vault/vaultadvisor";
+import VaultAdvisorLeads from "../ecommerce/B2C/VaultAdvisorLeads";
 
 
 
@@ -258,8 +263,8 @@ const roleSlugMap = {
   7: "freelancer",
   11: "accountant",
   12: "supervisor",
-  15: "agency",        // Agency
-  16: "agent",         // Agent
+  15: "agency",        
+  16: "agent",         
   17: "developer",
   18: "vault-admin",
   22: "vaultagent" ,
@@ -518,7 +523,9 @@ const CmsRoutes = () => {
 <Route path="onboard-partner" element={<OnboardPartner />} />
 <Route path="AgentVaultlisting" element={<AgentVaultListing />} />
 <Route path="leads/create" element={<VaultCreateLeads />} />
-<Route path="leads" element={<LeadsVault/>} />
+<Route path="leads" element={<VaultLeads />} />
+<Route path="leads/advisor" element={<AdvisorLeads />} />
+
 <Route path="leads/:leadId" element={<VaultLeadDetails />} />
 <Route path="leads/:leadId/documents" element={<VaultLeadDocuments />} /> 
 <Route path="/lead-documents/:leadId"element={<VaultAgentDocument/>} />
@@ -540,6 +547,9 @@ const CmsRoutes = () => {
 <Route path="leads/partner/create" element={<IndividualLeadCreate />} />
 
 
+{/* Mortgage ops case details */}
+
+<Route path= "mortgage-ops/case/:caseId" element={<MortgageOpsCaseDetail/>} />
 
 
 <Route path="vault/agent-leads" element={<VaultAgentLeadList />} />
@@ -648,6 +658,8 @@ const CmsRoutes = () => {
 
             <Route path="/case/create" element={< CreateCase />} />
             <Route path="/case/view" element={< ViewCases />} />
+                        <Route path="/case/manage" element={< AdminManagecases />} />
+
                         <Route path="/case/queue/view" element={< QueueCases />} />
             <Route path="/case/assigned/all" element={< OpsAssignedcases />} />
 

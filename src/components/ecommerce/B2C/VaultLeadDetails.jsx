@@ -1,183 +1,249 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
+import { Modal, message } from 'antd';
 import {
-  ArrowLeft, User, Home, Briefcase, Loader2, AlertCircle,
-  FileText, Eye, RefreshCw,
+  ArrowLeft,
+  User,
+  Home,
+  Briefcase,
+  Loader2,
+  AlertCircle,
+  FileText,
+  Eye,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Download,
+  ChevronRight,
+  CreditCard,
+  Calendar,
+  MapPin,
+  Building,
+  Phone,
+  Mail,
+  DollarSign,
+  FileCheck,
+  Shield,
+  UserCheck,
+  Banknote,
+  Heart,
+  Users,
+  TrendingUp,
 } from 'lucide-react';
 
-/* ── Fonts ──────────────────────────────────────────────────────────────────── */
-const FontInjector = () => (
-  <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-    .ld-root, .ld-root * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-    .ld-back:hover { background: #f0f7ff !important; color: #2563eb !important; border-color: #bfdbfe !important; }
-    .ld-file-item:hover { background: #f0f7ff !important; border-color: #bfdbfe !important; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-    .ld-dl-btn:hover { background: #eff6ff !important; border-color: #bfdbfe !important; color: #2563eb !important; }
-    @keyframes ld-spin { to { transform: rotate(360deg); } }
-    @keyframes ld-fade { from { opacity:0; transform:translateY(8px);} to { opacity:1; transform:translateY(0);} }
-    .ld-animate { animation: ld-fade 0.22s ease both; }
-  `}</style>
-);
-
-/* ── Status Config ──────────────────────────────────────────────────────────── */
+// ────────────────────────────────────────────────────────────────────────────
+// STATUS CONFIGURATION
+// ────────────────────────────────────────────────────────────────────────────
 const STATUS_MAP = {
-  'New':                      { bg: '#eff6ff', color: '#1d4ed8', dot: '#3b82f6', border: '#bfdbfe' },
-  'Contacted':                { bg: '#fffbeb', color: '#92400e', dot: '#f59e0b', border: '#fde68a' },
-  'Qualified':                { bg: '#f0fdf4', color: '#166534', dot: '#22c55e', border: '#bbf7d0' },
-  'Collecting Documentation': { bg: '#faf5ff', color: '#581c87', dot: '#a855f7', border: '#e9d5ff' },
-  'Disbursed':                { bg: '#f0f9ff', color: '#075985', dot: '#0ea5e9', border: '#bae6fd' },
+  New: { bg: 'bg-blue-50', color: 'text-blue-700', dot: 'bg-blue-500', border: 'border-blue-200' },
+  Contacted: { bg: 'bg-amber-50', color: 'text-amber-700', dot: 'bg-amber-500', border: 'border-amber-200' },
+  Qualified: { bg: 'bg-emerald-50', color: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-200' },
+  'Collecting Documentation': { bg: 'bg-purple-50', color: 'text-purple-700', dot: 'bg-purple-500', border: 'border-purple-200' },
+  Disbursed: { bg: 'bg-sky-50', color: 'text-sky-700', dot: 'bg-sky-500', border: 'border-sky-200' },
+  'Under Review': { bg: 'bg-indigo-50', color: 'text-indigo-700', dot: 'bg-indigo-500', border: 'border-indigo-200' },
+  'Bank Application': { bg: 'bg-violet-50', color: 'text-violet-700', dot: 'bg-violet-500', border: 'border-violet-200' },
+  'Pre-Approved': { bg: 'bg-green-50', color: 'text-green-700', dot: 'bg-green-500', border: 'border-green-200' },
+  Valuation: { bg: 'bg-orange-50', color: 'text-orange-700', dot: 'bg-orange-500', border: 'border-orange-200' },
+  Rejected: { bg: 'bg-red-50', color: 'text-red-700', dot: 'bg-red-500', border: 'border-red-200' },
+  Lost: { bg: 'bg-gray-50', color: 'text-gray-700', dot: 'bg-gray-500', border: 'border-gray-200' },
 };
 
 const StatusBadge = ({ status }) => {
-  const s = STATUS_MAP[status] || { bg: '#f8fafc', color: '#475569', dot: '#94a3b8', border: '#e2e8f0' };
+  const s = STATUS_MAP[status] || {
+    bg: 'bg-gray-50',
+    color: 'text-gray-700',
+    dot: 'bg-gray-500',
+    border: 'border-gray-200',
+  };
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', borderRadius: 999, background: s.bg, color: s.color, border: `1px solid ${s.border}`, fontSize: 12, fontWeight: 600 }}>
-      <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.dot }} />
+    <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${s.bg} ${s.color} border ${s.border} text-xs font-semibold`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
       {status || 'Unknown'}
     </span>
   );
 };
 
-/* ── Info Row ───────────────────────────────────────────────────────────────── */
-const InfoRow = ({ label, value, last }) => (
-  <div style={{ padding: '10px 0', borderBottom: last ? 'none' : '1px solid #f1f5f9' }}>
-    <p style={{ margin: '0 0 3px', fontSize: 10.5, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</p>
-    <p style={{ margin: 0, fontSize: 13, fontWeight: value ? 500 : 400, color: value ? '#1e293b' : '#cbd5e1', fontFamily: "'JetBrains Mono', monospace", wordBreak: 'break-word' }}>
-      {value ?? '—'}
-    </p>
-  </div>
-);
-
-/* ── Panel Card ─────────────────────────────────────────────────────────────── */
-const Panel = ({ icon: Icon, label, accent, children }) => (
-  <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e8edf5', padding: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }} className="ld-animate">
-    <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid #f1f5f9' }}>
-      <div style={{ width: 32, height: 32, borderRadius: 9, background: `${accent}12`, border: `1.5px solid ${accent}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <Icon size={15} style={{ color: accent }} />
-      </div>
-      <span style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>{label}</span>
-    </div>
-    {children}
-  </div>
-);
-
-/* ── Document Type Label Map ────────────────────────────────────────────────── */
-const DOC_TYPE_LABELS = {
-  emirates_id_front:  'Emirates ID (Front)',
-  emirates_id_back:   'Emirates ID (Back)',
-  passport:           'Passport',
-  visa:               'Visa',
-  bank_statements:    'Bank Statements',
-  salary_certificate: 'Salary Certificate',
-  payslips:           'Payslips',
-  trade_license:      'Trade License',
-  tenancy_contract:   'Tenancy Contract',
-  title_deed:         'Title Deed',
-  noc:                'NOC Letter',
-};
-
-const formatDocType = (type) => {
-  if (!type) return 'Document';
-  return DOC_TYPE_LABELS[type] || type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-};
-
-/* ── MIME / file type → badge config ───────────────────────────────────────── */
-const getMimeConfig = (mimeType, fileName) => {
-  if (mimeType) {
-    if (mimeType === 'application/pdf')  return { bg: '#FCEBEB', color: '#A32D2D', label: 'PDF' };
-    if (mimeType.startsWith('image/'))   return { bg: '#FAEEDA', color: '#854F0B', label: 'IMG' };
-    if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return { bg: '#EAF3DE', color: '#3B6D11', label: 'XLS' };
-    if (mimeType.includes('word') || mimeType.includes('document'))     return { bg: '#E6F1FB', color: '#185FA5', label: 'DOC' };
-  }
-  if (fileName) {
-    const ext = fileName.split('.').pop().toLowerCase();
-    const MAP = {
-      pdf:  { bg: '#FCEBEB', color: '#A32D2D', label: 'PDF' },
-      jpg:  { bg: '#FAEEDA', color: '#854F0B', label: 'IMG' },
-      jpeg: { bg: '#FAEEDA', color: '#854F0B', label: 'IMG' },
-      png:  { bg: '#FAEEDA', color: '#854F0B', label: 'IMG' },
-      webp: { bg: '#FAEEDA', color: '#854F0B', label: 'IMG' },
-      xlsx: { bg: '#EAF3DE', color: '#3B6D11', label: 'XLS' },
-      xls:  { bg: '#EAF3DE', color: '#3B6D11', label: 'XLS' },
-      csv:  { bg: '#EAF3DE', color: '#3B6D11', label: 'CSV' },
-      docx: { bg: '#E6F1FB', color: '#185FA5', label: 'DOC' },
-      doc:  { bg: '#E6F1FB', color: '#185FA5', label: 'DOC' },
-    };
-    if (MAP[ext]) return MAP[ext];
-  }
-  return { bg: '#F1EFE8', color: '#5F5E5A', label: 'FILE' };
-};
-
-/* ── Verification Status Badge ──────────────────────────────────────────────── */
-const VERIFY_MAP = {
-  verified: { bg: '#f0fdf4', color: '#166534', dot: '#22c55e' },
-  pending:  { bg: '#fffbeb', color: '#92400e', dot: '#f59e0b' },
-  rejected: { bg: '#fef2f2', color: '#991b1b', dot: '#ef4444' },
-};
-
+// ────────────────────────────────────────────────────────────────────────────
+// VERIFICATION STATUS BADGE
+// ────────────────────────────────────────────────────────────────────────────
 const VerifyBadge = ({ status }) => {
-  const s = VERIFY_MAP[status] || VERIFY_MAP.pending;
+  const config = {
+    verified: { bg: 'bg-emerald-50', color: 'text-emerald-700', icon: <CheckCircle size={12} /> },
+    pending: { bg: 'bg-amber-50', color: 'text-amber-700', icon: <Clock size={12} /> },
+    rejected: { bg: 'bg-red-50', color: 'text-red-700', icon: <XCircle size={12} /> },
+    Uploaded: { bg: 'bg-blue-50', color: 'text-blue-700', icon: <FileCheck size={12} /> },
+  };
+  const c = config[status?.toLowerCase()] || config.pending;
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, background: s.bg, color: s.color, fontSize: 11, fontWeight: 600 }}>
-      <span style={{ width: 5, height: 5, borderRadius: '50%', background: s.dot, flexShrink: 0 }} />
-      {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Pending'}
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full ${c.bg} ${c.color} text-xs font-medium`}>
+      {c.icon}
+      {status || 'Pending'}
     </span>
   );
 };
 
-/* ── Category grouping config ───────────────────────────────────────────────── */
-const CATEGORY_CONFIG = {
-  identity:  { label: 'Identity Documents',  accent: '#2563eb', bg: '#eff6ff' },
-  financial: { label: 'Financial Documents', accent: '#16a34a', bg: '#f0fdf4' },
-  property:  { label: 'Property Documents',  accent: '#9333ea', bg: '#faf5ff' },
-  other:     { label: 'Other Documents',     accent: '#64748b', bg: '#f8fafc' },
+// ────────────────────────────────────────────────────────────────────────────
+// DOCUMENT TYPE LABELS
+// ────────────────────────────────────────────────────────────────────────────
+const DOC_TYPE_LABELS = {
+  emirates_id_front: 'Emirates ID (Front)',
+  emirates_id_back: 'Emirates ID (Back)',
+  passport: 'Passport',
+  visa: 'Visa',
+  bank_statements: 'Bank Statements',
+  salary_certificate: 'Salary Certificate',
+  payslips: 'Payslips',
+  trade_license: 'Trade License',
+  tenancy_contract: 'Tenancy Contract',
+  title_deed: 'Title Deed',
+  noc: 'NOC Letter',
+  consent_form: 'Consent Form',
+  bank_application_form: 'Bank Application Form',
 };
 
-/* ── Shared panel wrapper style ─────────────────────────────────────────────── */
-const panelStyle = {
-  background: '#fff',
-  borderRadius: 16,
-  border: '1px solid #e8edf5',
-  padding: '20px 24px',
-  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+const formatDocType = (type) => {
+  if (!type) return 'Document';
+  return DOC_TYPE_LABELS[type] || type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 };
 
-/* ── Documents Panel ────────────────────────────────────────────────────────── */
+// ────────────────────────────────────────────────────────────────────────────
+// FILE TYPE CONFIGURATION
+// ────────────────────────────────────────────────────────────────────────────
+const getFileTypeConfig = (mimeType, fileName) => {
+  if (mimeType === 'application/pdf') return { bg: 'bg-red-50', color: 'text-red-600', label: 'PDF' };
+  if (mimeType?.startsWith('image/')) return { bg: 'bg-emerald-50', color: 'text-emerald-600', label: 'IMG' };
+  if (mimeType?.includes('spreadsheet') || mimeType?.includes('excel'))
+    return { bg: 'bg-green-50', color: 'text-green-600', label: 'XLS' };
+  if (mimeType?.includes('word') || mimeType?.includes('document'))
+    return { bg: 'bg-blue-50', color: 'text-blue-600', label: 'DOC' };
+  if (fileName) {
+    const ext = fileName.split('.').pop().toLowerCase();
+    const map = {
+      pdf: { bg: 'bg-red-50', color: 'text-red-600', label: 'PDF' },
+      jpg: { bg: 'bg-emerald-50', color: 'text-emerald-600', label: 'IMG' },
+      jpeg: { bg: 'bg-emerald-50', color: 'text-emerald-600', label: 'IMG' },
+      png: { bg: 'bg-emerald-50', color: 'text-emerald-600', label: 'IMG' },
+      webp: { bg: 'bg-emerald-50', color: 'text-emerald-600', label: 'IMG' },
+      doc: { bg: 'bg-blue-50', color: 'text-blue-600', label: 'DOC' },
+      docx: { bg: 'bg-blue-50', color: 'text-blue-600', label: 'DOC' },
+    };
+    if (map[ext]) return map[ext];
+  }
+  return { bg: 'bg-gray-50', color: 'text-gray-600', label: 'FILE' };
+};
+
+// ────────────────────────────────────────────────────────────────────────────
+// INFO ROW COMPONENT
+// ────────────────────────────────────────────────────────────────────────────
+const InfoRow = ({ label, value, icon: Icon, last }) => (
+  <div className={`py-3 ${!last ? 'border-b border-gray-100' : ''}`}>
+    <div className="flex items-center gap-2 mb-1">
+      {Icon && <Icon size={12} className="text-gray-400" />}
+      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+        {label}
+      </span>
+    </div>
+    <p className="text-sm font-medium text-gray-800 break-words font-mono">
+      {value || '—'}
+    </p>
+  </div>
+);
+
+// ────────────────────────────────────────────────────────────────────────────
+// DETAIL CARD COMPONENT
+// ────────────────────────────────────────────────────────────────────────────
+const DetailCard = ({ icon: Icon, title, accentColor, children }) => (
+  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className={`px-5 py-4 border-b border-gray-100 flex items-center gap-3`}>
+      <div
+        className="w-8 h-8 rounded-xl flex items-center justify-center"
+        style={{ backgroundColor: `${accentColor}15`, border: `1px solid ${accentColor}30` }}
+      >
+        <Icon size={16} style={{ color: accentColor }} />
+      </div>
+      <span className="font-bold text-gray-800 text-sm">{title}</span>
+    </div>
+    <div className="p-5">{children}</div>
+  </div>
+);
+
+// ────────────────────────────────────────────────────────────────────────────
+// DOCUMENT PREVIEW MODAL
+// ────────────────────────────────────────────────────────────────────────────
+const DocumentPreviewModal = ({ open, onClose, doc }) => {
+  if (!doc) return null;
+
+  const fileUrl = doc.fileUrl || doc.url || doc.documentUrl || doc.file_url;
+  const isPdf = fileUrl?.toLowerCase().endsWith('.pdf') || doc.mimeType === 'application/pdf';
+  const isImage = doc.mimeType?.startsWith('image/') || /\.(png|jpe?g|gif|webp)$/i.test(fileUrl);
+
+  return (
+    <Modal
+      open={open}
+      onCancel={onClose}
+      footer={null}
+      width="90%"
+      style={{ maxWidth: 1000 }}
+      centered
+      destroyOnClose
+      title={
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+            <FileText size={16} className="text-purple-600" />
+          </div>
+          <div>
+            <div className="font-semibold text-gray-800">{formatDocType(doc.documentType)}</div>
+            <div className="text-xs text-gray-400">{doc.fileName}</div>
+          </div>
+        </div>
+      }
+    >
+      <div className="min-h-[60vh] max-h-[70vh] bg-gray-50 rounded-xl flex items-center justify-center overflow-auto">
+        {isPdf ? (
+          <iframe src={fileUrl} className="w-full h-[65vh] border-0 rounded-xl" title="PDF Preview" />
+        ) : isImage ? (
+          <img src={fileUrl} alt="Document preview" className="max-h-[65vh] max-w-full object-contain rounded-xl" />
+        ) : (
+          <div className="text-center p-10">
+            <FileText size={48} className="text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-sm">Preview not available for this file type</p>
+            <a
+              href={fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition"
+            >
+              <Download size={14} /> Download File
+            </a>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+};
+
+// ────────────────────────────────────────────────────────────────────────────
+// DOCUMENTS LIST COMPONENT (Integrated)
+// ────────────────────────────────────────────────────────────────────────────
 const DocumentsList = ({ leadId }) => {
+  const [previewDoc, setPreviewDoc] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['leadDocuments', leadId],
     queryFn: () => apiService.get(`/vault/lead/documents/${leadId}`),
     enabled: !!leadId,
   });
 
-  // API returns { success: true, data: [...] }
   const documents = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
 
-  if (isLoading) {
-    return (
-      <div style={{ ...panelStyle, marginTop: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '32px 0' }}>
-          <Loader2 size={18} style={{ color: '#2563eb', animation: 'ld-spin 0.8s linear infinite' }} />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{ ...panelStyle, marginTop: 24 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '24px 0' }}>
-          <AlertCircle size={20} style={{ color: '#ef4444' }} />
-          <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>Failed to load documents</p>
-          <button onClick={() => refetch()} style={{ padding: '5px 14px', background: '#f1f5f9', border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 600, color: '#475569', cursor: 'pointer' }}>
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const handlePreview = (doc) => {
+    setPreviewDoc(doc);
+    setPreviewOpen(true);
+  };
 
   // Group documents by category
   const grouped = documents.reduce((acc, doc) => {
@@ -187,135 +253,140 @@ const DocumentsList = ({ leadId }) => {
     return acc;
   }, {});
 
-  const categoryOrder = ['identity', 'financial', 'property', 'other'];
+  const categoryConfig = {
+    identity: { label: 'Identity Documents', accent: '#5c039b', bg: 'bg-purple-50', order: 1 },
+    financial: { label: 'Financial Documents', accent: '#10b981', bg: 'bg-emerald-50', order: 2 },
+    property: { label: 'Property Documents', accent: '#f59e0b', bg: 'bg-amber-50', order: 3 },
+    bank_form: { label: 'Bank Forms', accent: '#3b82f6', bg: 'bg-blue-50', order: 4 },
+    other: { label: 'Other Documents', accent: '#6b7280', bg: 'bg-gray-50', order: 5 },
+  };
+
+  const sortedCategories = Object.keys(grouped).sort(
+    (a, b) => (categoryConfig[a]?.order || 99) - (categoryConfig[b]?.order || 99)
+  );
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 p-8 mt-6">
+        <div className="flex justify-center py-8">
+          <Loader2 size={24} className="text-purple-600 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 p-8 mt-6">
+        <div className="flex flex-col items-center gap-3 py-6">
+          <AlertCircle size={24} className="text-red-400" />
+          <p className="text-gray-500 text-sm">Failed to load documents</p>
+          <button
+            onClick={() => refetch()}
+            className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-200 transition"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (documents.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 p-8 mt-6">
+        <div className="flex flex-col items-center gap-3 py-6">
+          <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center">
+            <FileText size={20} className="text-gray-300" />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">No documents uploaded yet</p>
+          <p className="text-gray-400 text-xs">Documents will appear here once uploaded</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ ...panelStyle, marginTop: 24 }} className="ld-animate">
-
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-        <FileText size={16} style={{ color: '#94a3b8', flexShrink: 0 }} />
-        <span style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>Uploaded Documents</span>
-        {documents.length > 0 && (
-          <span style={{ fontSize: 12, fontWeight: 500, background: '#f1f5f9', color: '#64748b', padding: '3px 10px', borderRadius: 999 }}>
-            {documents.length}
-          </span>
-        )}
-      </div>
-
-      {/* Empty State */}
-      {documents.length === 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '40px 0' }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <FileText size={20} style={{ color: '#cbd5e1' }} />
+    <>
+      <div className="bg-white rounded-2xl border border-gray-100 mt-6 overflow-hidden">
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileText size={16} className="text-purple-600" />
+            <span className="font-bold text-gray-800 text-sm">Uploaded Documents</span>
+            <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs font-medium text-gray-600">
+              {documents.length}
+            </span>
           </div>
-          <p style={{ margin: 0, fontSize: 13, color: '#94a3b8', fontWeight: 500 }}>No documents uploaded yet</p>
-          <p style={{ margin: 0, fontSize: 12, color: '#cbd5e1' }}>Documents will appear here once uploaded</p>
+          <button
+            onClick={() => refetch()}
+            className="p-1.5 rounded-lg text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition"
+          >
+            <RefreshCw size={14} />
+          </button>
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {categoryOrder.map(cat => {
+
+        {/* Document Categories */}
+        <div className="p-5">
+          {sortedCategories.map((cat) => {
             const docs = grouped[cat];
-            if (!docs || docs.length === 0) return null;
-            const catCfg = CATEGORY_CONFIG[cat] || CATEGORY_CONFIG.other;
+            const cfg = categoryConfig[cat] || categoryConfig.other;
 
             return (
-              <div key={cat}>
-                {/* Category Label */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: catCfg.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    {catCfg.label}
+              <div key={cat} className="mb-6 last:mb-0">
+                {/* Category Header */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${cfg.color || 'text-purple-600'}`}>
+                    {cfg.label}
                   </span>
-                  <span style={{ fontSize: 11, fontWeight: 600, background: catCfg.bg, color: catCfg.accent, padding: '1px 8px', borderRadius: 999 }}>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${cfg.bg} text-gray-600`}>
                     {docs.length}
                   </span>
-                  <div style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
+                  <div className="flex-1 h-px bg-gray-100" />
                 </div>
 
                 {/* Document Cards Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 10 }}>
-                  {docs.map((doc, i) => {
-                    const cfg      = getMimeConfig(doc.mimeType, doc.fileName);
-                    const docLabel = formatDocType(doc.documentType);
-                    const sizeMb   = doc.fileSizeMb != null
-                      ? doc.fileSizeMb < 1
-                        ? `${(doc.fileSizeMb * 1024).toFixed(0)} KB`
-                        : `${doc.fileSizeMb.toFixed(1)} MB`
-                      : doc.formattedFileSize || '';
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {docs.map((doc, idx) => {
+                    const fileCfg = getFileTypeConfig(doc.mimeType, doc.fileName);
+                    const size =
+                      doc.fileSizeMb != null
+                        ? doc.fileSizeMb < 1
+                          ? `${(doc.fileSizeMb * 1024).toFixed(0)} KB`
+                          : `${doc.fileSizeMb.toFixed(1)} MB`
+                        : doc.formattedFileSize || '';
 
                     return (
                       <div
-                        key={doc._id || doc.documentId || i}
-                        className="ld-file-item"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          padding: '12px 14px',
-                          borderRadius: 12,
-                          background: '#fff',
-                          border: '1px solid #e8edf5',
-                          transition: 'all 0.2s ease',
-                          cursor: 'default',
-                        }}
+                        key={doc._id || doc.documentId || idx}
+                        className="group flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-white hover:border-purple-200 hover:bg-purple-50/30 transition-all duration-200 cursor-pointer"
+                        onClick={() => handlePreview(doc)}
                       >
-                        {/* File type badge */}
-                        <div style={{
-                          width: 42,
-                          height: 42,
-                          borderRadius: 10,
-                          background: cfg.bg,
-                          color: cfg.color,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          flexShrink: 0,
-                          letterSpacing: '0.05em',
-                        }}>
-                          {cfg.label}
+                        {/* File Type Badge */}
+                        <div
+                          className={`w-10 h-10 rounded-xl ${fileCfg.bg} flex items-center justify-center flex-shrink-0`}
+                        >
+                          <span className={`text-xs font-bold ${fileCfg.color}`}>{fileCfg.label}</span>
                         </div>
 
-                        {/* Info */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 600, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={docLabel}>
-                            {docLabel}
+                        {/* Document Info */}
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className="text-sm font-semibold text-gray-800 truncate"
+                            title={formatDocType(doc.documentType)}
+                          >
+                            {formatDocType(doc.documentType)}
                           </p>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div className="flex items-center gap-2 mt-1">
                             <VerifyBadge status={doc.verificationStatus} />
-                            {sizeMb && (
-                              <span style={{ fontSize: 11, color: '#94a3b8' }}>{sizeMb}</span>
-                            )}
+                            {size && <span className="text-[10px] text-gray-400">{size}</span>}
                           </div>
                         </div>
 
-                        {/* View */}
-                        {doc.fileUrl && (
-                          <a
-                            href={doc.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ld-dl-btn"
-                            style={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: 8,
-                              border: '1px solid #e2e8f0',
-                              background: '#f8fafc',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: '#64748b',
-                              textDecoration: 'none',
-                              flexShrink: 0,
-                              transition: 'all 0.15s ease',
-                            }}
-                            title={`View ${docLabel}`}
-                          >
-                            <Eye size={14} />
-                          </a>
-                        )}
+                        {/* Preview Button */}
+                        <div className="w-8 h-8 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-purple-100 group-hover:border-purple-200 group-hover:text-purple-600 transition">
+                          <Eye size={14} />
+                        </div>
                       </div>
                     );
                   })}
@@ -324,15 +395,20 @@ const DocumentsList = ({ leadId }) => {
             );
           })}
         </div>
-      )}
-    </div>
+      </div>
+
+      {/* Preview Modal */}
+      <DocumentPreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} doc={previewDoc} />
+    </>
   );
 };
 
-/* ── Main Detail Page ───────────────────────────────────────────────────────── */
+// ────────────────────────────────────────────────────────────────────────────
+// MAIN LEAD DETAIL PAGE
+// ────────────────────────────────────────────────────────────────────────────
 const VaultLeadDetail = () => {
   const { leadId } = useParams();
-  const navigate   = useNavigate();
+  const navigate = useNavigate();
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['leadDetail', leadId],
@@ -342,112 +418,145 @@ const VaultLeadDetail = () => {
 
   const lead = data?.data || data;
 
-  const showDocs = lead
-    ? (lead.referralType && lead.referralType !== 'Referral Only') || lead.currentStatus === 'Collecting Documentation'
-    : false;
+  const formatCurrency = (amount) => {
+    if (!amount) return null;
+    return `AED ${Number(amount).toLocaleString('en-AE', { maximumFractionDigits: 0 })}`;
+  };
 
-  const fmtAED = (n) => n ? `AED ${Number(n).toLocaleString('en-AE', { maximumFractionDigits: 0 })}` : null;
+  const showDocuments =
+    lead ? (lead.referralType && lead.referralType !== 'Referral Only') || lead.currentStatus === 'Collecting Documentation' : false;
+
+  const customerInfo = lead?.customerInfo || lead?.clientInfo || {};
+  const propertyInfo = lead?.propertyDetails || lead?.propertyInfo || {};
+  const loanInfo = lead?.loanRequirements || lead?.loanInfo || {};
 
   return (
-    <div className="ld-root" style={{ padding: '32px 36px', minHeight: '100vh', background: '#f4f7fb' }}>
-      <FontInjector />
-
-      {/* ── Top Bar ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <button
-            className="ld-back"
-            onClick={() => navigate(-1)}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 14px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, color: '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}
-          >
-            <ArrowLeft size={15} /> Back
-          </button>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f172a', letterSpacing: '-0.02em' }}>
-              Lead Details
-            </h1>
-            {lead && (
-              <p style={{ margin: '3px 0 0', fontSize: 12, color: '#94a3b8', fontFamily: "'JetBrains Mono', monospace" }}>
-                {lead.leadId || leadId}
-              </p>
-            )}
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Bar */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition"
+            >
+              <ArrowLeft size={18} />
+              <span className="text-sm font-medium">Back</span>
+            </button>
+            <div>
+              <h1 className="text-xl font-bold text-gray-800">My Lead Details</h1>
+             
+            </div>
           </div>
-        </div>
 
-        {lead && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <StatusBadge status={lead.currentStatus} />
+          {lead && (
+            <div className="flex items-center gap-3">
+              <StatusBadge status={lead.currentStatus} />
+              <button
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="p-2 rounded-xl text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition"
+              >
+                <RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 size={32} className="text-purple-600 animate-spin" />
+            <p className="text-gray-500 text-sm">Loading lead details...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !isLoading && (
+          <div className="max-w-md mx-auto bg-white rounded-2xl border border-red-100 p-8 text-center">
+            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle size={24} className="text-red-500" />
+            </div>
+            <h3 className="font-bold text-gray-800 mb-2">Failed to load lead</h3>
+            <p className="text-gray-500 text-sm mb-6">Could not fetch details for this lead.</p>
             <button
               onClick={() => refetch()}
-              disabled={isFetching}
-              style={{ width: 34, height: 34, borderRadius: 9, border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s', opacity: isFetching ? 0.5 : 1 }}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition"
             >
-              <RefreshCw size={14} style={{ animation: isFetching ? 'ld-spin 0.8s linear infinite' : 'none' }} />
+              Try Again
             </button>
           </div>
         )}
+
+        {/* Lead Content */}
+        {lead && !isLoading && (
+          <>
+            {/* Three Column Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Customer Info Card */}
+              <DetailCard icon={User} title="Customer Information" accentColor="#5c039b">
+                <InfoRow label="Full Name" value={customerInfo.fullName} icon={UserCheck} />
+                <InfoRow label="Email" value={customerInfo.email} icon={Mail} />
+                <InfoRow label="Mobile" value={customerInfo.mobileNumber || customerInfo.mobile} icon={Phone} />
+                <InfoRow label="WhatsApp" value={customerInfo.whatsappNumber} icon={Heart} />
+                <InfoRow label="Nationality" value={customerInfo.nationality} icon={Users} />
+                <InfoRow label="Marital Status" value={customerInfo.maritalStatus} />
+                <InfoRow label="Employer" value={customerInfo.employer} icon={Building} />
+                <InfoRow label="Monthly Salary" value={formatCurrency(customerInfo.monthlySalary)} icon={Banknote} last />
+              </DetailCard>
+
+              {/* Property Details Card */}
+              <DetailCard icon={Home} title="Property Details" accentColor="#10b981">
+                <InfoRow label="Property Type" value={[propertyInfo.propertyType, propertyInfo.propertySubtype].filter(Boolean).join(' — ')} icon={Building} />
+                <InfoRow label="Property Value" value={formatCurrency(propertyInfo.propertyValue)} icon={DollarSign} />
+                <InfoRow label="Down Payment" value={formatCurrency(propertyInfo.downPaymentAmount || propertyInfo.downPayment)} />
+                <InfoRow label="Building" value={propertyInfo.propertyAddress?.building} icon={MapPin} />
+                <InfoRow label="Area" value={propertyInfo.propertyAddress?.area} />
+                <InfoRow label="City" value={propertyInfo.propertyAddress?.city} />
+                <InfoRow label="Property Age" value={propertyInfo.propertyAgeYears ? `${propertyInfo.propertyAgeYears} yrs` : null} icon={Calendar} />
+                <InfoRow label="Off-Plan" value={propertyInfo.isOffPlan != null ? (propertyInfo.isOffPlan ? 'Yes' : 'No') : null} last />
+              </DetailCard>
+
+              {/* Loan Requirements Card */}
+              <DetailCard icon={Briefcase} title="Loan Requirements" accentColor="#f59e0b">
+                <InfoRow label="Loan Amount" value={formatCurrency(propertyInfo.loanAmountRequired || loanInfo.requestedAmount)} icon={CreditCard} />
+                <InfoRow label="Tenure" value={loanInfo.preferredTenureYears ? `${loanInfo.preferredTenureYears} Years` : null} icon={Calendar} />
+                <InfoRow label="Rate Type" value={loanInfo.preferredInterestRateType || loanInfo.interestRateType} icon={TrendingUp} />
+                <InfoRow label="Preferred Banks" value={loanInfo.preferredBanks?.join(', ') || loanInfo.selectedBank} icon={Building} />
+                <InfoRow label="Special Requirements" value={loanInfo.specialRequirements} />
+                <InfoRow label="Referral Type" value={lead.referralType} />
+                <InfoRow label="Notes to Xoto" value={lead.notesToXoto} icon={FileCheck} last />
+              </DetailCard>
+            </div>
+
+            {/* Documents Section - Integrated */}
+            {showDocuments && <DocumentsList leadId={lead._id || leadId} />}
+
+            {/* Additional Info if needed */}
+            {lead.internalNotes?.length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-100 mt-6 p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <FileText size={16} className="text-purple-600" />
+                  <span className="font-bold text-gray-800 text-sm">Internal Notes</span>
+                </div>
+                <div className="space-y-2">
+                  {lead.internalNotes.map((note, idx) => (
+                    <div key={idx} className="p-3 bg-gray-50 rounded-xl">
+                      <p className="text-sm text-gray-700">{note.note}</p>
+                      <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                        <span>By: {note.addedBy}</span>
+                        <span>{new Date(note.addedAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
-
-      {/* ── Loading ── */}
-      {isLoading && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px 0', gap: 14 }}>
-          <Loader2 size={32} style={{ color: '#2563eb', animation: 'ld-spin 0.8s linear infinite' }} />
-          <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>Loading lead details…</p>
-        </div>
-      )}
-
-      {/* ── Error ── */}
-      {error && !isLoading && (
-        <div style={{ padding: 28, background: '#fff', border: '1px solid #fecaca', borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center', maxWidth: 420, margin: '60px auto' }}>
-          <AlertCircle size={32} style={{ color: '#ef4444' }} />
-          <p style={{ margin: 0, fontWeight: 700, color: '#dc2626', fontSize: 16 }}>Failed to load lead</p>
-          <p style={{ margin: 0, fontSize: 13, color: '#94a3b8' }}>Could not fetch details for this lead. Please try again.</p>
-          <button onClick={() => refetch()} style={{ padding: '9px 24px', background: '#dc2626', border: 'none', borderRadius: 9, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-            Try Again
-          </button>
-        </div>
-      )}
-
-      {/* ── Content ── */}
-      {lead && !isLoading && (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 18, alignItems: 'start' }}>
-            <Panel icon={User} label="Customer Info" accent="#2563eb">
-              <InfoRow label="Full Name"       value={lead.customerInfo?.fullName} />
-              <InfoRow label="Email"           value={lead.customerInfo?.email} />
-              <InfoRow label="Mobile"          value={lead.customerInfo?.mobileNumber} />
-              <InfoRow label="WhatsApp"        value={lead.customerInfo?.whatsappNumber} />
-              <InfoRow label="Nationality"     value={lead.customerInfo?.nationality} />
-              <InfoRow label="Marital Status"  value={lead.customerInfo?.maritalStatus} />
-              <InfoRow label="Employer"        value={lead.customerInfo?.employer} />
-              <InfoRow label="Monthly Salary"  value={fmtAED(lead.customerInfo?.monthlySalary)} last />
-            </Panel>
-
-            <Panel icon={Home} label="Property Details" accent="#16a34a">
-              <InfoRow label="Type"            value={[lead.propertyDetails?.propertyType, lead.propertyDetails?.propertySubtype].filter(Boolean).join(' — ') || null} />
-              <InfoRow label="Property Value"  value={fmtAED(lead.propertyDetails?.propertyValue)} />
-              <InfoRow label="Down Payment"    value={fmtAED(lead.propertyDetails?.downPaymentAmount)} />
-              <InfoRow label="Building"        value={lead.propertyDetails?.propertyAddress?.building} />
-              <InfoRow label="Area"            value={lead.propertyDetails?.propertyAddress?.area} />
-              <InfoRow label="City"            value={lead.propertyDetails?.propertyAddress?.city} />
-              <InfoRow label="Property Age"    value={lead.propertyDetails?.propertyAgeYears ? `${lead.propertyDetails.propertyAgeYears} yrs` : null} />
-              <InfoRow label="Off-Plan"        value={lead.propertyDetails?.isOffPlan != null ? (lead.propertyDetails.isOffPlan ? 'Yes' : 'No') : null} last />
-            </Panel>
-
-            <Panel icon={Briefcase} label="Loan Requirements" accent="#9333ea">
-              <InfoRow label="Loan Amount"          value={fmtAED(lead.propertyDetails?.loanAmountRequired)} />
-              <InfoRow label="Tenure"               value={lead.loanRequirements?.preferredTenureYears ? `${lead.loanRequirements.preferredTenureYears} Years` : null} />
-              <InfoRow label="Rate Type"            value={lead.loanRequirements?.preferredInterestRateType} />
-              <InfoRow label="Preferred Banks"      value={lead.loanRequirements?.preferredBanks?.join(', ')} />
-              <InfoRow label="Special Requirements" value={lead.loanRequirements?.specialRequirements} />
-              <InfoRow label="Referral Type"        value={lead.referralType} />
-              <InfoRow label="Notes to Xoto"        value={lead.notesToXoto} last />
-            </Panel>
-          </div>
-
-          {showDocs && <DocumentsList leadId={lead._id || leadId} />}
-        </>
-      )}
     </div>
   );
 };
