@@ -6,7 +6,7 @@ import {
   message, Spin, Progress, Modal, Tabs, Tag, Descriptions, 
   Row, Col, Card, Steps, Button, Space, Alert, Typography, 
   Form, Input, Select, Badge, Tooltip, Statistic, Divider,
-  Empty, Collapse, Timeline as AntTimeline, Grid, Table
+  Empty, Collapse, Timeline as AntTimeline, Grid, Table, Popconfirm
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -38,7 +38,10 @@ import {
   FallOutlined,
   CalculatorOutlined,
   InfoCircleOutlined,
-  LoadingOutlined
+  LoadingOutlined,
+  ThunderboltOutlined,
+  SwapOutlined,
+  AuditOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -79,20 +82,23 @@ const DOCUMENT_LABELS = {
   'payslips': 'Payslips (6 Months)',
   'title_deed': 'Title Deed',
   'consent_form': 'Consent Form',
+  'property_valuation': 'Property Valuation Report',
+  'fol_document': 'FOL Document',
+  'signed_fol': 'Signed FOL',
+  'noc_letter': 'NOC Letter'
 };
 
-// Status steps for timeline
+// Status steps for timeline - FIXED mapping
 const STATUS_STEPS = [
-  { title: 'Assigned', icon: <UserOutlined />, color: INFO_COLOR },
-  { title: 'Under Review', icon: <EyeOutlined />, color: INFO_COLOR },
-  { title: 'Returned', icon: <RollbackOutlined />, color: WARNING_COLOR },
-  { title: 'Bank App', icon: <SendOutlined />, color: PRIMARY },
-  { title: 'Pre-Approved', icon: <CheckCircleOutlined />, color: SUCCESS_COLOR },
-  { title: 'Valuation', icon: <HomeOutlined />, color: WARNING_COLOR },
-  { title: 'FOL Processed', icon: <FileTextOutlined />, color: INFO_COLOR },
-  { title: 'FOL Issued', icon: <FileTextOutlined />, color: INFO_COLOR },
-  { title: 'FOL Signed', icon: <CheckCircleOutlined />, color: SUCCESS_COLOR },
-  { title: 'Disbursed', icon: <DollarOutlined />, color: SUCCESS_COLOR }
+  { title: 'Assigned', statusKey: 'Assigned - Pending Review', icon: <UserOutlined />, color: INFO_COLOR },
+  { title: 'Under Review', statusKey: 'Under Review', icon: <EyeOutlined />, color: INFO_COLOR },
+  { title: 'Bank App', statusKey: 'Bank Application', icon: <SendOutlined />, color: PRIMARY },
+  { title: 'Pre-Approved', statusKey: 'Pre-Approved', icon: <CheckCircleOutlined />, color: SUCCESS_COLOR },
+  { title: 'Valuation', statusKey: 'Valuation', icon: <HomeOutlined />, color: WARNING_COLOR },
+  { title: 'FOL Processed', statusKey: 'FOL Processed', icon: <FileTextOutlined />, color: INFO_COLOR },
+  { title: 'FOL Issued', statusKey: 'FOL Issued', icon: <FileTextOutlined />, color: INFO_COLOR },
+  { title: 'FOL Signed', statusKey: 'FOL Signed', icon: <CheckCircleOutlined />, color: SUCCESS_COLOR },
+  { title: 'Disbursed', statusKey: 'Disbursed', icon: <DollarOutlined />, color: SUCCESS_COLOR }
 ];
 
 // Available statuses for update with big icons
@@ -101,12 +107,14 @@ const AVAILABLE_STATUSES = [
   { value: 'Returned - Pending Correction', label: 'Return for Correction', color: WARNING_COLOR, icon: <RollbackOutlined style={{ fontSize: 28 }} />, bgColor: '#fffbeb' },
   { value: 'Bank Application', label: 'Submit to Bank', color: SUCCESS_COLOR, icon: <SendOutlined style={{ fontSize: 28 }} />, bgColor: '#ecfdf5' },
   { value: 'Pre-Approved', label: 'Pre-Approved', color: SUCCESS_COLOR, icon: <CheckCircleOutlined style={{ fontSize: 28 }} />, bgColor: '#ecfdf5' },
-  { value: 'Valuation', label: 'Valuation', color: WARNING_COLOR, icon: <HomeOutlined style={{ fontSize: 28 }} />, bgColor: '#fffbeb' },
+  { value: 'Valuation', label: 'Valuation Requested', color: WARNING_COLOR, icon: <HomeOutlined style={{ fontSize: 28 }} />, bgColor: '#fffbeb' },
   { value: 'FOL Processed', label: 'FOL Processed', color: INFO_COLOR, icon: <FileTextOutlined style={{ fontSize: 28 }} />, bgColor: '#eff6ff' },
   { value: 'FOL Issued', label: 'FOL Issued', color: INFO_COLOR, icon: <FileTextOutlined style={{ fontSize: 28 }} />, bgColor: '#eff6ff' },
   { value: 'FOL Signed', label: 'FOL Signed', color: SUCCESS_COLOR, icon: <CheckCircleOutlined style={{ fontSize: 28 }} />, bgColor: '#ecfdf5' },
   { value: 'Disbursed', label: 'Disbursed', color: SUCCESS_COLOR, icon: <DollarOutlined style={{ fontSize: 28 }} />, bgColor: '#ecfdf5' },
-  { value: 'Rejected', label: 'Rejected', color: ERROR_COLOR, icon: <CloseCircleOutlined style={{ fontSize: 28 }} />, bgColor: '#fef2f2' }
+  { value: 'Collecting Documentation', label: 'Collecting Docs', color: WARNING_COLOR, icon: <FileTextOutlined style={{ fontSize: 28 }} />, bgColor: '#fffbeb' },
+  { value: 'Rejected', label: 'Rejected', color: ERROR_COLOR, icon: <CloseCircleOutlined style={{ fontSize: 28 }} />, bgColor: '#fef2f2' },
+  { value: 'Lost', label: 'Lost', color: '#6B7280', icon: <CloseCircleOutlined style={{ fontSize: 28 }} />, bgColor: '#f3f4f6' }
 ];
 
 // Custom Button Component
@@ -394,6 +402,8 @@ const OpsAssignedReview = () => {
   const [bankReference, setBankReference] = useState('');
   const [returnModalVisible, setReturnModalVisible] = useState(false);
   const [returnNotes, setReturnNotes] = useState('');
+  const [valuationDate, setValuationDate] = useState('');
+  const [folAmount, setFolAmount] = useState('');
   
   // Loading states for specific actions
   const [underReviewLoading, setUnderReviewLoading] = useState(false);
@@ -477,7 +487,7 @@ const OpsAssignedReview = () => {
     }
   };
 
-  // Update case status with loading animation
+  // Update case status with loading animation - FIXED to use correct API endpoint
   const handleUpdateStatus = async (status, shouldCloseModal = true) => {
     if (!status) return;
     
@@ -501,9 +511,26 @@ const OpsAssignedReview = () => {
         payload.approvedAmount = parseFloat(approvedAmount);
       }
 
+      // Use the update status endpoint
       const response = await apiService.put(`/vault/cases/${caseId}/status`, payload);
+      
       if (response?.success) {
-        message.success(`Case status updated to ${status}`);
+        const statusMessages = {
+          'Pre-Approved': `✅ Case Pre-Approved! Amount: ${approvedAmount ? `AED ${approvedAmount}` : 'Pending'}`,
+          'Valuation': `🏠 Valuation requested from bank.`,
+          'FOL Processed': `📄 FOL being processed by bank`,
+          'FOL Issued': `📨 FOL Issued! Amount: ${folAmount || approvedAmount || 'N/A'}`,
+          'FOL Signed': `✍️ FOL Signed by client`,
+          'Disbursed': `💰 Case Disbursed! Amount: ${approvedAmount || 'N/A'}`,
+          'Collecting Documentation': `📋 Additional documents requested from client`,
+          'Rejected': `❌ Case rejected by bank. Reason: ${statusNotes || 'N/A'}`,
+          'Lost': `📉 Case lost`,
+          'Under Review': `🔍 Case under review`,
+          'Bank Application': `🏦 Submitted to bank. Ref: ${bankReference || 'N/A'}`
+        };
+        
+        message.success(statusMessages[status] || `Case status updated to ${status}`);
+        
         if (shouldCloseModal) {
           setStatusModalVisible(false);
         }
@@ -552,7 +579,7 @@ const OpsAssignedReview = () => {
         correctionNotes: returnNotes
       });
       if (response?.success) {
-        message.warning("Case returned for correction");
+        message.warning("Case returned for correction - Submitter notified");
         setReturnModalVisible(false);
         setReturnNotes('');
         fetchData();
@@ -566,7 +593,7 @@ const OpsAssignedReview = () => {
     }
   };
 
-  // Submit to bank
+  // Submit to bank - FIXED API endpoint
   const handleSubmitToBank = async () => {
     setUpdating(true);
     try {
@@ -599,7 +626,14 @@ const OpsAssignedReview = () => {
   const allVerified = totalDocs > 0 && verifiedCount === totalDocs && rejectedCount === 0;
   const verificationProgress = totalDocs > 0 ? (verifiedCount / totalDocs) * 100 : 0;
   
-  const currentStepIndex = STATUS_STEPS.findIndex(s => s.title === caseData?.currentStatus?.split(' - ')[0] || caseData?.currentStatus === 'Assigned - Pending Review' ? 0 : STATUS_STEPS.findIndex(step => caseData?.currentStatus?.includes(step.title)));
+  // FIXED: Calculate current step index based on statusKey mapping
+  const getCurrentStepIndex = () => {
+    const currentStatus = caseData?.currentStatus;
+    const index = STATUS_STEPS.findIndex(step => step.statusKey === currentStatus);
+    return index !== -1 ? index : 0;
+  };
+  
+  const currentStepIndex = getCurrentStepIndex();
   const canSubmitToBank = allVerified && caseData?.currentStatus === 'Under Review';
 
   // Calculations data for table
@@ -706,7 +740,21 @@ const OpsAssignedReview = () => {
           </div>
         </div>
 
-        {/* Stats Cards Row - 12 column layout with 10 + 2 */}
+        {/* Progress Timeline - FIXED to show correct steps */}
+        <Card style={{ borderRadius: 16, marginBottom: 24 }} bodyStyle={{ padding: '20px 24px' }}>
+          <Steps
+            current={currentStepIndex}
+            items={STATUS_STEPS.map(step => ({
+              title: step.title,
+              icon: step.icon,
+              status: currentStepIndex > STATUS_STEPS.findIndex(s => s.statusKey === step.statusKey) ? 'finish' : 
+                      currentStepIndex === STATUS_STEPS.findIndex(s => s.statusKey === step.statusKey) ? 'process' : 'wait'
+            }))}
+            responsive={false}
+          />
+        </Card>
+
+        {/* Stats Cards Row */}
         <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
           <Col xs={24} md={20}>
             <Row gutter={[16, 16]}>
@@ -816,13 +864,13 @@ const OpsAssignedReview = () => {
           />
         </Card>
 
-        {/* Rectangle Tabs with Purple Active Color */}
+        {/* Rectangle Tabs */}
         <div style={{ marginBottom: 24, borderBottom: `1px solid ${PRIMARY_BORDER}` }}>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             {[
               { key: 'documents', label: 'Document Review', icon: <FileProtectOutlined />, count: pendingCount },
               { key: 'info', label: 'Client Information', icon: <UserOutlined /> },
-              { key: 'actions', label: 'Actions', icon: <BankOutlined /> }
+              { key: 'actions', label: 'Actions & Status', icon: <ThunderboltOutlined /> }
             ].map(tab => (
               <button
                 key={tab.key}
@@ -841,18 +889,6 @@ const OpsAssignedReview = () => {
                   alignItems: 'center',
                   gap: 8,
                   marginRight: 4,
-                }}
-                onMouseEnter={(e) => {
-                  if (activeTab !== tab.key) {
-                    e.target.style.background = PRIMARY_LIGHT;
-                    e.target.style.color = PRIMARY;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (activeTab !== tab.key) {
-                    e.target.style.background = 'transparent';
-                    e.target.style.color = PRIMARY;
-                  }
                 }}
               >
                 {tab.icon}
@@ -990,7 +1026,7 @@ const OpsAssignedReview = () => {
             </Row>
           )}
 
-          {/* Actions Tab */}
+          {/* Actions Tab - Complete Status Update Section */}
           {activeTab === 'actions' && (
             <Row gutter={[16, 16]}>
               <Col xs={24} lg={12}>
@@ -1016,13 +1052,13 @@ const OpsAssignedReview = () => {
                   </div>
                   <Title level={4} style={{ marginTop: 0 }}>Submit to Bank</Title>
                   <Text type="secondary">Submit complete case to bank for processing</Text>
-                  {!canSubmitToBank && <Tag color="warning" style={{ marginTop: 12 }}>Requires all documents verified</Tag>}
+                  {!canSubmitToBank && <Tag color="warning" style={{ marginTop: 12 }}>Requires all documents verified ({verifiedCount}/{totalDocs})</Tag>}
                 </Card>
               </Col>
               <Col span={24}>
-                <Card title={<span><ClockCircleOutlined style={{ marginRight: 8, color: PRIMARY }} /> Quick Status Updates</span>} style={{ borderRadius: 16 }} headStyle={{ borderBottom: `1px solid ${PRIMARY_BORDER}` }}>
+                <Card title={<span><ThunderboltOutlined style={{ marginRight: 8, color: PRIMARY }} /> Quick Status Updates</span>} style={{ borderRadius: 16 }} headStyle={{ borderBottom: `1px solid ${PRIMARY_BORDER}` }}>
                   <Row gutter={[16, 16]}>
-                    {AVAILABLE_STATUSES.filter(s => s.value !== 'Bank Application').map(status => (
+                    {AVAILABLE_STATUSES.filter(s => s.value !== caseData?.currentStatus).map(status => (
                       <Col xs={24} sm={12} md={8} lg={6} key={status.value}>
                         <Card 
                           hoverable 
@@ -1032,8 +1068,6 @@ const OpsAssignedReview = () => {
                             cursor: 'pointer',
                             border: `1px solid ${status.color}`,
                             transition: 'all 0.3s ease',
-                            position: 'relative',
-                            overflow: 'hidden',
                             background: underReviewLoading && status.value === 'Under Review' ? '#f5f5f5' : '#fff',
                             opacity: underReviewLoading && status.value === 'Under Review' ? 0.7 : 1
                           }}
@@ -1065,10 +1099,7 @@ const OpsAssignedReview = () => {
                                 justifyContent: 'center', 
                                 margin: '0 auto 12px',
                                 transition: 'transform 0.3s ease'
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                              >
+                              }}>
                                 {status.icon}
                               </div>
                               <Title level={5} style={{ margin: '8px 0 4px', color: status.color }}>{status.label}</Title>
@@ -1087,12 +1118,7 @@ const OpsAssignedReview = () => {
 
         {/* Bank Product Modal */}
         <Modal
-          title={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <BankOutlined style={{ color: PRIMARY }} />
-              <span>Bank Product Details</span>
-            </div>
-          }
+          title={<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><BankOutlined style={{ color: PRIMARY }} /><span>Bank Product Details</span></div>}
           open={bankModalVisible}
           onCancel={() => setBankModalVisible(false)}
           footer={[<CustomButton key="close" type="primary" onClick={() => setBankModalVisible(false)}>Close</CustomButton>]}
@@ -1114,30 +1140,13 @@ const OpsAssignedReview = () => {
                 <Descriptions.Item label="Max LTV">{bankProduct.loanDetails?.maxLoanToValue}%</Descriptions.Item>
                 <Descriptions.Item label="Min LTV">{bankProduct.loanDetails?.minLoanToValue}%</Descriptions.Item>
                 <Descriptions.Item label="Tenure">{bankProduct.loanDetails?.tenureYears} years</Descriptions.Item>
-                <Descriptions.Item label="Min Tenure">{bankProduct.loanDetails?.minTenureYears} years</Descriptions.Item>
-                <Descriptions.Item label="Max Tenure">{bankProduct.loanDetails?.maxTenureYears} years</Descriptions.Item>
-                <Descriptions.Item label="Interest Type">{bankProduct.loanDetails?.interestType}</Descriptions.Item>
                 <Descriptions.Item label="Processing Fee">{bankProduct.costBreakdown?.bankProcessingFee || 0} AED</Descriptions.Item>
                 <Descriptions.Item label="Valuation Fee">{bankProduct.costBreakdown?.valuationFee || 0} AED</Descriptions.Item>
                 <Descriptions.Item label="Early Settlement">{bankProduct.loanDetails?.earlySettlementFee}</Descriptions.Item>
-                <Descriptions.Item label="Life Insurance">{bankProduct.insurance?.lifeInsuranceRequired ? 'Required' : 'Not Required'}</Descriptions.Item>
               </Descriptions>
-              <Divider />
-              <div style={{ background: '#f8f5ff', padding: 12, borderRadius: 8 }}>
-                <Text strong>Eligibility Criteria:</Text>
-                <div style={{ marginTop: 8 }}>
-                  <Tag color="blue">Min Salary: AED {bankProduct.eligibility?.minSalary?.toLocaleString()}</Tag>
-                  <Tag color="blue">Min Age: {bankProduct.eligibility?.minAge} years</Tag>
-                  <Tag color="blue">Max Age: {bankProduct.eligibility?.maxAge} years</Tag>
-                  <Tag color="blue">Min Loan: AED {bankProduct.eligibility?.minLoanAmount?.toLocaleString()}</Tag>
-                </div>
-              </div>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: 40 }}>
-              <Spin />
-              <div style={{ marginTop: 16 }}>Loading bank product details...</div>
-            </div>
+            <div style={{ textAlign: 'center', padding: 40 }}><Spin /><div style={{ marginTop: 16 }}>Loading bank product details...</div></div>
           )}
         </Modal>
 
@@ -1161,16 +1170,26 @@ const OpsAssignedReview = () => {
             </div>
           </div>
           {selectedStatus === 'Bank Application' && (
-            <Form.Item label="Bank Reference Number" required>
+            <Form.Item label="Bank Reference Number">
               <Input placeholder="Enter bank reference number" value={bankReference} onChange={(e) => setBankReference(e.target.value)} prefix={<BankOutlined />} style={{ borderRadius: 8 }} />
             </Form.Item>
           )}
           {selectedStatus === 'Disbursed' && (
-            <Form.Item label="Approved Amount" required>
-              <Input placeholder="Enter approved loan amount" value={approvedAmount} onChange={(e) => setApprovedAmount(e.target.value)} prefix="AED" type="number" style={{ borderRadius: 8 }} />
+            <Form.Item label="Disbursed Amount">
+              <Input placeholder="Enter disbursed loan amount" value={approvedAmount} onChange={(e) => setApprovedAmount(e.target.value)} prefix="AED" type="number" style={{ borderRadius: 8 }} />
             </Form.Item>
           )}
-          <Form.Item label="Notes (Optional)">
+          {selectedStatus === 'Pre-Approved' && (
+            <Form.Item label="Pre-Approved Amount">
+              <Input placeholder="Enter pre-approved amount" value={approvedAmount} onChange={(e) => setApprovedAmount(e.target.value)} prefix="AED" type="number" style={{ borderRadius: 8 }} />
+            </Form.Item>
+          )}
+          {selectedStatus === 'FOL Issued' && (
+            <Form.Item label="FOL Amount">
+              <Input placeholder="Enter FOL amount" value={folAmount} onChange={(e) => setFolAmount(e.target.value)} prefix="AED" type="number" style={{ borderRadius: 8 }} />
+            </Form.Item>
+          )}
+          <Form.Item label="Notes">
             <TextArea rows={3} placeholder="Add any notes about this status update..." value={statusNotes} onChange={(e) => setStatusNotes(e.target.value)} style={{ borderRadius: 8 }} />
           </Form.Item>
         </Modal>

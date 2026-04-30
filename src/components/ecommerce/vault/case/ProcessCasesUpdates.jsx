@@ -3,20 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { apiService } from '../../../../manageApi/utils/custom.apiservice';
 import {
-  Card, Tabs, Button, Typography, Row, Col, Avatar,
-  Tag, Descriptions, Divider, Spin, message, Badge,
-  Pagination, Space, Progress, Statistic, Modal, Tooltip,
-  Select, Input, Timeline, Steps, Alert, Empty
+  Card, Button, Typography, Row, Col, Avatar,
+  Tag, Spin, message, Pagination, Space, Progress, Modal, Tooltip,
+  Select, Input, Alert, Empty, Popconfirm
 } from 'antd';
 import {
   UserOutlined, BankOutlined, FileTextOutlined,
   CalendarOutlined, EyeOutlined, HomeOutlined,
   DollarCircleOutlined, CheckCircleOutlined,
   CloseCircleOutlined, ClockCircleOutlined, RocketOutlined,
-  SendOutlined, TrophyOutlined, TeamOutlined, InfoCircleOutlined,
-  EditOutlined, HistoryOutlined, FileDoneOutlined,
-  LoadingOutlined, PlusOutlined, ArrowRightOutlined, SyncOutlined,
-  WarningOutlined, SmileOutlined, SolutionOutlined, GiftOutlined
+  SendOutlined, TeamOutlined, InfoCircleOutlined,
+  EditOutlined, ArrowRightOutlined, SyncOutlined,
+  WarningOutlined, RedoOutlined, CheckOutlined, HistoryOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -33,10 +31,14 @@ const ERROR_COLOR = "#ef4444";
 const INFO_COLOR = "#3b82f6";
 
 // ================= STATUS CONFIGURATION =================
-// All possible statuses based on the workflow
 const CASE_STATUSES = [
-  'Under Review',
+  'Draft',
   'Submitted to Xoto',
+  'In Ops Queue - Pending Pick-up',
+  'Assigned - Pending Review',
+  'Under Review',
+  'Returned - Pending Correction',
+  'Resubmitted-After Correction',
   'Bank Application',
   'Collecting Documentation',
   'Pre-Approved',
@@ -49,16 +51,19 @@ const CASE_STATUSES = [
   'Lost'
 ];
 
-// Status to icon mapping with animated effects
 const getStatusIcon = (status) => {
   const iconMap = {
     'Under Review': <SyncOutlined spin style={{ color: INFO_COLOR }} />,
     'Submitted to Xoto': <SendOutlined style={{ color: THEME_COLOR }} />,
+    'In Ops Queue - Pending Pick-up': <ClockCircleOutlined style={{ color: WARNING_COLOR }} />,
+    'Assigned - Pending Review': <EyeOutlined style={{ color: INFO_COLOR }} />,
+    'Returned - Pending Correction': <WarningOutlined style={{ color: ERROR_COLOR }} />,
+    'Resubmitted-After Correction': <RedoOutlined style={{ color: THEME_COLOR }} />,
     'Bank Application': <BankOutlined style={{ color: THEME_COLOR }} />,
     'Collecting Documentation': <FileTextOutlined style={{ color: WARNING_COLOR }} />,
     'Pre-Approved': <CheckCircleOutlined style={{ color: SUCCESS_COLOR }} />,
     'Valuation': <EyeOutlined style={{ color: INFO_COLOR }} />,
-    'FOL Processed': <FileDoneOutlined style={{ color: SUCCESS_COLOR }} />,
+    'FOL Processed': <FileTextOutlined style={{ color: SUCCESS_COLOR }} />,
     'FOL Issued': <FileTextOutlined style={{ color: SUCCESS_COLOR }} />,
     'FOL Signed': <CheckCircleOutlined style={{ color: SUCCESS_COLOR }} />,
     'Disbursed': <DollarCircleOutlined style={{ color: SUCCESS_COLOR }} />,
@@ -68,11 +73,14 @@ const getStatusIcon = (status) => {
   return iconMap[status] || <ClockCircleOutlined />;
 };
 
-// Status color mapping for tags and borders
 const getStatusColor = (status) => {
   const colorMap = {
     'Under Review': 'processing',
     'Submitted to Xoto': 'processing',
+    'In Ops Queue - Pending Pick-up': 'warning',
+    'Assigned - Pending Review': 'processing',
+    'Returned - Pending Correction': 'error',
+    'Resubmitted-After Correction': 'warning',
     'Bank Application': 'processing',
     'Collecting Documentation': 'warning',
     'Pre-Approved': 'success',
@@ -87,10 +95,11 @@ const getStatusColor = (status) => {
   return colorMap[status] || 'default';
 };
 
-// Get gradient background for cards based on status
 const getCardGradient = (status) => {
   const gradients = {
     'Under Review': `linear-gradient(135deg, ${INFO_COLOR}08 0%, #fff 100%)`,
+    'Returned - Pending Correction': `linear-gradient(135deg, ${ERROR_COLOR}04 0%, #fff 100%)`,
+    'Resubmitted-After Correction': `linear-gradient(135deg, ${THEME_COLOR}04 0%, #fff 100%)`,
     'Pre-Approved': `linear-gradient(135deg, ${SUCCESS_COLOR}08 0%, #fff 100%)`,
     'Rejected': `linear-gradient(135deg, ${ERROR_COLOR}04 0%, #fff 100%)`,
     'Disbursed': `linear-gradient(135deg, ${SUCCESS_COLOR}10 0%, #fff 100%)`,
@@ -98,11 +107,15 @@ const getCardGradient = (status) => {
   return gradients[status] || `linear-gradient(135deg, ${THEME_COLOR}04 0%, #fff 100%)`;
 };
 
-// Get available next statuses based on current status
 const getAvailableNextStatuses = (currentStatus) => {
   const transitions = {
-    'Under Review': ['Submitted to Xoto', 'Collecting Documentation', 'Lost'],
-    'Submitted to Xoto': ['Bank Application', 'Collecting Documentation', 'Lost'],
+    'Draft': ['Submitted to Xoto'],
+    'Submitted to Xoto': ['In Ops Queue - Pending Pick-up'],
+    'In Ops Queue - Pending Pick-up': ['Assigned - Pending Review'],
+    'Assigned - Pending Review': ['Under Review', 'Returned - Pending Correction'],
+    'Under Review': ['Bank Application', 'Returned - Pending Correction'],
+    'Returned - Pending Correction': ['Resubmitted-After Correction'],
+    'Resubmitted-After Correction': ['Under Review'],
     'Bank Application': ['Pre-Approved', 'Collecting Documentation', 'Rejected'],
     'Collecting Documentation': ['Bank Application', 'Lost'],
     'Pre-Approved': ['Valuation', 'Rejected'],
@@ -117,7 +130,6 @@ const getAvailableNextStatuses = (currentStatus) => {
   return transitions[currentStatus] || [];
 };
 
-// Role slug mapping
 const roleSlugMap = {
   0: "superadmin", 1: "admin", 2: "customer",
   15: "agency", 16: "agent", 17: "developer", 18: "vault-admin"
@@ -128,7 +140,6 @@ const ProcessCasesUpdates = () => {
   const { user } = useSelector((s) => s.auth);
   const roleSlug = roleSlugMap[user?.role?.code] ?? "superadmin";
 
-  // State
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -136,15 +147,17 @@ const ProcessCasesUpdates = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [activeTab, setActiveTab] = useState('all');
 
-  // Modal state
+  // Status Update Modal
   const [statusModalVisible, setStatusModalVisible] = useState(false);
   const [selectedCase, setSelectedCase] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [statusNotes, setStatusNotes] = useState('');
-  const [statusHistory, setStatusHistory] = useState([]);
-  const [historyModalVisible, setHistoryModalVisible] = useState(false);
 
-  // Fetch cases
+  // Resubmit Modal
+  const [resubmitModalVisible, setResubmitModalVisible] = useState(false);
+  const [resubmitCase, setResubmitCase] = useState(null);
+  const [resubmitNotes, setResubmitNotes] = useState('');
+
   const fetchCases = useCallback(async (page) => {
     setLoading(true);
     try {
@@ -168,21 +181,28 @@ const ProcessCasesUpdates = () => {
     setCurrentPage(page);
   };
 
+  // Navigate to View Case
   const navigateToCaseDetail = (caseItem) => {
     navigate(`/dashboard/${roleSlug}/case/view/${caseItem._id}`);
   };
 
-  // Open status update modal
-  const openStatusModal = (caseItem, e) => {
-    e.stopPropagation();
+  // Open Status Update Modal
+  const openStatusModal = (caseItem) => {
     setSelectedCase(caseItem);
     setSelectedStatus('');
     setStatusNotes('');
     setStatusModalVisible(true);
   };
 
-  // Update case status
-  const updateCaseStatus = async () => {
+  // Open Resubmit Modal
+  const openResubmitModal = (caseItem) => {
+    setResubmitCase(caseItem);
+    setResubmitNotes('');
+    setResubmitModalVisible(true);
+  };
+
+  // API: Update Case Status
+  const handleUpdateStatus = async () => {
     if (!selectedStatus) {
       message.warning("Please select a status");
       return;
@@ -196,62 +216,64 @@ const ProcessCasesUpdates = () => {
       });
 
       if (response?.success) {
-        message.success({
-          content: `Case status updated to "${selectedStatus}" successfully!`,
-          duration: 3,
-          icon: <CheckCircleOutlined />
-        });
+        message.success(`Case status updated to "${selectedStatus}" successfully!`);
         setStatusModalVisible(false);
+        setSelectedCase(null);
         fetchCases(currentPage);
       } else {
         message.error(response?.message || "Failed to update case status");
       }
     } catch (err) {
-      console.error("Status update error:", err);
       message.error(err.response?.data?.message || "Error updating case status");
     } finally {
       setUpdating(false);
     }
   };
 
-  // View status history - fetch from API ideally
-  const viewStatusHistory = async (caseItem, e) => {
-    e.stopPropagation();
+  // API: Resubmit Case
+  const handleResubmitCase = async () => {
+    if (!resubmitCase) return;
+
+    setUpdating(true);
     try {
-      // Replace with actual API call: GET /vault/cases/:id/status-history
-      const mockHistory = [
-        { status: caseItem.currentStatus, notes: "Current status", timestamp: caseItem.updatedAt, updatedBy: "System" },
-        { status: "Under Review", notes: "Case received and under review", timestamp: caseItem.createdAt, updatedBy: caseItem.createdBy?.advisorName || "System" }
-      ];
-      setStatusHistory(mockHistory);
-      setHistoryModalVisible(true);
+      const response = await apiService.put(`/vault/cases/ops/resubmit/${resubmitCase._id}`, {
+        correctionNotes: resubmitNotes || "Corrections completed and resubmitted for review."
+      });
+
+      if (response?.success) {
+        message.success(`Case "${resubmitCase.caseReference}" resubmitted successfully!`);
+        setResubmitModalVisible(false);
+        setResubmitCase(null);
+        setResubmitNotes('');
+        fetchCases(currentPage);
+      } else {
+        message.error(response?.message || "Failed to resubmit case");
+      }
     } catch (err) {
-      message.error("Failed to load history");
+      message.error(err.response?.data?.message || "Error resubmitting case");
+    } finally {
+      setUpdating(false);
     }
   };
 
-  // Get document progress
   const getDocumentProgress = (documentStatus) => {
     const total = documentStatus?.requiredDocuments?.length || 10;
     const uploaded = documentStatus?.documentsUploadedCount || 0;
-    const verified = documentStatus?.documentsVerifiedCount || 0;
     const percentage = total > 0 ? (uploaded / total) * 100 : 0;
-    return { total, uploaded, verified, percentage };
+    return { total, uploaded, percentage };
   };
 
-  // Filter cases by status tab
   const getFilteredCases = () => {
     if (activeTab === 'all') return cases;
     return cases.filter(c => c.currentStatus === activeTab);
   };
 
-  // Get count for each status
   const getStatusCount = (status) => {
     if (status === 'all') return cases.length;
     return cases.filter(c => c.currentStatus === status).length;
   };
 
-  // Render individual case card with enhanced UI
+  // Render Case Card
   const renderCaseCard = (caseItem) => {
     const clientName = caseItem.clientInfo?.fullName || 'Unknown Client';
     const propertyValue = caseItem.propertyInfo?.propertyValue || 0;
@@ -261,6 +283,8 @@ const ProcessCasesUpdates = () => {
     const createdBy = caseItem.createdBy?.advisorName || caseItem.createdBy?.partnerName || 'Admin';
     const availableStatuses = getAvailableNextStatuses(caseItem.currentStatus);
     const canUpdate = availableStatuses.length > 0;
+    const isReturned = caseItem.currentStatus === 'Returned - Pending Correction';
+    const isResubmitted = caseItem.currentStatus === 'Resubmitted-After Correction';
     const isUnderReview = caseItem.currentStatus === 'Under Review';
     const statusIcon = getStatusIcon(caseItem.currentStatus);
     const statusColor = getStatusColor(caseItem.currentStatus);
@@ -268,22 +292,19 @@ const ProcessCasesUpdates = () => {
 
     return (
       <Card
-        hoverable
         style={{
           borderRadius: 20,
-          border: `1px solid ${statusColor === 'success' ? SUCCESS_COLOR : statusColor === 'error' ? ERROR_COLOR : '#e8e8e8'}`,
-          borderTop: `5px solid ${statusColor === 'success' ? SUCCESS_COLOR : statusColor === 'error' ? ERROR_COLOR : THEME_COLOR}`,
+          border: `1px solid ${isReturned ? ERROR_COLOR : statusColor === 'success' ? SUCCESS_COLOR : statusColor === 'error' ? ERROR_COLOR : '#e8e8e8'}`,
+          borderTop: `5px solid ${isReturned ? ERROR_COLOR : statusColor === 'success' ? SUCCESS_COLOR : statusColor === 'error' ? ERROR_COLOR : THEME_COLOR}`,
           overflow: 'hidden',
           position: 'relative',
           height: '100%',
-          cursor: 'pointer',
           background: cardGradient,
           transition: 'transform 0.3s ease, box-shadow 0.3s ease'
         }}
         bodyStyle={{ padding: 0 }}
-        onClick={() => navigateToCaseDetail(caseItem)}
       >
-        {/* Animated loader for Under Review status */}
+        {/* Animated loader for Under Review */}
         {isUnderReview && (
           <div style={{
             position: 'absolute',
@@ -297,15 +318,55 @@ const ProcessCasesUpdates = () => {
           }} />
         )}
 
-        <div style={{ padding: 24 }}>
-          {/* Header Section */}
+        {/* Returned Warning Banner */}
+        {isReturned && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            background: ERROR_COLOR,
+            color: 'white',
+            padding: '6px 16px',
+            textAlign: 'center',
+            fontSize: 12,
+            fontWeight: 600,
+            zIndex: 10
+          }}>
+            <WarningOutlined style={{ marginRight: 8 }} />
+            CORRECTIONS REQUIRED
+          </div>
+        )}
+
+        {/* Resubmitted Badge */}
+        {isResubmitted && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            background: THEME_COLOR,
+            color: 'white',
+            padding: '6px 16px',
+            textAlign: 'center',
+            fontSize: 12,
+            fontWeight: 600,
+            zIndex: 10
+          }}>
+            <RedoOutlined style={{ marginRight: 8 }} />
+            RESUBMITTED - Waiting for Ops Review
+          </div>
+        )}
+
+        <div style={{ padding: isReturned || isResubmitted ? '40px 24px 24px 24px' : '24px' }}>
+          {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <Avatar
-                icon={isUnderReview ? <SyncOutlined spin /> : <UserOutlined />}
+                icon={isUnderReview ? <SyncOutlined spin /> : isReturned ? <WarningOutlined /> : <UserOutlined />}
                 style={{
-                  backgroundColor: isUnderReview ? INFO_COLOR : THEME_COLOR,
-                  boxShadow: `0 4px 12px ${isUnderReview ? INFO_COLOR : THEME_COLOR}30`
+                  backgroundColor: isReturned ? ERROR_COLOR : isUnderReview ? INFO_COLOR : THEME_COLOR,
+                  boxShadow: `0 4px 12px ${isReturned ? ERROR_COLOR : isUnderReview ? INFO_COLOR : THEME_COLOR}30`
                 }}
                 size={52}
               />
@@ -314,145 +375,119 @@ const ProcessCasesUpdates = () => {
                 <Text type="secondary" style={{ fontSize: 12 }}>Case: {caseItem.caseReference}</Text>
               </div>
             </div>
-            <Tag
-              icon={statusIcon}
-              color={statusColor}
-              style={{ padding: '6px 14px', borderRadius: 30, fontSize: 13, fontWeight: 600 }}
-            >
+            <Tag icon={statusIcon} color={statusColor} style={{ padding: '6px 14px', borderRadius: 30, fontWeight: 600 }}>
               {caseItem.currentStatus}
-              {isUnderReview && <LoadingOutlined style={{ marginLeft: 8 }} spin />}
             </Tag>
           </div>
 
-          {/* Key Metrics Row */}
+          {/* Key Metrics */}
           <Row gutter={16} style={{ background: '#faf9fe', padding: '16px', borderRadius: 16, marginBottom: 20 }}>
             <Col span={12}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <HomeOutlined style={{ color: THEME_COLOR, fontSize: 18 }} />
+                <HomeOutlined style={{ color: THEME_COLOR }} />
                 <div>
                   <Text type="secondary" style={{ fontSize: 11 }}>Property Value</Text>
-                  <div style={{ fontWeight: 700, color: '#1e1b4b', fontSize: 16 }}>
-                    AED {propertyValue.toLocaleString()}
-                  </div>
+                  <div style={{ fontWeight: 700, fontSize: 16 }}>AED {propertyValue.toLocaleString()}</div>
                 </div>
               </div>
             </Col>
             <Col span={12}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <DollarCircleOutlined style={{ color: SUCCESS_COLOR, fontSize: 18 }} />
+                <DollarCircleOutlined style={{ color: SUCCESS_COLOR }} />
                 <div>
                   <Text type="secondary" style={{ fontSize: 11 }}>Loan Amount</Text>
-                  <div style={{ fontWeight: 700, color: THEME_COLOR, fontSize: 16 }}>
-                    AED {loanAmount.toLocaleString()}
-                  </div>
+                  <div style={{ fontWeight: 700, fontSize: 16 }}>AED {loanAmount.toLocaleString()}</div>
                 </div>
               </div>
             </Col>
           </Row>
 
-          {/* Bank & Rate Info */}
+          {/* Correction Notes for Returned Cases */}
+          {isReturned && caseItem.lastReturnNotes && (
+            <Alert
+              message="Correction Required"
+              description={caseItem.lastReturnNotes}
+              type="error"
+              showIcon
+              style={{ marginBottom: 16, borderRadius: 12 }}
+            />
+          )}
+
+          {/* Bank & Document Info */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <BankOutlined style={{ color: THEME_COLOR, fontSize: 18 }} />
-              <Text strong style={{ fontSize: 14 }}>{bankName}</Text>
+              <BankOutlined style={{ color: THEME_COLOR }} />
+              <Text strong>{bankName}</Text>
             </div>
-            {caseItem.loanInfo?.interestRatePercentage && (
-              <Tag color="purple" style={{ borderRadius: 30, padding: '4px 12px', fontWeight: 600 }}>
-                {caseItem.loanInfo.interestRatePercentage}% Fixed
-              </Tag>
-            )}
-            {caseItem.calculations?.dbr && (
-              <Tag color="blue" style={{ borderRadius: 30 }}>
-                DBR: {caseItem.calculations.dbr}%
-              </Tag>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <FileTextOutlined style={{ color: THEME_COLOR }} />
+              <Text>{docProgress.uploaded}/{docProgress.total} docs</Text>
+              <Progress percent={docProgress.percentage} size="small" style={{ width: 80 }} strokeColor={THEME_COLOR} showInfo={false} />
+            </div>
           </div>
 
-          {/* Document Progress */}
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                <FileTextOutlined /> Document Status
-              </Text>
-              <Text strong style={{ fontSize: 12 }}>{docProgress.uploaded}/{docProgress.total} uploaded</Text>
-            </div>
-            <Progress
-              percent={docProgress.percentage}
-              size="small"
-              strokeColor={docProgress.percentage === 100 ? SUCCESS_COLOR : THEME_COLOR}
-              showInfo={false}
-              strokeWidth={8}
-              style={{ borderRadius: 10 }}
-            />
-            {docProgress.verified === docProgress.total && docProgress.total > 0 && (
-              <div style={{ marginTop: 6 }}>
-                <Tag icon={<CheckCircleOutlined />} color="success" style={{ fontSize: 11 }}>
-                  All documents verified
-                </Tag>
-              </div>
-            )}
-          </div>
-
-          {/* Metadata Row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, color: '#888', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
-            <span><CalendarOutlined /> Created {dayjs(caseItem.createdAt).format('MMM DD, YYYY')}</span>
+          {/* Metadata */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#888', marginBottom: 20 }}>
+            <span><CalendarOutlined /> {dayjs(caseItem.createdAt).format('MMM DD, YYYY')}</span>
             <span><UserOutlined /> {createdBy}</span>
-            {caseItem.assignedTo?.opsName && (
-              <span><TeamOutlined /> {caseItem.assignedTo.opsName}</span>
-            )}
+            {caseItem.assignedTo?.opsName && <span><TeamOutlined /> {caseItem.assignedTo.opsName}</span>}
           </div>
 
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: 12 }}>
-            {canUpdate ? (
-              <Tooltip title={`Move to: ${availableStatuses.join(' → ')}`}>
+            {/* VIEW CASE BUTTON - Always visible */}
+            <Button
+              icon={<EyeOutlined />}
+              onClick={() => navigateToCaseDetail(caseItem)}
+              style={{ borderRadius: 12, flex: 1, height: 42 }}
+            >
+              View Case
+            </Button>
+
+            {/* RESUBMIT BUTTON - Only for Returned cases */}
+            {isReturned && (
+              <Popconfirm
+                title="Confirm Resubmission"
+                description="Have you made all corrections? Case will go back to Mortgage Ops."
+                onConfirm={() => openResubmitModal(caseItem)}
+                okText="Yes"
+                cancelText="No"
+                placement="topRight"
+              >
                 <Button
                   type="primary"
-                  block
+                  icon={<RedoOutlined />}
+                  style={{ background: SUCCESS_COLOR, borderColor: SUCCESS_COLOR, borderRadius: 12, flex: 1, height: 42, fontWeight: 600 }}
+                >
+                  Resubmit
+                </Button>
+              </Popconfirm>
+            )}
+
+            {/* UPDATE STATUS BUTTON - For all other cases that can be updated */}
+            {!isReturned && canUpdate && (
+              <Tooltip title={`Next: ${availableStatuses[0]}`}>
+                <Button
+                  type="primary"
                   icon={<RocketOutlined />}
-                  onClick={(e) => openStatusModal(caseItem, e)}
-                  style={{
-                    background: THEME_COLOR,
-                    borderColor: THEME_COLOR,
-                    borderRadius: 12,
-                    flex: 1,
-                    height: 42,
-                    fontWeight: 600
-                  }}
+                  onClick={() => openStatusModal(caseItem)}
+                  style={{ background: THEME_COLOR, borderColor: THEME_COLOR, borderRadius: 12, flex: 1, height: 42, fontWeight: 600 }}
                 >
                   Update Status
                 </Button>
               </Tooltip>
-            ) : (
-              <Button
-                block
-                disabled
-                style={{ borderRadius: 12, flex: 1, height: 42 }}
-                icon={<CloseCircleOutlined />}
-              >
-                Final Stage
+            )}
+
+            {/* FINAL STAGE BUTTON - Disabled for completed cases */}
+            {!isReturned && !canUpdate && (
+              <Button disabled style={{ borderRadius: 12, flex: 1, height: 42 }} icon={<CheckCircleOutlined />}>
+                Completed
               </Button>
             )}
-            <Tooltip title="View Status Timeline">
-              <Button
-                icon={<HistoryOutlined />}
-                onClick={(e) => viewStatusHistory(caseItem, e)}
-                style={{ borderRadius: 12, width: 42, height: 42 }}
-              />
-            </Tooltip>
           </div>
-
-          {/* Next Step Hint */}
-          {canUpdate && availableStatuses.length > 0 && (
-            <div style={{ marginTop: 14, textAlign: 'center' }}>
-              <Text type="secondary" style={{ fontSize: 11 }}>
-                <ArrowRightOutlined /> Next: {availableStatuses[0]}
-              </Text>
-            </div>
-          )}
         </div>
 
-        <style jsx>{`
+        <style>{`
           @keyframes loadingProgress {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(100%); }
@@ -462,163 +497,116 @@ const ProcessCasesUpdates = () => {
     );
   };
 
+  // Resubmit Modal
+  const renderResubmitModal = () => (
+    <Modal
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <RedoOutlined style={{ color: THEME_COLOR, fontSize: 24 }} />
+          <span style={{ fontSize: 18, fontWeight: 600 }}>Resubmit Case</span>
+        </div>
+      }
+      open={resubmitModalVisible}
+      onCancel={() => { setResubmitModalVisible(false); setResubmitCase(null); setResubmitNotes(''); }}
+      footer={[
+        <Button key="cancel" onClick={() => { setResubmitModalVisible(false); setResubmitCase(null); setResubmitNotes(''); }}>
+          Cancel
+        </Button>,
+        <Button key="submit" type="primary" onClick={handleResubmitCase} loading={updating} style={{ background: SUCCESS_COLOR }}>
+          Confirm Resubmit
+        </Button>
+      ]}
+      width={500}
+      centered
+    >
+      {resubmitCase && (
+        <>
+          <Alert
+            message="Correction Required"
+            description={resubmitCase.lastReturnNotes || "Please confirm all corrections are made."}
+            type="error"
+            showIcon
+            style={{ marginBottom: 20, borderRadius: 12 }}
+          />
+          <div style={{ marginBottom: 16 }}>
+            <Text strong>Resubmission Notes (Optional)</Text>
+            <TextArea
+              rows={3}
+              value={resubmitNotes}
+              onChange={(e) => setResubmitNotes(e.target.value)}
+              placeholder="Add notes about corrections made..."
+              style={{ marginTop: 8, borderRadius: 12 }}
+            />
+          </div>
+        </>
+      )}
+    </Modal>
+  );
+
   // Status Update Modal
   const renderStatusModal = () => (
     <Modal
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <EditOutlined style={{ color: THEME_COLOR, fontSize: 24 }} />
-          <span style={{ fontSize: 18, fontWeight: 600 }}>Update Case Status</span>
+          <span style={{ fontSize: 18, fontWeight: 600 }}>Update Status</span>
         </div>
       }
       open={statusModalVisible}
       onCancel={() => { setStatusModalVisible(false); setSelectedCase(null); }}
       footer={[
-        <Button key="cancel" onClick={() => { setStatusModalVisible(false); setSelectedCase(null); }} style={{ borderRadius: 10 }}>
-          Cancel
-        </Button>,
-        <Button
-          key="submit"
-          type="primary"
-          onClick={updateCaseStatus}
-          loading={updating}
-          style={{ background: SUCCESS_COLOR, borderColor: SUCCESS_COLOR, borderRadius: 10 }}
-          icon={<RocketOutlined />}
-        >
+        <Button key="cancel" onClick={() => { setStatusModalVisible(false); setSelectedCase(null); }}>Cancel</Button>,
+        <Button key="submit" type="primary" onClick={handleUpdateStatus} loading={updating} style={{ background: SUCCESS_COLOR }}>
           Update Status
         </Button>
       ]}
-      width={600}
+      width={500}
       centered
     >
       {selectedCase && (
-        <div style={{ padding: '8px 0' }}>
+        <>
           <Alert
             message={`Current: ${selectedCase.currentStatus}`}
-            description={`Case ${selectedCase.caseReference} · ${selectedCase.clientInfo?.fullName}`}
+            description={`Case: ${selectedCase.caseReference}`}
             type="info"
             showIcon
-            icon={getStatusIcon(selectedCase.currentStatus)}
-            style={{ borderRadius: 16, marginBottom: 24 }}
+            style={{ marginBottom: 20, borderRadius: 12 }}
           />
-
-          <div style={{ marginBottom: 24 }}>
-            <Text strong style={{ fontSize: 15 }}>New Status <span style={{ color: 'red' }}>*</span></Text>
+          <div style={{ marginBottom: 16 }}>
+            <Text strong>New Status <span style={{ color: 'red' }}>*</span></Text>
             <Select
               placeholder="Select next status"
               value={selectedStatus}
               onChange={setSelectedStatus}
-              style={{ width: '100%', marginTop: 10 }}
+              style={{ width: '100%', marginTop: 8 }}
               size="large"
-              suffixIcon={<ArrowRightOutlined />}
             >
               {getAvailableNextStatuses(selectedCase.currentStatus).map(status => (
                 <Option key={status} value={status}>
                   <Space>
                     {getStatusIcon(status)}
-                    <span style={{ fontWeight: 500 }}>{status}</span>
-                    <Tag color={getStatusColor(status)} style={{ borderRadius: 20 }}>{status}</Tag>
+                    <span>{status}</span>
                   </Space>
                 </Option>
               ))}
             </Select>
           </div>
-
-          <div style={{ marginBottom: 24 }}>
-            <Text strong style={{ fontSize: 15 }}>Notes / Remarks</Text>
+          <div>
+            <Text strong>Notes</Text>
             <TextArea
-              rows={4}
+              rows={3}
               value={statusNotes}
               onChange={(e) => setStatusNotes(e.target.value)}
-              placeholder="Add details about this update (e.g., approval amount, valuation date, etc.)"
-              style={{ marginTop: 10, borderRadius: 12 }}
+              placeholder="Add details about this update..."
+              style={{ marginTop: 8, borderRadius: 12 }}
             />
           </div>
-
-          {/* Conditional Tips */}
-          {selectedStatus === 'Pre-Approved' && (
-            <Alert
-              message="💡 Pre-Approval Tip"
-              description="Include the conditional approval amount and any bank conditions."
-              type="warning"
-              showIcon
-              style={{ borderRadius: 12 }}
-            />
-          )}
-          {selectedStatus === 'Disbursed' && (
-            <Alert
-              message="🎉 Disbursement Confirmation"
-              description="Confirm loan amount, transfer date, and post-disbursement actions."
-              type="success"
-              showIcon
-              style={{ borderRadius: 12 }}
-            />
-          )}
-        </div>
+        </>
       )}
     </Modal>
   );
 
-  // Status History Modal
-  const renderHistoryModal = () => (
-    <Modal
-      title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <HistoryOutlined style={{ color: THEME_COLOR, fontSize: 24 }} />
-          <span style={{ fontSize: 18, fontWeight: 600 }}>Status Timeline</span>
-        </div>
-      }
-      open={historyModalVisible}
-      onCancel={() => setHistoryModalVisible(false)}
-      footer={[
-        <Button key="close" onClick={() => setHistoryModalVisible(false)} style={{ borderRadius: 10 }}>
-          Close
-        </Button>
-      ]}
-      width={700}
-      centered
-    >
-      {selectedCase && (
-        <div>
-          <div style={{ marginBottom: 24, padding: 16, background: '#f5f0ff', borderRadius: 16 }}>
-            <Text strong style={{ fontSize: 16 }}>{selectedCase.caseReference}</Text>
-            <br />
-            <Text type="secondary">{selectedCase.clientInfo?.fullName} · {selectedCase.loanInfo?.selectedBank || 'No bank'}</Text>
-          </div>
-
-          <Timeline
-            items={statusHistory.map((item, idx) => ({
-              dot: getStatusIcon(item.status),
-              color: getStatusColor(item.status) === 'success' ? SUCCESS_COLOR :
-                getStatusColor(item.status) === 'error' ? ERROR_COLOR : THEME_COLOR,
-              children: (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                    <Tag color={getStatusColor(item.status)} icon={getStatusIcon(item.status)} style={{ borderRadius: 30, padding: '4px 14px' }}>
-                      {item.status}
-                    </Tag>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      {dayjs(item.timestamp).format('DD MMM YYYY, hh:mm A')}
-                    </Text>
-                  </div>
-                  {item.notes && (
-                    <div style={{ marginTop: 10, padding: 12, background: '#f9f9f9', borderRadius: 12 }}>
-                      <Text style={{ fontSize: 13 }}>{item.notes}</Text>
-                    </div>
-                  )}
-                  <div style={{ marginTop: 6 }}>
-                    <Text type="secondary" style={{ fontSize: 11 }}>Updated by: {item.updatedBy}</Text>
-                  </div>
-                </div>
-              )
-            }))}
-          />
-        </div>
-      )}
-    </Modal>
-  );
-
-  // Status Tabs with Counts - No stats cards, just tabs showing counts
+  // Status Tabs
   const renderStatusTabs = () => {
     const allStatuses = ['all', ...CASE_STATUSES];
     return (
@@ -628,8 +616,6 @@ const ProcessCasesUpdates = () => {
             const count = getStatusCount(status);
             const isActive = activeTab === status;
             const displayName = status === 'all' ? 'All Cases' : status;
-            const statusColorType = getStatusColor(status);
-            
             return (
               <Button
                 key={status}
@@ -641,15 +627,12 @@ const ProcessCasesUpdates = () => {
                   background: isActive ? THEME_COLOR : 'white',
                   borderColor: isActive ? THEME_COLOR : '#e0e0e0',
                   color: isActive ? 'white' : '#4a5568',
-                  fontWeight: 600,
-                  boxShadow: isActive ? `0 4px 12px ${THEME_COLOR}40` : 'none',
-                  transition: 'all 0.2s'
+                  fontWeight: 600
                 }}
               >
                 {status !== 'all' && getStatusIcon(status)}
                 <span style={{ marginLeft: status !== 'all' ? 8 : 0 }}>
-                  {displayName}
-                  {count > 0 && ` (${count})`}
+                  {displayName} ({count})
                 </span>
               </Button>
             );
@@ -663,65 +646,38 @@ const ProcessCasesUpdates = () => {
 
   return (
     <div style={{ padding: '28px 32px', background: '#fdfbff', minHeight: '100vh' }}>
-
-      {/* Header Section */}
       <div style={{ marginBottom: 28 }}>
-        <Title level={2} style={{ color: '#1e1b4b', margin: 0, fontWeight: 800, letterSpacing: '-0.5px' }}>
-          Process & Update Cases
-        </Title>
-        <Text type="secondary" style={{ fontSize: 15 }}>
-          Manage mortgage case workflows, update statuses, and track progress
-        </Text>
+        <Title level={2} style={{ color: '#1e1b4b', margin: 0, fontWeight: 800 }}>Process & Update Cases</Title>
+        <Text type="secondary">Manage mortgage case workflows, update statuses, and track progress</Text>
       </div>
 
-      {/* Status Tabs with inline counts */}
       {renderStatusTabs()}
 
-      {/* Cases Grid */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '80px 0' }}>
           <Spin size="large" tip="Loading cases..." />
         </div>
       ) : filteredCases.length === 0 ? (
-        <Empty
-          description={
-            <span>
-              No cases found for <strong>{activeTab === 'all' ? 'any' : activeTab}</strong> status
-              <br />
-              <Text type="secondary" style={{ fontSize: 12 }}>Cases in draft are not shown here</Text>
-            </span>
-          }
-          style={{ padding: '80px 0' }}
-        />
+        <Empty description={`No cases found for ${activeTab === 'all' ? 'any' : activeTab} status`} />
       ) : (
         <>
           <Row gutter={[28, 28]}>
             {filteredCases.map(caseItem => (
-              <Col xs={24} md={24} lg={24} xl={24} key={caseItem._id}>
+              <Col xs={24} key={caseItem._id}>
                 {renderCaseCard(caseItem)}
               </Col>
             ))}
           </Row>
-
-          {/* Pagination */}
           {totalItems > 0 && (
             <div style={{ marginTop: 48, display: 'flex', justifyContent: 'flex-end' }}>
-              <Pagination
-                current={currentPage}
-                total={totalItems}
-                pageSize={12}
-                onChange={handlePageChange}
-                showSizeChanger={false}
-                showTotal={(total) => `Total ${total} cases`}
-              />
+              <Pagination current={currentPage} total={totalItems} pageSize={12} onChange={handlePageChange} showTotal={(total) => `Total ${total} cases`} />
             </div>
           )}
         </>
       )}
 
-      {/* Modals */}
       {renderStatusModal()}
-      {renderHistoryModal()}
+      {renderResubmitModal()}
     </div>
   );
 };
