@@ -1149,8 +1149,6 @@ const insertHtmlIntoEditor = useCallback((html) => {
     }
   }, [form]);
 
-  // ── FIX #2: FORMAT-PRESERVING PASTE HANDLER — now wired to the
-  //   editor wrapper div via onPaste prop (was defined but never attached)
   const handlePaste = useCallback(async (event) => {
     const cd = event.clipboardData;
     if (!cd) return;
