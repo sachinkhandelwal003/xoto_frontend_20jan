@@ -34,7 +34,6 @@ const Freelancerrequest = () => {
       const params = { page, limit: itemsPerPage };
       if (filters.status !== undefined) params.status = filters.status;
       const response = await apiService.get('/freelancer/requests', params);
-      console.log('Freelancer Requests API Response:', response);
       setFreelancerRequests(response.requests || []);
       setPagination({
         currentPage: response.pagination.currentPage || 1,

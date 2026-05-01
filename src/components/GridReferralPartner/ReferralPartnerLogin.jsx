@@ -74,7 +74,7 @@ const ReferralPartnerLogin = () => {
       });
       // AuthContext token save aur isAuthenticated true kar dega, jisse upar wala useEffect trigger hoga
     } catch (err) {
-      console.log("🔥 Referral Partner Login Error:", err);
+      
 
       let errorMessage = "Invalid credentials";
 

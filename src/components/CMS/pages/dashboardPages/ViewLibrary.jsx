@@ -45,9 +45,9 @@ const ViewLibrary = () => {
         return;
       }
 
-      console.log(`Fetching from: ${endpoint}`);
+      
       const res = await apiService.get(endpoint);
-      console.log(`Raw API Response for ${category}:`, res);
+      
 
       let rawData = [];
       if (Array.isArray(res)) {
@@ -60,7 +60,7 @@ const ViewLibrary = () => {
         rawData = res.data.images; 
       }
 
-      console.log(`Extracted Data Array for ${category}:`, rawData);
+      
 
       let formatted = [];
 
@@ -98,7 +98,7 @@ const ViewLibrary = () => {
         }
       });
 
-      console.log(`Final Valid Images for UI:`, formatted);
+     
       setDisplayData(formatted);
 
     } catch (error) {

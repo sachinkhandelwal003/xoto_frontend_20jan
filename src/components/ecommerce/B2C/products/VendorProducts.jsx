@@ -107,9 +107,9 @@ const ProductManagementContent = () => {
     formData.append('file', file);
     try {
       const response = await axios.post(`${BASE_URL}/api/upload`, formData);
-      console.log("responseresponseresponse",response)
+      
       const imageUrl = response.data?.url || response.data?.secure_url || response.data?.data?.url || response.data;
-            console.log("imageUrlimageUrlimageUrlimageUrl",response)
+            
 
       onSuccess(imageUrl);
       message.success("Uploaded");

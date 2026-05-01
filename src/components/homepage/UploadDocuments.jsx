@@ -97,7 +97,7 @@ const UploadDocuments = () => {
         if(!leadId) { setInitLoading(false); return; }
 
         try {
-            console.log("Fetching for Lead:", leadId);
+            
             const res = await fetch(`${BASE_URL}/api/mortgages/get-lead-data?lead_id=${leadId}`);
             const json = await res.json();
             
@@ -113,7 +113,7 @@ const UploadDocuments = () => {
                                 json.data || // <-- YE LINE ADD KI HAI (Yahi data pakdegi)
                                 {};
 
-                console.log("📥 Extracted Docs:", apiDocs);
+                
 
                 const newFiles = {};
                 // Helper to set state
@@ -170,7 +170,7 @@ const UploadDocuments = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        console.log("💾 Saved to backend");
+        
     } catch(e) { console.error("Save failed", e); }
     finally { setIsAutoSaving(false); }
   };
@@ -183,7 +183,7 @@ const UploadDocuments = () => {
     formData.append('file', file);
 
     try {
-        console.log("📤 Uploading...");
+        
         const res = await fetch(`${BASE_URL}/api/upload`, { method: 'POST', body: formData });
         const json = await res.json();
 
@@ -196,7 +196,7 @@ const UploadDocuments = () => {
 
             if (!uploadedUrl) throw new Error("URL missing in response");
 
-            console.log("🔗 URL:", uploadedUrl);
+            
             
             setFiles(prev => {
                 const newState = { 

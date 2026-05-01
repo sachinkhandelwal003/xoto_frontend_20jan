@@ -9,7 +9,7 @@ const SearchBar = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     // Implement search functionality
-    console.log('Searching for:', searchQuery);
+    
   };
 
   const clearSearch = () => {

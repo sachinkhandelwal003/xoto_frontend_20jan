@@ -6,7 +6,7 @@ import {
   Card, Button, Typography, Row, Col, Avatar,
   Tag, Divider, Spin, message, Badge,
   Space, Progress, Modal, Tooltip,
-  Select, Input, Alert, Empty, Form, Dropdown, Menu
+  Select, Input, Alert, Empty, Form, Radio
 } from 'antd';
 import {
   UserOutlined, BankOutlined, FileTextOutlined,
@@ -18,11 +18,12 @@ import {
   LoadingOutlined, ArrowRightOutlined, SyncOutlined,
   WarningOutlined, UserAddOutlined, SwapOutlined,
   ApartmentOutlined, UserSwitchOutlined, TrophyOutlined,
-  DollarOutlined, FundOutlined
+  DollarOutlined, FundOutlined, PlusOutlined, GiftOutlined,
+  ReloadOutlined, SearchOutlined, PercentageOutlined,
+  RiseOutlined, FallOutlined, WalletOutlined,InfoCircleOutlined 
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import CustomTable from '../../../../components/CMS/pages/custom/CustomTable';
 
 dayjs.extend(relativeTime);
 
@@ -34,46 +35,24 @@ const SUCCESS_COLOR = "#10b981";
 const WARNING_COLOR = "#f59e0b";
 const ERROR_COLOR = "#ef4444";
 const INFO_COLOR = "#3b82f6";
+const SUCCESS_LIGHT = "#D1FAE5";
+const INFO_LIGHT = "#DBEAFE";
 
 const roleSlugMap = {
-  '0': 'superadmin',
-  '1': 'admin',
-  '2': "customer",
-  '5': 'vendor-b2c',
-  '6': 'vendor-b2b',
-  '7': 'freelancer',
-  '11': 'accountant',
-  '12': 'supervisor',
-  '15': "agency",
-  '16': "agent",
-  '17': "developer",
-  '18': "vault-admin",
-  '22': "vaultagent",
-  '21': "vaultpartner",
-  '24': "GridAdvisor",
-  '23': "vault-ops",
-  '25': "gridReferralPartner",
-  '26': "vault-advisor",
+  '0': 'superadmin', '1': 'admin', '2': "customer",
+  '5': 'vendor-b2c', '6': 'vendor-b2b', '7': 'freelancer',
+  '11': 'accountant', '12': 'supervisor', '15': "agency",
+  '16': "agent", '17': "developer", '18': "vault-admin",
+  '22': "vaultagent", '21': "vaultpartner", '24': "GridAdvisor",
+  '23': "vault-ops", '25': "gridReferralPartner", '26': "vault-advisor",
 };
 
-// ================= STATUS CONFIGURATION =================
 const CASE_STATUSES = [
-  'Draft',
-  'Submitted to Xoto',
-  'In Ops Queue - Pending Pick-up',
-  'Assigned - Pending Review',
-  'Under Review',
-  'Returned - Pending Correction',
-  'Bank Application',
-  'Collecting Documentation',
-  'Pre-Approved',
-  'Valuation',
-  'FOL Processed',
-  'FOL Issued',
-  'FOL Signed',
-  'Disbursed',
-  'Rejected',
-  'Lost'
+  'Draft', 'Submitted to Xoto', 'In Ops Queue - Pending Pick-up',
+  'Assigned - Pending Review', 'Under Review', 'Returned - Pending Correction',
+  'Bank Application', 'Collecting Documentation', 'Pre-Approved',
+  'Valuation', 'FOL Processed', 'FOL Issued', 'FOL Signed',
+  'Disbursed', 'Rejected', 'Lost'
 ];
 
 const getStatusIcon = (status) => {
@@ -100,84 +79,35 @@ const getStatusIcon = (status) => {
 
 const getStatusColor = (status) => {
   const colorMap = {
-    'Draft': 'default',
-    'Submitted to Xoto': 'processing',
-    'In Ops Queue - Pending Pick-up': 'warning',
-    'Assigned - Pending Review': 'processing',
-    'Under Review': 'processing',
-    'Returned - Pending Correction': 'error',
-    'Bank Application': 'processing',
-    'Collecting Documentation': 'warning',
-    'Pre-Approved': 'success',
-    'Valuation': 'processing',
-    'FOL Processed': 'success',
-    'FOL Issued': 'success',
-    'FOL Signed': 'success',
-    'Disbursed': 'success',
-    'Rejected': 'error',
-    'Lost': 'default'
+    'Draft': 'default', 'Submitted to Xoto': 'processing',
+    'In Ops Queue - Pending Pick-up': 'warning', 'Assigned - Pending Review': 'processing',
+    'Under Review': 'processing', 'Returned - Pending Correction': 'error',
+    'Bank Application': 'processing', 'Collecting Documentation': 'warning',
+    'Pre-Approved': 'success', 'Valuation': 'processing',
+    'FOL Processed': 'success', 'FOL Issued': 'success',
+    'FOL Signed': 'success', 'Disbursed': 'success',
+    'Rejected': 'error', 'Lost': 'default'
   };
   return colorMap[status] || 'default';
 };
 
-const getAvailableNextStatuses = (currentStatus) => {
-  const transitions = {
-    'Draft': ['Submitted to Xoto', 'Lost'],
-    'Submitted to Xoto': ['In Ops Queue - Pending Pick-up', 'Lost'],
-    'In Ops Queue - Pending Pick-up': ['Assigned - Pending Review', 'Lost'],
-    'Assigned - Pending Review': ['Under Review', 'Returned - Pending Correction', 'Lost'],
-    'Under Review': ['Bank Application', 'Collecting Documentation', 'Rejected'],
-    'Returned - Pending Correction': ['Under Review', 'Lost'],
-    'Bank Application': ['Pre-Approved', 'Collecting Documentation', 'Rejected'],
-    'Collecting Documentation': ['Bank Application', 'Lost'],
-    'Pre-Approved': ['Valuation', 'Rejected'],
-    'Valuation': ['FOL Processed', 'Rejected'],
-    'FOL Processed': ['FOL Issued', 'Rejected'],
-    'FOL Issued': ['FOL Signed', 'Rejected'],
-    'FOL Signed': ['Disbursed', 'Rejected'],
-    'Disbursed': [],
-    'Rejected': [],
-    'Lost': []
-  };
-  return transitions[currentStatus] || [];
-};
-
 const getCreatorInfo = (caseItem) => {
   const createdBy = caseItem.createdBy;
-  if (!createdBy) return { name: 'Unknown', type: 'Unknown', icon: <UserOutlined /> };
+  if (!createdBy) return { name: 'Unknown', type: 'Unknown', icon: <UserOutlined />, color: '#9ca3af' };
   
   if (createdBy.role === 'partner' && createdBy.partnerName) {
-    return { 
-      name: createdBy.partnerName, 
-      type: 'Partner', 
-      icon: <ApartmentOutlined />,
-      subText: 'Partner Created',
-      color: '#8b5cf6'
-    };
+    return { name: createdBy.partnerName, type: 'Partner', icon: <ApartmentOutlined />, color: '#8b5cf6' };
   } else if (createdBy.role === 'advisor' && createdBy.advisorName) {
-    return { 
-      name: createdBy.advisorName, 
-      type: 'Xoto Advisor', 
-      icon: <UserSwitchOutlined />,
-      subText: 'Advisor Created',
-      color: THEME_COLOR
-    };
+    return { name: createdBy.advisorName, type: 'Xoto Advisor', icon: <UserSwitchOutlined />, color: THEME_COLOR };
   } else if (createdBy.role === 'admin' && createdBy.adminName) {
-    return { 
-      name: createdBy.adminName, 
-      type: 'Admin', 
-      icon: <TrophyOutlined />,
-      subText: 'Admin Created',
-      color: '#f59e0b'
-    };
+    return { name: createdBy.adminName, type: 'Admin', icon: <TrophyOutlined />, color: '#f59e0b' };
   }
-  
-  return { name: 'System', type: 'System', icon: <UserOutlined />, subText: 'Auto Created', color: '#9ca3af' };
+  return { name: 'System', type: 'System', icon: <UserOutlined />, color: '#9ca3af' };
 };
 
-// Navigation helper
-const navigateToAmountDetails = (navigate, roleSlug, caseId) => {
-  navigate(`/dashboard/${roleSlug}/case/amount/view/${caseId}`);
+const formatCurrency = (value) => {
+  if (!value && value !== 0) return "AED 0";
+  return `AED ${Number(value).toLocaleString()}`;
 };
 
 const AdminManagecases = () => {
@@ -187,140 +117,109 @@ const AdminManagecases = () => {
 
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [updating, setUpdating] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [activeStatus, setActiveStatus] = useState('all');
+  const [itemsPerPage] = useState(12);
+  const [totalCases, setTotalCases] = useState(0);
+  const [activeStatus, setActiveStatus] = useState('Disbursed');
+  const [search, setSearch] = useState("");
+  const [toastMsg, setToastMsg] = useState(null);
   
-  const [opsList, setOpsList] = useState([]);
-  const [fetchingOps, setFetchingOps] = useState(false);
-
-  const [statusModalVisible, setStatusModalVisible] = useState(false);
-  const [assignOpsModalVisible, setAssignOpsModalVisible] = useState(false);
+  // Preview Modal State (Only Preview - NO Creation)
+  const [previewModalVisible, setPreviewModalVisible] = useState(false);
   const [selectedCase, setSelectedCase] = useState(null);
-  const [selectedStatus, setSelectedStatus] = useState('');
-  const [statusNotes, setStatusNotes] = useState('');
-  const [selectedOpsId, setSelectedOpsId] = useState('');
-  const [assignLoading, setAssignLoading] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [commissionPreview, setCommissionPreview] = useState(null);
+  const [previewForm, setPreviewForm] = useState({
+    bankCommissionRate: '',
+    actualBankCommission: ''
+  });
 
-  const fetchCases = useCallback(async (page) => {
+  const showToast = (message, type = "success") => {
+    setToastMsg({ message, type });
+    setTimeout(() => setToastMsg(null), 3000);
+  };
+
+  // Fetch cases
+  const fetchCases = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiService.get(`/vault/cases?page=${page}&limit=12`);
-      if (res?.success) {
-        setCases(res.data || []);
-        setTotalItems(res.pagination?.total || 0);
+      let url = `/vault/cases?page=${currentPage}&limit=${itemsPerPage}`;
+      if (activeStatus !== 'all') url += `&status=${activeStatus}`;
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+
+      const response = await apiService.get(url);
+      if (response?.success) {
+        setCases(response.data || []);
+        setTotalCases(response.pagination?.total || 0);
       }
     } catch (err) {
       message.error("Failed to load cases");
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const fetchOpsList = useCallback(async () => {
-    setFetchingOps(true);
-    try {
-      const res = await apiService.get('/vault/ops/all?page=1&limit=1000&status=active');
-      if (res?.success) {
-        setOpsList(res.data || []);
-      }
-    } catch (err) {
-      console.error("Failed to fetch Ops list:", err);
-    } finally {
-      setFetchingOps(false);
-    }
-  }, []);
+  }, [currentPage, itemsPerPage, activeStatus, search]);
 
   useEffect(() => {
-    fetchCases(currentPage);
-    fetchOpsList();
-  }, [currentPage, fetchCases, fetchOpsList]);
+    fetchCases();
+  }, [fetchCases]);
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
+  // Fetch Commission Preview (ONLY - No Creation)
+// Fetch Commission Preview (ONLY - No Creation)
+const fetchCommissionPreview = async () => {
+  if (!selectedCase) return;
+  setPreviewLoading(true);
+  try {
+    let payload = {};
+    if (previewForm.actualBankCommission) {
+      payload.customBankCommission = parseFloat(previewForm.actualBankCommission);
+    } else if (previewForm.bankCommissionRate) {
+      payload.customBankRate = parseFloat(previewForm.bankCommissionRate);
+    }
+    
+    const response = await apiService.post(`/vault/commissions/admin/preview/${selectedCase._id}`, payload);
+    
+    // ✅ FIXED: response.data contains the data directly
+    if (response?.success && response?.data) {
+      setCommissionPreview(response.data);  // NOT response.data.data
+    } else {
+      showToast(response?.message || "Failed to preview commission", "error");
+    }
+  } catch (err) {
+    console.error("Preview error:", err);
+    showToast(err.response?.data?.message || "Error previewing commission", "error");
+  } finally {
+    setPreviewLoading(false);
+  }
+};
+
+  const openPreviewModal = (caseItem) => {
+    setSelectedCase(caseItem);
+    setCommissionPreview(null);
+    setPreviewForm({ bankCommissionRate: '', actualBankCommission: '' });
+    setPreviewModalVisible(true);
   };
 
   const navigateToCaseDetail = (caseId) => {
     navigate(`/dashboard/${roleSlug}/case/view/${caseId}`);
   };
 
-  const navigateToAmountDetailsPage = (caseId) => {
-    navigateToAmountDetails(navigate, roleSlug, caseId);
+  const navigateToAmountDetails = (caseId) => {
+    navigate(`/dashboard/${roleSlug}/case/amount/view/${caseId}`);
   };
 
-  const openStatusModal = (caseItem, e) => {
-    e?.stopPropagation();
-    setSelectedCase(caseItem);
-    setSelectedStatus('');
-    setStatusNotes('');
-    setStatusModalVisible(true);
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
   };
 
-  const openAssignOpsModal = (caseItem, e) => {
-    e?.stopPropagation();
-    setSelectedCase(caseItem);
-    setSelectedOpsId(caseItem.assignedTo?.opsId || '');
-    setAssignOpsModalVisible(true);
+  const resetFilters = () => {
+    setSearch("");
+    setActiveStatus("Disbursed");
+    setCurrentPage(1);
   };
 
-  const updateCaseStatus = async () => {
-    if (!selectedStatus) {
-      message.warning("Please select a status");
-      return;
-    }
-
-    setUpdating(true);
-    try {
-      const response = await apiService.put(`/vault/cases/admin/${selectedCase._id}/status`, {
-        status: selectedStatus,
-        notes: statusNotes
-      });
-
-      if (response?.success) {
-        message.success(`Case status updated to "${selectedStatus}" successfully!`);
-        setStatusModalVisible(false);
-        fetchCases(currentPage);
-      } else {
-        message.error(response?.message || "Failed to update case status");
-      }
-    } catch (err) {
-      message.error(err.response?.data?.message || "Error updating case status");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const assignToOps = async () => {
-    if (!selectedOpsId) {
-      message.warning("Please select an Ops member");
-      return;
-    }
-
-    setAssignLoading(true);
-    try {
-      const response = await apiService.post('/vault/cases/ops/assign', {
-        caseId: selectedCase._id,
-        opsId: selectedOpsId
-      });
-
-      if (response?.success) {
-        message.success(`Case assigned to Ops successfully!`);
-        setAssignOpsModalVisible(false);
-        fetchCases(currentPage);
-      } else {
-        message.error(response?.message || "Failed to assign case");
-      }
-    } catch (err) {
-      message.error(err.response?.data?.message || "Error assigning case");
-    } finally {
-      setAssignLoading(false);
-    }
-  };
-
-  const getFilteredCases = () => {
-    if (activeStatus === 'all') return cases;
-    return cases.filter(c => c.currentStatus === activeStatus);
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
 
   const getStatusCount = (status) => {
@@ -328,238 +227,175 @@ const AdminManagecases = () => {
     return cases.filter(c => c.currentStatus === status).length;
   };
 
-  const getDocumentProgress = (documentStatus) => {
-    const total = documentStatus?.requiredDocuments?.length || 10;
-    const uploaded = documentStatus?.documentsUploadedCount || 0;
-    const percentage = total > 0 ? (uploaded / total) * 100 : 0;
-    return { total, uploaded, percentage };
-  };
+  // Render Case Card
+  const renderCaseCard = (caseItem) => {
+    const creator = getCreatorInfo(caseItem);
+    const isDisbursed = caseItem.currentStatus === 'Disbursed';
+    const hasCommission = caseItem.commissionInfo || false;
+    const disbursedAmount = caseItem.loanInfo?.disbursedAmount || caseItem.loanInfo?.approvedAmount || 0;
+    
+    const xotoCommission = disbursedAmount * 0.01;
+    let partnerPercentage = 80;
+    if (caseItem.createdBy?.role === 'partner') {
+      partnerPercentage = disbursedAmount <= 5000000 ? 80 : 85;
+    } else if (caseItem.createdBy?.role === 'advisor') {
+      partnerPercentage = 0;
+    }
+    const estimatedCommission = (xotoCommission * partnerPercentage) / 100;
 
-  // Updated columns with Amount Details button for Disbursed cases
-  const columns = [
-    {
-      key: 'caseInfo',
-      title: 'Case Info',
-      width: 280,
-      render: (_, record) => {
-        const creator = getCreatorInfo(record);
-        return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Avatar
-              icon={creator.icon}
-              style={{ backgroundColor: creator.color, flexShrink: 0 }}
-              size={44}
-            />
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 14, color: '#1e1b4b' }}>
-                {record.clientInfo?.fullName || 'Unknown'}
-              </div>
-              <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
-                {record.caseReference}
-              </div>
-              <div style={{ marginTop: 4 }}>
-                <Tag icon={creator.icon} color="purple" style={{ fontSize: 10, margin: 0 }}>
-                  {creator.type}: {creator.name}
-                </Tag>
+    return (
+      <Card
+        style={{
+          borderRadius: 20,
+          border: isDisbursed ? `1px solid ${SUCCESS_COLOR}40` : `1px solid ${THEME_COLOR}20`,
+          overflow: 'hidden',
+          height: '100%',
+          background: isDisbursed ? `linear-gradient(135deg, ${SUCCESS_LIGHT} 0%, #fff 100%)` : '#fff',
+          transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+          position: 'relative'
+        }}
+        hoverable
+        bodyStyle={{ padding: 0 }}
+      >
+        {isDisbursed && (
+          <div style={{
+            position: 'absolute', top: 0, right: 0, width: 60, height: 60, overflow: 'hidden', zIndex: 10
+          }}>
+            <div style={{
+              position: 'absolute', top: 12, right: -25, width: 80, background: SUCCESS_COLOR,
+              color: 'white', textAlign: 'center', padding: '4px 0', fontSize: 10,
+              fontWeight: 600, transform: 'rotate(45deg)'
+            }}>DISBURSED</div>
+          </div>
+        )}
+
+        <div style={{ padding: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Avatar icon={creator.icon} style={{ backgroundColor: creator.color }} size={44} />
+              <div>
+                <Text strong style={{ fontSize: 16 }}>{caseItem.clientInfo?.fullName || 'Unknown'}</Text>
+                <div style={{ fontSize: 11, color: '#9ca3af' }}>{caseItem.caseReference}</div>
               </div>
             </div>
+            <Tag icon={getStatusIcon(caseItem.currentStatus)} color={getStatusColor(caseItem.currentStatus)}>
+              {caseItem.currentStatus}
+            </Tag>
           </div>
-        );
-      }
-    },
-    {
-      key: 'property',
-      title: 'Property & Loan',
-      width: 250,
-      render: (_, record) => (
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <HomeOutlined style={{ color: THEME_COLOR, fontSize: 12 }} />
-            <Text strong style={{ fontSize: 13 }}>
-              AED {record.propertyInfo?.propertyValue?.toLocaleString() || 0}
-            </Text>
+
+          <div style={{ background: '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 16 }}>
+            <Row gutter={12}>
+              <Col span={8}>
+                <Text type="secondary" style={{ fontSize: 10 }}>Property Value</Text>
+                <div style={{ fontWeight: 600 }}>{formatCurrency(caseItem.propertyInfo?.propertyValue)}</div>
+              </Col>
+              <Col span={8}>
+                <Text type="secondary" style={{ fontSize: 10 }}>Loan Amount</Text>
+                <div style={{ fontWeight: 600 }}>{formatCurrency(caseItem.calculations?.loanAmount)}</div>
+              </Col>
+              <Col span={8}>
+                <Text type="secondary" style={{ fontSize: 10 }}>Bank</Text>
+                <div style={{ fontWeight: 600 }}>{caseItem.loanInfo?.selectedBank || 'N/A'}</div>
+              </Col>
+            </Row>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-            <DollarCircleOutlined style={{ color: SUCCESS_COLOR, fontSize: 12 }} />
-            <Text style={{ fontSize: 12, color: '#4b5563' }}>
-              Loan: AED {record.calculations?.loanAmount?.toLocaleString() || 0}
-            </Text>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-            <BankOutlined style={{ color: INFO_COLOR, fontSize: 12 }} />
-            <Text style={{ fontSize: 12, color: '#4b5563' }}>
-              {record.loanInfo?.selectedBank || 'No Bank'}
-            </Text>
-          </div>
-        </div>
-      )
-    },
-    {
-      key: 'status',
-      title: 'Status',
-      width: 200,
-      render: (_, record) => (
-        <div>
-          <Tag
-            icon={getStatusIcon(record.currentStatus)}
-            color={getStatusColor(record.currentStatus)}
-            style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}
-          >
-            {record.currentStatus}
-          </Tag>
-          {record.assignedTo?.opsName && (
-            <div style={{ marginTop: 6 }}>
-              <Tag icon={<TeamOutlined />} style={{ fontSize: 10 }}>
-                Ops: {record.assignedTo.opsName}
-              </Tag>
-            </div>
-          )}
-        </div>
-      )
-    },
-    {
-      key: 'documents',
-      title: 'Documents',
-      width: 180,
-      render: (_, record) => {
-        const progress = getDocumentProgress(record.documentStatus);
-        return (
-          <div>
+
+          <div style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <Text type="secondary" style={{ fontSize: 11 }}>Uploaded</Text>
-              <Text strong style={{ fontSize: 11 }}>{progress.uploaded}/{progress.total}</Text>
+              <Text type="secondary" style={{ fontSize: 11 }}>Documents</Text>
+              <Text strong style={{ fontSize: 11 }}>
+                {caseItem.documentStatus?.documentsUploadedCount || 0}/{caseItem.documentStatus?.requiredDocuments?.length || 0}
+              </Text>
             </div>
             <Progress
-              percent={progress.percentage}
+              percent={caseItem.documentStatus?.completionPercentage || 0}
               size="small"
-              strokeColor={progress.percentage === 100 ? SUCCESS_COLOR : THEME_COLOR}
+              strokeColor={caseItem.documentStatus?.completionPercentage === 100 ? SUCCESS_COLOR : THEME_COLOR}
               showInfo={false}
               strokeWidth={6}
             />
-            {record.documentStatus?.allDocumentsVerified && (
-              <Tag icon={<CheckCircleOutlined />} color="success" style={{ fontSize: 10, marginTop: 6 }}>
-                All Verified
-              </Tag>
+          </div>
+
+          {isDisbursed && (
+            <div style={{ background: hasCommission ? SUCCESS_LIGHT : INFO_LIGHT, borderRadius: 12, padding: 12, marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <Text type="secondary" style={{ fontSize: 10 }}>Est. Commission</Text>
+                  <div style={{ fontWeight: 700, color: SUCCESS_COLOR }}>{formatCurrency(estimatedCommission)}</div>
+                </div>
+                {hasCommission ? (
+                  <Tag color="success" icon={<CheckCircleOutlined />}>Commission Created</Tag>
+                ) : (
+                  <Tag color="warning" icon={<ClockCircleOutlined />}>Pending</Tag>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9ca3af', marginBottom: 16 }}>
+            <span><CalendarOutlined /> {dayjs(caseItem.createdAt).format('DD MMM YYYY')}</span>
+            <span><TeamOutlined /> {creator.type}</span>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Tooltip title="View Case Details">
+              <Button icon={<EyeOutlined />} onClick={() => navigateToCaseDetail(caseItem._id)} style={{ borderRadius: 8, flex: 1 }}>
+                View
+              </Button>
+            </Tooltip>
+
+            {isDisbursed && (
+              <>
+                <Tooltip title="View Amount Details">
+                  <Button icon={<DollarOutlined />} onClick={() => navigateToAmountDetails(caseItem._id)} style={{ borderRadius: 8, borderColor: SUCCESS_COLOR, color: SUCCESS_COLOR }}>
+                    Amount
+                  </Button>
+                </Tooltip>
+                {!hasCommission && (
+                  <Tooltip title="Preview Commission">
+                    <Button
+                      type="primary"
+                      icon={<EyeOutlined />}
+                      onClick={() => openPreviewModal(caseItem)}
+                      style={{ background: SUCCESS_COLOR, borderColor: SUCCESS_COLOR, borderRadius: 8 }}
+                    >
+                      Preview
+                    </Button>
+                  </Tooltip>
+                )}
+              </>
             )}
-          </div>
-        );
-      }
-    },
-    {
-      key: 'createdAt',
-      title: 'Created',
-      width: 150,
-      render: (_, record) => (
-        <div>
-          <div style={{ fontSize: 12, color: '#6b7280' }}>
-            <CalendarOutlined style={{ marginRight: 4 }} />
-            {dayjs(record.createdAt).format('DD MMM YYYY')}
-          </div>
-          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
-            {dayjs(record.createdAt).fromNow()}
           </div>
         </div>
-      )
-    },
-    {
-      key: 'actions',
-      title: 'Actions',
-      width: 280,
-      align: 'center',
-      render: (_, record) => {
-        const availableStatuses = getAvailableNextStatuses(record.currentStatus);
-        const canUpdate = availableStatuses.length > 0;
-        const isAssigned = !!record.assignedTo?.opsId;
-        const isDisbursed = record.currentStatus === 'Disbursed';
-        
-        return (
-          <Space size={8} wrap>
-            {/* View Details Button */}
-            <Tooltip title="View Details">
-              <Button
-                type="default"
-                icon={<EyeOutlined />}
-                onClick={() => navigateToCaseDetail(record._id)}
-                style={{ borderRadius: 8 }}
-              />
-            </Tooltip>
-            
-            {/* Update Status Button (only if can update) */}
-            {canUpdate && (
-              <Tooltip title="Update Status">
-                <Button
-                  type="primary"
-                  icon={<RocketOutlined />}
-                  onClick={(e) => openStatusModal(record, e)}
-                  style={{ background: THEME_COLOR, borderColor: THEME_COLOR, borderRadius: 8 }}
-                />
-              </Tooltip>
-            )}
-            
-            {/* Assign/Reassign to Ops Button */}
-            <Tooltip title={isAssigned ? "Reassign to Ops" : "Assign to Ops"}>
-              <Button
-                type="default"
-                icon={<UserAddOutlined />}
-                onClick={(e) => openAssignOpsModal(record, e)}
-                style={{ borderColor: isAssigned ? SUCCESS_COLOR : THEME_COLOR, color: isAssigned ? SUCCESS_COLOR : THEME_COLOR, borderRadius: 8 }}
-              />
-            </Tooltip>
+      </Card>
+    );
+  };
 
-            {/* Amount Details Button - ONLY for Disbursed cases */}
-            {isDisbursed && (
-              <Tooltip title="View Amount Details (Disbursed)">
-                <Button
-                  type="default"
-                  icon={<DollarOutlined />}
-                  onClick={() => navigateToAmountDetailsPage(record._id)}
-                  style={{ 
-                    borderColor: SUCCESS_COLOR, 
-                    color: SUCCESS_COLOR, 
-                    borderRadius: 8,
-                    background: '#f0fdf4'
-                  }}
-                >
-                  Amount Details
-                </Button>
-              </Tooltip>
-            )}
-          </Space>
-        );
-      }
-    }
-  ];
-
+  // Status Tabs
   const renderStatusTabs = () => {
     const allStatuses = ['all', ...CASE_STATUSES];
     return (
-      <div style={{ marginBottom: 28, overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: 8 }}>
+      <div style={{ marginBottom: 24, overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: 8 }}>
         <Space size={10} wrap>
           {allStatuses.map(status => {
             const count = getStatusCount(status);
             const isActive = activeStatus === status;
             const displayName = status === 'all' ? 'All Cases' : status;
-            
             return (
               <Button
                 key={status}
                 onClick={() => setActiveStatus(status)}
                 style={{
-                  borderRadius: 40,
-                  padding: '6px 22px',
-                  height: 'auto',
+                  borderRadius: 40, padding: '6px 22px', height: 'auto',
                   background: isActive ? THEME_COLOR : 'white',
                   borderColor: isActive ? THEME_COLOR : '#e5e7eb',
-                  color: isActive ? 'white' : '#4b5563',
-                  fontWeight: 600,
-                  boxShadow: isActive ? `0 2px 8px ${THEME_COLOR}40` : 'none',
-                  transition: 'all 0.2s'
+                  color: isActive ? 'white' : '#4b5563', fontWeight: 600,
+                  boxShadow: isActive ? `0 2px 8px ${THEME_COLOR}40` : 'none'
                 }}
               >
                 {status !== 'all' && getStatusIcon(status)}
                 <span style={{ marginLeft: status !== 'all' ? 8 : 0 }}>
-                  {displayName}
-                  {count > 0 && ` (${count})`}
+                  {displayName}{count > 0 && ` (${count})`}
                 </span>
               </Button>
             );
@@ -569,6 +405,7 @@ const AdminManagecases = () => {
     );
   };
 
+  // Stats Summary
   const renderStats = () => {
     const total = cases.length;
     const pendingQueue = cases.filter(c => c.currentStatus === 'In Ops Queue - Pending Pick-up').length;
@@ -577,298 +414,318 @@ const AdminManagecases = () => {
     
     return (
       <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={6}>
+        <Col xs={24} sm={12} lg={6}>
           <div style={{ background: 'white', borderRadius: 16, padding: '16px 20px', border: `1px solid ${THEME_COLOR}20` }}>
-            <Statistic title="Total Cases" value={total} prefix={<FileTextOutlined />} valueStyle={{ color: THEME_COLOR }} />
+            <StatisticComp title="Total Cases" value={total} prefix={<FileTextOutlined />} valueStyle={{ color: THEME_COLOR }} />
           </div>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} lg={6}>
           <div style={{ background: 'white', borderRadius: 16, padding: '16px 20px', border: `1px solid ${WARNING_COLOR}20` }}>
-            <Statistic title="Pending Queue" value={pendingQueue} prefix={<ClockCircleOutlined />} valueStyle={{ color: WARNING_COLOR }} />
+            <StatisticComp title="Pending Queue" value={pendingQueue} prefix={<ClockCircleOutlined />} valueStyle={{ color: WARNING_COLOR }} />
           </div>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} lg={6}>
           <div style={{ background: 'white', borderRadius: 16, padding: '16px 20px', border: `1px solid ${INFO_COLOR}20` }}>
-            <Statistic title="In Progress" value={inProgress} prefix={<SyncOutlined spin />} valueStyle={{ color: INFO_COLOR }} />
+            <StatisticComp title="In Progress" value={inProgress} prefix={<SyncOutlined spin />} valueStyle={{ color: INFO_COLOR }} />
           </div>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} lg={6}>
           <div style={{ background: 'white', borderRadius: 16, padding: '16px 20px', border: `1px solid ${SUCCESS_COLOR}20` }}>
-            <Statistic title="Completed (Disbursed)" value={completed} prefix={<DollarOutlined />} valueStyle={{ color: SUCCESS_COLOR }} />
+            <StatisticComp title="Disbursed" value={completed} prefix={<DollarOutlined />} valueStyle={{ color: SUCCESS_COLOR }} />
           </div>
         </Col>
       </Row>
     );
   };
 
-  const renderStatusModal = () => (
+  // Preview Commission Modal (ONLY PREVIEW - NO CREATION)
+  const renderPreviewModal = () => (
     <Modal
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <EditOutlined style={{ color: THEME_COLOR, fontSize: 24 }} />
-          <span style={{ fontSize: 18, fontWeight: 600 }}>Update Case Status</span>
+          <EyeOutlined style={{ color: SUCCESS_COLOR, fontSize: 24 }} />
+          <span style={{ fontSize: 18, fontWeight: 600 }}>Commission Preview</span>
+          <Tag color="success">Disbursed Case</Tag>
         </div>
       }
-      open={statusModalVisible}
-      onCancel={() => { setStatusModalVisible(false); setSelectedCase(null); }}
+      open={previewModalVisible}
+      onCancel={() => { setPreviewModalVisible(false); setSelectedCase(null); setCommissionPreview(null); }}
+      width={700}
       footer={[
-        <Button key="cancel" onClick={() => { setStatusModalVisible(false); setSelectedCase(null); }}>Cancel</Button>,
-        <Button
-          key="submit"
-          type="primary"
-          onClick={updateCaseStatus}
-          loading={updating}
-          style={{ background: SUCCESS_COLOR, borderColor: SUCCESS_COLOR }}
-          icon={<RocketOutlined />}
-        >
-          Update Status
+        <Button key="close" type="primary" onClick={() => { setPreviewModalVisible(false); setSelectedCase(null); setCommissionPreview(null); }} style={{ background: THEME_COLOR }}>
+          Close
         </Button>
       ]}
-      width={600}
-      centered
     >
       {selectedCase && (
         <div>
-          <Alert
-            message={`Current: ${selectedCase.currentStatus}`}
-            description={`Case ${selectedCase.caseReference} · ${selectedCase.clientInfo?.fullName}`}
-            type="info"
-            showIcon
-            icon={getStatusIcon(selectedCase.currentStatus)}
-            style={{ borderRadius: 12, marginBottom: 24 }}
-          />
-
-          <div style={{ marginBottom: 24 }}>
-            <Text strong>New Status <span style={{ color: 'red' }}>*</span></Text>
-            <Select
-              placeholder="Select next status"
-              value={selectedStatus}
-              onChange={setSelectedStatus}
-              style={{ width: '100%', marginTop: 8 }}
-              size="large"
-            >
-              {getAvailableNextStatuses(selectedCase.currentStatus).map(status => (
-                <Option key={status} value={status}>
-                  <Space>
-                    {getStatusIcon(status)}
-                    <span>{status}</span>
-                    <Tag color={getStatusColor(status)}>{status}</Tag>
-                  </Space>
-                </Option>
-              ))}
-            </Select>
+          {/* Case Summary */}
+          <div style={{ background: '#f5f0ff', padding: 16, borderRadius: 12, marginBottom: 20 }}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Text type="secondary" style={{ fontSize: 12 }}>Case Reference</Text>
+                <div><Text strong>{selectedCase.caseReference}</Text></div>
+              </Col>
+              <Col span={12}>
+                <Text type="secondary" style={{ fontSize: 12 }}>Client Name</Text>
+                <div><Text strong>{selectedCase.clientInfo?.fullName}</Text></div>
+              </Col>
+            </Row>
+            <Row gutter={16} style={{ marginTop: 12 }}>
+              <Col span={12}>
+                <Text type="secondary" style={{ fontSize: 12 }}>Disbursed Amount</Text>
+                <div><Text strong style={{ color: SUCCESS_COLOR, fontSize: 16 }}>{formatCurrency(selectedCase.loanInfo?.disbursedAmount)}</Text></div>
+              </Col>
+              <Col span={12}>
+                <Text type="secondary" style={{ fontSize: 12 }}>Lead Source</Text>
+                <div>
+                  <Tag color="green" icon={<CheckCircleOutlined />}>Has Lead</Tag>
+                </div>
+              </Col>
+            </Row>
           </div>
 
-          <div>
-            <Text strong>Notes / Remarks</Text>
-            <TextArea
-              rows={4}
-              value={statusNotes}
-              onChange={(e) => setStatusNotes(e.target.value)}
-              placeholder="Add details about this update..."
-              style={{ marginTop: 8 }}
-            />
+          {/* Bank Commission Input for Preview */}
+          <div style={{ marginBottom: 20 }}>
+            <Text strong>Enter Bank Commission Information to Preview</Text>
+            <div style={{ marginTop: 12 }}>
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <span style={{ minWidth: 180 }}>Bank Commission Rate:</span>
+                  <Input 
+                    placeholder="Rate (%)" 
+                    value={previewForm.bankCommissionRate} 
+                    onChange={(e) => {
+                      setPreviewForm({ ...previewForm, bankCommissionRate: e.target.value, actualBankCommission: '' });
+                    }} 
+                    suffix="%" 
+                    style={{ width: 150 }} 
+                    prefix={<PercentageOutlined />}
+                  />
+                </div>
+              </div>
+              <div style={{ textAlign: 'center', margin: '8px 0' }}>
+                <Text type="secondary">OR</Text>
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <span style={{ minWidth: 180 }}>Actual Bank Commission Amount (AED):</span>
+                  <Input 
+                    placeholder="Amount (AED)" 
+                    value={previewForm.actualBankCommission} 
+                    onChange={(e) => {
+                      setPreviewForm({ ...previewForm, actualBankCommission: e.target.value, bankCommissionRate: '' });
+                    }} 
+                    prefix="AED" 
+                    style={{ width: 200 }} 
+                  />
+                </div>
+              </div>
+              <div style={{ marginTop: 16 }}>
+                <Button 
+                  type="primary" 
+                  onClick={fetchCommissionPreview} 
+                  loading={previewLoading}
+                  icon={<EyeOutlined />}
+                  style={{ background: SUCCESS_COLOR, width: '100%' }}
+                >
+                  Calculate Preview
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
-    </Modal>
-  );
 
-  const renderAssignOpsModal = () => (
-    <Modal
-      title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <UserAddOutlined style={{ color: THEME_COLOR, fontSize: 24 }} />
-          <span style={{ fontSize: 18, fontWeight: 600 }}>Assign to Mortgage Ops</span>
-        </div>
-      }
-      open={assignOpsModalVisible}
-      onCancel={() => { setAssignOpsModalVisible(false); setSelectedCase(null); setSelectedOpsId(''); }}
-      footer={[
-        <Button key="cancel" onClick={() => { setAssignOpsModalVisible(false); setSelectedCase(null); setSelectedOpsId(''); }}>Cancel</Button>,
-        <Button
-          key="submit"
-          type="primary"
-          onClick={assignToOps}
-          loading={assignLoading}
-          style={{ background: THEME_COLOR, borderColor: THEME_COLOR }}
-          icon={<SwapOutlined />}
-        >
-          Assign Case
-        </Button>
-      ]}
-      width={600}
-      centered
-    >
-      {selectedCase && (
-        <div>
-          <Alert
-            message={`Case: ${selectedCase.caseReference}`}
-            description={`Client: ${selectedCase.clientInfo?.fullName} | Current Status: ${selectedCase.currentStatus}`}
-            type="info"
-            showIcon
-            style={{ borderRadius: 12, marginBottom: 24 }}
-          />
-          
-          {selectedCase.assignedTo?.opsName && (
-            <div style={{ marginBottom: 16, padding: 12, background: '#fef3c7', borderRadius: 12 }}>
-              <Text>Currently assigned to: <strong>{selectedCase.assignedTo.opsName}</strong></Text>
-              <br />
-              <Text type="secondary" style={{ fontSize: 12 }}>Reassigning will update workload automatically</Text>
+
+{commissionPreview && (
+  <div style={{ background: SUCCESS_LIGHT, padding: 16, borderRadius: 12, border: `1px solid ${SUCCESS_COLOR}`, marginTop: 16 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+      <CheckCircleOutlined style={{ color: SUCCESS_COLOR }} />
+      <Text strong style={{ color: SUCCESS_COLOR, fontSize: 14 }}>Commission Calculation Result</Text>
+    </div>
+    
+    {commissionPreview.note && (
+      <Alert
+        message="Lead Source Info"
+        description={commissionPreview.note}
+        type="info"
+        showIcon
+        style={{ marginBottom: 16, borderRadius: 8 }}
+      />
+    )}
+
+    {/* Bank Commission Info */}
+    <div style={{ background: '#fff', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+      <Text strong style={{ display: 'block', marginBottom: 8 }}>Bank Commission Details</Text>
+      <Row gutter={16}>
+        <Col span={12}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <BankOutlined style={{ color: THEME_COLOR }} />
+            <div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Rate</Text>
+              <div><Text strong>{commissionPreview.bankCommission?.ratePercentage}</Text></div>
+            </div>
+          </div>
+        </Col>
+        <Col span={12}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <DollarOutlined style={{ color: SUCCESS_COLOR }} />
+            <div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Xoto Receives</Text>
+              <div><Text strong style={{ color: SUCCESS_COLOR }}>{formatCurrency(commissionPreview.bankCommission?.calculatedAmount)}</Text></div>
+            </div>
+          </div>
+        </Col>
+      </Row>
+    </div>
+
+    {/* Recipient Info */}
+    <div style={{ background: '#fff', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+      <Text strong style={{ display: 'block', marginBottom: 8 }}>Recipient Details</Text>
+      <Row gutter={16}>
+        <Col span={12}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <UserOutlined style={{ color: THEME_COLOR }} />
+            <div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Recipient</Text>
+              <div><Text strong>{commissionPreview.recipient?.name}</Text></div>
+            </div>
+          </div>
+        </Col>
+        <Col span={12}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <PercentageOutlined style={{ color: WARNING_COLOR }} />
+            <div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Percentage</Text>
+              <div><Text strong>{commissionPreview.recipient?.percentage}%</Text></div>
+            </div>
+          </div>
+        </Col>
+      </Row>
+    </div>
+
+    {/* Commission Amount Summary */}
+    <div style={{ background: '#fff', borderRadius: 12, padding: 16, textAlign: 'center', marginBottom: 12 }}>
+      <Text type="secondary">Commission Amount</Text>
+      <div style={{ fontSize: 32, fontWeight: 700, color: SUCCESS_COLOR }}>
+        {formatCurrency(commissionPreview.recipient?.commissionAmount)}
+      </div>
+      <Text type="secondary" style={{ fontSize: 12 }}>{commissionPreview.recipient?.formula}</Text>
+    </div>
+
+    {/* Xoto Profit Summary */}
+    <div style={{ background: '#fff', borderRadius: 12, padding: 12 }}>
+      <Row gutter={16}>
+        <Col span={12}>
+          <div style={{ textAlign: 'center' }}>
+            <Text type="secondary" style={{ fontSize: 11 }}>Gross Commission</Text>
+            <div><Text strong>{formatCurrency(commissionPreview.xoto?.grossCommission)}</Text></div>
+          </div>
+        </Col>
+        <Col span={12}>
+          <div style={{ textAlign: 'center' }}>
+            <Text type="secondary" style={{ fontSize: 11 }}>Xoto Net Profit</Text>
+            <div><Text strong style={{ color: SUCCESS_COLOR }}>{formatCurrency(commissionPreview.xoto?.netProfit)}</Text></div>
+            <Tag color={commissionPreview.xoto?.profitMargin === '100%' ? 'green' : 'blue'} style={{ marginTop: 4 }}>
+              Margin: {commissionPreview.xoto?.profitMargin}
+            </Tag>
+          </div>
+        </Col>
+      </Row>
+    </div>
+
+    <div style={{ marginTop: 16, textAlign: 'center' }}>
+      <Text type="secondary" style={{ fontSize: 11 }}>
+        <InfoCircleOutlined /> This is a preview only. No commission has been created.
+      </Text>
+    </div>
+  </div>
+)}
+
+          {!commissionPreview && !previewLoading && (
+            <div style={{ textAlign: 'center', padding: 40, background: '#f8fafc', borderRadius: 12 }}>
+              <EyeOutlined style={{ fontSize: 48, color: '#9ca3af' }} />
+              <div style={{ marginTop: 12 }}>
+                <Text type="secondary">Enter bank commission details and click "Calculate Preview"</Text>
+              </div>
             </div>
           )}
 
-          <div>
-            <Text strong>Select Ops Member <span style={{ color: 'red' }}>*</span></Text>
-            <Select
-              placeholder="Choose Ops team member"
-              value={selectedOpsId || undefined}
-              onChange={setSelectedOpsId}
-              style={{ width: '100%', marginTop: 8 }}
-              size="large"
-              loading={fetchingOps}
-              showSearch
-              optionFilterProp="children"
-            >
-              {opsList.map(ops => {
-                const fullName = `${ops.name?.first_name || ''} ${ops.name?.last_name || ''}`.trim();
-                const workload = ops.workload?.currentApplications || 0;
-                const capacity = ops.workload?.maxCapacity || 30;
-                const isFull = workload >= capacity;
-                
-                return (
-                  <Option key={ops._id} value={ops._id} disabled={isFull}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Space>
-                        <Avatar size={24} icon={<UserOutlined />} />
-                        <span><strong>{fullName || ops.email}</strong></span>
-                        <Tag color="blue" style={{ fontSize: 10 }}>{ops.designation || 'Ops Executive'}</Tag>
-                      </Space>
-                      <Space>
-                        <Badge count={workload} overflowCount={99} style={{ backgroundColor: workload > capacity * 0.8 ? ERROR_COLOR : SUCCESS_COLOR }} />
-                        <Text type="secondary" style={{ fontSize: 11 }}>/ {capacity}</Text>
-                        {isFull && <Tag color="error" style={{ fontSize: 10 }}>Full</Tag>}
-                      </Space>
-                    </div>
-                  </Option>
-                );
-              })}
-            </Select>
-            <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
-              * Assigned Ops will be notified and workload will be updated automatically
-            </Text>
-          </div>
+          {previewLoading && (
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <Spin size="large" />
+              <div style={{ marginTop: 12 }}>Calculating commission preview...</div>
+            </div>
+          )}
         </div>
       )}
     </Modal>
   );
 
-  const filteredCases = getFilteredCases();
-
-  // Helper Statistic Component
-  const StatisticComp = ({ title, value, prefix, valueStyle }) => (
-    <div>
-      <Text type="secondary" style={{ fontSize: 13 }}>{title}</Text>
-      <div style={{ fontSize: 28, fontWeight: 700, ...valueStyle, marginTop: 4 }}>
-        {prefix && <span style={{ marginRight: 6 }}>{prefix}</span>}
-        {value}
-      </div>
-    </div>
-  );
+  const totalPages = Math.ceil(totalCases / itemsPerPage);
+  const filteredCases = cases;
 
   return (
     <div style={{ padding: '28px 32px', background: '#fdfbff', minHeight: '100vh' }}>
-      <style>{`
-        .case-table .ant-table-thead > tr > th {
-          background: #faf5ff !important;
-          color: ${THEME_COLOR} !important;
-          font-weight: 700 !important;
-          border-bottom: 2px solid #e9d5ff !important;
-        }
-        .case-table .ant-table-tbody > tr:hover > td {
-          background: #faf5ff !important;
-        }
-        .case-table .ant-table-tbody > tr > td {
-          border-bottom: 1px solid #f3e8ff;
-        }
-        .case-table .ant-pagination-item-active {
-          border-color: ${THEME_COLOR} !important;
-          background: ${THEME_COLOR} !important;
-        }
-        .case-table .ant-pagination-item-active a {
-          color: white !important;
-        }
-      `}</style>
-
-      {/* Header Section */}
-      <div style={{ marginBottom: 24 }}>
-        <Title level={2} style={{ color: '#1e1b4b', margin: 0, fontWeight: 800 }}>
-          Case Management
-        </Title>
-        <Text type="secondary" style={{ fontSize: 14 }}>
-          Manage mortgage cases, track progress, update statuses, and assign to Ops team
-        </Text>
-      </div>
-
-      {/* Stats Cards */}
-      {renderStats()}
-
-      {/* Status Tabs */}
-      {renderStatusTabs()}
-
-      {/* Cases Table */}
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '80px 0' }}>
-          <Spin size="large" tip="Loading cases..." />
-        </div>
-      ) : filteredCases.length === 0 ? (
-        <Empty
-          description={
-            <span>
-              No cases found for <strong>{activeStatus === 'all' ? 'any' : activeStatus}</strong> status
-            </span>
-          }
-          style={{ padding: '60px 0' }}
-        />
-      ) : (
-        <div className="case-table">
-          <CustomTable
-            columns={columns}
-            data={filteredCases}
-            loading={loading}
-            totalItems={totalItems}
-            currentPage={currentPage}
-            itemsPerPage={12}
-            onPageChange={handlePageChange}
-            showSearch={true}
-            searchPlaceholder="Search by client name, case reference, or email..."
-            onSearch={(value, record) => {
-              const searchTerm = value.toLowerCase();
-              return (
-                record.clientInfo?.fullName?.toLowerCase().includes(searchTerm) ||
-                record.caseReference?.toLowerCase().includes(searchTerm) ||
-                record.clientInfo?.email?.toLowerCase().includes(searchTerm)
-              );
-            }}
-          />
+      {toastMsg && (
+        <div style={{ position: "fixed", top: 20, right: 20, zIndex: 9999, display: "flex", alignItems: "center", gap: 8, background: toastMsg.type === "success" ? "#059669" : "#DC2626", color: "#fff", padding: "12px 16px", borderRadius: 10, fontSize: 13, fontWeight: 600, boxShadow: "0 10px 25px rgba(0,0,0,0.15)" }}>
+          {toastMsg.type === "success" ? <CheckCircleOutlined /> : <ClockCircleOutlined />}{toastMsg.message}
         </div>
       )}
 
-      {/* Modals */}
-      {renderStatusModal()}
-      {renderAssignOpsModal()}
+      <div style={{ marginBottom: 24 }}>
+        <Title level={2} style={{ color: '#1e1b4b', margin: 0, fontWeight: 800 }}>Case Management</Title>
+        <Text type="secondary" style={{ fontSize: 14 }}>Manage mortgage cases, track progress, and preview commissions for disbursed cases</Text>
+      </div>
+
+      {renderStats()}
+      {renderStatusTabs()}
+
+      {/* Filter Bar */}
+      <div style={{ background: "#fff", borderRadius: 16, padding: "16px 20px", marginBottom: 24, border: `1px solid ${THEME_COLOR}20`, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, flex: 1 }}>
+          <Input placeholder="Search by case ID or client name..." value={search} onChange={handleSearchChange} style={{ width: 280 }} allowClear prefix={<SearchOutlined />} />
+          <Button onClick={resetFilters}>Reset Filters</Button>
+        </div>
+        <Button icon={<ReloadOutlined />} onClick={fetchCases} loading={loading}>Refresh</Button>
+      </div>
+
+      {/* Cases Grid - Card View */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '80px 0' }}><Spin size="large" /><div style={{ marginTop: 16 }}>Loading cases...</div></div>
+      ) : filteredCases.length === 0 ? (
+        <Empty description={<span>No cases found for <strong>{activeStatus === 'all' ? 'any' : activeStatus}</strong> status</span>} style={{ padding: '60px 0' }} />
+      ) : (
+        <>
+          <Row gutter={[24, 24]}>
+            {filteredCases.map(caseItem => (
+              <Col xs={24} sm={24} md={12} lg={12} xl={12} key={caseItem._id}>
+                {renderCaseCard(caseItem)}
+              </Col>
+            ))}
+          </Row>
+          {totalPages > 1 && (
+            <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center' }}>
+              <Space>
+                <Button disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>Previous</Button>
+                <span>Page {currentPage} of {totalPages}</span>
+                <Button disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)}>Next</Button>
+              </Space>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Preview Modal (Only Preview - No Creation) */}
+      {renderPreviewModal()}
     </div>
   );
 };
 
 // Statistic Component
-const Statistic = ({ title, value, prefix, valueStyle }) => (
+const StatisticComp = ({ title, value, prefix, valueStyle }) => (
   <div>
     <Text type="secondary" style={{ fontSize: 13 }}>{title}</Text>
-    <div style={{ fontSize: 28, fontWeight: 700, ...valueStyle, marginTop: 4 }}>
-      {prefix && <span style={{ marginRight: 6 }}>{prefix}</span>}
-      {value}
-    </div>
+    <div style={{ fontSize: 28, fontWeight: 700, ...valueStyle, marginTop: 4 }}>{prefix && <span style={{ marginRight: 6 }}>{prefix}</span>}{value}</div>
   </div>
 );
 

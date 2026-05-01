@@ -220,7 +220,7 @@ const Leads = () => {
         const rawData = response.data || [];
         const formattedData = flattenLeadsForSearch(rawData);
 
-        console.log(`${status} Leads Response:`, rawData);
+       
 
         if (status === "accepted") {
           setAcceptedLeads(formattedData);
@@ -258,7 +258,7 @@ const Leads = () => {
       });
 
       if (response.success) {
-        console.log('Deals Response:', response.data);
+        
         const formattedData = flattenLeadsForSearch(response.data || []);
         setDeals(formattedData);
         setDealsPagination({

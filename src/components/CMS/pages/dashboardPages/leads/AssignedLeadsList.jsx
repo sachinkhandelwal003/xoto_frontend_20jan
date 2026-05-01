@@ -312,7 +312,7 @@ useEffect(() => {
         try {
             const params = { page, limit, supervisor: user?.id, ...filterParams };
             const response = await apiService.get('/estimates', params);
-            console.log('API Response:', response.data);
+           
             
             if (response.success) {
                 setLeads(response.data || []);
@@ -339,7 +339,7 @@ useEffect(() => {
                 serviceCategory: serviceCategoryId 
             };
             const response = await apiService.get('/freelancer', params);
-            console.log('Freelancers API Response:', response);
+            
             
             if (response.success) {
                 setFreelancers(response.freelancers || []);
@@ -535,7 +535,7 @@ useEffect(() => {
       margin_amount: marginAmountToSend
     };
 
-    console.log('✅ Final Quotation Payload:', payload);
+    
 
     const response = await apiService.post(
       `/estimates/${selectedLead._id}/final-quotation`,

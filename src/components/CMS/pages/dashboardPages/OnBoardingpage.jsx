@@ -190,7 +190,7 @@ const AddDeveloper = () => {
         agreementDocuments: agreementDocuments
       };
 
-      console.log("Developer Payload:", payload);
+      
 
       // ✅ ACTUAL API CALL
       const response = await apiService.post("/developer/create-developer", payload);

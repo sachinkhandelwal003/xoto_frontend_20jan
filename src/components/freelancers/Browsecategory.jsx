@@ -27,7 +27,7 @@ const FreelancerCard = ({ service }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    
     setShowModal(false);
     setFormData({ name: '', email: '', message: '' });
   };

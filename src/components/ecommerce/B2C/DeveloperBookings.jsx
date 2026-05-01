@@ -18,8 +18,7 @@ const { Title, Text } = Typography;
 
 const DeveloperBookings = () => {
   const { user } = useSelector((state) => state.auth);
-  console.log("Developer user object:", user);
-  console.log("Developer user:", JSON.stringify(user, null, 2));
+  
 
   const [leads, setLeads]                 = useState([]);
   const [loading, setLoading]             = useState(false);

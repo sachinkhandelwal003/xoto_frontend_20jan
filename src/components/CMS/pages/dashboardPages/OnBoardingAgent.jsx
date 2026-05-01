@@ -93,7 +93,7 @@ const AddAgent = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      console.log(`📸 RAW API Response for ${type}:`, response);
+      
 
       // 🔥 BULLETPROOF URL EXTRACTION 🔥
       // Ye har possible format se URL nikal lega chahe apiService kuch bhi return kare
@@ -105,7 +105,7 @@ const AddAgent = () => {
         response?.data?.fileUrl ||
         "";
 
-      console.log(`✅ Extracted URL for ${type}:`, uploadedUrl);
+     
 
       if (uploadedUrl) {
         setUrls((prev) => ({ ...prev, [type]: uploadedUrl }));
@@ -157,7 +157,7 @@ const AddAgent = () => {
         rera_certificate: urls.rera || ""
       };
 
-      console.log("🚀 FINAL EXACT JSON PAYLOAD:", JSON.stringify(payload, null, 2));
+      
 
       const response = await apiService.post("/agent/agent-signup", payload);
       
