@@ -41,7 +41,7 @@ const ProductProfile = () => {
   const { id: routeProductId } = useParams();
   
   const productId = queryProductId || routeProductId;
-  console.log(productId)
+  
 
   // --- STATE ---
   const [product, setProduct] = useState(null);

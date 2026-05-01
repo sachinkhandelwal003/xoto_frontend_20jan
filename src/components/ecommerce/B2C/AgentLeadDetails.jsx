@@ -78,7 +78,7 @@ export default function AgentLeadDetails(){
   type="primary"
   block
   onClick={() => {
-  console.log("clicked", id);
+  
   navigate(`/dashboard/agent/lead/${id}/create-deal`)
 ;
 }}

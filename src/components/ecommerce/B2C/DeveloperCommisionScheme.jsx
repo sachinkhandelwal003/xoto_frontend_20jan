@@ -30,7 +30,7 @@ export default function DeveloperCommissionScheme() {
       }
 
     }catch(error){
-      console.log(error);
+      
     }
 
   };

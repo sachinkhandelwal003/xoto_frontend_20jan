@@ -629,37 +629,37 @@ const CUSTOM_ROLE_LINKS = {
 
     },
 ],
-// "23": [
-   
-//     {
-//       title: "Case",
-//       icon: "fas fa-folder-open",
-//       path: "/dashboard/{roleSlug}/cases",
-//       submenus: [
-//         { title: "Queue Cases", path: "/dashboard/{roleSlug}/case/queue/view" },
-//                 { title: "My Assigned Cases", path: "/dashboard/{roleSlug}/case/assigned/all" },
-
-//         // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
-//       ],
-
-//     },
-// ],
-
-
 "23": [
-  {
-    title: "Mortgage Cases",
-    icon: "fas fa-file-invoice-dollar",   // same icon as mortgage, or use fas fa-gavel
-    path: "/dashboard/{roleSlug}/mortgage-ops",
-    submenus: [
-      {
-        title: "All Cases",
-        path: "/dashboard/{roleSlug}/mortgage-ops/case/:caseId"
-      },
-      // Optional: Add a direct case detail link if needed, but usually you'd navigate from the list.
-    ]
-  } 
+   
+    {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Queue Cases", path: "/dashboard/{roleSlug}/case/queue/view" },
+                { title: "My Assigned Cases", path: "/dashboard/{roleSlug}/case/assigned/all" },
+
+        { title: "Disbursed Cases", path: "/dashboard/{roleSlug}/case/disbursed" },
+      ],
+
+    },
 ],
+
+
+// "23": [
+//   {
+//     title: "Mortgage Cases",
+//     icon: "fas fa-file-invoice-dollar",   // same icon as mortgage, or use fas fa-gavel
+//     path: "/dashboard/{roleSlug}/mortgage-ops",
+//     submenus: [
+//       {
+//         title: "All Cases",
+//         path: "/dashboard/{roleSlug}/mortgage-ops/case/:caseId"
+//       },
+//       // Optional: Add a direct case detail link if needed, but usually you'd navigate from the list.
+//     ]
+//   } 
+// ],
 
 
 };
@@ -766,13 +766,13 @@ useEffect(() => {
     try {
       const response = await apiService.get('/profile/get-profile-data');
 
-          console.log('FULL RESPONSE:', JSON.stringify(response, null, 2));
+         
 
       const category = response?.data?.partnerCategory
         ?.toString()
         .trim()
         .toLowerCase();
-      console.log('partnerCategory:', category);
+      
       setPartnerCategory(category || null);
     } catch (error) {
       console.error('partner profile fetch failed:', error);

@@ -53,10 +53,9 @@ const LeadManagement = () => {
       const list = Array.isArray(res?.data)
         ? res.data
         : res?.data?.data || [];
-         console.log("AGENT OBJECT:", list[0]?.agent);
+         
       setLeads(list);
     } catch (error) {
-      console.log(error);
       message.error("Failed to fetch leads.");
     } finally {
       setLoading(false);

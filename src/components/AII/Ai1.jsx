@@ -34,7 +34,7 @@ const Ai1 = () => {
       .then((res) => {
         setBlog(res.data || res.blog || res);
         setLoading(false);
-        console.log("Fetched blog data:", res.data || res.blog || res);
+        
       })
       .catch((err) => {
         console.error(err);

@@ -68,7 +68,7 @@ const isEditMode = Boolean(id);
       const list = Array.isArray(res?.data) ? res.data : res?.data?.data || [];
       setDevelopers(list);
     } catch (err) {
-      console.log("Failed to fetch developers", err);
+      
     }
   };
 
@@ -84,7 +84,7 @@ const isEditMode = Boolean(id);
         : Array.isArray(res?.data) ? res.data : [];
       setExistingProperties(list);
     } catch (err) {
-      console.log("Failed to fetch existing properties", err);
+      
     } finally {
       setExistingLoading(false);
     }

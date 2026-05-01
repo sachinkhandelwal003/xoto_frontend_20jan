@@ -16,7 +16,7 @@ export const registerSocket = (userId) => {
   if (!userId) return;
   const sock = getSocket();
   const doRegister = () => {
-    console.log("✅ Registering:", userId);
+    
     sock.emit("register", userId);
   };
   if (sock.connected) doRegister();

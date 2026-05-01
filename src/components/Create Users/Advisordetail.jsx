@@ -282,7 +282,7 @@ useEffect(() => {
       try {
         const res = await apiService.get(`/GridAdvisor/${id}`);
         
-        console.log("ADVISOR DETAIL RESPONSE 👉", res.data); // CHECK THIS IN CONSOLE
+        
         
         // Try all possible response structures
         const advisorData = 
@@ -291,7 +291,7 @@ useEffect(() => {
           res.data?.advisor ||          // { advisor: {} }
           res.data;                     // {}
           
-        console.log("ADVISOR DATA 👉", advisorData);
+        
         setAdvisor(advisorData);
         
       } catch (err) {

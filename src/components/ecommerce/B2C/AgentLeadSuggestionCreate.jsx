@@ -359,8 +359,7 @@ export default function AgentLeadSuggestionCreate() {
         else if (Array.isArray(res?.data))   rawList = res.data;
         else if (Array.isArray(res))         rawList = res;
         setAllProps(rawList.map(mapItem));
-        console.log('RAW first item:', rawList[0]);
-console.log('MAPPED first item:', rawList.map(mapItem)[0]);
+        
       } catch (e) {
         console.error('[fetchAllProperties]', e);
         addToast('Could not load properties', 'e');
@@ -487,8 +486,7 @@ console.log('MAPPED first item:', rawList.map(mapItem)[0]);
   selected_property: selProp.length > 0 ? selProp[0] : null,
   agent: user?._id || user?.id,
 };
-console.log('DEBUG selProp:', selProp);
-console.log('DEBUG payload:', JSON.stringify(payload, null, 2));
+
 const leadRes = await apiService.post('/agent/lead/create-lead', payload);
       
 

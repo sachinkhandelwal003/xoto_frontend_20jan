@@ -160,7 +160,7 @@ const Newpage = () => {
     e.preventDefault();
     const errors = validateForm();
     if (Object.keys(errors).length === 0) {
-      console.log("Form submitted:", formData);
+      
       setShowContactModal(false);
       setFormData({ name: "", email: "", message: "" });
     } else {

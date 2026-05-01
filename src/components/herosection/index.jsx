@@ -22,7 +22,7 @@ const videoRef = useRef(null);
 useEffect(() => {
   if (videoRef.current) {
     videoRef.current.play().catch(() => {
-      console.log("Autoplay blocked");
+      
     });
   }
 }, []);

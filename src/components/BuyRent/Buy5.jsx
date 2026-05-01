@@ -160,6 +160,20 @@ if (res && Array.isArray(res.data)) {
     fetchProperties();
   }, []);
 
+
+useEffect(() => {
+  if (openModal) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "auto";
+  }
+
+  return () => {
+    document.body.style.overflow = "auto";
+  };
+}, [openModal]);
+
+
   // --- HANDLERS ---
 
   const handleChange = (e) => {
@@ -473,14 +487,14 @@ if (phoneError) {
                   </div>
                 </div>
 
-                <div className="relative">
+                {/* <div className="relative">
                   <input name="occupation" value={formData.occupation} onChange={handleChange} placeholder={t("form.occupation")} className={`premium-input pl-12 ${errors.occupation ? 'border-red-500 bg-red-50' : ''}`} />
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600"><Briefcase size={20} /></div>
                   {errors.occupation && <p className="text-red-500 text-xs mt-1 absolute">{errors.occupation}</p>}
-                </div>
+                </div> */}
 
                 {/* Location Dropdowns */}
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                     <div className="relative">
                         <Select
                             placeholder="Select Country"
@@ -533,7 +547,7 @@ if (phoneError) {
                             {errors.city && <p className="text-red-500 text-xs mt-3 absolute">{errors.city}</p>}
                         </div>
                     </div>
-                </div>
+                </div> */}
 
                 <button type="submit" disabled={loading} className="w-full bg-[#5C039B] text-white py-4 md:py-5 rounded-xl text-lg font-bold hover:bg-[#4b0281] hover:scale-[1.01] transition-all flex items-center justify-center gap-2 shadow-lg">
                   {loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : t("actions.submit")}

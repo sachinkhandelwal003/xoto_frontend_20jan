@@ -136,7 +136,6 @@ const AddAgency = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      console.log(`📸 RAW API Response for ${type}:`, response);
 
       // 🔥 BULLETPROOF URL EXTRACTION 🔥
       let uploadedUrl = "";
@@ -147,7 +146,7 @@ const AddAgency = () => {
       else if (response?.data?.fileUrl) uploadedUrl = response.data.fileUrl;
       else if (typeof response?.data === 'string') uploadedUrl = response.data;
 
-      console.log(`✅ Extracted URL for ${type}:`, uploadedUrl);
+     
 
       if (uploadedUrl) {
         setUrls((prev) => ({ ...prev, [type]: uploadedUrl }));
@@ -193,7 +192,7 @@ const AddAgency = () => {
         rera_license: urls.rera_license || ""
       };
 
-      console.log("🚀 FINAL EXACT JSON PAYLOAD:", JSON.stringify(payload, null, 2));
+      
 
       // ✅ ACTUAL API CALL
       const response = await apiService.post("/agency/agency-signup", payload);

@@ -179,6 +179,7 @@ import AllAdvisors from "../Create Users/Alladvisors";
 import AdvisorDetail from "../Create Users/Advisordetail";
 import AllLeadsPage from "../GridAdmin.jsx/Allleadspage";
 import AdvisorLeadsPage from "../AdvisorGrid/Advisorleadspage";
+import PropertyCatalogue from "../AdvisorGrid/Propertycatalogue";
 
 {/*Xoto Vault*/ }
 import VaultAdminDashboard from "../ecommerce/B2C/VaultAdminDashboard";
@@ -251,6 +252,8 @@ import VaultCreateadvisor from "../ecommerce/B2C/VaultCreateadviosor";
 import AdminManagecases from "../ecommerce/vault/case/AdminManagecases";
 // import AdvisorLeads from "../ecommerce/vault/vaultadvisor";
 import VaultAdvisorLeads from "../ecommerce/B2C/VaultAdvisorLeads";
+import DisbursedCases from "../ecommerce/vault/case/DisbursedCases";
+import DisbursedFullAmountCases from "../ecommerce/vault/case/DisbursedFullAmountCases";
 
 
 
@@ -538,6 +541,8 @@ const CmsRoutes = () => {
 <Route path="advisor/list"   element={<AdvisorList />} />
 <Route path="advisor/:id" element={<VaultAdvisorDetail />} />
 <Route path="mortgage-ops/create" element={<VaultCreateMortgage />} />
+<Route path="create/vault-advisor" element={<VaultCreateadvisor />} />
+
 <Route path="mortgage-ops/list"   element={<VaultMortgageList />} />
 <Route path="mortgage-ops/:id" element={<VaultMortgagedetail />} />
 <Route path="mortgage/dashboard" element={<MortgageOpsDashboard />} />
@@ -643,6 +648,7 @@ const CmsRoutes = () => {
 <Route path="create-advisor" element={<CreateAdvisor />} />
 <Route path="dashboard/myprofile" element={<GridAdvisorProfile />} />
 <Route path="gridAdvisorLeads" element={<AdvisorLeadsPage />} />
+<Route path="property-catalogue" element={<PropertyCatalogue />} />
 
 
 
@@ -664,9 +670,13 @@ const CmsRoutes = () => {
             <Route path="/case/assigned/all" element={< OpsAssignedcases />} />
 
                         <Route path="/case/view/all" element={< ProcessCasesUpdates />} />
+                                                <Route path="/case/disbursed" element={< DisbursedCases />} />
+
 
             <Route path="/case/view/:caseId" element={< DetailedViewCases/>} />
+            <Route path="/case/amount/view/:caseId" element={< DisbursedFullAmountCases/>} />
 
+            <Route path="/case/assigned/view/:caseId" element={< OpsAssignedReview/>} />
 
 
 

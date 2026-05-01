@@ -4,8 +4,7 @@ import { FaUser, FaBriefcase, FaProjectDiagram } from 'react-icons/fa';
 
 const DesignerCard = ({ designer, index }) => {
   const handleHireClick = () => {
-    console.log(`Hiring ${designer.name}`);
-    // You would typically have some hiring logic here
+    
   };
 
   // Animation variants

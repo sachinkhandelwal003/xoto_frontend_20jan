@@ -40,12 +40,11 @@ function Avatar({ isTalking }) {
           if (child.morphTargetDictionary[name] !== undefined) {
             headMeshRef.current = child;
             mouthIndexRef.current = child.morphTargetDictionary[name];
-            console.log("✅ Lip-Sync Ready:", name);
             break;
           }
         }
         if (!headMeshRef.current) {
-          console.log("⚠️ Morph Targets:", Object.keys(child.morphTargetDictionary));
+          
         }
       }
     });
@@ -86,7 +85,7 @@ export default function Checker() {
   const [isTalking, setIsTalking] = useState(false);
 
   useEffect(() => {
-    vapi.on("call-start", () => console.log("✅ Vapi Call Started"));
+    vapi.on("call-start", () => { setCallStatus("active"); });
     vapi.on("call-end", () => { setCallStatus("inactive"); setIsTalking(false); });
     vapi.on("speech-start", () => { setIsTalking(true); });
     vapi.on("speech-end", () => { setIsTalking(false); });

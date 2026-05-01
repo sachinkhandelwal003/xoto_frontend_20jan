@@ -27,7 +27,7 @@ export default function AdminChatRequests() {
   try {
     setLoading(true);
     const res  = await apiService.get("/chat-request/all-requests");
-    console.log("All requests response:", res); // ← ADD temporarily
+   
     
     // ✅ Multiple formats handle karo
     const list = Array.isArray(res?.data?.data) ? res.data.data
@@ -36,7 +36,7 @@ export default function AdminChatRequests() {
                : [];
     setRequests(list);
   } catch (err) {
-    console.log("Error:", err);
+   
     message.error("Requests load nahi huyi");
   } finally { setLoading(false); }
 };
