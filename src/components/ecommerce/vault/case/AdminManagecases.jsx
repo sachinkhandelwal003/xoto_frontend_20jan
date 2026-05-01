@@ -17,7 +17,8 @@ import {
   HistoryOutlined, FileDoneOutlined,
   LoadingOutlined, ArrowRightOutlined, SyncOutlined,
   WarningOutlined, UserAddOutlined, SwapOutlined,
-  ApartmentOutlined, UserSwitchOutlined, TrophyOutlined
+  ApartmentOutlined, UserSwitchOutlined, TrophyOutlined,
+  DollarOutlined, FundOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -34,9 +35,6 @@ const WARNING_COLOR = "#f59e0b";
 const ERROR_COLOR = "#ef4444";
 const INFO_COLOR = "#3b82f6";
 
-
-
-
 const roleSlugMap = {
   '0': 'superadmin',
   '1': 'admin',
@@ -46,26 +44,18 @@ const roleSlugMap = {
   '7': 'freelancer',
   '11': 'accountant',
   '12': 'supervisor',
-  '15': "agency",        // Agency
-  '16': "agent",         // Agent
+  '15': "agency",
+  '16': "agent",
   '17': "developer",
-  '18': "vault-admin", //vault
+  '18': "vault-admin",
   '22': "vaultagent",
   '21': "vaultpartner",
   '24': "GridAdvisor",
-  // '23': "vault-advisor",
-  // '26': "vault-ops",
-  // '26': "vault-advisor",
   '23': "vault-ops",
   '25': "gridReferralPartner",
   '26': "vault-advisor",
-  // '23': "vault-ops",
-  
-   
- 
-
-
 };
+
 // ================= STATUS CONFIGURATION =================
 const CASE_STATUSES = [
   'Draft',
@@ -152,8 +142,6 @@ const getAvailableNextStatuses = (currentStatus) => {
   return transitions[currentStatus] || [];
 };
 
-
-// Get creator info with proper labels
 const getCreatorInfo = (caseItem) => {
   const createdBy = caseItem.createdBy;
   if (!createdBy) return { name: 'Unknown', type: 'Unknown', icon: <UserOutlined /> };
@@ -187,13 +175,16 @@ const getCreatorInfo = (caseItem) => {
   return { name: 'System', type: 'System', icon: <UserOutlined />, subText: 'Auto Created', color: '#9ca3af' };
 };
 
+// Navigation helper
+const navigateToAmountDetails = (navigate, roleSlug, caseId) => {
+  navigate(`/dashboard/${roleSlug}/case/amount/view/${caseId}`);
+};
 
 const AdminManagecases = () => {
   const navigate = useNavigate();
   const { user } = useSelector((s) => s.auth);
   const roleSlug = roleSlugMap[user?.role?.code] ?? "superadmin";
 
-  // State
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -201,11 +192,9 @@ const AdminManagecases = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [activeStatus, setActiveStatus] = useState('all');
   
-  // Ops list state
   const [opsList, setOpsList] = useState([]);
   const [fetchingOps, setFetchingOps] = useState(false);
 
-  // Modal state
   const [statusModalVisible, setStatusModalVisible] = useState(false);
   const [assignOpsModalVisible, setAssignOpsModalVisible] = useState(false);
   const [selectedCase, setSelectedCase] = useState(null);
@@ -214,7 +203,6 @@ const AdminManagecases = () => {
   const [selectedOpsId, setSelectedOpsId] = useState('');
   const [assignLoading, setAssignLoading] = useState(false);
 
-  // Fetch cases
   const fetchCases = useCallback(async (page) => {
     setLoading(true);
     try {
@@ -230,7 +218,6 @@ const AdminManagecases = () => {
     }
   }, []);
 
-  // Fetch Ops list
   const fetchOpsList = useCallback(async () => {
     setFetchingOps(true);
     try {
@@ -258,7 +245,10 @@ const AdminManagecases = () => {
     navigate(`/dashboard/${roleSlug}/case/view/${caseId}`);
   };
 
-  // Open status update modal
+  const navigateToAmountDetailsPage = (caseId) => {
+    navigateToAmountDetails(navigate, roleSlug, caseId);
+  };
+
   const openStatusModal = (caseItem, e) => {
     e?.stopPropagation();
     setSelectedCase(caseItem);
@@ -267,7 +257,6 @@ const AdminManagecases = () => {
     setStatusModalVisible(true);
   };
 
-  // Open assign Ops modal
   const openAssignOpsModal = (caseItem, e) => {
     e?.stopPropagation();
     setSelectedCase(caseItem);
@@ -275,7 +264,6 @@ const AdminManagecases = () => {
     setAssignOpsModalVisible(true);
   };
 
-  // Update case status
   const updateCaseStatus = async () => {
     if (!selectedStatus) {
       message.warning("Please select a status");
@@ -303,7 +291,6 @@ const AdminManagecases = () => {
     }
   };
 
-  // Assign case to Ops
   const assignToOps = async () => {
     if (!selectedOpsId) {
       message.warning("Please select an Ops member");
@@ -331,19 +318,16 @@ const AdminManagecases = () => {
     }
   };
 
-  // Get filtered cases by status
   const getFilteredCases = () => {
     if (activeStatus === 'all') return cases;
     return cases.filter(c => c.currentStatus === activeStatus);
   };
 
-  // Get count for each status
   const getStatusCount = (status) => {
     if (status === 'all') return cases.length;
     return cases.filter(c => c.currentStatus === status).length;
   };
 
-  // Get document progress
   const getDocumentProgress = (documentStatus) => {
     const total = documentStatus?.requiredDocuments?.length || 10;
     const uploaded = documentStatus?.documentsUploadedCount || 0;
@@ -351,7 +335,7 @@ const AdminManagecases = () => {
     return { total, uploaded, percentage };
   };
 
-  // Table Columns
+  // Updated columns with Amount Details button for Disbursed cases
   const columns = [
     {
       key: 'caseInfo',
@@ -480,15 +464,17 @@ const AdminManagecases = () => {
     {
       key: 'actions',
       title: 'Actions',
-      width: 180,
+      width: 280,
       align: 'center',
       render: (_, record) => {
         const availableStatuses = getAvailableNextStatuses(record.currentStatus);
         const canUpdate = availableStatuses.length > 0;
         const isAssigned = !!record.assignedTo?.opsId;
+        const isDisbursed = record.currentStatus === 'Disbursed';
         
         return (
-          <Space size={8}>
+          <Space size={8} wrap>
+            {/* View Details Button */}
             <Tooltip title="View Details">
               <Button
                 type="default"
@@ -498,16 +484,19 @@ const AdminManagecases = () => {
               />
             </Tooltip>
             
-            <Tooltip title="Update Status">
-              <Button
-                type="primary"
-                icon={<RocketOutlined />}
-                onClick={(e) => openStatusModal(record, e)}
-                disabled={!canUpdate}
-                style={{ background: canUpdate ? THEME_COLOR : '#d1d5db', borderColor: canUpdate ? THEME_COLOR : '#d1d5db', borderRadius: 8 }}
-              />
-            </Tooltip>
+            {/* Update Status Button (only if can update) */}
+            {canUpdate && (
+              <Tooltip title="Update Status">
+                <Button
+                  type="primary"
+                  icon={<RocketOutlined />}
+                  onClick={(e) => openStatusModal(record, e)}
+                  style={{ background: THEME_COLOR, borderColor: THEME_COLOR, borderRadius: 8 }}
+                />
+              </Tooltip>
+            )}
             
+            {/* Assign/Reassign to Ops Button */}
             <Tooltip title={isAssigned ? "Reassign to Ops" : "Assign to Ops"}>
               <Button
                 type="default"
@@ -516,13 +505,31 @@ const AdminManagecases = () => {
                 style={{ borderColor: isAssigned ? SUCCESS_COLOR : THEME_COLOR, color: isAssigned ? SUCCESS_COLOR : THEME_COLOR, borderRadius: 8 }}
               />
             </Tooltip>
+
+            {/* Amount Details Button - ONLY for Disbursed cases */}
+            {isDisbursed && (
+              <Tooltip title="View Amount Details (Disbursed)">
+                <Button
+                  type="default"
+                  icon={<DollarOutlined />}
+                  onClick={() => navigateToAmountDetailsPage(record._id)}
+                  style={{ 
+                    borderColor: SUCCESS_COLOR, 
+                    color: SUCCESS_COLOR, 
+                    borderRadius: 8,
+                    background: '#f0fdf4'
+                  }}
+                >
+                  Amount Details
+                </Button>
+              </Tooltip>
+            )}
           </Space>
         );
       }
     }
   ];
 
-  // Status Tabs
   const renderStatusTabs = () => {
     const allStatuses = ['all', ...CASE_STATUSES];
     return (
@@ -562,7 +569,6 @@ const AdminManagecases = () => {
     );
   };
 
-  // Stats Summary
   const renderStats = () => {
     const total = cases.length;
     const pendingQueue = cases.filter(c => c.currentStatus === 'In Ops Queue - Pending Pick-up').length;
@@ -588,14 +594,13 @@ const AdminManagecases = () => {
         </Col>
         <Col span={6}>
           <div style={{ background: 'white', borderRadius: 16, padding: '16px 20px', border: `1px solid ${SUCCESS_COLOR}20` }}>
-            <Statistic title="Completed" value={completed} prefix={<CheckCircleOutlined />} valueStyle={{ color: SUCCESS_COLOR }} />
+            <Statistic title="Completed (Disbursed)" value={completed} prefix={<DollarOutlined />} valueStyle={{ color: SUCCESS_COLOR }} />
           </div>
         </Col>
       </Row>
     );
   };
 
-  // Status Update Modal
   const renderStatusModal = () => (
     <Modal
       title={
@@ -607,9 +612,7 @@ const AdminManagecases = () => {
       open={statusModalVisible}
       onCancel={() => { setStatusModalVisible(false); setSelectedCase(null); }}
       footer={[
-        <Button key="cancel" onClick={() => { setStatusModalVisible(false); setSelectedCase(null); }}>
-          Cancel
-        </Button>,
+        <Button key="cancel" onClick={() => { setStatusModalVisible(false); setSelectedCase(null); }}>Cancel</Button>,
         <Button
           key="submit"
           type="primary"
@@ -671,7 +674,6 @@ const AdminManagecases = () => {
     </Modal>
   );
 
-  // Assign Ops Modal
   const renderAssignOpsModal = () => (
     <Modal
       title={
@@ -683,9 +685,7 @@ const AdminManagecases = () => {
       open={assignOpsModalVisible}
       onCancel={() => { setAssignOpsModalVisible(false); setSelectedCase(null); setSelectedOpsId(''); }}
       footer={[
-        <Button key="cancel" onClick={() => { setAssignOpsModalVisible(false); setSelectedCase(null); setSelectedOpsId(''); }}>
-          Cancel
-        </Button>,
+        <Button key="cancel" onClick={() => { setAssignOpsModalVisible(false); setSelectedCase(null); setSelectedOpsId(''); }}>Cancel</Button>,
         <Button
           key="submit"
           type="primary"
@@ -764,6 +764,17 @@ const AdminManagecases = () => {
   );
 
   const filteredCases = getFilteredCases();
+
+  // Helper Statistic Component
+  const StatisticComp = ({ title, value, prefix, valueStyle }) => (
+    <div>
+      <Text type="secondary" style={{ fontSize: 13 }}>{title}</Text>
+      <div style={{ fontSize: 28, fontWeight: 700, ...valueStyle, marginTop: 4 }}>
+        {prefix && <span style={{ marginRight: 6 }}>{prefix}</span>}
+        {value}
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ padding: '28px 32px', background: '#fdfbff', minHeight: '100vh' }}>

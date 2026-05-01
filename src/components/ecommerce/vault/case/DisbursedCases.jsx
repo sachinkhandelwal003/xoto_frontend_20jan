@@ -158,11 +158,7 @@ const DisbursedCases = () => {
     }
   };
 
-  const handleViewCase = async (row) => {
-    setViewModal(row);
-    setActiveTab('summary');
-    await fetchAmountDetails(row._id);
-  };
+  
 
   // Navigation to Full Case View
   const handleViewFullCase = (id) => {
@@ -337,25 +333,7 @@ const DisbursedCases = () => {
         return (
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             {/* Quick View Button */}
-            <button
-              onClick={() => handleViewCase(row)}
-              style={{
-                display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
-                background: PURPLE_LIGHT, border: `1px solid ${PURPLE_BORDER}`,
-                borderRadius: 7, fontSize: 12, fontWeight: 600, color: PURPLE,
-                cursor: "pointer", transition: "all 0.2s"
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = PURPLE;
-                e.target.style.color = "#fff";
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = PURPLE_LIGHT;
-                e.target.style.color = PURPLE;
-              }}
-            >
-              <Eye size={13} /> Quick View
-            </button>
+         
 
             {/* Full Case Details Button */}
             <button
@@ -491,241 +469,7 @@ const DisbursedCases = () => {
     </Row>
   );
 
-  // ==================== QUICK VIEW MODAL WITH API DATA ====================
-  const renderViewModal = () => {
-    if (!viewModal) return null;
-
-    if (loadingDetails) {
-      return (
-        <Modal
-          title="Loading Case Details..."
-          open={!!viewModal}
-          onCancel={() => { setViewModal(null); setAmountDetails(null); }}
-          footer={null}
-          width={600}
-          centered
-        >
-          <div style={{ textAlign: 'center', padding: 40 }}>
-            <Spin size="large" />
-            <div style={{ marginTop: 16 }}>Fetching amount details...</div>
-          </div>
-        </Modal>
-      );
-    }
-
-    const data = amountDetails?.data || {};
-    const comparison = data.amountComparison || {};
-    const bankOffer = data.bankOffer || {};
-    const commission = data.commissionCalculation || {};
-    const summary = data.summary || {};
-    const timeline = data.amountTimeline || [];
-
-    // Amount Comparison Table Data
-    const amountComparisonData = [
-      { key: '1', label: 'Requested Amount', value: formatCurrency(comparison.requestedAmount), icon: <BankOutlined />, color: '#6B7280' },
-      { key: '2', label: 'Approved Amount', value: formatCurrency(comparison.approvedAmount), icon: <CheckCircleOutlined />, color: WARNING_COLOR },
-      { key: '3', label: 'Disbursed Amount', value: formatCurrency(comparison.disbursedAmount), icon: <DollarOutlined />, color: SUCCESS_COLOR },
-      { key: '4', label: 'Difference', value: formatCurrency(Math.abs(comparison.amountDifference || 0)), icon: <RiseOutlined />, color: comparison.amountStatus === 'reduced' ? ERROR_COLOR : WARNING_COLOR },
-    ];
-
-    // Loan Details Table Data
-    const loanDetailsData = [
-      { key: '1', label: 'Bank Name', value: bankOffer.bankName, icon: <BankOutlined /> },
-      { key: '2', label: 'Interest Rate', value: `${bankOffer.interestRate}% (${bankOffer.interestRateType})`, icon: <PercentageOutlined /> },
-      { key: '3', label: 'Loan Tenure', value: `${bankOffer.tenureYears} years`, icon: <CalendarOutlined /> },
-      { key: '4', label: 'Monthly EMI', value: formatCurrency(bankOffer.monthlyEMI), icon: <CalculatorOutlined /> },
-      { key: '5', label: 'Processing Fee', value: formatCurrency(bankOffer.processingFee), icon: <FileTextOutlined /> },
-      { key: '6', label: 'Valuation Fee', value: formatCurrency(bankOffer.valuationFee), icon: <FileTextOutlined /> },
-      { key: '7', label: 'Early Settlement Fee', value: `${bankOffer.earlySettlementFee}%`, icon: <PercentageOutlined /> },
-    ];
-
-    // Financial Summary Table Data
-    const financialSummaryData = [
-      { key: '1', label: 'Property Value', value: formatCurrency(summary.propertyValue), icon: <HomeOutlined /> },
-      { key: '2', label: 'Down Payment', value: formatCurrency(summary.downPayment), icon: <DollarOutlined /> },
-      { key: '3', label: 'LTV Ratio', value: `${summary.ltvPercentage}%`, icon: <PercentageOutlined /> },
-      { key: '4', label: 'DBR', value: `${summary.dbrPercentage}% (${summary.dbrStatus})`, icon: <PercentageOutlined /> },
-      { key: '5', label: 'Total Upfront Cost', value: formatCurrency(summary.totalUpfrontCost), icon: <WalletOutlined /> },
-      { key: '6', label: 'Total Interest Payable', value: formatCurrency(summary.totalInterestPayable), icon: <RiseOutlined /> },
-      { key: '7', label: 'Total Amount Payable', value: formatCurrency(summary.totalAmountPayable), icon: <DollarOutlined /> },
-    ];
-
-    // Commission Table Data
-    const commissionData = [
-      { key: '1', label: 'Disbursed Amount', value: formatCurrency(commission.loanAmount), icon: <DollarOutlined /> },
-      { key: '2', label: 'Loan Tier', value: commission.loanTier, icon: <TrophyOutlined /> },
-      { key: '3', label: 'Xoto Commission Rate', value: commission.xotoCommissionRate, icon: <PercentageOutlined /> },
-      { key: '4', label: 'Xoto Commission Amount', value: formatCurrency(commission.xotoCommissionFromBank), icon: <BankOutlined /> },
-      { key: '5', label: 'Recipient', value: `${commission.recipientType} (${commission.recipientName || 'N/A'})`, icon: <UserOutlined /> },
-      { key: '6', label: 'Recipient Percentage', value: `${commission.recipientPercentage}%`, icon: <PercentageOutlined /> },
-      { key: '7', label: 'Commission Amount', value: formatCurrency(commission.commissionAmount), icon: <GiftOutlined />, highlight: true },
-      { key: '8', label: 'Formula', value: commission.formula, icon: <CalculatorOutlined /> },
-      { key: '9', label: 'Status', value: commission.status, icon: <ClockCircleOutlined /> },
-    ];
-
-    const columnsConfig = [
-      { title: 'Parameter', dataIndex: 'label', key: 'label', render: (text, record) => (<span><span style={{ marginRight: 8 }}>{record.icon}</span> {text}</span>) },
-      { title: 'Value', dataIndex: 'value', key: 'value', render: (text, record) => (<Text strong style={{ color: record.highlight ? SUCCESS_COLOR : record.color || '#374151' }}>{text}</Text>) }
-    ];
-
-    return (
-      <Modal
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <DollarOutlined style={{ color: SUCCESS_COLOR, fontSize: 24 }} />
-            <span style={{ fontSize: 18, fontWeight: 600 }}>Disbursed Case Details</span>
-            <Tag color="success" style={{ marginLeft: 'auto' }}>{data.currentStatus || 'Disbursed'}</Tag>
-          </div>
-        }
-        open={!!viewModal}
-        onCancel={() => { setViewModal(null); setAmountDetails(null); }}
-        width={1000}
-        footer={[
-          <Button key="close" onClick={() => { setViewModal(null); setAmountDetails(null); }}>Close</Button>,
-          <Button 
-            key="fullCase" 
-            type="primary" 
-            onClick={() => {
-              setViewModal(null);
-              setAmountDetails(null);
-              handleViewFullCase(viewModal._id);
-            }}
-            style={{ background: PURPLE }}
-            icon={<FileTextOutlined />}
-          >
-            View Full Case
-          </Button>,
-          <Button 
-            key="amountDetails" 
-            type="primary" 
-            onClick={() => {
-              setViewModal(null);
-              setAmountDetails(null);
-              handleViewAmountDetails(viewModal._id);
-            }}
-            style={{ background: SUCCESS_COLOR }}
-            icon={<DollarOutlined />}
-          >
-            Amount Details
-          </Button>
-        ]}
-      >
-        <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 8 }}>
-          {/* Status Banner */}
-          <Alert
-            message={`Case ${viewModal.caseReference} - ${data.currentStatus || 'Disbursed'}`}
-            description={`Disbursed on ${formatDate(viewModal.updatedAt)} | Message: ${comparison.message || 'Loan disbursed successfully'}`}
-            type="success"
-            showIcon
-            style={{ marginBottom: 16, borderRadius: 12 }}
-          />
-
-          {/* Tabs */}
-          <Tabs activeKey={activeTab} onChange={setActiveTab} style={{ marginBottom: 16 }}>
-            <Tabs.TabPane tab={<span><DollarOutlined /> Amount Summary</span>} key="summary" />
-            <Tabs.TabPane tab={<span><BankOutlined /> Loan Details</span>} key="loan" />
-            <Tabs.TabPane tab={<span><CalculatorOutlined /> Financial Summary</span>} key="financial" />
-            <Tabs.TabPane tab={<span><GiftOutlined /> Commission</span>} key="commission" />
-            <Tabs.TabPane tab={<span><ClockCircleOutlined /> Timeline</span>} key="timeline" />
-          </Tabs>
-
-          {/* Tab 1: Amount Summary */}
-          {activeTab === 'summary' && (
-            <AntTable 
-              columns={columnsConfig} 
-              dataSource={amountComparisonData} 
-              pagination={false} 
-              size="middle"
-              bordered
-              rowKey="key"
-              style={{ borderRadius: 12, overflow: 'hidden' }}
-            />
-          )}
-
-          {/* Tab 2: Loan Details */}
-          {activeTab === 'loan' && (
-            <AntTable 
-              columns={columnsConfig} 
-              dataSource={loanDetailsData} 
-              pagination={false} 
-              size="middle"
-              bordered
-              rowKey="key"
-              style={{ borderRadius: 12, overflow: 'hidden' }}
-            />
-          )}
-
-          {/* Tab 3: Financial Summary */}
-          {activeTab === 'financial' && (
-            <AntTable 
-              columns={columnsConfig} 
-              dataSource={financialSummaryData} 
-              pagination={false} 
-              size="middle"
-              bordered
-              rowKey="key"
-              style={{ borderRadius: 12, overflow: 'hidden' }}
-            />
-          )}
-
-          {/* Tab 4: Commission Breakdown */}
-          {activeTab === 'commission' && (
-            <>
-              <AntTable 
-                columns={columnsConfig} 
-                dataSource={commissionData} 
-                pagination={false} 
-                size="middle"
-                bordered
-                rowKey="key"
-                style={{ borderRadius: 12, overflow: 'hidden' }}
-              />
-              <Card style={{ marginTop: 16, background: '#f0fdf4', border: `1px solid ${SUCCESS_COLOR}`, borderRadius: 12 }}>
-                <div style={{ textAlign: 'center' }}>
-                  <Text strong style={{ color: SUCCESS_COLOR }}>Commission Calculation Summary</Text>
-                  <div style={{ marginTop: 8, fontSize: 14 }}>
-                    {formatCurrency(commission.xotoCommissionFromBank)} × {commission.recipientPercentage}% = <Text strong style={{ color: SUCCESS_COLOR, fontSize: 16 }}>{formatCurrency(commission.commissionAmount)}</Text>
-                  </div>
-                  <Text type="secondary" style={{ fontSize: 12 }}>Commission will be processed within 30 days after disbursement confirmation</Text>
-                </div>
-              </Card>
-            </>
-          )}
-
-          {/* Tab 5: Timeline */}
-          {activeTab === 'timeline' && (
-            <div>
-              {timeline.map((item, idx) => (
-                <div key={idx} style={{ 
-                  display: 'flex', 
-                  marginBottom: 16, 
-                  padding: 12, 
-                  background: item.isFinal ? '#f0fdf4' : '#f8fafc', 
-                  borderRadius: 12,
-                  borderLeft: `3px solid ${item.isFinal ? SUCCESS_COLOR : PURPLE}`
-                }}>
-                  <div style={{ minWidth: 160 }}>
-                    <Text strong style={{ fontSize: 12 }}>{formatDate(item.date)}</Text>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <Text>{item.event}</Text>
-                    {item.reference && <div><Text type="secondary" style={{ fontSize: 11 }}>Reference: {item.reference}</Text></div>}
-                    <Text type="secondary" style={{ fontSize: 11 }}>By: {item.addedBy}</Text>
-                  </div>
-                  {item.isFinal && <Tag color="success">Final</Tag>}
-                </div>
-              ))}
-              {timeline.length === 0 && (
-                <div style={{ textAlign: 'center', padding: 40 }}>
-                  <Text type="secondary">No timeline events found</Text>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </Modal>
-    );
-  };
+  
 
   return (
     <div style={{ minHeight: "100vh", background: "#F9FAFB", padding: "28px 24px" }}>
@@ -793,7 +537,6 @@ const DisbursedCases = () => {
       />
 
       {/* View Modal with API Data */}
-      {renderViewModal()}
     </div>
   );
 };
