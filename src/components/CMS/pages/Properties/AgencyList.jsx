@@ -197,7 +197,7 @@ const AgencyList = () => {
     
     try {
       const res = await apiService.get(`/agency/get-agency-details/${record._id}`);
-      console.log("📸 Drawer API Response:", res);
+      
 
       // Safe extraction regardless of API nesting
       let fetchedData = res?.data?.data || res?.data?.agency || res?.data;

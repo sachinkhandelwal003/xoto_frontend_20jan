@@ -22,7 +22,7 @@ const System = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('System settings updated:', settings);
+    
   };
 
   return (

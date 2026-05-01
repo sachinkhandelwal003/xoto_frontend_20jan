@@ -132,7 +132,7 @@ const VaultAgentLeadList = () => {
         setAdvisors(Array.isArray(advList)   ? advList   : []);
         setAgents(Array.isArray(agentList)   ? agentList : []);
       } catch (err) {
-        console.log(err);
+        
       }
     };
     fetchDropdowns();

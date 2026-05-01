@@ -774,10 +774,10 @@ margin_amount: adminMarginAmount,
     
     // Calculate supervisor margin
     
-    console.log(adminMarginPercent)
+   
     // Calculate admin margin
     const adminMarginAmount = adminMarginPercent ? (amountAfterDiscount * adminMarginPercent) / 100 : 0;
-        console.log("adminMarginAmountadminMarginAmount" ,adminMarginAmount)
+        
 
     // Total = base amount - discount + supervisor margin + admin margin
     return amountAfterDiscount + adminMarginAmount;

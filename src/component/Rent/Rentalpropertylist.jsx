@@ -107,8 +107,7 @@ const RentalPropertyList = () => {
 
       const res = await apiService.get(`/properties?${params.toString()}`);
 
-      // ── Response fix — console.log karke apna structure dekho ──────────
-      console.log("API Response:", res);
+     
 
       const raw   = res?.data ?? res;
       const list  = Array.isArray(raw?.data)  ? raw.data  :

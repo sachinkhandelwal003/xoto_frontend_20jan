@@ -97,7 +97,7 @@ const AddLeadModal = ({ onClose, leadData }) => {
         status: formData.status,
       };
 
-      console.log("PAYLOAD SEND:", payload);
+      
 
       if (leadData) {
         // UPDATE API (Maine isko .put kar diya hai, dhyan rakhna)
@@ -112,7 +112,7 @@ const AddLeadModal = ({ onClose, leadData }) => {
       handleClose();
 
     } catch (error) {
-      console.log("API ERROR:", error.response?.data || error);
+      
       alert(error.response?.data?.message || "Something went wrong ❌");
     } finally {
       setLoading(false);

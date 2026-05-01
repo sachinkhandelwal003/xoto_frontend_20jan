@@ -31,7 +31,7 @@ export default function DeveloperLeads() {
        
       );
       
-      console.log("Raw Response from API:", res.data);
+      
 
       let list = [];
       if (Array.isArray(res.data)) {
@@ -52,7 +52,7 @@ export default function DeveloperLeads() {
         };
       });
 
-      console.log("Formatted Leads Array:", formattedLeads);
+      
 
       setLeads(formattedLeads);
       setFilteredLeads(formattedLeads);

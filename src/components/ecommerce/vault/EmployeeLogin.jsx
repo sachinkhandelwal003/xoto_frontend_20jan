@@ -200,7 +200,7 @@ const EmployeeLogin = () => {
       });
       // Redirection is handled by the useEffect above
     } catch (err) {
-      console.log("🔥 Backend Error Object:", err);
+      
 
       let errorMessage = "Invalid credentials";
 

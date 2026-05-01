@@ -754,13 +754,13 @@ useEffect(() => {
     try {
       const response = await apiService.get('/profile/get-profile-data');
 
-          console.log('FULL RESPONSE:', JSON.stringify(response, null, 2));
+         
 
       const category = response?.data?.partnerCategory
         ?.toString()
         .trim()
         .toLowerCase();
-      console.log('partnerCategory:', category);
+      
       setPartnerCategory(category || null);
     } catch (error) {
       console.error('partner profile fetch failed:', error);

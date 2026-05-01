@@ -54,7 +54,7 @@ const GenericUploader = ({ value, onChange, label, listType = "text" }) => {
     formData.append("file", file);
 
     try {
-      console.log(`Uploading ${label}...`);
+      
       const response = await apiService.post(`/upload`, formData);
       const responseBody = response.data || response;
       const url =
@@ -566,7 +566,7 @@ const SellerPage = () => {
   };
 
   const onError = (errors) => {
-    console.log("Validation Failed:", errors);
+    
     if (Object.keys(errors).length > 0) {
       if (errors.bank_details || errors.registration) {
         message.error("Please fix errors in Business & Bank Details (Step 3)");

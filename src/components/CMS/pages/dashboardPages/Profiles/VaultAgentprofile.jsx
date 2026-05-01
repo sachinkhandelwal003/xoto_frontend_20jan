@@ -222,7 +222,7 @@ const VaultAgentProfile = () => {
       { headers: { "Content-Type": "multipart/form-data" } }
     );
 
-    console.log("UPLOAD RESPONSE:", res.data);
+    
 
     // ✅ dynamic field fix
     const newUrl = res?.data?.data?.[fieldName];
@@ -238,7 +238,7 @@ const VaultAgentProfile = () => {
     await getProfile();
 
   } catch (err) {
-    console.log(err);
+    
     message.error("Upload failed.");
   } finally {
     setImageUploading(false);
@@ -276,7 +276,7 @@ const handleUpdate = async (values) => {
     await getProfile(); // 👈 correct
 
   } catch (err) {
-    console.log(err);
+    
     message.error("Update failed.");
   } finally {
     setUpdating(false);

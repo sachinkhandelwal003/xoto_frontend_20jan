@@ -34,7 +34,7 @@ const VendorRejected = () => {
       if (filters.search) params.search = filters.search;
       if (filters.businessType) params.businessType = filters.businessType;
       const response = await apiService.get('/vendor', params);
-      console.log('Rejected Vendors API Response:', response);
+      
       setVendors(response.vendors || []);
       setPagination({
         currentPage: response.pagination.currentPage || 1,
