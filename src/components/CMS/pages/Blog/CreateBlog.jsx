@@ -55,7 +55,7 @@ const THEME = {
 //  GLOBAL STYLES
 // ─────────────────────────────────────────────
 const GLOBAL_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.bunny.net/css?family=playfair-display:600,600i,700,700i,800,800i|plus-jakarta-sans:400,500,600,700,800&display=swap');
 
   .bm-root * { box-sizing: border-box; }
   .bm-root {
@@ -315,7 +315,7 @@ const cleanExternalHtml = (html) => {
     Array.from(node.children).forEach(processNode);
     const tag = node.tagName.toLowerCase();
     const style = node.getAttribute('style') || '';
-    const isBold = /font-weight\s*:\s*(bold|[6-9]\d{2})/i.test(style);
+    const isBold = /font-weight\s*:\s*(bold|[7-9]\d{2})/i.test(style);
     const isItalic = /font-style\s*:\s*italic/i.test(style);
     const isUnderline = /text-decoration[^;]*:\s*[^;]*underline/i.test(style);
     const isStrike = /text-decoration[^;]*:\s*[^;]*line-through/i.test(style);
@@ -1162,6 +1162,8 @@ const insertHtmlIntoEditor = useCallback((html) => {
     const isGoogleDoc = pastedHtml.includes('google-docs') || pastedHtml.includes('docs.google');
     const isExternalHeavy = pastedHtml.includes('xmlns:') || pastedHtml.length > (pastedText.length || 1) * 4;
 
+    if (!isWordDoc && !isGoogleDoc && !isExternalHeavy) return;
+
     event.preventDefault();
     event.stopPropagation();
     setPasteProcessing(true);
@@ -1924,7 +1926,7 @@ const insertHtmlIntoEditor = useCallback((html) => {
 
             {/* Editor wrapper with paste handler */}
             <div
-              onPaste={handlePaste}
+              onPasteCapture={handlePaste}
               style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}
             >
             <JoditEditor
