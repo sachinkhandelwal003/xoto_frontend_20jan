@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
 import {
   Form, Input, Select, Button, Card, Row, Col, Typography,
-  DatePicker, InputNumber, Switch, Tag, message, Divider, Space, Tooltip, Modal, Descriptions, Alert
+  DatePicker, InputNumber, Switch, message, Divider, Space, Modal, Descriptions, Alert
 } from 'antd';
 import {
   UserOutlined, HomeOutlined, FileTextOutlined, BankOutlined,
-  SaveOutlined, InfoCircleOutlined, CheckOutlined, PhoneOutlined,
-  MailOutlined, CalendarOutlined, DollarOutlined, EnvironmentOutlined,
-  CloseOutlined, EyeOutlined, WarningOutlined, TeamOutlined
+  SaveOutlined, CheckOutlined, EyeOutlined, TeamOutlined
 } from '@ant-design/icons';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
@@ -17,13 +15,10 @@ const { Title, Text } = Typography;
 const { Option }      = Select;
 const { TextArea }    = Input;
 
-const THEME = '#5C039B';
-const THEME_LIGHT = '#f3e8ff';
-const SUCCESS_COLOR ='#5C039B';
+const BRAND_PURPLE = '#5C039B';
 
 /* ─────────────────────────────── CONSTANTS ─────────────────────────────── */
 
-// ✅ SELECT: nationality list
 const NATIONALITIES = [
   'Emirati', 'Saudi Arabian', 'Indian', 'Pakistani', 'British', 'American',
   'Egyptian', 'Filipino', 'Jordanian', 'Lebanese', 'Syrian', 'Bangladeshi',
@@ -31,14 +26,12 @@ const NATIONALITIES = [
   'French', 'German', 'Italian', 'Russian', 'South African', 'Nigerian', 'Other',
 ];
 
-// ✅ SELECT: gender options
 const GENDER_OPTIONS = [
-  { value: 'Male', label: 'Male', icon: '👨' },
-  { value: 'Female', label: 'Female', icon: '👩' },
-  { value: 'Other', label: 'Other', icon: '👤' },
+  { value: 'Male', label: 'Male' },
+  { value: 'Female', label: 'Female' },
+  { value: 'Other', label: 'Other' },
 ];
 
-// ✅ SELECT: city → areas mapping
 const UAE_AREAS = {
   Dubai: [
     'Downtown Dubai', 'Dubai Marina', 'Palm Jumeirah', 'JBR', 'Business Bay',
@@ -58,85 +51,22 @@ const UAE_AREAS = {
   'Umm Al Quwain':     ['UAQ City'],
 };
 
-// ✅ SELECT: bank list for preferred banks multi-select
-const BANK_LIST = [
-  'Emirates NBD', 'Abu Dhabi Commercial Bank (ADCB)', 'First Abu Dhabi Bank (FAB)',
-  'Mashreq Bank', 'Dubai Islamic Bank (DIB)', 'Abu Dhabi Islamic Bank (ADIB)',
-  'RAKBANK', 'Commercial Bank of Dubai (CBD)', 'Sharjah Islamic Bank',
-  'Citibank UAE', 'HSBC UAE', 'Standard Chartered UAE', 'Other',
-];
+/* ─────────────────────────────── MAIN COMPONENT ─────────────────────────────── */
 
-/* ─────────────────────────────── SMALL UI HELPERS ──────────────────────── */
-
-// Required badge
-const Req = () => <span style={{ color: '#ef4444', marginLeft: 2 }}>*</span>;
-
-// Recommended badge
-const Rec = () => (
-  <Tooltip title="Strongly recommended for accurate mortgage assessment">
-    <span style={{
-      marginLeft: 6, fontSize: 10, fontWeight: 700, padding: '1px 7px',
-      borderRadius: 20, background: '#fff7ed', color: '#c2410c',
-      border: '1px solid #fed7aa', verticalAlign: 'middle', cursor: 'help',
-    }}>
-      RECOMMENDED
-    </span>
-  </Tooltip>
-);
-
-// Optional badge
-const Opt = () => (
-  <span style={{
-    marginLeft: 6, fontSize: 10, fontWeight: 600, padding: '1px 7px',
-    borderRadius: 20, background: '#f1f5f9', color: '#94a3b8',
-    border: '1px solid #e2e8f0', verticalAlign: 'middle',
-  }}>
-    OPTIONAL
-  </span>
-);
-
-// Section header
-const SectionHead = ({ icon, title, subtitle }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, padding: '16px 20px', background: '#faf5ff', borderRadius: 12, border: '1px solid #f0e6ff' }}>
-    <div style={{ width: 40, height: 40, borderRadius: 12, background: THEME, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      {React.cloneElement(icon, { style: { color: '#fff', fontSize: 18 } })}
-    </div>
-    <div>
-      <div style={{ fontWeight: 700, fontSize: 15, color: '#1a0533' }}>{title}</div>
-      {subtitle && <div style={{ fontSize: 12, color: '#9b8ab0', marginTop: 1 }}>{subtitle}</div>}
-    </div>
-  </div>
-);
-
-// Field label
-const Label = ({ children, req, opt, rec }) => (
-  <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
-    {children}
-    {req && <Req />}
-    {rec && <Rec />}
-    {opt && <Opt />}
-  </span>
-);
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   MAIN COMPONENT
-═══════════════════════════════════════════════════════════════════════════ */
 const VaultCreateLeads = () => {
   const [form]           = Form.useForm();
-  const [loading, setLoading]         = useState(false);
-  const [preferredBanks, setPreferredBanks] = useState([]);
+  const [loading, setLoading]        = useState(false);
   const [selectedCity, setSelectedCity]     = useState('Dubai');
   const [isOffPlan, setIsOffPlan]           = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [formValues, setFormValues] = useState(null);
 
-  /* ── payload builder ── */
   const buildPayload = (values) => {
     return {
       customerInfo: {
         fullName:           values.fullName,
         preferredName:      values.preferredName    || null,
-        gender:             values.gender,                          // ✅ NEW GENDER FIELD
+        gender:             values.gender,
         email:              values.email,
         mobileNumber:       values.mobileNumber     || null,
         alternativePhone:   values.alternativePhone || null,
@@ -144,9 +74,8 @@ const VaultCreateLeads = () => {
         dateOfBirth:        values.dateOfBirth      ? values.dateOfBirth.toISOString() : null,
         nationality:        values.nationality,
         maritalStatus:      values.maritalStatus,
-        numberOfDependents: values.numberOfDependents  ?? 0,
         occupation:         values.occupation          || null,
-        employer:           values.employer             || null,
+        employer:           values.employer            || null,
         monthlySalary:      values.monthlySalary        || null,
       },
       propertyDetails: {
@@ -169,29 +98,26 @@ const VaultCreateLeads = () => {
       loanRequirements: {
         preferredTenureYears:        values.preferredTenureYears       || 25,
         preferredInterestRateType:   values.preferredInterestRateType  || 'Fixed',
-        preferredBanks:              preferredBanks,
-        feeFinancingPreference:      values.feeFinancingPreference      ?? true,
-        lifeInsurancePreference:     values.lifeInsurancePreference     ?? true,
+        feeFinancingPreference:      values.feeFinancingPreference     ?? true,
+        lifeInsurancePreference:     values.lifeInsurancePreference    ?? true,
         propertyInsurancePreference: values.propertyInsurancePreference ?? true,
-        specialRequirements:         values.specialRequirements         || null,
+        specialRequirements:         values.specialRequirements        || null,
       },
       referralType: values.referralType || 'Referral Only',
       notesToXoto:  values.notesToXoto  || null,
     };
   };
 
-  // Show confirmation modal before submit
   const handlePreview = async () => {
     try {
       const values = await form.validateFields();
       setFormValues(values);
       setConfirmModalVisible(true);
     } catch (err) {
-      message.error("Please fill all required fields before preview");
+      message.error("Please fill all required fields before previewing");
     }
   };
 
-  // Actual submit after confirmation
   const handleSubmit = async () => {
     if (!formValues) return;
     
@@ -201,7 +127,6 @@ const VaultCreateLeads = () => {
       await apiService.post('/vault/lead/create', payload);
       message.success('Lead created successfully!');
       form.resetFields();
-      setPreferredBanks([]);
       setIsOffPlan(false);
       setConfirmModalVisible(false);
       setFormValues(null);
@@ -212,22 +137,18 @@ const VaultCreateLeads = () => {
     }
   };
 
-  const addBank    = (bank) => { if (bank && !preferredBanks.includes(bank)) setPreferredBanks(p => [...p, bank]); };
-  const removeBank = (bank) => setPreferredBanks(p => p.filter(b => b !== bank));
-  const areas      = UAE_AREAS[selectedCity] || [];
+  const areas = UAE_AREAS[selectedCity] || [];
 
-  // Format currency for display
   const formatCurrency = (value) => {
     if (!value) return 'N/A';
     return `AED ${value.toLocaleString()}`;
   };
 
-  // Confirmation Modal
   const renderConfirmModal = () => (
     <Modal
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <CheckOutlined style={{ color: SUCCESS_COLOR, fontSize: 24 }} />
+          <CheckOutlined style={{ color: BRAND_PURPLE, fontSize: 24 }} />
           <span style={{ fontSize: 18, fontWeight: 700, color: '#1e1b4b' }}>Confirm Lead Submission</span>
         </div>
       }
@@ -243,7 +164,7 @@ const VaultCreateLeads = () => {
           type="primary" 
           onClick={handleSubmit}
           loading={loading}
-          style={{ background: THEME, borderColor: THEME, borderRadius: 8 }}
+          style={{ background: BRAND_PURPLE, borderColor: BRAND_PURPLE, borderRadius: 8 }}
           icon={<SaveOutlined />}
         >
           Confirm & Submit Lead
@@ -260,7 +181,6 @@ const VaultCreateLeads = () => {
             style={{ marginBottom: 20, borderRadius: 12 }}
           />
           
-          {/* Customer Information Summary */}
           <Card size="small" title={<span><UserOutlined /> Customer Information</span>} style={{ marginBottom: 16, borderRadius: 12 }}>
             <Row gutter={[16, 8]}>
               <Col span={12}>
@@ -293,12 +213,11 @@ const VaultCreateLeads = () => {
               </Col>
               <Col span={12}>
                 <Text type="secondary" style={{ fontSize: 12 }}>Monthly Salary</Text>
-                <div><Text strong style={{ color: SUCCESS_COLOR }}>{formatCurrency(formValues.monthlySalary)}</Text></div>
+                <div><Text strong style={{ color: BRAND_PURPLE }}>{formatCurrency(formValues.monthlySalary)}</Text></div>
               </Col>
             </Row>
           </Card>
 
-          {/* Property Summary */}
           <Card size="small" title={<span><HomeOutlined /> Property Information</span>} style={{ marginBottom: 16, borderRadius: 12 }}>
             <Row gutter={[16, 8]}>
               <Col span={12}>
@@ -321,14 +240,9 @@ const VaultCreateLeads = () => {
                 <Text type="secondary" style={{ fontSize: 12 }}>Location</Text>
                 <div><Text strong>{formValues.city}, {formValues.area || 'N/A'}</Text></div>
               </Col>
-              <Col span={12}>
-                <Text type="secondary" style={{ fontSize: 12 }}>Building</Text>
-                <div><Text strong>{formValues.building || 'N/A'}</Text></div>
-              </Col>
             </Row>
           </Card>
 
-          {/* Loan Requirements Summary */}
           <Card size="small" title={<span><BankOutlined /> Loan Requirements</span>} style={{ marginBottom: 16, borderRadius: 12 }}>
             <Row gutter={[16, 8]}>
               <Col span={12}>
@@ -339,20 +253,9 @@ const VaultCreateLeads = () => {
                 <Text type="secondary" style={{ fontSize: 12 }}>Interest Rate Type</Text>
                 <div><Text strong>{formValues.preferredInterestRateType || 'Fixed'}</Text></div>
               </Col>
-              <Col span={24}>
-                <Text type="secondary" style={{ fontSize: 12 }}>Preferred Banks</Text>
-                <div>
-                  {preferredBanks.length > 0 ? (
-                    <Space wrap>
-                      {preferredBanks.map(bank => <Tag key={bank} color="purple">{bank}</Tag>)}
-                    </Space>
-                  ) : <Text type="secondary">No preference</Text>}
-                </div>
-              </Col>
             </Row>
           </Card>
 
-          {/* Referral Info */}
           <Card size="small" title={<span><TeamOutlined /> Referral Information</span>} style={{ borderRadius: 12 }}>
             <Row gutter={[16, 8]}>
               <Col span={12}>
@@ -371,13 +274,12 @@ const VaultCreateLeads = () => {
   );
 
   return (
-    <div style={{ background: '#f7f3ff', minHeight: '100vh', padding: '28px 20px' }}>
+    <div style={{ background: '#f8f9fa', minHeight: '100vh', padding: '24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
-        {/* Page header */}
-        <div style={{ marginBottom: 28 }}>
-          <Title level={2} style={{ margin: 0, color: '#1a0533', fontWeight: 800 }}>Create New Lead</Title>
-          <Text style={{ color: '#9b8ab0', fontSize: 14 }}>Fill in customer and property details to submit a mortgage referral.</Text>
+        <div style={{ marginBottom: 24 }}>
+          <Title level={3} style={{ margin: 0, color: '#1f2937' }}>Create New Lead</Title>
+          <Text type="secondary">Fill in customer and property details to submit a mortgage referral.</Text>
         </div>
 
         <Form
@@ -390,108 +292,84 @@ const VaultCreateLeads = () => {
               form.scrollToField(errorFields[0].name, { behavior: "smooth", block: "center" });
             }
           }}
-          scrollToFirstError
         >
-
-          {/* ══════════════ SECTION 1 — Customer Info ══════════════ */}
-          <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0e6ff', padding: '24px 28px', marginBottom: 20, boxShadow: '0 2px 12px rgba(92,3,155,0.05)' }}>
-            <SectionHead icon={<UserOutlined />} title="Customer Information" subtitle="Personal and contact details of the lead" />
-
+          {/* SECTION 1 — Customer Info */}
+          <Card
+            title={<Space><UserOutlined style={{ color: BRAND_PURPLE }} /> Customer Information</Space>}
+            bordered={false}
+            style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}
+          >
             <Row gutter={[24, 8]}>
-
-              {/* fullName — ✅ REQUIRED */}
               <Col xs={24} md={8}>
-                <Form.Item name="fullName" label={<Label req>Full Legal Name</Label>}
-                  rules={[{ required: true, message: 'Full name is required' }]}>
-                  <Input size="large" prefix={<UserOutlined style={{ color: '#c0aad8' }} />} placeholder="e.g. Ahmed Al Mansouri" style={{ borderRadius: 8 }} />
+                <Form.Item name="fullName" label="Full Legal Name" rules={[{ required: true, message: 'Required' }]}>
+                  <Input size="large" placeholder="e.g. Ahmed Al Mansouri" style={{ borderRadius: 8 }} />
                 </Form.Item>
               </Col>
 
-              {/* preferredName — 🟡 OPTIONAL */}
               <Col xs={24} md={8}>
-                <Form.Item name="preferredName" label={<Label opt>Preferred Name</Label>}>
+                <Form.Item name="preferredName" label="Preferred Name (Optional)">
                   <Input size="large" placeholder="e.g. Ahmed" style={{ borderRadius: 8 }} />
                 </Form.Item>
               </Col>
 
-              {/* gender — ✅ REQUIRED — NEW FIELD */}
               <Col xs={24} md={8}>
-                <Form.Item name="gender" label={<Label req>Gender</Label>}
-                  rules={[{ required: true, message: 'Gender is required' }]}>
+                <Form.Item name="gender" label="Gender" rules={[{ required: true, message: 'Required' }]}>
                   <Select size="large" placeholder="Select gender" style={{ borderRadius: 8 }}>
                     {GENDER_OPTIONS.map(g => (
                       <Option key={g.value} value={g.value}>
-                        <span style={{ marginRight: 8 }}>{g.icon}</span> {g.label}
+                        {g.label}
                       </Option>
                     ))}
                   </Select>
                 </Form.Item>
               </Col>
 
-              {/* email — ✅ REQUIRED */}
               <Col xs={24} md={8}>
-                <Form.Item name="email" label={<Label req>Email Address</Label>}
-                  rules={[{ required: true, message: 'Email is required' }, { type: 'email', message: 'Enter a valid email' }]}>
-                  <Input size="large" prefix={<MailOutlined style={{ color: '#c0aad8' }} />} placeholder="omar@example.com" style={{ borderRadius: 8 }} />
+                <Form.Item name="email" label="Email Address" rules={[{ required: true, message: 'Required' }, { type: 'email', message: 'Valid email required' }]}>
+                  <Input size="large" placeholder="omar@example.com" style={{ borderRadius: 8 }} />
                 </Form.Item>
               </Col>
 
-              {/* mobileNumber — ✅ REQUIRED */}
               <Col xs={24} md={8}>
-                <Form.Item name="mobileNumber" label={<Label req>Mobile Number</Label>}
-                  rules={[{ required: true, message: 'Mobile number is required' }]}>
+                <Form.Item name="mobileNumber" label="Mobile Number" rules={[{ required: true, message: 'Required' }]}>
                   <PhoneInput
                     country="ae"
                     preferredCountries={['ae', 'sa', 'in', 'pk', 'gb', 'us']}
                     enableSearch
                     placeholder="Enter mobile number"
-                    inputStyle={{ width: '100%', height: 40, borderRadius: 8, border: '1px solid #d9d9d9' }}
-                    containerStyle={{ width: '100%' }}
+                    inputStyle={{ width: '100%', height: 40, borderRadius: 8 }}
                   />
                 </Form.Item>
               </Col>
 
-              {/* alternativePhone — 🟡 OPTIONAL */}
               <Col xs={24} md={8}>
-                <Form.Item name="alternativePhone" label={<Label opt>Alternative Phone</Label>}>
-                  <PhoneInput country="ae" enableSearch placeholder="Optional"
-                    inputStyle={{ width: '100%', height: 40, borderRadius: 8, border: '1px solid #d9d9d9' }}
-                    containerStyle={{ width: '100%' }} />
+                <Form.Item name="alternativePhone" label="Alternative Phone (Optional)">
+                  <PhoneInput country="ae" enableSearch placeholder="Optional" inputStyle={{ width: '100%', height: 40, borderRadius: 8 }} />
                 </Form.Item>
               </Col>
 
-              {/* whatsappNumber — 🟡 OPTIONAL */}
               <Col xs={24} md={8}>
-                <Form.Item name="whatsappNumber" label={<Label opt>WhatsApp Number</Label>}>
-                  <PhoneInput country="ae" enableSearch placeholder="Optional (if different from mobile)"
-                    inputStyle={{ width: '100%', height: 40, borderRadius: 8, border: '1px solid #d9d9d9' }}
-                    containerStyle={{ width: '100%' }} />
+                <Form.Item name="whatsappNumber" label="WhatsApp Number (Optional)">
+                  <PhoneInput country="ae" enableSearch placeholder="Optional" inputStyle={{ width: '100%', height: 40, borderRadius: 8 }} />
                 </Form.Item>
               </Col>
 
-              {/* dateOfBirth — ✅ REQUIRED */}
               <Col xs={24} md={8}>
-                <Form.Item name="dateOfBirth" label={<Label req>Date of Birth</Label>}
-                  rules={[{ required: true, message: 'Date of birth is required' }]}>
-                  <DatePicker size="large" style={{ width: '100%', borderRadius: 8 }} placeholder="Select date" format="DD-MMM-YYYY"
-                    disabledDate={d => d && d.valueOf() > Date.now()} />
+                <Form.Item name="dateOfBirth" label="Date of Birth" rules={[{ required: true, message: 'Required' }]}>
+                  <DatePicker size="large" style={{ width: '100%', borderRadius: 8 }} format="DD-MMM-YYYY" disabledDate={d => d && d.valueOf() > Date.now()} />
                 </Form.Item>
               </Col>
 
-              {/* nationality — ✅ REQUIRED */}
               <Col xs={24} md={8}>
-                <Form.Item name="nationality" label={<Label req>Nationality</Label>}
-                  rules={[{ required: true, message: 'Nationality is required' }]}>
-                  <Select size="large" showSearch placeholder="Select nationality" optionFilterProp="children" style={{ borderRadius: 8 }}>
+                <Form.Item name="nationality" label="Nationality" rules={[{ required: true, message: 'Required' }]}>
+                  <Select size="large" showSearch placeholder="Select nationality" style={{ borderRadius: 8 }}>
                     {NATIONALITIES.map(n => <Option key={n} value={n}>{n}</Option>)}
                   </Select>
                 </Form.Item>
               </Col>
 
-              {/* maritalStatus — ✅ REQUIRED */}
               <Col xs={24} md={8}>
-                <Form.Item name="maritalStatus" label={<Label req>Marital Status</Label>}
-                  rules={[{ required: true, message: 'Marital status is required' }]}>
+                <Form.Item name="maritalStatus" label="Marital Status" rules={[{ required: true, message: 'Required' }]}>
                   <Select size="large" placeholder="Select status" style={{ borderRadius: 8 }}>
                     <Option value="Single">Single</Option>
                     <Option value="Married">Married</Option>
@@ -501,60 +379,50 @@ const VaultCreateLeads = () => {
                 </Form.Item>
               </Col>
 
-              {/* numberOfDependents — 🟡 OPTIONAL */}
               <Col xs={24} md={8}>
-                <Form.Item name="numberOfDependents" label={<Label opt>Number of Dependents</Label>}>
-                  <InputNumber size="large" min={0} max={20} style={{ width: '100%', borderRadius: 8 }} />
-                </Form.Item>
-              </Col>
-
-              {/* occupation — 🟡 OPTIONAL */}
-              <Col xs={24} md={8}>
-                <Form.Item name="occupation" label={<Label opt>Occupation / Job Title</Label>}>
+                <Form.Item name="occupation" label="Occupation / Job Title (Optional)">
                   <Input size="large" placeholder="e.g. Senior Engineer" style={{ borderRadius: 8 }} />
                 </Form.Item>
               </Col>
 
-              {/* employer — 🟡 OPTIONAL */}
               <Col xs={24} md={8}>
-                <Form.Item name="employer" label={<Label opt>Employer / Company Name</Label>}>
-                  <Input size="large" placeholder="e.g. EMAAR, Emirates NBD" style={{ borderRadius: 8 }} />
+                <Form.Item name="employer" label="Employer / Company Name (Optional)">
+                  <Input size="large" placeholder="e.g. EMAAR" style={{ borderRadius: 8 }} />
                 </Form.Item>
               </Col>
 
-              {/* monthlySalary — 🔥 STRONGLY RECOMMENDED */}
               <Col xs={24} md={8}>
-                <Form.Item name="monthlySalary" label={<Label rec>Monthly Salary</Label>}>
+                <Form.Item name="monthlySalary" label="Monthly Salary (AED) (Recommended)">
                   <InputNumber
                     size="large" min={0} step={1000} style={{ width: '100%', borderRadius: 8 }}
-                    formatter={v => v ? `AED ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
-                    parser={v => v.replace(/AED\s?|(,*)/g, '')}
+                    formatter={v => v ? `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
+                    parser={v => v.replace(/\$\s?|(,*)/g, '')}
                     placeholder="e.g. 25,000"
                   />
                 </Form.Item>
               </Col>
             </Row>
-          </div>
+          </Card>
 
-          {/* ══════════════ SECTION 2 — Property Details ══════════════ */}
-          <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0e6ff', padding: '24px 28px', marginBottom: 20, boxShadow: '0 2px 12px rgba(92,3,155,0.05)' }}>
-            <SectionHead icon={<HomeOutlined />} title="Property Details" subtitle="Details of the property to be mortgaged" />
-
+          {/* SECTION 2 — Property Details */}
+          <Card
+            title={<Space><HomeOutlined style={{ color: BRAND_PURPLE }} /> Property Details</Space>}
+            bordered={false}
+            style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}
+          >
             <Row gutter={[24, 8]}>
-
               <Col xs={24} md={8}>
-                <Form.Item name="propertyType" label={<Label req>Property Type</Label>}
-                  rules={[{ required: true, message: 'Property type is required' }]}>
+                <Form.Item name="propertyType" label="Property Type" rules={[{ required: true, message: 'Required' }]}>
                   <Select size="large" style={{ borderRadius: 8 }}>
-                    <Option value="Ready">🏠 Ready</Option>
-                    <Option value="Off-plan">🏗️ Off-plan</Option>
-                    <Option value="Commercial">🏢 Commercial</Option>
+                    <Option value="Ready">Ready</Option>
+                    <Option value="Off-plan">Off-plan</Option>
+                    <Option value="Commercial">Commercial</Option>
                   </Select>
                 </Form.Item>
               </Col>
 
               <Col xs={24} md={8}>
-                <Form.Item name="propertySubtype" label={<Label opt>Property Subtype</Label>}>
+                <Form.Item name="propertySubtype" label="Property Subtype (Optional)">
                   <Select size="large" placeholder="Select subtype" allowClear style={{ borderRadius: 8 }}>
                     <Option value="Apartment">Apartment</Option>
                     <Option value="Villa">Villa</Option>
@@ -565,41 +433,40 @@ const VaultCreateLeads = () => {
               </Col>
 
               <Col xs={24} md={8}>
-                <Form.Item name="propertyValue" label={<Label req>Property Value (AED)</Label>}
-                  rules={[{ required: true, message: 'Property value is required' }]}>
+                <Form.Item name="propertyValue" label="Property Value (AED)" rules={[{ required: true, message: 'Required' }]}>
                   <InputNumber
                     size="large" min={0} style={{ width: '100%', borderRadius: 8 }}
-                    formatter={v => v ? `AED ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
-                    parser={v => v.replace(/AED\s?|(,*)/g, '')}
+                    formatter={v => v ? `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
+                    parser={v => v.replace(/\$\s?|(,*)/g, '')}
                     placeholder="e.g. 1,500,000"
                   />
                 </Form.Item>
               </Col>
 
               <Col xs={24} md={8}>
-                <Form.Item name="downPaymentAmount" label={<Label opt>Down Payment Amount (AED)</Label>}>
+                <Form.Item name="downPaymentAmount" label="Down Payment Amount (AED) (Optional)">
                   <InputNumber
                     size="large" min={0} style={{ width: '100%', borderRadius: 8 }}
-                    formatter={v => v ? `AED ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
-                    parser={v => v.replace(/AED\s?|(,*)/g, '')}
+                    formatter={v => v ? `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
+                    parser={v => v.replace(/\$\s?|(,*)/g, '')}
                     placeholder="e.g. 300,000"
                   />
                 </Form.Item>
               </Col>
 
               <Col xs={24} md={8}>
-                <Form.Item name="loanAmountRequired" label={<Label opt>Loan Amount Required (AED)</Label>}>
+                <Form.Item name="loanAmountRequired" label="Loan Amount Required (AED) (Optional)">
                   <InputNumber
                     size="large" min={0} style={{ width: '100%', borderRadius: 8 }}
-                    formatter={v => v ? `AED ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
-                    parser={v => v.replace(/AED\s?|(,*)/g, '')}
+                    formatter={v => v ? `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
+                    parser={v => v.replace(/\$\s?|(,*)/g, '')}
                     placeholder="e.g. 1,200,000"
                   />
                 </Form.Item>
               </Col>
 
               <Col xs={24} md={8}>
-                <Form.Item name="city" label={<Label opt>City</Label>}>
+                <Form.Item name="city" label="City (Optional)">
                   <Select size="large" onChange={(val) => { setSelectedCity(val); form.setFieldValue('area', undefined); }} style={{ borderRadius: 8 }}>
                     {Object.keys(UAE_AREAS).map(city => <Option key={city} value={city}>{city}</Option>)}
                   </Select>
@@ -607,7 +474,7 @@ const VaultCreateLeads = () => {
               </Col>
 
               <Col xs={24} md={8}>
-                <Form.Item name="area" label={<Label opt>Area / Community</Label>}>
+                <Form.Item name="area" label="Area / Community (Optional)">
                   <Select size="large" placeholder="Select area" showSearch allowClear style={{ borderRadius: 8 }}>
                     {areas.map(a => <Option key={a} value={a}>{a}</Option>)}
                     <Option value="Other">Other</Option>
@@ -616,60 +483,50 @@ const VaultCreateLeads = () => {
               </Col>
 
               <Col xs={24} md={8}>
-                <Form.Item name="building" label={<Label opt>Building / Tower Name</Label>}>
-                  <Input size="large" placeholder="e.g. Burj Views, Marina Gate" style={{ borderRadius: 8 }} />
+                <Form.Item name="building" label="Building / Tower Name (Optional)">
+                  <Input size="large" placeholder="e.g. Burj Views" style={{ borderRadius: 8 }} />
                 </Form.Item>
               </Col>
 
               <Col xs={24} md={8}>
-                <Form.Item name="propertyAgeYears" label={<Label opt>Property Age (Years)</Label>}>
-                  <InputNumber size="large" min={0} max={100} style={{ width: '100%', borderRadius: 8 }} placeholder="0 if new" addonAfter="Yrs" />
+                <Form.Item name="propertyAgeYears" label="Property Age (Years) (Optional)">
+                  <InputNumber size="large" min={0} max={100} style={{ width: '100%', borderRadius: 8 }} placeholder="0 if new" />
                 </Form.Item>
               </Col>
 
               <Col xs={24} md={8}>
-                <Form.Item name="isOffPlan" label={<Label opt>Off-Plan Property</Label>} valuePropName="checked">
-                  <Switch
-                    checkedChildren="Yes — Off-plan"
-                    unCheckedChildren="No — Ready / Existing"
-                    style={{ background: isOffPlan ? THEME : undefined }}
-                    onChange={(v) => setIsOffPlan(v)}
-                  />
+                <Form.Item name="isOffPlan" label="Off-Plan Property" valuePropName="checked">
+                  <Switch checkedChildren="Yes" unCheckedChildren="No" onChange={(v) => setIsOffPlan(v)} />
                 </Form.Item>
               </Col>
 
               <Col xs={24} md={8}>
                 <Form.Item
                   name="completionDate"
-                  label={<Label opt={!isOffPlan} req={isOffPlan}>Expected Completion Date</Label>}
-                  rules={[{ required: isOffPlan, message: 'Required for off-plan property' }]}
+                  label="Expected Completion Date"
+                  rules={[{ required: isOffPlan, message: 'Required for off-plan' }]}
                 >
-                  <DatePicker
-                    size="large"
-                    style={{ width: '100%', borderRadius: 8 }}
-                    format="DD-MMM-YYYY"
-                    placeholder={isOffPlan ? 'Required for off-plan' : 'Only for off-plan'}
-                    disabled={!isOffPlan}
-                  />
+                  <DatePicker size="large" style={{ width: '100%', borderRadius: 8 }} format="DD-MMM-YYYY" disabled={!isOffPlan} />
                 </Form.Item>
               </Col>
             </Row>
-          </div>
+          </Card>
 
-          {/* ══════════════ SECTION 3 — Loan Requirements ══════════════ */}
-          <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0e6ff', padding: '24px 28px', marginBottom: 20, boxShadow: '0 2px 12px rgba(92,3,155,0.05)' }}>
-            <SectionHead icon={<BankOutlined />} title="Loan Requirements" subtitle="Customer's mortgage preferences" />
-
+          {/* SECTION 3 — Loan Requirements */}
+          <Card
+            title={<Space><BankOutlined style={{ color: BRAND_PURPLE }} /> Loan Requirements</Space>}
+            bordered={false}
+            style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}
+          >
             <Row gutter={[24, 8]}>
-
               <Col xs={24} md={8}>
-                <Form.Item name="preferredTenureYears" label={<Label opt>Preferred Loan Tenure</Label>}>
-                  <InputNumber size="large" min={1} max={35} style={{ width: '100%', borderRadius: 8 }} addonAfter="Years" />
+                <Form.Item name="preferredTenureYears" label="Preferred Loan Tenure (Years) (Optional)">
+                  <InputNumber size="large" min={1} max={35} style={{ width: '100%', borderRadius: 8 }} />
                 </Form.Item>
               </Col>
 
               <Col xs={24} md={8}>
-                <Form.Item name="preferredInterestRateType" label={<Label opt>Interest Rate Type</Label>}>
+                <Form.Item name="preferredInterestRateType" label="Interest Rate Type (Optional)">
                   <Select size="large" style={{ borderRadius: 8 }}>
                     <Option value="Fixed">Fixed Rate</Option>
                     <Option value="Variable">Variable Rate</Option>
@@ -678,117 +535,73 @@ const VaultCreateLeads = () => {
               </Col>
 
               <Col xs={24}>
-                <div style={{ marginBottom: 8 }}>
-                  <Label opt>Preferred Banks</Label>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-                  {preferredBanks.map(bank => (
-                    <Tag key={bank}
-                      style={{ borderRadius: 20, padding: '3px 12px', background: '#f0e6ff', border: '1px solid #d8c5ff', color: THEME, fontWeight: 600, fontSize: 12 }}
-                      closeIcon={<CloseOutlined style={{ fontSize: 10, color: '#9b8ab0' }} />}
-                      closable onClose={() => removeBank(bank)}>
-                      {bank}
-                    </Tag>
-                  ))}
-                  {preferredBanks.length === 0 && (
-                    <Text style={{ fontSize: 12, color: '#c0aad8' }}>No banks selected — leave blank if no preference</Text>
-                  )}
-                </div>
-                <Select
-                  size="large"
-                  placeholder="Add a preferred bank (optional)"
-                  style={{ width: 280, borderRadius: 8 }}
-                  onSelect={(val) => addBank(val)}
-                  value={undefined}
-                >
-                  {BANK_LIST.filter(b => !preferredBanks.includes(b)).map(b => (
-                    <Option key={b} value={b}>{b}</Option>
-                  ))}
-                </Select>
-              </Col>
-
-              <Col xs={24}>
-                <Divider style={{ margin: '12px 0' }} />
-                <Text style={{ fontSize: 12, fontWeight: 600, color: '#9b8ab0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Customer Preferences</Text>
-                <Row gutter={[16, 12]} style={{ marginTop: 12 }}>
-                  {[
-                    { name: 'feeFinancingPreference',      label: 'Include Fee Financing',      desc: 'Add processing fees into the loan amount' },
-                    { name: 'lifeInsurancePreference',     label: 'Include Life Insurance',     desc: 'Mortgage protection life coverage' },
-                    { name: 'propertyInsurancePreference', label: 'Include Property Insurance', desc: 'Building and content insurance' },
-                  ].map(({ name, label, desc }) => (
-                    <Col xs={24} sm={8} key={name}>
-                      <Form.Item name={name} valuePropName="checked" style={{ marginBottom: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', background: '#faf5ff', borderRadius: 10, border: '1px solid #f0e6ff' }}>
-                          <Switch size="small" style={{ marginTop: 2, flexShrink: 0 }} />
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: '#1a0533' }}>{label}</div>
-                            <div style={{ fontSize: 11, color: '#9b8ab0', marginTop: 1 }}>{desc}</div>
-                          </div>
-                        </div>
-                      </Form.Item>
-                    </Col>
-                  ))}
+                <Divider style={{ margin: '24px 0' }} />
+                <Text strong>Customer Preferences</Text>
+                <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                  <Col xs={24} sm={8}>
+                    <Form.Item name="feeFinancingPreference" valuePropName="checked" label="Include Fee Financing">
+                      <Switch />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={8}>
+                    <Form.Item name="lifeInsurancePreference" valuePropName="checked" label="Include Life Insurance">
+                      <Switch />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={8}>
+                    <Form.Item name="propertyInsurancePreference" valuePropName="checked" label="Include Property Insurance">
+                      <Switch />
+                    </Form.Item>
+                  </Col>
                 </Row>
               </Col>
 
-              <Col xs={24} style={{ marginTop: 8 }}>
-                <Form.Item name="specialRequirements" label={<Label opt>Special Requirements</Label>}>
-                  <TextArea rows={3} placeholder="e.g. Needs early settlement flexibility, Islamic financing preferred, salary via WPS…" style={{ borderRadius: 8 }} />
+              <Col xs={24}>
+                <Form.Item name="specialRequirements" label="Special Requirements (Optional)">
+                  <TextArea rows={3} placeholder="e.g. Needs early settlement flexibility" style={{ borderRadius: 8 }} />
                 </Form.Item>
               </Col>
             </Row>
-          </div>
+          </Card>
 
-          {/* ══════════════ SECTION 4 — Referral & Notes ══════════════ */}
-          <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0e6ff', padding: '24px 28px', marginBottom: 24, boxShadow: '0 2px 12px rgba(92,3,155,0.05)' }}>
-            <SectionHead icon={<FileTextOutlined />} title="Referral & Notes" subtitle="How you are referring this lead" />
-
+          {/* SECTION 4 — Referral & Notes */}
+          <Card
+            title={<Space><FileTextOutlined style={{ color: BRAND_PURPLE }} /> Referral & Notes</Space>}
+            bordered={false}
+            style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}
+          >
             <Row gutter={[24, 8]}>
-
               <Col xs={24} md={12}>
-                <Form.Item name="referralType" label={<Label opt>Referral Type</Label>}>
-                  <Select size="large" placeholder="Select referral type" optionLabelProp="label" style={{ borderRadius: 8 }}>
-                    <Option value="Referral Only" label="Referral Only">
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <span style={{ fontWeight: 600 }}>Referral Only</span>
-                        <span style={{ fontSize: 11, color: "#94a3b8" }}>I am only referring — Xoto will handle documents</span>
-                      </div>
-                    </Option>
-                    <Option value="Referral + Docs" label="Referral + Docs">
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <span style={{ fontWeight: 600 }}>Referral + Docs</span>
-                        <span style={{ fontSize: 11, color: "#94a3b8" }}>I will collect and submit documents too</span>
-                      </div>
-                    </Option>
+                <Form.Item name="referralType" label="Referral Type (Optional)">
+                  <Select size="large" style={{ borderRadius: 8 }}>
+                    <Option value="Referral Only">Referral Only</Option>
+                    <Option value="Referral + Docs">Referral + Docs</Option>
                   </Select>
                 </Form.Item>
               </Col>
 
               <Col xs={24} md={12}>
-                <Form.Item name="notesToXoto" label={<Label opt>Notes to Xoto Team</Label>}>
-                  <TextArea rows={3} placeholder="e.g. Customer is in a hurry, prefers Islamic financing, referred via Ahmad…" style={{ borderRadius: 8 }} />
+                <Form.Item name="notesToXoto" label="Notes to Xoto Team (Optional)">
+                  <TextArea rows={3} placeholder="Any additional notes..." style={{ borderRadius: 8 }} />
                 </Form.Item>
               </Col>
             </Row>
-          </div>
+          </Card>
 
-          {/* ══════════════ SUBMIT BUTTONS ══════════════ */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-            <Button size="large" onClick={() => { form.resetFields(); setPreferredBanks([]); setIsOffPlan(false); }}
-              style={{ borderRadius: 10, height: 46, paddingInline: 28, fontWeight: 600, borderColor: THEME, color: THEME }}>
+          {/* ACTION BUTTONS */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, background: '#fff', padding: '16px 24px', borderRadius: 12, boxShadow: '0 -2px 10px rgba(0,0,0,0.02)' }}>
+            <Button size="large" onClick={() => { form.resetFields(); setIsOffPlan(false); }} style={{ borderRadius: 8 }}>
               Reset
             </Button>
             <Button
-              type="primary" htmlType="submit" size="large"
-              icon={<EyeOutlined />}
-              style={{ background: THEME, borderColor: THEME, borderRadius: 10, height: 46, paddingInline: 36, fontWeight: 700, fontSize: 14 }}
+              type="primary" htmlType="submit" size="large" icon={<EyeOutlined />}
+              style={{ background: BRAND_PURPLE, borderColor: BRAND_PURPLE, borderRadius: 8, padding: '0 32px' }}
             >
               Preview & Submit
             </Button>
           </div>
         </Form>
 
-        {/* Confirmation Modal */}
         {renderConfirmModal()}
       </div>
     </div>

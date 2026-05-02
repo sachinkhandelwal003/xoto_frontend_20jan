@@ -16,17 +16,18 @@ import {
   InputNumber,
   Divider,
   Upload,
+  Modal,
+  Descriptions
 } from "antd";
 import {
   ArrowLeftOutlined,
   UserOutlined,
-  MailOutlined,
   PhoneOutlined,
   BankOutlined,
   IdcardOutlined,
   CheckOutlined,
   UploadOutlined,
-  LockOutlined,
+  EyeOutlined
 } from "@ant-design/icons";
 import { Country } from "country-state-city";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
@@ -43,6 +44,13 @@ const VaultCreateadvisor = () => {
   const [loading, setLoading] = useState(false);
   const [profileUrl, setProfileUrl] = useState("");
   const [uploadingProfile, setUploadingProfile] = useState(false);
+
+  // Preview State
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+
+  // All Countries for Nationality
+  const allCountries = useMemo(() => Country.getAllCountries() || [], []);
 
   const countryOptions = useMemo(() => {
     const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"];
@@ -97,7 +105,22 @@ const VaultCreateadvisor = () => {
     return false;
   };
 
-  const handleSubmit = async (values) => {
+  const handlePreview = async () => {
+    try {
+      await form.validateFields();
+      if (!profileUrl) {
+        message.error("Please upload a profile photo before previewing.");
+        return;
+      }
+      const values = form.getFieldsValue(true);
+      setPreviewData(values);
+      setPreviewVisible(true);
+    } catch (error) {
+      message.error("Please fill all required fields correctly.");
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!profileUrl) {
       message.error("Please upload a profile photo");
       return;
@@ -105,6 +128,7 @@ const VaultCreateadvisor = () => {
 
     setLoading(true);
     try {
+      const values = form.getFieldsValue(true);
       const fullPhoneNumber = `+${values.country_code}${values.phone}`;
       const extractedCountryCode = `+${values.country_code}`;
 
@@ -129,7 +153,8 @@ const VaultCreateadvisor = () => {
       message.success("Advisor created! Login credentials sent via email.");
       form.resetFields();
       setProfileUrl("");
-      setTimeout(() => navigate(-1), 1500); // Changed to navigate(-1)
+      setPreviewVisible(false);
+      setTimeout(() => navigate(-1), 1500);
     } catch (err) {
       console.error("Create Advisor Error:", err);
       message.error(err?.response?.data?.message || "Failed to create advisor");
@@ -137,20 +162,6 @@ const VaultCreateadvisor = () => {
       setLoading(false);
     }
   };
-
-  const NATIONALITIES = [
-    "United Arab Emirates",
-    "Saudi Arabia",
-    "India",
-    "Pakistan",
-    "Egypt",
-    "Jordan",
-    "Lebanon",
-    "Philippines",
-    "United Kingdom",
-    "United States",
-    "Other",
-  ];
 
   const DEPARTMENTS = [
     "Mortgage Advisory",
@@ -163,7 +174,6 @@ const VaultCreateadvisor = () => {
   return (
     <div style={{ padding: "24px", background: "#f8f9fa", minHeight: "100vh" }}>
       <div style={{ marginBottom: "24px", display: "flex", alignItems: "center", gap: "16px" }}>
-      
         <div>
           <Title level={3} style={{ margin: 0, color: "#1f2937" }}>
             Create New Advisor
@@ -177,7 +187,6 @@ const VaultCreateadvisor = () => {
       <Form
         form={form}
         layout="vertical"
-        onFinish={handleSubmit}
         initialValues={{ country_code: "971" }}
       >
         <Row gutter={[24, 24]}>
@@ -334,14 +343,16 @@ const VaultCreateadvisor = () => {
                 <Col xs={24} md={12}>
                   <Form.Item name="nationality" label="Nationality">
                     <Select
+                      showSearch
                       placeholder="Select nationality"
                       size="large"
                       style={{ borderRadius: "8px" }}
                       allowClear
+                      optionFilterProp="children"
                     >
-                      {NATIONALITIES.map((n) => (
-                        <Option key={n} value={n}>
-                          {n}
+                      {allCountries.map((c) => (
+                        <Option key={c.isoCode} value={c.name}>
+                          {c.name}
                         </Option>
                       ))}
                     </Select>
@@ -501,35 +512,105 @@ const VaultCreateadvisor = () => {
             borderRadius: "12px",
             boxShadow: "0 -2px 10px rgba(0,0,0,0.02)",
             display: "flex",
-            justifyContent: "space-between", // Changed to space-between for opposite sides
+            justifyContent: "space-between",
             alignItems: "center",
+            flexWrap: "wrap",
+            gap: "16px"
           }}
         >
           <Button
             size="large"
             icon={<ArrowLeftOutlined />}
-            onClick={() => navigate(-1)} // Changed to navigate(-1)
+            onClick={() => navigate(-1)}
             style={{ borderRadius: "8px", fontWeight: "600" }}
           >
             Back
           </Button>
-          <Button
-            type="primary"
-            htmlType="submit"
-            size="large"
-            loading={loading}
-            style={{
-              background: BRAND_PURPLE,
-              borderColor: BRAND_PURPLE,
-              borderRadius: "8px",
-              fontWeight: "600",
-              padding: "0 32px",
-            }}
-          >
-            {loading ? "Creating..." : "Create Advisor"}
-          </Button>
+
+          <Space wrap>
+            <Button
+              size="large"
+              icon={<EyeOutlined />}
+              onClick={handlePreview}
+              style={{
+                borderColor: BRAND_PURPLE,
+                color: BRAND_PURPLE,
+                borderRadius: "8px",
+                fontWeight: "600",
+                padding: "0 32px",
+              }}
+            >
+              Review Details
+            </Button>
+            <Button
+              type="primary"
+              onClick={handleSubmit}
+              size="large"
+              loading={loading}
+              style={{
+                background: BRAND_PURPLE,
+                borderColor: BRAND_PURPLE,
+                borderRadius: "8px",
+                fontWeight: "600",
+                padding: "0 32px",
+              }}
+            >
+              {loading ? "Creating..." : "Create Advisor"}
+            </Button>
+          </Space>
         </div>
       </Form>
+
+      {/* --- PREVIEW MODAL --- */}
+      <Modal
+        title="Review Advisor Details"
+        open={previewVisible}
+        onCancel={() => setPreviewVisible(false)}
+        footer={[
+          <Button key="back" onClick={() => setPreviewVisible(false)}>
+            Edit Details
+          </Button>,
+          <Button key="submit" type="primary" loading={loading} onClick={handleSubmit} style={{ background: BRAND_PURPLE }}>
+            Confirm & Create
+          </Button>,
+        ]}
+        width={800}
+      >
+        {previewData && (
+          <Row gutter={[24, 24]} style={{ marginTop: 16 }}>
+            <Col xs={24} md={18}>
+              <Descriptions bordered column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }} size="small">
+                <Descriptions.Item label="First Name">{previewData.first_name}</Descriptions.Item>
+                <Descriptions.Item label="Last Name">{previewData.last_name}</Descriptions.Item>
+                <Descriptions.Item label="Email">{previewData.email}</Descriptions.Item>
+                <Descriptions.Item label="Phone">+{previewData.country_code} {previewData.phone}</Descriptions.Item>
+                <Descriptions.Item label="Date of Birth">{previewData.dateOfBirth ? previewData.dateOfBirth.format("DD/MM/YYYY") : "N/A"}</Descriptions.Item>
+                <Descriptions.Item label="Nationality">{previewData.nationality || "N/A"}</Descriptions.Item>
+                <Descriptions.Item label="Gender">{previewData.gender || "N/A"}</Descriptions.Item>
+                <Descriptions.Item label="Department">{previewData.department || "N/A"}</Descriptions.Item>
+                <Descriptions.Item label="Designation">{previewData.designation || "N/A"}</Descriptions.Item>
+                <Descriptions.Item label="Join Date">{previewData.joinDate ? previewData.joinDate.format("DD/MM/YYYY") : "N/A"}</Descriptions.Item>
+                <Descriptions.Item label="Max Leads">{previewData.maxLeadsCapacity || "N/A"}</Descriptions.Item>
+              </Descriptions>
+            </Col>
+            <Col xs={24} md={6} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <Text strong style={{ marginBottom: 8 }}>Profile Photo</Text>
+              <img 
+                src={profileUrl} 
+                alt="Profile Preview" 
+                style={{ 
+                  width: 120, 
+                  height: 120, 
+                  borderRadius: '50%', 
+                  objectFit: 'cover', 
+                  border: `3px solid ${BRAND_PURPLE}`,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }} 
+              />
+            </Col>
+          </Row>
+        )}
+      </Modal>
 
       <style jsx global>{`
         .custom-phone-select .ant-select-selector {
