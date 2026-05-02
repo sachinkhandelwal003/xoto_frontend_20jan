@@ -1070,3 +1070,4 @@ export default function VaultPartners() {
     </div>
   );
 }
+
