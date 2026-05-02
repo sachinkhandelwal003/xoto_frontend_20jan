@@ -4,6 +4,8 @@ import logo from "../../assets/img/xoto vault.png";
 import maskgroup from "../../assets/img/Maskgroup1.png";
 import rentimg from "../../assets/img/rental-home1.png";
 import personimg from "../../assets/img/rent-person.png";
+import fourth from "../../assets/img/fourth.png";
+import fifth from "../../assets/img/step4.png";
 
 const dmSans = {
   fontFamily: "'DM Sans', sans-serif",
@@ -58,10 +60,10 @@ export default function Third() {
           <div className="absolute -top-14 left-0 w-full flex justify-between px-10">
 
             {/* STEP 1 */}
-            <div className="w-28 h-28 flex justify-center">
+            <div className="w-28 h-28 flex mt-4 justify-center">
               <button
                 onClick={() => setStep(1)}
-                className={`w-28 h-28 rounded-full flex items-center justify-center transition-all duration-300 
+                className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 
                 ${step >= 1 ? "bg-[#5C039B] scale-110 shadow-xl" : "bg-gray-500/50"}`}
               >
                 <img src={rentimg} className="w-14 h-14" />
@@ -83,18 +85,22 @@ export default function Third() {
             <div className="w-28 h-28 flex justify-center items-center">
               <button
                 onClick={() => setStep(3)}
-                className={`w-12 h-12 rounded-full transition-all duration-300 
+                className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 
                 ${step >= 3 ? "bg-[#5C039B] scale-110 shadow-xl" : "bg-gray-500/50"}`}
-              />
-            </div>
+              >
+                <img src={fourth} className="w-10 h-10 " />
+                </button>
+              </div>
 
             {/* STEP 4 */}
             <div className="w-28 h-28 flex justify-center items-center">
               <button
                 onClick={() => setStep(4)}
-                className={`w-12 h-12 rounded-full transition-all duration-300 
+                className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 
                 ${step >= 4 ? "bg-[#5C039B] scale-110 shadow-xl" : "bg-gray-500/50"}`}
-              />
+              >
+                <img src={fifth} className="w-10 h-10 ml-2" />
+              </button>
             </div>
           </div>
 

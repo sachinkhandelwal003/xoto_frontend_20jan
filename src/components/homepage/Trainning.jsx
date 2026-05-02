@@ -29,7 +29,7 @@ export default function ComingSoon() {
 
           <button
             onClick={() => navigate("/ecosystem")}
-            className="mt-4 inline-block rounded-full bg-white px-8 py-3 text-lg text-black transition hover:bg-gray-200"
+            className="mt-4 inline-block rounded-full bg-white px-8 py-3 text-lg text-black transition hover:bg-[#5c039b] hover:text-white "
           >
             Take me back to Partner Page
           </button>
