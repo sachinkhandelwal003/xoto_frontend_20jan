@@ -814,6 +814,9 @@ useEffect(() => {
 if (roleCode === '21' && partnerCategory !== 'individual') {
   delete modulesMap['Create Lead'];
 }
+ if (partnerCategory === 'individual') {
+    delete modulesMap['Vault Partners'];
+  }
 
     // 3. Sorting
     const ordered = [];
@@ -886,6 +889,11 @@ if (roleCode === '21' && partnerCategory !== 'individual') {
               <div className="text-center">
                 <div className="text-xs uppercase tracking-widest text-purple-300/80">Welcome</div>
                 <div className="text-sm font-bold text-purple-200 capitalize">{displayRoleName}</div>
+                  {roleCode === '21' && partnerCategory && (
+    <div className="text-[11px] mt-1 px-2 py-[2px] rounded-full bg-purple-700/40 text-purple-200 capitalize inline-block">
+      {partnerCategory}
+    </div>
+  )}
               </div>
             )}
           </div>

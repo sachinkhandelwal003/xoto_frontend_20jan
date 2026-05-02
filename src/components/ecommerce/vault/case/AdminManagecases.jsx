@@ -250,7 +250,7 @@ const fetchCommissionPreview = async () => {
           border: isDisbursed ? `1px solid ${SUCCESS_COLOR}40` : `1px solid ${THEME_COLOR}20`,
           overflow: 'hidden',
           height: '100%',
-          background: isDisbursed ? `linear-gradient(135deg, ${SUCCESS_LIGHT} 0%, #fff 100%)` : '#fff',
+          background: isDisbursed ? `linear-gradient(135deg, #F3E8FF 0%, #ffffff 100%)` : '#fff',
           transition: 'transform 0.3s ease, box-shadow 0.3s ease',
           position: 'relative'
         }}

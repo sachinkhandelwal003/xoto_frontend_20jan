@@ -54,6 +54,8 @@ const VaultCreateadvisor = () => {
       }))
       .sort((a, b) => {
         const aPriority = priorityIsoCodes.includes(a.iso);
+
+        
         const bPriority = priorityIsoCodes.includes(b.iso);
         if (aPriority && !bPriority) return -1;
         if (!aPriority && bPriority) return 1;
