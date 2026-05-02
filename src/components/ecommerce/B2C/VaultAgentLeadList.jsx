@@ -21,6 +21,18 @@ const PM = "#7C3AED";
 const PL = "#F5F0FF";
 const PB = "#E9D5FF";
 
+// Role slug mapping for navigation
+const roleSlugMap = {
+  0: "superadmin", 
+  1: "admin", 
+  2: "customer",
+  15: "agency", 
+  16: "agent", 
+  17: "developer", 
+  18: "vault-admin",
+  21: "partner"
+};
+
 // ─── Static config ──────────────────────────────────────────────────────────
 const STATUS_CFG = {
   New                        : { color: "blue",    bg: "#EFF6FF", text: "#1D4ED8" },
@@ -64,6 +76,9 @@ const INIT_FILTERS = {
 const VaultAgentLeadList = () => {
   const { user }   = useSelector((s) => s.auth);
   const navigate   = useNavigate();
+  
+  // Get role slug for navigation
+  const roleSlug = roleSlugMap[user?.role?.code] ?? "vault-admin";
 
   // ─── Data state ─────────────────────────────────────────────────────────
   const [data,         setData]         = useState([]);
@@ -90,6 +105,17 @@ const VaultAgentLeadList = () => {
 
   // Active filter count
   const activeCount = Object.entries(applied).filter(([, v]) => v !== "" && v !== undefined).length;
+
+  // ─── Navigation handlers with roleSlug ────────────────────────────────────
+  const handleViewDetail = (id) => {
+    if (id) navigate(`/dashboard/${roleSlug}/vault/lead/${id}`);
+    else message.warning("Lead ID not available");
+  };
+
+  const handleUploadDocs = (id) => {
+    if (!id) { message.warning("Lead ID not available"); return; }
+    navigate(`/dashboard/${roleSlug}/vault/lead/documents/${id}`);
+  };
 
   // ─── Fetch leads ─────────────────────────────────────────────────────────
   const fetchLeads = useCallback(async (page = currentPage, limit = itemsPerPage, f = applied) => {
@@ -183,22 +209,12 @@ const VaultAgentLeadList = () => {
     fetchLeads(1, itemsPerPage, f);
   };
 
-  const handleViewDetail = (id) => {
-    if (id) navigate(`/dashboard/vaultagentlead-admin-detail/vault/lead/${id}`);
-    else message.warning("Lead ID not available");
-  };
-
-  const handleUploadDocs = (id) => {
-    if (!id) { message.warning("Lead ID not available"); return; }
-    navigate(`/dashboard/vaultagent/vault/lead/documents/${id}`);
-  };
-
   // ── Open assign modal ───────────────────────────────────────────────────
   const openAssign = (record) => {
     const leadId     = record?._id || record?.leadId;
     const clientName = record?.customerInfo?.fullName || "this lead";
     // Pre-select already assigned advisor if any
-    const existingAdvisorId = record?.assignedAdvisor?._id || record?.advisorId || null;
+    const existingAdvisorId = record?.assignedTo?.advisorId || null;
     setAssignTarget({ leadId, clientName });
     setSelectedAdvisor(existingAdvisorId);
     setAssignModal(true);
@@ -260,16 +276,6 @@ const VaultAgentLeadList = () => {
         );
       },
     },
-    // {
-    //   key  : "loanAmountRequired",
-    //   title: "Loan Amount",
-    //   render: (_, r) => {
-    //     const amt = r?.propertyDetails?.loanAmountRequired;
-    //     return amt
-    //       ? <span style={{ fontWeight: 600, color: "#059669", fontSize: 13 }}>AED {fmt(amt)}</span>
-    //       : <span style={{ color: "#D1D5DB" }}>—</span>;
-    //   },
-    // },
     {
       key  : "referralType",
       title: "Referral Type",
@@ -291,44 +297,44 @@ const VaultAgentLeadList = () => {
       },
     },
     {
-  key: "assignedAdvisor",
-  title: "Assigned Advisor",
-  render: (_, r) => {
-    const assigned = r?.assignedTo;
-    const name = assigned?.advisorName;
-    const isAssigned = !!assigned?.advisorId;
+      key: "assignedAdvisor",
+      title: "Assigned Advisor",
+      render: (_, r) => {
+        const assigned = r?.assignedTo;
+        const name = assigned?.advisorName;
+        const isAssigned = !!assigned?.advisorId;
 
-    if (isAssigned) {
-      return (
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Avatar size={26} icon={<UserOutlined />} />
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>
-              {name || "Assigned"}
+        if (isAssigned) {
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Avatar size={26} icon={<UserOutlined />} />
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>
+                  {name || "Assigned"}
+                </div>
+                <div style={{ fontSize: 10, color: "#10B981", fontWeight: 600 }}>
+                  ● Assigned
+                </div>
+              </div>
             </div>
-            <div style={{ fontSize: 10, color: "#10B981", fontWeight: 600 }}>
-              ● Assigned
-            </div>
-          </div>
-        </div>
-      );
-    }
+          );
+        }
 
-    return (
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <Avatar size={26} icon={<UserOutlined />} />
-        <div>
-          <div style={{ fontSize: 12, color: "#D97706", fontWeight: 600 }}>
-            Unassigned
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Avatar size={26} icon={<UserOutlined />} />
+            <div>
+              <div style={{ fontSize: 12, color: "#D97706", fontWeight: 600 }}>
+                Unassigned
+              </div>
+              <div style={{ fontSize: 10, color: "#9CA3AF" }}>
+                ● Not Assigned
+              </div>
+            </div>
           </div>
-          <div style={{ fontSize: 10, color: "#9CA3AF" }}>
-            ● Not Assigned
-          </div>
-        </div>
-      </div>
-    );
-  },
-},
+        );
+      },
+    },
     {
       key  : "currentStatus",
       title: "Status",
@@ -343,38 +349,6 @@ const VaultAgentLeadList = () => {
         );
       },
     },
-    // {
-    //   key  : "assigned",
-    //   title: "Advisor",
-    //   render: (_, r) => {
-    //     const advisor = r?.assignedAdvisor;
-    //     const hasAdvisor = advisor || r?.advisorId;
-    //     if (hasAdvisor) {
-    //       const name = advisor?.first_name
-    //         ? `${advisor.first_name} ${advisor.last_name || ""}`.trim()
-    //         : advisor?.name || "Assigned";
-    //       return (
-    //         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-    //           <div style={{ width: 26, height: 26, borderRadius: "50%", background: "#F5F0FF", border: "1.5px solid #E9D5FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-    //             <UserOutlined style={{ fontSize: 11, color: P }} />
-    //           </div>
-    //           <div>
-    //             <div style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{name}</div>
-    //             <div style={{ fontSize: 10, color: "#10B981", fontWeight: 600 }}>● Assigned</div>
-    //           </div>
-    //         </div>
-    //       );
-    //     }
-    //     return (
-    //       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-    //         <div style={{ width: 26, height: 26, borderRadius: "50%", background: "#FFFBEB", border: "1.5px solid #FDE68A", display: "flex", alignItems: "center", justifyContent: "center" }}>
-    //           <UserOutlined style={{ fontSize: 11, color: "#D97706" }} />
-    //         </div>
-    //         <span style={{ fontSize: 12, color: "#D97706", fontWeight: 500 }}>Unassigned</span>
-    //       </div>
-    //     );
-    //   },
-    // },
     {
       key  : "sourceInfo",
       title: "Agent",
@@ -403,10 +377,9 @@ const VaultAgentLeadList = () => {
       title: "Actions",
       align: "center",
       render: (_, r) => {
-        const refType    = (r?.referralType || "").trim().toLowerCase();
-        const leadId     = r?._id || r?.leadId;
-        const showUpload = refType === "referral" || refType === "referral only" || refType.includes("referral only");
-const hasAdvisor = !!r?.assignedTo?.advisorId;
+        const leadId = r?._id || r?.leadId;
+        const hasAdvisor = !!r?.assignedTo?.advisorId;
+        
         return (
           <Space size={4}>
             {/* View */}
@@ -418,6 +391,18 @@ const hasAdvisor = !!r?.assignedTo?.advisorId;
                 style={{ color: P, fontWeight: 500, fontSize: 12 }}
               >
                 View
+              </Button>
+            </Tooltip>
+
+            {/* Upload Docs */}
+            <Tooltip title="Upload Documents">
+              <Button
+                type="text"
+                icon={<UploadOutlined />}
+                onClick={() => handleUploadDocs(leadId)}
+                style={{ color: P, fontWeight: 500, fontSize: 12 }}
+              >
+                Docs
               </Button>
             </Tooltip>
 
@@ -439,9 +424,6 @@ const hasAdvisor = !!r?.assignedTo?.advisorId;
                 {hasAdvisor ? "Reassign" : "Assign"}
               </Button>
             </Tooltip>
-
-            {/* Upload docs */}
-          
           </Space>
         );
       },
@@ -515,15 +497,11 @@ const hasAdvisor = !!r?.assignedTo?.advisorId;
 
       {/* ── Stats Card ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 18 }}>
-        {[
-          { label: "Total Leads", value: totalItems, sub: "in pipeline", color: P },
-        ].map((s, i) => (
-          <div key={i} className="vll-stat" style={{ background: "white", borderRadius: 14, padding: "14px 18px", border: "1px solid #EDE9F6", boxShadow: "0 1px 6px rgba(92,3,155,0.05)", transition: "all .2s" }}>
-            <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 6 }}>{s.label}</div>
-            <div style={{ fontSize: 26, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
-            <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 4 }}>{s.sub}</div>
-          </div>
-        ))}
+        <div className="vll-stat" style={{ background: "white", borderRadius: 14, padding: "14px 18px", border: "1px solid #EDE9F6", boxShadow: "0 1px 6px rgba(92,3,155,0.05)", transition: "all .2s" }}>
+          <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 6 }}>Total Leads</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: P, lineHeight: 1 }}>{totalItems}</div>
+          <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 4 }}>in pipeline</div>
+        </div>
       </div>
 
       {/* ── Quick Search + Status Pills ── */}

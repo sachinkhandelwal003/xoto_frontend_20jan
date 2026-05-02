@@ -1,30 +1,4 @@
-/**
- * BlogManagement.jsx — Full-featured Blog CMS
- *
- * NEW FEATURES ADDED:
- * ─────────────────────────────────────────────────────────────────────
- *  1. IMPORT FILE BUTTON — supports: .docx, .pdf, .txt, .html, .md, .rtf
- *     • DOCX  → rich HTML via mammoth.js  (npm install mammoth)
- *     • PDF   → text extraction via pdfjs-dist  (npm install pdfjs-dist)
- *     • TXT   → paragraphs
- *     • HTML  → sanitised HTML
- *     • MD    → Markdown → HTML (bold, italic, lists, headings, code …)
- *     • RTF   → plain-text fallback
- *
- *  2. FORMAT-PRESERVING PASTE
- *     • Bold, Italic, Underline, Strikethrough survive from ANY source
- *     • Bullet/numbered lists survive
- *     • Headings survive
- *     • Word / Google-Docs junk (mso-*, namespace tags, class noise) is
- *       stripped while semantic structure is kept
- *     • Works identically on every OS / browser
- * ─────────────────────────────────────────────────────────────────────
- *
- * Required packages (run once):
- *   npm install mammoth pdfjs-dist
- */
-
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo} from 'react';
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
 import JoditEditor from 'jodit-react';
 import DOMPurify from 'dompurify';
@@ -49,15 +23,14 @@ import {
   UndoOutlined, ScissorOutlined, ZoomInOutlined, BookOutlined, CalendarOutlined,
   RocketOutlined, TagOutlined,
   ArrowLeftOutlined, ArrowRightOutlined, SaveOutlined,
-  AppstoreAddOutlined, ImportOutlined, LoadingOutlined,
-  FilePdfOutlined, FileWordOutlined, FileMarkdownOutlined,
+  AppstoreAddOutlined, LoadingOutlined,
 } from '@ant-design/icons';
 
 const { Text } = Typography;
 const { Option } = Select;
 const { useBreakpoint } = Grid;
 const { TextArea } = Input;
-const { TabPane } = Tabs;
+// const { TabPane } = Tabs;  
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS (unchanged)
@@ -82,7 +55,7 @@ const THEME = {
 //  GLOBAL STYLES
 // ─────────────────────────────────────────────
 const GLOBAL_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.bunny.net/css?family=playfair-display:600,600i,700,700i,800,800i|plus-jakarta-sans:400,500,600,700,800&display=swap');
 
   .bm-root * { box-sizing: border-box; }
   .bm-root {
@@ -93,7 +66,6 @@ const GLOBAL_STYLES = `
     color: #0f172a;
   }
 
-  /* ── HEADER ── */
   .bm-header {
     display: flex; justify-content: space-between; align-items: flex-end;
     margin-bottom: 32px; flex-wrap: wrap; gap: 16px;
@@ -119,7 +91,6 @@ const GLOBAL_STYLES = `
     box-shadow: 0 6px 16px rgba(109,40,217,.3) !important;
   }
 
-  /* ── STATS ── */
   .bm-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; margin-bottom: 32px; }
   .bm-stat-card {
     background: #fff; border-radius: 16px; padding: 24px;
@@ -136,7 +107,6 @@ const GLOBAL_STYLES = `
   .bm-stat-icon.blue   { background: #eff6ff; color: #3b82f6; }
   .bm-stat-value { font-family: 'Plus Jakarta Sans',sans-serif; font-size: 32px; font-weight: 800; color: #0f172a; line-height: 1; letter-spacing: -0.5px; }
 
-  /* ── FILTERS ── */
   .bm-filters {
     background: #fff; border-radius: 16px; padding: 16px 20px;
     border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,.02);
@@ -147,7 +117,6 @@ const GLOBAL_STYLES = `
     height: 42px !important; font-weight: 500; font-family: 'Plus Jakarta Sans',sans-serif;
   }
 
-  /* ── BLOG CARD ── */
   .bm-blog-card {
     background: #fff; border-radius: 16px; border: 1px solid #e2e8f0;
     overflow: hidden; margin-bottom: 20px;
@@ -182,30 +151,24 @@ const GLOBAL_STYLES = `
   .bm-meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #64748b; font-weight: 500; }
   .bm-meta-item strong { color: #0f172a; font-weight: 600; }
 
-  /* ── MODAL ── */
   .bm-modal .ant-modal-content { border-radius: 16px !important; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 20px 40px -10px rgba(0,0,0,.1) !important; }
   .bm-modal .ant-modal-header { background: #ffffff !important; padding: 24px 32px 20px !important; border-bottom: 1px solid #f1f5f9 !important; margin-bottom: 0 !important; }
   .bm-modal .ant-modal-title { color: #0f172a !important; font-family: 'Plus Jakarta Sans',sans-serif !important; font-size: 18px !important; font-weight: 700 !important; }
   .bm-modal .ant-modal-close-x { color: #64748b !important; font-size: 16px; }
-  .bm-modal .ant-modal-body { padding: 24px 32px !important; }
+  .bm-modal .ant-modal-body { padding: 24px 32px !important; max-height: 78vh; overflow-y: auto; }
 
-  /* ── FOOTER ACTIONS ── */
   .bm-footer-bar { display: flex; justify-content: space-between; align-items: center; padding: 20px 0 0; border-top: 1px solid #f1f5f9; margin-top: 12px; }
   .bm-save-draft-btn { height: 44px !important; padding: 0 24px !important; border-radius: 10px !important; border-color: #cbd5e1 !important; color: #475569 !important; font-weight: 600 !important; background: #fff !important; font-size: 14px !important; }
   .bm-publish-btn { height: 44px !important; padding: 0 28px !important; border-radius: 10px !important; background: #6d28d9 !important; border: none !important; font-weight: 600 !important; font-size: 14px !important; color: #fff !important; }
 
-  /* ── IMPORT ZONE (redesigned) ── */
+  /* IMPORT ZONE */
   .bm-import-zone {
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    background: #ffffff;
-    overflow: hidden;
-    margin-bottom: 16px;
+    border: 1px solid #e2e8f0; border-radius: 12px;
+    background: #ffffff; overflow: hidden; margin-bottom: 16px;
   }
   .bm-import-zone-top {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 16px;
-    border-bottom: 0.5px solid #f1f5f9;
+    padding: 14px 16px; border-bottom: 0.5px solid #f1f5f9;
     gap: 12px; flex-wrap: wrap;
   }
   .bm-import-zone-left { display: flex; align-items: center; gap: 12px; }
@@ -219,11 +182,8 @@ const GLOBAL_STYLES = `
   .bm-import-zone-sub { font-size: 12px; color: #64748b; margin: 0; font-weight: 400; }
   .bm-import-btn {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 14px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #ffffff;
-    color: #0f172a;
+    padding: 7px 14px; border: 1px solid #e2e8f0; border-radius: 8px;
+    background: #ffffff; color: #0f172a;
     font-size: 13px; font-weight: 600;
     cursor: pointer; white-space: nowrap; flex-shrink: 0;
     transition: background 0.15s, border-color 0.15s;
@@ -241,7 +201,6 @@ const GLOBAL_STYLES = `
     font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px;
     letter-spacing: 0.2px; display: inline-flex; align-items: center; gap: 4px;
   }
-  .bm-format-badge svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .bm-format-badge.docx { background: #dbeafe; color: #1d4ed8; }
   .bm-format-badge.pdf  { background: #fee2e2; color: #b91c1c; }
   .bm-format-badge.txt  { background: #f1f5f9; color: #475569; }
@@ -250,24 +209,23 @@ const GLOBAL_STYLES = `
   .bm-format-badge.rtf  { background: #f5f3ff; color: #5b21b6; }
   .bm-import-paste-hint {
     display: flex; align-items: center; gap: 8px;
-    padding: 8px 16px;
-    background: #f8fafc;
+    padding: 8px 16px; background: #f8fafc;
     font-size: 11px; color: #94a3b8; font-weight: 500;
   }
   .bm-import-paste-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; flex-shrink: 0; }
 
-  /* ── PREVIEW MODAL ── */
+  /* PREVIEW MODAL */
   .preview-modal .ant-modal-content { border-radius: 16px !important; overflow: hidden; }
   .preview-modal .ant-modal-header { background: #ffffff !important; border-bottom: 1px solid #f1f5f9 !important; margin-bottom: 0 !important; padding: 20px 32px !important; }
   .preview-modal .ant-modal-title { color: #0f172a !important; font-weight: 700 !important; font-family: 'Plus Jakarta Sans',sans-serif !important; font-size: 18px !important; }
-  .preview-modal .ant-modal-body { padding: 0 !important; }
+  .preview-modal .ant-modal-body { padding: 0 !important; max-height: 78vh; overflow-y: auto; }
 
-  /* ── BLOG PREVIEW CONTENT ── */
+  /* BLOG PREVIEW CONTENT */
   .blog-preview-wrap { font-family: 'DM Sans',sans-serif; color: #0f172a; background: #fff; }
   .blog-preview-hero { width: 100%; height: 360px; object-fit: cover; display: block; border-bottom: 1px solid #e2e8f0; }
   .blog-preview-inner { padding: 48px 56px; max-width: 860px; margin: 0 auto; }
   .blog-preview-content ul { list-style-type: disc !important; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
-  .blog-preview-content ol { list-style-type: decimal !important; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
+.blog-preview-content ol { list-style-type: decimal; padding-left: 2.2em !important; margin: 0 0 1.5em 0 !important; display: block !important; }
   .blog-preview-content li { display: list-item !important; list-style-position: outside !important; margin: 0 0 .6em 0 !important; line-height: 1.8; color: #334155; font-size: 17px; }
   .blog-preview-content h1 { font-family: 'Playfair Display',serif; font-size: 2.4em; font-weight: 800; margin: 1.4em 0 .5em !important; line-height: 1.2; color: #0f172a; display: block; letter-spacing: -0.5px; }
   .blog-preview-content h2 { font-family: 'Playfair Display',serif; font-size: 1.8em; font-weight: 700; margin: 1.2em 0 .4em !important; line-height: 1.3; color: #0f172a; display: block; letter-spacing: -0.5px; }
@@ -281,7 +239,7 @@ const GLOBAL_STYLES = `
   .blog-preview-content u { text-decoration: underline !important; }
   .blog-preview-content s, .blog-preview-content strike { text-decoration: line-through !important; }
 
-  /* ── PAGINATION ── */
+  /* PAGINATION */
   .bm-pagination { display: flex; justify-content: space-between; align-items: center; padding: 24px 0; flex-wrap: wrap; gap: 12px; }
   .bm-page-info { font-size: 14px; color: #64748b; font-weight: 500; }
   .bm-page-btns { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -290,13 +248,13 @@ const GLOBAL_STYLES = `
   .bm-page-btn.active { background: #6d28d9; border-color: #6d28d9; color: #fff; }
   .bm-page-btn:disabled { opacity: .4; cursor: not-allowed; }
 
-  /* ── EMPTY STATE ── */
+  /* EMPTY STATE */
   .bm-empty { text-align: center; padding: 80px 20px; }
   .bm-empty-icon { font-size: 48px; color: #cbd5e1; margin-bottom: 16px; }
   .bm-empty-title { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
   .bm-empty-sub { font-size: 14px; color: #64748b; }
 
-  /* ── RESPONSIVE ── */
+  /* RESPONSIVE */
   @media (max-width: 992px) {
     .bm-stats { grid-template-columns: repeat(2,1fr); }
     .bm-blog-card { flex-direction: column; }
@@ -327,13 +285,10 @@ const GLOBAL_STYLES = `
 `;
 
 // ═══════════════════════════════════════════════════════════════════
-//  ① FORMATTING-PRESERVING HTML CLEANER
-//     Strips Word/Docs junk while keeping bold, italic, lists, headings
+//  HTML CLEANING UTILITIES
 // ═══════════════════════════════════════════════════════════════════
 const cleanExternalHtml = (html) => {
   if (!html) return '';
-
-  // ── Remove Word/IE conditional comments and embedded styles ──────
   let cleaned = html
     .replace(/<!--\[if[^\]]*\]>[\s\S]*?<!\[endif\]-->/gi, '')
     .replace(/<!--[\s\S]*?-->/g, '')
@@ -342,73 +297,52 @@ const cleanExternalHtml = (html) => {
     .replace(/<link[^>]*>/gi, '')
     .replace(/<\?xml[^?]*\?>/gi, '');
 
-  // ── Remove Word XML namespace tags (o:p, w:*, etc.) ─────────────
   cleaned = cleaned.replace(/<\/?\w+:\w+[^>]*>/gi, '');
   cleaned = cleaned.replace(/\s+xmlns[\w:]*="[^"]*"/gi, '');
   cleaned = cleaned.replace(/\s+lang="[^"]*"/gi, '');
 
-  // ── DOM-based semantic cleaning ──────────────────────────────────
   const div = document.createElement('div');
   div.innerHTML = cleaned;
-
-  // Remove dangerous elements
   div.querySelectorAll('script,iframe,object,embed,applet,head,style,link,meta').forEach(el => el.remove());
-
-  // Remove class, id, name attrs (Word class soup is useless)
   div.querySelectorAll('[class],[id],[name]').forEach(el => {
     el.removeAttribute('class');
     el.removeAttribute('id');
     el.removeAttribute('name');
   });
 
-  // ── Process nodes: extract formatting from style attrs ───────────
   const processNode = (node) => {
     if (node.nodeType !== Node.ELEMENT_NODE) return;
-
-    // Recurse children first (bottom-up)
     Array.from(node.children).forEach(processNode);
-
     const tag = node.tagName.toLowerCase();
     const style = node.getAttribute('style') || '';
-
-    const isBold = /font-weight\s*:\s*(bold|[6-9]\d{2})/i.test(style);
+    const isBold = /font-weight\s*:\s*(bold|[7-9]\d{2})/i.test(style);
     const isItalic = /font-style\s*:\s*italic/i.test(style);
     const isUnderline = /text-decoration[^;]*:\s*[^;]*underline/i.test(style);
     const isStrike = /text-decoration[^;]*:\s*[^;]*line-through/i.test(style);
-
-    // Keep text-align if present, strip everything else
     const alignMatch = style.match(/text-align\s*:\s*(left|center|right|justify)/i);
     node.removeAttribute('style');
     if (alignMatch) node.setAttribute('style', `text-align:${alignMatch[1]}`);
-
     if (tag === 'span' || tag === 'font') {
       const parent = node.parentNode;
       if (!parent) return;
-
       if (isBold || isItalic || isUnderline || isStrike) {
-        // Wrap children in semantic tags, then unwrap the span
         let inner = node.innerHTML;
-        // Apply in reverse so nesting order is correct
         if (isStrike)    inner = `<s>${inner}</s>`;
         if (isUnderline) inner = `<u>${inner}</u>`;
         if (isItalic)    inner = `<em>${inner}</em>`;
         if (isBold)      inner = `<strong>${inner}</strong>`;
-
         const temp = document.createElement('span');
         temp.innerHTML = inner;
         while (temp.firstChild) parent.insertBefore(temp.firstChild, node);
         parent.removeChild(node);
       } else {
-        // No formatting → just unwrap
         while (node.firstChild) parent.insertBefore(node.firstChild, node);
         parent.removeChild(node);
       }
     }
   };
-
   Array.from(div.children).forEach(processNode);
 
-  // ── Convert legacy <b>/<i> to <strong>/<em> ──────────────────────
   div.querySelectorAll('b').forEach(el => {
     const s = document.createElement('strong');
     s.innerHTML = el.innerHTML;
@@ -419,117 +353,41 @@ const cleanExternalHtml = (html) => {
     em.innerHTML = el.innerHTML;
     el.parentNode?.replaceChild(em, el);
   });
+ div.querySelectorAll('li').forEach(li => {
+  const text = li.textContent.trim();
 
-  // ── Remove empty <p> paragraphs Word generates ───────────────────
-  div.querySelectorAll('p').forEach(p => {
-    if (!p.textContent.trim() && !p.querySelector('img')) p.remove();
-  });
+  if (
+    text &&
+    !text.startsWith("•") &&
+    !text.match(/^\d+\./) &&
+    text.length > 80
+  ) {
+    const p = document.createElement("p");
+    p.innerHTML = li.innerHTML;
+    li.parentNode?.replaceChild(p, li);
+  }
+});
+    
 
-  // ── Final DOMPurify pass (security + allow all semantic tags) ────
   return DOMPurify.sanitize(div.innerHTML, {
-    ALLOWED_TAGS: [
-      'p','br','strong','em','u','s','strike','del',
-      'h1','h2','h3','h4','h5','h6',
-      'ul','ol','li','a','img','blockquote','pre','code',
-      'hr','table','thead','tbody','tr','td','th','div',
-    ],
+    ALLOWED_TAGS: ['p','br','strong','em','u','s','strike','del','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th','div'],
     ALLOWED_ATTR: ['href','src','alt','title','target','rel','style'],
     ALLOW_DATA_ATTR: false,
   });
 };
 
-// ── Sanitise regular HTML pastes (from webpages, etc.) ──────────────
 const sanitiseRegularHtml = (html) => {
   if (!html) return '';
   return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: [
-      'p','br','strong','b','em','i','u','s','strike','del',
-      'h1','h2','h3','h4','h5','h6',
-      'ul','ol','li','a','img','blockquote','pre','code',
-      'hr','table','thead','tbody','tr','td','th','div','span',
-    ],
+    ALLOWED_TAGS: ['p','br','strong','b','em','i','u','s','strike','del','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th','div','span'],
     ALLOWED_ATTR: ['href','src','alt','title','target','rel','style'],
     ALLOW_DATA_ATTR: false,
   });
 };
 
 // ═══════════════════════════════════════════════════════════════════
-//  ② MARKDOWN → HTML  (preserves bold, italic, lists, headings, code)
+//  MARKDOWN → HTML
 // ═══════════════════════════════════════════════════════════════════
-const markdownToHtml = (md) => {
-  if (!md) return '';
-  let html = md
-    // Escape HTML entities first
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-  const lines = html.split('\n');
-  const out = [];
-  let inUl = false, inOl = false, inPre = false, preBuffer = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
-
-    // Fenced code blocks
-    if (/^```/.test(line)) {
-      if (!inPre) {
-        inPre = true; preBuffer = [];
-      } else {
-        inPre = false;
-        out.push(`<pre><code>${preBuffer.join('\n')}</code></pre>`);
-        preBuffer = [];
-      }
-      continue;
-    }
-    if (inPre) { preBuffer.push(line); continue; }
-
-    // Close lists if not a list line
-    const isUl = /^[\s]*[-*+] /.test(line);
-    const isOl = /^[\s]*\d+\. /.test(line);
-    if (!isUl && inUl) { out.push('</ul>'); inUl = false; }
-    if (!isOl && inOl) { out.push('</ol>'); inOl = false; }
-
-    // Headings
-    if (/^###### /.test(line)) { out.push(`<h6>${inlineFormat(line.slice(7))}</h6>`); continue; }
-    if (/^##### /.test(line))  { out.push(`<h5>${inlineFormat(line.slice(6))}</h5>`); continue; }
-    if (/^#### /.test(line))   { out.push(`<h4>${inlineFormat(line.slice(5))}</h4>`); continue; }
-    if (/^### /.test(line))    { out.push(`<h3>${inlineFormat(line.slice(4))}</h3>`); continue; }
-    if (/^## /.test(line))     { out.push(`<h2>${inlineFormat(line.slice(3))}</h2>`); continue; }
-    if (/^# /.test(line))      { out.push(`<h1>${inlineFormat(line.slice(2))}</h1>`); continue; }
-
-    // Blockquote
-    if (/^> /.test(line)) { out.push(`<blockquote>${inlineFormat(line.slice(2))}</blockquote>`); continue; }
-
-    // Horizontal rule
-    if (/^(---|\*\*\*|___)$/.test(line.trim())) { out.push('<hr>'); continue; }
-
-    // Unordered list
-    if (isUl) {
-      if (!inUl) { out.push('<ul>'); inUl = true; }
-      out.push(`<li>${inlineFormat(line.replace(/^[\s]*[-*+] /, ''))}</li>`);
-      continue;
-    }
-
-    // Ordered list
-    if (isOl) {
-      if (!inOl) { out.push('<ol>'); inOl = true; }
-      out.push(`<li>${inlineFormat(line.replace(/^[\s]*\d+\. /, ''))}</li>`);
-      continue;
-    }
-
-    // Empty line
-    if (!line.trim()) continue;
-
-    // Paragraph
-    out.push(`<p>${inlineFormat(line)}</p>`);
-  }
-
-  if (inUl) out.push('</ul>');
-  if (inOl) out.push('</ol>');
-  if (inPre) out.push(`<pre><code>${preBuffer.join('\n')}</code></pre>`);
-
-  return out.join('\n');
-};
-
 const inlineFormat = (text) =>
   text
     .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
@@ -542,125 +400,74 @@ const inlineFormat = (text) =>
     .replace(/`(.+?)`/g, '<code>$1</code>')
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
 
+const markdownToHtml = (md) => {
+  if (!md) return '';
+  let html = md.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const lines = html.split('\n');
+  const out = [];
+  let inUl = false, inOl = false, inPre = false, preBuffer = [];
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    if (/^```/.test(line)) {
+      if (!inPre) { inPre = true; preBuffer = []; }
+      else { inPre = false; out.push(`<pre><code>${preBuffer.join('\n')}</code></pre>`); preBuffer = []; }
+      continue;
+    }
+    if (inPre) { preBuffer.push(line); continue; }
+    const isUl = /^[\s]*[-*+] /.test(line);
+    const isOl = /^[\s]*\d+\. /.test(line);
+    if (!isUl && inUl) { out.push('</ul>'); inUl = false; }
+    if (!isOl && inOl) { out.push('</ol>'); inOl = false; }
+    if (/^###### /.test(line)) { out.push(`<h6>${inlineFormat(line.slice(7))}</h6>`); continue; }
+    if (/^##### /.test(line))  { out.push(`<h5>${inlineFormat(line.slice(6))}</h5>`); continue; }
+    if (/^#### /.test(line))   { out.push(`<h4>${inlineFormat(line.slice(5))}</h4>`); continue; }
+    if (/^### /.test(line))    { out.push(`<h3>${inlineFormat(line.slice(4))}</h3>`); continue; }
+    if (/^## /.test(line))     { out.push(`<h2>${inlineFormat(line.slice(3))}</h2>`); continue; }
+    if (/^# /.test(line))      { out.push(`<h1>${inlineFormat(line.slice(2))}</h1>`); continue; }
+    if (/^> /.test(line)) { out.push(`<blockquote>${inlineFormat(line.slice(2))}</blockquote>`); continue; }
+    if (/^(---|\*\*\*|___)$/.test(line.trim())) { out.push('<hr>'); continue; }
+    if (isUl) { if (!inUl) { out.push('<ul>'); inUl = true; } out.push(`<li>${inlineFormat(line.replace(/^[\s]*[-*+] /, ''))}</li>`); continue; }
+    if (isOl) { if (!inOl) { out.push('<ol>'); inOl = true; } out.push(`<li>${inlineFormat(line.replace(/^[\s]*\d+\. /, ''))}</li>`); continue; }
+    if (!line.trim()) continue;
+    out.push(`<p>${inlineFormat(line)}</p>`);
+  }
+  if (inUl) out.push('</ul>');
+  if (inOl) out.push('</ol>');
+  if (inPre) out.push(`<pre><code>${preBuffer.join('\n')}</code></pre>`);
+  return out.join('\n');
+};
+
 // ═══════════════════════════════════════════════════════════════════
-//  ③ RTF → PLAIN TEXT  (improved control-code stripper)
+//  RTF → PLAIN TEXT
 // ═══════════════════════════════════════════════════════════════════
 const rtfToText = (rtf) => {
   if (!rtf) return '';
   let text = rtf;
-  // Remove RTF header and info groups
   text = text.replace(/\{\\info[\s\S]*?\}/gi, '');
-  // Remove binary blobs (pictures etc.)
   text = text.replace(/\{\\pict[\s\S]*?\}/gi, '');
-  // Decode bold/italic markers before stripping (rough)
-  text = text.replace(/\\b\s+([^\\{]+)/g, '**$1**');
-  text = text.replace(/\\i\s+([^\\{]+)/g, '_$1_');
-  // Paragraph breaks
   text = text.replace(/\\par[\s\r\n]/g, '\n\n');
   text = text.replace(/\\line[\s\r\n]/g, '\n');
-  // Remove all other control words and groups
   text = text.replace(/\{[^{}]*\}/g, '');
   text = text.replace(/\\[a-z]+\-?\d*\s?/gi, '');
   text = text.replace(/\\'[0-9a-f]{2}/gi, '');
   text = text.replace(/[{}\\]/g, '');
-  // Collapse whitespace
   text = text.replace(/\r\n|\r/g, '\n');
   text = text.replace(/\n{3,}/g, '\n\n');
   return text.trim();
 };
 
 // ═══════════════════════════════════════════════════════════════════
-//  ④ POST-PROCESS HTML — normalise after any import/parse
-//     • removes empty paragraphs & nbsp-only lines
-//     • merges adjacent same-type lists
-//     • unwraps pointless wrapper divs
-//     • detects plain-text list patterns and converts them
-//     • final DOMPurify pass
+//  POST-PROCESS HTML
 // ═══════════════════════════════════════════════════════════════════
 const postProcessHtml = (html) => {
   if (!html || !html.trim()) return '';
-
   const div = document.createElement('div');
   div.innerHTML = html;
-
-  // ── 1. Remove dangerous / structural noise ──────────────────────
   div.querySelectorAll('script,iframe,style,link,meta,head').forEach(el => el.remove());
-
-  // ── 2. Unwrap wrapper divs that serve no purpose ────────────────
-  // A div that only wraps a single block element → hoist the child
-  let changed = true;
-  while (changed) {
-    changed = false;
-    div.querySelectorAll('div').forEach(d => {
-      const blockTags = ['P','H1','H2','H3','H4','H5','H6','UL','OL','BLOCKQUOTE','PRE','HR','TABLE'];
-      const kids = Array.from(d.childNodes).filter(n =>
-        n.nodeType === Node.ELEMENT_NODE || (n.nodeType === Node.TEXT_NODE && n.textContent.trim())
-      );
-      if (kids.length === 1 && blockTags.includes(kids[0].nodeName)) {
-        const parent = d.parentNode;
-        if (parent) {
-          while (d.firstChild) parent.insertBefore(d.firstChild, d);
-          parent.removeChild(d);
-          changed = true;
-        }
-      }
-    });
-  }
-
-  // ── 3. Remove empty / whitespace-only / nbsp-only paragraphs ────
   div.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6').forEach(el => {
     const text = el.textContent.replace(/\u00a0/g, '').trim();
     if (!text && !el.querySelector('img, svg, picture')) el.remove();
   });
-
-  // ── 4. Detect plain-text bullet patterns inside <p> tags ────────
-  //    e.g.  <p>• Item one</p>  or  <p>- Item</p>  or  <p>* Item</p>
-  const bulletRe = /^[\s]*([•·▪▸◦\-\*])\s+(.+)$/;
-  const numRe    = /^[\s]*(\d+)[.)]\s+(.+)$/;
-
-  // Collect consecutive bullet <p>s and convert to <ul>/<ol>
-  const children = Array.from(div.children);
-  let i = 0;
-  while (i < children.length) {
-    const el = children[i];
-    if (el.tagName === 'P') {
-      const txt = el.textContent.trim();
-      if (bulletRe.test(txt)) {
-        // Collect run of bullet paragraphs
-        const ul = document.createElement('ul');
-        while (i < children.length && bulletRe.test(children[i]?.textContent?.trim())) {
-          const m = children[i].textContent.trim().match(bulletRe);
-          const li = document.createElement('li');
-          li.innerHTML = inlineFormat(m[2]);
-          ul.appendChild(li);
-          const old = children[i];
-          i++;
-          old.remove();
-        }
-        div.insertBefore(ul, div.children[i] || null);
-        children.splice(i - ul.children.length, ul.children.length, ul);
-        continue;
-      }
-      if (numRe.test(txt)) {
-        const ol = document.createElement('ol');
-        while (i < children.length && numRe.test(children[i]?.textContent?.trim())) {
-          const m = children[i].textContent.trim().match(numRe);
-          const li = document.createElement('li');
-          li.innerHTML = inlineFormat(m[2]);
-          ol.appendChild(li);
-          const old = children[i];
-          i++;
-          old.remove();
-        }
-        div.insertBefore(ol, div.children[i] || null);
-        children.splice(i - ol.children.length, ol.children.length, ol);
-        continue;
-      }
-    }
-    i++;
-  }
-
-  // ── 5. Merge adjacent lists of the same type ────────────────────
   div.querySelectorAll('ul + ul, ol + ol').forEach(list => {
     const prev = list.previousElementSibling;
     if (prev && prev.tagName === list.tagName) {
@@ -668,276 +475,119 @@ const postProcessHtml = (html) => {
       list.remove();
     }
   });
-
-  // ── 6. Convert ALL-CAPS short lines → <h2> (common in PDF exports)
-  div.querySelectorAll('p, div').forEach(el => {
-    const txt = el.textContent.trim();
-    if (
-      txt.length > 3 && txt.length < 80 &&
-      txt === txt.toUpperCase() &&
-      !/[.!?,;:]{2,}/.test(txt) &&        // not a sentence
-      !el.querySelector('img')
-    ) {
-      const h2 = document.createElement('h2');
-      h2.textContent = txt.charAt(0) + txt.slice(1).toLowerCase();
-      el.parentNode?.replaceChild(h2, el);
-    }
-  });
-
-  // ── 7. Detect short standalone bold lines → headings ────────────
-  div.querySelectorAll('p').forEach(el => {
-    const kids = Array.from(el.childNodes);
-    if (
-      kids.length === 1 &&
-      kids[0].nodeType === Node.ELEMENT_NODE &&
-      kids[0].tagName === 'STRONG'
-    ) {
-      const txt = kids[0].textContent.trim();
-      if (txt.length > 3 && txt.length < 100 && !txt.endsWith('.')) {
-        const h3 = document.createElement('h3');
-        h3.textContent = txt;
-        el.parentNode?.replaceChild(h3, el);
-      }
-    }
-  });
-
-  // ── 8. Final DOMPurify sanitisation ─────────────────────────────
   return DOMPurify.sanitize(div.innerHTML, {
-    ALLOWED_TAGS: [
-      'p','br','strong','em','u','s','del',
-      'h1','h2','h3','h4','h5','h6',
-      'ul','ol','li','a','img',
-      'blockquote','pre','code','hr',
-      'table','thead','tbody','tr','td','th',
-    ],
+    ALLOWED_TAGS: ['p','br','strong','em','u','s','del','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th'],
     ALLOWED_ATTR: ['href','src','alt','title','target','rel','style'],
     ALLOW_DATA_ATTR: false,
   });
 };
 
 // ═══════════════════════════════════════════════════════════════════
-//  ⑤ FILE → HTML  (dispatches by extension, then post-processes)
+//  FILE → HTML
 // ═══════════════════════════════════════════════════════════════════
 const convertFileToHtml = async (file) => {
   const name = file.name || '';
   const ext = name.split('.').pop().toLowerCase();
 
-  // ── DOCX via mammoth.js ─────────────────────────────────────────
   if (ext === 'docx') {
-    let mammoth;
-    try {
-      mammoth = (await import('mammoth')).default;
-    } catch {
-      throw new Error('mammoth not installed. Run: npm install mammoth');
-    }
+    let mammothLib;
+    try { mammothLib = (await import('mammoth')).default; }
+    catch { throw new Error('mammoth not installed. Run: npm install mammoth'); }
     const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.convertToHtml(
-      { arrayBuffer },
-      {
-        styleMap: [
-          // Common heading names across Word versions / languages
-          "p[style-name='Heading 1']          => h1:fresh",
-          "p[style-name='Heading 2']          => h2:fresh",
-          "p[style-name='Heading 3']          => h3:fresh",
-          "p[style-name='Heading 4']          => h4:fresh",
-          "p[style-name='Heading 5']          => h5:fresh",
-          "p[style-name='Heading 6']          => h6:fresh",
-          "p[style-name='heading 1']          => h1:fresh",
-          "p[style-name='heading 2']          => h2:fresh",
-          "p[style-name='heading 3']          => h3:fresh",
-          "p[style-name='Title']              => h1:fresh",
-          "p[style-name='Subtitle']           => h2:fresh",
-          "p[style-name='Quote']              => blockquote:fresh",
-          "p[style-name='Intense Quote']      => blockquote:fresh",
-          "p[style-name='List Paragraph']     => p:fresh",
-          // Inline formatting
-          "b                                  => strong",
-          "i                                  => em",
-          "u                                  => u",
-          "strike                             => s",
-        ],
-        convertImage: mammoth.images.imgElement(img =>
-          img.read('base64').then(data => ({
-            src: `data:${img.contentType};base64,${data}`,
-          }))
-        ),
-        ignoreEmptyParagraphs: true,
-      }
-    );
-    if (result.messages?.length) console.info('[mammoth warnings]', result.messages);
+    const result = await mammothLib.convertToHtml({ arrayBuffer }, {
+      styleMap: [
+        "p[style-name='Heading 1'] => h1:fresh",
+        "p[style-name='Heading 2'] => h2:fresh",
+        "p[style-name='Heading 3'] => h3:fresh",
+        "p[style-name='Title']     => h1:fresh",
+        "p[style-name='Subtitle']  => h2:fresh",
+        "b => strong", "i => em", "u => u", "strike => s",
+      ],
+      convertImage: mammothLib.images.imgElement(img =>
+        img.read('base64').then(data => ({ src: `data:${img.contentType};base64,${data}` }))
+      ),
+      ignoreEmptyParagraphs: true,
+    });
     return postProcessHtml(result.value);
   }
 
-  // ── PDF via pdfjs-dist ──────────────────────────────────────────
   if (ext === 'pdf') {
     let pdfjsLib;
     try {
-      pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
+      pdfjsLib = await import('pdfjs-dist');
       pdfjsLib.GlobalWorkerOptions.workerSrc =
         `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-    } catch {
-      try {
-        pdfjsLib = await import('pdfjs-dist');
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-      } catch {
-        throw new Error('pdfjs-dist not installed. Run: npm install pdfjs-dist');
-      }
-    }
-
+    } catch { throw new Error('pdfjs-dist not installed. Run: npm install pdfjs-dist'); }
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-    const allLines = [];  // { text, fontSize, bold, y }
-
+    const allLines = [];
     for (let p = 1; p <= pdf.numPages; p++) {
       const page = await pdf.getPage(p);
       const textContent = await page.getTextContent({ includeMarkedContent: false });
-
-      // Collect items with font size info
       const rawItems = textContent.items.filter(it => it.str?.trim());
-
-      // Group by Y position (same line = same rounded Y)
       const yMap = {};
       rawItems.forEach(item => {
         const y = Math.round(item.transform[5]);
         if (!yMap[y]) yMap[y] = [];
         yMap[y].push(item);
       });
-
-      // Sort Y top→bottom and build line objects
-      Object.keys(yMap)
-        .map(Number)
-        .sort((a, b) => b - a)
-        .forEach(y => {
-          const items = yMap[y];
-          const text = items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
-          if (!text) return;
-          // Estimate fontSize from transform matrix (element [3] = scaleY)
-          const fontSize = Math.abs(items[0]?.transform?.[3] || 12);
-          const isBold = (items[0]?.fontName || '').toLowerCase().includes('bold');
-          allLines.push({ text, fontSize, isBold, pageBreakBefore: y > 700 && p > 1 });
-        });
-
-      // Page separator (blank line between pages)
+      Object.keys(yMap).map(Number).sort((a, b) => b - a).forEach(y => {
+        const items = yMap[y];
+        const text = items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
+        if (!text) return;
+        const fontSize = Math.abs(items[0]?.transform?.[3] || 12);
+        const isBold = (items[0]?.fontName || '').toLowerCase().includes('bold');
+        allLines.push({ text, fontSize, isBold });
+      });
       allLines.push({ text: '', fontSize: 0, isBold: false, separator: true });
     }
-
-    // Determine "body" font size (mode of all sizes)
     const sizeFreq = {};
-    allLines.forEach(l => {
-      if (l.fontSize > 0) sizeFreq[Math.round(l.fontSize)] = (sizeFreq[Math.round(l.fontSize)] || 0) + 1;
-    });
-    const bodyFontSize = parseFloat(
-      Object.entries(sizeFreq).sort((a, b) => b[1] - a[1])[0]?.[0] || 12
-    );
-
-    // Convert lines → HTML
+    allLines.forEach(l => { if (l.fontSize > 0) sizeFreq[Math.round(l.fontSize)] = (sizeFreq[Math.round(l.fontSize)] || 0) + 1; });
+    const bodyFontSize = parseFloat(Object.entries(sizeFreq).sort((a, b) => b[1] - a[1])[0]?.[0] || 12);
     const htmlParts = [];
     let paraBuffer = [];
-
-    const flushPara = () => {
-      if (!paraBuffer.length) return;
-      htmlParts.push(`<p>${paraBuffer.join(' ')}</p>`);
-      paraBuffer = [];
-    };
-
+    const flushPara = () => { if (!paraBuffer.length) return; htmlParts.push(`<p>${paraBuffer.join(' ')}</p>`); paraBuffer = []; };
     allLines.forEach(line => {
-      if (!line.text || line.separator) {
-        flushPara();
-        return;
-      }
-
+      if (!line.text || line.separator) { flushPara(); return; }
       const txt = line.text.trim();
       const fs  = Math.round(line.fontSize);
       const bodyFs = Math.round(bodyFontSize);
-
-      // Heading detection by font size relative to body
-      if (fs >= bodyFs * 1.8 || (fs >= bodyFs * 1.4 && line.isBold && txt.length < 80)) {
-        flushPara();
-        htmlParts.push(`<h1>${txt}</h1>`);
-        return;
-      }
-      if (fs >= bodyFs * 1.4 || (fs >= bodyFs * 1.2 && line.isBold && txt.length < 80)) {
-        flushPara();
-        htmlParts.push(`<h2>${txt}</h2>`);
-        return;
-      }
-      if (fs >= bodyFs * 1.15 && line.isBold && txt.length < 100) {
-        flushPara();
-        htmlParts.push(`<h3>${txt}</h3>`);
-        return;
-      }
-
-      // Bullet detection
+      if (fs >= bodyFs * 1.8 || (fs >= bodyFs * 1.4 && line.isBold && txt.length < 80)) { flushPara(); htmlParts.push(`<h1>${txt}</h1>`); return; }
+      if (fs >= bodyFs * 1.4 || (fs >= bodyFs * 1.2 && line.isBold && txt.length < 80)) { flushPara(); htmlParts.push(`<h2>${txt}</h2>`); return; }
+      if (fs >= bodyFs * 1.15 && line.isBold && txt.length < 100) { flushPara(); htmlParts.push(`<h3>${txt}</h3>`); return; }
       const bulletMatch = txt.match(/^([•·▪▸◦\-\*])\s+(.+)$/);
       const numMatch    = txt.match(/^(\d+)[.)]\s+(.+)$/);
-      if (bulletMatch) {
-        flushPara();
-        htmlParts.push(`<ul><li>${bulletMatch[2]}</li></ul>`);
-        return;
-      }
-      if (numMatch) {
-        flushPara();
-        htmlParts.push(`<ol><li>${numMatch[2]}</li></ol>`);
-        return;
-      }
-
-      // Regular body text → accumulate into paragraph
-      // End paragraph when line ends with full stop / question / exclamation
+      if (bulletMatch) { flushPara(); htmlParts.push(`<ul><li>${bulletMatch[2]}</li></ul>`); return; }
+      if (numMatch)    { flushPara(); htmlParts.push(`<ol><li>${numMatch[2]}</li></ol>`); return; }
       paraBuffer.push(line.isBold ? `<strong>${txt}</strong>` : txt);
       if (/[.!?:]\s*$/.test(txt) && txt.length > 40) flushPara();
     });
-
     flushPara();
     return postProcessHtml(htmlParts.join('\n'));
   }
 
-  // ── Plain text ──────────────────────────────────────────────────
   if (ext === 'txt') {
     const text = await file.text();
-    // Detect if it looks like Markdown (has # headings or * bullets)
-    if (/^#{1,6}\s/m.test(text) || /^\s*[-*] /m.test(text)) {
-      return postProcessHtml(markdownToHtml(text));
-    }
-    const html = text
-      .split(/\n\n+/)
-      .filter(p => p.trim())
-      .map(block => {
-        const trimmed = block.trim();
-        // Short line, no period → might be a heading
-        if (trimmed.length < 80 && !trimmed.includes('.') && trimmed === trimmed.toUpperCase()) {
-          return `<h2>${trimmed.charAt(0) + trimmed.slice(1).toLowerCase()}</h2>`;
-        }
-        return `<p>${trimmed.replace(/\n/g, ' ')}</p>`;
-      })
-      .join('\n');
+    if (/^#{1,6}\s/m.test(text) || /^\s*[-*] /m.test(text)) return postProcessHtml(markdownToHtml(text));
+    const html = text.split(/\n\n+/).filter(p => p.trim()).map(block => `<p>${block.trim().replace(/\n/g, ' ')}</p>`).join('\n');
     return postProcessHtml(html);
   }
 
-  // ── HTML / HTM ─────────────────────────────────────────────────
   if (ext === 'html' || ext === 'htm') {
     const text = await file.text();
     const bodyMatch = text.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-    const raw = bodyMatch ? bodyMatch[1] : text;
-    return postProcessHtml(cleanExternalHtml(raw));
+    return postProcessHtml(cleanExternalHtml(bodyMatch ? bodyMatch[1] : text));
   }
 
-  // ── Markdown ───────────────────────────────────────────────────
   if (ext === 'md' || ext === 'markdown') {
     const text = await file.text();
     return postProcessHtml(markdownToHtml(text));
   }
 
-  // ── RTF ────────────────────────────────────────────────────────
   if (ext === 'rtf') {
     const text = await file.text();
     const plain = rtfToText(text);
-    // After stripping, treat as plain text
-    const html = plain
-      .split(/\n\n+/)
-      .filter(p => p.trim())
-      .map(p => `<p>${p.replace(/\n/g, ' ')}</p>`)
-      .join('\n');
+    const html = plain.split(/\n\n+/).filter(p => p.trim()).map(p => `<p>${p.replace(/\n/g, ' ')}</p>`).join('\n');
     return postProcessHtml(html);
   }
 
@@ -945,7 +595,7 @@ const convertFileToHtml = async (file) => {
 };
 
 // ─────────────────────────────────────────────
-//  HELPER UTILITIES  (unchanged from original)
+//  HELPER UTILITIES
 // ─────────────────────────────────────────────
 const htmlToPlainText = (html) => {
   if (!html) return '';
@@ -1024,9 +674,7 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [cropping, setCropping] = useState(false);
   const screens = Grid.useBreakpoint();
-
   useEffect(() => { if (open) { setCrop({ x: 0, y: 0 }); setZoom(1); setCroppedAreaPixels(null); } }, [open, imageSrc]);
-
   const handleConfirm = async () => {
     if (!croppedAreaPixels) return;
     setCropping(true);
@@ -1034,9 +682,9 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
     catch { message.error('Crop failed, please try again'); }
     finally { setCropping(false); }
   };
-
   return (
-    <Modal open={open} title={<Space><ScissorOutlined style={{ color: '#6d28d9' }} /><span style={{ color: '#0f172a' }}>{title || 'Crop Image'}</span></Space>} onCancel={onCancel} width={screens.xs ? '98%' : 620} centered destroyOnClose className="bm-modal"
+    <Modal open={open} title={<Space><ScissorOutlined style={{ color: '#6d28d9' }} /><span>{title || 'Crop Image'}</span></Space>}
+      onCancel={onCancel} width={screens.xs ? '98%' : 620} centered destroyOnClose className="bm-modal"
       footer={
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
           <Space>
@@ -1046,13 +694,17 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
           </Space>
           <Space>
             <Button onClick={onCancel} style={{ fontWeight: 600, borderRadius: 8 }}>Cancel</Button>
-            <Button type="primary" icon={<ScissorOutlined />} loading={cropping} onClick={handleConfirm} style={{ background: THEME.primary, borderColor: THEME.primary, borderRadius: 8, fontWeight: 600 }}>Apply Crop</Button>
+            <Button type="primary" icon={<ScissorOutlined />} loading={cropping} onClick={handleConfirm}
+              style={{ background: THEME.primary, borderColor: THEME.primary, borderRadius: 8, fontWeight: 600 }}>
+              Apply Crop
+            </Button>
           </Space>
         </div>
       }>
       <div style={{ position: 'relative', width: '100%', height: screens.xs ? 280 : 380, background: '#f8fafc', borderRadius: 12, overflow: 'hidden' }}>
         {imageSrc
-          ? <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={aspect} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_, px) => setCroppedAreaPixels(px)} style={{ containerStyle: { borderRadius: 12 }, cropAreaStyle: { border: '2px solid #8b5cf6', boxShadow: '0 0 0 9999px rgba(0,0,0,.65)' } }} />
+          ? <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={aspect} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_, px) => setCroppedAreaPixels(px)}
+              style={{ containerStyle: { borderRadius: 12 }, cropAreaStyle: { border: '2px solid #8b5cf6', boxShadow: '0 0 0 9999px rgba(0,0,0,.65)' } }} />
           : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><Text type="secondary">Loading image…</Text></div>}
       </div>
       <div style={{ marginTop: 12, textAlign: 'center' }}><Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>Drag to reposition · Scroll or slider to zoom</Text></div>
@@ -1066,7 +718,6 @@ const ImageCropModal = ({ open, imageSrc, aspect, title, onConfirm, onCancel }) 
 const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, label, extra, maxCount = 1 }) => {
   const [cropModal, setCropModal] = useState({ open: false, src: '' });
   const [pendingFile, setPendingFile] = useState(null);
-
   const handleBeforeUpload = (file) => {
     if (!['image/jpeg','image/png','image/jpg','image/webp'].includes(file.type)) { message.error('Only JPG, PNG, WEBP allowed'); return Upload.LIST_IGNORE; }
     if (file.size / 1024 / 1024 > maxSizeMB) { message.error(`Max ${maxSizeMB}MB`); return Upload.LIST_IGNORE; }
@@ -1075,7 +726,6 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
     reader.readAsDataURL(file);
     return Upload.LIST_IGNORE;
   };
-
   const handleCropConfirm = (blob) => {
     const fileName = pendingFile?.name || 'image.jpg';
     const croppedFile = new File([blob], fileName, { type: 'image/jpeg' });
@@ -1084,41 +734,41 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
     setCropModal({ open: false, src: '' }); setPendingFile(null);
     message.success('Image cropped!');
   };
-
   const handleEditCrop = (file) => {
     const src = file.url || file.preview;
     if (!src) { message.error('Cannot edit this image'); return; }
     setPendingFile(file.originFileObj || null);
     setCropModal({ open: true, src });
   };
-
-  const handlePreview = async (file) => {
-    if (!file.url && !file.preview && file.originFileObj) {
-      file.preview = await new Promise(res => { const r = new FileReader(); r.readAsDataURL(file.originFileObj); r.onload = () => res(r.result); });
-    }
-    const imageUrl = file.url || file.preview;
-    Modal.confirm({ icon: null, width: 600, centered: true, okButtonProps: { style: { display: 'none' } }, cancelButtonProps: { style: { display: 'none' } }, content: <div><img src={imageUrl} alt="preview" style={{ width: '100%', borderRadius: 12 }} /><div style={{ textAlign: 'center', marginTop: 16 }}><Button onClick={() => Modal.destroyAll()} style={{ fontWeight: 600 }}>Close</Button></div></div>, onCancel: () => Modal.destroyAll() });
-  };
-
   const itemRender = (originNode, file) => (
     <div style={{ position: 'relative', display: 'inline-block' }}>
       {originNode}
       <Tooltip title="Crop / Edit">
-        <button onClick={e => { e.stopPropagation(); handleEditCrop(file); }} style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', background: '#0f172a', border: 'none', borderRadius: 6, color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', zIndex: 10 }}>
+        <button onClick={e => { e.stopPropagation(); handleEditCrop(file); }}
+          style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', background: '#0f172a', border: 'none', borderRadius: 6, color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', zIndex: 10 }}>
           <ScissorOutlined style={{ fontSize: 10 }} /> EDIT
         </button>
       </Tooltip>
     </div>
   );
-
   return (
     <>
       <Form.Item label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>{label}</span>} extra={<span style={{ fontSize: 12, color: '#64748b' }}>{extra}</span>}>
-        <Upload listType="picture-card" fileList={fileList} onPreview={handlePreview} onChange={({ fileList: fl }) => { if (fl.length < fileList.length) onChange(fl); }} beforeUpload={handleBeforeUpload} maxCount={maxCount} itemRender={itemRender} accept="image/jpeg,image/png,image/webp">
-          {fileList.length < maxCount && <div style={{ textAlign: 'center' }}><PlusOutlined style={{ color: '#64748b', fontSize: 20 }} /><div style={{ marginTop: 8, fontSize: 12, color: '#475569', fontWeight: 600 }}>UPLOAD</div></div>}
+        <Upload listType="picture-card" fileList={fileList}
+          onChange={({ fileList: fl }) => { if (fl.length < fileList.length) onChange(fl); }}
+          beforeUpload={handleBeforeUpload} maxCount={maxCount} itemRender={itemRender}
+          accept="image/jpeg,image/png,image/webp">
+          {fileList.length < maxCount && (
+            <div style={{ textAlign: 'center' }}>
+              <PlusOutlined style={{ color: '#64748b', fontSize: 20 }} />
+              <div style={{ marginTop: 8, fontSize: 12, color: '#475569', fontWeight: 600 }}>UPLOAD</div>
+            </div>
+          )}
         </Upload>
       </Form.Item>
-      <ImageCropModal open={cropModal.open} imageSrc={cropModal.src} aspect={aspect} title={cropTitle} onConfirm={handleCropConfirm} onCancel={() => { setCropModal({ open: false, src: '' }); setPendingFile(null); }} />
+      <ImageCropModal open={cropModal.open} imageSrc={cropModal.src} aspect={aspect} title={cropTitle}
+        onConfirm={handleCropConfirm}
+        onCancel={() => { setCropModal({ open: false, src: '' }); setPendingFile(null); }} />
     </>
   );
 };
@@ -1129,13 +779,11 @@ const UploadWithCrop = ({ fileList, onChange, aspect, cropTitle, maxSizeMB = 5, 
 const BlogPreview = ({ data }) => {
   if (!data) return null;
   const { title, subHeading, content, authorName, authorDesignation, authorImage, tags, category, featuredImage, coverImage, createdAt, readingTime, headings } = data;
-
   const sanitized = content ? DOMPurify.sanitize(content, {
     ALLOWED_TAGS: ['p','br','strong','b','em','i','u','s','strike','del','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th','div','span'],
     ALLOWED_ATTR: ['href','src','alt','title','target','rel','style'],
     ALLOW_DATA_ATTR: false,
   }) : '';
-
   const heroImg = coverImage || featuredImage;
   return (
     <div className="blog-preview-wrap">
@@ -1162,7 +810,9 @@ const BlogPreview = ({ data }) => {
           <div style={{ background: '#f8fafc', borderRadius: 12, padding: 20, marginBottom: 32, border: '1px solid #e2e8f0' }}>
             <div style={{ fontWeight: 700, marginBottom: 12, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}><BookOutlined /> Table of Contents</div>
             <ol style={{ paddingLeft: 20, margin: 0 }}>
-              {headings.filter(h => h.level <= 3).map((h, i) => <li key={i} style={{ paddingLeft: (h.level - 1) * 16, listStyle: 'decimal', marginBottom: 6, color: '#475569', fontWeight: 500 }}>{h.text}</li>)}
+              {headings.filter(h => h.level <= 3).map((h, i) => (
+                <li key={i} style={{ paddingLeft: (h.level - 1) * 16, listStyle: 'decimal', marginBottom: 6, color: '#475569', fontWeight: 500 }}>{h.text}</li>
+              ))}
             </ol>
           </div>
         )}
@@ -1173,81 +823,250 @@ const BlogPreview = ({ data }) => {
 };
 
 // ─────────────────────────────────────────────
-//  JODIT EDITOR CONFIG  (format-preserving paste)
+//  JODIT EDITOR CONFIG
 // ─────────────────────────────────────────────
 const getEditorConfig = () => ({
   readonly: false,
-  placeholder: 'Write your blog here, or paste / import from Word, PDF, Google Docs…',
-  height: 480,
-  enableDragAndDropFileToEditor: true,
-  uploader: { insertImageAsBase64URI: true, imagesExtensions: ['jpg','png','jpeg','gif','svg','webp'] },
-  toolbarSticky: false,
+  height: 550,
+  minHeight: 400,
+  
+  // iframe: false रखो — true होने पर बहुत से buttons टूट जाते हैं
+  iframe: false,
+  
+  toolbarSticky: true,
+  toolbarStickyOffset: 0,
+  toolbarAdaptive: false,
+  showCharsCounter: true,
+  showWordsCounter: true,
+  showXPathInStatusbar: false,
 
-  // Let our wrapper's onPaste handle ALL rich-text pastes
   askBeforePasteHTML: false,
   askBeforePasteFromWord: false,
   defaultActionOnPaste: 'insert_as_html',
-  processPasteHTML: false,   // we sanitise before inserting
+  processPasteHTML: false,
 
-  removeButtons: ['file','video','print','about'],
-  spellcheck: true,
-  editorCssClass: 'jodit-clean-editor',
+  enter: 'P',
 
-  iframeStyle: `
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
-    body { font-family: 'DM Sans',sans-serif; line-height: 1.7; font-size: 16px; color: #1e293b; padding: 16px 20px; margin: 0; }
-    ul { list-style-type: disc !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
-    ol { list-style-type: decimal !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
-    li { display: list-item !important; list-style-position: outside !important; margin: .4em 0 !important; line-height: 1.8; }
-    ul ul { list-style-type: circle !important; }
-    ul ul ul { list-style-type: square !important; }
-    ol ol { list-style-type: lower-alpha !important; }
-    p { margin: .8em 0; }
-    h1 { font-family: 'Playfair Display',serif; font-size: 2.2em; font-weight: 800; margin: 1.2em 0 .5em; color: #0f172a; }
-    h2 { font-family: 'Playfair Display',serif; font-size: 1.8em; font-weight: 700; margin: 1.1em 0 .4em; color: #0f172a; }
-    h3 { font-family: 'Playfair Display',serif; font-size: 1.4em; font-weight: 600; margin: 1em 0 .35em; color: #334155; }
-    blockquote { border-left: 4px solid #6d28d9; padding: 12px 20px; margin: 1.2em 0; color: #475569; font-style: italic; background: #f8fafc; border-radius: 0 8px 8px 0; font-family: 'Playfair Display',serif; }
-    img { max-width: 100%; border-radius: 8px; margin: 1em 0; }
-    strong, b { font-weight: 700 !important; color: #0f172a !important; }
-    em, i { font-style: italic !important; }
-    u { text-decoration: underline !important; }
-    s, strike { text-decoration: line-through !important; }
-    a { color: #6d28d9; text-decoration: underline; font-weight: 500; }
-    pre, code { background: #f1f5f9; border-radius: 8px; padding: 2px 6px; font-family: monospace; color: #0f172a; }
-    pre { padding: 16px 20px; overflow-x: auto; }
-  `,
+  // ── FULL TOOLBAR ──────────────────────────────────────────────
+  buttons: [
+    'bold', 'italic', 'underline', 'strikethrough', '|',
+    'superscript', 'subscript', '|',
+    'ul', 'ol', '|',
+    'outdent', 'indent', '|',
+    'font', 'fontsize', 'brush', 'paragraph', '|',
+    'image', 'video', 'table', 'link', '|',
+    'align', '|',
+    'undo', 'redo', '|',
+    'hr', 'eraser', 'copyformat', '|',
+    'symbol', 'fullsize', '|',
+    'preview', 'print', '|',
+    'source',
+  ],
+
+  buttonsMD: [
+    'bold', 'italic', 'underline', '|',
+    'ul', 'ol', '|',
+    'font', 'fontsize', 'brush', 'paragraph', '|',
+    'image', 'table', 'link', '|',
+    'align', 'undo', 'redo', '|',
+    'fullsize', 'source',
+  ],
+
+  buttonsSM: [
+    'bold', 'italic', 'underline', '|',
+    'ul', 'ol', '|',
+    'image', 'link', '|',
+    'align', 'undo', 'redo',
+  ],
+
+  buttonsXS: [
+    'bold', 'italic', '|',
+    'ul', 'ol', '|',
+    'undo', 'redo',
+  ],
+
+  // ── FONT OPTIONS ─────────────────────────────────────────────
+  fontValues: {
+    'Plus Jakarta Sans,sans-serif': 'Plus Jakarta Sans',
+    'Arial,sans-serif':             'Arial',
+    'Georgia,serif':                'Georgia',
+    'Times New Roman,serif':        'Times New Roman',
+    'Courier New,monospace':        'Courier New',
+    'Verdana,sans-serif':           'Verdana',
+    'Trebuchet MS,sans-serif':      'Trebuchet MS',
+    'Playfair Display,serif':       'Playfair Display',
+  },
+
+  fontSizeValues: ['8','9','10','11','12','14','16','18','20','22','24','28','32','36','40','48','56','64','72'],
+
+  // ── COLOR PICKER ─────────────────────────────────────────────
+  colorPickerDefaultTab: 'color',
+  colors: {
+    greyscale:  ['#000000','#434343','#666666','#999999','#b7b7b7','#cccccc','#d9d9d9','#efefef','#f3f3f3','#ffffff'],
+    palette:    ['#980000','#ff0000','#ff9900','#ffff00','#00f0f0','#00ffff','#4a86e8','#0000ff','#9900ff','#ff00ff'],
+    full: [
+      '#e6b8a2','#dd7e6b','#cc4125','#a61c00','#85200c','#5b0f00',
+      '#f9cb9c','#f6b26b','#e69138','#b45309','#783f04','#3d1f00',
+      '#ffe599','#ffd966','#f1c232','#bf9000','#7f6000','#3d3d00',
+      '#b6d7a8','#93c47d','#6aa84f','#38761d','#274e13','#0c2704',
+      '#a4c2f4','#6d9eeb','#3c78d8','#1155cc','#1c4587','#073763',
+      '#b4a7d6','#8e7cc3','#674ea7','#351c75','#20124d','#0a0033',
+      '#ea9999','#e06666','#cc0000','#990000','#660000','#330000',
+    ],
+  },
+
+  // ── IMAGE CONFIG ─────────────────────────────────────────────
+  image: {
+    openOnDblClick: true,
+    editSrc: true,
+    useImageEditor: false,
+    editTitle: true,
+    editAlt: true,
+    editLink: true,
+    editSize: true,
+    editBorderRadius: true,
+    editMargins: true,
+    editStyle: true,
+    editClass: false,
+    editId: false,
+    showPreview: true,
+    selectImageAfterClose: true,
+  },
+
+  // ── LINK CONFIG ───────────────────────────────────────────────
+  link: {
+    openInNewTabCheckbox: true,
+    noFollowCheckbox: true,
+  },
+
+  // ── TABLE CONFIG ──────────────────────────────────────────────
+  table: {
+    allowCellResize: true,
+    useExtraClassesOptions: false,
+  },
+
+  // ── PLACEHOLDER ───────────────────────────────────────────────
+  placeholder: 'Start writing your blog post here…\n\nTips:\n• Paste from Word or Google Docs — formatting is preserved\n• Use Import File button above for .docx, .pdf, .md files',
+
+  // ── EDITOR CSS (non-iframe mode) ──────────────────────────────
+  style: {
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
+    fontSize:   '16px',
+    lineHeight: '1.75',
+    color:      '#1e293b',
+    padding:    '20px 28px',
+    minHeight:  '400px',
+  },
 
   extraCSS: `
-    .jodit-clean-editor { font-family: 'DM Sans',sans-serif; line-height: 1.7; font-size: 16px; color: #1e293b; }
-    .jodit-clean-editor ul { list-style-type: disc !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
-    .jodit-clean-editor ol { list-style-type: decimal !important; padding-left: 2.5em !important; margin: 1em 0 !important; display: block !important; }
-    .jodit-clean-editor li { display: list-item !important; list-style-position: outside !important; margin: .5em 0 !important; }
-    .jodit-clean-editor p { margin: .8em 0; }
-    .jodit-clean-editor strong, .jodit-clean-editor b { font-weight: 700 !important; }
-    .jodit-clean-editor em, .jodit-clean-editor i { font-style: italic !important; }
-    .jodit-clean-editor u { text-decoration: underline !important; }
-    .jodit-clean-editor s { text-decoration: line-through !important; }
-    .jodit-clean-editor h1,.jodit-clean-editor h2,.jodit-clean-editor h3 { font-family: 'Playfair Display',serif; margin: 1.2em 0 .5em; font-weight: 700; }
-    .jodit-clean-editor blockquote { border-left: 4px solid #6d28d9; padding: 12px 20px; margin: 1.2em 0; color: #475569; font-style: italic; background: #f8fafc; border-radius: 0 8px 8px 0; font-family: 'Playfair Display',serif; }
-    .jodit-clean-editor img { max-width: 100%; border-radius: 8px; }
-  `,
-});
+    /* Lists */
+    ul { list-style-type: disc    !important; padding-left: 28px !important; margin: 10px 0 !important; display: block !important; }
+    ol { list-style-type: decimal !important; padding-left: 28px !important; margin: 10px 0 !important; display: block !important; }
+    ul ul   { list-style-type: circle  !important; }
+    ul ul ul { list-style-type: square !important; }
+    ol ol   { list-style-type: lower-alpha !important; }
+    li {
+      display: list-item !important;
+      list-style-position: outside !important;
+      margin: 5px 0 !important;
+      line-height: 1.75 !important;
+      font-size: 16px !important;
+    }
+    li p { display: inline !important; margin: 0 !important; }
 
+    /* Headings */
+    h1 { font-size: 2em;   font-weight: 800; margin: 0.8em 0 0.4em !important; color: #0f172a; line-height: 1.2; }
+    h2 { font-size: 1.6em; font-weight: 700; margin: 0.8em 0 0.35em !important; color: #0f172a; line-height: 1.3; }
+    h3 { font-size: 1.3em; font-weight: 600; margin: 0.8em 0 0.3em !important;  color: #334155; }
+    h4 { font-size: 1.1em; font-weight: 600; margin: 0.6em 0 0.25em !important; color: #334155; }
+    h5 { font-size: 1em;   font-weight: 600; margin: 0.6em 0 0.2em !important;  color: #475569; }
+    h6 { font-size: 0.9em; font-weight: 600; margin: 0.6em 0 0.2em !important;  color: #64748b; }
+
+    /* Inline */
+    strong, b { font-weight: 700  !important; color: #0f172a  !important; }
+    em, i     { font-style: italic !important; }
+    u         { text-decoration: underline    !important; }
+    s, strike { text-decoration: line-through !important; }
+    sup { vertical-align: super; font-size: 0.75em; }
+    sub { vertical-align: sub;   font-size: 0.75em; }
+
+    /* Links */
+    a { color: #6d28d9; text-decoration: underline; font-weight: 500; }
+    a:hover { color: #4c1d95; }
+
+    /* Blockquote */
+    blockquote {
+      border-left: 4px solid #6d28d9;
+      padding: 14px 22px;
+      margin: 16px 0 !important;
+      background: #f8fafc;
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: #475569;
+      font-size: 17px;
+    }
+
+    /* Code */
+    pre  { background: #1e293b; border-radius: 8px; padding: 16px 20px; overflow-x: auto; font-family: 'Courier New',monospace; font-size: 14px; color: #e2e8f0; margin: 14px 0 !important; }
+    code { background: #f1f5f9; border-radius: 4px; padding: 2px 7px; font-family: 'Courier New',monospace; font-size: 14px; color: #6d28d9; }
+    pre code { background: none; padding: 0; color: #e2e8f0; }
+
+    /* Table */
+    table { border-collapse: collapse; width: 100%; margin: 16px 0 !important; border-radius: 8px; overflow: hidden; }
+    th { background: #6d28d9; color: #fff; font-weight: 700; padding: 12px 16px; text-align: left; font-size: 14px; }
+    td { border: 1px solid #e2e8f0; padding: 10px 16px; font-size: 14px; color: #334155; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    tr:hover td { background: #f1f5f9; }
+
+    /* Image */
+    img { max-width: 100%; border-radius: 10px; margin: 12px 0; display: block; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+    /* HR */
+    hr { border: none; border-top: 2px solid #e2e8f0; margin: 24px 0 !important; }
+
+    /* Paragraph */
+    p { margin: 8px 0 !important; line-height: 1.75; }
+
+    /* Jodit UI polish */
+    .jodit-toolbar__box { border-bottom: 1px solid #e2e8f0 !important; background: #f8fafc !important; }
+    .jodit-toolbar-button { border-radius: 6px !important; }
+    .jodit-toolbar-button:hover { background: #ede9fe !important; color: #6d28d9 !important; }
+    .jodit-toolbar-button.jodit-toolbar-button_variant_initial.jodit-toolbar-button_text-icons_true { color: #374151 !important; }
+    .jodit-status-bar { background: #f8fafc !important; border-top: 1px solid #e2e8f0 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 12px !important; color: #64748b !important; }
+  `,
+
+  // ── SPELLCHECK & MISC ─────────────────────────────────────────
+  spellcheck: true,
+  disablePlugins: [],
+  enableDragAndDropFileToEditor: true,
+  uploader: { insertImageAsBase64URI: true },   // image drag-drop base64 में insert
+});
 // ══════════════════════════════════════════════
 //  MAIN COMPONENT
 // ══════════════════════════════════════════════
 const BlogManagement = () => {
   const screens = useBreakpoint();
   const editorRef = useRef(null);
-  const fileInputRef = useRef(null);   // ← hidden file input for Import
+  const fileInputRef = useRef(null);
   const searchTimeout = useRef(null);
+  const contentDebounceRef = useRef(null);
+  const editorConfig = useMemo(() => getEditorConfig(), []);
+
+
+  // ── FIX #1: targetStatus as a ref so handleSave always reads the
+  //   correct value — useState is async and causes race conditions
+  const targetStatusRef = useRef('draft');
+
+  // ── FIX #3: editorKey increments on every modal open → forces
+  //   Jodit to fully remount with fresh content each time
+  const [editorKey, setEditorKey] = useState(0);
 
   // ── State ────────────────────────────────────────────────────────
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [fileImporting, setFileImporting] = useState(false);  // ← NEW
-  const [targetStatus, setTargetStatus] = useState('draft');
+  const [savingAs, setSavingAs] = useState('');    // 'draft' | 'published' — for button loading
+  const [fileImporting, setFileImporting] = useState(false);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalResults: 0, itemsPerPage: 10 });
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -1272,38 +1091,44 @@ const BlogManagement = () => {
   const [authorImageList, setAuthorImageList] = useState([]);
   const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, views: 0 });
 
-  // ── Helper: insert HTML into Jodit at cursor ────────────────────
-  const insertHtmlIntoEditor = useCallback((html) => {
-    if (!html) return;
-    const joditInstance = editorRef.current?.jodit || editorRef.current;
-    if (joditInstance?.s?.insertHTML) {
-      joditInstance.s.focus();
-      joditInstance.s.setCursorAfter(joditInstance.editor.lastChild || joditInstance.editor);
-      joditInstance.s.insertHTML(html);
-      const newVal = joditInstance.value;
-      contentRef.current = newVal;
-      setContentValue(newVal);
-      setHeadings(extractHeadings(newVal));
-    } else {
-      const newVal = (contentRef.current || '') + html;
-      contentRef.current = newVal;
-      setContentValue(newVal);
-      setHeadings(extractHeadings(newVal));
-    }
+  // ── FIX #4: Get Jodit instance reliably across jodit-react versions
+  const getJoditInstance = useCallback(() => {
+    if (!editorRef.current) return null;
+    // jodit-react v3/v4: ref.current IS the Jodit instance
+    // jodit-react v1/v2: ref.current.jodit
+    return editorRef.current?.jodit || editorRef.current;
   }, []);
 
+  // ── FIX #4: replaceEditorContent — sets the full editor value
   const replaceEditorContent = useCallback((html) => {
     if (!html) return;
-    const joditInstance = editorRef.current?.jodit || editorRef.current;
-    if (joditInstance && typeof joditInstance.value !== 'undefined') {
-      joditInstance.value = html;
+    // Primary: use Jodit's own value setter (most reliable)
+    const jodit = getJoditInstance();
+    if (jodit && typeof jodit.value !== 'undefined') {
+      jodit.value = html;
     }
+    // Always keep React state in sync
     contentRef.current = html;
     setContentValue(html);
     setHeadings(extractHeadings(html));
-  }, []);
+  }, [getJoditInstance]);
 
-  // ── Helper: apply smart metadata from HTML ─────────────────────
+  // ── FIX #4: insertHtmlIntoEditor — appends HTML at cursor
+const insertHtmlIntoEditor = useCallback((html) => {
+  if (!html) return;
+
+  const jodit = getJoditInstance();
+
+  if (jodit) {
+    jodit.value = html;
+  }
+
+  contentRef.current = html;
+  setContentValue(html);
+  setHeadings(extractHeadings(html));
+}, [getJoditInstance]);
+
+  // ── Smart metadata fill ────────────────────────────────────────
   const applySmartFill = useCallback((html) => {
     const extracted = smartExtract(html);
     const cur = form.getFieldsValue();
@@ -1324,54 +1149,31 @@ const BlogManagement = () => {
     }
   }, [form]);
 
-  // ══════════════════════════════════════════════════════════════════
-  //  FORMAT-PRESERVING PASTE HANDLER
-  //  • Intercepts ALL pastes that carry HTML
-  //  • Word/Docs → clean junk, preserve formatting
-  //  • Regular HTML → sanitise only
-  //  • Plain text → let Jodit handle natively
-  // ══════════════════════════════════════════════════════════════════
   const handlePaste = useCallback(async (event) => {
     const cd = event.clipboardData;
     if (!cd) return;
-
     const pastedHtml = cd.getData('text/html');
     const pastedText = cd.getData('text/plain');
+    if (!pastedHtml) return;  // no HTML → let Jodit handle plain text natively
 
-    // No HTML in clipboard → allow Jodit's own plain-text paste
-    if (!pastedHtml) return;
-
-    // Detect source
     const isWordDoc = pastedHtml.includes('urn:schemas-microsoft-com') || pastedHtml.includes('mso-');
     const isGoogleDoc = pastedHtml.includes('google-docs') || pastedHtml.includes('docs.google');
     const isExternalHeavy = pastedHtml.includes('xmlns:') || pastedHtml.length > (pastedText.length || 1) * 4;
 
-    // We always take over HTML pastes so formatting is consistent
+    if (!isWordDoc && !isGoogleDoc && !isExternalHeavy) return;
+
     event.preventDefault();
     event.stopPropagation();
     setPasteProcessing(true);
-
     try {
       let cleanHtml;
-
       if (isWordDoc || isGoogleDoc || isExternalHeavy) {
-        // Deep clean: strip Word/Docs junk, preserve semantic formatting
         cleanHtml = cleanExternalHtml(pastedHtml);
-        notification.info({
-          message: '✨ Smart Paste Applied',
-          description: 'Junk formatting stripped — bold, italic & lists preserved.',
-          duration: 2,
-          placement: 'topRight',
-        });
+        notification.info({ message: '✨ Smart Paste Applied', description: 'Junk formatting stripped — bold, italic & lists preserved.', duration: 2, placement: 'topRight' });
       } else {
-        // Light sanitise: preserve ALL formatting from regular HTML sources
         cleanHtml = sanitiseRegularHtml(pastedHtml);
       }
-
-      if (cleanHtml) {
-        insertHtmlIntoEditor(cleanHtml);
-        applySmartFill(cleanHtml);
-      }
+      if (cleanHtml) { insertHtmlIntoEditor(cleanHtml); applySmartFill(cleanHtml); }
     } catch (e) {
       console.error('[paste error]', e);
       message.error('Failed to process pasted content');
@@ -1380,70 +1182,43 @@ const BlogManagement = () => {
     }
   }, [insertHtmlIntoEditor, applySmartFill]);
 
-  // ══════════════════════════════════════════════════════════════════
-  //  FILE IMPORT HANDLER
-  // ══════════════════════════════════════════════════════════════════
+  // ── FILE IMPORT ─────────────────────────────────────────────────
   const handleImportFile = useCallback(async (file) => {
     if (!file) return;
     setFileImporting(true);
-
     const SUPPORTED = ['docx','pdf','txt','html','htm','md','markdown','rtf'];
     const ext = file.name.split('.').pop().toLowerCase();
-
     if (!SUPPORTED.includes(ext)) {
-      message.error(`Unsupported format: .${ext} — supported: ${SUPPORTED.join(', ')}`);
+      message.error(`Unsupported format: .${ext}`);
       setFileImporting(false);
       return;
     }
-
     try {
       const html = await convertFileToHtml(file);
-
-      if (!html || !html.trim()) {
-        message.warning(`No readable content found in ${file.name}`);
-        return;
-      }
-
-      // Ask whether to replace or append if editor already has content
+      if (!html || !html.trim()) { message.warning(`No readable content found in ${file.name}`); return; }
       const currentContent = contentRef.current;
       const hasContent = currentContent && currentContent !== '<p><br></p>' && currentContent.trim().length > 10;
-
       if (hasContent) {
         Modal.confirm({
-          title: <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 700, color: '#0f172a' }}>Import "{file.name}"</span>,
+          title: <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 700 }}>Import "{file.name}"</span>,
           content: <span style={{ color: '#475569' }}>The editor already has content. Do you want to replace it or append to it?</span>,
-          okText: 'Replace',
-          cancelText: 'Append',
+          okText: 'Replace', cancelText: 'Append',
           okButtonProps: { style: { background: '#6d28d9', borderColor: '#6d28d9', borderRadius: 8, fontWeight: 600 } },
           cancelButtonProps: { style: { borderRadius: 8, fontWeight: 600 } },
           centered: true,
-          onOk: () => {
-            replaceEditorContent(html);
-            applySmartFill(html);
-            notification.success({ message: `📄 "${file.name}" Imported`, description: 'Content replaced in editor.', placement: 'topRight', duration: 3 });
-          },
-          onCancel: () => {
-            insertHtmlIntoEditor(html);
-            applySmartFill(html);
-            notification.success({ message: `📄 "${file.name}" Imported`, description: 'Content appended to editor.', placement: 'topRight', duration: 3 });
-          },
+          onOk:    () => { replaceEditorContent(html); applySmartFill(html); notification.success({ message: `📄 "${file.name}" Imported`, description: 'Content replaced.', placement: 'topRight', duration: 3 }); },
+          onCancel:() => { insertHtmlIntoEditor(html); applySmartFill(html); notification.success({ message: `📄 "${file.name}" Imported`, description: 'Content appended.', placement: 'topRight', duration: 3 }); },
         });
       } else {
         replaceEditorContent(html);
         applySmartFill(html);
-        notification.success({
-          message: `📄 "${file.name}" Imported`,
-          description: `${ext.toUpperCase()} file loaded — formatting preserved.`,
-          placement: 'topRight',
-          duration: 4,
-        });
+        notification.success({ message: `📄 "${file.name}" Imported`, description: `${ext.toUpperCase()} file loaded — formatting preserved.`, placement: 'topRight', duration: 4 });
       }
     } catch (e) {
       console.error('[file import error]', e);
       message.error(e.message || `Failed to import ${file.name}`);
     } finally {
       setFileImporting(false);
-      // Reset file input so same file can be selected again
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }, [replaceEditorContent, insertHtmlIntoEditor, applySmartFill]);
@@ -1453,13 +1228,13 @@ const BlogManagement = () => {
     if (file) handleImportFile(file);
   }, [handleImportFile]);
 
-  // ── Editor change ───────────────────────────────────────────────
+  // ── Editor change handler ───────────────────────────────────────
   const handleEditorChange = useCallback((value) => {
     contentRef.current = value;
     setContentValue(value);
   }, []);
 
-  // ── Auto-extract heading + subheading ──────────────────────────
+  // ── Auto-extract headings + subheading ─────────────────────────
   useEffect(() => {
     const t = setTimeout(() => {
       if (contentRef.current) {
@@ -1472,37 +1247,34 @@ const BlogManagement = () => {
       }
     }, 800);
     return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contentValue, form]);
 
-  // ── Auto-save to localStorage ──────────────────────────────────
+  // ── Auto-save ──────────────────────────────────────────────────
   useEffect(() => {
     let t;
-    if (autoSave && contentValue && modalVisible && !pasteProcessing) {
+    if (autoSave && contentValue && modalVisible && !pasteProcessing && !fileImporting) {
       t = setTimeout(() => handleAutoSave(), 30000);
     }
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contentValue, autoSave, modalVisible, pasteProcessing]);
+  }, [contentValue, autoSave, modalVisible, pasteProcessing, fileImporting]);
 
   const handleAutoSave = async () => {
-    if (!contentRef.current || !modalVisible || pasteProcessing) return;
+    if (!contentRef.current || !modalVisible || pasteProcessing || fileImporting) return;
     const values = form.getFieldsValue();
     if (!values.title) return;
     const key = `blog_draft_${editingId || 'new'}`;
     localStorage.setItem(key, JSON.stringify({
-      ...values,
-      content: contentRef.current,
-      headings,
-      featuredImage: featuredImageList,
-      coverImage: coverImageList,
-      authorImage: authorImageList,
-      timestamp: new Date().toISOString(),
+      ...values, content: contentRef.current, headings,
+      featuredImage: featuredImageList, coverImage: coverImageList,
+      authorImage: authorImageList, timestamp: new Date().toISOString(),
     }));
     setLastSaved(new Date());
   };
 
-  const loadDraft = () => {
-    const key = `blog_draft_${editingId || 'new'}`;
+  const loadDraft = (currentEditingId) => {
+    const key = `blog_draft_${currentEditingId || 'new'}`;
     const raw = localStorage.getItem(key);
     if (!raw) return;
     try {
@@ -1515,26 +1287,35 @@ const BlogManagement = () => {
         okButtonProps: { style: { background: THEME.primary, borderColor: THEME.primary, borderRadius: 8, fontWeight: 600 } },
         cancelButtonProps: { style: { borderRadius: 8, fontWeight: 500 } },
         onOk: () => {
-          form.setFieldsValue({ title: draft.title, subHeading: draft.subHeading, tags: draft.tags, category: draft.category, authorName: draft.authorName, authorDesignation: draft.authorDesignation });
+          form.setFieldsValue({
+            title: draft.title, subHeading: draft.subHeading,
+            tags: draft.tags, category: draft.category,
+            authorName: draft.authorName, authorDesignation: draft.authorDesignation,
+          });
           const dc = draft.content || '';
-          contentRef.current = dc; setContentValue(dc); setHeadings(draft.headings || []);
-          setFeaturedImageList(draft.featuredImage || []);
-          setCoverImageList(draft.coverImage || []);
-          setAuthorImageList(draft.authorImage || []);
+          contentRef.current = dc;
+          setContentValue(dc);
+          setHeadings(draft.headings || []);
+          // FIX: also push into jodit via ref if available
+          const jodit = getJoditInstance();
+          if (jodit && typeof jodit.value !== 'undefined') jodit.value = dc;
+          if (draft.featuredImage?.length) setFeaturedImageList(draft.featuredImage);
+          if (draft.coverImage?.length)    setCoverImageList(draft.coverImage);
+          if (draft.authorImage?.length)   setAuthorImageList(draft.authorImage);
           message.success('Draft restored!');
         },
       });
     } catch (e) { console.error(e); }
   };
 
-  // ── API calls ──────────────────────────────────────────────────
+  // ── API: fetch list ─────────────────────────────────────────────
   const fetchBlogs = useCallback(async (page = 1, limit = 10, searchVal = '', category = '', status = '') => {
     setLoading(true);
     try {
       let url = `/blogs/get-all-blogs?page=${page}&limit=${limit}`;
       if (searchVal?.trim()) url += `&search=${encodeURIComponent(searchVal.trim())}`;
       if (category) url += `&category=${encodeURIComponent(category)}`;
-      if (status) url += `&isPublished=${status === 'published'}`;
+      if (status)   url += `&isPublished=${status === 'published'}`;
       const res = await apiService.get(url);
       if (res.success) {
         setBlogs(res.data || []);
@@ -1563,25 +1344,61 @@ const BlogManagement = () => {
     fetchBlogs(1, pagination.itemsPerPage, '', '', '');
   };
 
+  // ── FIX #7: fetchBlogById — proper state hydration + editor remount
   const fetchBlogById = async (id) => {
     setLoading(true);
     try {
       const res = await apiService.get(`/blogs/get-blog-by-id?id=${id}`);
       if (res.success && res.data) {
         const b = res.data;
-        form.setFieldsValue({ title: b.title || '', subHeading: b.subHeading || '', tags: b.tags || [], category: b.category || 'Other', authorName: b.authorName || 'Admin', authorDesignation: b.authorDesignation || 'Content Writer' });
+
+        // 1. Reset form first
+        form.resetFields();
+
+        // 2. Set form fields
+        form.setFieldsValue({
+          title:             b.title             || '',
+          subHeading:        b.subHeading        || '',
+          tags:              b.tags              || [],
+          category:          b.category          || 'Other',
+          authorName:        b.authorName        || 'Admin',
+          authorDesignation: b.authorDesignation || 'Content Writer',
+        });
+
+        // 3. Set content refs BEFORE opening modal
         const blogContent = b.content || '';
-        contentRef.current = blogContent; setContentValue(blogContent); setHeadings(extractHeadings(blogContent));
+        contentRef.current = blogContent;
+        setContentValue(blogContent);
+        setHeadings(extractHeadings(blogContent));
+
+        // 4. Set images
         setFeaturedImageList(b.featuredImage ? [{ uid: '-1', name: 'featured', status: 'done', url: b.featuredImage, preview: b.featuredImage }] : []);
-        setCoverImageList(b.coverImage ? [{ uid: '-2', name: 'cover', status: 'done', url: b.coverImage, preview: b.coverImage }] : []);
-        setAuthorImageList(b.authorImage ? [{ uid: '-3', name: 'author', status: 'done', url: b.authorImage, preview: b.authorImage }] : []);
-        setEditingId(id); setModalVisible(true);
-        setTimeout(() => loadDraft(), 100);
-      } else message.error(res.message || 'Failed to fetch blog');
-    } catch (e) { console.error(e); message.error('Failed to fetch blog'); }
-    finally { setLoading(false); }
+        setCoverImageList(b.coverImage     ? [{ uid: '-2', name: 'cover',    status: 'done', url: b.coverImage,    preview: b.coverImage    }] : []);
+        setAuthorImageList(b.authorImage   ? [{ uid: '-3', name: 'author',   status: 'done', url: b.authorImage,   preview: b.authorImage   }] : []);
+
+        // 5. Set editing ID
+        setEditingId(id);
+
+        // 6. FIX #3: Increment editorKey so JoditEditor remounts with fresh content
+        setEditorKey(k => k + 1);
+
+        // 7. Open modal
+        setModalVisible(true);
+
+        // 8. Check for drafts after modal opens
+        setTimeout(() => loadDraft(id), 300);
+      } else {
+        message.error(res.message || 'Failed to fetch blog');
+      }
+    } catch (e) {
+      console.error(e);
+      message.error('Failed to fetch blog');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // ── API: upload file ────────────────────────────────────────────
   const uploadFile = async (file) => {
     const fd = new FormData(); fd.append('file', file);
     const res = await apiService.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -1596,50 +1413,76 @@ const BlogManagement = () => {
     return '';
   };
 
+  // ── FIX #1: handleSave reads targetStatusRef (not async state)
   const handleSave = async (values) => {
     const currentContent = contentRef.current;
-    if (!currentContent || currentContent === '<p><br></p>') { message.error('Please add blog content'); return; }
-    if (targetStatus === 'published') {
-      if (!featuredImageList.length) { message.error('Featured Image required for publishing'); return; }
-      if (!coverImageList.length) { message.error('Cover Image required for publishing'); return; }
-      if (!authorImageList.length) { message.error('Author Image required for publishing'); return; }
-      if (!values.authorName) { message.error('Author Name required for publishing'); return; }
+    const isPublishing = targetStatusRef.current === 'published';
+
+    if (!currentContent || currentContent === '<p><br></p>') {
+      message.error('Please add blog content');
+      return;
     }
+    if (isPublishing) {
+      if (!featuredImageList.length) { message.error('Featured Image required for publishing'); return; }
+      if (!coverImageList.length)    { message.error('Cover Image required for publishing');    return; }
+      if (!authorImageList.length)   { message.error('Author Image required for publishing');   return; }
+      if (!values.authorName)        { message.error('Author Name required for publishing');    return; }
+    }
+
     setSaving(true);
+    setSavingAs(targetStatusRef.current);
     try {
-      const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([processImage(featuredImageList), processImage(coverImageList), processImage(authorImageList)]);
+      const [featuredUrl, coverUrl, authorImgUrl] = await Promise.all([
+        processImage(featuredImageList),
+        processImage(coverImageList),
+        processImage(authorImageList),
+      ]);
       const cleanedContent = DOMPurify.sanitize(currentContent, {
         ALLOWED_TAGS: ['p','br','strong','b','em','i','u','s','strike','del','h1','h2','h3','h4','h5','h6','ul','ol','li','a','img','blockquote','pre','code','hr','table','thead','tbody','tr','td','th'],
         ALLOWED_ATTR: ['href','src','alt','title','target','rel','style'],
         ALLOW_DATA_ATTR: false,
       });
       const payload = {
-        title: values.title,
-        subHeading: values.subHeading || extractExcerpt(cleanedContent, 160),
-        content: cleanedContent,
-        authorName: values.authorName || 'Admin',
+        title:             values.title,
+        subHeading:        values.subHeading || extractExcerpt(cleanedContent, 160),
+        content:           cleanedContent,
+        authorName:        values.authorName        || 'Admin',
         authorDesignation: values.authorDesignation || 'Content Writer',
-        authorImage: authorImgUrl,
-        isPublished: targetStatus === 'published',
-        tags: values.tags || [],
-        category: values.category || 'Other',
-        featuredImage: featuredUrl,
-        coverImage: coverUrl,
+        authorImage:       authorImgUrl,
+        isPublished:       isPublishing,
+        tags:              values.tags     || [],
+        category:          values.category || 'Other',
+        featuredImage:     featuredUrl,
+        coverImage:        coverUrl,
       };
-      if (targetStatus === 'published') payload.publishedAt = new Date().toISOString();
+      if (isPublishing) payload.publishedAt = new Date().toISOString();
+
       const res = editingId
         ? await apiService.put(`/blogs/edit-blog-by-id?id=${editingId}`, payload)
         : await apiService.post('/blogs/create-blog', payload);
+
       if (res.success) {
-        notification.success({ message: <span style={{ fontWeight: 700, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{editingId ? 'Blog Updated' : 'Blog Created'}</span>, description: <span style={{ color: '#475569' }}>"{values.title}" {targetStatus === 'published' ? 'published' : 'saved as draft'} successfully</span>, placement: 'topRight', duration: 4 });
+        notification.success({
+          message: <span style={{ fontWeight: 700 }}>{editingId ? 'Blog Updated' : 'Blog Created'}</span>,
+          description: <span style={{ color: '#475569' }}>"{values.title}" {isPublishing ? 'published' : 'saved as draft'} successfully</span>,
+          placement: 'topRight', duration: 4,
+        });
         localStorage.removeItem(`blog_draft_${editingId || 'new'}`);
         closeModal();
         fetchBlogs(pagination.currentPage, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus);
-      } else message.error(res.message || 'Operation failed');
-    } catch (e) { console.error(e); message.error(e.message || 'Failed to save blog'); }
-    finally { setSaving(false); }
+      } else {
+        message.error(res.message || 'Operation failed');
+      }
+    } catch (e) {
+      console.error(e);
+      message.error(e.message || 'Failed to save blog');
+    } finally {
+      setSaving(false);
+      setSavingAs('');
+    }
   };
 
+  // ── Delete ──────────────────────────────────────────────────────
   const deleteBlog = async (id) => {
     try {
       const res = await apiService.delete(`/blogs/delete-blog-by-id?id=${id}`);
@@ -1648,6 +1491,7 @@ const BlogManagement = () => {
     } catch (e) { console.error(e); message.error('Failed to delete'); }
   };
 
+  // ── Preview ─────────────────────────────────────────────────────
   const handleCardPreview = async (record) => {
     const hide = message.loading('Loading preview…', 0);
     try {
@@ -1661,53 +1505,75 @@ const BlogManagement = () => {
     if (isLive) {
       const fv = form.getFieldsValue();
       setPreviewBlogData({
-        title: fv.title || 'Untitled',
-        subHeading: fv.subHeading,
-        content: contentRef.current,
-        authorName: fv.authorName,
+        title:             fv.title || 'Untitled',
+        subHeading:        fv.subHeading,
+        content:           contentRef.current,
+        authorName:        fv.authorName,
         authorDesignation: fv.authorDesignation,
-        tags: fv.tags,
-        category: fv.category,
-        featuredImage: featuredImageList[0]?.url || featuredImageList[0]?.preview,
-        coverImage: coverImageList[0]?.url || coverImageList[0]?.preview,
-        authorImage: authorImageList[0]?.url || authorImageList[0]?.preview,
+        tags:              fv.tags,
+        category:          fv.category,
+        featuredImage:     featuredImageList[0]?.url || featuredImageList[0]?.preview,
+        coverImage:        coverImageList[0]?.url    || coverImageList[0]?.preview,
+        authorImage:       authorImageList[0]?.url   || authorImageList[0]?.preview,
         headings,
-        createdAt: new Date(),
-        readingTime: Math.max(1, Math.ceil((contentRef.current || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200)),
+        createdAt:         new Date(),
+        readingTime:       Math.max(1, Math.ceil((contentRef.current || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200)),
       });
     } else {
-      setPreviewBlogData({ ...blogData, headings: extractHeadings(blogData?.content || ''), readingTime: Math.max(1, Math.ceil((blogData?.content || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200)) });
+      setPreviewBlogData({
+        ...blogData,
+        headings:    extractHeadings(blogData?.content || ''),
+        readingTime: Math.max(1, Math.ceil((blogData?.content || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200)),
+      });
     }
     setPreviewModalVisible(true);
   };
 
+  // ── FIX #8: closeModal clears ALL state cleanly
   const closeModal = () => {
-    setModalVisible(false); setEditingId(null);
-    setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
-    contentRef.current = ''; setContentValue(''); setHeadings([]);
-    setSmartFillApplied(false); setLastSaved(null);
+    setModalVisible(false);
+    setEditingId(null);
+    setFeaturedImageList([]);
+    setCoverImageList([]);
+    setAuthorImageList([]);
+    contentRef.current = '';
+    setContentValue('');
+    setHeadings([]);
+    setSmartFillApplied(false);
+    setLastSaved(null);
     form.resetFields();
   };
 
+  // ── openCreate: reset everything, bump editorKey for clean mount
   const openCreate = () => {
-    setEditingId(null); form.resetFields();
-    setFeaturedImageList([]); setCoverImageList([]); setAuthorImageList([]);
-    contentRef.current = ''; setContentValue(''); setHeadings([]);
-    setSmartFillApplied(false); setModalVisible(true);
-    setTimeout(() => loadDraft(), 100);
+    form.resetFields();
+    setEditingId(null);
+    setFeaturedImageList([]);
+    setCoverImageList([]);
+    setAuthorImageList([]);
+    contentRef.current = '';
+    setContentValue('');
+    setHeadings([]);
+    setSmartFillApplied(false);
+    setEditorKey(k => k + 1);   // FIX #3: fresh editor
+    setModalVisible(true);
+    setTimeout(() => loadDraft(null), 300);
   };
 
+  // ── Stat cards ─────────────────────────────────────────────────
   const statCards = [
-    { label: 'Total Posts',  value: stats.total,     icon: <FileTextOutlined />,     color: 'purple' },
-    { label: 'Published',    value: stats.published,  icon: <CheckCircleOutlined />,  color: 'green'  },
-    { label: 'Drafts',       value: stats.drafts,     icon: <SyncOutlined />,         color: 'amber'  },
-    { label: 'Total Views',  value: stats.views,      icon: <EyeOutlined />,          color: 'blue'   },
+    { label: 'Total Posts', value: stats.total,     icon: <FileTextOutlined />,    color: 'purple' },
+    { label: 'Published',   value: stats.published,  icon: <CheckCircleOutlined />, color: 'green'  },
+    { label: 'Drafts',      value: stats.drafts,     icon: <SyncOutlined />,        color: 'amber'  },
+    { label: 'Total Views', value: stats.views,      icon: <EyeOutlined />,         color: 'blue'   },
   ];
 
   const PAGE_RANGE = Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
     .slice(Math.max(0, pagination.currentPage - 3), pagination.currentPage + 2);
 
-  // ── Render ─────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════
+  //  RENDER
+  // ══════════════════════════════════════════════════════════════════
   return (
     <>
       <style>{GLOBAL_STYLES}</style>
@@ -1740,7 +1606,10 @@ const BlogManagement = () => {
         <div className="bm-stats">
           {statCards.map(s => (
             <div key={s.label} className="bm-stat-card">
-              <div className="bm-stat-top"><div className="bm-stat-label">{s.label}</div><div className={`bm-stat-icon ${s.color}`}>{s.icon}</div></div>
+              <div className="bm-stat-top">
+                <div className="bm-stat-label">{s.label}</div>
+                <div className={`bm-stat-icon ${s.color}`}>{s.icon}</div>
+              </div>
               <div className="bm-stat-value">{s.value.toLocaleString()}</div>
             </div>
           ))}
@@ -1748,7 +1617,8 @@ const BlogManagement = () => {
 
         {/* ── Filters ── */}
         <div className="bm-filters">
-          <Input size="large" prefix={<SearchOutlined style={{ color: '#94a3b8' }} />} placeholder="Search posts by title or tag…" value={searchText} onChange={handleSearch} allowClear style={{ flex: 1, minWidth: 200 }} />
+          <Input size="large" prefix={<SearchOutlined style={{ color: '#94a3b8' }} />} placeholder="Search posts by title or tag…"
+            value={searchText} onChange={handleSearch} allowClear style={{ flex: 1, minWidth: 200 }} />
           <Select size="large" placeholder="Category" value={selectedCategory || undefined} onChange={v => handleFilterChange('category', v)} allowClear style={{ flex: '1 1 150px', minWidth: 150 }}>
             {[['AI','🤖 AI'],['Real Estate','🏠 Real Estate'],['PropTech','📱 PropTech'],['Technology','💻 Technology'],['Business','💼 Business'],['Mortgage','🏦 Mortgage'],['Landscaping','🌳 Landscaping'],['Other','📄 Other']].map(([v, l]) => <Option key={v} value={v}>{l}</Option>)}
           </Select>
@@ -1793,10 +1663,22 @@ const BlogManagement = () => {
                         </span>
                       </div>
                       <div className="bm-blog-actions">
-                        <Tooltip title="Edit"><button className="bm-action-btn" onClick={() => fetchBlogById(record._id)}><EditOutlined /></button></Tooltip>
-                        <Tooltip title="Preview"><button className="bm-action-btn" onClick={() => handleCardPreview(record)}><EyeOutlined /></button></Tooltip>
-                        <Popconfirm title={<span style={{ fontWeight: 700 }}>Delete Post</span>} description="This action cannot be undone." onConfirm={() => deleteBlog(record._id)} okText="Delete" okButtonProps={{ danger: true, style: { fontWeight: 600, borderRadius: 8 } }} cancelButtonProps={{ style: { borderRadius: 8, fontWeight: 500 } }}>
-                          <Tooltip title="Delete"><button className="bm-action-btn danger"><DeleteOutlined /></button></Tooltip>
+                        <Tooltip title="Edit">
+                          <button className="bm-action-btn" onClick={() => fetchBlogById(record._id)}><EditOutlined /></button>
+                        </Tooltip>
+                        <Tooltip title="Preview">
+                          <button className="bm-action-btn" onClick={() => handleCardPreview(record)}><EyeOutlined /></button>
+                        </Tooltip>
+                        <Popconfirm
+                          title={<span style={{ fontWeight: 700 }}>Delete Post</span>}
+                          description="This action cannot be undone."
+                          onConfirm={() => deleteBlog(record._id)}
+                          okText="Delete"
+                          okButtonProps={{ danger: true, style: { fontWeight: 600, borderRadius: 8 } }}
+                          cancelButtonProps={{ style: { borderRadius: 8, fontWeight: 500 } }}>
+                          <Tooltip title="Delete">
+                            <button className="bm-action-btn danger"><DeleteOutlined /></button>
+                          </Tooltip>
                         </Popconfirm>
                       </div>
                     </div>
@@ -1823,11 +1705,24 @@ const BlogManagement = () => {
 
             {/* Pagination */}
             <div className="bm-pagination">
-              <div className="bm-page-info">Showing {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}–{Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalResults)} of {pagination.totalResults} posts</div>
+              <div className="bm-page-info">
+                Showing {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}–{Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalResults)} of {pagination.totalResults} posts
+              </div>
               <div className="bm-page-btns">
-                <button className="bm-page-btn" disabled={pagination.currentPage === 1} onClick={() => fetchBlogs(pagination.currentPage - 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}><ArrowLeftOutlined /></button>
-                {PAGE_RANGE.map(p => <button key={p} className={`bm-page-btn ${pagination.currentPage === p ? 'active' : ''}`} onClick={() => fetchBlogs(p, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}>{p}</button>)}
-                <button className="bm-page-btn" disabled={pagination.currentPage === pagination.totalPages} onClick={() => fetchBlogs(pagination.currentPage + 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}><ArrowRightOutlined /></button>
+                <button className="bm-page-btn" disabled={pagination.currentPage === 1}
+                  onClick={() => fetchBlogs(pagination.currentPage - 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}>
+                  <ArrowLeftOutlined />
+                </button>
+                {PAGE_RANGE.map(p => (
+                  <button key={p} className={`bm-page-btn ${pagination.currentPage === p ? 'active' : ''}`}
+                    onClick={() => fetchBlogs(p, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}>
+                    {p}
+                  </button>
+                ))}
+                <button className="bm-page-btn" disabled={pagination.currentPage === pagination.totalPages}
+                  onClick={() => fetchBlogs(pagination.currentPage + 1, pagination.itemsPerPage, searchText, selectedCategory, selectedStatus)}>
+                  <ArrowRightOutlined />
+                </button>
               </div>
             </div>
           </>
@@ -1858,197 +1753,325 @@ const BlogManagement = () => {
         width={screens.xs ? '98%' : 1060}
         styles={{ maxHeight: '80vh', overflowY: 'auto' }}
       >
-        <Form form={form} layout="vertical" onFinish={handleSave} initialValues={{ category: 'Other', authorName: 'Admin', authorDesignation: 'Content Writer' }}>
-          <Tabs defaultActiveKey="content" size="large" tabBarStyle={{ fontWeight: 600, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-
-            {/* ── CONTENT TAB ── */}
-            <TabPane tab={<span><EditOutlined />  Content</span>} key="content">
-              <Row gutter={16}>
-                <Col span={24}>
-                  <Form.Item name="title" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Post Title</span>} rules={[{ required: true, message: 'Title is required' }]}>
-                    <Input placeholder="Enter an engaging, SEO-friendly title…" size="large" style={{ borderRadius: 8, fontSize: 15, fontWeight: 500, padding: '10px 14px' }} />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item name="subHeading" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Subheading / Excerpt</span>}>
-                <TextArea rows={2} placeholder="Auto-extracted from content, or write your own (max 160 chars)" maxLength={160} showCount style={{ borderRadius: 8, fontWeight: 500, fontSize: 14, padding: '10px 14px' }} />
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSave}
+          initialValues={{ category: 'Other', authorName: 'Admin', authorDesignation: 'Content Writer' }}
+        >
+          <Tabs
+  defaultActiveKey="content"
+  size="large"
+  tabBarStyle={{ fontWeight: 600, fontFamily: "'Plus Jakarta Sans',sans-serif" }}
+  
+  items={[
+    {
+      key: 'content',
+      label: <span><EditOutlined /> Content</span>,
+      children: (
+        <>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                name="title"
+                label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Post Title</span>}
+                rules={[{ required: true, message: 'Title is required' }]}
+              >
+                <Input
+                  placeholder="Enter an engaging, SEO-friendly title…"
+                  size="large"
+                  style={{ borderRadius: 8, fontSize: 15, fontWeight: 500, padding: '10px 14px' }}
+                />
               </Form.Item>
+            </Col>
+          </Row>
 
-              <Row gutter={24}>
-                <Col xs={24} md={12}>
-                  <Form.Item name="tags" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Tags</span>}>
-                    <Select mode="tags" size="large" placeholder="Add tags (press Enter)" tokenSeparators={[',']} style={{ borderRadius: 8, fontWeight: 500 }}>
-                      {['AI','Real Estate','PropTech','Technology','Business','Mortgage','Landscaping','Marketing','UAE','Dubai','Innovation'].map(t => <Option key={t} value={t}>{t}</Option>)}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item name="category" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Category</span>}>
-                    <Select size="large" placeholder="Select category" style={{ fontWeight: 500 }}>
-                      {[['AI','🤖'],['Real Estate','🏠'],['PropTech','📱'],['Technology','💻'],['Business','💼'],['Mortgage','🏦'],['Landscaping','🌳'],['Other','📄']].map(([v, e]) => <Option key={v} value={v}>{e} {v}</Option>)}
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
+          <Form.Item
+            name="subHeading"
+            label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Subheading / Excerpt</span>}
+          >
+            <TextArea
+              rows={2}
+              placeholder="Auto-extracted from content, or write your own (max 160 chars)"
+              maxLength={160}
+              showCount
+              style={{ borderRadius: 8, fontWeight: 500, fontSize: 14, padding: '10px 14px' }}
+            />
+          </Form.Item>
 
-              {/* ════════════════════════════════════════════════════
-                   IMPORT FILE ZONE  (redesigned)
-                ════════════════════════════════════════════════════ */}
-              <Form.Item label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Blog Content <span style={{ color: '#ef4444' }}>*</span></span>}>
-
-                <div className="bm-import-zone">
-                  {/* Top row: icon + title + button */}
-                  <div className="bm-import-zone-top">
-                    <div className="bm-import-zone-left">
-                      <div className="bm-import-icon">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                          <polyline points="17 8 12 3 7 8"/>
-                          <line x1="12" y1="3" x2="12" y2="15"/>
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="bm-import-zone-title">Import file</p>
-                        <p className="bm-import-zone-sub">Bold, italic, lists and headings are preserved</p>
-                      </div>
-                    </div>
-                    <button
-                      className="bm-import-btn"
-                      disabled={fileImporting}
-                      onClick={() => fileInputRef.current?.click()}
-                      type="button"
-                    >
-                      {fileImporting ? (
-                        <LoadingOutlined style={{ fontSize: 13 }} spin />
-                      ) : (
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                          <polyline points="17 8 12 3 7 8"/>
-                          <line x1="12" y1="3" x2="12" y2="15"/>
-                        </svg>
-                      )}
-                      {fileImporting ? 'Importing…' : 'Choose file'}
-                    </button>
-                  </div>
-
-                  {/* Format badges row */}
-                  <div className="bm-formats-row">
-                    <span className="bm-formats-label">Supported</span>
-                    <span className="bm-format-badge docx">
-                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                      DOCX
-                    </span>
-                    <span className="bm-format-badge pdf">
-                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                      PDF
-                    </span>
-                    <span className="bm-format-badge md">
-                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                      MD
-                    </span>
-                    <span className="bm-format-badge html">
-                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                      HTML
-                    </span>
-                    <span className="bm-format-badge txt">TXT</span>
-                    <span className="bm-format-badge rtf">RTF</span>
-                  </div>
-
-                  {/* Smart paste hint strip */}
-                  <div className="bm-import-paste-hint">
-                    <div className="bm-import-paste-dot" />
-                    Smart paste active — copy from Word or Google Docs and paste directly into the editor below
-                  </div>
-                </div>
-
-                {/* Alerts */}
-                {smartFillApplied && (
-                  <Alert message={<span style={{ fontWeight: 600 }}>✨ Smart Fill Applied — Category & tags auto-detected!</span>} type="success" showIcon closable onClose={() => setSmartFillApplied(false)} style={{ marginBottom: 12, borderRadius: 8 }} />
-                )}
-                {pasteProcessing && (
-                  <Alert message={<span style={{ fontWeight: 600 }}>⏳ Processing paste — preserving formatting…</span>} type="info" showIcon style={{ marginBottom: 12, borderRadius: 8 }} />
-                )}
-                {fileImporting && (
-                  <Alert message={<span style={{ fontWeight: 600 }}>📄 Importing file — extracting formatted content…</span>} type="info" showIcon icon={<Spin indicator={<LoadingOutlined />} />} style={{ marginBottom: 12, borderRadius: 8 }} />
-                )}
-
-                {/* Editor wrapper — onPaste intercepts ALL rich pastes */}
-                <div
-                  
-                  style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}
+          <Row gutter={24}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="tags"
+                label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Tags</span>}
+              >
+                <Select
+                  mode="tags"
+                  size="large"
+                  placeholder="Add tags (press Enter)"
+                  tokenSeparators={[',']}
+                  style={{ borderRadius: 8, fontWeight: 500 }}
                 >
-                  <JoditEditor
-                    ref={editorRef}
-                    value={contentValue}
-                    config={getEditorConfig()}
-                    onBlur={handleEditorChange}
-                    onChange={handleEditorChange}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, gap: 10 }}>
-                  <Button
-                    icon={<EyeOutlined />}
-                    onClick={() => showPreview({}, true)}
-                    disabled={!contentRef.current || contentRef.current === '<p><br></p>'}
-                    style={{ borderRadius: 8, borderColor: '#e2e8f0', color: '#4c1d95', fontWeight: 600, height: 40, padding: '0 20px', background: '#f8fafc' }}
-                  >
-                    Live Preview
-                  </Button>
-                </div>
+                  {['AI','Real Estate','PropTech','Technology','Business','Mortgage','Landscaping','Marketing','UAE','Dubai','Innovation'].map(t => (
+                    <Option key={t} value={t}>{t}</Option>
+                  ))}
+                </Select>
               </Form.Item>
-            </TabPane>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="category"
+                label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Category</span>}
+              >
+                <Select size="large" placeholder="Select category" style={{ fontWeight: 500 }}>
+                  {[
+                    ['AI','🤖'], ['Real Estate','🏠'], ['PropTech','📱'],
+                    ['Technology','💻'], ['Business','💼'], ['Mortgage','🏦'],
+                    ['Landscaping','🌳'], ['Other','📄']
+                  ].map(([v, e]) => (
+                    <Option key={v} value={v}>{e} {v}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
 
-            {/* ── MEDIA TAB ── */}
-            <TabPane tab={<span><PictureOutlined />  Media</span>} key="media">
-              <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginBottom: 24, borderLeft: '4px solid #3b82f6' }}>
-                <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>📸 Image Guidelines</div>
-                <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>Featured image shows in blog listings; Cover image is the full-width hero banner.</div>
-              </div>
-              <Row gutter={[32, 24]}>
-                <Col xs={24} md={12}>
-                  <UploadWithCrop fileList={featuredImageList} onChange={setFeaturedImageList} aspect={3 / 2} cropTitle="Crop Featured Image (3:2)" maxSizeMB={5} label="Featured Image (Card Thumbnail)" extra="Recommended: 1200 × 800px · Max 5MB" />
-                </Col>
-                <Col xs={24} md={12}>
-                  <UploadWithCrop fileList={coverImageList} onChange={setCoverImageList} aspect={16 / 9} cropTitle="Crop Cover / Hero Image (16:9)" maxSizeMB={5} label="Cover Image (Hero Banner)" extra="Recommended: 1920 × 1080px · Max 5MB" />
-                </Col>
-              </Row>
-            </TabPane>
-
-            {/* ── AUTHOR TAB ── */}
-            <TabPane tab={<span><UserOutlined />  Author</span>} key="author">
-              <Row gutter={32} align="top">
-                <Col xs={24} md={14}>
-                  <Form.Item name="authorName" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Author Name</span>}>
-                    <Input prefix={<UserOutlined style={{ color: '#94a3b8' }} />} placeholder="Author's full name" size="large" style={{ borderRadius: 8, fontWeight: 500 }} />
-                  </Form.Item>
-                  <Form.Item name="authorDesignation" label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Author Designation</span>}>
-                    <Input prefix={<TagOutlined style={{ color: '#94a3b8' }} />} placeholder="e.g. Content Writer, Senior Editor, Guest Author" size="large" style={{ borderRadius: 8, fontWeight: 500 }} />
-                  </Form.Item>
-                  <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginTop: 24, borderLeft: '4px solid #10b981' }}>
-                    <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>ℹ️ Author Info</div>
-                    <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>Optional for drafts, required for publishing.</div>
+          {/* CONTENT EDITOR SECTION */}
+          <Form.Item
+            label={
+              <span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>
+                Blog Content <span style={{ color: '#ef4444' }}>*</span>
+              </span>
+            }
+          >
+            {/* Import Zone */}
+            <div className="bm-import-zone">
+              <div className="bm-import-zone-top">
+                <div className="bm-import-zone-left">
+                  <div className="bm-import-icon">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
                   </div>
-                </Col>
-                <Col xs={24} md={10}>
-                  <UploadWithCrop fileList={authorImageList} onChange={setAuthorImageList} aspect={1} cropTitle="Crop Author Avatar (1:1)" maxSizeMB={2} label="Author Avatar" extra="Recommended: 400 × 400px · Max 2MB" />
-                </Col>
-              </Row>
-            </TabPane>
-          </Tabs>
+                  <div>
+                    <p className="bm-import-zone-title">Import file</p>
+                    <p className="bm-import-zone-sub">Bold, italic, lists and headings are preserved</p>
+                  </div>
+                </div>
+                <button
+                  className="bm-import-btn"
+                  disabled={fileImporting}
+                  onClick={() => fileInputRef.current?.click()}
+                  type="button"
+                >
+                  {fileImporting ? (
+                    <LoadingOutlined style={{ fontSize: 13 }} spin />
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                  )}
+                  {fileImporting ? 'Importing…' : 'Choose file'}
+                </button>
+              </div>
+              <div className="bm-formats-row">
+                <span className="bm-formats-label">Supported</span>
+                <span className="bm-format-badge docx">DOCX</span>
+                <span className="bm-format-badge pdf">PDF</span>
+                <span className="bm-format-badge md">MD</span>
+                <span className="bm-format-badge html">HTML</span>
+                <span className="bm-format-badge txt">TXT</span>
+                <span className="bm-format-badge rtf">RTF</span>
+              </div>
+              <div className="bm-import-paste-hint">
+                <div className="bm-import-paste-dot" />
+                Smart paste active — copy from Word or Google Docs and paste directly into the editor below
+              </div>
+            </div>
 
-          {/* Footer */}
+            {/* Alerts */}
+            {smartFillApplied && (
+              <Alert
+                message={<span style={{ fontWeight: 600 }}>✨ Smart Fill Applied — Category & tags auto-detected!</span>}
+                type="success"
+                showIcon
+                closable
+                onClose={() => setSmartFillApplied(false)}
+                style={{ marginBottom: 12, borderRadius: 8 }}
+              />
+            )}
+            {pasteProcessing && (
+              <Alert
+                message={<span style={{ fontWeight: 600 }}>⏳ Processing paste — preserving formatting…</span>}
+                type="info"
+                showIcon
+                style={{ marginBottom: 12, borderRadius: 8 }}
+              />
+            )}
+            {fileImporting && (
+              <Alert
+                message={<span style={{ fontWeight: 600 }}>📄 Importing file — extracting formatted content…</span>}
+                type="info"
+                showIcon
+                icon={<Spin indicator={<LoadingOutlined />} />}
+                style={{ marginBottom: 12, borderRadius: 8 }}
+              />
+            )}
+
+            {/* Editor wrapper with paste handler */}
+            <div
+              onPasteCapture={handlePaste}
+              style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}
+            >
+            <JoditEditor
+  key={editorKey}
+  ref={editorRef}
+  value={contentRef.current}
+  config={editorConfig}
+  onChange={(newContent) => {
+    contentRef.current = newContent;
+    clearTimeout(contentDebounceRef.current);
+    contentDebounceRef.current = setTimeout(() => {
+      setHeadings(extractHeadings(newContent));
+    }, 800);
+  }}
+/>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, gap: 10 }}>
+              <Button
+                icon={<EyeOutlined />}
+                onClick={() => showPreview({}, true)}
+                disabled={!contentRef.current || contentRef.current === '<p><br></p>'}
+                style={{ borderRadius: 8, borderColor: '#e2e8f0', color: '#4c1d95', fontWeight: 600, height: 40, padding: '0 20px', background: '#f8fafc' }}
+              >
+                Live Preview
+              </Button>
+            </div>
+          </Form.Item>
+        </>
+      )
+    },
+    {
+      key: 'media',
+      label: <span><PictureOutlined /> Media</span>,
+      children: (
+        <>
+          <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginBottom: 24, borderLeft: '4px solid #3b82f6' }}>
+            <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>📸 Image Guidelines</div>
+            <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>
+              Featured image shows in blog listings; Cover image is the full-width hero banner.
+            </div>
+          </div>
+          <Row gutter={[32, 24]}>
+            <Col xs={24} md={12}>
+              <UploadWithCrop
+                fileList={featuredImageList}
+                onChange={setFeaturedImageList}
+                aspect={3/2}
+                cropTitle="Crop Featured Image (3:2)"
+                maxSizeMB={5}
+                label="Featured Image (Card Thumbnail)"
+                extra="Recommended: 1200 × 800px · Max 5MB"
+              />
+            </Col>
+            <Col xs={24} md={12}>
+              <UploadWithCrop
+                fileList={coverImageList}
+                onChange={setCoverImageList}
+                aspect={16/9}
+                cropTitle="Crop Cover / Hero Image (16:9)"
+                maxSizeMB={5}
+                label="Cover Image (Hero Banner)"
+                extra="Recommended: 1920 × 1080px · Max 5MB"
+              />
+            </Col>
+          </Row>
+        </>
+      )
+    },
+    {
+      key: 'author',
+      label: <span><UserOutlined /> Author</span>,
+      children: (
+        <>
+          <Row gutter={32} align="top">
+            <Col xs={24} md={14}>
+              <Form.Item
+                name="authorName"
+                label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Author Name</span>}
+              >
+                <Input
+                  prefix={<UserOutlined style={{ color: '#94a3b8' }} />}
+                  placeholder="Author's full name"
+                  size="large"
+                  style={{ borderRadius: 8, fontWeight: 500 }}
+                />
+              </Form.Item>
+              <Form.Item
+                name="authorDesignation"
+                label={<span style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>Author Designation</span>}
+              >
+                <Input
+                  prefix={<TagOutlined style={{ color: '#94a3b8' }} />}
+                  placeholder="e.g. Content Writer, Senior Editor, Guest Author"
+                  size="large"
+                  style={{ borderRadius: 8, fontWeight: 500 }}
+                />
+              </Form.Item>
+              <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginTop: 24, borderLeft: '4px solid #10b981' }}>
+                <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700 }}>ℹ️ Author Info</div>
+                <div style={{ fontSize: 13, color: '#475569', marginTop: 4, fontWeight: 500 }}>
+                  Optional for drafts, required for publishing.
+                </div>
+              </div>
+            </Col>
+            <Col xs={24} md={10}>
+              <UploadWithCrop
+                fileList={authorImageList}
+                onChange={setAuthorImageList}
+                aspect={1}
+                cropTitle="Crop Author Avatar (1:1)"
+                maxSizeMB={2}
+                label="Author Avatar"
+                extra="Recommended: 400 × 400px · Max 2MB"
+              />
+            </Col>
+          </Row>
+        </>
+      )
+    }
+  ]}
+/>
+
+          {/* Footer Actions */}
           <div className="bm-footer-bar">
             <Space>
               <Switch checked={autoSave} onChange={setAutoSave} style={{ background: autoSave ? '#0f172a' : undefined }} />
               <Text style={{ fontSize: 14, color: '#475569', fontWeight: 500 }}>Auto-save</Text>
             </Space>
             <Space size={12} style={{ flexWrap: 'wrap' }}>
-              <Button size="large" icon={<SaveOutlined />} onClick={() => { setTargetStatus('draft'); form.submit(); }} loading={saving && targetStatus === 'draft'} className="bm-save-draft-btn">
+              {/* FIX #1 & #6: set targetStatusRef synchronously, then submit */}
+              <Button
+                size="large"
+                icon={<SaveOutlined />}
+                onClick={() => { targetStatusRef.current = 'draft'; form.submit(); }}
+                // FIX #6: use savingAs for button loading state (no async race)
+                loading={saving && savingAs === 'draft'}
+                className="bm-save-draft-btn">
                 Save Draft
               </Button>
-              <Button type="primary" size="large" icon={editingId ? <CheckCircleOutlined /> : <RocketOutlined />} onClick={() => { setTargetStatus('published'); form.submit(); }} loading={saving && targetStatus === 'published'} className="bm-publish-btn">
+              <Button
+                type="primary"
+                size="large"
+                icon={editingId ? <CheckCircleOutlined /> : <RocketOutlined />}
+                onClick={() => { targetStatusRef.current = 'published'; form.submit(); }}
+                loading={saving && savingAs === 'published'}
+                className="bm-publish-btn">
                 {editingId ? 'Update & Publish' : 'Publish Post'}
               </Button>
             </Space>
@@ -2062,8 +2085,13 @@ const BlogManagement = () => {
         onCancel={() => setPreviewModalVisible(false)}
         footer={
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text type="secondary" style={{ fontSize: 13, fontWeight: 500, display: screens.xs ? 'none' : 'block' }}>This is how your blog will appear to readers</Text>
-            <Button onClick={() => setPreviewModalVisible(false)} style={{ borderRadius: 8, fontWeight: 600, width: screens.xs ? '100%' : 'auto', height: 40 }}>Close Preview</Button>
+            <Text type="secondary" style={{ fontSize: 13, fontWeight: 500, display: screens.xs ? 'none' : 'block' }}>
+              This is how your blog will appear to readers
+            </Text>
+            <Button onClick={() => setPreviewModalVisible(false)}
+              style={{ borderRadius: 8, fontWeight: 600, width: screens.xs ? '100%' : 'auto', height: 40 }}>
+              Close Preview
+            </Button>
           </div>
         }
         width={screens.xs ? '98%' : 900}
@@ -2079,4 +2107,4 @@ const BlogManagement = () => {
   );
 };
 
-export default BlogManagement;
+export default BlogManagement;   

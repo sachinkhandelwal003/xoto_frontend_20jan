@@ -164,7 +164,6 @@ const QueueCases = () => {
         setPickupModal(null);
         fetchQueueCases(currentPage, itemsPerPage, statusFilter, search, bankFilter);
         // Navigate to review page
-        navigate(`/ops/cases/${id}/review`);
       } else {
         showToast(response?.message || "Pickup failed", "error");
       }
@@ -180,10 +179,7 @@ const QueueCases = () => {
     setViewModal(row);
   };
 
-  // Review case
-  const handleReviewCase = (id) => {
-    navigate(`/ops/cases/${id}/review`);
-  };
+ 
 
   // Columns Definition for CustomTable
   const columns = [
@@ -342,20 +338,10 @@ const QueueCases = () => {
             </button>
 
             {/* Review Button */}
-            <button
-              onClick={() => handleReviewCase(id)}
-              style={{
-                display: "flex", alignItems: "center", gap: 5, padding: "6px 10px",
-                background: "#fff", border: `1px solid ${PURPLE_BORDER}`,
-                borderRadius: 7, fontSize: 12, fontWeight: 600, color: "#374151",
-                cursor: "pointer", transition: "all 0.2s"
-              }}
-            >
-              <ArrowRight size={13} /> Review
-            </button>
+      
 
             {/* Menu Dropdown */}
-            <div style={{ position: "relative" }}>
+            {/* <div style={{ position: "relative" }}>
               <button
                 onClick={() => setOpenMenuId(isOpen ? null : id)}
                 style={{ background: "transparent", border: "none", cursor: "pointer", padding: "6px" }}
@@ -385,7 +371,7 @@ const QueueCases = () => {
                   </div>
                 </div>
               )}
-            </div>
+            </div> */}
           </div>
         );
       }

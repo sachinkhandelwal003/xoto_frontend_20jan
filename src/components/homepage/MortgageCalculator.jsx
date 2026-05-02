@@ -26,10 +26,14 @@ const COUNTRIES = [
   { code: 'GB', dialCode: '+44', maxLength: 10, name: 'UK' },
   { code: 'PK', dialCode: '+92', maxLength: 10, name: 'Pakistan' },
   { code: 'QA', dialCode: '+974', maxLength: 8, name: 'Qatar' },
+  { code: 'KW', dialCode: '+965', maxLength: 8, name: 'Kuwait' },
+  { code: 'OM', dialCode: '+968', maxLength: 8, name: 'Oman' },
+  { code: 'BH', dialCode: '+973', maxLength: 8, name: 'Bahrain' },
 ];
 
 const MIN_SALARY = 10000;
 const DSR = 0.5;
+
 const getStressRate = (years) => {
   if (years <= 15) return 3.17;
   if (years <= 17) return 3.41;
@@ -68,12 +72,12 @@ const ModalWrapper = ({ isOpen, onClose, title, subtitle, children }) => {
       <div className="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="relative p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div>
-            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{title}</h2>
-            {subtitle && <p className="text-sm text-slate-500 font-medium mt-1">{subtitle}</p>}
+            <h2 className="text-xl font-bold text-slate-800">{title}</h2>
+            {subtitle && <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>}
           </div>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition"><FaTimes size={20} /></button>
         </div>
-        <div className="p-6 max-h-[80vh] overflow-y-auto">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );
@@ -362,6 +366,7 @@ export default function PerfectMortgageCalculator() {
                   <input type="range" min={5} max={25} value={loanTenure} onChange={e => setLoanTenure(Number(e.target.value))} className="w-full" style={{ accentColor: '#7C3AED' }} />
                   <div className="flex justify-between text-xs font-medium text-slate-300 mt-2"><span>5 Yrs</span><span>25 Yrs</span></div>
                 </div>
+                <div><label className="text-xs font-semibold text-slate-500">Loan Tenure: {loanTenure} years</label><input type="range" min={5} max={25} value={loanTenure} onChange={(e) => setLoanTenure(Number(e.target.value))} className="w-full accent-purple-600" /></div>
               </div>
             )}
 
@@ -472,9 +477,8 @@ export default function PerfectMortgageCalculator() {
         </div>
       </div>
 
+      <LeadCaptureModal isOpen={modals.preapproval} onClose={() => closeModal('preapproval')} calculatorData={calculatorData} />
       <LoanSummaryModal isOpen={modals.summary} onClose={() => closeModal('summary')} data={{ affordability, monthly: monthlyPayment }} />
-      <PreApprovalModal isOpen={modals.preapproval} onClose={() => closeModal('preapproval')} calculatorData={calculatorData} />
-      <ContactModal isOpen={modals.contact} onClose={() => closeModal('contact')} />
     </div>
   );
 }

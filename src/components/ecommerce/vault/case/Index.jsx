@@ -1198,14 +1198,16 @@ const CreateCase = () => {
                 />
               </Col>
               <Col xs={24} sm={12} md={6}>
-                <Text strong>Building Name</Text>
-                <Input 
-                  size="large" 
-                  value={caseData.propertyInfo.propertyAddress?.building} 
-                  onChange={(e) => handleNestedChange('propertyInfo', 'propertyAddress', 'building', e.target.value)} 
-                  placeholder="Enter building name" 
-                  style={{ marginTop: 4 }} 
-                />
+<Text strong>
+  Building Name <span style={{ color: 'red' }}>*</span>
+</Text>              <Input 
+  size="large" 
+  value={caseData.propertyInfo.propertyAddress?.building} 
+  onChange={(e) => handleNestedChange('propertyInfo', 'propertyAddress', 'building', e.target.value)} 
+  placeholder="Enter building name" 
+  style={{ marginTop: 4 }} 
+  status={!caseData.propertyInfo.propertyAddress?.building ? 'error' : ''}
+/>
               </Col>
               <Col xs={24} sm={12} md={6}>
                 <Text strong>Area <span style={{ color: 'red' }}>*</span></Text>
@@ -1412,7 +1414,7 @@ const CreateCase = () => {
                   {doc.label}
                   {doc.required && <span style={{ color: 'red' }}>*</span>}
                 </Text>
-                <div style={{ marginTop: 12 }}>
+                {/* <div style={{ marginTop: 12 }}>
                   {uploadedDocuments.some(d => d.type === doc.key) ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <CheckCircleOutlined style={{ color: '#10b981' }} />
@@ -1431,7 +1433,7 @@ const CreateCase = () => {
                       </Button>
                     </Upload>
                   )}
-                </div>
+                </div> */}
               </Card>
             </Col>
           ))}
