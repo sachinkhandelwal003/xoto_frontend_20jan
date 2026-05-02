@@ -536,7 +536,7 @@ const InteriorPlanner = () => {
 
     try {
       await apiService.post('/ai/generate-interior', formData);
-      console.log("✅ Interior generation started — polling shuru...");
+      
       startPolling(); 
     } catch (error) {
       console.error('Generation failed:', error);

@@ -570,19 +570,29 @@ const CUSTOM_ROLE_LINKS = {
 // Baaki purane roles ke neeche ye paste karo:
   "25": [
     {
-      title: "Total Leads",
-      icon: "fas fa-wallet",
-      path: "/dashboard/{roleSlug}/total-leads",
+      title: "Referrals",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/referrals",
+      submenus: [
+        { 
+          title: "Submit Lead", 
+          path: "/dashboard/{roleSlug}/submit-leads" 
+        },
+        { 
+          title: "My Referrals", 
+          path: "/dashboard/{roleSlug}/all-referrals" 
+        }
+      ]
     },
     {
-      title: "Active Leads",
-      icon: "fas fa-user-cog",
-      path: "/dashboard/{roleSlug}/active-leads",
+      title: "Leaderboard",
+      icon: "fas fa-trophy",
+      path: "/dashboard/{roleSlug}/leaderboard"
     },
     {
-      title: "Recent Leads",
+      title: "Profile",
       icon: "fas fa-user-cog",
-      path: "/dashboard/{roleSlug}/recent-leads",
+      path: "/dashboard/{roleSlug}/profile"
     }
   ],
 
@@ -619,37 +629,37 @@ const CUSTOM_ROLE_LINKS = {
 
     },
 ],
-// "23": [
-   
-//     {
-//       title: "Case",
-//       icon: "fas fa-folder-open",
-//       path: "/dashboard/{roleSlug}/cases",
-//       submenus: [
-//         { title: "Queue Cases", path: "/dashboard/{roleSlug}/case/queue/view" },
-//                 { title: "My Assigned Cases", path: "/dashboard/{roleSlug}/case/assigned/all" },
-
-//         // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
-//       ],
-
-//     },
-// ],
-
-
 "23": [
-  {
-    title: "Mortgage Cases",
-    icon: "fas fa-file-invoice-dollar",   // same icon as mortgage, or use fas fa-gavel
-    path: "/dashboard/{roleSlug}/mortgage-ops",
-    submenus: [
-      {
-        title: "All Cases",
-        path: "/dashboard/{roleSlug}/mortgage-ops/case/:caseId"
-      },
-      // Optional: Add a direct case detail link if needed, but usually you'd navigate from the list.
-    ]
-  } 
+   
+    {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Queue Cases", path: "/dashboard/{roleSlug}/case/queue/view" },
+                { title: "My Assigned Cases", path: "/dashboard/{roleSlug}/case/assigned/all" },
+
+        { title: "Disbursed Cases", path: "/dashboard/{roleSlug}/case/disbursed" },
+      ],
+
+    },
 ],
+
+
+// "23": [
+//   {
+//     title: "Mortgage Cases",
+//     icon: "fas fa-file-invoice-dollar",   // same icon as mortgage, or use fas fa-gavel
+//     path: "/dashboard/{roleSlug}/mortgage-ops",
+//     submenus: [
+//       {
+//         title: "All Cases",
+//         path: "/dashboard/{roleSlug}/mortgage-ops/case/:caseId"
+//       },
+//       // Optional: Add a direct case detail link if needed, but usually you'd navigate from the list.
+//     ]
+//   } 
+// ],
 
 
 };
@@ -756,13 +766,13 @@ useEffect(() => {
     try {
       const response = await apiService.get('/profile/get-profile-data');
 
-          console.log('FULL RESPONSE:', JSON.stringify(response, null, 2));
+         
 
       const category = response?.data?.partnerCategory
         ?.toString()
         .trim()
         .toLowerCase();
-      console.log('partnerCategory:', category);
+      
       setPartnerCategory(category || null);
     } catch (error) {
       console.error('partner profile fetch failed:', error);
@@ -814,6 +824,9 @@ useEffect(() => {
 if (roleCode === '21' && partnerCategory !== 'individual') {
   delete modulesMap['Create Lead'];
 }
+ if (partnerCategory === 'individual') {
+    delete modulesMap['Vault Partners'];
+  }
 
     // 3. Sorting
     const ordered = [];
@@ -886,6 +899,11 @@ if (roleCode === '21' && partnerCategory !== 'individual') {
               <div className="text-center">
                 <div className="text-xs uppercase tracking-widest text-purple-300/80">Welcome</div>
                 <div className="text-sm font-bold text-purple-200 capitalize">{displayRoleName}</div>
+                  {roleCode === '21' && partnerCategory && (
+    <div className="text-[11px] mt-1 px-2 py-[2px] rounded-full bg-purple-700/40 text-purple-200 capitalize inline-block">
+      {partnerCategory}
+    </div>
+  )}
               </div>
             )}
           </div>

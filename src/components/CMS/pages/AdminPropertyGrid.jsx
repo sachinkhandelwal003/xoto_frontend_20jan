@@ -322,7 +322,7 @@ const AdminPropertyList = () => {
       setTotal(res?.pagination?.totalItems || list.length);
       setStats(res?.stats || null);
     } catch (err) {
-      console.log(err);
+     
       message.error("Failed to load properties");
     } finally {
       setLoading(false);

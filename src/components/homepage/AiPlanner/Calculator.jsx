@@ -334,7 +334,7 @@ const Calculator = () => {
     if (!selectedType) return;
 
     setLoading((prev) => ({ ...prev, gallery: true }));
-    console.log("Fetching gallery via GET for Type:", selectedType);
+    
 
     try {
       const res = await apiService.get(
@@ -656,10 +656,10 @@ const Calculator = () => {
           response.updatedEstimate?.type_gallery_snapshot?.moodboardImages;
 
         if (snapshotImages && snapshotImages.length > 0) {
-          console.log("Using Snapshot Images from Response");
+          
           setGalleryImages(snapshotImages);
         } else {
-          console.log("Snapshot empty, checking existing gallery images...");
+          
           if (galleryImages.length === 0) {
             // If we have nothing (Step 2 failed or API didn't run), try fetching again
             getAllImages();

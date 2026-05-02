@@ -61,7 +61,6 @@ const ContentEdit = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Content saved:', content);
     navigate('/content');
   };
 

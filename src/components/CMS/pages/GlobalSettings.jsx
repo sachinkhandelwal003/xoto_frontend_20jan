@@ -53,7 +53,7 @@ const GlobalSettings = () => {
     setLoading(true);
     // Simulate API Call
     setTimeout(() => {
-      console.log("Saved Settings:", values);
+      
       message.success("Global settings updated successfully! Changes are now live.");
       setLoading(false);
     }, 1200);

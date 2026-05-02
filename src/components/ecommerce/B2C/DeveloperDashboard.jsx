@@ -55,7 +55,7 @@ const DeveloperDashboard = () => {
         setDealFunnel(res.dealFunnel || []);
       }
     } catch (err) {
-      console.log(err);
+      
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -23,7 +23,7 @@ const Second = () => {
     <>
       <section
         dir={isRTL ? "rtl" : "ltr"}
-        className="relative w-full py-12 lg:py-20 bg-[var(--color-body)] overflow-hidden"
+        className="relative w-full py-12 lg:py-15 bg-[var(--color-body)] overflow-hidden"
       >
         {/* BACKGROUND WAVE */}
         <div className="absolute bottom-0 left-0 w-full z-0 pointer-events-none translate-y-1/4 lg:translate-y-1/2">

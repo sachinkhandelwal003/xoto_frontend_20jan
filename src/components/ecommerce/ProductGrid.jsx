@@ -145,7 +145,7 @@ const ProductGrid = ({
   ];
 
   const handleBookingSubmit = (values) => {
-    console.log("Booking submitted:", values);
+    
     message.success(
       "Consultation booked successfully! Our designer will contact you shortly."
     );

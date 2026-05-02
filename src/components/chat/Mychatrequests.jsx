@@ -32,7 +32,7 @@ const res = await apiService.get("/chat-request/my-requests");
                  : [];
       setRequests(list);
     } catch (err) {
-      console.log("Error:", err);
+     
       message.error("Requests load nahi huyi");
     } finally { setLoading(false); }
   };
@@ -139,8 +139,7 @@ const res = await apiService.get("/chat-request/my-requests");
             style={{ background: "#7c3aed", borderColor: "#7c3aed", marginLeft: 12 }}
            
 onClick={() => {
-  console.log("Active chat req:", req);
-  console.log("Lead:", req.lead);
+ 
   setActiveChat(req);
 }}
           >

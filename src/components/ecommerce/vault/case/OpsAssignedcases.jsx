@@ -3,20 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from 'react-redux';
 import {
   Eye, User, Mail, Phone, AlertCircle, CheckCircle,
-  Clock, Building2, Banknote, FileText, Inbox,
+  Clock, Building2, Banknote, FileText,
   Calendar, TrendingUp, RefreshCw
 } from "lucide-react";
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
 import CustomTable from "../../../CMS/pages/custom/CustomTable";
 import dayjs from "dayjs";
-import { Card, Tag, Badge, Progress, Modal, Descriptions, Alert, Button, Input, Tabs } from "antd";
-import { CheckCircleOutlined, ClockCircleOutlined, EyeOutlined } from "@ant-design/icons";
+import { Card, Tag, Badge, Progress, Modal, Alert, Button, Input, Tooltip } from "antd";
+import { CheckCircleOutlined, ClockCircleOutlined, EyeOutlined, RedoOutlined } from "@ant-design/icons";
 
 const PURPLE = "#5C039B";
 const PURPLE_LIGHT = "#FAF5FF";
 const PURPLE_BORDER = "#E9D5FF";
 
-const { TabPane } = Tabs;
 const roleSlugMap = {
   '0': 'superadmin',
   '1': 'admin',
@@ -26,22 +25,48 @@ const roleSlugMap = {
   '7': 'freelancer',
   '11': 'accountant',
   '12': 'supervisor',
-  '15': "agency",        // Agency
-  '16': "agent",         // Agent
+  '15': "agency",
+  '16': "agent",
   '17': "developer",
-  '18': "vault-admin", //vault
+  '18': "vault-admin",
   '22': "vaultagent",
   '21': "vaultpartner",
   '24': "GridAdvisor",
   '26': "vault-advisor",
   '23': "vault-ops",
   '25': "gridReferralPartner",
-  
 };
+
+// ================= STATUS CONFIGURATION =================
+// Row 1: Review & Under Review Statuses (Need Immediate Attention)
+const REVIEW_STATUSES = [
+  { key: 'all', label: 'All Cases', icon: '📋', color: PURPLE },
+  { key: 'Assigned - Pending Review', label: 'Pending Review', icon: '👀', color: "#D97706" },
+  { key: 'Under Review', label: 'Under Review', icon: '🔍', color: "#3B82F6" },
+  { key: 'Returned - Pending Correction', label: 'Returned', icon: '⚠️', color: "#DC2626" },
+  { key: 'Resubmitted-After Correction', label: 'Resubmitted', icon: '🔄', color: "#8B5CF6" }
+];
+
+// Row 2: Bank Application & Pipeline Statuses
+const PIPELINE_STATUSES = [
+  { key: 'Bank Application', label: 'Bank Application', icon: '🏦', color: "#8B5CF6" },
+  { key: 'Collecting Documentation', label: 'Collecting Docs', icon: '📄', color: "#F59E0B" },
+  { key: 'Pre-Approved', label: 'Pre-Approved', icon: '✅', color: "#10B981" },
+  { key: 'Valuation', label: 'Valuation', icon: '🏠', color: "#F59E0B" },
+  { key: 'FOL Processed', label: 'FOL Processed', icon: '📑', color: "#6366F1" },
+  { key: 'FOL Issued', label: 'FOL Issued', icon: '📨', color: "#06B6D4" },
+  { key: 'FOL Signed', label: 'FOL Signed', icon: '✍️', color: "#14B8A6" },
+  { key: 'Disbursed', label: 'Disbursed', icon: '💰', color: "#059669" },
+  { key: 'Draft', label: 'Draft', icon: '📝', color: "#6B7280" },
+  { key: 'Submitted to Xoto', label: 'Submitted', icon: '📤', color: "#8B5CF6" },
+  { key: 'In Ops Queue - Pending Pick-up', label: 'Ops Queue', icon: '⏳', color: "#F59E0B" },
+  { key: 'Rejected', label: 'Rejected', icon: '❌', color: "#DC2626" },
+  { key: 'Lost', label: 'Lost', icon: '📉', color: "#6B7280" }
+];
 
 const OpsAssignedcases = () => {
   const navigate = useNavigate();
-    const { user } = useSelector((s) => s.auth);
+  const { user } = useSelector((s) => s.auth);
   const roleSlug = roleSlugMap[user?.role?.code] ?? "superadmin";
 
   const [cases, setCases] = useState([]);
@@ -49,14 +74,7 @@ const OpsAssignedcases = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalCases, setTotalCases] = useState(0);
-  const [summary, setSummary] = useState({
-    total: 0,
-    pendingReview: 0,
-    underReview: 0,
-    returned: 0,
-    bankApplication: 0
-  });
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeStatus, setActiveStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [viewModal, setViewModal] = useState(null);
   const [toast, setToast] = useState(null);
@@ -79,7 +97,7 @@ const OpsAssignedcases = () => {
   };
 
   // Fetch assigned cases
-  const fetchAssignedCases = useCallback(async (page = 1, limit = 10, status = activeTab, searchTerm = search) => {
+  const fetchAssignedCases = useCallback(async (page = 1, limit = 10, status = activeStatus, searchTerm = search) => {
     setLoading(true);
     try {
       let url = `/vault/cases/ops/my-cases?page=${page}&limit=${limit}`;
@@ -91,13 +109,6 @@ const OpsAssignedcases = () => {
       if (response?.success) {
         setCases(response.data || []);
         setTotalCases(response.pagination?.totalItems || response.data?.length || 0);
-        setSummary(response.summary || {
-          total: 0,
-          pendingReview: 0,
-          underReview: 0,
-          returned: 0,
-          bankApplication: 0
-        });
       } else {
         showToast(response?.message || "Failed to load assigned cases", "error");
       }
@@ -107,49 +118,52 @@ const OpsAssignedcases = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, search]);
+  }, [activeStatus, search]);
 
   useEffect(() => {
-    fetchAssignedCases(currentPage, itemsPerPage, activeTab, search);
-  }, [currentPage, itemsPerPage, activeTab, search, fetchAssignedCases]);
+    fetchAssignedCases(currentPage, itemsPerPage, activeStatus, search);
+  }, [currentPage, itemsPerPage, activeStatus, search, fetchAssignedCases]);
 
   const handleSearch = (e) => {
     setSearch(e.target.value);
     setCurrentPage(1);
   };
 
-  const handleTabChange = (key) => {
-    setActiveTab(key);
+  const handleStatusClick = (statusKey) => {
+    setActiveStatus(statusKey);
     setCurrentPage(1);
   };
 
   const resetFilters = () => {
     setSearch("");
-    setActiveTab("all");
+    setActiveStatus("all");
     setCurrentPage(1);
   };
 
   const handleRefresh = () => {
-    fetchAssignedCases(currentPage, itemsPerPage, activeTab, search);
+    fetchAssignedCases(currentPage, itemsPerPage, activeStatus, search);
   };
 
-  // View case details
   const handleViewCase = (row) => {
     setViewModal(row);
   };
 
-
-   const handleReviewCase = (id) => {
+  const handleReviewCase = (id) => {
     navigate(`/dashboard/${roleSlug}/case/assigned/view/${id}`);
   };
 
-  // Get status badge
+  // Get status badge configuration
   const getStatusBadge = (status) => {
     const statusMap = {
+      'Draft': { color: "#6B7280", bg: "#F3F4F6", text: "Draft", icon: <ClockCircleOutlined /> },
+      'Submitted to Xoto': { color: "#8B5CF6", bg: "#F3E8FF", text: "Submitted", icon: <ClockCircleOutlined /> },
+      'In Ops Queue - Pending Pick-up': { color: "#F59E0B", bg: "#FFFBEB", text: "In Queue", icon: <ClockCircleOutlined /> },
       'Assigned - Pending Review': { color: "#D97706", bg: "#FFFBEB", text: "Pending Review", icon: <ClockCircleOutlined /> },
       'Under Review': { color: "#3B82F6", bg: "#EFF6FF", text: "Under Review", icon: <EyeOutlined /> },
       'Returned - Pending Correction': { color: "#DC2626", bg: "#FEF2F2", text: "Returned", icon: <ClockCircleOutlined /> },
+      'Resubmitted-After Correction': { color: "#8B5CF6", bg: "#F3E8FF", text: "Resubmitted", icon: <RedoOutlined /> },
       'Bank Application': { color: "#8B5CF6", bg: "#F3E8FF", text: "Bank Application", icon: <ClockCircleOutlined /> },
+      'Collecting Documentation': { color: "#F59E0B", bg: "#FFFBEB", text: "Collecting Docs", icon: <ClockCircleOutlined /> },
       'Pre-Approved': { color: "#10B981", bg: "#ECFDF5", text: "Pre-Approved", icon: <CheckCircleOutlined /> },
       'Valuation': { color: "#F59E0B", bg: "#FFFBEB", text: "Valuation", icon: <ClockCircleOutlined /> },
       'FOL Processed': { color: "#6366F1", bg: "#EEF2FF", text: "FOL Processed", icon: <ClockCircleOutlined /> },
@@ -160,6 +174,12 @@ const OpsAssignedcases = () => {
       'Lost': { color: "#6B7280", bg: "#F3F4F6", text: "Lost", icon: <AlertCircle /> }
     };
     return statusMap[status] || { color: "#6B7280", bg: "#F3F4F6", text: status, icon: <ClockCircleOutlined /> };
+  };
+
+  // Get count for each status
+  const getStatusCount = (statusKey) => {
+    if (statusKey === 'all') return cases.length;
+    return cases.filter(c => c.currentStatus === statusKey).length;
   };
 
   // Calculate document progress
@@ -183,6 +203,11 @@ const OpsAssignedcases = () => {
           <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>
             Assigned: {formatDate(row.assignedTo?.assignedAt)}
           </p>
+          {row.resubmissionCount > 0 && (
+            <Tag color="purple" style={{ fontSize: 10, marginTop: 4 }}>
+              <RedoOutlined /> Resubmitted: {row.resubmissionCount}x
+            </Tag>
+          )}
         </div>
       ),
     },
@@ -223,7 +248,7 @@ const OpsAssignedcases = () => {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#6B7280", marginTop: 2 }}>
             <TrendingUp size={12} color="#9CA3AF" />
-            <span>{row.loanInfo?.interestRatePercentage}%</span>
+            <span>{row.loanInfo?.interestRatePercentage || 0}%</span>
           </div>
         </div>
       ),
@@ -254,31 +279,34 @@ const OpsAssignedcases = () => {
     {
       key: "status",
       title: "Status",
-      width: 140,
+      width: 160,
       render: (_, row) => {
         const status = getStatusBadge(row.currentStatus);
         return (
-          <Badge 
-            color={status.color} 
-            text={
-              <span style={{ color: status.color, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-                {status.icon}
-                {status.text}
-              </span>
-            }
-          />
+          <Tooltip title={row.currentStatus}>
+            <Badge 
+              color={status.color} 
+              text={
+                <span style={{ color: status.color, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                  {status.icon}
+                  {status.text}
+                </span>
+              }
+            />
+          </Tooltip>
         );
       }
     },
     {
       key: "actions",
       title: "Actions",
-      width: 180,
+      width: 200,
       render: (_, row) => {
         const id = getCaseId(row);
+        const isResubmitted = row.currentStatus === 'Resubmitted-After Correction';
+        const isReturned = row.currentStatus === 'Returned - Pending Correction';
         return (
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {/* View Button */}
             <button
               onClick={() => handleViewCase(row)}
               style={{
@@ -298,14 +326,14 @@ const OpsAssignedcases = () => {
             >
               <Eye size={13} /> View
             </button>
-
-            {/* Review Button */}
             <button
               onClick={() => handleReviewCase(id)}
               style={{
                 display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
-                background: "#fff", border: `1px solid ${PURPLE_BORDER}`,
-                borderRadius: 7, fontSize: 12, fontWeight: 600, color: "#374151",
+                background: (isResubmitted || isReturned) ? PURPLE : "#fff",
+                border: `1px solid ${PURPLE_BORDER}`,
+                borderRadius: 7, fontSize: 12, fontWeight: 600,
+                color: (isResubmitted || isReturned) ? "#fff" : "#374151",
                 cursor: "pointer", transition: "all 0.2s"
               }}
               onMouseEnter={(e) => {
@@ -314,12 +342,15 @@ const OpsAssignedcases = () => {
                 e.target.style.color = "#fff";
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = "#fff";
-                e.target.style.borderColor = PURPLE_BORDER;
-                e.target.style.color = "#374151";
+                if (isResubmitted || isReturned) {
+                  e.target.style.background = PURPLE;
+                } else {
+                  e.target.style.background = "#fff";
+                }
+                e.target.style.color = (isResubmitted || isReturned) ? "#fff" : "#374151";
               }}
             >
-              <FileText size={13} /> Review
+              <FileText size={13} /> {(isResubmitted || isReturned) ? "Review Now" : "Review"}
             </button>
           </div>
         );
@@ -327,28 +358,122 @@ const OpsAssignedcases = () => {
     }
   ];
 
-  // Stats Cards
-  const StatsCards = () => (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 24 }}>
-      <div style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", border: `1px solid ${PURPLE_BORDER}` }}>
-        <p style={{ fontSize: 28, fontWeight: 700, color: "#111827" }}>{summary.total || 0}</p>
-        <p style={{ fontSize: 12, color: "#6B7280" }}>Total Assigned</p>
+  // Row 1: Review & Under Review Status Buttons
+  const ReviewStatusButtons = () => (
+    <div style={{ 
+      marginBottom: 16,
+      background: "#fff", 
+      borderRadius: 16, 
+      padding: "16px 20px",
+      border: `1px solid ${PURPLE_BORDER}`,
+      overflowX: "auto",
+      whiteSpace: "nowrap"
+    }}>
+      <div style={{ marginBottom: 8, fontSize: 12, fontWeight: 600, color: PURPLE, display: "flex", alignItems: "center", gap: 8 }}>
+        <EyeOutlined /> REVIEW & UNDER REVIEW
+        <span style={{ fontSize: 11, color: "#6B7280", fontWeight: 400 }}>(Cases needing immediate attention)</span>
       </div>
-      <div style={{ background: "#FFFBEB", borderRadius: 12, padding: "16px 20px", border: "1px solid #FDE68A" }}>
-        <p style={{ fontSize: 28, fontWeight: 700, color: "#D97706" }}>{summary.pendingReview || 0}</p>
-        <p style={{ fontSize: 12, color: "#6B7280" }}>Pending Review</p>
+      <div style={{ display: "inline-flex", gap: 8, flexWrap: "wrap" }}>
+        {REVIEW_STATUSES.map(status => {
+          const count = getStatusCount(status.key);
+          const isActive = activeStatus === status.key;
+          return (
+            <button
+              key={status.key}
+              onClick={() => handleStatusClick(status.key)}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 40,
+                fontSize: 12,
+                fontWeight: 600,
+                border: `1px solid ${isActive ? status.color : "#E5E7EB"}`,
+                background: isActive ? status.color : "#fff",
+                color: isActive ? "#fff" : status.color,
+                cursor: "pointer",
+                transition: "all 0.2s",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6
+              }}
+            >
+              <span>{status.icon}</span>
+              <span>{status.label}</span>
+              {count > 0 && (
+                <span style={{
+                  background: isActive ? "rgba(255,255,255,0.2)" : `${status.color}20`,
+                  padding: "2px 6px",
+                  borderRadius: 20,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  marginLeft: 4,
+                  color: isActive ? "#fff" : status.color
+                }}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
-      <div style={{ background: "#EFF6FF", borderRadius: 12, padding: "16px 20px", border: "1px solid #BFDBFE" }}>
-        <p style={{ fontSize: 28, fontWeight: 700, color: "#3B82F6" }}>{summary.underReview || 0}</p>
-        <p style={{ fontSize: 12, color: "#6B7280" }}>Under Review</p>
+    </div>
+  );
+
+  // Row 2: Bank Application & Pipeline Status Buttons
+  const PipelineStatusButtons = () => (
+    <div style={{ 
+      marginBottom: 24,
+      background: "#fff", 
+      borderRadius: 16, 
+      padding: "16px 20px",
+      border: `1px solid ${PURPLE_BORDER}`,
+      overflowX: "auto",
+      whiteSpace: "nowrap"
+    }}>
+      <div style={{ marginBottom: 8, fontSize: 12, fontWeight: 600, color: "#10b981", display: "flex", alignItems: "center", gap: 8 }}>
+        <CheckCircleOutlined /> BANK APPLICATION & PIPELINE
+        <span style={{ fontSize: 11, color: "#6B7280", fontWeight: 400 }}>(Active cases in mortgage journey)</span>
       </div>
-      <div style={{ background: "#FEF2F2", borderRadius: 12, padding: "16px 20px", border: "1px solid #FECACA" }}>
-        <p style={{ fontSize: 28, fontWeight: 700, color: "#DC2626" }}>{summary.returned || 0}</p>
-        <p style={{ fontSize: 12, color: "#6B7280" }}>Returned</p>
-      </div>
-      <div style={{ background: "#F3E8FF", borderRadius: 12, padding: "16px 20px", border: "1px solid #E9D5FF" }}>
-        <p style={{ fontSize: 28, fontWeight: 700, color: "#8B5CF6" }}>{summary.bankApplication || 0}</p>
-        <p style={{ fontSize: 12, color: "#6B7280" }}>Bank Application</p>
+      <div style={{ display: "inline-flex", gap: 8, flexWrap: "wrap" }}>
+        {PIPELINE_STATUSES.map(status => {
+          const count = getStatusCount(status.key);
+          const isActive = activeStatus === status.key;
+          return (
+            <button
+              key={status.key}
+              onClick={() => handleStatusClick(status.key)}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 40,
+                fontSize: 12,
+                fontWeight: 600,
+                border: `1px solid ${isActive ? status.color : "#E5E7EB"}`,
+                background: isActive ? status.color : "#fff",
+                color: isActive ? "#fff" : status.color,
+                cursor: "pointer",
+                transition: "all 0.2s",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6
+              }}
+            >
+              <span>{status.icon}</span>
+              <span>{status.label}</span>
+              {count > 0 && (
+                <span style={{
+                  background: isActive ? "rgba(255,255,255,0.2)" : `${status.color}20`,
+                  padding: "2px 6px",
+                  borderRadius: 20,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  marginLeft: 4,
+                  color: isActive ? "#fff" : status.color
+                }}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -373,6 +498,7 @@ const OpsAssignedcases = () => {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <span style={{ fontSize: 12, color: "#6B7280", background: PURPLE_LIGHT, padding: "6px 12px", borderRadius: 8 }}>
+          <Calendar size={12} style={{ marginRight: 4 }} />
           Last updated: {formatDate(new Date())}
         </span>
         <Button 
@@ -394,6 +520,8 @@ const OpsAssignedcases = () => {
     const uploaded = viewModal.documentStatus?.documentsUploadedCount || 0;
     const total = viewModal.documentStatus?.requiredDocuments?.length || 0;
     const percentage = total > 0 ? (uploaded / total) * 100 : 0;
+    const isResubmitted = viewModal.currentStatus === 'Resubmitted-After Correction';
+    const isReturned = viewModal.currentStatus === 'Returned - Pending Correction';
 
     return (
       <Modal
@@ -412,21 +540,30 @@ const OpsAssignedcases = () => {
             }}
             style={{ background: PURPLE }}
           >
-            Review Case
+            {(isResubmitted || isReturned) ? "Review Now" : "Review Case"}
           </Button>
         ]}
       >
         <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
-          {/* Status Banner */}
           <Alert
             message={`Status: ${status.text}`}
             description={`Case assigned on ${formatDate(viewModal.assignedTo?.assignedAt)}`}
-            type={viewModal.currentStatus === 'Returned - Pending Correction' ? 'error' : 'info'}
+            type={isReturned ? 'error' : isResubmitted ? 'warning' : 'info'}
             showIcon
             style={{ marginBottom: 16 }}
           />
 
-          {/* Client Information */}
+          {viewModal.resubmissionCount > 0 && (
+            <Alert
+              message={`Resubmission #${viewModal.resubmissionCount}`}
+              description="This case has been resubmitted after corrections."
+              type="warning"
+              showIcon
+              icon={<RedoOutlined />}
+              style={{ marginBottom: 16 }}
+            />
+          )}
+
           <Card title="Client Information" size="small" style={{ marginBottom: 16 }}>
             <table style={{ width: "100%", fontSize: 13 }}>
               <tbody>
@@ -434,13 +571,10 @@ const OpsAssignedcases = () => {
                 <tr><td style={{ padding: "4px 0", color: "#6B7280" }}>Email:</td><td style={{ padding: "4px 0" }}>{viewModal.clientInfo?.email}</td></tr>
                 <tr><td style={{ padding: "4px 0", color: "#6B7280" }}>Mobile:</td><td style={{ padding: "4px 0" }}>{viewModal.clientInfo?.mobile}</td></tr>
                 <tr><td style={{ padding: "4px 0", color: "#6B7280" }}>Nationality:</td><td style={{ padding: "4px 0" }}>{viewModal.clientInfo?.nationality}</td></tr>
-                <tr><td style={{ padding: "4px 0", color: "#6B7280" }}>Marital Status:</td><td style={{ padding: "4px 0" }}>{viewModal.clientInfo?.maritalStatus}</td></tr>
-                <tr><td style={{ padding: "4px 0", color: "#6B7280" }}>Dependents:</td><td style={{ padding: "4px 0" }}>{viewModal.clientInfo?.numberOfDependents}</td></tr>
               </tbody>
             </table>
           </Card>
 
-          {/* Loan Information */}
           <Card title="Loan Information" size="small" style={{ marginBottom: 16 }}>
             <table style={{ width: "100%", fontSize: 13 }}>
               <tbody>
@@ -448,45 +582,18 @@ const OpsAssignedcases = () => {
                 <tr><td style={{ padding: "4px 0", color: "#6B7280" }}>Interest Rate:</td><td style={{ padding: "4px 0" }}>{viewModal.loanInfo?.interestRatePercentage}%</td></tr>
                 <tr><td style={{ padding: "4px 0", color: "#6B7280" }}>Tenure:</td><td style={{ padding: "4px 0" }}>{viewModal.loanInfo?.tenureYears} years</td></tr>
                 <tr><td style={{ padding: "4px 0", color: "#6B7280" }}>Selected Bank:</td><td style={{ padding: "4px 0" }}>{viewModal.loanInfo?.selectedBank}</td></tr>
-                <tr><td style={{ padding: "4px 0", color: "#6B7280" }}>Monthly EMI:</td><td style={{ padding: "4px 0" }}>{formatCurrency(viewModal.loanInfo?.monthlyInstallment?.principalAndInterest)}</td></tr>
-                <tr><td style={{ padding: "4px 0", color: "#6B7280" }}>LTV Ratio:</td><td style={{ padding: "4px 0" }}>{viewModal.propertyInfo?.ltvPercentage}%</td></tr>
               </tbody>
             </table>
           </Card>
 
-          {/* Property Information */}
-          <Card title="Property Information" size="small" style={{ marginBottom: 16 }}>
-            <table style={{ width: "100%", fontSize: 13 }}>
-              <tbody>
-                <tr><td style={{ padding: "4px 0", color: "#6B7280", width: 120 }}>Property Value:</td><td style={{ padding: "4px 0", fontWeight: 500 }}>{formatCurrency(viewModal.propertyInfo?.propertyValue)}</td></tr>
-                <tr><td style={{ padding: "4px 0", color: "#6B7280" }}>Property Type:</td><td style={{ padding: "4px 0" }}>{viewModal.propertyInfo?.propertyType}</td></tr>
-                <tr><td style={{ padding: "4px 0", color: "#6B7280" }}>Area:</td><td style={{ padding: "4px 0" }}>{viewModal.propertyInfo?.propertyAddress?.area}</td></tr>
-                <tr><td style={{ padding: "4px 0", color: "#6B7280" }}>Building:</td><td style={{ padding: "4px 0" }}>{viewModal.propertyInfo?.propertyAddress?.building || "N/A"}</td></tr>
-              </tbody>
-            </table>
-          </Card>
-
-          {/* Document Status */}
           <Card title="Document Status" size="small">
             <div style={{ textAlign: "center", marginBottom: 16 }}>
-              <Progress 
-                type="circle" 
-                percent={Math.round(percentage)} 
-                width={100}
-                strokeColor={percentage === 100 ? "#10b981" : PURPLE}
-              />
-              <div style={{ marginTop: 8 }}>
-                <span style={{ fontSize: 13 }}>{uploaded} / {total} documents uploaded</span>
-              </div>
+              <Progress type="circle" percent={Math.round(percentage)} width={100} strokeColor={percentage === 100 ? "#10b981" : PURPLE} />
+              <div style={{ marginTop: 8 }}><span>{uploaded} / {total} documents uploaded</span></div>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
               {viewModal.documentStatus?.requiredDocuments?.slice(0, 10).map((doc, idx) => (
-                <Tag 
-                  key={idx}
-                  color={doc.isUploaded ? "green" : "orange"}
-                  icon={doc.isUploaded ? <CheckCircleOutlined /> : <ClockCircleOutlined />}
-                  style={{ fontSize: 11 }}
-                >
+                <Tag key={idx} color={doc.isVerified ? "green" : (doc.isUploaded ? "orange" : "red")} style={{ fontSize: 11 }}>
                   {doc.documentType?.replace(/_/g, " ").toUpperCase()}
                 </Tag>
               ))}
@@ -497,9 +604,17 @@ const OpsAssignedcases = () => {
     );
   };
 
+  // Get header title based on active status
+  const getHeaderTitle = () => {
+    if (activeStatus === 'all') return 'All Cases';
+    const reviewStatus = REVIEW_STATUSES.find(s => s.key === activeStatus);
+    if (reviewStatus) return reviewStatus.label;
+    const pipelineStatus = PIPELINE_STATUSES.find(s => s.key === activeStatus);
+    return pipelineStatus?.label || activeStatus;
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#F9FAFB", padding: "28px 24px" }}>
-      {/* Toast Notification */}
       {toast && (
         <div style={{
           position: "fixed", top: 20, right: 20, zIndex: 9999,
@@ -507,14 +622,12 @@ const OpsAssignedcases = () => {
           background: toast.type === "success" ? "#059669" : "#DC2626",
           color: "#fff", padding: "12px 16px", borderRadius: 10,
           fontSize: 13, fontWeight: 600, boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-          
         }}>
           {toast.type === "success" ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
           {toast.message}
         </div>
       )}
 
-      {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111827" }}>My Assigned Cases</h1>
         <p style={{ fontSize: 13, color: "#6B7280", marginTop: 4 }}>
@@ -522,20 +635,27 @@ const OpsAssignedcases = () => {
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <StatsCards />
+      {/* Row 1: Review & Under Review Status Buttons */}
+      <ReviewStatusButtons />
 
-      {/* Tabs */}
-      <Tabs activeKey={activeTab} onChange={handleTabChange} style={{ marginBottom: 24 }}>
-        <TabPane tab="All Cases" key="all" />
-        <TabPane tab="Pending Review" key="Assigned - Pending Review" />
-        <TabPane tab="Under Review" key="Under Review" />
-        <TabPane tab="Returned" key="Returned - Pending Correction" />
-        <TabPane tab="Bank Application" key="Bank Application" />
-      </Tabs>
+      {/* Row 2: Bank Application & Pipeline Status Buttons */}
+      <PipelineStatusButtons />
 
       {/* Filter Bar */}
       <FilterBar />
+
+      {/* Case Count Info */}
+      <div style={{ marginBottom: 16, fontSize: 13, color: "#6B7280", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <span>
+          Showing <strong>{cases.length}</strong> case{cases.length !== 1 ? 's' : ''} 
+          {activeStatus !== 'all' && ` with status: ${getHeaderTitle()}`}
+        </span>
+        {cases.length > 0 && (
+          <span style={{ fontSize: 11, background: PURPLE_LIGHT, padding: "4px 10px", borderRadius: 20, color: PURPLE }}>
+            Total assigned: {cases.filter(c => c.assignedTo?.opsId).length}
+          </span>
+        )}
+      </div>
 
       {/* Table */}
       <CustomTable
@@ -551,23 +671,7 @@ const OpsAssignedcases = () => {
         }}
       />
 
-      {/* View Modal */}
       {renderViewModal()}
-
-      <style>{`
-        .ant-progress-text {
-          font-size: 10px !important;
-        }
-        .ant-tabs-tab-active {
-          color: ${PURPLE} !important;
-        }
-        .ant-tabs-ink-bar {
-          background-color: ${PURPLE} !important;
-        }
-        .ant-tabs-tab:hover {
-          color: ${PURPLE} !important;
-        }
-      `}</style>
     </div>
   );
 };

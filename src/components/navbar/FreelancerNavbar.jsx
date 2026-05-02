@@ -81,17 +81,17 @@ const FreelancerNavbar = () => {
   };
 
   const handleConnect = () => {
-    console.log("Connect call");
+    
     toggleContactModal();
   };
 
   const handleDisconnect = () => {
-    console.log("Disconnect call");
+    
     toggleContactModal();
   };
 
   const handleLogout = () => {
-    console.log("User logged out");
+    
     navigate("/login");
   };
 

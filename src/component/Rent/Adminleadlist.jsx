@@ -171,7 +171,7 @@ const AdminLeadList = () => {
       const list = body?.data ?? (Array.isArray(body) ? body : []);
       setAgents(list);
     } catch (err) {
-      console.log('Failed to load agents', err);
+      
     } finally {
       setAgentsLoading(false);
     }

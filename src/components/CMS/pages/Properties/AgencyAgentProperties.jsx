@@ -544,7 +544,7 @@ export default function AgencyAgentProperties() {
     try {
       const res = await apiService.get("/property/get-all-developers");
       setDevelopers(Array.isArray(res?.data) ? res.data : res?.data?.data || []);
-    } catch (err) { console.log(err); }
+    } catch (err) {  }
   };
 
   useEffect(() => { fetchProjects(1, false); fetchDevelopers(); }, []);

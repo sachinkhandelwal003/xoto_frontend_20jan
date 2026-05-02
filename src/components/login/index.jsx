@@ -379,7 +379,7 @@ const Login = () => {
         password: values.password,
       });
     } catch (err) {
-      console.log("🔥 Backend Error Object:", err);
+      
 
       let errorMessage = "Invalid credentials";
 

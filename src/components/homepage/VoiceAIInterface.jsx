@@ -57,9 +57,7 @@ function VoiceAIInterface({ onClose }) {
       // 1. Jaise hi user tap kare, status update karo
       setStatus("AI Initializing..."); 
       vapiRef.current.start(ASSISTANT_ID);
-      console.log("Vapi call started");
-      console.log("assistant id:", ASSISTANT_ID);
-      console.log("public key:", PUBLIC_KEY);
+      
     }
   };
 
