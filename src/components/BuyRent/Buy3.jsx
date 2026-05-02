@@ -48,20 +48,14 @@ const extractProperties = (res) => {
 };
 
 const transformProperty = (item) => ({
-  id: item._id,
-  imgUrl:
-    item.photos?.architecture?.[0] ||
-    item.photos?.interior?.[0] ||
-    item.photos?.other?.[0] ||
-    item.mainLogo ||
-    "https://via.placeholder.com/400x300?text=No+Image",
+  id: item._id || item.id,
+  imgUrl: item.photos?.architecture?.[0] || item.photos?.interior?.[0] || item.photos?.other?.[0] || item.mainLogo || "https://via.placeholder.com/400x300?text=No+Image",
   title: item.propertyName || "Unnamed Property",
-  price: item.price
-    ? `${item.currency || "AED"} ${Number(item.price).toLocaleString()}`
-    : "Price on Request",
+  price: item.price ? `${item.currency || "AED"} ${Number(item.price).toLocaleString()}` : "Price on Request",
   location: item.area && item.city ? `${item.area}, ${item.city}` : "Dubai, UAE",
   bedrooms: item.bedrooms || 0,
   bathrooms: item.bathrooms || 0,
+  bedroomType: item.bedroomType || "",   // ✅ yeh add karo
   area: item.builtUpArea ? `${item.builtUpArea} ${item.builtUpAreaUnit || "sqft"}` : "N/A",
   tag: item.propertySubType || item.transactionType || "Sell",
   liked: false,
@@ -112,11 +106,13 @@ const validatePhone = (countryCode, mobile) => {
 
 const Property = () => {
   const { t } = useTranslation("buy3");
-  const [openModal, setOpenModal] = useState(false);
-  const [loading, setLoading] = useState(false);
+const [openModal, setOpenModal] = useState(false);
+const [loading, setLoading] = useState(false);
+const [selectedProperty, setSelectedProperty] = useState(null);
   const [properties, setProperties] = useState(() => readCachedHotProperties());
   const [fetchLoading, setFetchLoading] = useState(() => readCachedHotProperties().length === 0);
   const [api, contextHolder] = notification.useNotification();
+  
 
   // 2. Form State (Added location fields)
   const [formData, setFormData] = useState({
@@ -268,6 +264,10 @@ if (phoneError) {
 const handleSubmit = async (e) => {
   e.preventDefault();
   if (!validateForm()) return;
+    if (!selectedProperty) {
+    openNotification("error", "No Property Selected", "Please select a property first");
+    return;
+  }
 
   setLoading(true);
 
@@ -280,24 +280,20 @@ const handleSubmit = async (e) => {
   const stateName = State.getStateByCodeAndCountry(formData.state, formData.location_country)?.name || formData.state;
   const finalLocationString = `${formData.city || stateName}, ${stateName}, ${countryName}`;
 
-  const payload = {
-    type: "hot_property",
-    name: { first_name: formData.first_name.trim(), last_name: formData.last_name.trim() },
-    mobile: {
-      country_code: formData.country_code,
-      number: formData.mobile,
-      full: phoneObj?.number ?? `+${formData.country_code}${formData.mobile}`, // ✅ safe
-    },
-    email: formData.email.toLowerCase().trim(),
-    occupation: formData.occupation,
-    location: finalLocationString,
-    city: formData.city,
-    preferred_city: formData.city || stateName,
-    preferred_contact: formData.preferred_contact,
-  };
+const payload = {
+  enquiry_type: "hot_property",
+  property_id: selectedProperty?.id,
+
+  first_name: formData.first_name.trim(),
+  last_name: formData.last_name.trim(),
+  phone_number: formData.mobile,
+ country_code: `+${formData.country_code}`,
+
+  email: formData.email.toLowerCase().trim(),
+};
 
   try {
-    const res = await apiService.post("/property/lead", payload);
+    const res = await apiService.post("/gridlead/website-lead", payload);
     if (res.success) {
       openNotification("success", "Request Submitted", t("toast.success"));
       setOpenModal(false);
@@ -346,13 +342,16 @@ const handleSubmit = async (e) => {
           </p>
         ) : (
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
-            {properties.map((deal) => (
-              <PropertyCard
-                key={deal.id}
-                deal={deal}
-                onClick={() => setOpenModal(true)}
-              />
-            ))}
+         {properties.map((deal) => (
+  <PropertyCard
+    key={deal.id}
+    deal={deal}
+    onClick={() => {
+      setSelectedProperty(deal);
+      setOpenModal(true);
+    }}
+  />
+))}
           </div>
         )}
       </div>
@@ -599,19 +598,31 @@ function PropertyCard({ deal, onClick }) {
 
         {/* Icons Row */}
         <div className="flex items-center gap-5 text-[13px] text-[#374151] mb-5">
-          <div className="flex items-center gap-2">
-            <img src={bedicon} alt="Beds" className="h-[16px] w-[16px]" />
-            <span>{deal.bedrooms} <span className="text-[#9CA3AF]">Bedrooms</span></span>
-          </div>
-          <div className="flex items-center gap-2">
-            <img src={tubicon} alt="Bath" className="h-[16px] w-[16px]" />
-            <span>{deal.bathrooms} <span className="text-[#9CA3AF]">Bathroom</span></span>
-          </div>
-          <div className="flex items-center gap-2">
-            <img src={layouticon} alt="Area" className="h-[16px] w-[16px]" />
-            <span>{deal.area} <span className="text-[#9CA3AF]">Living Area</span></span>
-          </div>
-        </div>
+  {deal.bedroomType === "studio" ? (
+   
+    <div className="flex items-center gap-2">
+      <img src={bedicon} alt="Studio" className="h-[16px] w-[16px]" />
+      <span className="font-semibold text-[#5C039B]">Studio</span>
+    </div>
+  ) : (
+   
+    <>
+      <div className="flex items-center gap-2">
+        <img src={bedicon} alt="Beds" className="h-[16px] w-[16px]" />
+        <span>{deal.bedrooms} <span className="text-[#9CA3AF]">Bedrooms</span></span>
+      </div>
+      <div className="flex items-center gap-2">
+        <img src={tubicon} alt="Bath" className="h-[16px] w-[16px]" />
+        <span>{deal.bathrooms} <span className="text-[#9CA3AF]">Bathroom</span></span>
+      </div>
+    </>
+  )}
+  {/* Area hamesha dikhega */}
+  <div className="flex items-center gap-2">
+    <img src={layouticon} alt="Area" className="h-[16px] w-[16px]" />
+    <span>{deal.area} <span className="text-[#9CA3AF]">Living Area</span></span>
+  </div>
+</div>
 
         {/* Button */}
         <button

@@ -8,6 +8,7 @@ import  Buy6 from '../BuyRent/Buy6'
 import Buy4 from '../BuyRent/Buy4'
 import  Sixth from '../Service/Sixth'
 import Seventh from '../Service/Seventh'
+import Partners from '../Service/partnes'
 const Service = () => {
   return (
     <div>
@@ -16,7 +17,7 @@ const Service = () => {
       <Second/>
            <Seventh/>
       <Third/>
-      <Buy4 />
+      <Partners />
       {/* <FOurth/> */}
       <Buy6/>
        {/* <Fifth/> */}
