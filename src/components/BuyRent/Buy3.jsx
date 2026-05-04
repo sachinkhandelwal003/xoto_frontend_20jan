@@ -427,7 +427,7 @@ const payload = {
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600"><Phone size={20} /></div>
                     {errors.mobile && <p className="text-red-500 text-xs mt-1 absolute bottom-[-18px]">{errors.mobile}</p>}
                   </div>
-                </div>
+                </div>  
 
                 {/* Occupation */}
                 {/* <div className="relative">
@@ -549,90 +549,191 @@ const payload = {
     </>
   );
 };
-
 function PropertyCard({ deal, onClick }) {
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [isFavourited, setIsFavourited] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
+
+  // Check if already favourited on mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const savedFavs = JSON.parse(localStorage.getItem("customer_favourites") || "[]");
+    if (savedFavs.includes(deal.id)) {
+      setIsFavourited(true);
+    }
+  }, [deal.id]);
+
+  // Scroll lock — image modal
+  useEffect(() => {
+    if (imageModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    return () => { document.body.style.overflow = "auto"; };
+  }, [imageModalOpen]);
+
+  // ESC key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && imageModalOpen) setImageModalOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [imageModalOpen]);
+
+  // ── Heart click handler ──────────────────────────────────────────────────
+  const handleFavouriteClick = async (e) => {
+    e.stopPropagation(); // card click se alag rakho
+
+    const token = localStorage.getItem("token");
+
+    // Login nahi hai → redirect
+    if (!token) {
+      window.location.href = "/user/login"; // apna login route daalo
+      return;
+    }
+
+    if (favLoading) return;
+    setFavLoading(true);
+
+    try {
+ const res = await apiService.post("/properties/favourites/toggle", {
+  property_id: deal.id,
+});
+
+      if (res.success) {
+        const newState = res.isFavourited;
+        setIsFavourited(newState);
+
+        // localStorage mein bhi sync karo
+        const savedFavs = JSON.parse(localStorage.getItem("customer_favourites") || "[]");
+        const updated = newState
+          ? [...new Set([...savedFavs, deal.id])]
+          : savedFavs.filter((id) => id !== deal.id);
+        localStorage.setItem("customer_favourites", JSON.stringify(updated));
+      }
+    } catch (err) {
+      console.error("Favourite toggle failed:", err);
+    } finally {
+      setFavLoading(false);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-[10px] shadow-[0_4px_24px_rgba(0,0,0,0.10)] overflow-visible w-full max-w-[390px] mb-6 transition-transform duration-300 hover:scale-[1.02] z-10">
-      
-      {/* Image Section */}
-      <div className="relative rounded-t-[10px] overflow-hidden">
-        <img 
-          src={deal.imgUrl} 
-          alt={deal.title} 
-          className="h-[200px] md:h-[230px] w-full object-cover rounded-t-[10px]" 
-        />
-        
-        {/* Popular badge - top left */}
-        <div className="absolute top-3 left-3 bg-white text-[#2F73F2] text-[12px] font-semibold px-3 py-1 rounded-[5px] shadow-sm">
-          Popular
-        </div>
-
-        {/* Favorite icon - top right */}
-        <div className="absolute top-3 right-3 bg-white w-[34px] h-[34px] rounded-[5px] flex items-center justify-center shadow-sm cursor-pointer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#5C039B" stroke="#5C039B" strokeWidth="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-        </div>
-      </div>
-
-      {/* Content Section */}
-      <div className="p-5 md:p-[20px]">
-        
-        {/* Title + Location Tag Row */}
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <h3 className="text-[16px] font-semibold text-[#111827] leading-snug">{deal.title}</h3>
-          {/* Location pill - e.g. "Florida" */}
-          <span className="shrink-0 text-[11px] font-medium text-[#5C039B] bg-[#F3E8FF] px-2 py-[3px] rounded-full">
-            {deal.location?.split(",")[1]?.trim() || "Dubai"}
-          </span>
-        </div>
-
-        {/* Price */}
-        <div className="flex items-end gap-[4px] mb-4">
-          <span className="font-bold text-[20px] text-[#111827]">{deal.price}</span>
-          <span className="font-medium text-[12px] text-[#9CA3AF] mb-[2px]">/month</span>
-        </div>
-
-        {/* Divider */}
-        <div className="border-t border-[#F3F4F6] mb-4" />
-
-        {/* Icons Row */}
-        <div className="flex items-center gap-5 text-[13px] text-[#374151] mb-5">
-  {deal.bedroomType === "studio" ? (
-   
-    <div className="flex items-center gap-2">
-      <img src={bedicon} alt="Studio" className="h-[16px] w-[16px]" />
-      <span className="font-semibold text-[#5C039B]">Studio</span>
-    </div>
-  ) : (
-   
     <>
-      <div className="flex items-center gap-2">
-        <img src={bedicon} alt="Beds" className="h-[16px] w-[16px]" />
-        <span>{deal.bedrooms} <span className="text-[#9CA3AF]">Bedrooms</span></span>
-      </div>
-      <div className="flex items-center gap-2">
-        <img src={tubicon} alt="Bath" className="h-[16px] w-[16px]" />
-        <span>{deal.bathrooms} <span className="text-[#9CA3AF]">Bathroom</span></span>
-      </div>
-    </>
-  )}
-  {/* Area hamesha dikhega */}
-  <div className="flex items-center gap-2">
-    <img src={layouticon} alt="Area" className="h-[16px] w-[16px]" />
-    <span>{deal.area} <span className="text-[#9CA3AF]">Living Area</span></span>
-  </div>
-</div>
+      <div className="bg-white rounded-[10px] shadow-[0_4px_24px_rgba(0,0,0,0.10)] overflow-visible w-full max-w-[390px] mb-6 transition-transform duration-300 hover:scale-[1.02] z-10">
 
-        {/* Button */}
-        <button
-          onClick={onClick}
-          className="w-full h-[48px] bg-[#5C039B] text-white rounded-[30px] font-semibold text-[15px] transition-all hover:bg-[#4a0280]"
-        >
-          Show Details
-        </button>
+        {/* Image Section */}
+        <div className="relative rounded-t-[10px] overflow-hidden">
+          <img
+            src={deal.imgUrl}
+            alt={deal.title}
+            className="h-[200px] md:h-[230px] w-full object-cover rounded-t-[10px] cursor-pointer"
+            onClick={() => setImageModalOpen(true)}
+          />
+
+          {/* Popular badge */}
+          <div className="absolute top-3 left-3 bg-white text-[#2F73F2] text-[12px] font-semibold px-3 py-1 rounded-[5px] shadow-sm">
+            Popular
+          </div>
+
+          {/* ── Heart / Favourite icon ── */}
+          <button
+            onClick={handleFavouriteClick}
+            disabled={favLoading}
+            className="absolute top-3 right-3 bg-white w-[34px] h-[34px] rounded-[5px] flex items-center justify-center shadow-sm cursor-pointer transition-transform duration-200 hover:scale-110 active:scale-95"
+          >
+            {favLoading ? (
+              // Loading spinner
+              <div className="w-4 h-4 border-2 border-[#5C039B] border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                // filled = liked, outline = not liked
+                fill={isFavourited ? "#5C039B" : "none"}
+                stroke="#5C039B"
+                strokeWidth="2"
+                className="transition-all duration-200"
+              >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            )}
+          </button>
+        </div>
+
+        {/* Content Section */}
+        <div className="p-5 md:p-[20px]">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <h3 className="text-[16px] font-semibold text-[#111827] leading-snug">{deal.title}</h3>
+            <span className="shrink-0 text-[11px] font-medium text-[#5C039B] bg-[#F3E8FF] px-2 py-[3px] rounded-full">
+              {deal.location?.split(",")[1]?.trim() || "Dubai"}
+            </span>
+          </div>
+
+          <div className="flex items-end gap-[4px] mb-4">
+            <span className="font-bold text-[20px] text-[#111827]">{deal.price}</span>
+          </div>
+
+          <div className="border-t border-[#F3F4F6] mb-4" />
+
+          <div className="flex items-center gap-5 text-[13px] text-[#374151] mb-5">
+            {deal.bedroomType === "studio" ? (
+              <div className="flex items-center gap-2">
+                <img src={bedicon} alt="Studio" className="h-[16px] w-[16px]" />
+                <span className="font-semibold text-[#5C039B]">Studio</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <img src={bedicon} alt="Beds" className="h-[16px] w-[16px]" />
+                  <span>{deal.bedrooms} <span className="text-[#9CA3AF]">Bedrooms</span></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <img src={tubicon} alt="Bath" className="h-[16px] w-[16px]" />
+                  <span>{deal.bathrooms} <span className="text-[#9CA3AF]">Bathroom</span></span>
+                </div>
+              </>
+            )}
+            <div className="flex items-center gap-2">
+              <img src={layouticon} alt="Area" className="h-[16px] w-[16px]" />
+              <span>{deal.area} <span className="text-[#9CA3AF]">Living Area</span></span>
+            </div>
+          </div>
+
+          <button
+            onClick={onClick}
+            className="w-full h-[48px] bg-[#5C039B] text-white rounded-[30px] font-semibold text-[15px] transition-all hover:bg-[#4a0280]"
+          >
+            Show Details
+          </button>
+        </div>
       </div>
-    </div>
+
+      {/* Image Lightbox Modal */}
+      {imageModalOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="relative max-w-[90vw] max-h-[90vh]">
+            <button
+              onClick={() => setImageModalOpen(false)}
+              className="absolute -top-4 -right-4 z-20 bg-gradient-to-r from-red-500 to-pink-500 text-white w-9 h-9 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg"
+            >
+              <X size={18} />
+            </button>
+            <img
+              src={deal.imgUrl}
+              alt={deal.title}
+              className="max-w-[90vw] max-h-[85vh] object-contain rounded-xl shadow-2xl"
+            />
+            <p className="text-center text-white/80 text-sm mt-3">{deal.title}</p>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
