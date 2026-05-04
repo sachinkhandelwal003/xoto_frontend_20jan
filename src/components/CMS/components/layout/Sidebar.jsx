@@ -141,7 +141,7 @@ const CUSTOM_ROLE_LINKS = {
     icon: "fas fa-user-shield",
     submenus: [
       { title: "Advisor List",      path: "/dashboard/{roleSlug}/advisors" },
-      { title: "Create Advisor",    path: "/dashboard/{roleSlug}/create-advisor" },
+      { title: "Create Advisor",    path: "/dashboard/{roleSlug}/advisor/create" },
       { title: "Leaderboard",       path: "/dashboard/{roleSlug}/advisors/leaderboard" },
     ]
   },
@@ -211,6 +211,14 @@ const CUSTOM_ROLE_LINKS = {
       title: "My Projects", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects",
       submenus: [
         { title: "Ongoing Projects", path: "/dashboard/{roleSlug}/projects/ongoing" },
+
+
+      ],
+    },
+    {
+      title: "My Favourites", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/My-favourite-Properties",
+      submenus: [
+        { title: "My Favourite Properties", path: "/dashboard/{roleSlug}/My-favourite-Properties" },
 
 
       ],
