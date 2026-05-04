@@ -115,17 +115,17 @@ const ROLES = [
     dashPath: "/dashboard/vault-admin/advisor/dashboard",
     apiEndpoint: "/vault/advisor/login",
   },
-  {
-    id: "xotopartner",
-    label: "Xoto Partner",
-    description: "Xoto Platform Partner",
-    Icon: TeamOutlined,
-    color: "#EC4899",
-    gradient: "linear-gradient(135deg, #EC4899, #BE185D)",
-    dashPath: "/dashboard/xoto-partner",
-    apiEndpoint: "/xoto/partner/login",
-    registerPath: "/xoto/partner/register",
-  },
+  // {
+  //   id: "xotopartner",
+  //   label: "Xoto Partner",
+  //   description: "Xoto Platform Partner",
+  //   Icon: TeamOutlined,
+  //   color: "#EC4899",
+  //   gradient: "linear-gradient(135deg, #EC4899, #BE185D)",
+  //   dashPath: "/dashboard/xoto-partner",
+  //   apiEndpoint: "/xoto/partner/login",
+  //   registerPath: "/xoto/partner/register",
+  // },
   {
     id: "vaultagent",
     label: "Xoto Vault Agent",
@@ -250,7 +250,7 @@ const EmployeeLogin = () => {
       >
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <Title level={2} style={{ margin: 0, color: "#fff", fontWeight: 700 }}>
-            Xoto Staff Portal
+            Xoto Vault Portal
           </Title>
           <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 16, marginTop: 8, display: "block" }}>
             Select your role to continue
