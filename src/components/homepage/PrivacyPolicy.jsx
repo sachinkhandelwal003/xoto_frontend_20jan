@@ -333,7 +333,7 @@ const PrivacyPolicyPage = () => {
                 <h2 className="text-xl font-bold text-gray-900">5. Real Estate Brokerage & Leasing Disclaimers</h2>
               </div>
               <div className="p-6 space-y-4 text-gray-700">
-                <p>Xoto Prophet Real Estate LLC acts as a real estate buying/selling broker and leasing agent in accordance with DLD/RERA rules.</p>
+                <p>Xoto Proptech Real Estate LLC acts as a real estate buying/selling broker and leasing agent in accordance with DLD/RERA rules.</p>
                 <div className="space-y-3">
                   <div className="flex gap-3 p-4 bg-gray-50 rounded-xl">
                     <Home className="h-5 w-5 flex-shrink-0" style={{ color: themeColor }} />

@@ -9,12 +9,14 @@ import Buy4 from '../BuyRent/Buy4'
 import  Sixth from '../Service/Sixth'
 import Seventh from '../Service/Seventh'
 import Partners from '../Service/partnes'
+import PerfectMortgageCalculator from './MortgageCalculator'
 const Service = () => {
   return (
     <div>
       {/* <h1>hello</h1> */}
       <First/>
-      <Second/>
+      {/* <Second/> */}
+          <PerfectMortgageCalculator/>
            <Seventh/>
       <Third/>
       <Partners />
