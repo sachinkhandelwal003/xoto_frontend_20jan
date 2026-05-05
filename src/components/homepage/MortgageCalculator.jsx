@@ -462,7 +462,7 @@ export default function PerfectMortgageCalculator() {
                     <p className="text-purple-200 text-sm font-medium mb-1">Monthly Installment</p>
                     <h2 className="text-4xl font-bold mb-2 tracking-tight">{formatCurrency(monthlyEMI)}</h2>
                     <p className="text-purple-400 text-xs font-medium mb-8">At {selectedProduct.rate}% interest rate</p>
-                    <div className="border-t border-purple-800/50 pt-6 grid grid-cols-2 gap-4">
+                    <div className="border-t border-purple-800/50 pt-6 flex flex-col gap-3">
                       <div>
                         <p className="text-purple-300 text-xs font-semibold mb-1 uppercase tracking-wide">Total Loan</p>
                         <p className="text-xl font-bold">{formatCurrency(loanAmount)}</p>
