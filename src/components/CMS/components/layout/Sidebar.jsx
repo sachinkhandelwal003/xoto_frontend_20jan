@@ -6,6 +6,7 @@ import { FiX, FiChevronDown } from 'react-icons/fi';
 import { useFreelancer } from '../../../../../src/context/FreelancerContext';
 import { apiService } from '../../../../manageApi/utils/custom.apiservice';
 import logoNew from '../../../../assets/img/logoNew.png';
+import vault from "../../../../assets/img/logo/logovault.png";
 import favicon from '../../../../assets/img/logonewww.png';
 import { icon } from '@fortawesome/fontawesome-svg-core';
 
@@ -875,6 +876,7 @@ if (roleCode === '21' && partnerCategory !== 'individual') {
     ${mobileOpen ? 'w-64 translate-x-0' : '-translate-x-full lg:translate-x-0'}
     ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
   `;
+const isVaultRole = ['18', '21', '22', '23', '26'].includes(roleCode);
 
   return (
     <>
@@ -891,11 +893,19 @@ if (roleCode === '21' && partnerCategory !== 'individual') {
         <div className={`flex items-center p-4 border-b border-purple-800/50 ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
           <div className="flex flex-col items-center gap-3 flex-1 overflow-hidden">
             <div className="flex flex-col items-center flex-shrink-0">
-              <img
-                src={sidebarCollapsed ? favicon : logoNew}
-                alt="Logo"
-                className={`transition-all duration-300 ${sidebarCollapsed ? 'h-8 w-8' : 'h-10 sm:h-12 lg:h-14 w-auto'}`}
-              />
+             <img
+  src={
+    sidebarCollapsed
+      ? favicon
+      : isVaultRole
+        ? vault
+        : logoNew
+  }
+  alt="Logo"
+  className={`transition-all duration-300 ${
+    sidebarCollapsed ? 'h-10 w-10' : 'h-10 sm:h-12 lg:h-16 w-auto'
+  }`}
+/>
               {!sidebarCollapsed && (
                 <span className="text-white text-[8px] sm:text-[10px] whitespace-nowrap mt-1">
                   Powered by AI. Inspired by you.

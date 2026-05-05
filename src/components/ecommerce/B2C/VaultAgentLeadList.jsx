@@ -19,52 +19,52 @@ dayjs.extend(relativeTime);
 dayjs.extend(duration);
 
 const { RangePicker } = DatePicker;
-const { Option }      = Select;
+const { Option } = Select;
 
 // ─── Brand ─────────────────────────────────────────────────────────────────
-const P  = "#5C039B";
+const P = "#5C039B";
 const PM = "#7C3AED";
 const PL = "#F5F0FF";
 const PB = "#E9D5FF";
 
 // Role slug mapping for navigation
 const roleSlugMap = {
-  0: "superadmin", 
-  1: "admin", 
+  0: "superadmin",
+  1: "admin",
   2: "customer",
-  15: "agency", 
-  16: "agent", 
-  17: "developer", 
+  15: "agency",
+  16: "agent",
+  17: "developer",
   18: "vault-admin",
   21: "partner"
 };
 
 // ─── Static config ──────────────────────────────────────────────────────────
 const STATUS_CFG = {
-  New                        : { color: "blue",    bg: "#EFF6FF", text: "#1D4ED8", icon: "🆕" },
-  Assigned                   : { color: "purple",  bg: "#F5F0FF", text: "#6D28D9", icon: "👤" },
-  Contacted                  : { color: "orange",  bg: "#FFF7ED", text: "#C2410C", icon: "📞" },
-  Qualified                  : { color: "geekblue",bg: "#EEF2FF", text: "#4338CA", icon: "✅" },
-  "Collecting Documentation" : { color: "green",   bg: "#F0FDF4", text: "#166534", icon: "📄" },
-  "Documents Complete"       : { color: "cyan",    bg: "#ECFEFF", text: "#0E7490", icon: "📁" },
-  "Application Opened"       : { color: "volcano", bg: "#FFF5F3", text: "#C2410C", icon: "🏦" },
-  "Not Proceeding"           : { color: "red",     bg: "#FEF2F2", text: "#B91C1C", icon: "❌" },
-  Disbursed                  : { color: "success", bg: "#ECFDF5", text: "#065F46", icon: "💰" },
+  New: { color: "blue", bg: "#EFF6FF", text: "#1D4ED8", icon: "🆕" },
+  Assigned: { color: "purple", bg: "#F5F0FF", text: "#6D28D9", icon: "👤" },
+  Contacted: { color: "orange", bg: "#FFF7ED", text: "#C2410C", icon: "📞" },
+  Qualified: { color: "geekblue", bg: "#EEF2FF", text: "#4338CA", icon: "✅" },
+  "Collecting Documentation": { color: "green", bg: "#F0FDF4", text: "#166534", icon: "📄" },
+  "Documents Complete": { color: "cyan", bg: "#ECFEFF", text: "#0E7490", icon: "📁" },
+  "Application Opened": { color: "volcano", bg: "#FFF5F3", text: "#C2410C", icon: "🏦" },
+  "Not Proceeding": { color: "red", bg: "#FEF2F2", text: "#B91C1C", icon: "❌" },
+  Disbursed: { color: "success", bg: "#ECFDF5", text: "#065F46", icon: "💰" },
 };
 
 const SOURCE_CFG = {
-  website        : { color: "blue",   label: "Website"        },
+  website: { color: "blue", label: "Website" },
   freelance_agent: { color: "purple", label: "Freelance Agent" },
-  partner        : { color: "green",  label: "Partner"        },
-  admin          : { color: "orange", label: "Admin"          },
+  partner: { color: "green", label: "Partner" },
+  admin: { color: "orange", label: "Admin" },
 };
 
 const STATUSES = Object.keys(STATUS_CFG);
-const SOURCES  = Object.keys(SOURCE_CFG);
+const SOURCES = Object.keys(SOURCE_CFG);
 
-const fmt     = (n) => (n ? Number(n).toLocaleString("en-AE") : "—");
+const fmt = (n) => (n ? Number(n).toLocaleString("en-AE") : "—");
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
-const cap     = (s) => s ? s.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "";
+const cap = (s) => s ? s.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "";
 
 // ─── SLA Helpers ───────────────────────────────────────────────────────────
 const BUSINESS_HOURS_SLA_MS = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
@@ -83,19 +83,19 @@ const checkSLABreach = (assignedAt, currentStatus) => {
 // Calculate time remaining until SLA breach (negative if breached)
 const getTimeRemaining = (assignedAt, currentStatus) => {
   if (!assignedAt || currentStatus === "Contacted") return null;
-  
+
   const assignedTime = new Date(assignedAt);
   const now = new Date();
   const elapsed = now - assignedTime;
   const remaining = BUSINESS_HOURS_SLA_MS - elapsed;
-  
+
   if (remaining <= 0) {
     return { breached: true, remaining: 0, formatted: "Breached" };
   }
-  
+
   const hours = Math.floor(remaining / (60 * 60 * 1000));
   const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-  
+
   return {
     breached: false,
     remaining,
@@ -110,69 +110,69 @@ const getSLAStatusDisplay = (assignedAt, currentStatus) => {
   if (!assignedAt || currentStatus === "Contacted") {
     return { color: "#10B981", text: "✓ Contacted", icon: <CheckCircleOutlined style={{ fontSize: 12 }} />, label: "On Track" };
   }
-  
+
   const timeRemaining = getTimeRemaining(assignedAt, currentStatus);
-  
+
   if (timeRemaining?.breached) {
     return { color: "#EF4444", text: "SLA Breached!", icon: <WarningOutlined style={{ fontSize: 12 }} />, label: "Urgent" };
   }
-  
+
   if (timeRemaining?.hours === 0 && timeRemaining?.minutes <= 30) {
     return { color: "#F59E0B", text: `${timeRemaining.formatted} left`, icon: <ClockCircleOutlined style={{ fontSize: 12 }} />, label: "Critical" };
   }
-  
+
   return { color: "#6B7280", text: `${timeRemaining?.formatted || "—"} left`, icon: <ClockCircleOutlined style={{ fontSize: 12 }} />, label: "Pending" };
 };
 
 // ─── Initial filter state ───────────────────────────────────────────────────
 const INIT_FILTERS = {
-  search    : "",
-  source    : "",
-  status    : "",
-  agentId   : "",
-  advisorId : "",
-  assigned  : "",
-  fromDate  : "",
-  toDate    : "",
-  slaBreach : "", // New filter for SLA breached leads
+  search: "",
+  source: "",
+  status: "",
+  agentId: "",
+  advisorId: "",
+  assigned: "",
+  fromDate: "",
+  toDate: "",
+  slaBreach: "", // New filter for SLA breached leads
 };
 
 // ══════════════════════════════════════════════════════════════════════════
 const VaultAgentLeadList = () => {
-  const { user }   = useSelector((s) => s.auth);
-  const navigate   = useNavigate();
-  
+  const { user } = useSelector((s) => s.auth);
+  const navigate = useNavigate();
+
   // Get role slug for navigation
   const roleSlug = roleSlugMap[user?.role?.code] ?? "vault-admin";
 
   // ─── Data state ─────────────────────────────────────────────────────────
-  const [data,         setData]         = useState([]);
-  const [loading,      setLoading]      = useState(false);
-  const [totalItems,   setTotalItems]   = useState(0);
-  const [currentPage,  setCurrentPage]  = useState(1);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [breachedCount, setBreachedCount] = useState(0);
 
   // ─── Filter state ────────────────────────────────────────────────────────
-  const [filters,    setFilters]    = useState(INIT_FILTERS);
-  const [applied,    setApplied]    = useState(INIT_FILTERS);
+  const [filters, setFilters] = useState(INIT_FILTERS);
+  const [applied, setApplied] = useState(INIT_FILTERS);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [dateRange,  setDateRange]  = useState(null);
+  const [dateRange, setDateRange] = useState(null);
 
   // ─── Advisor / Agent dropdown lists ─────────────────────────────────────
   const [advisors, setAdvisors] = useState([]);
-  const [agents,   setAgents]   = useState([]);
+  const [agents, setAgents] = useState([]);
 
   // ─── Assign Modal state ──────────────────────────────────────────────────
-  const [assignModal,      setAssignModal]      = useState(false);
-  const [assignTarget,     setAssignTarget]     = useState(null);   // { leadId, clientName }
-  const [selectedAdvisor,  setSelectedAdvisor]  = useState(null);   // advisorId string
-  const [assignLoading,    setAssignLoading]    = useState(false);
+  const [assignModal, setAssignModal] = useState(false);
+  const [assignTarget, setAssignTarget] = useState(null);   // { leadId, clientName }
+  const [selectedAdvisor, setSelectedAdvisor] = useState(null);   // advisorId string
+  const [assignLoading, setAssignLoading] = useState(false);
 
   // ─── Notify Advisor Modal state ──────────────────────────────────────────
-  const [notifyModal,      setNotifyModal]      = useState(false);
-  const [notifyTarget,     setNotifyTarget]     = useState(null);
-  const [notifyLoading,    setNotifyLoading]    = useState(false);
+  const [notifyModal, setNotifyModal] = useState(false);
+  const [notifyTarget, setNotifyTarget] = useState(null);
+  const [notifyLoading, setNotifyLoading] = useState(false);
 
   // Active filter count
   const activeCount = Object.entries(applied).filter(([, v]) => v !== "" && v !== undefined && v !== false).length;
@@ -193,27 +193,27 @@ const VaultAgentLeadList = () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({ page, limit });
-      if (f.search)    params.set("search",    f.search);
-      if (f.source)    params.set("source",    f.source);
-      if (f.status)    params.set("status",    f.status);
-      if (f.agentId)   params.set("agentId",   f.agentId);
+      if (f.search) params.set("search", f.search);
+      if (f.source) params.set("source", f.source);
+      if (f.status) params.set("status", f.status);
+      if (f.agentId) params.set("agentId", f.agentId);
       if (f.advisorId) params.set("advisorId", f.advisorId);
       if (f.assigned !== "") params.set("assigned", f.assigned);
-      if (f.fromDate)  params.set("fromDate",  f.fromDate);
-      if (f.toDate)    params.set("toDate",    f.toDate);
+      if (f.fromDate) params.set("fromDate", f.fromDate);
+      if (f.toDate) params.set("toDate", f.toDate);
 
-      const res   = await apiService.get(`/vault/lead/admin/all?${params.toString()}`);
-      const list  = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
+      const res = await apiService.get(`/vault/lead/admin/all?${params.toString()}`);
+      const list = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
       const total = res?.data?.total || res?.data?.totalItems || res?.data?.count || list.length;
-      
+
       // Calculate SLA breach count
-      const breachedLeads = list.filter(lead => 
-        lead.assignedTo?.advisorId && 
-        lead.currentStatus === "New" && 
+      const breachedLeads = list.filter(lead =>
+        lead.assignedTo?.advisorId &&
+        lead.currentStatus === "New" &&
         checkSLABreach(lead.assignedTo?.assignedAt, lead.currentStatus)
       );
       setBreachedCount(breachedLeads.length);
-      
+
       setData(list);
       setTotalItems(total);
     } catch {
@@ -230,15 +230,27 @@ const VaultAgentLeadList = () => {
     const fetchDropdowns = async () => {
       try {
         const [advRes, agentRes] = await Promise.all([
-          apiService.get("/vault/advisor/all?limit=100"),
+          apiService.get("/vault/advisor/all?limit=100&status=active"),
           apiService.get("/vault/agent/admin/all-agents?limit=100"),
         ]);
-        const advList   = advRes?.data?.data   || advRes?.data   || [];
+        const advList = advRes?.data?.data || advRes?.data || [];
         const agentList = agentRes?.data?.data || agentRes?.data || [];
-        setAdvisors(Array.isArray(advList)   ? advList   : []);
-        setAgents(Array.isArray(agentList)   ? agentList : []);
+        setAdvisors(
+          advList.map(a => ({
+            id: a._id,
+            firstName: a.name?.first_name,
+            lastName: a.name?.last_name,
+            fullName: `${a.name?.first_name || ""} ${a.name?.last_name || ""}`,
+            profilePic: a.profilePic,
+            joinDate: a.joinDate,
+            designation: a.designation,
+            department: a.department,
+            currentLeads: a.workload?.currentLeads,
+            maxLeadsCapacity: a.workload?.maxLeadsCapacity
+          }))
+        ); setAgents(Array.isArray(agentList) ? agentList : []);
       } catch (err) {
-        
+
       }
     };
     fetchDropdowns();
@@ -279,7 +291,7 @@ const VaultAgentLeadList = () => {
     setFilters((prev) => ({
       ...prev,
       fromDate: dates?.[0] ? dates[0].format("YYYY-MM-DD") : "",
-      toDate  : dates?.[1] ? dates[1].format("YYYY-MM-DD") : "",
+      toDate: dates?.[1] ? dates[1].format("YYYY-MM-DD") : "",
     }));
   };
 
@@ -291,7 +303,7 @@ const VaultAgentLeadList = () => {
 
   // ── Open assign modal ───────────────────────────────────────────────────
   const openAssign = (record) => {
-    const leadId     = record?._id || record?.leadId;
+    const leadId = record?._id || record?.leadId;
     const clientName = record?.customerInfo?.fullName || "this lead";
     const existingAdvisorId = record?.assignedTo?.advisorId || null;
     setAssignTarget({ leadId, clientName });
@@ -308,8 +320,8 @@ const VaultAgentLeadList = () => {
     setAssignLoading(true);
     try {
       await apiService.post("/vault/lead/admin/assign-to-advisor", {
-        leadId    : assignTarget.leadId,
-        advisorId : selectedAdvisor,
+        leadId: assignTarget.leadId,
+        advisorId: selectedAdvisor,
       });
       message.success(`Lead assigned successfully! SLA timer started.`);
       setAssignModal(false);
@@ -351,7 +363,7 @@ const VaultAgentLeadList = () => {
   // ─── Table columns with SLA column ───────────────────────────────────────
   const columns = [
     {
-      key  : "customerInfo",
+      key: "customerInfo",
       title: "Client",
       width: 220,
       render: (_, r) => {
@@ -359,14 +371,14 @@ const VaultAgentLeadList = () => {
         return (
           <div>
             <div style={{ fontWeight: 600, color: "#111827", fontSize: 13 }}>{ci.fullName || "—"}</div>
-            {ci.email        && <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{ci.email}</div>}
+            {ci.email && <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{ci.email}</div>}
             {ci.mobileNumber && <div style={{ fontSize: 11, color: "#6B7280" }}>{ci.mobileNumber}</div>}
           </div>
         );
       },
     },
     {
-      key  : "assignedAdvisor",
+      key: "assignedAdvisor",
       title: "Assigned Advisor",
       width: 200,
       render: (_, r) => {
@@ -408,13 +420,13 @@ const VaultAgentLeadList = () => {
       },
     },
     {
-      key  : "slaStatus",
+      key: "slaStatus",
       title: "SLA Status",
       width: 140,
       render: (_, r) => {
         const assigned = r?.assignedTo;
         const currentStatus = r?.currentStatus;
-        
+
         if (!assigned?.advisorId) {
           return (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -423,7 +435,7 @@ const VaultAgentLeadList = () => {
             </div>
           );
         }
-        
+
         if (currentStatus === "Contacted") {
           return (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -433,10 +445,10 @@ const VaultAgentLeadList = () => {
             </div>
           );
         }
-        
+
         const slaInfo = getTimeRemaining(assigned.assignedAt, currentStatus);
         const isBreached = slaInfo?.breached;
-        
+
         if (isBreached) {
           return (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -446,9 +458,9 @@ const VaultAgentLeadList = () => {
             </div>
           );
         }
-        
+
         const isUrgent = slaInfo?.hours === 0 && slaInfo?.minutes <= 30;
-        
+
         return (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <ClockCircleOutlined style={{ color: isUrgent ? "#F59E0B" : "#6B7280", fontSize: 12 }} />
@@ -461,7 +473,7 @@ const VaultAgentLeadList = () => {
       },
     },
     {
-      key  : "currentStatus",
+      key: "currentStatus",
       title: "Status",
       width: 150,
       render: (_, r) => {
@@ -476,7 +488,7 @@ const VaultAgentLeadList = () => {
       },
     },
     {
-      key  : "source",
+      key: "source",
       title: "Source",
       width: 120,
       render: (_, r) => {
@@ -487,7 +499,7 @@ const VaultAgentLeadList = () => {
       },
     },
     {
-      key  : "sourceInfo",
+      key: "sourceInfo",
       title: "Agent",
       width: 140,
       render: (_, r) => {
@@ -501,7 +513,7 @@ const VaultAgentLeadList = () => {
       },
     },
     {
-      key  : "createdAt",
+      key: "createdAt",
       title: "Created",
       width: 100,
       render: (_, r) => (
@@ -511,7 +523,7 @@ const VaultAgentLeadList = () => {
       ),
     },
     {
-      key  : "actions",
+      key: "actions",
       title: "Actions",
       width: 220,
       align: "center",
@@ -520,7 +532,7 @@ const VaultAgentLeadList = () => {
         const hasAdvisor = !!r?.assignedTo?.advisorId;
         const isAssignedAndNotContacted = hasAdvisor && r?.currentStatus === "New";
         const isSLABreached = isAssignedAndNotContacted && checkSLABreach(r?.assignedTo?.assignedAt, r?.currentStatus);
-        
+
         return (
           <Space size={4} wrap>
             {/* View */}
@@ -556,12 +568,12 @@ const VaultAgentLeadList = () => {
                 icon={<UserAddOutlined />}
                 onClick={() => openAssign(r)}
                 style={{
-                  borderRadius : 6,
-                  fontSize     : 11,
-                  fontWeight   : 600,
-                  color        : hasAdvisor ? "#6D28D9" : P,
-                  borderColor  : hasAdvisor ? "#DDD6FE" : PB,
-                  background   : hasAdvisor ? "#F5F3FF" : PL,
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: hasAdvisor ? "#6D28D9" : P,
+                  borderColor: hasAdvisor ? "#DDD6FE" : PB,
+                  background: hasAdvisor ? "#F5F3FF" : PL,
                 }}
               >
                 {hasAdvisor ? "Reassign" : "Assign"}
@@ -678,10 +690,10 @@ const VaultAgentLeadList = () => {
               onClick={() => setDrawerOpen(true)}
               style={{
                 borderRadius: 10,
-                background  : activeCount > 0 ? PL : "white",
-                borderColor : activeCount > 0 ? P  : "#E8DFF5",
-                color       : activeCount > 0 ? P  : "#374151",
-                fontWeight  : activeCount > 0 ? 700 : 400,
+                background: activeCount > 0 ? PL : "white",
+                borderColor: activeCount > 0 ? P : "#E8DFF5",
+                color: activeCount > 0 ? P : "#374151",
+                fontWeight: activeCount > 0 ? 700 : 400,
               }}
             >
               Filters{activeCount > 0 ? ` (${activeCount})` : ""}
@@ -757,7 +769,7 @@ const VaultAgentLeadList = () => {
             <span style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600, whiteSpace: "nowrap" }}>Quick:</span>
             {["New", "Assigned", "Contacted", "Qualified", "Collecting Documentation", "Disbursed"].map((s) => {
               const active = applied.status === s;
-              const cfg    = STATUS_CFG[s] || {};
+              const cfg = STATUS_CFG[s] || {};
               return (
                 <span
                   key={s}
@@ -792,14 +804,14 @@ const VaultAgentLeadList = () => {
             {Object.entries(applied).map(([k, v]) => {
               if (!v && v !== false) return null;
               const labels = {
-                search   : `Search: "${v}"`,
-                source   : `Source: ${SOURCE_CFG[v]?.label || v}`,
-                status   : `Status: ${v}`,
-                agentId  : `Agent ID: …${String(v).slice(-6)}`,
+                search: `Search: "${v}"`,
+                source: `Source: ${SOURCE_CFG[v]?.label || v}`,
+                status: `Status: ${v}`,
+                agentId: `Agent ID: …${String(v).slice(-6)}`,
                 advisorId: `Advisor ID: …${String(v).slice(-6)}`,
-                assigned : `Assigned: ${v === "true" || v === true ? "Yes" : "No"}`,
-                fromDate : `From: ${v}`,
-                toDate   : `To: ${v}`,
+                assigned: `Assigned: ${v === "true" || v === true ? "Yes" : "No"}`,
+                fromDate: `From: ${v}`,
+                toDate: `To: ${v}`,
                 slaBreach: `SLA: ${v === "true" ? "Breached Only" : ""}`,
               };
               return (
@@ -892,7 +904,7 @@ const VaultAgentLeadList = () => {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {STATUSES.map((s) => {
                 const active = filters.status === s;
-                const cfg    = STATUS_CFG[s] || {};
+                const cfg = STATUS_CFG[s] || {};
                 return (
                   <span key={s} className="vll-pill"
                     style={{ background: active ? cfg.bg : "#F9F6FF", borderColor: active ? cfg.text || P : "#EDE9F6", color: active ? cfg.text || P : "#6B7280" }}
@@ -925,7 +937,7 @@ const VaultAgentLeadList = () => {
           <FilterGroup label="Assignment Status" icon="👤" hint="Whether assigned to an advisor">
             <div style={{ display: "flex", gap: 8 }}>
               {[
-                { val: "true",  label: "Assigned",  icon: <CheckCircleOutlined />, activeColor: "#059669", activeBg: "#ECFDF5" },
+                { val: "true", label: "Assigned", icon: <CheckCircleOutlined />, activeColor: "#059669", activeBg: "#ECFDF5" },
                 { val: "false", label: "Unassigned", icon: <CloseCircleOutlined />, activeColor: "#D97706", activeBg: "#FFFBEB" },
               ].map((opt) => {
                 const active = filters.assigned === opt.val;
@@ -944,8 +956,13 @@ const VaultAgentLeadList = () => {
             <div className="vll-select">
               <Select style={{ width: "100%" }} placeholder="Any Advisor" value={filters.advisorId || undefined} onChange={(v) => setFilters((p) => ({ ...p, advisorId: v || "" }))} allowClear showSearch optionFilterProp="children" suffixIcon={<TeamOutlined style={{ color: P }} />}>
                 {advisors.map((a) => (
-                  <Option key={a._id || a.id} value={a._id || a.id}>
-                    {a.first_name} {a.last_name}{a.department && <span style={{ color: "#9CA3AF", fontSize: 11 }}> — {a.department}</span>}
+                  <Option key={a.id} value={a.id}>
+                    {a.fullName}
+                    {a.department && (
+                      <span style={{ color: "#9CA3AF", fontSize: 11 }}>
+                        {" "}— {a.department}
+                      </span>
+                    )}
                   </Option>
                 ))}
               </Select>
@@ -974,9 +991,9 @@ const VaultAgentLeadList = () => {
             <div className="vll-date">
               <RangePicker style={{ width: "100%" }} value={dateRange} onChange={handleDateRange} format="DD MMM YYYY" placeholder={["From Date", "To Date"]}
                 presets={[
-                  { label: "Today",        value: [dayjs(), dayjs()] },
-                  { label: "This Week",    value: [dayjs().startOf("week"), dayjs()] },
-                  { label: "This Month",   value: [dayjs().startOf("month"), dayjs()] },
+                  { label: "Today", value: [dayjs(), dayjs()] },
+                  { label: "This Week", value: [dayjs().startOf("week"), dayjs()] },
+                  { label: "This Month", value: [dayjs().startOf("month"), dayjs()] },
                   { label: "Last 30 Days", value: [dayjs().subtract(30, "day"), dayjs()] },
                   { label: "Last 90 Days", value: [dayjs().subtract(90, "day"), dayjs()] },
                 ]}
@@ -1019,10 +1036,10 @@ const VaultAgentLeadList = () => {
             onClick={handleAssign}
             icon={<UserAddOutlined />}
             style={{
-              background  : selectedAdvisor ? `linear-gradient(135deg, ${P}, ${PM})` : undefined,
-              borderColor : selectedAdvisor ? P : undefined,
+              background: selectedAdvisor ? `linear-gradient(135deg, ${P}, ${PM})` : undefined,
+              borderColor: selectedAdvisor ? P : undefined,
               borderRadius: 8,
-              fontWeight  : 600,
+              fontWeight: 600,
             }}
           >
             Confirm Assignment
@@ -1032,7 +1049,7 @@ const VaultAgentLeadList = () => {
         width={520}
         styles={{
           header: { borderBottom: "1px solid #f0e8ff", paddingBottom: 14 },
-          body  : { paddingTop: 16 },
+          body: { paddingTop: 16 },
         }}
       >
         {/* SLA Info Banner */}
@@ -1047,18 +1064,24 @@ const VaultAgentLeadList = () => {
 
         {/* Selected advisor preview */}
         {selectedAdvisor && (() => {
-          const adv = advisors.find((a) => (a._id || a.id) === selectedAdvisor);
+          const adv = advisors.find((a) => a.id === selectedAdvisor);
           if (!adv) return null;
-          const name = `${adv.first_name || ""} ${adv.last_name || ""}`.trim();
+          const name = adv.fullName;
           const leads = adv.currentLeads ?? 0;
-          const max   = adv.maxLeadsCapacity ?? 0;
-          const pct   = max ? Math.min((leads / max) * 100, 100) : 0;
+          const max = adv.maxLeadsCapacity ?? 0;
+          const pct = max ? Math.min((leads / max) * 100, 100) : 0;
           return (
             <div style={{ background: PL, border: `1px solid ${PB}`, borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
-              <Avatar size={42} icon={<UserOutlined />} style={{ background: `linear-gradient(135deg, ${P}, ${PM})`, flexShrink: 0 }} src={adv.profilePic} />
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <Avatar
+                size={36}
+                src={adv.profilePic || undefined}
+                icon={!adv.profilePic && <UserOutlined />}
+              />              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, color: "#1a0533", fontSize: 14 }}>{name}</div>
                 <div style={{ fontSize: 11, color: "#6B7280" }}>{adv.designation || adv.department || "Advisor"}</div>
+                <div style={{ fontSize: 10, color: "#9CA3AF" }}>
+                  Joined: {adv.joinDate ? new Date(adv.joinDate).toLocaleDateString("en-GB") : "—"}
+                </div>
                 {max > 0 && (
                   <div style={{ marginTop: 6 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
@@ -1086,12 +1109,12 @@ const VaultAgentLeadList = () => {
             <div style={{ textAlign: "center", color: "#9CA3AF", padding: "24px 0", fontSize: 13 }}>No advisors available</div>
           ) : (
             advisors.map((adv) => {
-              const id       = adv._id || adv.id;
-              const name     = `${adv.first_name || ""} ${adv.last_name || ""}`.trim();
-              const leads    = adv.currentLeads ?? 0;
-              const max      = adv.maxLeadsCapacity ?? 0;
-              const pct      = max ? Math.min((leads / max) * 100, 100) : 0;
-              const isFull   = max > 0 && leads >= max;
+              const id = adv.id;
+              const name = adv.fullName;
+              const leads = adv.currentLeads ?? 0;
+              const max = adv.maxLeadsCapacity ?? 0;
+              const pct = max ? Math.min((leads / max) * 100, 100) : 0;
+              const isFull = max > 0 && leads >= max;
               const isSelected = selectedAdvisor === id;
 
               return (
@@ -1100,16 +1123,16 @@ const VaultAgentLeadList = () => {
                   className="assign-advisor-opt"
                   onClick={() => !isFull && setSelectedAdvisor(isSelected ? null : id)}
                   style={{
-                    display     : "flex",
-                    alignItems  : "center",
-                    gap         : 12,
-                    padding     : "10px 14px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "10px 14px",
                     borderRadius: 10,
-                    border      : `1.5px solid ${isSelected ? P : "#e8dff5"}`,
-                    background  : isSelected ? PL : isFull ? "#fafafa" : "white",
-                    cursor      : isFull ? "not-allowed" : "pointer",
-                    opacity     : isFull ? 0.55 : 1,
-                    transition  : "all .15s",
+                    border: `1.5px solid ${isSelected ? P : "#e8dff5"}`,
+                    background: isSelected ? PL : isFull ? "#fafafa" : "white",
+                    cursor: isFull ? "not-allowed" : "pointer",
+                    opacity: isFull ? 0.55 : 1,
+                    transition: "all .15s",
                   }}
                 >
                   <Avatar
