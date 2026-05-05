@@ -491,6 +491,8 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from "../../manageApi/utils/custom.apiservice";
 import toast, { Toaster } from 'react-hot-toast';
+// import wave2 from "../../assets/img/wave/wave2.png";
+import wave1 from "../../assets/img/wave/waveint2.png";
 import {
   FaMoneyBillWave, FaPhoneAlt, FaWhatsapp, FaEnvelope,
   FaCheckCircle, FaInfoCircle, FaTimes, FaCalendarAlt,
@@ -930,7 +932,18 @@ export default function PerfectMortgageCalculator() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-10 text-slate-800" style={{ fontFamily: '"DM Sans", sans-serif' }}>
+    <div className="relative  bg-[var(--color-body)] p-4 md:p-10 text-slate-800 overflow-hidden" style={{ fontFamily: '"DM Sans", sans-serif' }}>
+<img 
+  src={wave1} 
+  className="absolute bottom-0 pointer-events-none"
+  style={{ 
+    width: '100vw',
+    left: '50%',
+    transform: 'translateX(-50%) translateY(30%)',
+    minWidth: '100%'
+  }}  
+  alt="" 
+/>
       <Toaster position="top-center" reverseOrder={false} />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
@@ -943,7 +956,8 @@ export default function PerfectMortgageCalculator() {
         select.field-input { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394A3B8' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
       `}</style>
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto relative z-10">
+        {/* ── FIX 1: 3-col grid, items-stretch so all columns same height ── */}
         <div className="grid lg:grid-cols-12 gap-8 items-stretch">
           {/* Col 1 — Heading */}
           <div className="lg:col-span-5 flex flex-col justify-center">
@@ -1091,7 +1105,7 @@ export default function PerfectMortgageCalculator() {
                     <p className="text-purple-200 text-sm font-medium mb-1">Monthly Installment</p>
                     <h2 className="text-4xl font-bold mb-2 tracking-tight">{formatCurrency(monthlyEMI)}</h2>
                     <p className="text-purple-400 text-xs font-medium mb-8">At {selectedProduct.rate}% interest rate</p>
-                    <div className="border-t border-purple-800/50 pt-6 grid grid-cols-2 gap-4">
+                    <div className="border-t border-purple-800/50 pt-6 flex flex-col gap-3">
                       <div>
                         <p className="text-purple-300 text-xs font-semibold mb-1 uppercase tracking-wide">Total Loan</p>
                         <p className="text-xl font-bold">{formatCurrency(loanAmount)}</p>

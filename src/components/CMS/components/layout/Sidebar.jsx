@@ -47,6 +47,14 @@ const CUSTOM_ROLE_LINKS = {
       ]
     },
     {
+      title: "User Feedbacks",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/feedbacks",
+      submenus: [
+        { title: "All Customers", path: "/dashboard/{roleSlug}/feedbacks" },
+      ]
+    },
+    {
       title: "Rental Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/rental/properties",
       submenus: [
         { title: "Create Rental Properties", path: "/dashboard/{roleSlug}/rental/properties" },
