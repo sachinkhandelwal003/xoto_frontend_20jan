@@ -9,11 +9,15 @@ import layouticon from "../../../assets/img/buy/icon-layout.png";
 const transformProperty = (item) => ({
   id: item._id || item.id,
   imgUrl:
+    // Page2/OurProperty format — photos seedha array hai
+    (Array.isArray(item.photos) && item.photos[0]) ||
+    // Hot property format — photos object ke andar nested arrays
     item.photos?.architecture?.[0] ||
     item.photos?.interior?.[0] ||
     item.photos?.other?.[0] ||
     item.mainLogo ||
     "https://via.placeholder.com/400x300?text=No+Image",
+
   title: item.propertyName || "Unnamed Property",
   price: item.price
     ? `${item.currency || "AED"} ${Number(item.price).toLocaleString()}`
@@ -22,8 +26,12 @@ const transformProperty = (item) => ({
   bedrooms: item.bedrooms || 0,
   bathrooms: item.bathrooms || 0,
   bedroomType: item.bedroomType || "",
-  area: item.builtUpArea ? `${item.builtUpArea} ${item.builtUpAreaUnit || "sqft"}` : "N/A",
-  tag: item.propertySubType || "Property",
+  area: item.builtUpArea
+    ? `${item.builtUpArea} ${item.builtUpAreaUnit || "sqft"}`
+    : item.builtUpArea_max
+    ? `${item.builtUpArea_max} ${item.builtUpAreaUnit || "sqft"}`
+    : "N/A",
+  tag: item.propertySubType || item.transactionType || item.propertyType || "Property",
 });
 
 const FavouriteProperties = () => {
@@ -38,19 +46,26 @@ const FavouriteProperties = () => {
     fetchFavourites();
   }, []);
 
-  const fetchFavourites = async () => {
-    setLoading(true);
-    try {
-      const res = await apiService.get("/properties/favourites");
-      const list = res?.data || res?.data?.data || [];
-      setProperties(Array.isArray(list) ? list.map(transformProperty) : []);
-    } catch (err) {
-      console.error("Failed to fetch favourites:", err);
-      setProperties([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchFavourites = async () => {
+  setLoading(true);
+  try {
+    // timestamp add karo — cache bust karta hai
+    const res = await apiService.get(`/properties/favourites?t=${Date.now()}`);
+    console.log("FAV API response:", res);
+
+    const raw = res?.data;
+    const list = Array.isArray(raw)       ? raw
+               : Array.isArray(raw?.data) ? raw.data
+               : [];
+
+    setProperties(list.map(transformProperty));
+  } catch (err) {
+    console.error("Failed to fetch favourites:", err);
+    setProperties([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleRemove = async (propertyId) => {
     if (removingId) return;

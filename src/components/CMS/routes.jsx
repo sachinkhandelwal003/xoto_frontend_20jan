@@ -255,6 +255,7 @@ import AdminManagecases from "../ecommerce/vault/case/AdminManagecases";
 import VaultAdvisorLeads from "../ecommerce/B2C/VaultAdvisorLeads";
 import DisbursedCases from "../ecommerce/vault/case/DisbursedCases";
 import DisbursedFullAmountCases from "../ecommerce/vault/case/DisbursedFullAmountCases";
+import Adminfeedbacks from "../../components/footer/Adminfeedbacks";
 
 
 
@@ -439,6 +440,8 @@ const CmsRoutes = () => {
 
       <Route path="seller/:id" element={<VendorB2CProfile />} />
       <Route path="inventory" element={<VendorInventory />} />
+
+      <Route path="/feedbacks" element={<Adminfeedbacks />} />
 
       {/* <Route path="projects/:id" element={<ViewProject/>} /> */}
       <Route path="quotation/received" element={<ReceivedQuotation />} />

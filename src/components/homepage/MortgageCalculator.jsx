@@ -280,8 +280,13 @@ export default function PerfectMortgageCalculator() {
   const calculatorData = { monthlyIncome: safeIncome, monthlyDebt: safeDebt, loanTenure, propertyValue: safePropVal, downpayment: safeDownpayment, loanAmount, rate: selectedProduct.rate, loanDuration, affordability, monthlyEMI, employment, residency };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-10 text-slate-800" style={{ fontFamily: '"DM Sans", sans-serif' }}>
+    <div className="relative overflow-hidden bg-[var(--color-body)] text-slate-800" style={{ fontFamily: '"DM Sans", sans-serif' }}>
       <Toaster position="top-center" reverseOrder={false} />
+
+      {/* ── Waves ── */}
+      {/* <img src={wave2} className="absolute top-15 w-full -translate-y-2/3 opacity-90 pointer-events-none" alt="" /> */}
+      <img src="https://xotostaging.s3.me-central-1.amazonaws.com/properties/1777974494260-waveint2.png" className="absolute bottom-2 w-full translate-y-2/4 opacity-90 pointer-events-none" alt="" />
+
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
         input[type=range] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 999px; background: #E2E8F0; outline: none; cursor: pointer; }
@@ -293,24 +298,21 @@ export default function PerfectMortgageCalculator() {
         select.field-input { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394A3B8' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
       `}</style>
 
-      <div className="max-w-6xl mx-auto">
-        {/* ── FIX 1: 3-col grid, items-stretch so all columns same height ── */}
+      <div className="relative z-10 max-w-6xl mx-auto py-10">
+        <div className="lg:col-span-5 flex flex-col items-center justify-center text-center">
+          <h1 className="text-center text-gray-900  font-semibold text-[40px] leading-tight md:text-[60px] md:leading-[48px] tracking-[-0.03em]"
+          style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            Discover Your True Buying Power
+          </h1>
+          <p className="text-slate-500 mt-4 text-base font-medium leading-relaxed mb-4">
+            Smart property financing for the UAE market.
+          </p>
+        </div>
+
         <div className="grid lg:grid-cols-12 gap-8 items-stretch">
 
-          {/* Col 1 — Heading: flex column, justify-center so text vertically centers inside card height */}
-          <div className="lg:col-span-5 flex flex-col justify-center">
-            {/* FIX: text-4xl + leading-tight makes heading fit in ~2 lines */}
-            <h1 className="text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">
-              Discover Your True Buying Power
-            </h1>
-            <p className="text-slate-500 mt-4 text-base font-medium leading-relaxed">
-              Smart property financing for the UAE market.
-            </p>
-          </div>
-
           {/* Col 2 — Form Card */}
-          {/* FIX 2: More padding (p-8), bigger gap between sections */}
-          <div className="lg:col-span-4 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+          <div className="lg:col-span-6 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
 
             {/* Tab Toggle */}
             <div className="flex p-1.5 bg-slate-100 rounded-[1.25rem] mb-8">
@@ -353,7 +355,6 @@ export default function PerfectMortgageCalculator() {
                   </div>
                 </div>
 
-                {/* Slider */}
                 <div className="pt-2">
                   <div className="flex justify-between items-center mb-3">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Loan Tenure</label>
@@ -368,8 +369,6 @@ export default function PerfectMortgageCalculator() {
             {/* ── EMI Planner Tab ── */}
             {activeTab === 'mortgage' && (
               <div className="space-y-5">
-
-                {/* FIX 3: Rate buttons — 3 in a row, bigger & cleaner */}
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Select Rate Type</label>
                   <div className="grid grid-cols-3 gap-3">
@@ -412,7 +411,7 @@ export default function PerfectMortgageCalculator() {
           </div>
 
           {/* Col 3 — Result Card */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-6">
             <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-[2rem] p-8 text-white shadow-2xl shadow-purple-900/20 relative overflow-hidden flex flex-col justify-between h-full">
               <div className="absolute -top-20 -right-20 w-56 h-56 bg-white opacity-[0.04] rounded-full" />
               <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-white opacity-[0.03] rounded-full" />
@@ -426,9 +425,9 @@ export default function PerfectMortgageCalculator() {
                   isEligible ? (
                     <div>
                       <p className="text-purple-200 text-sm font-medium mb-1">Max Property Price</p>
-                      <h2 className="text-2xl font-bold mb-2 tracking-tight">{formatCurrency(affordability)}</h2>
+                      <h2 className="text-3xl font-bold mb-2 tracking-tight">{formatCurrency(affordability)}</h2>
                       <p className="text-purple-400 text-xs font-medium mb-8">Based on 50% DSR stress rate</p>
-                      <div className="border-t border-purple-800/50 pt-6  justify-between items-center">
+                      <div className="border-t border-purple-800/50 pt-6 justify-between items-center">
                         <div>
                           <p className="text-purple-300 text-xs font-semibold mb-1 uppercase tracking-wide">Monthly EMI</p>
                           <p className="text-2xl font-bold">{formatCurrency(monthlyPayment)}</p>
@@ -469,6 +468,7 @@ export default function PerfectMortgageCalculator() {
               </button>
             </div>
           </div>
+
         </div>
       </div>
 
