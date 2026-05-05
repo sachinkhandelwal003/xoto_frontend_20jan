@@ -197,7 +197,7 @@ const PrivacyPolicyPage = () => {
           {/* Main Content */}
           <main className="flex-1 space-y-6">
             {/* Search Bar */}
-            <div className="relative mb-6">
+            {/* <div className="relative mb-6">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
@@ -206,7 +206,7 @@ const PrivacyPolicyPage = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-200 transition-all outline-none"
               />
-            </div>
+            </div> */}
 
             {/* Section 1: Definitions */}
             <section id="definitions" className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden scroll-mt-20 transition-all hover:shadow-xl">
@@ -488,7 +488,7 @@ const PrivacyPolicyPage = () => {
                       <Phone className="h-5 w-5 text-gray-500 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="font-medium text-gray-900">Phone</p>
-                        <a href="tel:+97143486807" className="text-sm hover:underline" style={{ color: themeColor }}>+971 42369625</a>
+                        <a href="tel:+97143486807" className="text-sm hover:underline" style={{ color: themeColor }}>+971 43486807</a>
                       </div>
                     </div>
                   </div>
