@@ -255,6 +255,7 @@ import AdminManagecases from "../ecommerce/vault/case/AdminManagecases";
 import VaultAdvisorLeads from "../ecommerce/B2C/VaultAdvisorLeads";
 import DisbursedCases from "../ecommerce/vault/case/DisbursedCases";
 import DisbursedFullAmountCases from "../ecommerce/vault/case/DisbursedFullAmountCases";
+import AgentsLeadFullView from "../ecommerce/B2C/AgentsLeadFullView";
 
 
 
@@ -528,8 +529,9 @@ const CmsRoutes = () => {
 <Route path="onboard-partner" element={<OnboardPartner />} />
 <Route path="AgentVaultlisting" element={<AgentVaultListing />} />
 <Route path="leads/create" element={<VaultCreateLeads />} />
-<Route path="leads" element={<VaultLeads />} />
+<Route path="leads" element={<LeadsVault />} />
 <Route path="leads/advisor" element={<AdvisorLeads />} />
+<Route path="leads/advisor/view/:id" element={<VaultAgentLeadDetail />} />
 
 <Route path="leads/:leadId" element={<VaultLeadDetails />} />
 <Route path="leads/:leadId/documents" element={<VaultLeadDocuments />} /> 
@@ -560,7 +562,7 @@ const CmsRoutes = () => {
 
 
 <Route path="vault/agent-leads" element={<VaultAgentLeadList />} />
-<Route path="vault/lead/:id" element={<VaultAgentLeadDetail />} />
+<Route path="vault/lead/:id" element={<AgentsLeadFullView />} />
 <Route path="vault/lead/documents/:leadId" element={<VaultLeadDocumentUpload />} />
 
 

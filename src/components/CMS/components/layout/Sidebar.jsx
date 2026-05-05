@@ -609,7 +609,7 @@ const CUSTOM_ROLE_LINKS = {
   {
     title: "My Leads",
     icon : "fas fa-file-alt",
-    path : "/dashboard/{roleSlug}/leads/advisor",  
+    path : "/dashboard/{roleSlug}/leads",  
   },
    {
       title: "Proposals",
