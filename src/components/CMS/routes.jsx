@@ -240,7 +240,8 @@ import ReferralPartnerDashboard from "./pages/ReferralPartnerDashboard"
 import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
 import QueueCases from "../ecommerce/vault/case/QueueCases";
 import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
-
+import AddAgent from "../grid agency/AgentCreate";
+import AllAgents from "../grid agency/AllAgents";
 import GridAdvisorDashboard from "./pages/GridAdvisorDashboard";
 import GridAdvisorProfile from "./pages/dashboardPages/Profiles/GridAdvisorProfile";
 import OpsAssignedReview from "../ecommerce/vault/case/OpsAssignedReview";
@@ -586,6 +587,10 @@ const CmsRoutes = () => {
 
 
       {/* Agency */}
+      <Route path="add" element={<AddAgent />} />
+      <Route path="all-agents" element={<AllAgents />} />
+
+
       <Route path="manage-agents" element={<AgencyManageAgents />} />
       <Route path="manage-agents/:id" element={<AgencyAgentDetails />} />
       <Route path="performance" element={<AgencyPerformance />} />

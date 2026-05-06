@@ -1,37 +1,68 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Tabs } from "antd";
+import { Tabs, Modal, Input } from "antd";
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
 import CustomTable from "../../pages/custom/CustomTable";
 import {
   Card, Typography, Avatar, Row, Col, Space, message,
-  Tooltip, Button, Popconfirm, Badge, Tag, Switch
+  Tooltip, Button, Badge, Tag
 } from "antd";
 import {
   UserOutlined, EyeOutlined, UsergroupAddOutlined,
-  CheckCircleOutlined, ClockCircleOutlined, MailOutlined, PhoneOutlined
+  CheckCircleOutlined, ClockCircleOutlined, MailOutlined,
+  PhoneOutlined, CloseCircleOutlined
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
+// ── Normalize agent (handles both old and new field names) ──────────────
+const normalizeAgent = (a) => ({
+  ...a,
+  key: a._id,
+  fullName: a.fullName || `${a.first_name || ""} ${a.last_name || ""}`.trim() || "—",
+  phone: a.phone || a.phone_number || "—",
+  email: a.email || "—",
+  location: a.location || a.operating_city || a.country || "—",
+  agencyApprovalStatus: a.agencyApprovalStatus || a.agencyApprovalStatus || "pending",
+  adminApprovalStatus: a.adminApprovalStatus || "pending",
+  profile_photo: a.profile_photo || a.profilePhoto || a.logo || "",
+});
+
+const statusTag = (status) => {
+  const map = {
+    approved: { color: "success", label: "Approved" },
+    declined: { color: "error", label: "Declined" },
+    pending: { color: "warning", label: "Pending" },
+  };
+  const s = map[status] || map.pending;
+  return <Tag color={s.color}>{s.label}</Tag>;
+};
+
 const AgentList = () => {
   const navigate = useNavigate();
 
-  const [agents, setAgents]             = useState([]);
-  const [loading, setLoading]           = useState(false);
-  const [currentPage, setCurrentPage]   = useState(1);
+  const [agents, setAgents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalItems, setTotalItems]     = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
   const [activeTab, setActiveTab] = useState("all");
 
-  // ── Fetch ────────────────────────────────────────────────────────────────
+  // Decline modal
+  const [declineModalOpen, setDeclineModalOpen] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [selectedAgentId, setSelectedAgentId] = useState(null);
+
+  // ── Fetch ────────────────────────────────────────────────────────────
   const fetchAgents = async (page = currentPage, limit = itemsPerPage) => {
     setLoading(true);
     try {
-      const res   = await apiService.get(`/agent/get-all-agents?page=${page}&limit=${limit}`);
-      const list  = res?.data?.data || res?.data || res || [];
-      const total = res?.data?.pagination?.totalItems || res?.data?.total || res?.total || list.length;
-      setAgents(list);
+      // Assumes you have an admin route that returns agents with new fields
+const res = await apiService.get(`/agency/admin/agents?page=${page}&limit=${limit}`);
+      const data = res?.data?.data || res?.data || res || [];
+      const total = res?.data?.pagination?.totalItems || res?.data?.total || res?.total || data.length;
+      const normalized = data.map(normalizeAgent);
+      setAgents(normalized);
       setTotalItems(total);
     } catch {
       message.error("Failed to fetch agents");
@@ -40,7 +71,9 @@ const AgentList = () => {
     }
   };
 
-  useEffect(() => { fetchAgents(1, 10); }, []);
+  useEffect(() => {
+    fetchAgents(1, itemsPerPage);
+  }, []);
 
   const handlePageChange = (page, size) => {
     setCurrentPage(page);
@@ -48,42 +81,79 @@ const AgentList = () => {
     fetchAgents(page, size);
   };
 
-  
-
-  // ── Toggle Verification (IsActive status if needed) ──────────────────────
-  const toggleVerification = async (record, checked) => {
-    const id = record?._id || record?.id;
-    if (!id) return;
+  // ── Admin Approve ─────────────────────────────────────────────────────
+  const handleAdminApprove = async (agentId) => {
     try {
-      await apiService.post(`/agent/update-agent?id=${id}`, { isVerified: checked });
-      message.success(`Agent ${checked ? "verified" : "unverified"} successfully`);
+await apiService.put(`/agency/admin/agents/${agentId}/approve`);
+      message.success("Agent approved by admin");
       fetchAgents(currentPage, itemsPerPage);
-    } catch {
-      message.error("Verification update failed");
+    } catch (err) {
+      message.error(err?.response?.data?.message || "Approval failed");
     }
   };
 
-  // ── Stats ────────────────────────────────────────────────────────────────
-  const verifiedAgents   = agents.filter((a) => a.isVerified).length;
-  const pendingApprovals = agents.filter((a) => a.onboarding_status !== "approved").length;
+  // ── Admin Decline (with reason modal) ─────────────────────────────────
+  const openDeclineModal = (agentId) => {
+    setSelectedAgentId(agentId);
+    setDeclineReason("");
+    setDeclineModalOpen(true);
+  };
+
+  const handleAdminDecline = async () => {
+    if (!declineReason.trim()) {
+      message.warning("Please provide a reason for declining");
+      return;
+    }
+    try {
+await apiService.put(`/agency/admin/agents/${agentId}/decline`, { reason: declineReason });
+      message.success("Agent declined");
+      setDeclineModalOpen(false);
+      setSelectedAgentId(null);
+      fetchAgents(currentPage, itemsPerPage);
+    } catch (err) {
+      message.error(err?.response?.data?.message || "Decline failed");
+    }
+  };
+
+  // ── Stats ────────────────────────────────────────────────────────────
+  const approvedAgents = agents.filter(a => a.adminApprovalStatus === "approved").length;
+  const pendingApprovals = agents.filter(a => a.adminApprovalStatus === "pending").length;
 
   const stats = [
-    { title: "Total Agents",      value: totalItems,       icon: <UsergroupAddOutlined />, color: "#2563eb", bg: "#dbeafe" },
-    { title: "Verified & Active", value: verifiedAgents,   icon: <CheckCircleOutlined />,  color: "#059669", bg: "#d1fae5" },
-    { title: "Pending Approvals", value: pendingApprovals, icon: <ClockCircleOutlined />,  color: "#d97706", bg: "#fef3c7" },
+    {
+      title: "Total Agents",
+      value: totalItems,
+      icon: <UsergroupAddOutlined />,
+      color: "#2563eb",
+      bg: "#dbeafe",
+    },
+    {
+      title: "Admin Approved",
+      value: approvedAgents,
+      icon: <CheckCircleOutlined />,
+      color: "#059669",
+      bg: "#d1fae5",
+    },
+    {
+      title: "Pending Approvals",
+      value: pendingApprovals,
+      icon: <ClockCircleOutlined />,
+      color: "#d97706",
+      bg: "#fef3c7",
+    },
   ];
 
   const filteredAgents = agents.filter((agent) => {
-  if (activeTab === "approved") return agent.onboarding_status === "approved";
-  if (activeTab === "rejected") return agent.onboarding_status === "rejected";
-  return true; // all
-});
+    if (activeTab === "approved") return agent.adminApprovalStatus === "approved";
+    if (activeTab === "rejected") return agent.adminApprovalStatus === "declined";
+    return true;
+  });
 
-  // ── Columns ──────────────────────────────────────────────────────────────
+  // ── Columns ────────────────────────────────────────────────────────────
   const columns = [
     {
       title: "Agent Profile",
-      key: "first_name",
+      key: "fullName",
       sortable: true,
       render: (_, record) => (
         <Space size="middle">
@@ -93,11 +163,11 @@ const AgentList = () => {
             icon={!record.profile_photo && <UserOutlined />}
             style={{ backgroundColor: "#f3e8ff", color: "#5c039b", fontWeight: "bold" }}
           >
-            {!record.profile_photo && record.first_name?.charAt(0)?.toUpperCase()}
+            {!record.profile_photo && record.fullName?.charAt(0)?.toUpperCase()}
           </Avatar>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <Text strong style={{ fontSize: 15, color: "#1f2937", textTransform: "capitalize" }}>
-              {record.first_name} {record.last_name}
+              {record.fullName}
             </Text>
             <Text type="secondary" style={{ fontSize: 12 }}>
               ID: {(record._id || record.id)?.slice(-6).toUpperCase()}
@@ -117,77 +187,72 @@ const AgentList = () => {
           </Text>
           <Text type="secondary" style={{ fontSize: 12 }}>
             <PhoneOutlined style={{ color: "#6b7280", marginRight: 6 }} />
-            {record.country_code} {record.phone_number}
+            {record.phone}
           </Text>
         </Space>
       ),
     },
     {
-      title: "Specialization",
-      key: "specialization",
+      title: "Location",
+      key: "location",
       sortable: true,
       render: (_, record) => (
-        <Tag color="purple" style={{ textTransform: "capitalize" }}>
-          {record.specialization || "N/A"}
-        </Tag>
+        <Text style={{ textTransform: "capitalize" }}>{record.location}</Text>
       ),
     },
     {
-      title: "Onboarding Status",
-      key: "onboarding_status",
-      sortable: true,
+      title: "Agency Approval",
+      key: "agencyApprovalStatus",
+      render: (_, record) => statusTag(record.agencyApprovalStatus),
+    },
+    {
+      title: "Admin Status",
+      key: "adminApprovalStatus",
       render: (_, record) => {
-        const colorMap = { approved: "#059669", pending: "#d97706", registered: "#2563eb", rejected: "#dc2626" };
-        return (
-          <Badge
-            color={colorMap[record.onboarding_status] || "#6b7280"}
-            text={
-              <Text style={{ textTransform: "capitalize", fontWeight: 500, fontSize: 13 }}>
-                {record.onboarding_status || "N/A"}
-              </Text>
-            }
-          />
-        );
+        if (record.adminApprovalStatus === "pending") {
+          return (
+            <Space>
+              <Button
+                size="small"
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                onClick={() => handleAdminApprove(record._id)}
+              >
+                Approve
+              </Button>
+              <Button
+                size="small"
+                danger
+                icon={<CloseCircleOutlined />}
+                onClick={() => openDeclineModal(record._id)}
+              >
+                Decline
+              </Button>
+            </Space>
+          );
+        }
+        return statusTag(record.adminApprovalStatus);
       },
     },
-   {
-  title: "Status",
-  key: "status",
-  render: (_, record) => {
-    const isActive = record.onboarding_status === "approved";
-
-    return (
-      <Tag
-        color={isActive ? "green" : "orange"}
-        style={{ fontWeight: 600, borderRadius: 20 }}
-      >
-        {isActive ? "Active" : "Pending"}
-      </Tag>
-    );
-  },
-},
     {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
         <Space size="small" wrap>
-          {/* ✅ ONLY NAVIGATE TO DETAILS PAGE */}
-          <Tooltip title="View Full Profile & Manage">
+          <Tooltip title="View Full Profile">
             <Button
               type="primary"
               icon={<EyeOutlined />}
               onClick={() => {
- 
-  const currentPath = window.location.pathname; 
-  const newPath = currentPath.replace('agent-list', `agents/${record._id || record.id}`);
-  navigate(newPath);
-}}
+                const currentPath = window.location.pathname;
+                const newPath = currentPath.replace('agent-list', `agents/${record._id}`);
+                navigate(newPath);
+              }}
               style={{ background: "#5c039b", borderColor: "#5c039b", borderRadius: 6 }}
             >
               View
             </Button>
           </Tooltip>
-        
         </Space>
       ),
     },
@@ -203,7 +268,7 @@ const AgentList = () => {
         <div>
           <Title level={2} style={{ margin: 0, color: "#1f2937" }}>Agent Management</Title>
           <Text type="secondary" style={{ fontSize: 15 }}>
-            Manage all registered platform agents. Click View to Approve/Reject.
+            Manage all registered platform agents. Approve or decline pending agents.
           </Text>
         </div>
       </div>
@@ -212,7 +277,6 @@ const AgentList = () => {
       <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
         {stats.map((stat, i) => (
           <Col xs={24} sm={12} md={8} key={i}>
-           
             <Card bordered={false} style={{ borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }} bodyStyle={{ padding: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <div style={{ width: 56, height: 56, borderRadius: 12, background: stat.bg, color: stat.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>
@@ -230,16 +294,16 @@ const AgentList = () => {
         ))}
       </Row>
 
-        <Tabs
-  activeKey={activeTab}
-  onChange={(key) => setActiveTab(key)}
-  style={{ marginBottom: 20 }}
-  items={[
-    { key: "all", label: "All Agents" },
-    { key: "approved", label: "Approved" },
-    { key: "rejected", label: "Rejected" },
-  ]}
-/>
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => setActiveTab(key)}
+        style={{ marginBottom: 20 }}
+        items={[
+          { key: "all", label: "All Agents" },
+          { key: "approved", label: "Admin Approved" },
+          { key: "rejected", label: "Admin Declined" },
+        ]}
+      />
 
       {/* Table */}
       <Card bordered={false} style={{ borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }} bodyStyle={{ padding: 0 }}>
@@ -259,6 +323,29 @@ const AgentList = () => {
           />
         </div>
       </Card>
+
+      {/* Decline Reason Modal */}
+      <Modal
+        title="Decline Agent"
+        open={declineModalOpen}
+        onOk={handleAdminDecline}
+        onCancel={() => {
+          setDeclineModalOpen(false);
+          setSelectedAgentId(null);
+          setDeclineReason("");
+        }}
+        okText="Decline"
+        okButtonProps={{ danger: true }}
+      >
+        <Text>Please provide a reason for declining this agent:</Text>
+        <Input.TextArea
+          rows={4}
+          value={declineReason}
+          onChange={(e) => setDeclineReason(e.target.value)}
+          style={{ marginTop: 10 }}
+          placeholder="Reason..."
+        />
+      </Modal>
     </div>
   );
 };

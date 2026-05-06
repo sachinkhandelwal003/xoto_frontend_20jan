@@ -388,6 +388,14 @@ const CUSTOM_ROLE_LINKS = {
 
       ],
     },
+    {
+    title: "Agents",
+    icon: "fas fa-user-friends",       // or any icon you like
+    path: "/dashboard/{roleSlug}/agents",
+    submenus: [
+      { title: "All Agents",   path: "/dashboard/{roleSlug}/all-agents" },
+    ],
+  },
 
   ],
 
