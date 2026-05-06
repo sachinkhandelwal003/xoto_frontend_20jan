@@ -126,7 +126,7 @@ export default function AdminPropertyListings() {
       showToast("success", `Property ${status}`);
       fetchProperties();
     } catch (err) {
-      console.log(err);
+     
       showToast("error", "Failed to update status");
     }
   };

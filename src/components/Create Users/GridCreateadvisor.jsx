@@ -519,7 +519,7 @@ const validate = () => {
   if (!form.countryCode)
     newErrors.countryCode = "Country code is required";
 
-  console.log("❌ Validation errors:", newErrors); // 👈 yahan la
+  
 
   setErrors(newErrors);
   return Object.keys(newErrors).length === 0;
@@ -528,7 +528,7 @@ const validate = () => {
   // ── Submit ──
 const handleSubmit = async (e) => {
   e.preventDefault();
-  console.log("🔥 Submit clicked");
+  
   if (!validate()) return;
 
   setLoading(true);
@@ -543,19 +543,17 @@ const handleSubmit = async (e) => {
       specialisation: form.specialisation,
     };
 
-    console.log("Payload:", payload); // ── payload dekho ──
-    console.log("🚀 Calling API...");
+    
 
     const res = await apiService.post("/gridadvisor", payload);
 
-    console.log("Response:", res); // ── response dekho ──
+    
 
     notify("success", "Advisor Created Successfully", `Login credentials have been sent to ${payload.email}`);
     setForm(INITIAL_FORM);
     setErrors({});
   } catch (err) {
-    console.log("Full error:", err);         // ── full error dekho ──
-    console.log("Error response:", err?.response); // ── server response ──
+    
     const msg =
       err?.response?.data?.message ||
       err?.message ||

@@ -277,7 +277,7 @@ export default function DeveloperPropertyEdit() {
         },
       };
 
-      console.log("=== UPDATE PAYLOAD ===", payload);
+      
 
       await apiService.put(`/properties/developer/property/${id}`, payload);
 

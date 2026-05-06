@@ -35,7 +35,7 @@ const CartPage = () => {
       );
       // ✅ Fix
 const items = res?.data?.items || res?.items || [];
-console.log("Cart Response:", res); // ← temporarily add karo
+
 setCartItems(Array.isArray(items) ? items : []);
     } catch (err) {
       toast.error("Failed to load cart");

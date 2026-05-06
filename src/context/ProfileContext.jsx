@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
       setUserProfile(profileData);
 
     } catch (err) {
-      console.log(err);
+      
     } finally {
       setLoading(false);
     }

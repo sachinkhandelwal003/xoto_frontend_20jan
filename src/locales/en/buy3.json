@@ -33,7 +33,7 @@
     "schedule": "Schedule Visit"
   },
   "toast": {
-    "success": "Visit scheduled! We'll contact you shortly.",
+    "success": "Your details have been submitted! We'll contact you shortly.",
     "error": "Failed to schedule visit. Try again."
   }
 

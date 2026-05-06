@@ -179,6 +179,8 @@ import AllAdvisors from "../Create Users/Alladvisors";
 import AdvisorDetail from "../Create Users/Advisordetail";
 import AllLeadsPage from "../GridAdmin.jsx/Allleadspage";
 import AdvisorLeadsPage from "../AdvisorGrid/Advisorleadspage";
+import PropertyCatalogue from "../AdvisorGrid/Propertycatalogue";
+import FavouriteProperty from "../Grid/Fav Property/FavouriteProperty";
 
 {/*Xoto Vault*/ }
 import VaultAdminDashboard from "../ecommerce/B2C/VaultAdminDashboard";
@@ -237,6 +239,9 @@ import DetailedViewCases from "../ecommerce/vault/case/DetailedViewCases";
 import ProcessCasesUpdates from "../ecommerce/vault/case/ProcessCasesUpdates";
 // import ReferralPartnerLogin from "../GridReferralPartner/ReferralPartnerLogin";
 import ReferralPartnerDashboard from "./pages/ReferralPartnerDashboard"
+import TotalLeads from "../GridReferralPartner/GridDashboardpages/TotalLeads";
+import ActiveLeads from "../GridReferralPartner/GridDashboardpages/CreateReferralLead";
+import RecentLeads from "../GridReferralPartner/GridDashboardpages/RecentLeads";
 import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
 import QueueCases from "../ecommerce/vault/case/QueueCases";
 import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
@@ -249,6 +254,10 @@ import VaultCreateadvisor from "../ecommerce/B2C/VaultCreateadviosor";
 import AdminManagecases from "../ecommerce/vault/case/AdminManagecases";
 // import AdvisorLeads from "../ecommerce/vault/vaultadvisor";
 import VaultAdvisorLeads from "../ecommerce/B2C/VaultAdvisorLeads";
+import DisbursedCases from "../ecommerce/vault/case/DisbursedCases";
+import DisbursedFullAmountCases from "../ecommerce/vault/case/DisbursedFullAmountCases";
+import AgentsLeadFullView from "../ecommerce/B2C/AgentsLeadFullView";
+import Adminfeedbacks from "../../components/footer/Adminfeedbacks";
 
 
 
@@ -427,11 +436,14 @@ const CmsRoutes = () => {
       <Route path="products/view" element={<ProductProfile />} />
       <Route path="products/edit/:id" element={<UpdateProduct />} />
       <Route path="products/edit/:id" element={<UpdateProduct />} />
+      <Route path="/My-favourite-Properties" element={<FavouriteProperty />} />
 
       <Route path="product/inventory/:id" element={<Inventory />} />
 
       <Route path="seller/:id" element={<VendorB2CProfile />} />
       <Route path="inventory" element={<VendorInventory />} />
+
+      <Route path="/feedbacks" element={<Adminfeedbacks />} />
 
       {/* <Route path="projects/:id" element={<ViewProject/>} /> */}
       <Route path="quotation/received" element={<ReceivedQuotation />} />
@@ -521,8 +533,9 @@ const CmsRoutes = () => {
 <Route path="onboard-partner" element={<OnboardPartner />} />
 <Route path="AgentVaultlisting" element={<AgentVaultListing />} />
 <Route path="leads/create" element={<VaultCreateLeads />} />
-<Route path="leads" element={<VaultLeads />} />
+<Route path="leads" element={<LeadsVault />} />
 <Route path="leads/advisor" element={<AdvisorLeads />} />
+<Route path="leads/advisor/view/:id" element={<VaultAgentLeadDetail />} />
 
 <Route path="leads/:leadId" element={<VaultLeadDetails />} />
 <Route path="leads/:leadId/documents" element={<VaultLeadDocuments />} /> 
@@ -536,6 +549,8 @@ const CmsRoutes = () => {
 <Route path="advisor/list"   element={<AdvisorList />} />
 <Route path="advisor/:id" element={<VaultAdvisorDetail />} />
 <Route path="mortgage-ops/create" element={<VaultCreateMortgage />} />
+<Route path="create/vault-advisor" element={<VaultCreateadvisor />} />
+
 <Route path="mortgage-ops/list"   element={<VaultMortgageList />} />
 <Route path="mortgage-ops/:id" element={<VaultMortgagedetail />} />
 <Route path="mortgage/dashboard" element={<MortgageOpsDashboard />} />
@@ -551,7 +566,7 @@ const CmsRoutes = () => {
 
 
 <Route path="vault/agent-leads" element={<VaultAgentLeadList />} />
-<Route path="vault/lead/:id" element={<VaultAgentLeadDetail />} />
+<Route path="vault/lead/:id" element={<AgentsLeadFullView />} />
 <Route path="vault/lead/documents/:leadId" element={<VaultLeadDocumentUpload />} />
 
 
@@ -636,12 +651,16 @@ const CmsRoutes = () => {
 
 {/* Grid Referral Partner   */}
 <Route path="/grid-referral-partner" element={<ReferralPartnerDashboard />} />
+<Route path="/total-leads" element={<TotalLeads />} />
+<Route path="/Submit-leads" element={<ActiveLeads />} />
+<Route path="/recent-leads" element={<RecentLeads />} />
 
 <Route path="advisors/:id" element={<AdvisorDetail />} />   
 <Route path="advisors" element={<AllAdvisors />} />         
 <Route path="create-advisor" element={<CreateAdvisor />} />
 <Route path="dashboard/myprofile" element={<GridAdvisorProfile />} />
 <Route path="gridAdvisorLeads" element={<AdvisorLeadsPage />} />
+<Route path="property-catalogue" element={<PropertyCatalogue />} />
 
 
 
@@ -663,9 +682,13 @@ const CmsRoutes = () => {
             <Route path="/case/assigned/all" element={< OpsAssignedcases />} />
 
                         <Route path="/case/view/all" element={< ProcessCasesUpdates />} />
+                                                <Route path="/case/disbursed" element={< DisbursedCases />} />
+
 
             <Route path="/case/view/:caseId" element={< DetailedViewCases/>} />
+            <Route path="/case/amount/view/:caseId" element={< DisbursedFullAmountCases/>} />
 
+            <Route path="/case/assigned/view/:caseId" element={< OpsAssignedReview/>} />
 
 
 

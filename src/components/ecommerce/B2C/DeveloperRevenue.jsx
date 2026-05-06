@@ -59,7 +59,7 @@ export default function DeveloperRevenue() {
 
     } catch (error) {
 
-      console.log("Revenue fetch error:", error);
+      
 
     }
 

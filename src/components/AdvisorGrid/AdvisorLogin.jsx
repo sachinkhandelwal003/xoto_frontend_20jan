@@ -293,7 +293,7 @@ const AdvisorLogin = () => {
         password: values.password,
       });
     } catch (err) {
-      console.log("🔥 Advisor Login Error:", err);
+     
 
       let errorMessage = "Invalid credentials";
 

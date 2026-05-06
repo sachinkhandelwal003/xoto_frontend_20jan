@@ -77,6 +77,7 @@ const OurProperty = () => {
   const [properties, setProperties] = useState([]);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [api, contextHolder] = notification.useNotification();
+  const [selectedProperty, setSelectedProperty] = useState(null);
 
   // 2. Form State (Added location fields)
   const [formData, setFormData] = useState({
@@ -160,6 +161,20 @@ if (res && Array.isArray(res.data)) {
     fetchProperties();
   }, []);
 
+
+useEffect(() => {
+  if (openModal) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "auto";
+  }
+
+  return () => {
+    document.body.style.overflow = "auto";
+  };
+}, [openModal]);
+
+
   // --- HANDLERS ---
 
   const handleChange = (e) => {
@@ -213,101 +228,133 @@ if (res && Array.isArray(res.data)) {
   // --- VALIDATION & SUBMIT ---
 
   const validateForm = () => {
-    let newErrors = {};
-    let isValid = true;
+  let newErrors = {};
+  let isValid = true;
 
-    if (!formData.first_name.trim()) { newErrors.first_name = "Required"; isValid = false; }
-    if (!formData.last_name.trim()) { newErrors.last_name = "Required"; isValid = false; }
-    if (!formData.email.trim()) { newErrors.email = "Required"; isValid = false; }
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) { newErrors.email = "Invalid email"; isValid = false; }
+  if (!formData.first_name.trim()) { newErrors.first_name = "Required"; isValid = false; }
+  if (!formData.last_name.trim()) { newErrors.last_name = "Required"; isValid = false; }
+  if (!formData.email.trim()) { newErrors.email = "Required"; isValid = false; }
+  else if (!/\S+@\S+\.\S+/.test(formData.email)) { newErrors.email = "Invalid email"; isValid = false; }
 
-   const phoneError = validatePhone(
-  formData.country_code,
-  formData.mobile
-);
+  const phoneError = validatePhone(formData.country_code, formData.mobile);
+  if (phoneError) { newErrors.mobile = phoneError; isValid = false; }
 
-if (phoneError) {
-  newErrors.mobile = phoneError;
-  isValid = false;
-}
+  setErrors(newErrors);
+  return isValid;
+};
 
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+  setLoading(true);
 
-    if (!formData.occupation.trim()) { newErrors.occupation = "Required"; isValid = false; }
-    
-    // Location Checks
-    if (!formData.location_country) { newErrors.location_country = "Country Required"; isValid = false; }
-    if (!formData.state) { newErrors.state = "State Required"; isValid = false; }
-    if (citiesList.length > 0 && !formData.city) { newErrors.city = "City Required"; isValid = false; }
-
-    setErrors(newErrors);
-    return isValid;
+  const payload = {
+    enquiry_type: "sell",
+    property_id: selectedProperty?.id,
+    first_name: formData.first_name.trim(),
+    last_name: formData.last_name.trim(),
+    phone_number: formData.mobile,
+    country_code: `+${formData.country_code}`,
+    email: formData.email.toLowerCase().trim(),
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setLoading(true);
-
-    // Resolve Names
-    const countryName = Country.getCountryByCode(formData.location_country)?.name || "";
-    const stateName = State.getStateByCodeAndCountry(formData.state, formData.location_country)?.name || formData.state;
-    const finalLocationString = `${formData.city || stateName}, ${stateName}, ${countryName}`;
-
-    const payload = {
-      type: "schedule_visit",
-      name: { first_name: formData.first_name.trim(), last_name: formData.last_name.trim() },
-      mobile: { country_code: formData.country_code, number: formData.mobile },
-      email: formData.email.toLowerCase().trim(),
-      occupation: formData.occupation,
-      location: finalLocationString,
-      preferred_city: formData.city || stateName,
-      preferred_contact: formData.preferred_contact,
-    };
-
-    try {
-      const res = await apiService.post("/property/lead", payload);
-      if (res.success) {
-        openNotification("success", "Request Submitted", t("toast.success"));
-        setOpenModal(false);
-        setFormData({
-          first_name: "", last_name: "", email: "", mobile: "", country_code: "971",
-          occupation: "", location_country: null, state: null, city: null, preferred_contact: "whatsapp",
-        });
-        setErrors({});
-      }
-    } catch (err) {
-      // Zero Index Error
-      const errorData = err.response?.data;
-      let errorMessage = t("toast.error");
-      if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
-        errorMessage = errorData.errors[0].message || errorData.errors[0].msg;
-      } else if (errorData?.message) {
-        errorMessage = errorData.message;
-      }
-      openNotification("error", "Submission Failed", errorMessage);
-    } finally {
-      setLoading(false);
+  try {
+    const res = await apiService.post("/gridlead/website-lead", payload);
+    if (res.success) {
+      openNotification("success", "Request Submitted", t("toast.success"));
+      setOpenModal(false);
+      setFormData({
+        first_name: "", last_name: "", email: "",
+        country_code: "971", mobile: "",
+        occupation: "", location_country: null, state: null, city: null,
+        preferred_contact: "whatsapp",
+      });
+      setErrors({});
+      setSelectedProperty(null);
     }
+  } catch (err) {
+    openNotification("error", "Submission Failed", err.response?.data?.message || t("toast.error"));
+  } finally {
+    setLoading(false);
+  }
+};
+
+// ── OurProperty se PEHLE paste karo ──────────────────────────────────────────
+
+const FALLBACK_IMAGE = "https://via.placeholder.com/400x300?text=No+Image";
+
+function PropertyCard({ property, onShowDetails }) {
+  const [isFavourited, setIsFavourited] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
+
+  // localStorage se check karo on mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const saved = JSON.parse(localStorage.getItem("customer_favourites") || "[]");
+    if (saved.includes(property.id)) setIsFavourited(true);
+  }, [property.id]);
+
+  const handleFavouriteClick = async (e) => {
+    e.stopPropagation();
+    if (!localStorage.getItem("token")) { window.location.href = "/user/login"; return; }
+    if (favLoading) return;
+    setFavLoading(true);
+    try {
+      const res = await apiService.post("/properties/favourites/toggle", { property_id: property.id });
+      if (res.success) {
+        setIsFavourited(res.isFavourited);
+        const saved = JSON.parse(localStorage.getItem("customer_favourites") || "[]");
+        const updated = res.isFavourited
+          ? [...new Set([...saved, property.id])]
+          : saved.filter((id) => id !== property.id);
+        localStorage.setItem("customer_favourites", JSON.stringify(updated));
+      }
+    } catch (err) { console.error("Favourite toggle failed:", err); }
+    finally { setFavLoading(false); }
   };
 
-  const PropertyCard = ({ property }) => (
+  return (
     <div className="w-full max-w-[393px] mx-auto h-[519px] bg-white rounded-[24px] shadow-[0px_20px_40px_rgba(0,0,0,0.12)] overflow-hidden relative transition-transform duration-300 hover:scale-[1.02]">
       <div className="h-[240px] relative">
-        <img src={property.image} alt={property.title} className="w-full h-full object-cover" />
+        <img
+          src={property.image}
+          alt={property.title}
+          className="w-full h-full object-cover"
+          onError={(e) => (e.target.src = FALLBACK_IMAGE)}
+        />
         <span className={`absolute top-4 left-4 text-xs font-medium px-3 py-1 rounded-md ${property.tag === "Sell" ? "bg-[#E8F0FF] text-[#2563EB]" : "bg-[#E9FFF3] text-[#16A34A]"}`}>
           {property.tag}
         </span>
-        <button className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-md hover:bg-gray-100 transition">
-          <img src={favroiteicon} alt="favorite" className="w-10 h-10" />
+
+        {/* ── Heart button — fav API wala ── */}
+        <button
+          onClick={handleFavouriteClick}
+          disabled={favLoading}
+          className="absolute top-4 right-4 w-9 h-9 rounded-md bg-white flex items-center justify-center shadow-md hover:scale-110 transition-transform duration-200 active:scale-95"
+          style={{ border: "none", cursor: "pointer" }}
+        >
+          {favLoading ? (
+            <div className="w-4 h-4 border-2 border-[#5C039B] border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <svg
+              width="16" height="16" viewBox="0 0 24 24"
+              fill={isFavourited ? "#5C039B" : "none"}
+              stroke="#5C039B" strokeWidth="2"
+              style={{ transition: "fill 0.2s" }}
+            >
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          )}
         </button>
       </div>
+
       <div className="p-6">
         <h3 className="font-medium text-[16px] leading-[24px] text-[rgba(0,0,0,0.6)] font-dm">
           {property.title}
         </h3>
         <div className="flex items-start justify-between">
-          <p className="text-[20px] leading-[28px] font-medium text-[#0F172A] font-dm">{property.price}</p>
+          <p className="text-[20px] leading-[28px] font-bold text-[#0F172A] font-dm">{property.price}</p>
           <span className="px-3 py-[2px] text-[12px] leading-[18px] rounded-full bg-[#E8F0FF] text-[#2563EB] mt-[2px] font-dm truncate max-w-[120px]">
             {property.location}
           </span>
@@ -335,8 +382,8 @@ if (phoneError) {
             <span className="mt-1 block text-[14px] md:text-[16px] leading-[18px] text-[rgba(0,0,0,0.6)] font-dm">Living Area</span>
           </div>
         </div>
-        <button 
-          onClick={() => setOpenModal(true)} 
+        <button
+          onClick={onShowDetails}
           className="w-full mt-8 h-[48px] rounded-lg bg-[#5C039B] text-white text-[16px] font-medium transition-transform hover:scale-[1.02] active:scale-95"
         >
           Show Details
@@ -344,6 +391,7 @@ if (phoneError) {
       </div>
     </div>
   );
+}
 
   return (
     <>
@@ -379,18 +427,25 @@ if (phoneError) {
                   loop
                 >
                   {properties.map((p) => (
-                    <SwiperSlide key={p.id}>
-                      <PropertyCard property={p} />
-                    </SwiperSlide>
-                  ))}
+  <SwiperSlide key={p.id}>
+    <PropertyCard
+      property={p}
+      onShowDetails={() => { setSelectedProperty(p); setOpenModal(true); }}
+    />
+  </SwiperSlide>
+))}
                 </Swiper>
               </div>
 
               {/* Desktop Grid */}
               <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10 justify-items-center">
-                {properties.map((p) => (
-                  <PropertyCard key={p.id} property={p} />
-                ))}
+               {properties.map((p) => (
+  <PropertyCard
+    key={p.id}
+    property={p}
+    onShowDetails={() => { setSelectedProperty(p); setOpenModal(true); }}
+  />
+))}
               </div>
             </>
           )}
@@ -473,14 +528,14 @@ if (phoneError) {
                   </div>
                 </div>
 
-                <div className="relative">
+                {/* <div className="relative">
                   <input name="occupation" value={formData.occupation} onChange={handleChange} placeholder={t("form.occupation")} className={`premium-input pl-12 ${errors.occupation ? 'border-red-500 bg-red-50' : ''}`} />
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600"><Briefcase size={20} /></div>
                   {errors.occupation && <p className="text-red-500 text-xs mt-1 absolute">{errors.occupation}</p>}
-                </div>
+                </div> */}
 
                 {/* Location Dropdowns */}
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                     <div className="relative">
                         <Select
                             placeholder="Select Country"
@@ -533,7 +588,7 @@ if (phoneError) {
                             {errors.city && <p className="text-red-500 text-xs mt-3 absolute">{errors.city}</p>}
                         </div>
                     </div>
-                </div>
+                </div> */}
 
                 <button type="submit" disabled={loading} className="w-full bg-[#5C039B] text-white py-4 md:py-5 rounded-xl text-lg font-bold hover:bg-[#4b0281] hover:scale-[1.01] transition-all flex items-center justify-center gap-2 shadow-lg">
                   {loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : t("actions.submit")}

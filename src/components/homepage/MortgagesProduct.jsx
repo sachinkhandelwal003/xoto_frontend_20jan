@@ -161,7 +161,7 @@ const MortgageProduct = () => {
             const response = await fetch(`${BASE_URL}/api/mortgages/get-lead-data?lead_id=${leadId}`);
             const result = await response.json();
             
-            console.log("🔥 API RESULT (Dashboard):", result); 
+            
 
             if (result.success && result.data) {
                 setApiData(result.data); // Save full data

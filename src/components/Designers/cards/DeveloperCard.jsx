@@ -3,7 +3,7 @@ import React from 'react';
 const DeveloperCard = ({ developer }) => {
   const handleHireClick = () => {
     // Implement hire functionality
-    console.log(`Hiring ${developer.name}`);
+    
   };
 
   return (

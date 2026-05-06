@@ -68,7 +68,7 @@ const handleScroll = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form submitted:", form);
+    
     handleClose();
   };
 

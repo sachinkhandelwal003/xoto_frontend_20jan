@@ -9,12 +9,12 @@
   "actions": {
     "schedule": "Schedule Visit",
     "viewMore": "View More",
-    "submit": "Schedule Property Visit",
+    "submit": "Submit",
     "loading": "Scheduling Visit..."
   },
   "modal": {
-    "title": "Schedule Property Visit",
-    "subtitle": "Fill in your details and we'll arrange a private viewing for you!"
+    "title": "We are Here To Help You",
+    "subtitle": "Fill in your contact details, our expert advisor will get in touch with you."
   },
   "form": {
     "firstName": "First Name",

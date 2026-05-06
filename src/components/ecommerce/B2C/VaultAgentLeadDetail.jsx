@@ -668,7 +668,7 @@ export default function VaultAgentLeadDetail() {
                       <DRow label="Advisor Name" value={normalizeText(at.advisorName)} />
                       <DRow label="Advisor ID" value={show(at.advisorId)} copy />
                       <DRow label="Assigned At" value={fmtDT(at.assignedAt)} />
-                      <DRow label="Assigned By" value={assignedByName || show(at.assignedBy)} />
+                      <DRow label="Assigned By" value={show(at.assignedBy)} />
                     </>
                   ) : <EmptyNote msg="No advisor assigned yet" />}
                 </Section>

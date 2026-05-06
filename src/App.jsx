@@ -392,7 +392,7 @@ function App() {
                <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
   
-                <Route path="/employee/login" element={<EmployeeLogin />} />
+                <Route path="/Vault/testing/login" element={<EmployeeLogin />} />
 
               <Route
                 path="/dashboard/:roleSlug/*"

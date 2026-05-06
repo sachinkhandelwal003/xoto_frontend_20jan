@@ -105,7 +105,7 @@ export default function SecondaryPlans() {
       const list = Array.isArray(res?.data) ? res.data : res?.data?.data || [];
       setDevelopers(list);
     } catch (err) {
-      console.log(err);
+      
     }
   };
 

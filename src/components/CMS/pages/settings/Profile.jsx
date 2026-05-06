@@ -17,7 +17,7 @@ const Profile = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Profile updated:', formData);
+    
   };
 
   return (

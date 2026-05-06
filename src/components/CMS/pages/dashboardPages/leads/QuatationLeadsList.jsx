@@ -64,7 +64,7 @@ const QuotationLeadsList = () => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   
-  console.log(mySubmittedQuotation)
+  
   // Single Item State
   const [quotationPrice, setQuotationPrice] = useState(0);
   const [discountPercent, setDiscountPercent] = useState(0);
@@ -238,7 +238,7 @@ const QuotationLeadsList = () => {
         estimate_subcategory: selectedEstimate?.subcategory?._id
       };
       
-      console.log('Submitting quotation:', quotationData);
+      
       
       const response = await apiService.post(`/estimates/${selectedEstimate._id}/quotation`, quotationData);
       

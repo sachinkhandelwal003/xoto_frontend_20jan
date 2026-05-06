@@ -22,7 +22,7 @@ const videoRef = useRef(null);
 useEffect(() => {
   if (videoRef.current) {
     videoRef.current.play().catch(() => {
-      console.log("Autoplay blocked");
+      
     });
   }
 }, []);
@@ -46,21 +46,21 @@ useEffect(() => {
 </div>
 
       {/* EXCLUSIVE DEALS LAYER — scales down on mobile */}
-   <div className="absolute 
+  <div className="absolute 
   top-[0px] 
   sm:top-[20px] 
   md:top-[-10px] 
-  right-0 
+  right-8
   z-10 
-  w-[60px] 
-  sm:w-[90px] 
-  md:w-[130px] 
-  lg:w-[160px] 
-  xl:w-[180px] 
+  w-[28px] 
+  sm:w-[50px] 
+  md:w-[70px] 
+  lg:w-[90px] 
+  xl:w-[110px] 
   cursor-pointer"
 >
   <img 
-    src={layer} 
+    src="https://xotostaging.s3.me-central-1.amazonaws.com/properties/1777723555826-Group%20%282%29.png" 
     alt="Exclusive Deals" 
     className="w-full h-auto object-contain"
     onClick={() => navigate("/Property#buy3")}

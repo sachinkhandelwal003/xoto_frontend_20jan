@@ -153,7 +153,7 @@ setStats(res?.data?.stats || stats);
       const list = Array.isArray(res?.data) ? res.data : res?.data?.data || [];
       setDevelopers(list);
     } catch (err) {
-      console.log(err);
+      
     }
   };
 

@@ -3,12 +3,14 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import {
   Button, Tag, message, Space, DatePicker, Select, Input,
-  Tooltip, Badge, Drawer, Modal, Form
+  Tooltip, Badge, Drawer, Modal, Form, Tabs, Progress, Alert
 } from "antd";
 import {
   EyeOutlined, SearchOutlined, FilterOutlined, ClearOutlined,
   ReloadOutlined, CheckCircleOutlined, CloseCircleOutlined,
-  UploadOutlined, PhoneOutlined, EditOutlined,
+  UploadOutlined, PhoneOutlined, EditOutlined, ClockCircleOutlined,
+  WarningOutlined, UserOutlined, FileTextOutlined, DollarOutlined,
+  InfoCircleOutlined
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
@@ -16,112 +18,155 @@ import CustomTable from "../../../CMS/pages/custom/CustomTable";
 import dayjs from "dayjs";
 
 const { RangePicker } = DatePicker;
-const { Option }      = Select;
-const { TextArea }    = Input;
+const { Option } = Select;
+const { TextArea } = Input;
+const { TabPane } = Tabs;
 
 // ─── Brand ─────────────────────────────────────────────────────────────────
-const P  = "#5C039B";
+const P = "#5C039B";
 const PM = "#7C3AED";
 const PL = "#F5F0FF";
 const PB = "#E9D5FF";
 
-
-
-
 const roleSlugMap = {
-  '0': 'superadmin',
-  '1': 'admin',
-  '2': "customer",
-  '5': 'vendor-b2c',
-  '6': 'vendor-b2b',
-  '7': 'freelancer',
-  '11': 'accountant',
-  '12': 'supervisor',
-  '15': "agency",        // Agency
-  '16': "agent",         // Agent
-  '17': "developer",
-  '18': "vault-admin", //vault
-  '22': "vaultagent",
-  '21': "vaultpartner",
-  '26': "vault-advisor",
-  '23': "vault-ops",
-   
- 
-
-
+  '0': 'superadmin', '1': 'admin', '2': "customer", '5': 'vendor-b2c',
+  '6': 'vendor-b2b', '7': 'freelancer', '11': 'accountant', '12': 'supervisor',
+  '15': "agency", '16': "agent", '17': "developer", '18': "vault-admin",
+  '22': "vaultagent", '21': "vaultpartner", '26': "vault-advisor", '23': "vault-ops",
 };
 
 // ─── Static config ──────────────────────────────────────────────────────────
 const STATUS_CFG = {
-  New                        : { color: "blue",    bg: "#EFF6FF", text: "#1D4ED8" },
-  Assigned                   : { color: "purple",  bg: "#F5F0FF", text: "#6D28D9" },
-  Contacted                  : { color: "orange",  bg: "#FFF7ED", text: "#C2410C" },
-  Qualified                  : { color: "geekblue",bg: "#EEF2FF", text: "#4338CA" },
-  "Collecting Documentation" : { color: "green",   bg: "#F0FDF4", text: "#166534" },
-  "Documents Complete"       : { color: "cyan",    bg: "#ECFEFF", text: "#0E7490" },
-  "Application Opened"       : { color: "volcano", bg: "#FFF5F3", text: "#C2410C" },
-  "Not Proceeding"           : { color: "red",     bg: "#FEF2F2", text: "#B91C1C" },
-  Disbursed                  : { color: "success", bg: "#ECFDF5", text: "#065F46" },
+  "New": { color: "blue", bg: "#EFF6FF", text: "#1D4ED8", icon: <FileTextOutlined />, order: 0 },
+  "Assigned": { color: "purple", bg: "#F5F0FF", text: "#6D28D9", icon: <UserOutlined />, order: 1 },
+  "Contacted": { color: "orange", bg: "#FFF7ED", text: "#C2410C", icon: <PhoneOutlined />, order: 2 },
+  "Qualified": { color: "geekblue", bg: "#EEF2FF", text: "#4338CA", icon: <CheckCircleOutlined />, order: 3 },
+  "Documents Complete": { color: "cyan", bg: "#ECFEFF", text: "#0E7490", icon: <CheckCircleOutlined />, order: 5 },
+  "Application Opened": { color: "volcano", bg: "#FFF5F3", text: "#C2410C", icon: <EditOutlined />, order: 6 },
+  "Not Proceeding": { color: "red", bg: "#FEF2F2", text: "#B91C1C", icon: <CloseCircleOutlined />, order: 99 },
+  "Disbursed": { color: "success", bg: "#ECFDF5", text: "#065F46", icon: <DollarOutlined />, order: 100 },
 };
 
 const SOURCE_CFG = {
-  website        : { color: "blue",   label: "Website"        },
+  website: { color: "blue", label: "Website" },
   freelance_agent: { color: "purple", label: "Freelance Agent" },
-  partner        : { color: "green",  label: "Partner"        },
-  admin          : { color: "orange", label: "Admin"          },
+  partner: { color: "green", label: "Partner" },
+  admin: { color: "orange", label: "Admin" },
 };
 
 const STATUSES = Object.keys(STATUS_CFG);
-const SOURCES  = Object.keys(SOURCE_CFG);
+const SOURCES = Object.keys(SOURCE_CFG);
 
-const fmt     = (n) => (n ? Number(n).toLocaleString("en-AE") : "—");
+const fmt = (n) => (n ? Number(n).toLocaleString("en-AE") : "—");
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
-const cap     = (s) => s ? s.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "";
+const cap = (s) => s ? s.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "";
+
+const BUSINESS_HOURS_SLA_MS = 4 * 60 * 60 * 1000;
+
+// Get SLA status display
+const getSLAStatus = (assignedAt, currentStatus, slaDeadline) => {
+  if (!assignedAt) return null;
+  if (currentStatus === "Contacted") return { status: "completed", text: "✓ SLA Met", color: "#10B981" };
+  
+  const now = new Date();
+  const deadline = slaDeadline ? new Date(slaDeadline) : new Date(new Date(assignedAt).getTime() + BUSINESS_HOURS_SLA_MS);
+  const remaining = deadline - now;
+  
+  if (remaining < 0) {
+    const overdue = Math.abs(Math.floor(remaining / (1000 * 60 * 60)));
+    return { status: "breached", text: `Breached by ${overdue}h`, color: "#EF4444" };
+  }
+  
+  const hoursLeft = Math.floor(remaining / (1000 * 60 * 60));
+  const minutesLeft = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+  
+  if (remaining < 30 * 60 * 1000) {
+    return { status: "urgent", text: `${hoursLeft}h ${minutesLeft}m left`, color: "#F59E0B" };
+  }
+  
+  return { status: "on_track", text: `${hoursLeft}h ${minutesLeft}m left`, color: "#6B7280" };
+};
+
+// Get time remaining formatted
+const getTimeRemaining = (assignedAt, slaDeadline) => {
+  if (!assignedAt) return null;
+  const deadline = slaDeadline ? new Date(slaDeadline) : new Date(new Date(assignedAt).getTime() + BUSINESS_HOURS_SLA_MS);
+  const remaining = deadline - new Date();
+  
+  if (remaining <= 0) return "Expired";
+  
+  const hours = Math.floor(remaining / (1000 * 60 * 60));
+  const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+  
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+};
 
 const INIT_FILTERS = { search: "", source: "", status: "", assigned: "", fromDate: "", toDate: "" };
 
 // ══════════════════════════════════════════════════════════════════════════
 const AdvisorLeads = () => {
   const navigate = useNavigate();
+  const { user } = useSelector((s) => s.auth);
+  const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
 
-  const [data,         setData]         = useState([]);
-  const [loading,      setLoading]      = useState(false);
-  const [totalItems,   setTotalItems]   = useState(0);
-  const [currentPage,  setCurrentPage]  = useState(1);
+  // ─── Data state ─────────────────────────────────────────────────────────
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [activeTab, setActiveTab] = useState("assigned");
 
-  const [filters,    setFilters]    = useState(INIT_FILTERS);
-  const [applied,    setApplied]    = useState(INIT_FILTERS);
+  // ─── Filter state ────────────────────────────────────────────────────────
+  const [filters, setFilters] = useState(INIT_FILTERS);
+  const [applied, setApplied] = useState(INIT_FILTERS);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [dateRange,  setDateRange]  = useState(null);
+  const [dateRange, setDateRange] = useState(null);
 
-  // ── Status update modal state ────────────────────────────────────────────
-  const [statusModal, setStatusModal]       = useState(false);
-  const [statusTarget, setStatusTarget]     = useState(null); // lead record
-  const [statusNotes, setStatusNotes]       = useState("");
-  const [statusLoading, setStatusLoading]   = useState(false);
-const [selectedStatus, setSelectedStatus] = useState("");
+  // ─── Status update modal state ──────────────────────────────────────────
+  const [statusModal, setStatusModal] = useState(false);
+  const [statusTarget, setStatusTarget] = useState(null);
+  const [statusNotes, setStatusNotes] = useState("");
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("");
+
   const activeCount = Object.entries(applied).filter(([, v]) => v !== "" && v !== undefined).length;
 
-  const statsNew       = data.filter((r) => r.currentStatus === "New").length;
-  const statsActive    = data.filter((r) => r.currentStatus && !["Disbursed", "Not Proceeding"].includes(r.currentStatus)).length;
-  const statsDisbursed = data.filter((r) => r.currentStatus === "Disbursed").length;
-const { user } = useSelector((s) => s.auth);
-const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
-  // ── Fetch ─────────────────────────────────────────────────────────────────
+  // Filter data based on active tab
+  const filteredData = data.filter(lead => {
+    if (activeTab === "assigned") return lead.currentStatus === "Assigned";
+    if (activeTab === "contacted") return lead.currentStatus === "Contacted";
+    if (activeTab === "qualified") return lead.currentStatus === "Qualified";
+    if (activeTab === "collecting") return lead.currentStatus === "Collecting Documentation";
+    if (activeTab === "disbursed") return lead.currentStatus === "Disbursed";
+    if (activeTab === "all") return true;
+    return true;
+  });
+
+  const stats = {
+    assigned: data.filter(r => r.currentStatus === "Assigned").length,
+    contacted: data.filter(r => r.currentStatus === "Contacted").length,
+    qualified: data.filter(r => r.currentStatus === "Qualified").length,
+    collecting: data.filter(r => r.currentStatus === "Collecting Documentation").length,
+    disbursed: data.filter(r => r.currentStatus === "Disbursed").length,
+    total: data.length
+  };
+
+  // ─── Fetch leads ─────────────────────────────────────────────────────────
   const fetchLeads = useCallback(async (page = currentPage, limit = itemsPerPage, f = applied) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({ page, limit });
-      if (f.search)           params.set("search",   f.search);
-      if (f.source)           params.set("source",   f.source);
-      if (f.status)           params.set("status",   f.status);
-      if (f.assigned !== "")  params.set("assigned", f.assigned);
-      if (f.fromDate)         params.set("fromDate", f.fromDate);
-      if (f.toDate)           params.set("toDate",   f.toDate);
+      if (f.search) params.set("search", f.search);
+      if (f.source) params.set("source", f.source);
+      if (f.status) params.set("status", f.status);
+      if (f.assigned !== "") params.set("assigned", f.assigned);
+      if (f.fromDate) params.set("fromDate", f.fromDate);
+      if (f.toDate) params.set("toDate", f.toDate);
 
-      const res   = await apiService.get(`/vault/lead/advisor/my-leads?${params.toString()}`);
-      const list  = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
+      const res = await apiService.get(`/vault/lead/advisor/my-leads?${params.toString()}`);
+      const list = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
       const total = res?.data?.total || res?.data?.totalItems || res?.data?.count || list.length;
       setData(list);
       setTotalItems(total);
@@ -134,7 +179,17 @@ const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  // Auto-refresh SLA timers every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (data.some(lead => lead.assignedTo?.advisorId && lead.currentStatus !== "Contacted")) {
+        fetchLeads(currentPage, itemsPerPage, applied);
+      }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [data, currentPage, itemsPerPage, applied, fetchLeads]);
+
+  // ─── Handlers ────────────────────────────────────────────────────────────
   const handlePageChange = (page, size) => {
     setCurrentPage(page);
     setItemsPerPage(size);
@@ -157,25 +212,19 @@ const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
     setDrawerOpen(false);
   };
 
-  const quickStatus = (status) => {
-    const f = { ...INIT_FILTERS, status };
-    setFilters(f); setApplied(f);
-    setCurrentPage(1);
-    fetchLeads(1, itemsPerPage, f);
-  };
-
   const handleDateRange = (dates) => {
     setDateRange(dates);
     setFilters((prev) => ({
       ...prev,
       fromDate: dates?.[0] ? dates[0].format("YYYY-MM-DD") : "",
-      toDate  : dates?.[1] ? dates[1].format("YYYY-MM-DD") : "",
+      toDate: dates?.[1] ? dates[1].format("YYYY-MM-DD") : "",
     }));
   };
 
   const handleSearchEnter = () => {
     const f = { ...applied, search: filters.search };
-    setApplied(f); setCurrentPage(1);
+    setApplied(f);
+    setCurrentPage(1);
     fetchLeads(1, itemsPerPage, f);
   };
 
@@ -184,69 +233,138 @@ const roleSlug = roleSlugMap[user?.role?.code] ?? "dashboard";
     else message.warning("Lead ID not available");
   };
 
-  // ── Open "Mark as {selectedStatus}" modal ────────────────────────────────────────
-  const openStatusModal = (record) => {
+  const handleAddDocs = (leadId) => {
+    if (!leadId) return message.warning("Lead ID not available");
+    navigate(`/dashboard/advisor/leads/${leadId}/documents`);
+  };
+
+  // ─── Open status update modal ───────────────────────────────────────────
+  const openStatusModal = (record, status) => {
     setStatusTarget(record);
+    setSelectedStatus(status);
     setStatusNotes("");
     setStatusModal(true);
   };
 
-  // ── Submit status → Contacted ─────────────────────────────────────────────
-  // API: PUT /vault/lead/advisor/lead/:leadId/status
-  // Body: { status: "Contacted", notes: "..." }
- const handleUpdateStatus = async (status) => {
-  if (!statusTarget?._id) return;
+  // ─── Handle Contact status update ────────────────────────────────────────
+  const handleContactUpdate = async () => {
+    if (!statusTarget?._id) return;
 
-  setStatusLoading(true);
-  try {
-    await apiService.put(
-      `/vault/lead/advisor/lead/${statusTarget._id}/status`,
-      {
-        status: status, // 🔥 dynamic
-        notes: statusNotes.trim() || undefined,
+    setStatusLoading(true);
+    try {
+      const response = await apiService.put(
+        `/vault/lead/advisor/lead/${statusTarget._id}/status`,
+        {
+          status: "Contacted",
+          notes: statusNotes.trim() || undefined,
+        }
+      );
+
+      const sla = response?.data?.data?.sla;
+      if (sla?.breached) {
+        message.warning(`Lead contacted but SLA was BREACHED! Response time: ${sla.responseTimeHours} hours`);
+      } else {
+        message.success(`Lead marked as Contacted! Response time: ${sla?.responseTimeHours || 0} hours (Within SLA ✅)`);
       }
-    );
 
-    message.success(`Lead marked as ${status}!`);
-    setStatusModal(false);f
-    setStatusTarget(null);
+      setStatusModal(false);
+      setStatusTarget(null);
+      setStatusNotes("");
+      fetchLeads(currentPage, itemsPerPage, applied);
 
-    fetchLeads(currentPage, itemsPerPage, applied);
+    } catch (err) {
+      const errorMsg = err?.response?.data?.message || "Failed to update status";
+      message.error(errorMsg);
+    } finally {
+      setStatusLoading(false);
+    }
+  };
 
-  } catch (err) {
-   
-  } finally {
-    setStatusLoading(false);
-  }
-};
+  // ─── Handle Qualified status update (only after documents verified) ──────
+  const handleQualifyUpdate = async () => {
+    if (!statusTarget?._id) return;
 
-  // ── Navigate to document upload page ─────────────────────────────────────
-const handleAddDocs = (leadId) => {
-  if (!leadId) return message.warning("Lead ID not available");
-  navigate(`/dashboard/advisor/leads/${leadId}/documents`);
-};
+    // Check document verification percentage
+    const docProgress = getDocumentProgress(statusTarget);
+    const isReadyForQualify = docProgress === 100;
 
-  // ── Table columns ─────────────────────────────────────────────────────────
+    if (!isReadyForQualify) {
+      message.error(`Cannot qualify: Document verification is only ${docProgress}% complete. Please upload all documents first.`);
+      setStatusModal(false);
+      return;
+    }
+
+    setStatusLoading(true);
+    try {
+      const response = await apiService.put(
+        `/vault/lead/advisor/lead/${statusTarget._id}/status`,
+        {
+          status: "Qualified",
+          notes: statusNotes.trim() || undefined,
+        }
+      );
+
+      message.success(`Lead marked as Qualified! Customer account created.`);
+
+      setStatusModal(false);
+      setStatusTarget(null);
+      setStatusNotes("");
+      fetchLeads(currentPage, itemsPerPage, applied);
+
+    } catch (err) {
+      const errorMsg = err?.response?.data?.message || "Failed to update status";
+      message.error(errorMsg);
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  // Get document progress percentage
+  const getDocumentProgress = (lead) => {
+    const docCollection = lead?.documentCollection || {};
+    return docCollection.collectionPercentage || 0;
+  };
+
+  // Get document verification status
+  const getDocumentVerificationStatus = (lead) => {
+    const docCollection = lead?.documentCollection || {};
+    const uploaded = docCollection.documentsUploaded || 0;
+    const total = docCollection.totalDocumentsRequired || 7;
+    const verified = docCollection.documentsVerified || 0;
+    
+    return {
+      percentage: docCollection.collectionPercentage || 0,
+      uploaded,
+      total,
+      verified,
+      isComplete: (docCollection.collectionPercentage || 0) === 100,
+      isVerified: (docCollection.verificationPercentage || 0) === 100
+    };
+  };
+
+  // ─── Table columns ─────────────────────────────────────────────────────────
   const columns = [
     {
-      key  : "customerInfo",
+      key: "customerInfo",
       title: "Client",
+      width: 220,
       render: (_, r) => {
         const ci = r?.customerInfo || {};
         return (
           <div>
             <div style={{ fontWeight: 600, color: "#111827", fontSize: 13 }}>{ci.fullName || "—"}</div>
-            {ci.email        && <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{ci.email}</div>}
+            {ci.email && <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{ci.email}</div>}
             {ci.mobileNumber && <div style={{ fontSize: 11, color: "#6B7280" }}>{ci.mobileNumber}</div>}
           </div>
         );
       },
     },
     {
-      key  : "propertyDetails",
+      key: "propertyDetails",
       title: "Property",
+      width: 180,
       render: (_, r) => {
-        const pd   = r?.propertyDetails || {};
+        const pd = r?.propertyDetails || {};
         const addr = [pd.propertyAddress?.building, pd.propertyAddress?.area, pd.propertyAddress?.city].filter(Boolean).join(", ");
         return (
           <div>
@@ -259,163 +377,182 @@ const handleAddDocs = (leadId) => {
       },
     },
     {
-      key  : "loanAmountRequired",
+      key: "loanAmount",
       title: "Loan Amount",
+      width: 120,
       render: (_, r) => {
         const amt = r?.propertyDetails?.loanAmountRequired;
-        return amt
-          ? <span style={{ fontWeight: 600, color: "#059669", fontSize: 13 }}>AED {fmt(amt)}</span>
-          : <span style={{ color: "#D1D5DB" }}>—</span>;
+        return amt ? (
+          <span style={{ fontWeight: 600, color: "#059669", fontSize: 13 }}>AED {fmt(amt)}</span>
+        ) : <span style={{ color: "#D1D5DB" }}>—</span>;
       },
     },
     {
-      key  : "referralType",
-      title: "Referral Type",
+      key: "slaStatus",
+      title: "SLA Status",
+      width: 140,
       render: (_, r) => {
-        const type  = r?.referralType || "—";
-        const lower = type.toLowerCase();
-        const color = lower.includes("referral only") ? "green" : lower.includes("docs") ? "purple" : "default";
-        return <Tag color={color} style={{ borderRadius: 20, fontWeight: 500 }}>{type}</Tag>;
+        const assigned = r?.assignedTo;
+        if (!assigned?.advisorId) return <span style={{ color: "#9CA3AF" }}>—</span>;
+        
+        const slaInfo = getSLAStatus(assigned.assignedAt, r?.currentStatus, r?.sla?.deadline);
+        const timeRemaining = getTimeRemaining(assigned.assignedAt, r?.sla?.deadline);
+        
+        if (!slaInfo) return <span style={{ color: "#9CA3AF" }}>—</span>;
+        
+        return (
+          <Tooltip title={`Assigned: ${new Date(assigned.assignedAt).toLocaleString()}\nDeadline: ${new Date(r?.sla?.deadline).toLocaleString()}`}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {slaInfo.status === "breached" && <WarningOutlined style={{ color: slaInfo.color }} />}
+              {slaInfo.status === "urgent" && <ClockCircleOutlined style={{ color: slaInfo.color }} />}
+              {slaInfo.status === "on_track" && <ClockCircleOutlined style={{ color: slaInfo.color }} />}
+              {slaInfo.status === "completed" && <CheckCircleOutlined style={{ color: slaInfo.color }} />}
+              <span style={{ fontSize: 11, color: slaInfo.color, fontWeight: slaInfo.status === "breached" ? 600 : 400 }}>
+                {slaInfo.status === "breached" ? "BREACHED" : timeRemaining}
+              </span>
+            </div>
+          </Tooltip>
+        );
       },
     },
     {
-      key  : "source",
-      title: "Source",
+      key: "documentProgress",
+      title: "Documents",
+      width: 140,
       render: (_, r) => {
-        const src = r?.sourceInfo?.source;
-        if (!src) return <span style={{ color: "#D1D5DB" }}>—</span>;
-        const cfg = SOURCE_CFG[src] || { color: "default", label: cap(src) };
-        return <Tag color={cfg.color} style={{ borderRadius: 20, fontWeight: 500 }}>{cfg.label}</Tag>;
+        const docStatus = getDocumentVerificationStatus(r);
+        const isReady = docStatus.isComplete;
+        
+        return (
+          <div style={{ width: "100%" }}>
+            <Tooltip title={`${docStatus.uploaded}/${docStatus.total} documents uploaded`}>
+              <Progress 
+                percent={docStatus.percentage} 
+                size="small" 
+                strokeColor={docStatus.isComplete ? "#10B981" : P} 
+                format={(percent) => `${percent}%`}
+              />
+            </Tooltip>
+            <div style={{ fontSize: 10, color: "#9CA3AF", textAlign: "center", marginTop: 2 }}>
+              {docStatus.uploaded}/{docStatus.total} uploaded
+              {docStatus.isComplete && <CheckCircleOutlined style={{ color: "#10B981", marginLeft: 4 }} />}
+            </div>
+          </div>
+        );
       },
     },
     {
-      key  : "currentStatus",
+      key: "currentStatus",
       title: "Status",
+      width: 140,
       render: (_, r) => {
         const val = r?.currentStatus;
         if (!val) return <span style={{ color: "#D1D5DB" }}>—</span>;
-        const cfg = STATUS_CFG[val] || { bg: "#F3F4F6", text: "#374151" };
+        const cfg = STATUS_CFG[val] || { bg: "#F3F4F6", text: "#374151", icon: <FileTextOutlined /> };
         return (
-          <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: cfg.bg, color: cfg.text, whiteSpace: "nowrap" }}>
-            {val}
+          <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: cfg.bg, color: cfg.text, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            {cfg.icon} {val}
           </span>
         );
       },
     },
     {
-      key  : "sourceInfo",
-      title: "Agent",
+      key: "referralType",
+      title: "Referral Type",
+      width: 120,
       render: (_, r) => {
-        const si = r?.sourceInfo || {};
-        return si.createdByName ? (
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 500, color: "#374151" }}>{si.createdByName}</div>
-            {si.createdByRole && <div style={{ fontSize: 11, color: "#9CA3AF" }}>{cap(si.createdByRole)}</div>}
-          </div>
-        ) : <span style={{ color: "#D1D5DB" }}>—</span>;
+        const type = r?.referralType || "—";
+        const isReferralOnly = type === "Referral Only";
+        return (
+          <Tag color={isReferralOnly ? "green" : "purple"} style={{ borderRadius: 20 }}>
+            {type}
+          </Tag>
+        );
       },
     },
     {
-      key  : "createdAt",
-      title: "Date",
-      render: (_, r) => (
-        <div style={{ fontSize: 12, color: "#6B7280" }}>
-          <div>{fmtDate(r?.createdAt)}</div>
-        </div>
-      ),
+      key: "createdAt",
+      title: "Created",
+      width: 100,
+      render: (_, r) => <div style={{ fontSize: 11, color: "#6B7280" }}>{fmtDate(r?.createdAt)}</div>,
     },
     {
-      key  : "actions",
+      key: "actions",
       title: "Actions",
+      width: 200,
       align: "center",
+      fixed: "right",
       render: (_, r) => {
-        const leadId       = r?._id || r?.leadId;
-        const status       = r?.currentStatus || "";
-        const referralType = (r?.referralType || "").toLowerCase().trim();
-
-        // ✅ "Referral Only" check
-        const isReferralOnly = referralType === "referral only";
-
-        // ✅ Show "Mark Contacted" only when status is NOT already Contacted or beyond
-        const canMarkContacted = !["Contacted", "Qualified", "Collecting Documentation",
-          "Documents Complete", "Application Opened", "Disbursed", "Not Proceeding"].includes(status);
-
-        // ✅ Show "Add Docs" ONLY when:
-        //    1. referralType === "Referral Only"
-        //    2. currentStatus === "Contacted"
-        const showAddDocs = isReferralOnly && status === "Contacted";
-
+        const leadId = r?._id;
+        const currentStatus = r?.currentStatus;
+        const docStatus = getDocumentVerificationStatus(r);
+        const canQualify = docStatus.isComplete && currentStatus === "Contacted";
+        const canContact = currentStatus === "Assigned";
+        
         return (
           <Space size={4} wrap>
-
-            {/* View detail — always visible */}
             <Tooltip title="View Details">
-              <Button
-                type="text"
-                icon={<EyeOutlined />}
-                onClick={() => handleViewDetail(leadId)}
-                style={{ color: P, fontWeight: 500, fontSize: 12 }}
-                size="small"
-              >
+              <Button type="text" icon={<EyeOutlined />} onClick={() => handleViewDetail(leadId)} style={{ color: P }} size="small">
                 View
               </Button>
             </Tooltip>
 
-            {/* Mark as {selectedStatus} — visible when lead not yet contacted */}
-            {canMarkContacted && (
-              <Tooltip title="Mark as {selectedStatus}">
+            {/* Contact Button - Only for Assigned leads */}
+            {canContact && (
+              <Tooltip title="Mark lead as Contacted (starts document collection)">
                 <Button
-                  type="text"
-                  icon={<PhoneOutlined />}
                   size="small"
-onClick={() => {
-  openStatusModal(r);
-  setSelectedStatus("Contacted");
-}}                  style={{
-                    color: "#C2410C", fontWeight: 600, fontSize: 12,
-                    background: "#FFF7ED", borderRadius: 8,
-                    border: "1px solid #FED7AA",
+                  icon={<PhoneOutlined />}
+                  onClick={() => openStatusModal(r, "Contacted")}
+                  style={{
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#C2410C",
+                    borderColor: "#FED7AA",
+                    background: "#FFF7ED",
                   }}
                 >
-                  Contacted
+                  Contact
                 </Button>
               </Tooltip>
             )}
-{status === "Contacted" && (
-  <Tooltip title="Mark as Qualified">
-    <Button
-      type="text"
-      icon={<CheckCircleOutlined />}
-      size="small"
-      onClick={() => {
-        openStatusModal(r);
-        setSelectedStatus("Qualified");
-      }}
-      style={{
-        color: "#4338CA",
-        fontWeight: 600,
-        fontSize: 12,
-        background: "#EEF2FF",
-        borderRadius: 8,
-        border: "1px solid #C7D2FE",
-      }}
-    >
-      Qualified
-    </Button>
-  </Tooltip>
-)}
-            {/* Add Docs — Referral Only + status === Contacted */}
-            {showAddDocs && (
+
+            {/* Qualify Button - Only for Contacted leads with 100% documents */}
+            {currentStatus === "Contacted" && (
+              <Tooltip 
+                title={!canQualify 
+                  ? `Cannot qualify: Document collection is only ${docStatus.percentage}% complete. Please upload all documents first.` 
+                  : "Mark lead as Qualified (after all documents verified)"}
+              >
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  onClick={() => canQualify && openStatusModal(r, "Qualified")}
+                  disabled={!canQualify}
+                  style={{
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    background: canQualify ? "#4338CA" : "#9CA3AF",
+                    borderColor: canQualify ? "#4338CA" : "#9CA3AF",
+                    opacity: canQualify ? 1 : 0.6,
+                  }}
+                >
+                  Qualify
+                </Button>
+              </Tooltip>
+            )}
+
+            {/* Add Docs button - Only for Referral Only leads in Contacted status */}
+            {r?.referralType === "Referral Only" && currentStatus === "Contacted" && (
               <Tooltip title="Upload Documents for this Lead">
                 <Button
-                  type="primary"
-                  icon={<UploadOutlined />}
                   size="small"
+                  icon={<UploadOutlined />}
                   onClick={() => handleAddDocs(leadId)}
-                  style={{
-                    background: P, borderColor: P,
-                    borderRadius: 8, fontWeight: 600, fontSize: 12,
-                  }}
+                  style={{ background: P, borderColor: P, borderRadius: 6, fontWeight: 600, fontSize: 11, color: "white" }}
                 >
                   Add Docs
                 </Button>
@@ -445,9 +582,11 @@ onClick={() => {
         .vll-drawer .ant-drawer-title { color: white !important; font-weight: 700 !important; }
         .vll-drawer .ant-drawer-close { color: rgba(255,255,255,0.8) !important; }
         .vll-stat:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(92,3,155,0.1) !important; }
+        .ant-tabs-tab-active { color: ${P} !important; }
+        .ant-tabs-ink-bar { background: ${P} !important; }
       `}</style>
 
-      {/* ── Page Header ── */}
+      {/* Page Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: "#1a0533", margin: 0 }}>My Leads</h1>
@@ -473,36 +612,76 @@ onClick={() => {
         </div>
       </div>
 
-      {/* ── Stats Cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 18 }}>
-        {[
-          { label: "Total Leads", value: totalItems,    sub: "assigned to me",  color: P         },
-          { label: "New",         value: statsNew,      sub: "awaiting action", color: "#1D4ED8" },
-          { label: "Active",      value: statsActive,   sub: "in progress",     color: "#D97706" },
-          { label: "Disbursed",   value: statsDisbursed,sub: "completed",       color: "#059669" },
-        ].map((s, i) => (
-          <div key={i} className="vll-stat"
-            style={{ background: "white", borderRadius: 14, padding: "14px 18px", border: "1px solid #EDE9F6", boxShadow: "0 1px 6px rgba(92,3,155,0.05)", transition: "all .2s" }}>
-            <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 6 }}>{s.label}</div>
-            <div style={{ fontSize: 26, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
-            <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 4 }}>{s.sub}</div>
-          </div>
-        ))}
+      {/* SLA DISCLAIMER - Shows on Assigned Tab only */}
+      {activeTab === "assigned" && (
+        <Alert
+          message={
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <InfoCircleOutlined style={{ fontSize: 18, color: P }} />
+              <span>
+                <strong>SLA Requirement:</strong> Each assigned lead <strong>MUST be contacted within 4 hours</strong> of assignment. 
+                Click <strong>"Contact"</strong> after contacting the customer, then upload documents, then <strong>"Qualify"</strong> when documents are 100% complete.
+              </span>
+            </div>
+          }
+          type="info"
+          showIcon={false}
+          style={{ 
+            marginBottom: 16, 
+            borderRadius: 12, 
+            background: PL, 
+            border: `1px solid ${PB}`,
+            color: "#1a0533"
+          }}
+        />
+      )}
+
+      {/* Stats Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 18 }}>
+        <div className="vll-stat" style={{ background: "white", borderRadius: 14, padding: "14px 18px", border: "1px solid #EDE9F6" }}>
+          <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700 }}>Assigned</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "#6D28D9", lineHeight: 1 }}>{stats.assigned}</div>
+          <div style={{ fontSize: 11, color: "#9CA3AF" }}>needs contact</div>
+        </div>
+        <div className="vll-stat" style={{ background: "white", borderRadius: 14, padding: "14px 18px", border: "1px solid #EDE9F6" }}>
+          <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700 }}>Contacted</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "#C2410C", lineHeight: 1 }}>{stats.contacted}</div>
+          <div style={{ fontSize: 11, color: "#9CA3AF" }}>needs documents</div>
+        </div>
+        <div className="vll-stat" style={{ background: "white", borderRadius: 14, padding: "14px 18px", border: "1px solid #EDE9F6" }}>
+          <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700 }}>Qualified</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "#4338CA", lineHeight: 1 }}>{stats.qualified}</div>
+          <div style={{ fontSize: 11, color: "#9CA3AF" }}>ready for proposal</div>
+        </div>
+        <div className="vll-stat" style={{ background: "white", borderRadius: 14, padding: "14px 18px", border: "1px solid #EDE9F6" }}>
+          <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700 }}>Collecting Docs</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "#166534", lineHeight: 1 }}>{stats.collecting}</div>
+          <div style={{ fontSize: 11, color: "#9CA3AF" }}>in progress</div>
+        </div>
+        <div className="vll-stat" style={{ background: "white", borderRadius: 14, padding: "14px 18px", border: "1px solid #EDE9F6" }}>
+          <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700 }}>Disbursed</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "#059669", lineHeight: 1 }}>{stats.disbursed}</div>
+          <div style={{ fontSize: 11, color: "#9CA3AF" }}>completed</div>
+        </div>
+        <div className="vll-stat" style={{ background: "white", borderRadius: 14, padding: "14px 18px", border: "1px solid #EDE9F6" }}>
+          <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700 }}>Total</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: P, lineHeight: 1 }}>{stats.total}</div>
+          <div style={{ fontSize: 11, color: "#9CA3AF" }}>all leads</div>
+        </div>
       </div>
 
-      {/* ── Legend for action buttons ── */}
-      <div style={{ background: "white", borderRadius: 12, border: "1px solid #EDE9F6", padding: "10px 16px", marginBottom: 14, display: "flex", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
-        <span style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 700 }}>ACTIONS:</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#C2410C" }}>
-          <PhoneOutlined /> <span>Contacted — marks lead as contacted (adds notes)</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: P }}>
-          <UploadOutlined /> <span>Add Docs — visible only for <b>Referral Only</b> leads after being <b>Contacted</b></span>
-        </div>
-      </div>
+      {/* Tabs for Lead Status */}
+      <Tabs activeKey={activeTab} onChange={setActiveTab} style={{ marginBottom: 16 }} className="custom-tabs">
+        <TabPane tab={<span><Badge count={stats.assigned} style={{ backgroundColor: P }} /> Assigned</span>} key="assigned" />
+        <TabPane tab={<span><Badge count={stats.contacted} /> Contacted</span>} key="contacted" />
+        <TabPane tab={<span><Badge count={stats.qualified} /> Qualified</span>} key="qualified" />
+        <TabPane tab={<span><Badge count={stats.collecting} /> Collecting Docs</span>} key="collecting" />
+        <TabPane tab={<span><Badge count={stats.disbursed} /> Disbursed</span>} key="disbursed" />
+        <TabPane tab={<span><Badge count={stats.total} /> All</span>} key="all" />
+      </Tabs>
 
-      {/* ── Quick Search + Status Pills ── */}
-      <div style={{ background: "white", borderRadius: 14, border: "1px solid #EDE9F6", padding: "14px 18px", marginBottom: 14, boxShadow: "0 1px 6px rgba(92,3,155,0.04)" }}>
+      {/* Quick Search */}
+      <div style={{ background: "white", borderRadius: 14, border: "1px solid #EDE9F6", padding: "14px 18px", marginBottom: 14 }}>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           <div className="vll-input" style={{ flex: 1, minWidth: 220 }}>
             <Input
@@ -512,66 +691,26 @@ onClick={() => {
               onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))}
               onPressEnter={handleSearchEnter}
               allowClear
-              onClear={() => { const f = { ...applied, search: "" }; setFilters(f); setApplied(f); fetchLeads(1, itemsPerPage, f); }}
             />
           </div>
-          <div style={{ width: 1, height: 28, background: "#EDE9F6" }} />
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            <span style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600, whiteSpace: "nowrap" }}>Quick:</span>
-            {["New", "Assigned", "Contacted", "Qualified", "Collecting Documentation", "Disbursed"].map((s) => {
-              const active = applied.status === s;
-              const cfg    = STATUS_CFG[s] || {};
-              return (
-                <span key={s} className={`vll-pill${active ? " active" : ""}`}
-                  style={active ? { background: cfg.bg, borderColor: cfg.text || P, color: cfg.text || P } : { background: "#F9F6FF", borderColor: "#EDE9F6", color: "#6B7280" }}
-                  onClick={() => active ? resetFilters() : quickStatus(s)}>
-                  {s}
-                </span>
-              );
-            })}
-          </div>
         </div>
-
-        {activeCount > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12, paddingTop: 12, borderTop: "1px solid #F5F0FF" }}>
-            <span style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600, paddingTop: 3 }}>Active:</span>
-            {Object.entries(applied).map(([k, v]) => {
-              if (!v && v !== false) return null;
-              const labels = { search: `Search: "${v}"`, source: `Source: ${SOURCE_CFG[v]?.label || v}`, status: `Status: ${v}`, assigned: `Assigned: ${v === "true" || v === true ? "Yes" : "No"}`, fromDate: `From: ${v}`, toDate: `To: ${v}` };
-              return (
-                <span key={k}
-                  style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: PL, color: P, border: `1px solid ${PB}`, cursor: "pointer" }}
-                  onClick={() => {
-                    const f = { ...applied, [k]: "" };
-                    if (k === "fromDate" || k === "toDate") { f.fromDate = ""; f.toDate = ""; setDateRange(null); }
-                    setFilters(f); setApplied(f); fetchLeads(1, itemsPerPage, f);
-                  }}>
-                  {labels[k]} ✕
-                </span>
-              );
-            })}
-          </div>
-        )}
       </div>
 
-      {/* ── Table ── */}
-      <div className="vll-table" style={{ background: "white", borderRadius: 16, border: "1px solid #EDE9F6", overflow: "hidden", boxShadow: "0 2px 12px rgba(92,3,155,0.05)" }}>
+      {/* Table */}
+      <div className="vll-table" style={{ background: "white", borderRadius: 16, border: "1px solid #EDE9F6", overflow: "hidden" }}>
         <CustomTable
           columns={columns}
-          data={data}
+          data={filteredData}
           loading={loading}
-          totalItems={totalItems}
+          totalItems={filteredData.length}
           currentPage={currentPage}
           itemsPerPage={itemsPerPage}
           onPageChange={handlePageChange}
-          onFilter={(f) => { const merged = { ...applied, ...f }; setFilters(merged); setApplied(merged); setCurrentPage(1); fetchLeads(1, itemsPerPage, merged); }}
           showSearch={false}
         />
       </div>
 
-      {/* ════════════════════════════════════════════════════════════
-          FILTER DRAWER
-      ════════════════════════════════════════════════════════════ */}
+      {/* Filter Drawer */}
       <Drawer
         className="vll-drawer"
         title="Filter My Leads"
@@ -579,7 +718,7 @@ onClick={() => {
         width={360}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        extra={<Button size="small" onClick={resetFilters} style={{ color: "#DC2626", borderColor: "#FECACA", background: "#FEF2F2", borderRadius: 8, fontSize: 12 }}>Reset All</Button>}
+        extra={<Button size="small" onClick={resetFilters} style={{ color: "#DC2626", borderColor: "#FECACA", background: "#FEF2F2", borderRadius: 8 }}>Reset All</Button>}
         footer={
           <div style={{ display: "flex", gap: 10 }}>
             <Button onClick={() => setDrawerOpen(false)} style={{ flex: 1, borderRadius: 10 }}>Cancel</Button>
@@ -592,75 +731,32 @@ onClick={() => {
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
           <FilterGroup label="Search" icon="🔍" hint="Name, email, or phone">
-            <div className="vll-input">
-              <Input prefix={<SearchOutlined style={{ color: P }} />} placeholder="e.g. Ahmed" value={filters.search} onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))} allowClear />
-            </div>
+            <Input placeholder="e.g. Ahmed" value={filters.search} onChange={(e) => setFilters(p => ({ ...p, search: e.target.value }))} />
           </FilterGroup>
           <FilterGroup label="Lead Source" icon="📡" hint="Where the lead came from">
-            <div className="vll-select">
-              <Select style={{ width: "100%" }} placeholder="All Sources" value={filters.source || undefined} onChange={(v) => setFilters((p) => ({ ...p, source: v || "" }))} allowClear>
-                {SOURCES.map((s) => <Option key={s} value={s}><Tag color={SOURCE_CFG[s].color} style={{ borderRadius: 20, marginRight: 6, fontSize: 11 }}>{SOURCE_CFG[s].label}</Tag></Option>)}
-              </Select>
-            </div>
-          </FilterGroup>
-          <FilterGroup label="Lead Status" icon="📊" hint="Current stage in pipeline">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {STATUSES.map((s) => {
-                const active = filters.status === s;
-                const cfg    = STATUS_CFG[s] || {};
-                return <span key={s} className="vll-pill" style={{ background: active ? cfg.bg : "#F9F6FF", borderColor: active ? cfg.text || P : "#EDE9F6", color: active ? cfg.text || P : "#6B7280" }} onClick={() => setFilters((p) => ({ ...p, status: active ? "" : s }))}>{s}</span>;
-              })}
-            </div>
-          </FilterGroup>
-          <FilterGroup label="Assignment Status" icon="👤" hint="Whether lead is assigned">
-            <div style={{ display: "flex", gap: 8 }}>
-              {[
-                { val: "true",  label: "Assigned",   icon: <CheckCircleOutlined />, activeColor: "#059669", activeBg: "#ECFDF5" },
-                { val: "false", label: "Unassigned",  icon: <CloseCircleOutlined />, activeColor: "#D97706", activeBg: "#FFFBEB" },
-              ].map((opt) => {
-                const active = filters.assigned === opt.val;
-                return (
-                  <button key={opt.val} onClick={() => setFilters((p) => ({ ...p, assigned: active ? "" : opt.val }))}
-                    style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 12px", borderRadius: 10, border: `1.5px solid ${active ? opt.activeColor : "#E8DFF5"}`, background: active ? opt.activeBg : "white", color: active ? opt.activeColor : "#6B7280", fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer", transition: "all .15s" }}>
-                    {opt.icon} {opt.label}
-                  </button>
-                );
-              })}
-            </div>
+            <Select style={{ width: "100%" }} placeholder="All Sources" value={filters.source || undefined} onChange={(v) => setFilters(p => ({ ...p, source: v || "" }))} allowClear>
+              {SOURCES.map(s => <Option key={s} value={s}>{SOURCE_CFG[s]?.label || s}</Option>)}
+            </Select>
           </FilterGroup>
           <FilterGroup label="Date Range" icon="📅" hint="Filter by lead creation date">
-            <div className="vll-date">
-              <RangePicker style={{ width: "100%" }} value={dateRange} onChange={handleDateRange} format="DD MMM YYYY" placeholder={["From Date", "To Date"]}
-                presets={[
-                  { label: "Today",        value: [dayjs(), dayjs()] },
-                  { label: "This Week",    value: [dayjs().startOf("week"), dayjs()] },
-                  { label: "This Month",   value: [dayjs().startOf("month"), dayjs()] },
-                  { label: "Last 30 Days", value: [dayjs().subtract(30, "day"), dayjs()] },
-                  { label: "Last 90 Days", value: [dayjs().subtract(90, "day"), dayjs()] },
-                ]}
-              />
-            </div>
+            <RangePicker style={{ width: "100%" }} value={dateRange} onChange={handleDateRange} format="DD MMM YYYY" />
           </FilterGroup>
         </div>
       </Drawer>
 
-      {/* ════════════════════════════════════════════════════════════
-          Mark as {selectedStatus} MODAL
-          API: PUT /vault/lead/advisor/lead/:leadId/status
-          Body: { status: "Contacted", notes: "..." }
-      ════════════════════════════════════════════════════════════ */}
+      {/* Status Update Modal - Contact */}
       <Modal
-        open={statusModal}
+        open={statusModal && selectedStatus === "Contacted"}
         onCancel={() => !statusLoading && setStatusModal(false)}
         title={
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#FFF7ED", border: "1px solid #FED7AA", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <PhoneOutlined style={{ color: "#C2410C", fontSize: 16 }} />
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "#FFF7ED", border: "1px solid #C2410C", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <PhoneOutlined style={{ color: "#C2410C", fontSize: 18 }} />
             </div>
             <div>
-              <div style={{ fontWeight: 700, color: "#111827" }}>Mark as {selectedStatus}</div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: "#111827" }}>Mark as Contacted</div>
               {statusTarget && (
-                <div style={{ fontSize: 12, color: "#9CA3AF", fontWeight: 400 }}>
+                <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>
                   {statusTarget.customerInfo?.fullName || "—"} • {statusTarget.customerInfo?.mobileNumber || ""}
                 </div>
               )}
@@ -668,36 +764,69 @@ onClick={() => {
           </div>
         }
         footer={[
-          <Button key="cancel" onClick={() => setStatusModal(false)} disabled={statusLoading} style={{ borderRadius: 10 }}>Cancel</Button>,
-          <Button key="submit" type="primary" loading={statusLoading} onClick={() => handleUpdateStatus(selectedStatus)}
-            style={{ background: "#C2410C", borderColor: "#C2410C", borderRadius: 10, fontWeight: 600 }}
-            icon={<PhoneOutlined />}>
+          <Button key="cancel" onClick={() => setStatusModal(false)} disabled={statusLoading}>Cancel</Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={statusLoading}
+            onClick={handleContactUpdate}
+            style={{ background: "#C2410C", borderColor: "#C2410C", borderRadius: 8, fontWeight: 600 }}
+            icon={<PhoneOutlined />}
+          >
             Confirm — Contacted
           </Button>,
         ]}
-        centered width={480} destroyOnClose
+        centered
+        width={500}
+        destroyOnClose
       >
-        {/* Lead summary */}
+        {/* Lead Summary */}
         {statusTarget && (
-          <div style={{ background: "#F9F6FF", borderRadius: 10, padding: "12px 16px", marginBottom: 16, border: "1px solid #EDE9F6" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 16px" }}>
-              {[
-                { label: "Client",       value: statusTarget.customerInfo?.fullName },
-                { label: "Mobile",       value: statusTarget.customerInfo?.mobileNumber },
-                { label: "Property",     value: statusTarget.propertyDetails?.propertyType },
-                { label: "Property Val", value: statusTarget.propertyDetails?.propertyValue ? `AED ${fmt(statusTarget.propertyDetails.propertyValue)}` : null },
-                { label: "Referral",     value: statusTarget.referralType },
-                { label: "Current Status", value: statusTarget.currentStatus },
-              ].map(({ label, value }) => (
-                <div key={label}>
-                  <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase" }}>{label}</div>
-                  <div style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>{value || "—"}</div>
+          <div style={{ background: "#F9F6FF", borderRadius: 12, padding: "16px", marginBottom: 20, border: `1px solid ${PB}` }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 20px" }}>
+              <div>
+                <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase" }}>Client Name</div>
+                <div style={{ fontSize: 14, color: "#374151", fontWeight: 500 }}>{statusTarget.customerInfo?.fullName || "—"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase" }}>Mobile</div>
+                <div style={{ fontSize: 14, color: "#374151", fontWeight: 500 }}>{statusTarget.customerInfo?.mobileNumber || "—"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase" }}>Property Value</div>
+                <div style={{ fontSize: 14, color: "#059669", fontWeight: 600 }}>AED {fmt(statusTarget.propertyDetails?.propertyValue)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase" }}>Current Status</div>
+                <div>
+                  <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 11, background: STATUS_CFG[statusTarget.currentStatus]?.bg, color: STATUS_CFG[statusTarget.currentStatus]?.text }}>
+                    {statusTarget.currentStatus}
+                  </span>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         )}
 
+        {/* SLA Warning for Contact */}
+        {statusTarget?.assignedTo && (
+          (() => {
+            const slaInfo = getSLAStatus(statusTarget.assignedTo.assignedAt, statusTarget.currentStatus, statusTarget.sla?.deadline);
+            const isBreached = slaInfo?.status === "breached";
+            return isBreached ? (
+              <div style={{ background: "#FEF2F2", borderRadius: 10, padding: "12px", marginBottom: 16, border: "1px solid #FECACA" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <WarningOutlined style={{ color: "#DC2626" }} />
+                  <span style={{ fontSize: 12, color: "#991B1B" }}>
+                    ⚠️ SLA ALERT: This lead is already overdue! Marking as contacted will record a breach.
+                  </span>
+                </div>
+              </div>
+            ) : null;
+          })()
+        )}
+
+        {/* Notes Input */}
         <div style={{ marginBottom: 6 }}>
           <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
             Contact Notes <span style={{ color: "#9CA3AF", fontWeight: 400 }}>(optional but recommended)</span>
@@ -707,12 +836,111 @@ onClick={() => {
           rows={4}
           value={statusNotes}
           onChange={(e) => setStatusNotes(e.target.value)}
-          placeholder="e.g. Customer contacted. Interested in 2M AED loan, 25 years fixed rate. Will send documents tomorrow."
+          placeholder="e.g., Customer contacted. Interested in 2M AED loan, 25 years fixed rate. Will send documents tomorrow."
           maxLength={500}
           showCount
           style={{ borderRadius: 10, borderColor: "#E8DFF5" }}
         />
-       
+      </Modal>
+
+      {/* Status Update Modal - Qualified (Only after 100% documents) */}
+      <Modal
+        open={statusModal && selectedStatus === "Qualified"}
+        onCancel={() => !statusLoading && setStatusModal(false)}
+        title={
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "#EEF2FF", border: "1px solid #4338CA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <CheckCircleOutlined style={{ color: "#4338CA", fontSize: 18 }} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: "#111827" }}>Mark as Qualified</div>
+              {statusTarget && (
+                <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>
+                  {statusTarget.customerInfo?.fullName || "—"} • {statusTarget.customerInfo?.mobileNumber || ""}
+                </div>
+              )}
+            </div>
+          </div>
+        }
+        footer={[
+          <Button key="cancel" onClick={() => setStatusModal(false)} disabled={statusLoading}>Cancel</Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={statusLoading}
+            onClick={handleQualifyUpdate}
+            style={{ background: "#4338CA", borderColor: "#4338CA", borderRadius: 8, fontWeight: 600 }}
+            icon={<CheckCircleOutlined />}
+          >
+            Confirm — Qualify Lead
+          </Button>,
+        ]}
+        centered
+        width={500}
+        destroyOnClose
+      >
+        {/* Lead Summary */}
+        {statusTarget && (
+          <div style={{ background: "#F9F6FF", borderRadius: 12, padding: "16px", marginBottom: 20, border: `1px solid ${PB}` }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 20px" }}>
+              <div>
+                <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase" }}>Client Name</div>
+                <div style={{ fontSize: 14, color: "#374151", fontWeight: 500 }}>{statusTarget.customerInfo?.fullName || "—"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase" }}>Mobile</div>
+                <div style={{ fontSize: 14, color: "#374151", fontWeight: 500 }}>{statusTarget.customerInfo?.mobileNumber || "—"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase" }}>Property Value</div>
+                <div style={{ fontSize: 14, color: "#059669", fontWeight: 600 }}>AED {fmt(statusTarget.propertyDetails?.propertyValue)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase" }}>Current Status</div>
+                <div>
+                  <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 11, background: STATUS_CFG[statusTarget.currentStatus]?.bg, color: STATUS_CFG[statusTarget.currentStatus]?.text }}>
+                    {statusTarget.currentStatus}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Document Verification Status */}
+        {statusTarget && (
+          <div style={{ background: getDocumentProgress(statusTarget) === 100 ? "#F0FDF4" : "#FEF3C7", borderRadius: 10, padding: "12px", marginBottom: 16, border: `1px solid ${getDocumentProgress(statusTarget) === 100 ? "#BBF7D0" : "#FDE68A"}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {getDocumentProgress(statusTarget) === 100 ? (
+                <CheckCircleOutlined style={{ color: "#10B981" }} />
+              ) : (
+                <WarningOutlined style={{ color: "#D97706" }} />
+              )}
+              <span style={{ fontSize: 12, color: getDocumentProgress(statusTarget) === 100 ? "#065F46" : "#92400E" }}>
+                {getDocumentProgress(statusTarget) === 100 
+                  ? "✅ All documents have been uploaded and verified. Lead is ready for qualification!" 
+                  : `⚠️ Document collection is only ${getDocumentProgress(statusTarget)}% complete. Please upload all documents before qualifying.`
+                }
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Notes Input */}
+        <div style={{ marginBottom: 6 }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
+            Qualification Notes <span style={{ color: "#9CA3AF", fontWeight: 400 }}>(optional)</span>
+          </label>
+        </div>
+        <TextArea
+          rows={4}
+          value={statusNotes}
+          onChange={(e) => setStatusNotes(e.target.value)}
+          placeholder="e.g., Customer qualified. Monthly income 35k AED. Eligible for loan up to 1.5M AED. Customer agreed to proceed."
+          maxLength={500}
+          showCount
+          style={{ borderRadius: 10, borderColor: "#E8DFF5" }}
+        />
       </Modal>
     </div>
   );
@@ -720,7 +948,7 @@ onClick={() => {
 
 export default AdvisorLeads;
 
-// ─── Filter Group helper ────────────────────────────────────────────────────
+// Filter Group helper
 function FilterGroup({ label, icon, hint, children }) {
   return (
     <div>

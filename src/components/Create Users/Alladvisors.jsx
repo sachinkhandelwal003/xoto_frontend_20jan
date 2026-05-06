@@ -211,14 +211,13 @@ try {
 
   const res = await apiService.get(`/GridAdvisor?${query.toString()}`);
 
-  console.log("FULL API RESPONSE 👉", res.data);
+  
 
 const responseData   = res;                          // not res.data
 const advisorsData   = responseData?.data?.advisors || [];
 const paginationData = responseData?.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 };
 
-  console.log("ADVISORS 👉", advisorsData);
-  console.log("PAGINATION 👉", paginationData);
+  
 
   setAdvisors(advisorsData);
   setPagination(paginationData);
@@ -258,7 +257,7 @@ const paginationData = responseData?.pagination || { total: 0, page: 1, limit: 1
   };
 
   const handleSuspendConfirm = async () => {
-    console.log("apiService methods:", Object.keys(apiService));
+    
     const { advisor, action, reason } = suspendModal;
     setSuspending(true);
     try {
@@ -398,7 +397,7 @@ const paginationData = responseData?.pagination || { total: 0, page: 1, limit: 1
             <button
               style={{ ...S.actionBtn, borderColor: "#FED7AA", color: C.suspended }}
               onClick={() => {
-  console.log("🔥 SUSPEND CLICKED", row._id);
+  
   openSuspendModal(row, "suspend");
 }}
             >

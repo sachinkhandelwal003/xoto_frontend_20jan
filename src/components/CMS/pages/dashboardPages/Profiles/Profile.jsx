@@ -19,14 +19,14 @@ const Profile = () => {
   const { user } = useSelector((state) => state.auth);
 
 
-  // console.log(user)
+  // 
   // Safety check
   if (!user || !user.role) {
     return <div>No user found</div>;
   }
 
   const roleCode = Number(user.role.code);
-  // console.log(roleCode)
+  
 
   switch (roleCode) {
     case 0:
