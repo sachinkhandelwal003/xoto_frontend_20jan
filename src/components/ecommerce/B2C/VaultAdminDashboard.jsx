@@ -1,695 +1,683 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   AreaChart, Area, PieChart, Pie, Cell,
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  LineChart, Line, Legend
+  LineChart, Line, Legend,
 } from "recharts";
 import {
-  Users, UserCheck, FolderOpen, Banknote,
-  TrendingUp, Clock, Handshake, Building2,
-  ArrowUpRight, AlertCircle, Bell, RefreshCw, Calendar, ChevronRight,
-  Target, Award, Zap, Shield, Activity, DollarSign, FileText, UserPlus
+  Users, UserCheck, FolderOpen, TrendingUp, Clock, Handshake,
+  Building2, AlertCircle, RefreshCw, Calendar, Target, Award,
+  Zap, Shield, Activity, DollarSign, ArrowUpRight, Layers,
 } from "lucide-react";
-import { Spin, message, Tabs, Badge, Button, Tag, Alert, DatePicker, Segmented, Select, Statistic, Card, Row, Col, Progress, Space, Avatar, Dropdown, Menu } from "antd";
+import {
+  Spin, message, Tabs, Badge, Button, Tag, Alert, DatePicker,
+  Segmented, Statistic, Card, Row, Col, Progress, Space, Avatar,
+} from "antd";
 import dayjs from "dayjs";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 const { RangePicker } = DatePicker;
-const { Option } = Select;
 
-// --- Brand & Chart Colors ---
-const BRAND_PURPLE = "#5C039B";
+/* ─── Brand Colors ───────────────────────────────────────────── */
+const BRAND          = "#5C039B";
 const BRAND_GRADIENT = "linear-gradient(135deg, #5C039B 0%, #8B5CF6 100%)";
-const CHART_COLORS = {
-  purple: BRAND_PURPLE,
-  purpleLight: "#8B5CF6",
-  green: "#10B981",
-  orange: "#F59E0B",
-  blue: "#3B82F6",
-  red: "#EF4444",
-  yellow: "#FBBF24",
-  pink: "#EC4899",
-  indigo: "#6366F1"
+const PIE_COLORS     = [BRAND, "#10B981", "#3B82F6", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4"];
+
+/* ─── Helpers ────────────────────────────────────────────────── */
+const formatCurrency = (v) => {
+  if (!v && v !== 0) return "AED 0";
+  if (v >= 1_000_000_000) return `AED ${(v / 1_000_000_000).toFixed(1)}B`;
+  if (v >= 1_000_000)     return `AED ${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000)         return `AED ${(v / 1_000).toFixed(0)}K`;
+  return `AED ${v.toLocaleString()}`;
 };
 
-const CATEGORY_COLORS = [BRAND_PURPLE, "#10B981", "#3B82F6", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4"];
+const fmtLabel = (key) =>
+  key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
 
-// --- Utility Functions ---
-const formatCurrency = (value) => {
-  if (!value) return "AED 0";
-  if (value >= 1000000) return `AED ${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `AED ${(value / 1000).toFixed(0)}K`;
-  return `AED ${value.toLocaleString()}`;
+const fmtChartDate = (ds, filter) => {
+  const d = new Date(ds);
+  if (filter === "week")  return d.toLocaleDateString("en-US", { weekday: "short" });
+  if (filter === "today") return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
-const formatDate = (dateString) => {
-  if (!dateString) return "N/A";
-  return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-};
-
-const formatTimeAgo = (dateString) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffHours = Math.floor((now - date) / (1000 * 60 * 60));
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffHours < 48) return "yesterday";
-  return `${Math.floor(diffHours / 24)}d ago`;
-};
-
-// --- Reusable Stat Card ---
-const StatCard = ({ title, value, icon: Icon, colorTheme, growth, loading, suffix = "", trend }) => {
-  const themeStyles = {
+/* ─── Reusable Stat Card ─────────────────────────────────────── */
+const StatCard = ({ title, value, icon: Icon, colorTheme = "purple", suffix = "", trend, loading }) => {
+  const themes = {
     purple: "text-[#5C039B] bg-[#5C039B]/10 border-[#5C039B]/20",
-    green: "text-emerald-600 bg-emerald-50 border-emerald-100",
-    blue: "text-blue-600 bg-blue-50 border-blue-100",
+    green:  "text-emerald-600 bg-emerald-50 border-emerald-100",
+    blue:   "text-blue-600 bg-blue-50 border-blue-100",
     orange: "text-orange-600 bg-orange-50 border-orange-100",
-    red: "text-red-600 bg-red-50 border-red-100",
-    gray: "text-gray-600 bg-gray-50 border-gray-200"
+    red:    "text-red-600 bg-red-50 border-red-100",
+    yellow: "text-yellow-600 bg-yellow-50 border-yellow-100",
   };
-
-  const currentTheme = themeStyles[colorTheme] || themeStyles.purple;
-
+  const cls = themes[colorTheme] || themes.purple;
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-4 shadow-sm hover:shadow-lg transition-all duration-300 group hover:border-[#5C039B]/20">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">{title}</span>
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-all group-hover:scale-110 ${currentTheme}`}>
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</span>
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-all group-hover:scale-110 ${cls}`}>
           {loading ? <Spin size="small" /> : <Icon size={22} />}
         </div>
       </div>
       <div>
         <div className="flex items-baseline gap-2">
           <span className="text-3xl font-bold text-gray-900 group-hover:text-[#5C039B] transition-colors">
-            {loading ? "..." : typeof value === 'number' ? value.toLocaleString() : value || 0}
+            {loading ? "—" : typeof value === "number" ? value.toLocaleString() : (value ?? 0)}
           </span>
           {suffix && <span className="text-sm text-gray-400">{suffix}</span>}
         </div>
-        {growth && (
-          <div className="flex items-center gap-1 mt-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md inline-flex">
-            <ArrowUpRight size={12} />
-            {growth}
-          </div>
-        )}
         {trend && <p className="text-xs text-gray-400 mt-2">{trend}</p>}
       </div>
     </div>
   );
 };
 
-// --- Custom Tooltip ---
+/* ─── Custom Tooltip ─────────────────────────────────────────── */
 const CustomTooltip = ({ active, payload, label, suffix = "", prefix = "" }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white/95 backdrop-blur-md border border-gray-100 rounded-xl shadow-xl px-4 py-3 text-sm">
-        <p className="font-semibold text-gray-500 mb-1">{label}</p>
-        <p className="text-[#5C039B] font-bold text-lg">
-          {prefix}{payload[0].value?.toLocaleString()}{suffix}
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl shadow-xl px-4 py-3 text-sm">
+      <p className="font-semibold text-gray-500 mb-1">{label}</p>
+      {payload.map((p, i) => (
+        <p key={i} style={{ color: p.color || BRAND }} className="font-bold text-base">
+          {prefix}{p.value?.toLocaleString()}{suffix}
         </p>
-      </div>
-    );
-  }
-  return null;
+      ))}
+    </div>
+  );
 };
 
-// --- Main Component ---
+/* ─── Pipeline Status Cell ───────────────────────────────────── */
+const PipelineCell = ({ label, count, accent }) => (
+  <div
+    className={`p-3 rounded-xl text-center transition-all ${count > 0 ? "shadow-sm border" : "bg-gray-50 opacity-60"}`}
+    style={count > 0 ? { background: `${accent}0d`, borderColor: `${accent}30` } : {}}
+  >
+    <div className="text-xl font-bold" style={{ color: count > 0 ? accent : "#CBD5E1" }}>{count}</div>
+    <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mt-1 leading-tight">{label}</div>
+  </div>
+);
+
+/* ═══════════════════ MAIN COMPONENT ════════════════════════ */
 const VaultAdminDashboard = () => {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [stats,      setStats]      = useState(null);
+  const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [timeFilter, setTimeFilter] = useState("month");
-  const [dateRange, setDateRange] = useState([dayjs().subtract(30, 'days'), dayjs()]);
-  const [customerFilter, setCustomerFilter] = useState(null);
-  const [customers, setCustomers] = useState([]);
+  const [dateRange,  setDateRange]  = useState(null);
 
-  // Fetch dashboard stats with filters
-  const fetchDashboardStats = async () => {
-    setRefreshing(true);
+  /* ── API Fetch ── */
+  const fetchStats = useCallback(async (isRefresh = false) => {
+    isRefresh ? setRefreshing(true) : setLoading(true);
     try {
-      let url = `/vault/statistics/admin/stats?range=${timeFilter}`;
-      
-      if (dateRange && dateRange[0] && dateRange[1] && timeFilter === 'custom') {
-        url += `&fromDate=${dateRange[0].format('YYYY-MM-DD')}&toDate=${dateRange[1].format('YYYY-MM-DD')}`;
-      }
-      
-      if (customerFilter) {
-        url += `&customerId=${customerFilter}`;
+      const params = new URLSearchParams();
+      if (timeFilter !== "custom") {
+        params.set("range", timeFilter);
+      } else if (dateRange?.[0] && dateRange?.[1]) {
+        params.set("fromDate", dateRange[0].format("YYYY-MM-DD"));
+        params.set("toDate",   dateRange[1].format("YYYY-MM-DD"));
       }
 
-      // Replace with your actual API call
-      // const response = await apiService.get(url);
-      
-      // Using your provided data
-      const mockData = {
-        platformHealth: {
-          totalUsers: { referralPartners: 26, partners: 3, advisors: 3, opsMembers: 4, total: 36 },
-          leads: { total: 12, today: 0, thisWeek: 7, thisMonth: 12, top5Recent: [
-            { _id: "69f5ca16d12d1086326e7db0", customerName: "Test001", mobileNumber: "919966558899", propertyValue: 1500000, createdAt: "2026-05-02T09:55:34.436Z", source: "freelance_agent" },
-            { _id: "69f49a89d12d1086326e4def", customerName: "Ayush Rajpalani", mobileNumber: "08385973582", propertyValue: 444445424522, createdAt: "2026-05-01T12:20:25.386Z", source: "freelance_agent" }
-          ] },
-          leadStatus: { new: 4, assigned: 0, contacted: 0, qualified: 5, collectingDocuments: 0, applicationCreated: 0, notProceeding: 0, disbursed: 3 },
-          applicationsByStatus: { draft: 0, submittedToXoto: 0, inOpsQueue: 0, underReview: 0, bankApplication: 1, preApproved: 0, valuation: 0, folIssued: 0, folSigned: 0, disbursed: 4, rejected: 0, lost: 0 },
-          slaBreach: { count: 2, details: [
-            { id: "69e878e24d637b43c066cecf", customerName: "Ahmed Al Mansouri", breachedAt: "2026-04-24T12:22:30.286Z" },
-            { id: "69e8961ab961e908fb09a471", customerName: "John Smith", breachedAt: "2026-04-24T08:42:57.873Z" }
-          ] }
-        },
-        opsQueue: { count: 0, urgentCount: 0, applications: [] },
-        unassignedLeads: { count: 8, oldestLead: "2026-04-22T09:01:00.621Z", leads: [
-          { _id: "69e88e4cec41e6a22b7e6805", customerName: "Divy Sharma", mobileNumber: "971965823654", propertyValue: 895623, createdAt: "2026-04-22T09:01:00.621Z", source: "freelance_agent" },
-          { _id: "69e890c9201d9873661e713a", customerName: "wertfg", mobileNumber: "971741852654", propertyValue: 15000000, createdAt: "2026-04-22T09:11:37.217Z", source: "freelance_agent" }
-        ] },
-        recentActivities: [
-          { type: "new_case", message: "New case XOTO-CASE-2026-4489 created for Test001", timestamp: "2026-05-02T10:05:42.325Z" },
-          { type: "new_lead", message: "New lead from Ayush ayush", timestamp: "2026-05-02T09:55:34.436Z" },
-          { type: "new_agent", message: "Freelance Agent Mongo DB registered", timestamp: "2026-05-01T13:17:20.586Z" }
-        ],
-        commissionStats: { pending: 0, confirmed: 0, paid: 0, total: 0 },
-        graphData: {
-          leadsOverTime: [
-            { date: "2026-04-22", count: 4 }, { date: "2026-04-28", count: 2 }, { date: "2026-04-29", count: 1 },
-            { date: "2026-04-30", count: 1 }, { date: "2026-05-01", count: 1 }, { date: "2026-05-02", count: 1 }
-          ],
-          casesOverTime: [
-            { date: "2026-04-27", count: 1 }, { date: "2026-04-28", count: 1 }, { date: "2026-04-29", count: 1 },
-            { date: "2026-04-30", count: 1 }, { date: "2026-05-01", count: 1 }, { date: "2026-05-02", count: 1 }
-          ],
-          disbursementsOverTime: [
-            { date: "2026-04-30", count: 2, totalAmount: 1400000 },
-            { date: "2026-05-01", count: 1, totalAmount: 19800000 },
-            { date: "2026-05-02", count: 1, totalAmount: 1400000 }
-          ],
-          monthlySummary: [
-            { month: "2026-04", totalCases: 4, disbursed: 2 },
-            { month: "2026-05", totalCases: 2, disbursed: 2 }
-          ],
-          leadsBySource: [{ name: "Freelance Agent", value: 10, color: "#5C039B" }]
-        },
-        timestamp: new Date().toISOString()
-      };
-      
-      setTimeout(() => {
-        setStats(mockData);
-        setLoading(false);
-        setRefreshing(false);
-      }, 600);
-      
-    } catch (error) {
-      message.error("Failed to load dashboard data");
+      const res = await apiService.get(`/vault/statistics/admin/stats?${params.toString()}`);
+
+      if (res?.data) {
+        setStats(res.data);
+      } else {
+        message.error("Failed to load dashboard data");
+      }
+    } catch (err) {
+      console.error("Dashboard error:", err);
+      message.error(err?.response?.data?.message || "Failed to load dashboard data");
+    } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [timeFilter, dateRange]);
 
-  useEffect(() => {
-    fetchDashboardStats();
-  }, [timeFilter, dateRange, customerFilter]);
+  useEffect(() => { fetchStats(); }, [fetchStats]);
 
-  // --- Chart Data Preparation ---
-  const formatChartDate = (dateString) => {
-    const date = new Date(dateString);
-    if (timeFilter === 'week') return date.toLocaleDateString('en-US', { weekday: 'short' });
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-  
-  const timelineData = stats?.graphData?.casesOverTime?.map(item => ({
-    name: formatChartDate(item.date), 
-    cases: item.count,
-    leads: stats.graphData.leadsOverTime.find(l => l.date === item.date)?.count || 0
-  })) || [];
+  /* ── Derived Data ── */
+  const kpis   = stats?.kpis              ?? {};
+  const graphs  = stats?.graphs            ?? {};
+  const ops    = stats?.opsMonitoring      ?? {};
+  const adv    = stats?.advisorMonitoring  ?? {};
 
-  const leadsOverTimeData = stats?.graphData?.leadsOverTime?.map(item => ({
-    name: formatChartDate(item.date), 
-    leads: item.count
-  })) || [];
+  /* Build unified date set for timeline (merge leads + cases dates) */
+  const allDates = [...new Set([
+    ...(graphs.leadsOverTime ?? []).map((d) => d.date),
+    ...(graphs.casesOverTime ?? []).map((d) => d.date),
+  ])].sort();
 
-  const disbursementData = stats?.graphData?.disbursementsOverTime?.map(item => ({
-    name: formatChartDate(item.date), 
-    amount: item.totalAmount / 1000000, 
-    count: item.count
-  })) || [];
+  const timelineData = allDates.map((date) => ({
+    name: fmtChartDate(date, timeFilter),
+    Leads: (graphs.leadsOverTime ?? []).find((d) => d.date === date)?.count ?? 0,
+    Cases: (graphs.casesOverTime ?? []).find((d) => d.date === date)?.count ?? 0,
+  }));
 
-  const monthlyData = stats?.graphData?.monthlySummary?.map(item => ({
-    name: item.month,
-    cases: item.totalCases,
-    disbursed: item.disbursed
-  })) || [];
+  const leadsOverTimeData = (graphs.leadsOverTime ?? []).map((d) => ({
+    name: fmtChartDate(d.date, timeFilter),
+    Leads: d.count,
+  }));
 
-  // Calculate conversion rate
-  const conversionRate = stats?.platformHealth?.leads?.total > 0 
-    ? ((stats?.platformHealth?.leadStatus?.disbursed || 0) / stats?.platformHealth?.leads?.total * 100).toFixed(1)
-    : 0;
+  const disbursementData = (graphs.disbursementsOverTime ?? []).map((d) => ({
+    name: fmtChartDate(d.date, timeFilter),
+    "Amount (M)": +(d.totalAmount / 1_000_000).toFixed(2),
+    Count: d.count,
+  }));
 
+  /* ── Loading screen ── */
   if (loading && !stats) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center flex-col gap-4">
         <Spin size="large" />
-        <p className="text-[#5C039B] font-medium tracking-wide">Loading VAULT Intelligence...</p>
+        <p style={{ color: BRAND }} className="font-semibold tracking-wide">Loading VAULT Intelligence…</p>
       </div>
     );
   }
 
-  const getActivityIcon = (type) => {
-    switch(type) {
-      case 'new_case': return <FileText size={14} className="text-blue-500" />;
-      case 'new_lead': return <UserPlus size={14} className="text-green-500" />;
-      case 'new_agent': return <Users size={14} className="text-purple-500" />;
-      case 'sla_breach': return <AlertCircle size={14} className="text-red-500" />;
-      default: return <Bell size={14} className="text-gray-500" />;
-    }
-  };
-
-  // --- Tab Items Configuration ---
+  /* ══════════════════ TAB ITEMS ══════════════════ */
   const tabItems = [
+
+    /* ─── OVERVIEW ─────────────────────────────── */
     {
-      key: 'overview',
-      label: <span className="flex items-center gap-2 px-3 py-2"><TrendingUp size={16} /> Overview</span>,
+      key: "overview",
+      label: <span className="flex items-center gap-2"><TrendingUp size={15} /> Overview</span>,
       children: (
         <div className="space-y-6">
-          {/* Top KPI Cards */}
+
+          {/* KPI Row */}
           <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12} lg={6}>
-              <StatCard title="Total Network" value={stats?.platformHealth?.totalUsers?.total} icon={Users} colorTheme="purple" growth="+12%" />
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <StatCard title="Total Leads" value={stats?.platformHealth?.leads?.total} icon={Target} colorTheme="blue" growth="+8%" />
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <StatCard title="Total Cases" value={stats?.platformHealth?.applicationsByStatus?.disbursed + stats?.platformHealth?.applicationsByStatus?.bankApplication} icon={FolderOpen} colorTheme="orange" />
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <StatCard title="Conversion Rate" value={conversionRate} icon={Zap} colorTheme="green" suffix="%" />
-            </Col>
+            {[
+              { title: "Total Leads",     value: kpis.totalLeads,             icon: Target,       colorTheme: "blue",   trend: `Conversion: ${(kpis.leadToCaseConversionRate ?? 0).toFixed(1)}%` },
+              { title: "Active Cases",    value: kpis.activeCases,            icon: FolderOpen,   colorTheme: "orange" },
+              { title: "Disbursed Cases", value: kpis.disbursedCases,         icon: DollarSign,   colorTheme: "green" },
+              { title: "Pending Cases",   value: kpis.pendingCases,           icon: Clock,        colorTheme: "yellow" },
+              { title: "SLA Breached",    value: kpis.slaBreachedLeads,       icon: AlertCircle,  colorTheme: "red" },
+            ].map((p) => (
+              <Col key={p.title} xs={24} sm={12} lg={5}>
+                <StatCard {...p} loading={loading} />
+              </Col>
+            ))}
           </Row>
 
-          {/* SLA Alert */}
-          {stats?.platformHealth?.slaBreach?.count > 0 && (
+          {/* SLA Alert Banner */}
+          {kpis.slaBreachedLeads > 0 && !loading && (
             <Alert
-              message={
-                <div className="flex items-center gap-2">
-                  <AlertCircle size={18} className="text-red-500" />
-                  <span className="font-bold">SLA Breach Alert</span>
-                </div>
-              }
-              description={`${stats.platformHealth.slaBreach.count} leads have exceeded the standard processing timeframe. Immediate attention required.`}
+              message={<span className="font-bold">SLA Breach Alert</span>}
+              description={`${kpis.slaBreachedLeads} lead${kpis.slaBreachedLeads > 1 ? "s" : ""} have exceeded the standard processing timeframe. Immediate attention required.`}
               type="error"
               showIcon
-              action={
-                <Button size="small" danger>
-                  Review Queue
-                </Button>
-              }
-              className="rounded-xl border-red-200 bg-red-50"
+              action={<Button size="small" danger>Review Queue</Button>}
+              className="rounded-xl"
             />
           )}
 
+          {/* Activity Timeline + Ops Monitoring */}
           <Row gutter={[16, 16]}>
-            {/* Main Chart - Combined */}
             <Col xs={24} lg={16}>
-              <Card className="rounded-2xl shadow-sm hover:shadow-md transition-all" bordered={false}>
-                <div className="flex items-center justify-between mb-6">
+              <Card className="rounded-2xl shadow-sm" bordered={false}>
+                <div className="flex items-center justify-between mb-5">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">Activity Timeline</h3>
-                    <p className="text-sm text-gray-400">Leads & Cases trend over selected period</p>
+                    <h3 className="text-base font-bold text-gray-900 m-0">Activity Timeline</h3>
+                    <p className="text-xs text-gray-400 mt-1 m-0">Leads &amp; Cases trend</p>
                   </div>
-                  <Tag color="purple" className="rounded-lg">Last {timeFilter}</Tag>
+                  <Tag color="purple">{timeFilter}</Tag>
                 </div>
-                <ResponsiveContainer width="100%" height={320}>
-                  <LineChart data={timelineData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 12 }} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 12 }} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Line type="monotone" dataKey="leads" stroke={CHART_COLORS.orange} strokeWidth={3} dot={{ fill: CHART_COLORS.orange, r: 4 }} name="Leads" />
-                    <Line type="monotone" dataKey="cases" stroke={BRAND_PURPLE} strokeWidth={3} dot={{ fill: BRAND_PURPLE, r: 4 }} name="Cases" />
-                  </LineChart>
-                </ResponsiveContainer>
+                {timelineData.length === 0
+                  ? <div className="h-48 flex items-center justify-center text-gray-400 text-sm">No data for this period</div>
+                  : (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={timelineData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 11 }} dy={8} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 11 }} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
+                        <Line type="monotone" dataKey="Leads" stroke="#F59E0B" strokeWidth={2.5} dot={{ fill: "#F59E0B", r: 3 }} />
+                        <Line type="monotone" dataKey="Cases" stroke={BRAND}   strokeWidth={2.5} dot={{ fill: BRAND,    r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )
+                }
               </Card>
             </Col>
 
-            {/* Recent Activity */}
+            {/* Ops + Advisor side panels */}
             <Col xs={24} lg={8}>
-              <Card className="rounded-2xl shadow-sm hover:shadow-md transition-all h-full" bordered={false}>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
-                  <Badge count={stats?.recentActivities?.length} style={{ backgroundColor: BRAND_PURPLE }} />
-                </div>
-                <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
-                  {stats?.recentActivities?.slice(0, 6).map((activity, idx) => (
-                    <div key={idx} className="flex gap-3 items-start p-3 rounded-xl hover:bg-gray-50 transition-all cursor-pointer group">
-                      <div className="mt-1 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        {getActivityIcon(activity.type)}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-800 line-clamp-2">{activity.message}</p>
-                        <p className="text-xs text-gray-400 mt-1">{formatTimeAgo(activity.timestamp)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Button type="link" className="w-full mt-4 text-[#5C039B] hover:text-[#4a027d]">
-                  View All Activity <ChevronRight size={14} />
-                </Button>
-              </Card>
+              <div className="flex flex-col gap-4 h-full">
+                <Card className="rounded-2xl shadow-sm" bordered={false}>
+                  <h3 className="text-sm font-bold text-gray-700 mb-4 m-0 uppercase tracking-wider">Ops Monitoring</h3>
+                  <Row gutter={[12, 12]}>
+                    {[
+                      { label: "Queue",  value: ops.queueCount,  color: BRAND     },
+                      { label: "Urgent", value: ops.urgentCount, color: "#EF4444" },
+                    ].map(({ label, value, color }) => (
+                      <Col key={label} span={12}>
+                        <div className="rounded-xl p-4 text-center" style={{ background: `${color}0d`, border: `1px solid ${color}25` }}>
+                          <div className="text-2xl font-black" style={{ color }}>{value ?? 0}</div>
+                          <div className="text-xs font-semibold text-gray-500 uppercase mt-1">{label}</div>
+                        </div>
+                      </Col>
+                    ))}
+                  </Row>
+                </Card>
+
+                <Card className="rounded-2xl shadow-sm" bordered={false}>
+                  <h3 className="text-sm font-bold text-gray-700 mb-4 m-0 uppercase tracking-wider">Advisor Monitoring</h3>
+                  <Row gutter={[12, 12]}>
+                    {[
+                      { label: "Available",  value: adv.availableAdvisors,  color: "#10B981" },
+                      { label: "Overloaded", value: adv.overloadedAdvisors, color: "#F59E0B" },
+                    ].map(({ label, value, color }) => (
+                      <Col key={label} span={12}>
+                        <div className="rounded-xl p-4 text-center" style={{ background: `${color}0d`, border: `1px solid ${color}25` }}>
+                          <div className="text-2xl font-black" style={{ color }}>{value ?? 0}</div>
+                          <div className="text-xs font-semibold text-gray-500 uppercase mt-1">{label}</div>
+                        </div>
+                      </Col>
+                    ))}
+                  </Row>
+                </Card>
+              </div>
             </Col>
           </Row>
 
-          {/* Status Progress Bars */}
+          {/* Lead Funnel + Source Distribution */}
           <Row gutter={[16, 16]}>
             <Col xs={24} lg={12}>
               <Card className="rounded-2xl shadow-sm" bordered={false}>
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Lead Funnel Progress</h3>
+                <h3 className="text-base font-bold text-gray-900 mb-5 m-0">Lead Funnel</h3>
                 <Space direction="vertical" className="w-full" size="large">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-600">New Leads</span>
-                      <span className="text-sm font-bold text-gray-900">{stats?.platformHealth?.leadStatus?.new || 0}</span>
-                    </div>
-                    <Progress percent={(stats?.platformHealth?.leadStatus?.new / stats?.platformHealth?.leads?.total * 100) || 0} strokeColor={BRAND_PURPLE} showInfo={false} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-600">Qualified</span>
-                      <span className="text-sm font-bold text-gray-900">{stats?.platformHealth?.leadStatus?.qualified || 0}</span>
-                    </div>
-                    <Progress percent={(stats?.platformHealth?.leadStatus?.qualified / stats?.platformHealth?.leads?.total * 100) || 0} strokeColor="#8B5CF6" showInfo={false} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-600">Disbursed</span>
-                      <span className="text-sm font-bold text-gray-900">{stats?.platformHealth?.leadStatus?.disbursed || 0}</span>
-                    </div>
-                    <Progress percent={(stats?.platformHealth?.leadStatus?.disbursed / stats?.platformHealth?.leads?.total * 100) || 0} strokeColor="#10B981" showInfo={false} />
-                  </div>
+                  {[
+                    { label: "New",       count: stats?.leadStatus?.new,       color: "#3B82F6" },
+                    { label: "Contacted", count: stats?.leadStatus?.contacted,  color: "#8B5CF6" },
+                    { label: "Qualified", count: stats?.leadStatus?.qualified,  color: BRAND },
+                    { label: "Disbursed", count: stats?.leadStatus?.disbursed,  color: "#10B981" },
+                  ].map(({ label, count, color }) => {
+                    const total = kpis.totalLeads || 1;
+                    const pct   = Math.min(100, Math.round(((count ?? 0) / total) * 100));
+                    return (
+                      <div key={label}>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-600">{label}</span>
+                          <span className="text-sm font-bold text-gray-900">
+                            {count ?? 0} <span className="text-gray-400 font-normal">({pct}%)</span>
+                          </span>
+                        </div>
+                        <Progress percent={pct} strokeColor={color} showInfo={false} />
+                      </div>
+                    );
+                  })}
                 </Space>
               </Card>
             </Col>
 
             <Col xs={24} lg={12}>
               <Card className="rounded-2xl shadow-sm" bordered={false}>
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Lead Source Distribution</h3>
-                <div className="flex justify-center">
-                  <ResponsiveContainer width="100%" height={240}>
-                    <PieChart>
-                      <Pie
-                        data={stats?.graphData?.leadsBySource || []}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        labelLine={false}
-                      >
-                        {stats?.graphData?.leadsBySource?.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+                <h3 className="text-base font-bold text-gray-900 mb-2 m-0">Lead Source Distribution</h3>
+                {(graphs.leadsBySource ?? []).length === 0
+                  ? <div className="h-48 flex items-center justify-center text-gray-400 text-sm">No source data</div>
+                  : (
+                    <ResponsiveContainer width="100%" height={240}>
+                      <PieChart>
+                        <Pie
+                          data={graphs.leadsBySource}
+                          cx="50%" cy="50%"
+                          innerRadius={60} outerRadius={90}
+                          paddingAngle={5} dataKey="value"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          labelLine={false}
+                        >
+                          {(graphs.leadsBySource ?? []).map((_, i) => (
+                            <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(v, n) => [v, n]} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )
+                }
               </Card>
             </Col>
           </Row>
         </div>
       ),
     },
+
+    /* ─── LEADS ─────────────────────────────────── */
     {
-      key: 'leads',
-      label: <span className="flex items-center gap-2 px-3 py-2"><UserCheck size={16} /> Leads Management</span>,
+      key: "leads",
+      label: <span className="flex items-center gap-2"><UserCheck size={15} /> Leads Management</span>,
       children: (
         <div className="space-y-6">
-          {/* Lead Stats Cards */}
+
           <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="rounded-2xl bg-gradient-to-br from-blue-50 to-white" bordered={false}>
-                <Statistic title="Today's Leads" value={stats?.platformHealth?.leads?.today} prefix={<TrendingUp size={20} className="text-blue-500" />} valueStyle={{ color: "#3B82F6", fontSize: 28 }} />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="rounded-2xl bg-gradient-to-br from-purple-50 to-white" bordered={false}>
-                <Statistic title="This Week" value={stats?.platformHealth?.leads?.thisWeek} prefix={<Calendar size={20} className="text-purple-500" />} valueStyle={{ color: BRAND_PURPLE, fontSize: 28 }} />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="rounded-2xl bg-gradient-to-br from-green-50 to-white" bordered={false}>
-                <Statistic title="This Month" value={stats?.platformHealth?.leads?.thisMonth} prefix={<Award size={20} className="text-green-500" />} valueStyle={{ color: "#10B981", fontSize: 28 }} />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="rounded-2xl bg-gradient-to-br from-orange-50 to-white" bordered={false}>
-                <Statistic title="Unassigned" value={stats?.unassignedLeads?.count} prefix={<AlertCircle size={20} className="text-orange-500" />} valueStyle={{ color: "#F59E0B", fontSize: 28 }} />
-              </Card>
-            </Col>
+            {[
+              { title: "Total Leads",     value: kpis.totalLeads,                                           icon: Target,       colorTheme: "blue" },
+              { title: "Conversion Rate", value: `${(kpis.leadToCaseConversionRate ?? 0).toFixed(1)}%`,     icon: Zap,          colorTheme: "green" },
+              { title: "Disbursed",       value: kpis.disbursedCases,                                       icon: DollarSign,   colorTheme: "purple" },
+              { title: "SLA Breached",    value: kpis.slaBreachedLeads,                                     icon: AlertCircle,  colorTheme: "red" },
+            ].map((p) => (
+              <Col key={p.title} xs={24} sm={12} lg={6}>
+                <StatCard {...p} loading={loading} />
+              </Col>
+            ))}
           </Row>
 
-          {/* Lead Status Grid */}
+          {/* Lead Status Breakdown */}
           <Card className="rounded-2xl shadow-sm" bordered={false}>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Lead Status Breakdown</h3>
-            <Row gutter={[12, 12]}>
-              {Object.entries(stats?.platformHealth?.leadStatus || {}).map(([status, count], idx) => (
-                <Col xs={12} sm={8} md={6} lg={4} key={status}>
-                  <div className={`p-4 rounded-xl text-center transition-all cursor-pointer hover:scale-105 ${count > 0 ? 'bg-gradient-to-br from-purple-50 to-white border border-purple-100' : 'bg-gray-50 opacity-60'}`}>
-                    <div className={`text-2xl font-black ${count > 0 ? 'text-[#5C039B]' : 'text-gray-400'}`}>{count}</div>
-                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider mt-2">
-                      {status.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                    </div>
+            <h3 className="text-base font-bold text-gray-900 mb-4 m-0">Lead Status Breakdown</h3>
+            <Row gutter={[10, 10]}>
+              {Object.entries(stats?.leadStatus ?? {}).map(([key, count], i) => (
+                <Col key={key} xs={12} sm={8} md={6} lg={4}>
+                  <div
+                    className={`p-4 rounded-xl text-center transition-all hover:scale-105 cursor-pointer ${count > 0 ? "border" : "bg-gray-50 opacity-60"}`}
+                    style={count > 0 ? { background: `${PIE_COLORS[i % PIE_COLORS.length]}0d`, borderColor: `${PIE_COLORS[i % PIE_COLORS.length]}30` } : {}}
+                  >
+                    <div className="text-2xl font-black" style={{ color: count > 0 ? PIE_COLORS[i % PIE_COLORS.length] : "#CBD5E1" }}>{count}</div>
+                    <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mt-2">{fmtLabel(key)}</div>
                   </div>
                 </Col>
               ))}
             </Row>
           </Card>
 
-          {/* Recent Leads Table */}
-          <Card className="rounded-2xl shadow-sm" bordered={false} title={<span className="font-bold text-gray-900">📋 Recent Leads</span>}>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b border-gray-200">
-                  <tr className="text-left">
-                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase">Customer</th>
-                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase">Contact</th>
-                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase">Property Value</th>
-                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase">Source</th>
-                    <th className="pb-3 text-xs font-semibold text-gray-400 uppercase">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats?.platformHealth?.leads?.top5Recent?.map((lead, idx) => (
-                    <tr key={idx} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                      <td className="py-3 text-sm font-medium text-gray-900">{lead.customerName}</td>
-                      <td className="py-3 text-sm text-gray-600">{lead.mobileNumber}</td>
-                      <td className="py-3 text-sm font-semibold text-[#5C039B]">{formatCurrency(lead.propertyValue)}</td>
-                      <td className="py-3"><Tag color="purple" className="rounded-full text-xs">{lead.source === 'freelance_agent' ? 'Freelance Agent' : lead.source}</Tag></td>
-                      <td className="py-3 text-sm text-gray-500">{formatDate(lead.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-
-          {/* Unassigned Leads */}
-          {stats?.unassignedLeads?.leads?.length > 0 && (
-            <Card className="rounded-2xl shadow-sm border-yellow-200 bg-gradient-to-br from-yellow-50 to-white" bordered={false}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">⚠️ Unassigned Leads Need Attention</h3>
-                <Badge count={stats.unassignedLeads.count} style={{ backgroundColor: "#F59E0B" }} />
-              </div>
-              <div className="space-y-3">
-                {stats.unassignedLeads.leads.slice(0, 5).map((lead, idx) => (
-                  <div key={idx} className="flex justify-between items-center p-4 rounded-xl bg-white shadow-sm hover:shadow-md transition-all">
-                    <div className="flex-1">
-                      <p className="font-bold text-gray-900">{lead.customerName}</p>
-                      <p className="text-xs text-gray-500 mt-1">{lead.mobileNumber}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-[#5C039B]">{formatCurrency(lead.propertyValue)}</p>
-                      <p className="text-xs text-gray-400 mt-1">{formatTimeAgo(lead.createdAt)}</p>
-                    </div>
-                    <Button type="primary" size="small" className="ml-4 rounded-lg" style={{ background: BRAND_GRADIENT, border: 'none' }}>
-                      Assign Now
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'applications',
-      label: <span className="flex items-center gap-2 px-3 py-2"><FolderOpen size={16} /> Applications</span>,
-      children: (
-        <div className="space-y-6">
-          {/* Application Status Grid */}
+          {/* Leads Over Time */}
           <Card className="rounded-2xl shadow-sm" bordered={false}>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Application Pipeline</h3>
-            <Row gutter={[12, 12]}>
-              {Object.entries(stats?.platformHealth?.applicationsByStatus || {}).map(([status, count], idx) => (
-                <Col xs={12} sm={8} md={6} lg={4} xl={3} key={status}>
-                  <div className={`p-3 rounded-xl text-center transition-all ${count > 0 ? 'bg-gradient-to-br from-green-50 to-white border border-green-100 shadow-sm' : 'bg-gray-50'}`}>
-                    <div className={`text-xl font-bold ${count > 0 ? 'text-green-600' : 'text-gray-400'}`}>{count}</div>
-                    <div className="text-[10px] font-semibold text-gray-500 uppercase mt-1 line-clamp-2">
-                      {status.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                    </div>
-                  </div>
-                </Col>
-              ))}
-            </Row>
-          </Card>
-
-          {/* Disbursement Chart */}
-          <Row gutter={[16, 16]}>
-            <Col xs={24} lg={16}>
-              <Card className="rounded-2xl shadow-sm" bordered={false}>
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Disbursement Volume (AED Millions)</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={disbursementData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <h3 className="text-base font-bold text-gray-900 mb-4 m-0">Leads Over Time</h3>
+            {leadsOverTimeData.length === 0
+              ? <div className="h-48 flex items-center justify-center text-gray-400 text-sm">No data for this period</div>
+              : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <AreaChart data={leadsOverTimeData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
                     <defs>
-                      <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                      <linearGradient id="leadGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="#3B82F6" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.01} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 12 }} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 12 }} />
-                    <Tooltip content={<CustomTooltip suffix="M AED" />} />
-                    <Area type="monotone" dataKey="amount" stroke="#10B981" strokeWidth={3} fill="url(#colorAmount)" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 11 }} dy={8} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 11 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area type="monotone" dataKey="Leads" stroke="#3B82F6" strokeWidth={2.5} fill="url(#leadGrad)" />
                   </AreaChart>
                 </ResponsiveContainer>
+              )
+            }
+          </Card>
+        </div>
+      ),
+    },
+
+    /* ─── APPLICATIONS ──────────────────────────── */
+    {
+      key: "applications",
+      label: <span className="flex items-center gap-2"><FolderOpen size={15} /> Applications</span>,
+      children: (
+        <div className="space-y-6">
+
+          <Row gutter={[16, 16]}>
+            {[
+              { title: "Active Cases",  value: kpis.activeCases,                        icon: FolderOpen,  colorTheme: "orange" },
+              { title: "Disbursed",     value: kpis.disbursedCases,                     icon: DollarSign,  colorTheme: "green"  },
+              { title: "Pending",       value: kpis.pendingCases,                       icon: Clock,       colorTheme: "yellow" },
+              { title: "At Bank",       value: stats?.caseStatus?.bankApplication ?? 0, icon: Building2,   colorTheme: "blue"   },
+            ].map((p) => (
+              <Col key={p.title} xs={24} sm={12} lg={6}>
+                <StatCard {...p} loading={loading} />
+              </Col>
+            ))}
+          </Row>
+
+          {/* Case Pipeline */}
+          <Card className="rounded-2xl shadow-sm" bordered={false}>
+            <h3 className="text-base font-bold text-gray-900 mb-4 m-0">Application Pipeline</h3>
+            <Row gutter={[10, 10]}>
+              {Object.entries(stats?.caseStatus ?? {}).map(([key, count]) => {
+                const accent =
+                  key === "disbursed"                           ? "#10B981" :
+                  key === "rejected" || key === "lost"          ? "#EF4444" :
+                  key === "bankApplication"                     ? "#3B82F6" : BRAND;
+                return (
+                  <Col key={key} xs={12} sm={8} md={6} lg={4} xl={3}>
+                    <PipelineCell label={fmtLabel(key)} count={count} accent={accent} />
+                  </Col>
+                );
+              })}
+            </Row>
+          </Card>
+
+          {/* Disbursement Chart + Summary */}
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={16}>
+              <Card className="rounded-2xl shadow-sm" bordered={false}>
+                <h3 className="text-base font-bold text-gray-900 mb-4 m-0">
+                  Disbursement Volume <span className="text-gray-400 font-normal text-sm">(AED Millions)</span>
+                </h3>
+                {disbursementData.length === 0
+                  ? <div className="h-56 flex items-center justify-center text-gray-400 text-sm">No disbursements in this period</div>
+                  : (
+                    <ResponsiveContainer width="100%" height={280}>
+                      <AreaChart data={disbursementData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="disbGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%"  stopColor="#10B981" stopOpacity={0.28} />
+                            <stop offset="95%" stopColor="#10B981" stopOpacity={0.01} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 11 }} dy={8} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 11 }} />
+                        <Tooltip content={<CustomTooltip suffix=" M AED" />} />
+                        <Area type="monotone" dataKey="Amount (M)" stroke="#10B981" strokeWidth={2.5} fill="url(#disbGrad)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  )
+                }
               </Card>
             </Col>
 
             <Col xs={24} lg={8}>
-              <Card className="rounded-2xl shadow-sm h-full flex items-center justify-center" bordered={false}>
-                <div className="text-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <DollarSign className="text-white" size={40} />
+              <div className="flex flex-col gap-4 h-full">
+                <Card className="rounded-2xl shadow-sm flex-1" bordered={false}>
+                  <div className="text-center py-4">
+                    <div
+                      className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md"
+                      style={{ background: "linear-gradient(135deg,#10B981,#059669)" }}
+                    >
+                      <DollarSign className="text-white" size={36} />
+                    </div>
+                    <Statistic
+                      title="Cases Disbursed"
+                      value={loading ? "—" : (kpis.disbursedCases ?? 0)}
+                      valueStyle={{ color: "#10B981", fontSize: 36, fontWeight: 800 }}
+                    />
+                    <p className="text-gray-400 text-sm mt-2 mb-4">Successfully completed</p>
+                    <Button
+                      type="primary"
+                      className="rounded-xl px-8 w-full"
+                      style={{ background: BRAND_GRADIENT, border: "none" }}
+                    >
+                      View Report
+                    </Button>
                   </div>
-                  <Statistic title="Total Disbursed" value={stats?.platformHealth?.applicationsByStatus?.disbursed || 0} suffix="Cases" valueStyle={{ color: "#10B981", fontSize: 32 }} />
-                  <p className="text-gray-400 text-sm mt-2">Successfully completed</p>
-                  <Button type="primary" className="mt-6 rounded-xl px-6" style={{ background: BRAND_GRADIENT, border: 'none' }}>
-                    View Report
-                  </Button>
-                </div>
-              </Card>
+                </Card>
+
+                <Card className="rounded-2xl shadow-sm" bordered={false}>
+                  <Row gutter={12}>
+                    {[
+                      { label: "At Bank",  value: stats?.caseStatus?.bankApplication ?? 0, color: "#3B82F6" },
+                      { label: "Rejected", value: stats?.caseStatus?.rejected ?? 0,        color: "#EF4444" },
+                    ].map(({ label, value, color }) => (
+                      <Col key={label} span={12}>
+                        <div
+                          className="rounded-xl p-4 text-center"
+                          style={{ background: `${color}0d`, border: `1px solid ${color}25` }}
+                        >
+                          <div className="text-2xl font-black" style={{ color }}>{value}</div>
+                          <div className="text-xs font-semibold text-gray-500 uppercase mt-1">{label}</div>
+                        </div>
+                      </Col>
+                    ))}
+                  </Row>
+                </Card>
+              </div>
             </Col>
           </Row>
         </div>
-      )
+      ),
     },
+
+    /* ─── NETWORK ───────────────────────────────── */
     {
-      key: 'network',
-      label: <span className="flex items-center gap-2 px-3 py-2"><Users size={16} /> Network</span>,
+      key: "network",
+      label: <span className="flex items-center gap-2"><Users size={15} /> Network</span>,
       children: (
         <div className="space-y-6">
+
           <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="rounded-2xl text-center" bordered={false}>
-                <Avatar size={64} icon={<Handshake />} style={{ backgroundColor: BRAND_PURPLE }} className="mx-auto mb-3" />
-                <Statistic title="Referral Partners" value={stats?.platformHealth?.totalUsers?.referralPartners || 0} valueStyle={{ color: BRAND_PURPLE }} />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="rounded-2xl text-center" bordered={false}>
-                <Avatar size={64} icon={<Building2 />} style={{ backgroundColor: "#3B82F6" }} className="mx-auto mb-3" />
-                <Statistic title="Partners" value={stats?.platformHealth?.totalUsers?.partners || 0} valueStyle={{ color: "#3B82F6" }} />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="rounded-2xl text-center" bordered={false}>
-                <Avatar size={64} icon={<Users />} style={{ backgroundColor: "#10B981" }} className="mx-auto mb-3" />
-                <Statistic title="Advisors" value={stats?.platformHealth?.totalUsers?.advisors || 0} valueStyle={{ color: "#10B981" }} />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="rounded-2xl text-center" bordered={false}>
-                <Avatar size={64} icon={<Shield />} style={{ backgroundColor: "#F59E0B" }} className="mx-auto mb-3" />
-                <Statistic title="Ops Members" value={stats?.platformHealth?.totalUsers?.opsMembers || 0} valueStyle={{ color: "#F59E0B" }} />
-              </Card>
-            </Col>
+            {[
+              { title: "Referral Partners", value: kpis.totalFreelanceAgents, icon: Handshake,  color: BRAND     },
+              { title: "Partners",          value: kpis.totalPartners,        icon: Building2,  color: "#3B82F6" },
+              { title: "Advisors",          value: kpis.totalAdvisors,        icon: Users,      color: "#10B981" },
+              { title: "Ops Executives",    value: kpis.totalOpsExecutives,   icon: Shield,     color: "#F59E0B" },
+            ].map(({ title, value, icon: Icon, color }) => (
+              <Col key={title} xs={24} sm={12} lg={6}>
+                <Card className="rounded-2xl shadow-sm text-center hover:shadow-md transition-all" bordered={false}>
+                  <Avatar size={64} icon={<Icon size={28} />} style={{ backgroundColor: color }} className="mx-auto mb-3" />
+                  <Statistic
+                    title={title}
+                    value={loading ? "—" : (value ?? 0)}
+                    valueStyle={{ color, fontSize: 32, fontWeight: 800 }}
+                  />
+                </Card>
+              </Col>
+            ))}
           </Row>
 
-          {/* Network Growth Chart */}
+          {/* Network Breakdown */}
           <Card className="rounded-2xl shadow-sm" bordered={false}>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Network Growth</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="cases" fill={BRAND_PURPLE} radius={[6, 6, 0, 0]} name="Total Cases" />
-                <Bar dataKey="disbursed" fill="#10B981" radius={[6, 6, 0, 0]} name="Disbursed" />
-              </BarChart>
-            </ResponsiveContainer>
+            {(() => {
+              const total =
+                (kpis.totalFreelanceAgents ?? 0) +
+                (kpis.totalPartners        ?? 0) +
+                (kpis.totalAdvisors        ?? 0) +
+                (kpis.totalOpsExecutives   ?? 0);
+              return (
+                <>
+                  <h3 className="text-base font-bold text-gray-900 mb-5 m-0">Total Network: {total}</h3>
+                  <Space direction="vertical" className="w-full" size="large">
+                    {[
+                      { label: "Referral Partners", value: kpis.totalFreelanceAgents, color: BRAND     },
+                      { label: "Partners",          value: kpis.totalPartners,        color: "#3B82F6" },
+                      { label: "Advisors",          value: kpis.totalAdvisors,        color: "#10B981" },
+                      { label: "Ops Executives",    value: kpis.totalOpsExecutives,   color: "#F59E0B" },
+                    ].map(({ label, value, color }) => {
+                      const pct = total > 0 ? Math.round(((value ?? 0) / total) * 100) : 0;
+                      return (
+                        <div key={label}>
+                          <div className="flex justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-600">{label}</span>
+                            <span className="text-sm font-bold text-gray-900">
+                              {value ?? 0} <span className="text-gray-400 font-normal">({pct}%)</span>
+                            </span>
+                          </div>
+                          <Progress percent={pct} strokeColor={color} showInfo={false} />
+                        </div>
+                      );
+                    })}
+                  </Space>
+                </>
+              );
+            })()}
           </Card>
+
+          {/* Advisor + Ops Monitoring detail */}
+          <Row gutter={[16, 16]}>
+            {[
+              { label: "Available Advisors",  value: adv.availableAdvisors,  color: "#10B981", icon: UserCheck    },
+              { label: "Overloaded Advisors", value: adv.overloadedAdvisors, color: "#EF4444", icon: AlertCircle  },
+              { label: "Ops Queue",           value: ops.queueCount,         color: BRAND,     icon: Layers       },
+              { label: "Urgent Items",        value: ops.urgentCount,        color: "#F59E0B", icon: Zap          },
+            ].map(({ label, value, color, icon: Icon }) => (
+              <Col key={label} xs={24} sm={12} lg={6}>
+                <div className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-all">
+                  <div
+                    className="rounded-xl w-12 h-12 flex items-center justify-center flex-shrink-0"
+                    style={{ background: `${color}15` }}
+                  >
+                    <Icon size={20} style={{ color }} />
+                  </div>
+                  <div>
+                    {loading
+                      ? <div className="w-10 h-6 bg-gray-100 rounded animate-pulse" />
+                      : <div className="text-2xl font-black" style={{ color }}>{value ?? 0}</div>
+                    }
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">{label}</div>
+                  </div>
+                </div>
+              </Col>
+            ))}
+          </Row>
         </div>
-      )
-    }
+      ),
+    },
   ];
 
+  /* ══════════════════ RENDER ══════════════════ */
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 p-6 md:p-8 font-sans">
-      
-      {/* Header Section */}
+
+      {/* Header */}
       <div className="mb-8">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#5C039B] to-purple-600 flex items-center justify-center shadow-lg">
+              <div className="flex items-center gap-3 mb-1">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
+                  style={{ background: BRAND_GRADIENT }}
+                >
                   <Activity className="text-white" size={20} />
                 </div>
-                <h1 className="text-2xl font-black text-gray-900 tracking-tight">VAULT Intelligence Dashboard</h1>
+                <h1 className="text-2xl font-black text-gray-900 tracking-tight m-0">VAULT Intelligence</h1>
               </div>
-              <p className="text-sm text-gray-500 font-medium">Real-time metrics and operational overview</p>
+              <p className="text-sm text-gray-400 font-medium ml-[52px] m-0">Real-time metrics &amp; operational overview</p>
             </div>
-            
-            <div className="flex flex-wrap items-center gap-4">
-              <Segmented 
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Segmented
                 options={[
-                  { label: 'Today', value: 'today' },
-                  { label: 'Week', value: 'week' },
-                  { label: 'Month', value: 'month' },
-                  { label: 'Custom', value: 'custom' }
-                ]} 
+                  { label: "Today",  value: "today"  },
+                  { label: "Week",   value: "week"   },
+                  { label: "Month",  value: "month"  },
+                  { label: "Custom", value: "custom" },
+                ]}
                 value={timeFilter}
                 onChange={setTimeFilter}
-                className="bg-gray-100 rounded-lg p-1 font-medium"
+                className="font-semibold"
               />
-              
-              {timeFilter === 'custom' && (
-                <RangePicker 
+
+              {timeFilter === "custom" && (
+                <RangePicker
                   value={dateRange}
-                  onChange={(dates) => setDateRange(dates)}
-                  className="rounded-lg border-gray-200 hover:border-[#5C039B]"
-                  placeholder={['Start Date', 'End Date']}
+                  onChange={setDateRange}
+                  className="rounded-lg"
+                  placeholder={["Start Date", "End Date"]}
                 />
               )}
-              
-              <Select
-                placeholder="Filter by Customer"
-                allowClear
-                onChange={setCustomerFilter}
-                className="min-w-[180px] rounded-lg"
-                showSearch
-              >
-                <Option value="customer1">Customer A</Option>
-                <Option value="customer2">Customer B</Option>
-              </Select>
-              
-              <Button 
-                icon={<RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />} 
-                onClick={fetchDashboardStats}
+
+              <Button
+                icon={<RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />}
+                onClick={() => fetchStats(true)}
                 loading={refreshing}
-                className="rounded-lg px-6 border-gray-200 hover:text-[#5C039B] hover:border-[#5C039B] transition-all"
+                className="rounded-lg px-5"
               >
-                Sync Data
+                Sync
               </Button>
             </div>
           </div>
@@ -700,50 +688,19 @@ const VaultAdminDashboard = () => {
       <Tabs
         defaultActiveKey="overview"
         items={tabItems}
-        className="custom-tabs"
-        tabBarStyle={{ marginBottom: '24px', backgroundColor: 'transparent' }}
+        className="vault-tabs"
+        tabBarStyle={{ marginBottom: 24 }}
       />
-      
-      {/* Global Styles */}
+
+      {/* Scoped Styles */}
       <style>{`
-        .custom-tabs .ant-tabs-ink-bar { 
-          background: ${BRAND_PURPLE}; 
-          height: 3px; 
-          border-radius: 3px 3px 0 0;
-        }
-        .custom-tabs .ant-tabs-tab-active .ant-tabs-tab-btn { 
-          color: ${BRAND_PURPLE} !important; 
-          font-weight: 700;
-        }
-        .custom-tabs .ant-tabs-tab:hover { 
-          color: ${BRAND_PURPLE}; 
-        }
-        .custom-tabs .ant-tabs-tab { 
-          font-size: 14px; 
-          font-weight: 600; 
-          color: #64748B; 
-          padding: 12px 0; 
-          margin-right: 32px;
-        }
-        .custom-scrollbar::-webkit-scrollbar { 
-          width: 4px; 
-        }
-        .custom-scrollbar::-webkit-scrollbar-track { 
-          background: transparent; 
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb { 
-          background: #E2E8F0; 
-          border-radius: 4px; 
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
-          background: ${BRAND_PURPLE}; 
-        }
-        .ant-card {
-          border-radius: 16px;
-        }
-        .ant-progress-bg {
-          height: 8px !important;
-        }
+        .vault-tabs .ant-tabs-ink-bar { background: ${BRAND}; height: 3px; border-radius: 3px 3px 0 0; }
+        .vault-tabs .ant-tabs-tab-active .ant-tabs-tab-btn { color: ${BRAND} !important; font-weight: 700; }
+        .vault-tabs .ant-tabs-tab:hover { color: ${BRAND}; }
+        .vault-tabs .ant-tabs-tab { font-size: 13px; font-weight: 600; color: #64748B; padding: 10px 0; margin-right: 28px; }
+        .ant-progress-bg { height: 8px !important; border-radius: 99px !important; }
+        .ant-card { border-radius: 16px !important; }
+        .ant-segmented-item-selected { color: ${BRAND} !important; font-weight: 700; }
       `}</style>
     </div>
   );
