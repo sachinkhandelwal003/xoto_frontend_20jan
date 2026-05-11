@@ -149,7 +149,7 @@ if (res?.stats) setStats(res.stats);
 
   const fetchDevelopers = async () => {
     try {
-      const res = await apiService.get("/property/get-all-developers");
+      const res = await apiService.get("/developer/get-all-developers");
       const list = Array.isArray(res?.data) ? res.data : res?.data?.data || [];
       setDevelopers(list);
     } catch (err) {

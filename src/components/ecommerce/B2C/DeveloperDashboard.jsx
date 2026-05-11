@@ -1,12 +1,11 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import {
-  RiseOutlined, FileTextOutlined, HomeOutlined,
-  BellOutlined, ArrowUpOutlined, ArrowDownOutlined,
+  HomeOutlined, BellOutlined, ArrowUpOutlined, ArrowDownOutlined,
   MessageOutlined, ReloadOutlined,
 } from "@ant-design/icons";
 import {
@@ -16,8 +15,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import { registerSocket } from "../../../utils/socket";
-import ActionRequiredModal from "../../../component/Actionrequired";
-import { AuthContext } from "../../../context/ProfileContext";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -27,12 +24,6 @@ const DeveloperDashboard = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth || {});
   const developerId = user?._id || user?.id || user?.sub;
-
-  const { userProfile, loading: profileLoading, isOnboarded } = useContext(AuthContext);
-  const prof = userProfile?.data || userProfile || {};
-
-  // 🔥 Foolproof check: Context wala flag OR Backend ka actual data
-  const checkIsOnboarded = isOnboarded || prof?.isVerified === true || prof?.onboarding_status === "approved";
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
@@ -55,7 +46,7 @@ const DeveloperDashboard = () => {
         setDealFunnel(res.dealFunnel || []);
       }
     } catch (err) {
-      
+      // handle error
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -69,25 +60,18 @@ const DeveloperDashboard = () => {
   }, [developerId, timeRange]);
 
   const getDisplayName = () => {
-    if (prof?.first_name)
-      return `${prof.first_name} ${prof.last_name || ""}`;
-    if (prof?.name) return prof.name;
-    if (prof?.company_name) return prof.company_name;
+    if (user?.first_name) return `${user.first_name} ${user.last_name || ""}`;
+    if (user?.name) return user.name;
+    if (user?.company_name) return user.company_name;
     return "Developer";
   };
 
-  // Agar profile ya dashboard load ho raha hai
-  if (loading || profileLoading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center h-[60vh]">
         <Spin size="large" />
       </div>
     );
-  }
-
-  // 🔥 Ab yahan naya variable use kiya hai
-  if (!checkIsOnboarded) {
-    return <ActionRequiredModal isOpen />;
   }
 
   return (

@@ -296,18 +296,6 @@ const CUSTOM_ROLE_LINKS = {
       path: "/dashboard/{roleSlug}/agent-projects",
     },
 
-    // {
-    //   title: "Leads",
-    //   icon: "fas fa-user-friends",
-    //   path: "/dashboard/{roleSlug}/agent-leads",
-    // },
-    // {
-    //   title: "Secondary Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/create-secondary-plans",
-    //   submenus: [
-    //     { title: "Create Properties", path: "/dashboard/{roleSlug}/create-secondary-plans" },
-    //     { title: "Secondary Plans", path: "/dashboard/{roleSlug}/secondary-plans" },
-    //   ],
-    // },
     {
       title: "Leads", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/GridAgent-lead",
       submenus: [
@@ -316,43 +304,6 @@ const CUSTOM_ROLE_LINKS = {
 
       ],
     },
-    {
-      title: "Site Visits",
-      icon: "fas fa-map-marker-alt",
-      path: "/dashboard/{roleSlug}/visits",
-    },
-     {
-    title: "Presentations",
-    icon: "fas fa-file-powerpoint",
-    path: "/dashboard/{roleSlug}/presentations",
-  },
-    // ,    {
-    //       title: "My-Chats",
-    //       icon: "fas fa-comment-dots",
-    //       path: "/dashboard/{roleSlug}/My-Chats",
-    //     }
-    {
-      title: "Deals",
-      icon: "fas fa-handshake",
-      path: "/dashboard/{roleSlug}/deals",
-    },
-    {
-      title: "Commission",
-      icon: "fas fa-rupee-sign",
-      path: "/dashboard/{roleSlug}/commission",
-    },
-    // {
-    //   title: "Xobia AI",
-    //   icon: "fas fa-credit-card",
-    //   path: "/dashboard/{roleSlug}/subscription",
-    // },
-
-    // {
-    //   title: "Presentations",
-    //   icon: "fas fa-file-powerpoint",
-    //   path: "/dashboard/{roleSlug}/presentations",
-    // },
-
 
 
   ],
@@ -369,35 +320,11 @@ const CUSTOM_ROLE_LINKS = {
     //   path: "/dashboard/{roleSlug}/property-list"
     // },
     {
-      title: "Inventory / Units",
+      title: "Listings",
       icon: "fas fa-layer-group",
       path: "/dashboard/{roleSlug}/developerinventory",
     },
-    {
-      title: "Leads Tracking",
-      icon: "fas fa-users",
-      path: "/dashboard/{roleSlug}/developer-leads",
-    },
-    {
-      title: "Sales Revenue",
-      icon: "fas fa-chart-line",
-      path: "/dashboard/{roleSlug}/revenue",
-    },
-    {
-      title: "Bookings",
-      icon: "fas fa-file-signature",
-      path: "/dashboard/{roleSlug}/bookings",
-    },
-    // {
-    //     title: "Analytics",
-    //     icon: "fas fa-chart-pie",
-    //     path: "/dashboard/{roleSlug}/analytics"
-    //   },
-    {
-      title: "Commission Scheme",
-      icon: "fas fa-percent",
-      path: "/dashboard/{roleSlug}/commission-scheme"
-    }
+
   ],
   "15": [
     {

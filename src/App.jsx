@@ -316,7 +316,7 @@ function App() {
                             <Route path="/ecommerce/checkout" element={<CheckoutPage />} />
                             <Route path="/ecommerce/payment/success" element={<PaymentSuccess />} />
 <Route path="/vault/vault-register" element={<VaultRegister />} />
-<Route path=" " element={<AdvisorLogin />} />
+<Route path="/Grid/advisor/login" element={<AdvisorLogin />} />
               
 {/* <Route path="/vaultpartner" element={<VaultPartner />} /> */}
               <Route
