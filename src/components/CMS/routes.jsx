@@ -246,6 +246,7 @@ import ReferralPartnerDashboard from "./pages/ReferralPartnerDashboard"
 import TotalLeads from "../GridReferralPartner/GridDashboardpages/TotalLeads";
 import ActiveLeads from "../GridReferralPartner/GridDashboardpages/CreateReferralLead";
 import RecentLeads from "../GridReferralPartner/GridDashboardpages/RecentLeads";
+import ReferralPartnerProfile from "../GridReferralPartner/ReferralPartnerProfile";
 import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
 import QueueCases from "../ecommerce/vault/case/QueueCases";
 import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
@@ -262,6 +263,7 @@ import DisbursedCases from "../ecommerce/vault/case/DisbursedCases";
 import DisbursedFullAmountCases from "../ecommerce/vault/case/DisbursedFullAmountCases";
 import AgentsLeadFullView from "../ecommerce/B2C/AgentsLeadFullView";
 import Adminfeedbacks from "../../components/footer/Adminfeedbacks";
+import Presentations from "../ecommerce/B2C/PresentationManager";
 
 
 
@@ -281,7 +283,7 @@ const roleSlugMap = {
   22: "vaultagent" ,
   26: "vault-advisor",
   23: "vault-ops",
-25:"gridReferralPartner",
+25:"gridreferralpartner",
   23: "vault-mortgage-ops",
 
 21:"vaultpartner",
@@ -630,6 +632,8 @@ const CmsRoutes = () => {
       <Route path="/agency-projects" element={<AgencyProjects />} />
       <Route path="/agency/deals" element={<AgencyDeals />} />
       <Route path="/agency-agent-properties" element={<AgencyAgentProperties />} />
+      <Route path="/presentations" element={<Presentations />} />
+
       {/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
       {/* Developer */}
       <Route path="developer-projects" element={<DeveloperProjects />} />
@@ -661,6 +665,8 @@ const CmsRoutes = () => {
 <Route path="/total-leads" element={<TotalLeads />} />
 <Route path="/Submit-leads" element={<ActiveLeads />} />
 <Route path="/recent-leads" element={<RecentLeads />} />
+<Route path="/profile" element={<ReferralPartnerProfile />} />
+
 
 <Route path="advisors/:id" element={<AdvisorDetail />} />   
 <Route path="advisors" element={<AllAdvisors />} />         

@@ -291,7 +291,7 @@ const CUSTOM_ROLE_LINKS = {
   ],
   "16": [
     {
-      title: "Marketplace",
+      title: "Catalogs",
       icon: "fas fa-building",
       path: "/dashboard/{roleSlug}/agent-projects",
     },
@@ -301,13 +301,13 @@ const CUSTOM_ROLE_LINKS = {
     //   icon: "fas fa-user-friends",
     //   path: "/dashboard/{roleSlug}/agent-leads",
     // },
-    {
-      title: "Secondary Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/create-secondary-plans",
-      submenus: [
-        { title: "Create Properties", path: "/dashboard/{roleSlug}/create-secondary-plans" },
-        { title: "Secondary Plans", path: "/dashboard/{roleSlug}/secondary-plans" },
-      ],
-    },
+    // {
+    //   title: "Secondary Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/create-secondary-plans",
+    //   submenus: [
+    //     { title: "Create Properties", path: "/dashboard/{roleSlug}/create-secondary-plans" },
+    //     { title: "Secondary Plans", path: "/dashboard/{roleSlug}/secondary-plans" },
+    //   ],
+    // },
     {
       title: "Leads", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/GridAgent-lead",
       submenus: [
@@ -321,6 +321,11 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-map-marker-alt",
       path: "/dashboard/{roleSlug}/visits",
     },
+     {
+    title: "Presentations",
+    icon: "fas fa-file-powerpoint",
+    path: "/dashboard/{roleSlug}/presentations",
+  },
     // ,    {
     //       title: "My-Chats",
     //       icon: "fas fa-comment-dots",
@@ -709,7 +714,7 @@ const roleSlugMap = {
   // '26': "vault-ops",
   // '26': "vault-advisor",
   '23': "vault-ops",
-  '25': "gridReferralPartner",
+  '25': "gridreferralpartner",
   '26': "vault-advisor",
   // '23': "vault-ops",
   
