@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   Card, Table, Button, Tag, Space, Modal, Input, Select,
   message, Tooltip, Drawer, Divider, Typography, Row, Col,
-  Statistic, Spin, Alert,
+  Statistic, Spin, Alert, Popconfirm,
 } from "antd";
 import {
   PlusOutlined, ThunderboltOutlined, ShareAltOutlined,
@@ -33,72 +33,30 @@ const T = {
   navyDark:   "#26215C",
 };
 
+// ── ObjectId validation ───────────────────────────────────────────────────────
+const isValidObjectId = (id) => /^[a-f\d]{24}$/i.test(id?.trim() || "");
+
 // ══════════════════════════════════════════════════════════════════════════════
 //  API SERVICE LAYER
-//  All 8 endpoints from routes.js wired here.
-//  Base path: /agent/lead — router is mounted at this prefix in Express.
 // ══════════════════════════════════════════════════════════════════════════════
-
-// 1. POST /agent/lead/presentations
-//    Create a new draft. Returns { success, data: presentation }
-const apiCreate = (payload) =>
-  apiService.post("/agent/lead/presentations", payload);
-
-// 2. PUT /agent/lead/presentations/:id
-//    Update an existing draft (title, tone, settings, properties).
-//    Returns { success, data: presentation }
-const apiUpdate = (id, payload) =>
-  apiService.put(`/agent/lead/presentations/${id}`, payload);
-
-// 3. POST /agent/lead/presentations/:id/generate
-//    Triggers PDF build + S3 upload + shareToken/shareLink creation.
-//    Returns { success, data: { ...presentation, shareLink } }
-const apiGenerate = (id) =>
-  apiService.post(`/agent/lead/presentations/${id}/generate`);
-
-// 4. POST /agent/lead/presentations/:id/share
-//    Marks presentation as shared via "whatsapp" or "email".
-//    Body: { channel: "whatsapp" | "email" }
-//    Returns { success, message, shareLink }
-const apiShareChannel = (id, channel) =>
-  apiService.post(`/agent/lead/presentations/${id}/share`, { channel });
-
-// 5. GET /agent/lead/presentations?status=draft|generated|archived
-//    Lists all presentations for the logged-in agent, with optional filter.
-//    Returns { success, data: [], total, page, pages }
-const apiFetchList = (status) =>
-  apiService.get(
-    `/agent/lead/presentations${status && status !== "all" ? `?status=${status}` : ""}`
-  );
-
-// 6. GET /agent/lead/presentations/:id
-//    Fetches a single presentation (populated: properties.property, lead).
-//    Returns { success, data: presentation }
-const apiFetchOne = (id) =>
-  apiService.get(`/agent/lead/presentations/${id}`);
-
-// 7. DELETE /agent/lead/presentations/:id
-//    Soft-archives the presentation (sets status = "archived").
-//    Returns { success, message }
-const apiArchive = (id) =>
-  apiService.delete(`/agent/lead/presentations/${id}`);
-
-// 8. GET /agent/lead/presentations/share/:token  ← PUBLIC (no auth)
-//    Called when a client opens the shareable link.
-//    Logs view event, increments viewCount, sets pipelineStatus = "viewed".
-//    Returns { success, data: presentation }
-//    NOTE: This is called client-side only when opening the share URL directly.
-//    It is NOT protected by protectMulti in the router.
-const apiPublicShare = (token) =>
-  apiService.get(`/agent/lead/presentations/share/${token}`);
+const apiCreate       = (payload)          => apiService.post("/agent/lead/presentations", payload);
+const apiUpdate       = (id, payload)      => apiService.put(`/agent/lead/presentations/${id}`, payload);
+const apiGenerate     = (id)               => apiService.post(`/agent/lead/presentations/${id}/generate`);
+const apiShareChannel = (id, channel)      => apiService.post(`/agent/lead/presentations/${id}/share`, { channel });
+const apiFetchList    = (status)           => apiService.get(`/agent/lead/presentations${status && status !== "all" ? `?status=${status}` : ""}`);
+const apiFetchOne     = (id)               => apiService.get(`/agent/lead/presentations/${id}`);
+const apiArchive      = (id)               => apiService.delete(`/agent/lead/presentations/${id}`);
+// NOTE: apiPublicShare is intentionally NOT called from agent browser.
+// It is called automatically by the client's browser when they open the share link.
+// Calling it here was inflating viewCount + setting pipelineStatus="viewed" before the client even opened it.
 
 // ── Payload builder ───────────────────────────────────────────────────────────
 function buildPayload({ form, sections, propertyId, customNote }) {
   return {
     title: form.title || `Presentation — ${new Date().toLocaleDateString("en-AE")}`,
     tone:  form.tone  || "professional",
-    properties: propertyId
-      ? [{ property: propertyId, customNote: customNote || "", order: 1 }]
+    properties: propertyId && isValidObjectId(propertyId)
+      ? [{ property: propertyId.trim(), customNote: customNote || "", order: 1 }]
       : [],
     settings: {
       language: form.language || "English",
@@ -114,6 +72,70 @@ function buildPayload({ form, sections, propertyId, customNote }) {
       },
     },
   };
+}
+
+// ── FIX: robust clipboard copy that works on HTTP + unfocused pages ───────────
+function copyToClipboard(text, successMsg = "Link copied to clipboard") {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text)
+      .then(() => message.success(successMsg))
+      .catch(() => fallbackCopy(text, successMsg));
+  } else {
+    fallbackCopy(text, successMsg);
+  }
+}
+
+function fallbackCopy(text, successMsg) {
+  try {
+    const el = document.createElement("textarea");
+    el.value = text;
+    el.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(el);
+    if (ok) message.success(successMsg);
+    else message.error("Copy failed — please copy the link manually");
+  } catch {
+    message.error("Copy failed — please copy the link manually");
+  }
+}
+
+// ── FIX: safe PDF opener — validates URL, catches popup-blocked case ──────────
+function openPdf(url) {
+  if (!url || typeof url !== "string" || !url.startsWith("http")) {
+    message.error("PDF URL is invalid or has expired");
+    return;
+  }
+  try {
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    if (!win || win.closed || typeof win.closed === "undefined") {
+      // Popup was blocked — fallback: navigate current tab
+      message.warning("Popup blocked. Opening in this tab...");
+      window.location.href = url;
+    }
+  } catch {
+    message.error("Could not open PDF. Try copying the URL manually.");
+  }
+}
+
+// ── FIX: real WhatsApp / Email dispatch ──────────────────────────────────────
+function dispatchShareChannel(channel, shareLink, title) {
+  if (!shareLink) { message.warning("Share link not ready yet"); return; }
+  if (channel === "whatsapp") {
+    const body = encodeURIComponent(
+      `Hi! I've prepared a property presentation for you: *${title}*\n\n${shareLink}`
+    );
+    window.open(`https://wa.me/?text=${body}`, "_blank", "noopener,noreferrer");
+  }
+  if (channel === "email") {
+    const subject = encodeURIComponent(`Property Presentation — ${title}`);
+    const body    = encodeURIComponent(
+      `Hello,\n\nPlease find your personalised property presentation here:\n${shareLink}\n\nFeel free to reach out with any questions.\n\nBest regards`
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  }
 }
 
 // ── Shared micro-components ───────────────────────────────────────────────────
@@ -176,6 +198,9 @@ function WizardStep1({ form, setForm, sections, setSections, propertyId, setProp
     { key: "payment",  label: "Payment plans" },
     { key: "location", label: "Location & community" },
   ];
+
+  // FIX: ObjectId validation with inline feedback
+  const propertyIdInvalid = propertyId.trim() && !isValidObjectId(propertyId);
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
@@ -243,7 +268,22 @@ function WizardStep1({ form, setForm, sections, setSections, propertyId, setProp
               <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: "block", marginBottom: 6 }}>
                 Property ID <span style={{ fontWeight: 400, color: T.muted }}>(MongoDB ObjectId)</span>
               </label>
-              <Input value={propertyId} onChange={e => setPropertyId(e.target.value)} placeholder="e.g. 69f9979815abe868e65799af" style={{ borderRadius: 10 }} />
+              {/* FIX: validate ObjectId and show inline error */}
+              <Input
+                value={propertyId}
+                onChange={e => setPropertyId(e.target.value)}
+                placeholder="e.g. 69f9979815abe868e65799af"
+                style={{
+                  borderRadius: 10,
+                  borderColor: propertyIdInvalid ? T.error : undefined,
+                }}
+                status={propertyIdInvalid ? "error" : ""}
+              />
+              {propertyIdInvalid && (
+                <div style={{ fontSize: 11, color: T.error, marginTop: 4 }}>
+                  Invalid ObjectId — must be 24 hex characters
+                </div>
+              )}
             </div>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: "block", marginBottom: 6 }}>Agent note (optional)</label>
@@ -294,7 +334,8 @@ function WizardStep1({ form, setForm, sections, setSections, propertyId, setProp
           <Button
             type="primary"
             onClick={onNext}
-            disabled={!form.title?.trim()}
+            // FIX: also block save if propertyId is present but invalid
+            disabled={!form.title?.trim() || propertyIdInvalid}
             style={{ flex: 1, background: T.primary, borderColor: T.primary, borderRadius: 10, fontWeight: 700 }}
           >
             {isEditing ? "Save changes" : "Save as draft →"}
@@ -336,7 +377,8 @@ function WizardStep2({ form, sections, record, onBack, onGenerate, generating })
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <Text strong style={{ fontSize: 13, color: T.text }}>Presentation preview</Text>
           {record?.pdfUrl && (
-            <Button size="small" icon={<FilePdfOutlined />} onClick={() => window.open(record.pdfUrl, "_blank")} style={{ borderRadius: 8 }}>
+            // FIX: use safe openPdf() instead of raw window.open
+            <Button size="small" icon={<FilePdfOutlined />} onClick={() => openPdf(record.pdfUrl)} style={{ borderRadius: 8 }}>
               View PDF
             </Button>
           )}
@@ -488,45 +530,26 @@ function WizardStep2({ form, sections, record, onBack, onGenerate, generating })
 
 // ════════════════════════════════════════════════════════════════════════════
 //  WIZARD STEP 3 — Share & Track
-//  Uses API #4 (shareViaChannel) and API #8 (public share view tracking)
 // ════════════════════════════════════════════════════════════════════════════
 function WizardStep3({ record, sharing, onShareChannel, onClose, onRefresh }) {
-  const [shareViewData, setShareViewData] = useState(null);
-  const [loadingShareView, setLoadingShareView] = useState(false);
-
   if (!record) return null;
 
-  // ── Open the shareable link AND trigger API #8 to log the open ──────────────
-  const handleOpenShareLink = async () => {
-    if (!record.shareLink) return;
-
-    // Extract token from shareLink (e.g. https://BASE_URL/presentation/share/TOKEN)
-    const token = record.shareLink.split("/").pop();
-
-    // Simulate client open — calls the public share endpoint (API #8)
-    // In production this happens automatically when the client opens the link
-    if (token) {
-      setLoadingShareView(true);
-      try {
-        const res = await apiPublicShare(token);
-        const data = res?.data?.data || res?.data;
-        setShareViewData(data);
-        message.success(`View tracked — pipeline updated to "${data?.pipelineStatus || "viewed"}"`);
-        onRefresh(); // refresh the record to get updated viewCount
-      } catch {
-        // Silently fail — this is a simulation; in real usage the client's browser calls this
-      } finally {
-        setLoadingShareView(false);
-      }
+  // FIX: removed apiPublicShare() call from here entirely.
+  // Opening the link no longer fakes a "client view". Tracking happens
+  // automatically when the real client opens the URL in their browser.
+  const handleOpenShareLink = () => {
+    if (!record.shareLink) {
+      message.warning("Share link not ready yet");
+      return;
     }
-
-    window.open(record.shareLink, "_blank");
-  };
-
-  const copyLink = () => {
-    if (record.shareLink) {
-      navigator.clipboard.writeText(record.shareLink);
-      message.success("Link copied to clipboard");
+    try {
+      const win = window.open(record.shareLink, "_blank", "noopener,noreferrer");
+      if (!win || win.closed || typeof win.closed === "undefined") {
+        message.warning("Popup blocked. Opening in this tab...");
+        window.location.href = record.shareLink;
+      }
+    } catch {
+      message.error("Could not open link");
     }
   };
 
@@ -545,15 +568,19 @@ function WizardStep3({ record, sharing, onShareChannel, onClose, onRefresh }) {
             <span style={{ flex: 1, fontSize: 11, color: "#534AB7", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 }}>
               {record.shareLink || "Generating..."}
             </span>
-            <Button size="small" icon={<CopyOutlined />} onClick={copyLink} style={{ borderRadius: 8, flexShrink: 0 }}>Copy</Button>
+            {/* FIX: use robust copyToClipboard() */}
+            <Button size="small" icon={<CopyOutlined />} onClick={() => copyToClipboard(record.shareLink)} style={{ borderRadius: 8, flexShrink: 0 }}>Copy</Button>
           </div>
 
-          {/* API #4 — shareViaChannel: WhatsApp + Email */}
+          {/* FIX: WhatsApp now actually opens WhatsApp with the link. Email opens mailto. */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
             <Button
               icon={<WhatsAppOutlined />}
               loading={sharing === "whatsapp"}
-              onClick={() => onShareChannel("whatsapp")}
+              onClick={() => {
+                onShareChannel("whatsapp");
+                dispatchShareChannel("whatsapp", record.shareLink, record.title);
+              }}
               style={{
                 height: 56, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
                 background: record.sharedViaWhatsApp ? "#f0fdf4" : "#fff",
@@ -567,7 +594,10 @@ function WizardStep3({ record, sharing, onShareChannel, onClose, onRefresh }) {
             <Button
               icon={<MailOutlined />}
               loading={sharing === "email"}
-              onClick={() => onShareChannel("email")}
+              onClick={() => {
+                onShareChannel("email");
+                dispatchShareChannel("email", record.shareLink, record.title);
+              }}
               style={{
                 height: 56, borderRadius: 12,
                 background: record.sharedViaEmail ? "#eff6ff" : "#fff",
@@ -578,36 +608,38 @@ function WizardStep3({ record, sharing, onShareChannel, onClose, onRefresh }) {
             >
               {record.sharedViaEmail ? "✓ Sent" : "Email"}
             </Button>
-            <Button icon={<CopyOutlined />} onClick={copyLink} style={{ height: 56, borderRadius: 12, fontSize: 11, fontWeight: 600 }}>Copy link</Button>
+            {/* FIX: use robust copyToClipboard() */}
+            <Button icon={<CopyOutlined />} onClick={() => copyToClipboard(record.shareLink)} style={{ height: 56, borderRadius: 12, fontSize: 11, fontWeight: 600 }}>Copy link</Button>
           </div>
 
-          {/* API #8 — Public share view: open + track */}
+          {/* FIX: "Open link" button no longer calls apiPublicShare — just opens the URL */}
           <Button
             block
             icon={<EyeOutlined />}
-            loading={loadingShareView}
             onClick={handleOpenShareLink}
             style={{ borderRadius: 10, marginBottom: 8, fontWeight: 600 }}
           >
-            Open share link (tracks client view)
+            Open share link (client view tracked on their end)
           </Button>
 
-          {shareViewData && (
-            <Alert
-              type="success"
-              showIcon
-              message={<span style={{ fontSize: 11 }}>View tracked · Pipeline: <strong>{shareViewData.pipelineStatus}</strong> · Total opens: <strong>{shareViewData.viewCount}</strong></span>}
-              style={{ borderRadius: 8 }}
-            />
-          )}
+          <Alert
+            type="info"
+            showIcon
+            message={
+              <span style={{ fontSize: 11 }}>
+                View count updates automatically when the client opens this link. Click <strong>Refresh stats</strong> to see latest data.
+              </span>
+            }
+            style={{ borderRadius: 8 }}
+          />
         </Card>
 
-        {/* PDF */}
+        {/* PDF — FIX: use safe openPdf() */}
         {record.pdfUrl && (
           <Button
             block
             icon={<FilePdfOutlined />}
-            onClick={() => window.open(record.pdfUrl, "_blank")}
+            onClick={() => openPdf(record.pdfUrl)}
             style={{ borderRadius: 12, height: 44, fontWeight: 600 }}
           >
             View / Download PDF
@@ -709,6 +741,8 @@ const AgentPresentations = () => {
   const [sharing, setSharing]             = useState(null);
   const [detailDrawer, setDetailDrawer]   = useState(null);
   const [archiving, setArchiving]         = useState(null);
+  // FIX: track whether anything was actually saved so closeWizard avoids needless refetch
+  const [wizardDirty, setWizardDirty]     = useState(false);
 
   // ── API #5 — listPresentations ────────────────────────────────────────────
   const fetchPresentations = useCallback(async () => {
@@ -735,11 +769,13 @@ const AgentPresentations = () => {
     setEditingId(null);
     setActiveRecord(null);
     setWizardStep(1);
+    setWizardDirty(false);
   };
 
   const openCreateWizard = () => { resetWizard(); setWizardOpen(true); };
 
-  const openEditWizard = (record) => {
+  // FIX: single source of truth for loading a record into wizard
+  const loadRecordIntoWizard = (record) => {
     setIsEditing(true);
     setEditingId(record._id);
     setActiveRecord(record);
@@ -758,12 +794,24 @@ const AgentPresentations = () => {
       payment:  !record.settings?.hideSections?.paymentPlans,
       location: !record.settings?.hideSections?.location,
     });
+    setWizardDirty(false);
+  };
+
+  const openEditWizard = (record) => {
+    loadRecordIntoWizard(record);
     setWizardStep(1);
+    setWizardOpen(true);
+  };
+
+  const openGenerateWizard = (record) => {
+    loadRecordIntoWizard(record);
+    setWizardStep(2);
     setWizardOpen(true);
   };
 
   const openShareWizard = (record) => {
     setActiveRecord(record);
+    setEditingId(record._id);
     setWizardStep(3);
     setWizardOpen(true);
   };
@@ -771,21 +819,26 @@ const AgentPresentations = () => {
   // ── API #1 / #2 — createPresentationDraft / updatePresentation ────────────
   const handleSaveDraft = async () => {
     if (!form.title?.trim()) { message.warning("Please enter a presentation title"); return; }
+    if (propertyId.trim() && !isValidObjectId(propertyId)) {
+      message.error("Invalid Property ID — must be a 24-character MongoDB ObjectId");
+      return;
+    }
     setSaving(true);
     const payload = buildPayload({ form, sections, propertyId, customNote });
     try {
       let res;
       if (isEditing && editingId) {
-        res = await apiUpdate(editingId, payload);          // API #2
+        res = await apiUpdate(editingId, payload);
         message.success("Draft updated successfully");
       } else {
-        res = await apiCreate(payload);                     // API #1
+        res = await apiCreate(payload);
         message.success("Draft created successfully");
       }
       const saved = res?.data?.data || res?.data || {};
       setActiveRecord(saved);
       setEditingId(saved._id);
       setIsEditing(true);
+      setWizardDirty(true);
       setWizardStep(2);
       fetchPresentations();
     } catch (err) {
@@ -795,14 +848,20 @@ const AgentPresentations = () => {
     }
   };
 
-  // ── API #3 — generatePresentation ────────────────────────────────────────
+  // ── API #3 — generatePresentation ─────────────────────────────────────────
+  // FIX: re-save latest form state before generating so unsaved edits aren't lost
   const handleGenerate = async () => {
     if (!editingId) { message.error("No draft to generate"); return; }
     setGenerating(true);
     try {
-      const res       = await apiGenerate(editingId);       // API #3
+      // Re-save any form changes made on step 2 before generating
+      const payload = buildPayload({ form, sections, propertyId, customNote });
+      await apiUpdate(editingId, payload);
+
+      const res       = await apiGenerate(editingId);
       const generated = res?.data?.data || res?.data || {};
       setActiveRecord(generated);
+      setWizardDirty(true);
       message.success("PDF generated! Share link is ready.");
       setWizardStep(3);
       fetchPresentations();
@@ -813,15 +872,17 @@ const AgentPresentations = () => {
     }
   };
 
-  // ── API #4 — shareViaChannel ─────────────────────────────────────────────
+  // ── API #4 — shareViaChannel ──────────────────────────────────────────────
+  // FIX: only marks the record as shared in DB — actual dispatch happens in dispatchShareChannel
   const handleShareChannel = async (channel) => {
     if (!activeRecord?._id) return;
     setSharing(channel);
     try {
-      await apiShareChannel(activeRecord._id, channel);     // API #4
+      await apiShareChannel(activeRecord._id, channel);
       message.success(`Marked as shared via ${channel}`);
-      const res = await apiFetchOne(activeRecord._id);      // API #6 — refresh
+      const res = await apiFetchOne(activeRecord._id);
       setActiveRecord(res?.data?.data || res?.data || activeRecord);
+      setWizardDirty(true);
       fetchPresentations();
     } catch (err) {
       message.error(err?.response?.data?.message || "Share failed");
@@ -830,11 +891,11 @@ const AgentPresentations = () => {
     }
   };
 
-  // ── API #6 — getPresentation (refresh stats) ─────────────────────────────
+  // ── API #6 — getPresentation (refresh stats) ──────────────────────────────
   const refreshActiveRecord = async () => {
     if (!activeRecord?._id) return;
     try {
-      const res = await apiFetchOne(activeRecord._id);      // API #6
+      const res = await apiFetchOne(activeRecord._id);
       setActiveRecord(res?.data?.data || res?.data || activeRecord);
       message.success("Stats refreshed");
     } catch {
@@ -842,11 +903,11 @@ const AgentPresentations = () => {
     }
   };
 
-  // ── API #7 — archivePresentation ─────────────────────────────────────────
+  // ── API #7 — archivePresentation ──────────────────────────────────────────
   const handleArchive = async (id) => {
     setArchiving(id);
     try {
-      await apiArchive(id);                                  // API #7
+      await apiArchive(id);
       message.success("Presentation archived");
       if (detailDrawer?._id === id) setDetailDrawer(null);
       fetchPresentations();
@@ -857,10 +918,23 @@ const AgentPresentations = () => {
     }
   };
 
+  // FIX: only refetch if something actually changed during the wizard session
   const closeWizard = () => {
     setWizardOpen(false);
+    if (wizardDirty) fetchPresentations();
     resetWizard();
-    fetchPresentations();
+  };
+
+  // FIX: refresh detailDrawer from the server so it never shows stale data
+  const openDetailDrawer = async (record) => {
+    setDetailDrawer(record); // show immediately with what we have
+    try {
+      const res = await apiFetchOne(record._id);
+      const fresh = res?.data?.data || res?.data;
+      if (fresh) setDetailDrawer(fresh);
+    } catch {
+      // silently keep the snapshot we already have
+    }
   };
 
   const counts = {
@@ -915,53 +989,55 @@ const AgentPresentations = () => {
       title: "Actions", key: "actions", width: 240,
       render: (_, record) => (
         <Space size="small" wrap>
-          {/* API #6 — open detail drawer */}
+          {/* FIX: openDetailDrawer refreshes from server */}
           <Tooltip title="View details">
-            <Button size="small" icon={<EyeOutlined />} onClick={() => setDetailDrawer(record)} />
+            <Button size="small" icon={<EyeOutlined />} onClick={() => openDetailDrawer(record)} />
           </Tooltip>
 
-          {/* Edit draft → wizard step 1 */}
           {record.status === "draft" && (
             <Tooltip title="Edit draft">
               <Button size="small" icon={<EditOutlined />} onClick={() => openEditWizard(record)} />
             </Tooltip>
           )}
 
-          {/* API #3 — generate → wizard step 2 */}
+          {/* FIX: uses openGenerateWizard() — no more 40-line inline duplicate */}
           {record.status === "draft" && (
             <Tooltip title="Preview & Generate">
               <Button
                 size="small" type="primary" icon={<ThunderboltOutlined />}
-                onClick={() => {
-                  setIsEditing(true); setEditingId(record._id); setActiveRecord(record);
-                  setForm({ title: record.title, tone: record.tone || "professional", language: record.settings?.language || "English", currency: record.settings?.currency || "AED", areaUnit: record.settings?.areaUnit || "sqft" });
-                  setSections({ cover: !record.settings?.hideSections?.cover, desc: !record.settings?.hideSections?.projectDesc, dev: !record.settings?.hideSections?.developer, prices: !record.settings?.hideSections?.unitPrices, payment: !record.settings?.hideSections?.paymentPlans, location: !record.settings?.hideSections?.location });
-                  setWizardStep(2); setWizardOpen(true);
-                }}
+                onClick={() => openGenerateWizard(record)}
                 style={{ background: T.primary, borderColor: T.primary }}
               />
             </Tooltip>
           )}
 
-          {/* API #4 — share → wizard step 3 */}
           {record.status === "generated" && (
             <Tooltip title="Share & track">
               <Button size="small" type="primary" icon={<ShareAltOutlined />} onClick={() => openShareWizard(record)} style={{ background: T.success, borderColor: T.success }} />
             </Tooltip>
           )}
 
-          {/* PDF direct link */}
+          {/* FIX: use safe openPdf() */}
           {record.pdfUrl && (
             <Tooltip title="View PDF">
-              <Button size="small" icon={<FilePdfOutlined />} onClick={() => window.open(record.pdfUrl, "_blank")} />
+              <Button size="small" icon={<FilePdfOutlined />} onClick={() => openPdf(record.pdfUrl)} />
             </Tooltip>
           )}
 
-          {/* API #7 — archive */}
+          {/* FIX: Popconfirm before archive — no more accidental one-click delete */}
           {record.status !== "archived" && (
-            <Tooltip title="Archive">
-              <Button size="small" danger icon={<DeleteOutlined />} loading={archiving === record._id} onClick={() => handleArchive(record._id)} />
-            </Tooltip>
+            <Popconfirm
+              title="Archive this presentation?"
+              description="It will move to the Archived tab. This cannot be undone."
+              onConfirm={() => handleArchive(record._id)}
+              okText="Archive"
+              cancelText="Cancel"
+              okButtonProps={{ danger: true }}
+            >
+              <Tooltip title="Archive">
+                <Button size="small" danger icon={<DeleteOutlined />} loading={archiving === record._id} />
+              </Tooltip>
+            </Popconfirm>
           )}
         </Space>
       ),
@@ -1122,7 +1198,7 @@ const AgentPresentations = () => {
         )}
       </Modal>
 
-      {/* Detail Drawer */}
+      {/* Detail Drawer — FIX: opened via openDetailDrawer() which refreshes from server */}
       <Drawer
         open={!!detailDrawer}
         onClose={() => setDetailDrawer(null)}
@@ -1215,13 +1291,15 @@ const AgentPresentations = () => {
                 <Text strong style={{ display: "block", marginBottom: 8 }}>Share Link</Text>
                 <div style={{ display: "flex" }}>
                   <Input value={detailDrawer.shareLink} readOnly style={{ borderRadius: "8px 0 0 8px", fontSize: 12, color: T.primary }} />
-                  <Button icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText(detailDrawer.shareLink); message.success("Copied"); }} style={{ borderRadius: "0 8px 8px 0" }} />
+                  {/* FIX: use robust copyToClipboard() */}
+                  <Button icon={<CopyOutlined />} onClick={() => copyToClipboard(detailDrawer.shareLink)} style={{ borderRadius: "0 8px 8px 0" }} />
                 </div>
               </>
             )}
 
             {detailDrawer.pdfUrl && (
-              <Button block icon={<FilePdfOutlined />} onClick={() => window.open(detailDrawer.pdfUrl, "_blank")} style={{ marginTop: 16, borderRadius: 8 }}>
+              // FIX: use safe openPdf()
+              <Button block icon={<FilePdfOutlined />} onClick={() => openPdf(detailDrawer.pdfUrl)} style={{ marginTop: 16, borderRadius: 8 }}>
                 View PDF
               </Button>
             )}
@@ -1237,10 +1315,20 @@ const AgentPresentations = () => {
                   Share & Track
                 </Button>
               )}
+              {/* FIX: Popconfirm in drawer too */}
               {detailDrawer.status !== "archived" && (
-                <Button block danger icon={<DeleteOutlined />} loading={archiving === detailDrawer._id} onClick={() => handleArchive(detailDrawer._id)} style={{ borderRadius: 8 }}>
-                  Archive
-                </Button>
+                <Popconfirm
+                  title="Archive this presentation?"
+                  description="It will move to the Archived tab. This cannot be undone."
+                  onConfirm={() => handleArchive(detailDrawer._id)}
+                  okText="Archive"
+                  cancelText="Cancel"
+                  okButtonProps={{ danger: true }}
+                >
+                  <Button block danger icon={<DeleteOutlined />} loading={archiving === detailDrawer._id} style={{ borderRadius: 8 }}>
+                    Archive
+                  </Button>
+                </Popconfirm>
               )}
             </div>
           </div>
