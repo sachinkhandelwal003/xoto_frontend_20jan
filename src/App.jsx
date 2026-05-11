@@ -108,7 +108,7 @@ import MortgageCalculator from "./components/homepage/MortgageCalculator";
 import ProposalLink from "./components/ecommerce/vault/proposal/ProposalLink";
 import PopupManager from "./components/homepage/PopupManager";
 
-import AdvisorLogin from "./components/AdvisorGrid/AdvisorLogin";
+import AdvisorLogin from "./components/Grid/AdvisorGrid/AdvisorLogin";
 
 
 import EmployeeLogin from "./components/ecommerce/vault/EmployeeLogin";

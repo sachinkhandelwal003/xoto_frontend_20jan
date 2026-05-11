@@ -109,9 +109,9 @@ const CUSTOM_ROLE_LINKS = {
     path: "/dashboard/{roleSlug}/lead-management",
     icon: "fas fa-filter",
     submenus: [
-      { title: "All Leads",       path: "/dashboard/{roleSlug}/lead-management" },
+      { title: "All Leads",       path: "/dashboard/{roleSlug}/grid/agentleads" },
       { title: "Platform Leads",  path: "/dashboard/{roleSlug}/GridAdmin/propertyleads" },
-      { title: "Agent Leads",     path: "/dashboard/{roleSlug}/leads/agent" },
+      { title: "Agent Leads",     path: "/dashboard/{roleSlug}/grid/agentleads" },
       { title: "General Leads",   path: "/dashboard/{roleSlug}/leads/general" },
     ]
   },
@@ -291,64 +291,19 @@ const CUSTOM_ROLE_LINKS = {
   ],
   "16": [
     {
-      title: "Marketplace",
+      title: "Catalogs",
       icon: "fas fa-building",
       path: "/dashboard/{roleSlug}/agent-projects",
     },
 
-    // {
-    //   title: "Leads",
-    //   icon: "fas fa-user-friends",
-    //   path: "/dashboard/{roleSlug}/agent-leads",
-    // },
     {
-      title: "Secondary Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/create-secondary-plans",
+      title: "Leads", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/GridAgent-lead",
       submenus: [
-        { title: "Create Properties", path: "/dashboard/{roleSlug}/create-secondary-plans" },
-        { title: "Secondary Plans", path: "/dashboard/{roleSlug}/secondary-plans" },
-      ],
-    },
-    {
-      title: "Leads", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/agent-leads",
-      submenus: [
-        { title: "Create Leads", path: "/dashboard/{roleSlug}/agent-leads/add" },
-        { title: "Leads", path: "/dashboard/{roleSlug}/agent-leads" },
+        { title: "Leads", path: "/dashboard/{roleSlug}/GridAgent-lead" },
 
 
       ],
     },
-    {
-      title: "Site Visits",
-      icon: "fas fa-map-marker-alt",
-      path: "/dashboard/{roleSlug}/visits",
-    },
-    // ,    {
-    //       title: "My-Chats",
-    //       icon: "fas fa-comment-dots",
-    //       path: "/dashboard/{roleSlug}/My-Chats",
-    //     }
-    {
-      title: "Deals",
-      icon: "fas fa-handshake",
-      path: "/dashboard/{roleSlug}/deals",
-    },
-    {
-      title: "Commission",
-      icon: "fas fa-rupee-sign",
-      path: "/dashboard/{roleSlug}/commission",
-    },
-    // {
-    //   title: "Xobia AI",
-    //   icon: "fas fa-credit-card",
-    //   path: "/dashboard/{roleSlug}/subscription",
-    // },
-
-    // {
-    //   title: "Presentations",
-    //   icon: "fas fa-file-powerpoint",
-    //   path: "/dashboard/{roleSlug}/presentations",
-    // },
-
 
 
   ],
@@ -365,35 +320,11 @@ const CUSTOM_ROLE_LINKS = {
     //   path: "/dashboard/{roleSlug}/property-list"
     // },
     {
-      title: "Inventory / Units",
+      title: "Listings",
       icon: "fas fa-layer-group",
       path: "/dashboard/{roleSlug}/developerinventory",
     },
-    {
-      title: "Leads Tracking",
-      icon: "fas fa-users",
-      path: "/dashboard/{roleSlug}/developer-leads",
-    },
-    {
-      title: "Sales Revenue",
-      icon: "fas fa-chart-line",
-      path: "/dashboard/{roleSlug}/revenue",
-    },
-    {
-      title: "Bookings",
-      icon: "fas fa-file-signature",
-      path: "/dashboard/{roleSlug}/bookings",
-    },
-    // {
-    //     title: "Analytics",
-    //     icon: "fas fa-chart-pie",
-    //     path: "/dashboard/{roleSlug}/analytics"
-    //   },
-    {
-      title: "Commission Scheme",
-      icon: "fas fa-percent",
-      path: "/dashboard/{roleSlug}/commission-scheme"
-    }
+
   ],
   "15": [
     {
@@ -405,6 +336,14 @@ const CUSTOM_ROLE_LINKS = {
 
       ],
     },
+    {
+    title: "Agents",
+    icon: "fas fa-user-friends",       // or any icon you like
+    path: "/dashboard/{roleSlug}/agents",
+    submenus: [
+      { title: "All Agents",   path: "/dashboard/{roleSlug}/all-agents" },
+    ],
+  },
 
   ],
 
@@ -702,7 +641,7 @@ const roleSlugMap = {
   // '26': "vault-ops",
   // '26': "vault-advisor",
   '23': "vault-ops",
-  '25': "gridReferralPartner",
+  '25': "gridreferralpartner",
   '26': "vault-advisor",
   // '23': "vault-ops",
   

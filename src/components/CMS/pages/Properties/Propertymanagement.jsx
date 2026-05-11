@@ -42,6 +42,8 @@ const statusConfig = {
   pending:  { color: C.pending,  icon: <ClockCircleFilled />, label: 'Pending'  },
   rejected: { color: C.rejected, icon: <CloseCircleFilled />, label: 'Rejected' },
   inactive: { color: C.inactive, icon: <CloseCircleFilled />, label: 'Inactive' },
+  changes_requested:  { color: '#f97316', icon: <ClockCircleFilled />, label: 'Changes Requested' }, // ← add
+
 };
 
 
@@ -61,7 +63,7 @@ const typeLabels = {
 };
 
 // ─── Property Card ─────────────────────────────────────────────────────────────
-const PropertyCard = ({ property, onApprove, onReject, onToggleHot, onToggleFeatured, onDelete, onView }) => {
+const PropertyCard = ({ property, onApprove, onReject, onToggleHot, onToggleFeatured, onDelete, onView, onRequestChanges, }) => {
   const {
     _id, propertyName, area, city, propertySubType,
     approvalStatus, listingStatus, isFeatured, isHot,
@@ -280,25 +282,26 @@ const PropertyCard = ({ property, onApprove, onReject, onToggleHot, onToggleFeat
           </Button>
         </Tooltip>
 
-        {approvalStatus === 'pending' && (
-          <>
-            <Button
-              size="small" type="primary" ghost
-              style={{ fontSize: 11, borderColor: C.approved, color: C.approved }}
-              onClick={() => onApprove(_id)}
-            >
-              ✓ Approve
-            </Button>
-<Button
-  size="small"
-  danger
-  ghost
-  onClick={() => onReject(_id)}
->
-  ✕ Reject
-</Button>
-          </>
-        )}
+    {approvalStatus === 'pending' && (
+  <>
+    <Button size="small" type="primary" ghost
+      style={{ fontSize: 11, borderColor: C.approved, color: C.approved }}
+      onClick={() => onApprove(_id)}
+    >
+      ✓ Approve
+    </Button>
+    <Button size="small" danger ghost onClick={() => onReject(_id)}>
+      ✕ Reject
+    </Button>
+    {/* ← Add this */}
+    <Button size="small"
+      style={{ fontSize: 11, borderColor: '#f97316', color: '#f97316' }}
+      onClick={() => onRequestChanges(_id)}
+    >
+      ↩ Changes
+    </Button>
+  </>
+)}
 
         <Tooltip title={isHot ? 'Remove Hot' : 'Mark Hot (max 3)'}>
           <Button
@@ -369,7 +372,9 @@ const PropertyManagement = () => {
 
   const [tempFilters,       setTempFilters]       = useState({ ...filters });
   const [activeFilterCount, setActiveFilterCount] = useState(0);
-
+const [requestChangesModal, setRequestChangesModal] = useState({
+  open: false, id: null, comment: ''
+});
   useEffect(() => {
     const keys = ['propertySubType','approvalStatus','listingStatus','isHot','isFeatured',
                   'minPrice','maxPrice','area','bedroomType','furnishing'];
@@ -471,7 +476,22 @@ const handleRejectConfirm = async () => {
     message.error('Failed to reject');
   }
 };
-
+const handleRequestChanges = async () => {
+  if (!requestChangesModal.comment.trim()) {
+    message.error('Admin comments are required');
+    return;
+  }
+  try {
+    await apiService.put(`/properties/${requestChangesModal.id}/request-changes`, {
+      adminComments: requestChangesModal.comment
+    });
+    message.success('Changes requested');
+    setRequestChangesModal({ open: false, id: null, comment: '' });
+    fetchProperties();
+  } catch (e) {
+    message.error('Failed to request changes');
+  }
+};
   const handleView = (id) => {
     navigate(`/dashboard/superadmin/developer/property/${id}`);
   };
@@ -702,6 +722,7 @@ const handleRejectConfirm = async () => {
                 property={p}
                 onApprove={handleApprove}
                 onReject={openRejectModal}
+                onRequestChanges={(id) => setRequestChangesModal({ open: true, id, comment: '' })} // ← add
                 onToggleHot={handleToggleHot}
                 onToggleFeatured={handleToggleFeatured}
                 onDelete={handleDelete}
@@ -855,6 +876,24 @@ const handleRejectConfirm = async () => {
     rows={4}
   />
 </Modal>
+   <Modal
+        title="Request Changes"
+        open={requestChangesModal.open}
+        onCancel={() => setRequestChangesModal({ open: false, id: null, comment: '' })}
+        onOk={handleRequestChanges}
+        okText="Send Request"
+        okButtonProps={{ style: { background: '#f97316', borderColor: '#f97316' } }}
+      >
+        <p style={{ color: '#6b7280', marginBottom: 12 }}>
+          Explain what changes the developer needs to make:
+        </p>
+        <Input.TextArea
+          rows={4}
+          placeholder="e.g. Please update the floor plan images and correct the price range..."
+          value={requestChangesModal.comment}
+          onChange={e => setRequestChangesModal(prev => ({ ...prev, comment: e.target.value }))}
+        />
+        </Modal>
     </div>
   );
 };

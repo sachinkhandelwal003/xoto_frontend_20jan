@@ -68,6 +68,8 @@ export default function DeveloperPropertyEdit() {
   const [loading, setLoading]   = useState(false);
   const [saving, setSaving]     = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [approvalStatus, setApprovalStatus] = useState('');
+const [adminComments, setAdminComments]   = useState('');
 
   // Photo file lists — each item is { uid, name, status, url } or antd upload file
   const [mainLogoFile,      setMainLogoFile]      = useState([]);
@@ -82,7 +84,7 @@ export default function DeveloperPropertyEdit() {
     (async () => {
       try {
         setLoading(true);
-        const res  = await apiService.get(`/properties/developer/property/${id}`);
+        const res  = await apiService.get(`/properties/${id}`);
         const data = res?.data?.data || res?.data;
         if (!data) return;
 
@@ -144,7 +146,8 @@ export default function DeveloperPropertyEdit() {
           year:     data.completionDate?.year,
           fullDate: data.completionDate?.fullDate ? dayjs(data.completionDate.fullDate) : null,
         });
-
+ setApprovalStatus(data.approvalStatus || '');
+        setAdminComments(data.adminComments   || '');
         // ── Populate photo file lists ────────────────────
         const toFileList = (urls = [], prefix) =>
           urls.map((url, i) => ({
@@ -279,7 +282,7 @@ export default function DeveloperPropertyEdit() {
 
       
 
-      await apiService.put(`/properties/developer/property/${id}`, payload);
+      await apiService.put(`/properties/${id}`, payload);
 
       message.success("Property updated successfully!");
       navigate("/dashboard/developer/developer-projects");
@@ -699,7 +702,23 @@ export default function DeveloperPropertyEdit() {
             </div>
           ))}
         </Card>
-
+{approvalStatus === 'changes_requested' && adminComments && (
+          <Alert
+            type="warning"
+            showIcon
+            className="mb-4"
+            message="Admin Requested Changes"
+            description={adminComments}
+          />
+        )}
+        {approvalStatus === 'approved' && (
+          <Alert
+            type="info"
+            showIcon
+            className="mb-4"
+            message="Editing this listing will send it back for admin approval"
+          />
+        )}
         {/* ── Submit ───────────────────────────────────── */}
         <Card style={{ borderRadius: 12 }}>
           <div style={{ display: "flex", gap: 12 }}>

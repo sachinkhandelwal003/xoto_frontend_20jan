@@ -34,7 +34,7 @@ const roleSlugMap = {
   '24': "GridAdvisor",
   '26': "vault-advisor",
   '23': "vault-ops",
-  '25': "gridReferralPartner",
+  '25': "gridreferralpartner",
 };
 
 // ================= STATUS CONFIGURATION =================

@@ -35,7 +35,7 @@ const roleSlugMap = {
   '0': 'superadmin', '1': 'admin', '2': "customer",
   '15': "agency", '16': "agent", '17': "developer",
   '18': "vault-admin", '22': "vaultagent", '21': "vaultpartner",
-  '24': "GridAdvisor", '26': "vault-advisor", '23': "vault-ops", '25': "gridReferralPartner",
+  '24': "GridAdvisor", '26': "vault-advisor", '23': "vault-ops", '25': "gridreferralpartner",
 };
 
 const DisbursedFullAmountCases = () => {
