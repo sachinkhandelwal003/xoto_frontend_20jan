@@ -239,7 +239,7 @@ export default function DeveloperAddProperty() {
       shareCommissionPercentage: values.shareCommissionPercentage || 0,
 
       // Misc
-      isFeatured:              values.isFeatured              || false,
+      // isFeatured:              values.isFeatured              || false,
       showContactOnlyVerified: values.showContactOnlyVerified || false,
     };
 
@@ -382,7 +382,7 @@ export default function DeveloperAddProperty() {
             readinessProgress: "0%",
             hasView:        false,
             viewType:       [],
-            isFeatured:     false,
+            // isFeatured:     false,
             showContactOnlyVerified: false,
             shareCommission:           false,
             shareCommissionPercentage: 0,
@@ -767,11 +767,11 @@ export default function DeveloperAddProperty() {
                 <InputNumber min={0} max={100} style={{ width: "100%" }} />
               </Form.Item>
             </Col>
-            <Col xs={12} md={6}>
+            {/* <Col xs={12} md={6}>
               <Form.Item name="isFeatured" valuePropName="checked" label="Featured">
                 <Switch />
               </Form.Item>
-            </Col>
+            </Col> */}
             <Col xs={12} md={6}>
               <Form.Item name="showContactOnlyVerified" valuePropName="checked" label="Contact Only Verified">
                 <Switch />
@@ -781,7 +781,15 @@ export default function DeveloperAddProperty() {
           <Form.Item name="resaleConditions" label="Resale Conditions">
             <TextArea rows={2} placeholder="e.g., Resale allowed after 30% payment. Transfer fee of 2% applies." />
           </Form.Item>
-
+{form.getFieldValue("approvalStatus") === "changes_requested" && (
+  <Alert
+    type="warning"
+    showIcon
+    message="Changes Requested by Admin"
+    description={form.getFieldValue("adminComments") || "Please review and resubmit."}
+    style={{ marginBottom: 16 }}
+  />
+)}
           {/* ── Submit ── */}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: 24, paddingBottom: 16 }}>
             <Button onClick={() => navigate("/dashboard/developer/developer-projects")}>Cancel</Button>

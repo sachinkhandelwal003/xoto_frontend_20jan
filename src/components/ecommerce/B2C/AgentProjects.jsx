@@ -105,7 +105,7 @@ export default function AgentProjects() {
       const params = new URLSearchParams();
       params.append("page", pageNo);
       params.append("limit", 12);
-      params.append("propertyType", propertyType);
+      if (propertyType !== 'all') params.append("propertySubType", propertyType);
       
       if (approvalStatus !== "all") params.append("approvalStatus", approvalStatus);
      if (listingStatus !== "all") {
@@ -129,14 +129,14 @@ export default function AgentProjects() {
         params.append("bedroomType", selectedBedrooms[0]);
       }
 
-      const res = await apiService.get(`properties/agent/property/secondary?${params.toString()}`);
+      const res = await apiService.get(`/properties?${params.toString()}`);
       
-const list = res?.data?.data || res?.data || [];
+const list = Array.isArray(res?.data) ? res.data : [];
 setProperties(prev => append ? [...prev, ...list] : list);
 setFiltered(list);
-setTotalItems(res?.data?.totalItems || list.length);
-setHasMore(pageNo < (res?.data?.pagination?.totalPages || 1));
-setStats(res?.data?.stats || stats);
+setTotalItems(res?.pagination?.totalItems || list.length);
+setHasMore(pageNo < (res?.pagination?.totalPages || 1));
+if (res?.stats) setStats(res.stats);
     } catch (err) {
       console.error(err);
       message.error("Failed to load properties");

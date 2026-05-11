@@ -169,25 +169,25 @@ const selectedPartnerTypeRef = useRef(null);
       gradient: "linear-gradient(135deg, #03A4F4, #0077b6)",
       type: "direct",
     },
-    // {
-    //   id: "agent",
-    //   label: "Agents",
-    //   desc: "For Agents",
-    //   icon: <IdcardOutlined style={{ fontSize: "28px" }} />,
-    //   color: "#10B981",
-    //   gradient: "linear-gradient(135deg, #10B981, #059669)",
-    //   type: "direct",
-    // },
+    {
+      id: "agent",
+      label: "Agents",
+      desc: "For Agents",
+      icon: <IdcardOutlined style={{ fontSize: "28px" }} />,
+      color: "#10B981",
+      gradient: "linear-gradient(135deg, #10B981, #059669)",
+      type: "direct",
+    },
     // ── DEVELOPER COMMENTED OUT ──────────────────────────────────────────
-    // {
-    //   id: "developer",
-    //   label: "Developers",
-    //   desc: "For Developers",
-    //   icon: <CodeOutlined style={{ fontSize: "28px" }} />,
-    //   color: "#F97316",
-    //   gradient: "linear-gradient(135deg, #10B981, #059669)",
-    //   type: "direct",
-    // },
+    {
+      id: "developer",
+      label: "Developers",
+      desc: "For Developers",
+      icon: <CodeOutlined style={{ fontSize: "28px" }} />,
+      color: "#F97316",
+      gradient: "linear-gradient(135deg, #10B981, #059669)",
+      type: "direct",
+    },
     // ─────────────────────────────────────────────────────────────────────
   ];
 

@@ -49,13 +49,15 @@ export default function AdminPropertyDetail() {
   // Reject modal
   const [rejectModal, setRejectModal]   = useState(false);
   const [rejectForm]                    = Form.useForm();
-
+//new 
+const [requestChangesModal, setRequestChangesModal] = useState(false);
+const [requestChangesForm] = Form.useForm();
   // ─── Fetch single property ──────────────────────────────────
   const fetchProperty = async () => {
     try {
       setLoading(true);
-      const json = await apiService.get(`/${id}`);
-      setProperty(json?.data?.data || null);
+      const json = await apiService.get(`/properties/${id}`);
+setProperty(json?.data || null);
     } catch (err) {
       console.error(err);
       showToast("error", "Failed to load property.");
@@ -70,7 +72,7 @@ export default function AdminPropertyDetail() {
   const handleApprove = async () => {
     try {
       setActionLoading(true);
-      await apiService.put(`/status/${id}`, { status: "approved" });
+      await apiService.patch(`/properties/${id}/approve`);
       showToast("success", "Property approved and published.");
       fetchProperty();
     } catch (err) {
@@ -85,10 +87,8 @@ export default function AdminPropertyDetail() {
   const handleReject = async (values) => {
     try {
       setActionLoading(true);
-      await apiService.put(`/status/${id}`, {
-        status: "rejected",
-        reason: values.reason,
-      });
+   await apiService.patch(`/properties/${id}/reject`, { rejectionReason: values.reason });
+
       showToast("success", "Property rejected.");
       setRejectModal(false);
       rejectForm.resetFields();
@@ -100,6 +100,22 @@ export default function AdminPropertyDetail() {
       setActionLoading(false);
     }
   };
+const handleRequestChanges = async (values) => {
+  try {
+    setActionLoading(true);
+    await apiService.patch(`/properties/${id}/request-changes`, {
+      adminComments: values.adminComments
+    });
+    showToast('success', 'Changes requested successfully.');
+    setRequestChangesModal(false);
+    requestChangesForm.resetFields();
+    fetchProperty();
+  } catch {
+    showToast('error', 'Failed to request changes.');
+  } finally {
+    setActionLoading(false);
+  }
+};
 
   // ─── Loading state ───────────────────────────────────────────
   if (loading) {
@@ -176,6 +192,20 @@ export default function AdminPropertyDetail() {
                 >
                   Reject
                 </Button>
+                 <Button
+      icon={<ClockCircleOutlined />}
+      style={{ borderColor: '#f97316', color: '#f97316' }}
+      onClick={() => setRequestChangesModal(true)}
+    >
+      Request Changes
+    </Button>
+    {property.approvalStatus === 'changes_requested' && property.adminComments && (
+  <Alert
+    type="warning"
+    message={`Changes Requested: ${property.adminComments}`}
+    showIcon className="mb-4"
+  />
+)}
               </>
             )}
 
@@ -234,20 +264,20 @@ export default function AdminPropertyDetail() {
           <Card className="shadow-sm rounded-xl mb-4">
             <Title level={5}>Project Details</Title>
             <Descriptions bordered column={{ xs: 1, sm: 2 }} size="small">
-              <Descriptions.Item label="Project Name">
-                {property.projectName || "—"}
+              <Descriptions.Item label="Property Name">
+                {property.propertyName || "—"}
               </Descriptions.Item>
               <Descriptions.Item label="Developer Name">
                 {property.developerName || "—"}
               </Descriptions.Item>
               <Descriptions.Item label="Location">
-                {[property.location, property.areaName, property.city]
+                {[property.location, property.areaName, property.city, property.area,]
                   .filter(Boolean)
                   .join(", ") || "—"}
               </Descriptions.Item>
               <Descriptions.Item label="Listing Type">
                 <Tag color="purple">
-                  {property.listingType === "developer" ? "Off Plan" : "Secondary"}
+                  {property.propertySubType === "developer" ? "Off Plan" : "Secondary"}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Unit Type">

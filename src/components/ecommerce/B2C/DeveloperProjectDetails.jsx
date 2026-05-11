@@ -72,7 +72,7 @@ export default function DeveloperProjectDetails() {
     (async () => {
       try {
         setLoading(true);
-        const res = await apiService.get(`/properties/developer/property/${id}`);
+        const res = await apiService.get(`/properties/${id}`);
         const data = res?.data?.data || res?.data;
         setProject(data);
       } catch (err) {

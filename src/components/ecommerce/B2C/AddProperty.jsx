@@ -83,13 +83,15 @@ const AddProperty = () => {
 
       const propertyData = {
         projectType: projectOption,
+        projectOption: projectOption, //new field
+          propertySubType: "secondary", //new field
         projectName: values.projectName,
         developerName: values.developerName,
+         area: values.location, //new field
         location: values.location,
         unitType: values.unitType,
         bedrooms: values.bedrooms,
         price: values.price,
-        area: values.area,
         description: values.description || "",
         photos: photos,
         shareCommission: values.shareCommission || false,
@@ -100,17 +102,15 @@ const AddProperty = () => {
         approvalStatus: "pending" // Goes to admin for approval
       };
 
-     await apiService.post(
-  "/property",
-  propertyData,
-  {
+     await apiService.post( "/properties",propertyData,
+      {
     headers: {
       Authorization: `Bearer ${localStorage.getItem("token")}`
     }
   }
 );
       message.success("Property submitted for admin approval!");
-      navigate("/dashboard/agent/my-listings");
+      navigate(-1);
     } catch (error) {
       message.error("Failed to create property");
       console.error(error);

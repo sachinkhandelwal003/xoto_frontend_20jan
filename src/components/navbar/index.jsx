@@ -67,7 +67,7 @@ const roleSlugMap = {
   '22': 'vaultagent',
   '21': 'xotovaultpartner',
   '24': 'GridAdvisor',
-  '25': 'gridReferralPartner' 
+  '25': 'GridReferralPartner' 
 };
 
 const Navbar = () => {
@@ -122,7 +122,7 @@ const Navbar = () => {
     if (roleName === "developer") return "/dashboard/developer";
     if (roleName === "customer") return "/dashboard/customer";
     if (roleName === "gridadvisor") return "/dashboard/GridAdvisor";
-    if (roleName === "gridReferralPartner") return "/dashboard/grid-referral-partner";
+    if (roleName === "gridreferralpartner") return "/dashboard/GridReferralPartner";
     if (roleName === "superadmin" || roleName === "admin") return "/dashboard/superadmin";
     // if (roleName === "vaultparnter" || roleName === "xotovaultpartnerr") return "/dashboard/vault/xotovaultpartner";
     

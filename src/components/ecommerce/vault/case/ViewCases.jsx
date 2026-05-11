@@ -45,7 +45,7 @@ const roleSlugMap = {
   // '26': "vault-ops",
   // '26': "vault-advisor",
   // '23': "vault-ops",
-  '25': "gridReferralPartner",
+  '25': "gridreferralpartner",
   '26': "vault-advisor",
   // '23': "vault-ops",
   

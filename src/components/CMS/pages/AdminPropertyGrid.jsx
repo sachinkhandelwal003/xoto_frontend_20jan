@@ -29,6 +29,7 @@ const STATUS_CONFIG = {
   approved: { color: "#10b981", bg: "#ecfdf5", border: "#a7f3d0", icon: <CheckCircleOutlined />, label: "Approved" },
   pending:  { color: "#f59e0b", bg: "#fffbeb", border: "#fde68a", icon: <ClockCircleOutlined />,  label: "Pending"  },
   rejected: { color: "#ef4444", bg: "#fef2f2", border: "#fecaca", icon: <CloseCircleOutlined />,  label: "Rejected" },
+  changes_requested: {color: "#f97316", bg: "#fff7ed", border: "#fed7aa", icon: <ClockCircleOutlined />, label: "Changes Requested"},
 };
 
 // ─── Stat Card ────────────────────────────────────────────────────
@@ -314,9 +315,8 @@ const AdminPropertyList = () => {
       if (filters.fromDate) params.append("fromDate", filters.fromDate.format("YYYY-MM-DD"));
       if (filters.toDate)   params.append("toDate",   filters.toDate.format("YYYY-MM-DD"));
 
-      const res = await apiService.get(
-        `/properties/admin/property/all?${params.toString()}&t=${Date.now()}`
-      );
+      const res = await apiService.get(`/properties?${params.toString()}`)
+
       const list = res?.data || [];
       setProperties(Array.isArray(list) ? list : []);
       setTotal(res?.pagination?.totalItems || list.length);
@@ -337,7 +337,7 @@ const AdminPropertyList = () => {
   // ── Actions ──────────────────────────────────────────────────────
   const approveProperty = async (id) => {
     try {
-      await apiService.put(`/properties/admin/property/approve/${id}`, {
+      await apiService.put(`/properties/${id}/approve`, {
         remarks: "All documents verified. Property approved.",
       });
       message.success("Property approved successfully");
@@ -350,7 +350,7 @@ const AdminPropertyList = () => {
   const rejectProperty = async () => {
     if (!rejectReason.trim()) { message.error("Please enter rejection reason"); return; }
     try {
-      await apiService.put(`/properties/admin/property/reject/${selectedId}`, {
+      await apiService.put(`/properties/${selectedId}/reject`, {
         rejectionReason: rejectReason,
       });
       message.success("Property rejected");
@@ -382,6 +382,8 @@ const AdminPropertyList = () => {
     { key: "approved", label: <span style={{ display: "flex", alignItems: "center", gap: 6 }}><CheckCircleOutlined />Approved</span> },
     { key: "pending",  label: <span style={{ display: "flex", alignItems: "center", gap: 6 }}><ClockCircleOutlined />Pending</span>  },
     { key: "rejected", label: <span style={{ display: "flex", alignItems: "center", gap: 6 }}><CloseCircleOutlined />Rejected</span> },
+    { key: "changes_requested", label: <span style={{ display: "flex", alignItems: "center", gap: 6 }}><ClockCircleOutlined />Changes Requested</span> },
+
   ];
 
   // ── Render ────────────────────────────────────────────────────────
