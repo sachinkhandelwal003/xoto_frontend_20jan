@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiService } from "../../manageApi/utils/custom.apiservice";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import {
   Modal, Button, Tag, Tooltip, Avatar, Radio,
   Spin, Empty, message, Drawer, Descriptions, Badge
@@ -13,7 +13,7 @@ import {
   MailOutlined, BankOutlined, DollarOutlined,
   FileTextOutlined, TeamOutlined
 } from '@ant-design/icons';
-import CustomTable from '../../components/CMS/pages/custom/CustomTable';
+import CustomTable from '../../CMS/pages/custom/CustomTable';
 
 const PRIMARY = '#5c039b';
 
@@ -252,7 +252,7 @@ const AssignModal = ({ lead, visible, onClose, onAssigned }) => {
   const fetchSuggestions = async () => {
     setLoading(true);
     try {
-      const res = await apiService.get(`/property/lead/${lead._id}/suggest-advisors`);
+      const res = await apiService.get(`/gridlead/${lead._id}/suggest-advisors`);
       const resData = res?.data || res;
       setRecommended(resData?.recommended || null);
       setOptions(resData?.options || []);
@@ -265,7 +265,7 @@ const AssignModal = ({ lead, visible, onClose, onAssigned }) => {
     if (!selectedId) return message.warning('Please select an advisor');
     setAssigning(true);
     try {
-      await apiService.put(`/property/lead/${lead._id}/assign`, { advisorId: selectedId, notes });
+      await apiService.put(`/gridlead/${lead._id}/assign`, { advisorId: selectedId, notes });
       message.success('Advisor assigned successfully');
       onAssigned();
       onClose();
@@ -559,7 +559,7 @@ const LeadDetailDrawer = ({ lead, visible, onClose }) => {
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-const AllLeadsPage = () => {
+const PlatformLeads = () => {
   const [leads,      setLeads]      = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
@@ -578,7 +578,7 @@ const AllLeadsPage = () => {
       if (extraFilters.status) query.set('status', extraFilters.status);
       if (extraFilters.type)   query.set('type',   extraFilters.type);
 
-      const res            = await apiService.get(`/gridlead?${query.toString()}`);
+      const res = await apiService.get(`/gridlead/website-only?${query.toString()}`);
       const leadsData      = res?.data       || [];
       const paginationData = res?.pagination || {};
 
@@ -779,4 +779,4 @@ const AllLeadsPage = () => {
   );
 };
 
-export default AllLeadsPage;
+export default PlatformLeads;

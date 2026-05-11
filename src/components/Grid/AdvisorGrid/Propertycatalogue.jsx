@@ -5,7 +5,7 @@ import {
   FileText, ChevronLeft, ChevronRight, Home, Sparkles,
   TrendingUp, Grid3X3, Plus, LayoutGrid, Layers
 } from "lucide-react";
-import { apiService } from "../../manageApi/utils/custom.apiservice";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const getThumb = (photos, mainLogo) => {

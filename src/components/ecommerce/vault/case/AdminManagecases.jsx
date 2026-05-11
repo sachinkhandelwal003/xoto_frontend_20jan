@@ -44,7 +44,7 @@ const roleSlugMap = {
   '11': 'accountant', '12': 'supervisor', '15': "agency",
   '16': "agent", '17': "developer", '18': "vault-admin",
   '22': "vaultagent", '21': "vaultpartner", '24': "GridAdvisor",
-  '23': "vault-ops", '25': "gridReferralPartner", '26': "vault-advisor",
+  '23': "vault-ops", '25': "gridreferralpartner", '26': "vault-advisor",
 };
 
 const CASE_STATUSES = [

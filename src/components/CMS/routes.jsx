@@ -177,10 +177,14 @@ import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail"
 import GridCreateadvisor from "../Create Users/GridCreateadvisor";
 import AllAdvisors from "../Create Users/Alladvisors";
 import AdvisorDetail from "../Create Users/Advisordetail";
-import AllLeadsPage from "../GridAdmin.jsx/Allleadspage";
-import AdvisorLeadsPage from "../AdvisorGrid/Advisorleadspage";
-import PropertyCatalogue from "../AdvisorGrid/Propertycatalogue";
+import PlatformLeads from "../Grid/GridAdmin.jsx/PlatformLeads";
+import AdvisorLeadsPage from "../Grid/AdvisorGrid/Advisorleadspage";
+import PropertyCatalogue from "../Grid/AdvisorGrid/Propertycatalogue";
 import FavouriteProperty from "../Grid/Fav Property/FavouriteProperty";
+import AgentLeads from "../Grid/GridAdmin.jsx/AgentLeads";
+import GridAgentLead from "../Grid/GridAgent/GridAgentLead";
+import CreateAgentLead from "../Grid/GridAgent/CreateAgentLead";
+
 
 {/*Xoto Vault*/ }
 import VaultAdminDashboard from "../ecommerce/B2C/VaultAdminDashboard";
@@ -242,10 +246,12 @@ import ReferralPartnerDashboard from "./pages/ReferralPartnerDashboard"
 import TotalLeads from "../GridReferralPartner/GridDashboardpages/TotalLeads";
 import ActiveLeads from "../GridReferralPartner/GridDashboardpages/CreateReferralLead";
 import RecentLeads from "../GridReferralPartner/GridDashboardpages/RecentLeads";
+import ReferralPartnerProfile from "../GridReferralPartner/ReferralPartnerProfile";
 import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
 import QueueCases from "../ecommerce/vault/case/QueueCases";
 import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
-
+import AddAgent from "../Grid/grid agency/AgentCreate";
+import AllAgents from "../Grid/grid agency/AllAgents";
 import GridAdvisorDashboard from "./pages/GridAdvisorDashboard";
 import GridAdvisorProfile from "./pages/dashboardPages/Profiles/GridAdvisorProfile";
 import OpsAssignedReview from "../ecommerce/vault/case/OpsAssignedReview";
@@ -257,6 +263,7 @@ import DisbursedCases from "../ecommerce/vault/case/DisbursedCases";
 import DisbursedFullAmountCases from "../ecommerce/vault/case/DisbursedFullAmountCases";
 import AgentsLeadFullView from "../ecommerce/B2C/AgentsLeadFullView";
 import Adminfeedbacks from "../../components/footer/Adminfeedbacks";
+import Presentations from "../ecommerce/B2C/PresentationManager";
 import BankProductViewwithdocuments from "../homepage/BankProductViewwithdocuments";
 import BankProductDocuments from "../homepage/BankProductDocuments";
 
@@ -278,7 +285,7 @@ const roleSlugMap = {
   22: "vaultagent" ,
   26: "vault-advisor",
   23: "vault-ops",
-25:"gridReferralPartner",
+25:"gridreferralpartner",
   23: "vault-mortgage-ops",
 
 21:"vaultpartner",
@@ -465,19 +472,18 @@ const CmsRoutes = () => {
       {/* Leads */}
       <Route path="agent-leads" element={<AgentLeadDashboard />} />
       <Route path="agent-leads/add" element={<AgentLeadSuggestionCreate />} />
-      <Route path="lead-details/:id" element={<LeadDetails />} />
+      <Route path="lead-details/:id" element={<LeadDetails />} /> 
       <Route path="lead-details/brocure" element={<BrochureGenerator />} />
       <Route path="track-brochures" element={<TrackBrochure />} />
+      <Route path="GridAgent-lead" element={<GridAgentLead />} />
+      <Route path="CreateAgent-Lead" element={<CreateAgentLead />} />
 
       <Route path="agent-lead/:id" element={<Addleaddetails />} />
       {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
 
       {/* Projects */}
       <Route path="agent-projects" element={<AgentProjects />} />
-      <Route
-        path="projects/:id"
-        element={<AgentProjectDetails />}
-      />
+      <Route path="projects/:id"element={<AgentProjectDetails />}/>
 
       {/* Deals */}
       <Route path="deals" element={<AgentDeals />} />
@@ -599,10 +605,15 @@ const CmsRoutes = () => {
       <Route path="developer/property/:id" element={<PropertyDetailPage />} />
 
 
-      <Route path="/GridAdmin/propertyleads" element={<AllLeadsPage />} />
+      <Route path="/GridAdmin/propertyleads" element={<PlatformLeads />} />
+      <Route path="/grid/agentleads" element={<AgentLeads />} />
 
 
       {/* Agency */}
+      <Route path="add" element={<AddAgent />} />
+      <Route path="all-agents" element={<AllAgents />} />
+
+
       <Route path="manage-agents" element={<AgencyManageAgents />} />
       <Route path="manage-agents/:id" element={<AgencyAgentDetails />} />
       <Route path="performance" element={<AgencyPerformance />} />
@@ -620,6 +631,8 @@ const CmsRoutes = () => {
       <Route path="/agency-projects" element={<AgencyProjects />} />
       <Route path="/agency/deals" element={<AgencyDeals />} />
       <Route path="/agency-agent-properties" element={<AgencyAgentProperties />} />
+      <Route path="/presentations" element={<Presentations />} />
+
       {/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
       {/* Developer */}
       <Route path="developer-projects" element={<DeveloperProjects />} />
@@ -651,6 +664,8 @@ const CmsRoutes = () => {
 <Route path="/total-leads" element={<TotalLeads />} />
 <Route path="/Submit-leads" element={<ActiveLeads />} />
 <Route path="/recent-leads" element={<RecentLeads />} />
+<Route path="/profile" element={<ReferralPartnerProfile />} />
+
 
 <Route path="advisors/:id" element={<AdvisorDetail />} />   
 <Route path="advisors" element={<AllAdvisors />} />         

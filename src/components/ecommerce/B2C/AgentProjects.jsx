@@ -105,7 +105,7 @@ export default function AgentProjects() {
       const params = new URLSearchParams();
       params.append("page", pageNo);
       params.append("limit", 12);
-      params.append("propertyType", propertyType);
+      if (propertyType !== 'all') params.append("propertySubType", propertyType);
       
       if (approvalStatus !== "all") params.append("approvalStatus", approvalStatus);
      if (listingStatus !== "all") {
@@ -129,14 +129,14 @@ export default function AgentProjects() {
         params.append("bedroomType", selectedBedrooms[0]);
       }
 
-      const res = await apiService.get(`properties/agent/property/secondary?${params.toString()}`);
+      const res = await apiService.get(`/properties?${params.toString()}`);
       
-const list = res?.data?.data || res?.data || [];
+const list = Array.isArray(res?.data) ? res.data : [];
 setProperties(prev => append ? [...prev, ...list] : list);
 setFiltered(list);
-setTotalItems(res?.data?.totalItems || list.length);
-setHasMore(pageNo < (res?.data?.pagination?.totalPages || 1));
-setStats(res?.data?.stats || stats);
+setTotalItems(res?.pagination?.totalItems || list.length);
+setHasMore(pageNo < (res?.pagination?.totalPages || 1));
+if (res?.stats) setStats(res.stats);
     } catch (err) {
       console.error(err);
       message.error("Failed to load properties");
@@ -149,7 +149,7 @@ setStats(res?.data?.stats || stats);
 
   const fetchDevelopers = async () => {
     try {
-      const res = await apiService.get("/property/get-all-developers");
+      const res = await apiService.get("/developer/get-all-developers");
       const list = Array.isArray(res?.data) ? res.data : res?.data?.data || [];
       setDevelopers(list);
     } catch (err) {
@@ -585,7 +585,7 @@ setStats(res?.data?.stats || stats);
             <Col xs={24} sm={12} md={8} lg={6} key={p._id}>
               <Card 
                 hoverable 
-                onClick={() => navigate(`/dashboard/agent/agent-projects/${p._id}`)} 
+                onClick={() => navigate(`/dashboard/agent/projects/${p._id}`)} 
                 style={{ borderRadius: 12, overflow: "hidden", border: "1px solid #e8e8e8", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", height: "100%", display: "flex", flexDirection: "column" }} 
                 bodyStyle={{ padding: "20px 16px 16px", flex: 1 }}
               >

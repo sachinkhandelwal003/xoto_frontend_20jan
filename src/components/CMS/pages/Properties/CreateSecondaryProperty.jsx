@@ -76,9 +76,9 @@ const isEditMode = Boolean(id);
   const fetchExistingProperties = async (search = "") => {
     try {
       setExistingLoading(true);
-      const res = await apiService.get(
-        `/properties/agent/property/secondary?propertyType=off_plan&page=1&limit=50${search ? `&search=${search}` : ""}`
-      );
+     const res = await apiService.get(
+  `/properties?propertySubType=off_plan&approvalStatus=approved&listingStatus=active&page=1&limit=50${search ? `&search=${search}` : ""}`
+);
       const list = Array.isArray(res?.data?.data)
         ? res.data.data
         : Array.isArray(res?.data) ? res.data : [];
@@ -93,6 +93,7 @@ const isEditMode = Boolean(id);
 useEffect(() => {
   fetchDevelopers();
   if (isEditMode) fetchPropertyById();
+  
 }, []);
 
   useEffect(() => {
@@ -105,7 +106,7 @@ useEffect(() => {
 const fetchPropertyById = async () => {
   try {
     setFormLoading(true);
-    const res = await apiService.get(`/properties/agent/property/secondary/${id}`);
+const res = await apiService.get(`/properties/${id}`);
     const data = res?.data?.data || res?.data || res;
     if (!data) return;
 
@@ -135,6 +136,8 @@ const fetchPropertyById = async () => {
       description: data.description || "",
       parkingSpaces: data.parkingSpaces || 0,
       transactionType: data.transactionType || "sell",
+      approvalStatus: data.approvalStatus || "pending",
+adminComments:  data.adminComments  || "",
     });
 
     if (data.mainLogo) setMainLogoList([{ uid: '-logo', name: 'main-logo', status: 'done', url: data.mainLogo }]);
@@ -363,8 +366,8 @@ const fetchPropertyById = async () => {
       };
 
       const response = isEditMode
-  ? await apiService.put(`/properties/agent/property/secondary/${id}`, payload)
-  : await apiService.post('/properties/agent/property/create-secondary', payload);
+  ? await apiService.put(`/properties/${id}`, payload)
+  : await apiService.post('/properties', payload);
 
       if (response) {
        notification.success({
@@ -786,6 +789,26 @@ const fetchPropertyById = async () => {
               </Form.Item>
             </Col>
           </Row>
+
+          <>
+    {form.getFieldValue("approvalStatus") === "changes_requested" && (
+      <Alert
+        type="warning"
+        showIcon
+        message="Admin requested changes"
+        description={form.getFieldValue("adminComments") || "Please update and resubmit."}
+        style={{ marginBottom: 16 }}
+      />
+    )}
+    {form.getFieldValue("approvalStatus") === "approved" && (
+      <Alert
+        type="info"
+        showIcon
+        message="Editing this listing will send it back for admin approval"
+        style={{ marginBottom: 16 }}
+      />
+    )}
+  </>
 
           {/* ACTIONS */}
           <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-100">
