@@ -10,7 +10,9 @@ import {
   ShareAltOutlined, ExportOutlined, MessageOutlined,
   AppstoreOutlined, ArrowLeftOutlined, EditOutlined, RobotOutlined, MoneyCollectOutlined,
   EyeOutlined, DownloadOutlined, RightOutlined, HomeOutlined, BuildOutlined,
-  CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, UnorderedListOutlined, PieChartOutlined
+  CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, UnorderedListOutlined, PieChartOutlined,
+    ThunderboltOutlined,FileTextOutlined,
+
 } from "@ant-design/icons";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import html2canvas from 'html2canvas';
@@ -211,7 +213,7 @@ export default function AgentProjectDetails() {
   const fetchPropertyDetails = async () => {
     try {
       setLoading(true);
-      let res = await apiService.get(`/properties/agent/property/secondary/${id}`);
+      let res = await apiService.get(`/properties/${id}`);
       let responseData = res?.data || res;
     
       if (responseData) {
@@ -238,7 +240,9 @@ export default function AgentProjectDetails() {
   const fetchInventoryUnits = async (propertyId) => {
     try {
       setInventoryLoading(true);
-      const res = await apiService.get(`properties/inventory/${propertyId}?status=available`);
+const res = await apiService.get(
+  `/properties/inventory?propertyId=${propertyId}&status=available`
+);
       const responseData = res?.data || res;
       
       if (responseData) {
@@ -364,6 +368,38 @@ export default function AgentProjectDetails() {
       setIsGenerating(false);
     }
   };
+
+  const handleGenerateAIPresentation = () => {
+  // Build prefill payload from current property
+  const prefill = {
+    propertyId: property._id || id,
+    propertyName: property.propertyName,
+    title: `${property.propertyName} — Presentation`,
+    language: pdfPreferences.language === "EN" ? "English"
+            : pdfPreferences.language === "AR" ? "Arabic"
+            : pdfPreferences.language === "RU" ? "Russian"
+            : pdfPreferences.language === "ZH" ? "Chinese"
+            : pdfPreferences.language === "FR" ? "French"
+            : "English",
+    currency: pdfPreferences.currency || property.currency || "AED",
+    areaUnit: pdfPreferences.measureUnit === "m2" ? "sqm" : "sqft",
+    customNote: customDescription || property.description || "",
+    tone: "professional",
+    // Section toggles derived from pdfPreferences.slides
+    sections: {
+      cover:    pdfPreferences.slides.includes("Cover slide"),
+      desc:     pdfPreferences.slides.includes("Project description"),
+      dev:      pdfPreferences.slides.includes("Developer"),
+      prices:   pdfPreferences.slides.includes("Unit prices"),
+      payment:  pdfPreferences.slides.includes("Payment plans"),
+      location: pdfPreferences.slides.includes("Location"),
+    },
+  };
+
+  // Navigate to AgentPresentations with prefill in router state
+  navigate("/dashboard/agent/presentations", { state: { prefill, autoOpenWizard: true } });
+};
+
 
   // Filter units based on active tab
   const getFilteredUnits = () => {
@@ -813,26 +849,92 @@ export default function AgentProjectDetails() {
             <div style={{ background: "#fffbe6", border: "1px solid #ffe58f", padding: "8px", borderRadius: "8px 8px 0 0", textAlign: "center" }}>
               <Text strong style={{ fontSize: 13 }}>🔑 Your customised personal offer. Try it!</Text>
             </div>
-            <div style={{ display: "flex", width: "100%", marginBottom: 12 }}>
-              <Button
-                type="primary"
-                onClick={() => setIsOfferModalOpen(true)}
-                style={{ flex: 1, height: 48, borderRadius: "0 0 0 8px", background: "#5b45ff", fontWeight: 600, fontSize: 16, border: "none" }}
-              >
-                Generate Sales Offer
-              </Button>
-              <Button
-                style={{ width: 48, height: 48, borderRadius: "0 0 8px 0", background: "#4f39f6", color: "#fff", border: "none" }}
-                icon={<ShareAltOutlined />}
-              />
-            </div>
-            <Button
-              block
-              style={{ height: 48, borderRadius: 8, background: "#1f1f1f", color: "#fff", fontWeight: 600, fontSize: 16, border: "none", marginBottom: 24 }}
-              icon={<ExportOutlined />}
-            >
-              Transfer client
-            </Button>
+           <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 12,
+    width: "100%",
+    marginTop: 12,
+    marginBottom: 14,
+  }}
+>
+  {/* Generate Sales Offer */}
+  <Button
+    type="primary"
+    icon={<FileTextOutlined />}
+    onClick={() => setIsOfferModalOpen(true)}
+    style={{
+      height: 52,
+      width: "100%",
+      borderRadius: 10,
+      background: "#5B45FF",
+      border: "none",
+      fontWeight: 600,
+      fontSize: 14,
+      padding: "0 14px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      boxShadow: "0 4px 12px rgba(91,69,255,0.18)",
+      whiteSpace: "normal",
+      textAlign: "center",
+      lineHeight: "1.2",
+    }}
+  >
+    Generate Sales Offer
+  </Button>
+
+  {/* Generate AI Presentation */}
+  <Button
+    type="primary"
+    icon={<ThunderboltOutlined />}
+    onClick={handleGenerateAIPresentation}
+    style={{
+      height: 52,
+      width: "100%",
+      borderRadius: 10,
+      background: "linear-gradient(90deg, #5C039B 0%, #A855F7 100%)",
+      border: "none",
+      fontWeight: 600,
+      fontSize: 14,
+      padding: "0 14px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      boxShadow: "0 4px 12px rgba(92,3,155,0.18)",
+      whiteSpace: "normal",
+      textAlign: "center",
+      lineHeight: "1.2",
+    }}
+  >
+    Generate AI Presentation
+  </Button>
+</div>
+
+{/* Transfer Client Button */}
+<Button
+  icon={<ShareAltOutlined />}
+  style={{
+    width: "100%",
+    height: 52,
+    borderRadius: 10,
+    background: "#111827",
+    color: "#fff",
+    border: "none",
+    fontWeight: 600,
+    fontSize: 15,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+    marginBottom: 16,
+  }}
+>
+  Transfer Client
+</Button> 
+
+            
 
             <Card style={{ borderRadius: 12, border: "1px solid #e5e7eb" }} bodyStyle={{ padding: "16px 20px" }}>
               <div style={{ textAlign: "center", marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #f3f4f6" }}>
