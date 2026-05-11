@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiService } from "../../manageApi/utils/custom.apiservice";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import {
   Modal, Button, Tag, Tooltip, Avatar,
   Drawer, Descriptions, Select, Input,
-  message, Spin
+  message
 } from 'antd';
 import {
   EyeOutlined, ReloadOutlined, EnvironmentOutlined,
   ClockCircleOutlined, EditOutlined, CheckCircleOutlined,
   PhoneOutlined, MailOutlined, UserOutlined, FireOutlined
 } from '@ant-design/icons';
-import CustomTable from '../../components/CMS/pages/custom/CustomTable';
+import CustomTable from '../../CMS/pages/custom/CustomTable';
 
 const { Option } = Select;
 
@@ -31,15 +31,102 @@ const TYPE_COLORS = {
 };
 
 const STATUS_CONFIG = {
-  submit:    { color: 'blue',   label: 'New',       bg: '#dbeafe', text: '#1e40af' },
-  contacted: { color: 'orange', label: 'Contacted', bg: '#fef3c7', text: '#92400e' },
-  converted: { color: 'green',  label: 'Converted', bg: '#dcfce7', text: '#166534' },
-  dead:      { color: 'red',    label: 'Dead',      bg: '#fee2e2', text: '#991b1b' },
+  new: {
+    color: 'blue',
+    label: 'New',
+    description: 'Lead just assigned - no contact yet',
+    bg: '#dbeafe',
+    text: '#1e40af',
+  },
+  submit: {
+    color: 'blue',
+    label: 'New',
+    description: 'Lead just assigned - no contact yet',
+    bg: '#dbeafe',
+    text: '#1e40af',
+  },
+  contacted: {
+    color: 'orange',
+    label: 'Contacted',
+    description: 'Advisor has initiated contact',
+    bg: '#fef3c7',
+    text: '#92400e',
+  },
+  in_discussion: {
+    color: 'gold',
+    label: 'In Discussion',
+    description: 'Active ongoing conversation with the customer',
+    bg: '#fef9c3',
+    text: '#854d0e',
+  },
+  site_visit_scheduled: {
+    color: 'purple',
+    label: 'Site Visit Scheduled',
+    description: 'Property viewing or meeting has been arranged',
+    bg: '#f3e8ff',
+    text: '#6b21a8',
+  },
+  offer_made: {
+    color: 'cyan',
+    label: 'Offer Made',
+    description: 'Advisor has submitted an offer on behalf of the customer',
+    bg: '#cffafe',
+    text: '#0e7490',
+  },
+  reserved: {
+    color: 'geekblue',
+    label: 'Reserved',
+    description: 'Unit reserved / booking form signed',
+    bg: '#e0e7ff',
+    text: '#3730a3',
+  },
+  spa_signed: {
+    color: 'green',
+    label: 'SPA Signed',
+    description: 'Sales and Purchase Agreement signed',
+    bg: '#dcfce7',
+    text: '#166534',
+  },
+  completed: {
+    color: 'green',
+    label: 'Completed',
+    description: 'Transaction completed; commission to be processed',
+    bg: '#bbf7d0',
+    text: '#14532d',
+  },
+  not_proceeding: {
+    color: 'red',
+    label: 'Not Proceeding',
+    description: 'Lead has been marked as lost or unresponsive',
+    bg: '#fee2e2',
+    text: '#991b1b',
+  },
 };
+
+const STATUS_FLOW = [
+  'new',
+  'contacted',
+  'in_discussion',
+  'site_visit_scheduled',
+  'offer_made',
+  'reserved',
+  'spa_signed',
+  'completed',
+];
+
+const STATUS_FILTER_OPTIONS = [
+  ...STATUS_FLOW,
+  'not_proceeding',
+].map((key) => ({ value: key, label: STATUS_CONFIG[key].label }));
+
+const STATUS_UPDATE_OPTIONS = [
+  ...STATUS_FLOW,
+  'not_proceeding',
+];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const TypeTag = ({ type }) => {
-  const t = TYPE_COLORS[type] || { bg: '#f3f4f6', color: '#374151', label: type };
+  const t = TYPE_COLORS[type] || { bg: '#f3f4f6', color: '#374151', label: type || '—' };
   return (
     <span style={{
       background: t.bg, color: t.color,
@@ -52,19 +139,51 @@ const TypeTag = ({ type }) => {
 };
 
 const StatusBadge = ({ status }) => {
-  const s = STATUS_CONFIG[status] || { color: 'default', label: status };
+  const s = STATUS_CONFIG[status] || { color: 'default', label: status || '—' };
   return <Tag color={s.color} style={{ borderRadius: 20, fontSize: 11 }}>{s.label}</Tag>;
+};
+
+const normalizeStatus = (status) => (status === 'submit' ? 'new' : status);
+
+const getAllowedStatusOptions = (status) => {
+  const current = normalizeStatus(status) || 'new';
+  return STATUS_UPDATE_OPTIONS.includes(current)
+    ? STATUS_UPDATE_OPTIONS
+    : ['new', ...STATUS_UPDATE_OPTIONS.filter((key) => key !== 'new')];
+};
+
+const formatBudget = (lead) => {
+  const min = lead?.requirements?.budget_min;
+  const max = lead?.requirements?.budget_max;
+  if (!min && !max) return '—';
+  const fmt = (n) => Number(n || 0).toLocaleString('en-IN');
+  if (min && max) return `AED ${fmt(min)} - AED ${fmt(max)}`;
+  if (min) return `From AED ${fmt(min)}`;
+  return `Up to AED ${fmt(max)}`;
+};
+
+const getLocation = (lead) =>
+  lead?.source?.listing_id?.area ||
+  lead?.requirements?.location_preferences?.[0]?.area ||
+  lead?.preferred_city ||
+  lead?.area ||
+  '—';
+
+const getAssignmentNote = (lead) => {
+  const notes = lead?.notes || [];
+  if (!notes.length) return '—';
+  return notes[notes.length - 1]?.text || '—';
 };
 
 // ─── Update Status Modal ──────────────────────────────────────────────────────
 const UpdateStatusModal = ({ lead, visible, onClose, onUpdated }) => {
-  const [status,   setStatus]   = useState('');
-  const [notes,    setNotes]    = useState('');
-  const [loading,  setLoading]  = useState(false);
+  const [status, setStatus] = useState('');
+  const [notes, setNotes] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (visible && lead) {
-      setStatus(lead.status || 'submit');
+      setStatus(normalizeStatus(lead.status) || 'new');
       setNotes('');
     }
   }, [visible, lead]);
@@ -73,7 +192,8 @@ const UpdateStatusModal = ({ lead, visible, onClose, onUpdated }) => {
     if (!status) return message.warning('Please select a status');
     setLoading(true);
     try {
-      await apiService.patch(`/property/lead/${lead._id}/status`, { status, notes });
+      // If your backend route differs, update this one line only.
+      await apiService.put(`/gridlead/${lead._id}/status`, { status, notes });
       message.success('Lead status updated');
       onUpdated();
       onClose();
@@ -100,7 +220,7 @@ const UpdateStatusModal = ({ lead, visible, onClose, onUpdated }) => {
           <div>
             <div style={{ fontSize: 15, fontWeight: 600 }}>Update Lead Status</div>
             <div style={{ fontSize: 12, color: '#6b7280', fontWeight: 400 }}>
-              {lead?.name?.first_name} {lead?.name?.last_name}
+              {lead?.contact_info?.name?.first_name} {lead?.contact_info?.name?.last_name}
             </div>
           </div>
         </div>
@@ -109,7 +229,6 @@ const UpdateStatusModal = ({ lead, visible, onClose, onUpdated }) => {
       width={460}
     >
       <div style={{ padding: '8px 0' }}>
-        {/* Current Status */}
         <div style={{
           background: '#faf5ff', border: '1px solid #ede9fe',
           borderRadius: 10, padding: '10px 14px', marginBottom: 16,
@@ -119,7 +238,6 @@ const UpdateStatusModal = ({ lead, visible, onClose, onUpdated }) => {
           <StatusBadge status={lead?.status} />
         </div>
 
-        {/* New Status */}
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
             New Status
@@ -130,21 +248,31 @@ const UpdateStatusModal = ({ lead, visible, onClose, onUpdated }) => {
             style={{ width: '100%' }}
             size="large"
           >
-            {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+            {getAllowedStatusOptions(lead?.status).map((k) => {
+              const v = STATUS_CONFIG[k];
+              return (
               <Option key={k} value={k}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{
                     width: 8, height: 8, borderRadius: '50%',
                     background: v.text, display: 'inline-block'
                   }} />
-                  {v.label}
+                  <div>
+                    <div style={{ lineHeight: 1.2 }}>{v.label}</div>
+                    <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.2 }}>
+                      {v.description}
+                    </div>
+                  </div>
                 </div>
               </Option>
-            ))}
+              );
+            })}
           </Select>
+          <div style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
+            {STATUS_CONFIG[status]?.description}
+          </div>
         </div>
 
-        {/* Notes */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
             Note <span style={{ fontWeight: 400, color: '#9ca3af' }}>(optional)</span>
@@ -177,6 +305,14 @@ const UpdateStatusModal = ({ lead, visible, onClose, onUpdated }) => {
 // ─── Lead Detail Drawer ───────────────────────────────────────────────────────
 const LeadDetailDrawer = ({ lead, visible, onClose }) => {
   if (!lead) return null;
+
+  const firstName = lead?.contact_info?.name?.first_name || '';
+  const lastName = lead?.contact_info?.name?.last_name || '';
+  const phoneCode = lead?.contact_info?.mobile?.country_code || '';
+  const phone = lead?.contact_info?.mobile?.number || '';
+  const email = lead?.contact_info?.email?.address || '';
+  const location = getLocation(lead);
+
   return (
     <Drawer
       title={
@@ -189,7 +325,6 @@ const LeadDetailDrawer = ({ lead, visible, onClose }) => {
       onClose={onClose}
       width={500}
     >
-      {/* Client Info */}
       <div style={{
         background: '#faf5ff', border: '1px solid #ede9fe',
         borderRadius: 12, padding: 16, marginBottom: 16
@@ -199,56 +334,53 @@ const LeadDetailDrawer = ({ lead, visible, onClose }) => {
             size={44}
             style={{ background: PRIMARY, fontWeight: 700, fontSize: 16, flexShrink: 0 }}
           >
-            {`${lead.name?.first_name?.[0] || ''}${lead.name?.last_name?.[0] || ''}`.toUpperCase()}
+            {`${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase()}
           </Avatar>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>
-              {lead.name?.first_name} {lead.name?.last_name}
+              {firstName} {lastName}
             </div>
-            <TypeTag type={lead.type} />
+            <TypeTag type={lead?.enquiry_type} />
           </div>
         </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 8 }}>
             <PhoneOutlined style={{ color: PRIMARY }} />
-            {lead.mobile?.country_code} {lead.mobile?.number}
+            {phoneCode} {phone}
           </div>
-          {lead.email && (
+
+          {!!email && (
             <div style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 8 }}>
               <MailOutlined style={{ color: PRIMARY }} />
-              {lead.email}
+              {email}
             </div>
           )}
-          {(lead.area || lead.preferred_city) && (
-            <div style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <EnvironmentOutlined style={{ color: PRIMARY }} />
-              {lead.area || lead.preferred_city}
-            </div>
-          )}
+
+          <div style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <EnvironmentOutlined style={{ color: PRIMARY }} />
+            {location}
+          </div>
         </div>
       </div>
 
       <Descriptions column={1} bordered size="small" labelStyle={{ fontWeight: 600, fontSize: 12 }}>
-        <Descriptions.Item label="Status"><StatusBadge status={lead.status} /></Descriptions.Item>
-        <Descriptions.Item label="Budget">{lead.budget || '—'}</Descriptions.Item>
-        <Descriptions.Item label="Bedrooms">{lead.desired_bedrooms || '—'}</Descriptions.Item>
-        <Descriptions.Item label="Preferred Contact">{lead.preferred_contact || '—'}</Descriptions.Item>
+        <Descriptions.Item label="Status"><StatusBadge status={lead?.status} /></Descriptions.Item>
+        <Descriptions.Item label="Budget">{formatBudget(lead)}</Descriptions.Item>
+        <Descriptions.Item label="Bedrooms">{lead?.requirements?.bedrooms ?? '—'}</Descriptions.Item>
+        <Descriptions.Item label="Preferred Contact">{lead?.contact_info?.preferred_contact || '—'}</Descriptions.Item>
         <Descriptions.Item label="Assigned At">
-          {lead.assignedAt ? new Date(lead.assignedAt).toLocaleString() : '—'}
+          {lead?.assigned_at ? new Date(lead.assigned_at).toLocaleString() : '—'}
         </Descriptions.Item>
         <Descriptions.Item label="Assignment Notes">
-          {lead.assignmentNotes || '—'}
+          {getAssignmentNote(lead)}
         </Descriptions.Item>
         <Descriptions.Item label="Created">
-          {new Date(lead.createdAt).toLocaleString()}
+          {lead?.createdAt ? new Date(lead.createdAt).toLocaleString() : '—'}
         </Descriptions.Item>
-        {lead.message && (
-          <Descriptions.Item label="Message">{lead.message}</Descriptions.Item>
-        )}
       </Descriptions>
 
-      {/* Property (for rent leads) */}
-      {lead.property && (
+      {lead?.source?.listing_id && (
         <div style={{
           background: '#f0fdf4', border: '1px solid #bbf7d0',
           borderRadius: 10, padding: '12px 14px', marginTop: 16
@@ -257,17 +389,16 @@ const LeadDetailDrawer = ({ lead, visible, onClose }) => {
             Property
           </div>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
-            {lead.property?.title}
+            {lead?.source?.listing_id?.propertyName || '—'}
           </div>
           <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
-            {lead.property?.location?.area}, {lead.property?.emirate}
-            {lead.property?.price && ` · AED ${lead.property.price.toLocaleString()}`}
+            {lead?.source?.listing_id?.area || '—'}, {lead?.source?.listing_id?.city || '—'}
+            {lead?.source?.listing_id?.price ? ` · AED ${Number(lead.source.listing_id.price).toLocaleString('en-IN')}` : ''}
           </div>
         </div>
       )}
 
-      {/* Notes History */}
-      {lead.notes?.length > 0 && (
+      {lead?.notes?.length > 0 && (
         <div style={{ marginTop: 16 }}>
           <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10, color: '#374151' }}>
             Notes History
@@ -280,7 +411,7 @@ const LeadDetailDrawer = ({ lead, visible, onClose }) => {
               <div style={{ fontSize: 12, color: '#374151' }}>{n.text}</div>
               <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                 <ClockCircleOutlined />
-                {new Date(n.createdAt).toLocaleString()}
+                {n?.created_at || n?.createdAt ? new Date(n.created_at || n.createdAt).toLocaleString() : '—'}
                 {n.author && ` · ${n.author}`}
               </div>
             </div>
@@ -293,35 +424,40 @@ const LeadDetailDrawer = ({ lead, visible, onClose }) => {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const AdvisorLeadsPage = () => {
-  const [leads,       setLeads]       = useState([]);
-  const [loading,     setLoading]     = useState(false);
-  const [pagination,  setPagination]  = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
-  const [filters,     setFilters]     = useState({});
-  const [viewLead,    setViewLead]    = useState(null);
-  const [updateLead,  setUpdateLead]  = useState(null);
-  const [stats,       setStats]       = useState({ total: 0, new: 0, contacted: 0, converted: 0 });
+  const [leads, setLeads] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
+  const [filters, setFilters] = useState({});
+  const [viewLead, setViewLead] = useState(null);
+  const [updateLead, setUpdateLead] = useState(null);
+  const [stats, setStats] = useState({ total: 0, new: 0, inProgress: 0, completed: 0, notProceeding: 0 });
 
   const fetchLeads = useCallback(async (page = 1, limit = 10, extraFilters = {}) => {
     setLoading(true);
     try {
       const query = new URLSearchParams();
-      query.set('page',  page);
+      query.set('page', page);
       query.set('limit', limit);
       if (extraFilters.search) query.set('search', extraFilters.search);
       if (extraFilters.status) query.set('status', extraFilters.status);
-      if (extraFilters.type)   query.set('type',   extraFilters.type);
+      if (extraFilters.type) query.set('type', extraFilters.type);
 
-      const res       = await apiService.get(`/property/lead/my-leads?${query.toString()}`);
-      const leadsData = res?.data       || [];
-      const pagData   = res?.pagination || {};
+      const res = await apiService.get(`/gridlead/my-leads?${query.toString()}`);
+      const payload = res?.data?.success !== undefined ? res.data : res;
+      const leadsData = payload?.data || [];
+      const pagData = payload?.pagination || { page, limit, total: leadsData.length, totalPages: 1 };
 
       setLeads(leadsData);
       setPagination(pagData);
       setStats({
-        total:     pagData?.total              || leadsData.length,
-        new:       leadsData.filter(l => l.status === 'submit').length,
+        total: pagData?.total || leadsData.length,
+        new: leadsData.filter(l => ['submit', 'new'].includes(l.status)).length,
         contacted: leadsData.filter(l => l.status === 'contacted').length,
-        converted: leadsData.filter(l => l.status === 'converted').length,
+        inProgress: leadsData.filter(l =>
+          ['contacted', 'in_discussion', 'site_visit_scheduled', 'offer_made', 'reserved', 'spa_signed'].includes(l.status)
+        ).length,
+        completed: leadsData.filter(l => l.status === 'completed').length,
+        notProceeding: leadsData.filter(l => l.status === 'not_proceeding').length,
       });
     } catch {
       message.error('Failed to fetch leads');
@@ -330,7 +466,7 @@ const AdvisorLeadsPage = () => {
     }
   }, []);
 
-  useEffect(() => { fetchLeads(); }, []);
+  useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
   const handlePageChange = (page, limit) => {
     fetchLeads(page, limit, filters);
@@ -343,30 +479,35 @@ const AdvisorLeadsPage = () => {
     fetchLeads(1, pagination.limit, merged);
   };
 
-  // ── Columns ──────────────────────────────────────────────────────────────────
   const columns = [
     {
       title: 'Client',
       key: 'full_name',
       sortable: true,
-      render: (val, row) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Avatar
-            size={34}
-            style={{ background: PRIMARY, fontWeight: 700, fontSize: 12, flexShrink: 0 }}
-          >
-            {`${row.name?.first_name?.[0] || ''}${row.name?.last_name?.[0] || ''}`.toUpperCase()}
-          </Avatar>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 13, color: '#111827' }}>
-              {row.name?.first_name} {row.name?.last_name}
-            </div>
-            <div style={{ fontSize: 11, color: '#6b7280' }}>
-              {row.mobile?.country_code} {row.mobile?.number}
+      render: (_, row) => {
+        const firstName = row?.contact_info?.name?.first_name || '';
+        const lastName = row?.contact_info?.name?.last_name || '';
+        const phoneCode = row?.contact_info?.mobile?.country_code || '';
+        const phone = row?.contact_info?.mobile?.number || '';
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Avatar
+              size={34}
+              style={{ background: PRIMARY, fontWeight: 700, fontSize: 12, flexShrink: 0 }}
+            >
+              {`${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase()}
+            </Avatar>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 13, color: '#111827' }}>
+                {firstName} {lastName}
+              </div>
+              <div style={{ fontSize: 11, color: '#6b7280' }}>
+                {phoneCode} {phone}
+              </div>
             </div>
           </div>
-        </div>
-      )
+        );
+      }
     },
     {
       title: 'Type',
@@ -374,36 +515,36 @@ const AdvisorLeadsPage = () => {
       filterable: true,
       filterKey: 'type',
       filterOptions: Object.entries(TYPE_COLORS).map(([k, v]) => ({ value: k, label: v.label })),
-      render: (val) => <TypeTag type={val} />
+      render: (_, row) => <TypeTag type={row?.enquiry_type} />
     },
     {
       title: 'Status',
       key: 'status',
       filterable: true,
       filterKey: 'status',
-      filterOptions: Object.entries(STATUS_CONFIG).map(([k, v]) => ({ value: k, label: v.label })),
+      filterOptions: STATUS_FILTER_OPTIONS,
       render: (val) => <StatusBadge status={val} />
     },
     {
       title: 'Location',
       key: 'area',
-      render: (val, row) => (
+      render: (_, row) => (
         <span style={{ fontSize: 12, color: '#6b7280' }}>
           <EnvironmentOutlined style={{ marginRight: 4, color: PRIMARY }} />
-          {row.area || row.preferred_city || '—'}
+          {getLocation(row)}
         </span>
       )
     },
     {
       title: 'Budget',
       key: 'budget',
-      render: (val) => (
-        <span style={{ fontSize: 12, color: '#374151' }}>{val || '—'}</span>
+      render: (_, row) => (
+        <span style={{ fontSize: 12, color: '#374151' }}>{formatBudget(row)}</span>
       )
     },
     {
       title: 'Assigned At',
-      key: 'assignedAt',
+      key: 'assigned_at',
       sortable: true,
       render: (val) => (
         <span style={{ fontSize: 12, color: '#6b7280' }}>
@@ -416,7 +557,7 @@ const AdvisorLeadsPage = () => {
     {
       title: 'Actions',
       key: '_id',
-      render: (val, row) => (
+      render: (_, row) => (
         <div style={{ display: 'flex', gap: 6 }}>
           <Tooltip title="View Details">
             <Button
@@ -444,18 +585,16 @@ const AdvisorLeadsPage = () => {
     },
   ];
 
-  // ── Stat Cards ────────────────────────────────────────────────────────────
   const statCards = [
-    { label: 'Total Assigned', value: stats.total,     bg: '#faf5ff', color: PRIMARY,   icon: <UserOutlined /> },
-    { label: 'New',            value: stats.new,       bg: '#dbeafe', color: '#1e40af', icon: <FireOutlined /> },
-    { label: 'Contacted',      value: stats.contacted, bg: '#fef3c7', color: '#92400e', icon: <PhoneOutlined /> },
-    { label: 'Converted',      value: stats.converted, bg: '#dcfce7', color: '#166534', icon: <CheckCircleOutlined /> },
+    { label: 'Total Assigned', value: stats.total, bg: '#faf5ff', color: PRIMARY, icon: <UserOutlined /> },
+    { label: 'New', value: stats.new, bg: '#dbeafe', color: '#1e40af', icon: <FireOutlined /> },
+    { label: 'In Progress', value: stats.inProgress, bg: '#fef3c7', color: '#92400e', icon: <PhoneOutlined /> },
+    { label: 'Completed', value: stats.completed, bg: '#dcfce7', color: '#166534', icon: <CheckCircleOutlined /> },
+    { label: 'Not Proceeding', value: stats.notProceeding, bg: '#fee2e2', color: '#991b1b', icon: <ClockCircleOutlined /> },
   ];
 
   return (
     <div style={{ padding: '28px 32px', background: '#faf5ff', minHeight: '100vh' }}>
-
-      {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
@@ -483,7 +622,6 @@ const AdvisorLeadsPage = () => {
         </Button>
       </div>
 
-      {/* ── Stat Cards ── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
@@ -512,7 +650,6 @@ const AdvisorLeadsPage = () => {
         ))}
       </div>
 
-      {/* ── Table ── */}
       <CustomTable
         columns={columns}
         data={leads}
@@ -525,7 +662,6 @@ const AdvisorLeadsPage = () => {
         showSearch
       />
 
-      {/* ── Update Status Modal ── */}
       <UpdateStatusModal
         lead={updateLead}
         visible={!!updateLead}
@@ -533,7 +669,6 @@ const AdvisorLeadsPage = () => {
         onUpdated={() => fetchLeads(pagination.page, pagination.limit, filters)}
       />
 
-      {/* ── Detail Drawer ── */}
       <LeadDetailDrawer
         lead={viewLead}
         visible={!!viewLead}

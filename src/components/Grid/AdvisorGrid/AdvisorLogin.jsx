@@ -14,13 +14,13 @@ import {
 } from "antd";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
-import { AuthContext } from "../../manageApi/context/AuthContext.jsx";
+import { AuthContext } from "../../../manageApi/context/AuthContext.jsx";
 import { toast } from "react-toastify";
 import styled, { keyframes } from "styled-components";
 
 // Assets
-import loginimage from "../../assets/img/one.png";
-import logoNew from "../../assets/img/logooo.png";
+import loginimage from "../../../assets/img/one.png";
+import logoNew from "../../../assets/img/logooo.png";
 
 import {
   ArrowLeftOutlined,

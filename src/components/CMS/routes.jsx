@@ -177,10 +177,14 @@ import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail"
 import GridCreateadvisor from "../Create Users/GridCreateadvisor";
 import AllAdvisors from "../Create Users/Alladvisors";
 import AdvisorDetail from "../Create Users/Advisordetail";
-import AllLeadsPage from "../GridAdmin.jsx/Allleadspage";
-import AdvisorLeadsPage from "../AdvisorGrid/Advisorleadspage";
-import PropertyCatalogue from "../AdvisorGrid/Propertycatalogue";
+import PlatformLeads from "../Grid/GridAdmin.jsx/PlatformLeads";
+import AdvisorLeadsPage from "../Grid/AdvisorGrid/Advisorleadspage";
+import PropertyCatalogue from "../Grid/AdvisorGrid/Propertycatalogue";
 import FavouriteProperty from "../Grid/Fav Property/FavouriteProperty";
+import AgentLeads from "../Grid/GridAdmin.jsx/AgentLeads";
+import GridAgentLead from "../Grid/GridAgent/GridAgentLead";
+import CreateAgentLead from "../Grid/GridAgent/CreateAgentLead";
+
 
 {/*Xoto Vault*/ }
 import VaultAdminDashboard from "../ecommerce/B2C/VaultAdminDashboard";
@@ -245,8 +249,8 @@ import RecentLeads from "../GridReferralPartner/GridDashboardpages/RecentLeads";
 import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
 import QueueCases from "../ecommerce/vault/case/QueueCases";
 import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
-import AddAgent from "../grid agency/AgentCreate";
-import AllAgents from "../grid agency/AllAgents";
+import AddAgent from "../Grid/grid agency/AgentCreate";
+import AllAgents from "../Grid/grid agency/AllAgents";
 import GridAdvisorDashboard from "./pages/GridAdvisorDashboard";
 import GridAdvisorProfile from "./pages/dashboardPages/Profiles/GridAdvisorProfile";
 import OpsAssignedReview from "../ecommerce/vault/case/OpsAssignedReview";
@@ -464,9 +468,11 @@ const CmsRoutes = () => {
       {/* Leads */}
       <Route path="agent-leads" element={<AgentLeadDashboard />} />
       <Route path="agent-leads/add" element={<AgentLeadSuggestionCreate />} />
-      <Route path="lead-details/:id" element={<LeadDetails />} />
+      <Route path="lead-details/:id" element={<LeadDetails />} /> 
       <Route path="lead-details/brocure" element={<BrochureGenerator />} />
       <Route path="track-brochures" element={<TrackBrochure />} />
+      <Route path="GridAgent-lead" element={<GridAgentLead />} />
+      <Route path="CreateAgent-Lead" element={<CreateAgentLead />} />
 
       <Route path="agent-lead/:id" element={<Addleaddetails />} />
       {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
@@ -598,7 +604,8 @@ const CmsRoutes = () => {
       <Route path="developer/property/:id" element={<PropertyDetailPage />} />
 
 
-      <Route path="/GridAdmin/propertyleads" element={<AllLeadsPage />} />
+      <Route path="/GridAdmin/propertyleads" element={<PlatformLeads />} />
+      <Route path="/grid/agentleads" element={<AgentLeads />} />
 
 
       {/* Agency */}

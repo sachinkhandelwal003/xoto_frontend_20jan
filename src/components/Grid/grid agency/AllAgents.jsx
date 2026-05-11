@@ -12,8 +12,8 @@ import {
 } from "@ant-design/icons";
 import { FiEye, FiSearch, FiRefreshCw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import CustomTable from "../CMS/pages/custom/CustomTable"
-import { apiService } from "../../manageApi/utils/custom.apiservice";
+import CustomTable from "../../CMS/pages/custom/CustomTable"
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 const { Title, Text } = Typography;
 

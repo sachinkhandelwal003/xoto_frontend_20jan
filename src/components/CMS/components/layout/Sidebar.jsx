@@ -109,9 +109,9 @@ const CUSTOM_ROLE_LINKS = {
     path: "/dashboard/{roleSlug}/lead-management",
     icon: "fas fa-filter",
     submenus: [
-      { title: "All Leads",       path: "/dashboard/{roleSlug}/lead-management" },
+      { title: "All Leads",       path: "/dashboard/{roleSlug}/grid/agentleads" },
       { title: "Platform Leads",  path: "/dashboard/{roleSlug}/GridAdmin/propertyleads" },
-      { title: "Agent Leads",     path: "/dashboard/{roleSlug}/leads/agent" },
+      { title: "Agent Leads",     path: "/dashboard/{roleSlug}/grid/agentleads" },
       { title: "General Leads",   path: "/dashboard/{roleSlug}/leads/general" },
     ]
   },
@@ -309,10 +309,9 @@ const CUSTOM_ROLE_LINKS = {
       ],
     },
     {
-      title: "Leads", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/agent-leads",
+      title: "Leads", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/GridAgent-lead",
       submenus: [
-        { title: "Create Leads", path: "/dashboard/{roleSlug}/agent-leads/add" },
-        { title: "Leads", path: "/dashboard/{roleSlug}/agent-leads" },
+        { title: "Leads", path: "/dashboard/{roleSlug}/GridAgent-lead" },
 
 
       ],
