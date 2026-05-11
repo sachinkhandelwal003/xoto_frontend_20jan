@@ -240,9 +240,9 @@ export default function AgentProjectDetails() {
   const fetchInventoryUnits = async (propertyId) => {
     try {
       setInventoryLoading(true);
-const res = await apiService.get(
-  `/properties/inventory?propertyId=${propertyId}&status=available`
-);
+// const res = await apiService.get(
+//   `/properties/inventory?propertyId=${propertyId}&status=available`
+// );
       const responseData = res?.data || res;
       
       if (responseData) {
