@@ -1,127 +1,241 @@
 // src/components/CMS/pages/VaultPartnerDashboard.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
   Card, Row, Col, Select, Button, Typography, Tag, Avatar, List,
-  Skeleton, Badge, Space, Statistic
+  Skeleton, Badge, Space, Statistic, Progress, Tabs, Empty, Tooltip,
+  Table, Divider, Spin, Alert, message
 } from "antd";
 import {
   UserAddOutlined, WalletOutlined, RocketOutlined,
   BellOutlined, ArrowUpOutlined, ArrowDownOutlined,
-  SafetyCertificateOutlined, PlusOutlined
+  SafetyCertificateOutlined, PlusOutlined, TeamOutlined,
+  FileTextOutlined, CheckCircleOutlined, ClockCircleOutlined,
+  DollarOutlined, ReloadOutlined, TrophyOutlined, UserOutlined,
+  RiseOutlined, FallOutlined, PieChartOutlined, LineChartOutlined
 } from "@ant-design/icons";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer
+  CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend, LineChart, Line
 } from "recharts";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
+import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-// Purple brand tokens (consistent with VaultPartnerProfile)
-const P = "#5C039B";
-const PM = "#7C3AED";
-const PL = "#F5F0FF";
-const GN = "#22C55E";
-const BL = "#3B82F6";
-const AMB = "#F59E0B";
+// Brand colors
+const BRAND = "#5C039B";
+const BRAND_GRADIENT = "linear-gradient(135deg, #5C039B 0%, #8B5CF6 100%)";
+const CHART_COLORS = {
+  primary: "#5C039B",
+  secondary: "#03A4F4",
+  success: "#10B981",
+  warning: "#F97316",
+  danger: "#EF4444",
+  purple: "#8B5CF6",
+  blue: "#3B82F6",
+  cyan: "#06B6D4",
+  pink: "#EC4899",
+  indigo: "#6366F1",
+};
+
+const PIE_COLORS = [
+  CHART_COLORS.primary,
+  CHART_COLORS.secondary,
+  CHART_COLORS.warning,
+  CHART_COLORS.success,
+  CHART_COLORS.blue,
+  CHART_COLORS.purple,
+  CHART_COLORS.cyan,
+  CHART_COLORS.pink,
+];
+
+// Helper functions
+const formatCurrency = (value) => {
+  if (!value && value !== 0) return "AED 0";
+  if (value >= 1_000_000) return `AED ${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `AED ${(value / 1_000).toFixed(0)}K`;
+  return `AED ${value?.toLocaleString() || 0}`;
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return "";
+  return dayjs(dateStr).format("DD MMM YYYY");
+};
+
+const formatShortDate = (dateStr) => {
+  if (!dateStr) return "";
+  return dayjs(dateStr).format("DD MMM");
+};
+
+const getLeadStatusColor = (status) => {
+  const map = {
+    new: CHART_COLORS.blue,
+    contacted: CHART_COLORS.secondary,
+    qualified: CHART_COLORS.primary,
+    collectingDocuments: CHART_COLORS.warning,
+    applicationOpened: CHART_COLORS.cyan,
+    disbursed: CHART_COLORS.success,
+    lost: CHART_COLORS.danger,
+  };
+  return map[status] || CHART_COLORS.gray;
+};
+
+const getLeadStatusTag = (status) => {
+  const display = status?.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase()) || status;
+  let color = "default";
+  if (status === "qualified") color = "purple";
+  else if (status === "disbursed") color = "success";
+  else if (status === "lost") color = "error";
+  else if (status === "contacted") color = "orange";
+  else if (status === "new") color = "blue";
+  else if (status === "collectingDocuments") color = "gold";
+  else if (status === "applicationOpened") color = "cyan";
+  return <Tag color={color}>{display}</Tag>;
+};
+
+// Custom Tooltip
+const CustomTooltip = ({ active, payload, label, suffix = "" }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl shadow-lg px-4 py-3 text-sm">
+      <p className="font-semibold text-gray-500 mb-1">{label}</p>
+      {payload.map((p, i) => (
+        <p key={i} style={{ color: p.color || BRAND }} className="font-bold text-base">
+          {p.name}: {p.value?.toLocaleString()}{suffix}
+        </p>
+      ))}
+    </div>
+  );
+};
 
 const VaultPartnerDashboard = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
 
-  const [timeRange, setTimeRange] = useState("7d");
-  const [partnerData, setPartnerData] = useState(null);
+  const [timeRange, setTimeRange] = useState("month");
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
-  // Determine partner type
-  const isIndividual = user?.partnerCategory === "individual" || partnerData?.partnerCategory === "individual";
+  const fetchStats = useCallback(async (isRefresh = false) => {
+    isRefresh ? setRefreshing(true) : setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("range", timeRange);
+      const response = await apiService.get(`/vault/statistics/partner/stats?${params.toString()}`);
 
-  // Fetch partner profile
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await apiService.get("/profile/get-profile-data"); // adjust endpoint as needed
-        const data = res?.data?.data || res?.data || {};
-        setPartnerData(data);
-      } catch (error) {
-        console.error("Failed to fetch partner profile:", error);
-        // fallback to Redux user
-        if (user) setPartnerData(user);
-      } finally {
-        setLoading(false);
+      if (response?.data) {
+        setStats(response.data);
+      } else {
+        message.error("Failed to load dashboard data");
       }
-    };
-    fetchProfile();
-  }, [user]);
+    } catch (error) {
+      console.error("Failed to fetch partner stats:", error);
+      message.error(error?.response?.data?.message || "Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [timeRange]);
 
-  const partnerName = partnerData?.companyName ||
-    (partnerData?.individualDetails
-      ? `${partnerData.individualDetails.firstName || ""} ${partnerData.individualDetails.lastName || ""}`.trim()
-      : user?.name) ||
-    "Partner";
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
-  // Mock chart data – replace with real API later
-  const revenueData = [
-    { name: "Mon", income: 4000 },
-    { name: "Tue", income: 3000 },
-    { name: "Wed", income: 5500 },
-    { name: "Thu", income: 4800 },
-    { name: "Fri", income: 7000 },
-    { name: "Sat", income: 8200 },
-    { name: "Sun", income: 6500 },
-  ];
+  // Extract data from API response
+  const partnerInfo = stats?.partnerInfo || {};
+  const kpis = stats?.kpis || {};
+  const leadStatus = stats?.leadStatus || {};
+  const caseStatus = stats?.caseStatus || {};
+  const commissions = stats?.commissions || {};
+  const performance = stats?.performance || {};
+  const graphs = stats?.graphs || {};
+  const agentsSummary = stats?.agentsSummary || {};
 
-  const projectPerformance = [
-    { name: "Project A", sales: 12 },
-    { name: "Project B", sales: 19 },
-    { name: "Project C", sales: 8 },
-    { name: "Project D", sales: 15 },
-  ];
+  // Prepare lead status data for pie chart
+  const leadStatusData = Object.entries(leadStatus)
+    .filter(([_, value]) => value > 0)
+    .map(([key, value], idx) => ({
+      name: key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase()),
+      originalKey: key,
+      value: value,
+      color: PIE_COLORS[idx % PIE_COLORS.length],
+    }));
 
-  const stats = [
+  // Prepare case status data for pie chart
+  const caseStatusData = Object.entries(caseStatus)
+    .filter(([_, value]) => value > 0)
+    .map(([key, value], idx) => ({
+      name: key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase()),
+      originalKey: key,
+      value: value,
+      color: PIE_COLORS[idx % PIE_COLORS.length],
+    }));
+
+  // Prepare leads over time data
+  const leadsOverTimeData = (graphs.leadsOverTime || []).map((d) => ({
+    name: formatShortDate(d.date),
+    Leads: d.count,
+    date: d.date,
+  }));
+
+  // Prepare commissions over time data
+  const commissionsOverTimeData = (graphs.commissionsOverTime || []).map((d) => ({
+    name: formatShortDate(d.date),
+    Commission: d.totalCommission || 0,
+    date: d.date,
+  }));
+
+  // Partner summary stats cards
+  const partnerStats = [
     {
-      label: "Total Commission",
-      value: "AED 42.5K",
-      change: 12,
-      icon: <WalletOutlined />,
-      color: P,
-      bg: PL,
-    },
-    {
-      label: "Direct Referrals",
-      value: "124",
-      change: 8,
+      title: "Total Leads",
+      value: kpis.totalLeads || 0,
       icon: <UserAddOutlined />,
-      color: BL,
+      color: CHART_COLORS.blue,
       bg: "#eff6ff",
+      suffix: "",
     },
     {
-      label: "Active Projects",
-      value: "12",
-      change: 2,
-      icon: <RocketOutlined />,
-      color: GN,
-      bg: "#ecfdf5",
+      title: "Qualified Leads",
+      value: leadStatus.qualified || 0,
+      icon: <CheckCircleOutlined />,
+      color: CHART_COLORS.primary,
+      bg: "#f5f0ff",
+      suffix: "",
     },
     {
-      label: "Success Rate",
-      value: "84%",
-      change: -1,
-      icon: <SafetyCertificateOutlined />,
-      color: AMB,
+      title: "Active Cases",
+      value: kpis.activeCases || 0,
+      icon: <FileTextOutlined />,
+      color: CHART_COLORS.warning,
       bg: "#fffbeb",
+      suffix: "",
+    },
+    {
+      title: "Total Commission",
+      value: formatCurrency(kpis.totalCommissionEarned || 0),
+      icon: <WalletOutlined />,
+      color: CHART_COLORS.success,
+      bg: "#ecfdf5",
+      suffix: "",
     },
   ];
 
-  const recentActivities = [
-    { partner: "Aman Verma", action: "Completed KYC Verification", status: "Verified", time: "10 mins ago" },
-    { partner: "Rajesh Kumar", action: "New Payout Requested", status: "Pending", time: "25 mins ago" },
-    { partner: "Global Heights", action: "New Inventory Added", status: "Update", time: "2 hrs ago" },
-    { partner: "Sneha Kapoor", action: "Lease Agreement Signed", status: "Closed", time: "5 hrs ago" },
-  ];
+  // Loading state
+  if (loading && !stats) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center flex-col gap-4">
+        <Spin size="large" />
+        <p style={{ color: BRAND }} className="font-semibold tracking-wide">Loading Partner Dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ background: "#f9f6ff", minHeight: "100vh", padding: "32px 28px" }}>
@@ -146,9 +260,18 @@ const VaultPartnerDashboard = () => {
           border-color: #e8dff5 !important;
         }
         .ant-btn-primary {
-          background: ${P} !important;
-          border-color: ${P} !important;
+          background: ${BRAND} !important;
+          border-color: ${BRAND} !important;
           border-radius: 30px !important;
+        }
+        .ant-tabs-tab-active .ant-tabs-tab-btn {
+          color: ${BRAND} !important;
+        }
+        .ant-tabs-ink-bar {
+          background: ${BRAND} !important;
+        }
+        .ant-progress-bg {
+          border-radius: 99px !important;
         }
       `}</style>
 
@@ -156,42 +279,82 @@ const VaultPartnerDashboard = () => {
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28, flexWrap: "wrap", gap: 16 }}>
           <div>
-            {loading ? (
-              <Skeleton active paragraph={{ rows: 1 }} style={{ width: 300 }} />
-            ) : (
-              <>
-                <Title level={2} style={{ margin: 0, fontWeight: 800, color: "#1a0533" }}>
-                  Partner Portal
-                  <Badge status="processing" color={GN} style={{ marginLeft: 12 }} />
-                </Title>
-                <Text type="secondary" style={{ fontSize: 14 }}>
-                  Welcome back, <strong>{partnerName}</strong>. Here's your partnership overview.
+            <Title level={2} style={{ margin: 0, fontWeight: 800, color: "#1a0533" }}>
+              Partner Portal
+              <Badge status="processing" color={CHART_COLORS.success} style={{ marginLeft: 12 }} />
+            </Title>
+            <Text type="secondary" style={{ fontSize: 14 }}>
+              Welcome back, <strong>{partnerInfo.name || "Partner"}</strong>. Here's your partnership overview.
+            </Text>
+            <div style={{ marginTop: 8 }}>
+              <Tag color="purple" style={{ borderRadius: 20 }}>
+                {partnerInfo.partnerCategory === "company" ? "Company Partner" : "Individual Partner"}
+              </Tag>
+              <Tag color={partnerInfo.status === "active" ? "green" : "red"} style={{ borderRadius: 20, marginLeft: 8 }}>
+                {partnerInfo.status || "active"}
+              </Tag>
+              {partnerInfo.joinedAt && (
+                <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                  Joined: {formatDate(partnerInfo.joinedAt)}
                 </Text>
-              </>
-            )}
+              )}
+            </div>
           </div>
 
           <Space size="middle">
-           
-            <Select defaultValue="7d" style={{ width: 140 }} onChange={setTimeRange} size="large">
-              <Option value="7d">Weekly</Option>
-              <Option value="30d">Monthly</Option>
+            <Select value={timeRange} style={{ width: 140 }} onChange={setTimeRange} size="large">
+              <Option value="today">Today</Option>
+              <Option value="week">This Week</Option>
+              <Option value="month">This Month</Option>
             </Select>
-            <Button size="large" icon={<BellOutlined />} style={{ borderRadius: 30, borderColor: "#e8dff5" }}>
-              Notifications
+            <Button
+              size="large"
+              icon={<ReloadOutlined className={refreshing ? "animate-spin" : ""} />}
+              onClick={() => fetchStats(true)}
+              loading={refreshing}
+              style={{ borderRadius: 30, borderColor: "#e8dff5" }}
+            >
+              Sync
             </Button>
+            {/* <Button size="large" icon={<BellOutlined />} style={{ borderRadius: 30, borderColor: "#e8dff5" }}>
+              Notifications
+            </Button> */}
           </Space>
         </div>
 
+        {/* Commission Tier Banner */}
+        {partnerInfo.commissionTier && (
+          <Card className="vpp-chart-card" style={{ marginBottom: 24, background: BRAND_GRADIENT, border: "none" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+              <div>
+                <Text style={{ color: "white", opacity: 0.8, fontSize: 13 }}>Your Commission Structure</Text>
+                <div style={{ display: "flex", gap: 32, marginTop: 8 }}>
+                  <div>
+                    <Text style={{ color: "white", fontSize: 28, fontWeight: 700 }}>{partnerInfo.commissionTier.below5M}%</Text>
+                    <Text style={{ color: "white", opacity: 0.7, marginLeft: 8, fontSize: 13 }}>Below AED 5M</Text>
+                  </div>
+                  <div>
+                    <Text style={{ color: "white", fontSize: 28, fontWeight: 700 }}>{partnerInfo.commissionTier.above5M}%</Text>
+                    <Text style={{ color: "white", opacity: 0.7, marginLeft: 8, fontSize: 13 }}>Above AED 5M</Text>
+                  </div>
+                </div>
+              </div>
+              <Button icon={<TrophyOutlined />} style={{ borderRadius: 30, background: "white", color: BRAND, border: "none", fontWeight: 500 }}>
+                View Commission Details
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {/* Stats Cards */}
         <Row gutter={[18, 18]} style={{ marginBottom: 28 }}>
-          {stats.map((stat, i) => (
+          {partnerStats.map((stat, i) => (
             <Col xs={24} sm={12} lg={6} key={i}>
               <Card bordered={false} className="vpp-stat-card" bodyStyle={{ padding: "20px 22px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div>
                     <Text type="secondary" style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      {stat.label}
+                      {stat.title}
                     </Text>
                     <div style={{ fontSize: 28, fontWeight: 800, color: "#1a0533", marginTop: 4, lineHeight: 1.2 }}>
                       {stat.value}
@@ -201,84 +364,290 @@ const VaultPartnerDashboard = () => {
                     style={{ backgroundColor: stat.bg, color: stat.color, borderRadius: 14 }}
                   />
                 </div>
-                <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                  <Tag color={stat.change > 0 ? "success" : "error"} style={{ borderRadius: 20, padding: "2px 10px", fontWeight: 600 }}>
-                    {stat.change > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {Math.abs(stat.change)}%
-                  </Tag>
-                  <Text type="secondary" style={{ fontSize: 12 }}>vs last month</Text>
-                </div>
               </Card>
             </Col>
           ))}
         </Row>
 
-        {/* Charts */}
-        <Row gutter={[20, 20]} style={{ marginBottom: 28 }}>
-          <Col xs={24} lg={15}>
-            <Card bordered={false} className="vpp-chart-card"
-              title={<span style={{ fontSize: 16, fontWeight: 700, color: P }}>Revenue Milestone (AED)</span>}>
-              <ResponsiveContainer width="100%" height={320}>
-                <AreaChart data={revenueData}>
-                  <defs>
-                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={P} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={P} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                  <YAxis axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }} />
-                  <Area type="monotone" dataKey="income" stroke={P} fillOpacity={1} fill="url(#colorIncome)" strokeWidth={3} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </Card>
-          </Col>
-          <Col xs={24} lg={9}>
-            <Card bordered={false} className="vpp-chart-card"
-              title={<span style={{ fontSize: 16, fontWeight: 700, color: P }}>Project Sales Distribution</span>}>
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={projectPerformance} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                  <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={80} />
-                  <Tooltip cursor={{ fill: "transparent" }} contentStyle={{ borderRadius: 8, border: "none" }} />
-                  <Bar dataKey="sales" fill={PM} radius={[0, 10, 10, 0]} barSize={20} />
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
-          </Col>
-        </Row>
+        {/* Tabs Section */}
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          className="vpp-tabs"
+          style={{ marginBottom: 24 }}
+          items={[
+            {
+              key: "overview",
+              label: <span><LineChartOutlined /> Overview</span>,
+              children: (
+                <Row gutter={[20, 20]}>
+                  {/* Leads Over Time Chart */}
+                  <Col xs={24} lg={14}>
+                    <Card bordered={false} className="vpp-chart-card"
+                      title={<span style={{ fontSize: 16, fontWeight: 700, color: BRAND }}>Leads Trend</span>}>
+                      {leadsOverTimeData.length === 0 ? (
+                        <Empty description="No lead data available for this period" className="py-12" />
+                      ) : (
+                        <ResponsiveContainer width="100%" height={320}>
+                          <AreaChart data={leadsOverTimeData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                            <defs>
+                              <linearGradient id="leadGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={BRAND} stopOpacity={0.3} />
+                                <stop offset="95%" stopColor={BRAND} stopOpacity={0.02} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 11 }} dy={8} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 11 }} />
+                            <RechartsTooltip content={<CustomTooltip />} />
+                            <Area type="monotone" dataKey="Leads" stroke={BRAND} strokeWidth={2.5} fill="url(#leadGrad)" name="New Leads" />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      )}
+                    </Card>
+                  </Col>
 
-        {/* Recent Activity */}
-        <Row>
-          <Col xs={24}>
-            <Card bordered={false} className="vpp-chart-card"
-              title={<span style={{ fontSize: 16, fontWeight: 700, color: P }}>Recent Partner Activities</span>}>
-              <List
-                itemLayout="horizontal"
-                dataSource={recentActivities}
-                renderItem={(item) => (
-                  <List.Item actions={[<Button type="link" key="view" style={{ color: P }}>View Details</Button>]}>
-                    <List.Item.Meta
-                      avatar={<Avatar src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.partner}`} size="large" />}
-                      title={<Text strong>{item.partner}</Text>}
-                      description={
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                          <Text type="secondary">{item.action}</Text>
-                          <Tag color={item.status === "Verified" || item.status === "Closed" ? "success" : item.status === "Pending" ? "warning" : "processing"}>
-                            {item.status}
-                          </Tag>
+                  {/* Commission Summary */}
+                  <Col xs={24} lg={10}>
+                    <Card bordered={false} className="vpp-chart-card"
+                      title={<span style={{ fontSize: 16, fontWeight: 700, color: BRAND }}>Commission Summary</span>}>
+                      <div style={{ textAlign: "center", padding: "16px" }}>
+                        <div style={{ fontSize: 36, fontWeight: 800, color: CHART_COLORS.success }}>
+                          {formatCurrency(commissions.totalEarned || 0)}
                         </div>
-                      }
-                    />
-                    <Text type="secondary" style={{ fontSize: 12 }}>{item.time}</Text>
-                  </List.Item>
-                )}
-              />
-            </Card>
+                        <Text type="secondary">Total Earned</Text>
+                        <Divider style={{ margin: "16px 0" }} />
+                        <Row gutter={16}>
+                          <Col span={12}>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 20, fontWeight: 700, color: CHART_COLORS.warning }}>
+                                {formatCurrency(commissions.pending || 0)}
+                              </div>
+                              <Text type="secondary" style={{ fontSize: 12 }}>Pending</Text>
+                            </div>
+                          </Col>
+                          <Col span={12}>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 20, fontWeight: 700, color: CHART_COLORS.success }}>
+                                {formatCurrency(commissions.confirmed || 0)}
+                              </div>
+                              <Text type="secondary" style={{ fontSize: 12 }}>Confirmed</Text>
+                            </div>
+                          </Col>
+                        </Row>
+                      </div>
+                    </Card>
+                  </Col>
+
+                  {/* Performance Metrics */}
+                  <Col xs={24}>
+                    <Card bordered={false} className="vpp-chart-card"
+                      title={<span style={{ fontSize: 16, fontWeight: 700, color: BRAND }}>Performance Metrics</span>}>
+                      <Row gutter={[24, 24]}>
+                        <Col xs={12} sm={6}>
+                          <div style={{ textAlign: "center" }}>
+                            <Progress
+                              type="circle"
+                              percent={kpis.conversionRate || performance.conversionRate || 0}
+                              strokeColor={BRAND}
+                              width={100}
+                              format={(percent) => `${percent || 0}%`}
+                            />
+                            <div style={{ marginTop: 12, fontWeight: 600 }}>Conversion Rate</div>
+                          </div>
+                        </Col>
+                        <Col xs={12} sm={6}>
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ fontSize: 32, fontWeight: 800, color: CHART_COLORS.primary }}>
+                              {performance.totalLeadsSubmitted || kpis.totalLeads || 0}
+                            </div>
+                            <div style={{ color: "#6B7280", fontSize: 12, marginTop: 4 }}>Total Leads Submitted</div>
+                          </div>
+                        </Col>
+                        <Col xs={12} sm={6}>
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ fontSize: 32, fontWeight: 800, color: CHART_COLORS.success }}>
+                              {performance.totalSuccessfulDisbursals || kpis.totalDisbursed || 0}
+                            </div>
+                            <div style={{ color: "#6B7280", fontSize: 12, marginTop: 4 }}>Successful Disbursals</div>
+                          </div>
+                        </Col>
+                        <Col xs={12} sm={6}>
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ fontSize: 32, fontWeight: 800, color: CHART_COLORS.warning }}>
+                              {agentsSummary.totalAgents || 0}
+                            </div>
+                            <div style={{ color: "#6B7280", fontSize: 12, marginTop: 4 }}>Total Agents</div>
+                          </div>
+                        </Col>
+                      </Row>
+                    </Card>
+                  </Col>
+                </Row>
+              ),
+            },
+            {
+              key: "leads",
+              label: <span><PieChartOutlined /> Leads & Cases</span>,
+              children: (
+                <Row gutter={[20, 20]}>
+                  {/* Lead Status Distribution */}
+                  <Col xs={24} lg={12}>
+                    <Card bordered={false} className="vpp-chart-card"
+                      title={<span style={{ fontSize: 16, fontWeight: 700, color: BRAND }}>Lead Status Distribution</span>}>
+                      {leadStatusData.length === 0 ? (
+                        <Empty description="No lead data available" className="py-12" />
+                      ) : (
+                        <ResponsiveContainer width="100%" height={320}>
+                          <PieChart>
+                            <Pie
+                              data={leadStatusData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={100}
+                              paddingAngle={4}
+                              dataKey="value"
+                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                              labelLine={false}
+                            >
+                              {leadStatusData.map((entry, idx) => (
+                                <Cell key={`cell-${idx}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip />
+                            <Legend verticalAlign="bottom" height={40} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                    </Card>
+                  </Col>
+
+                  {/* Case Status Distribution */}
+                  <Col xs={24} lg={12}>
+                    <Card bordered={false} className="vpp-chart-card"
+                      title={<span style={{ fontSize: 16, fontWeight: 700, color: BRAND }}>Case Status Distribution</span>}>
+                      {caseStatusData.length === 0 ? (
+                        <Empty description="No case data available" className="py-12" />
+                      ) : (
+                        <ResponsiveContainer width="100%" height={320}>
+                          <PieChart>
+                            <Pie
+                              data={caseStatusData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={100}
+                              paddingAngle={4}
+                              dataKey="value"
+                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                              labelLine={false}
+                            >
+                              {caseStatusData.map((entry, idx) => (
+                                <Cell key={`cell-${idx}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip />
+                            <Legend verticalAlign="bottom" height={40} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                    </Card>
+                  </Col>
+                </Row>
+              ),
+            },
+            {
+              key: "agents",
+              label: <span><TeamOutlined /> Agents Network</span>,
+              children: (
+                <Row gutter={[20, 20]}>
+                  <Col xs={24} sm={8}>
+                    <Card bordered={false} className="vpp-stat-card">
+                      <Statistic
+                        title="Total Agents"
+                        value={agentsSummary.totalAgents || 0}
+                        prefix={<TeamOutlined />}
+                        valueStyle={{ color: BRAND }}
+                      />
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={8}>
+                    <Card bordered={false} className="vpp-stat-card">
+                      <Statistic
+                        title="Active Agents"
+                        value={agentsSummary.activeAgents || 0}
+                        prefix={<CheckCircleOutlined />}
+                        valueStyle={{ color: CHART_COLORS.success }}
+                      />
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={8}>
+                    <Card bordered={false} className="vpp-stat-card">
+                      <Statistic
+                        title="Pending Agents"
+                        value={agentsSummary.pendingAgents || 0}
+                        prefix={<ClockCircleOutlined />}
+                        valueStyle={{ color: CHART_COLORS.warning }}
+                      />
+                    </Card>
+                  </Col>
+
+                  <Col xs={24}>
+                    <Card
+                      bordered={false}
+                      className="vpp-chart-card"
+                      title={<span style={{ fontSize: 16, fontWeight: 700, color: BRAND }}>Agent Performance</span>}
+                    >
+                      <Empty description="No agent data available yet" className="py-12" />
+                    </Card>
+                  </Col>
+                </Row>
+              ),
+            },
+          ]}
+        />
+
+        {/* Quick Actions */}
+        {/* <Row gutter={[16, 16]} className="mt-6">
+          <Col xs={24} sm={8}>
+            <Button
+              block
+              size="large"
+              icon={<PlusOutlined />}
+              className="h-14 text-base font-medium rounded-xl"
+              style={{ backgroundColor: "#f5f0ff", color: BRAND, borderColor: "#e8dff5" }}
+              onClick={() => navigate("/partner/refer-lead")}
+            >
+              Refer New Lead
+            </Button>
           </Col>
-        </Row>
+          <Col xs={24} sm={8}>
+            <Button
+              block
+              size="large"
+              icon={<WalletOutlined />}
+              className="h-14 text-base font-medium rounded-xl"
+              style={{ backgroundColor: "#f5f0ff", color: BRAND, borderColor: "#e8dff5" }}
+              onClick={() => navigate("/partner/commissions")}
+            >
+              View Commissions
+            </Button>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Button
+              block
+              size="large"
+              type="primary"
+              icon={<TeamOutlined />}
+              className="h-14 text-base font-medium rounded-xl"
+              style={{ background: BRAND_GRADIENT, border: "none" }}
+              onClick={() => navigate("/partner/agents")}
+            >
+              Manage Agents
+            </Button>
+          </Col>
+        </Row> */}
       </div>
     </div>
   );

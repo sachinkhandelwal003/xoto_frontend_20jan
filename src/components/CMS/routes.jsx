@@ -260,6 +260,8 @@ import DisbursedFullAmountCases from "../ecommerce/vault/case/DisbursedFullAmoun
 import AgentsLeadFullView from "../ecommerce/B2C/AgentsLeadFullView";
 import Adminfeedbacks from "../../components/footer/Adminfeedbacks";
 import Presentations from "../ecommerce/B2C/PresentationManager";
+import BankProductViewwithdocuments from "../homepage/BankProductViewwithdocuments";
+import BankProductDocuments from "../homepage/BankProductDocuments";
 
 
 
@@ -670,6 +672,14 @@ const CmsRoutes = () => {
 {/* vault */}
 
       <Route path="/bank/products" element={< BankProductListVault />} />
+<Route
+  path="/bank/products/view/:productId"
+  element={< BankProductViewwithdocuments />}
+/>
+<Route
+  path="/bank/products/documents/:productId"
+  element={< BankProductDocuments />}
+/>
             <Route path="/proposals/create" element={< CreateProposalAdmin />} />
             <Route path="/proposals/view" element={< ViewProposal />} />
 
