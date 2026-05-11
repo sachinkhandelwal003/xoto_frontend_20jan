@@ -211,7 +211,7 @@ export default function AgentProjectDetails() {
   const fetchPropertyDetails = async () => {
     try {
       setLoading(true);
-      let res = await apiService.get(`/properties/agent/property/secondary/${id}`);
+      let res = await apiService.get(`/properties/${id}`);
       let responseData = res?.data || res;
     
       if (responseData) {
@@ -238,7 +238,9 @@ export default function AgentProjectDetails() {
   const fetchInventoryUnits = async (propertyId) => {
     try {
       setInventoryLoading(true);
-      const res = await apiService.get(`properties/inventory/${propertyId}?status=available`);
+const res = await apiService.get(
+  `/properties/inventory?propertyId=${propertyId}&status=available`
+);
       const responseData = res?.data || res;
       
       if (responseData) {

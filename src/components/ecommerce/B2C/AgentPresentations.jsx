@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card, Table, Button, Tag, Space, Modal, Input, Select,
   message, Tooltip, Drawer, Divider, Typography, Row, Col,
-  Statistic, Form, Checkbox, Spin, Alert,
+  Statistic, Spin, Alert,
 } from "antd";
 import {
   PlusOutlined, ThunderboltOutlined, ShareAltOutlined,
@@ -10,7 +10,7 @@ import {
   FilePdfOutlined, WhatsAppOutlined, MailOutlined,
   CheckCircleOutlined, ClockCircleOutlined, BarChartOutlined,
   SettingOutlined, ExperimentOutlined, ArrowLeftOutlined,
-  GlobalOutlined, DollarOutlined,
+  LinkOutlined, ReloadOutlined,
 } from "@ant-design/icons";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
@@ -19,58 +19,102 @@ const { Option } = Select;
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 const T = {
-  primary:     "#5C039B",
-  primaryLight:"#7c3aed",
-  success:     "#10b981",
-  warning:     "#d97706",
-  error:       "#ef4444",
-  info:        "#3b82f6",
-  bg:          "#f8f9fa",
-  cardBg:      "#ffffff",
-  border:      "#f0f0f0",
-  text:        "#1f2937",
-  muted:       "#9ca3af",
-  xotoPurple:  "#7F77DD",
-  xotoGreen:   "#3DAF78",
-  navyDark:    "#26215C",
+  primary:    "#5C039B",
+  success:    "#10b981",
+  warning:    "#d97706",
+  error:      "#ef4444",
+  info:       "#3b82f6",
+  bg:         "#f8f9fa",
+  border:     "#f0f0f0",
+  text:       "#1f2937",
+  muted:      "#9ca3af",
+  xotoPurple: "#7F77DD",
+  xotoGreen:  "#3DAF78",
+  navyDark:   "#26215C",
 };
 
-// ── Currency / Area helpers ───────────────────────────────────────────────────
-const CURRENCY_SYMBOL = { AED: "AED", USD: "USD", GBP: "GBP", EUR: "EUR" };
-const toneMap = {
-  luxury:       "sophisticated and aspirational, emphasising exclusivity and lifestyle elevation",
-  professional: "clear, data-driven and professional",
-  friendly:     "warm, conversational and encouraging",
-};
+// ══════════════════════════════════════════════════════════════════════════════
+//  API SERVICE LAYER
+//  All 8 endpoints from routes.js wired here.
+//  Base path: /agent/lead — router is mounted at this prefix in Express.
+// ══════════════════════════════════════════════════════════════════════════════
 
-// ── API calls ─────────────────────────────────────────────────────────────────
-// POST   /agent/lead/presentations            → create draft
+// 1. POST /agent/lead/presentations
+//    Create a new draft. Returns { success, data: presentation }
 const apiCreate = (payload) =>
   apiService.post("/agent/lead/presentations", payload);
 
-// PUT    /agent/lead/presentations/:id        → update draft
+// 2. PUT /agent/lead/presentations/:id
+//    Update an existing draft (title, tone, settings, properties).
+//    Returns { success, data: presentation }
 const apiUpdate = (id, payload) =>
   apiService.put(`/agent/lead/presentations/${id}`, payload);
 
-// POST   /agent/lead/presentations/:id/generate → generate PDF + share link
+// 3. POST /agent/lead/presentations/:id/generate
+//    Triggers PDF build + S3 upload + shareToken/shareLink creation.
+//    Returns { success, data: { ...presentation, shareLink } }
 const apiGenerate = (id) =>
   apiService.post(`/agent/lead/presentations/${id}/generate`);
 
-// POST   /agent/lead/presentations/:id/share  → mark shared via channel
+// 4. POST /agent/lead/presentations/:id/share
+//    Marks presentation as shared via "whatsapp" or "email".
+//    Body: { channel: "whatsapp" | "email" }
+//    Returns { success, message, shareLink }
 const apiShareChannel = (id, channel) =>
   apiService.post(`/agent/lead/presentations/${id}/share`, { channel });
 
-// GET    /agent/lead/presentations            → list
+// 5. GET /agent/lead/presentations?status=draft|generated|archived
+//    Lists all presentations for the logged-in agent, with optional filter.
+//    Returns { success, data: [], total, page, pages }
 const apiFetchList = (status) =>
-  apiService.get(`/agent/lead/presentations${status && status !== "all" ? `?status=${status}` : ""}`);
+  apiService.get(
+    `/agent/lead/presentations${status && status !== "all" ? `?status=${status}` : ""}`
+  );
 
-// GET    /agent/lead/presentations/:id        → single
+// 6. GET /agent/lead/presentations/:id
+//    Fetches a single presentation (populated: properties.property, lead).
+//    Returns { success, data: presentation }
 const apiFetchOne = (id) =>
   apiService.get(`/agent/lead/presentations/${id}`);
 
-// DELETE /agent/lead/presentations/:id        → archive
+// 7. DELETE /agent/lead/presentations/:id
+//    Soft-archives the presentation (sets status = "archived").
+//    Returns { success, message }
 const apiArchive = (id) =>
   apiService.delete(`/agent/lead/presentations/${id}`);
+
+// 8. GET /agent/lead/presentations/share/:token  ← PUBLIC (no auth)
+//    Called when a client opens the shareable link.
+//    Logs view event, increments viewCount, sets pipelineStatus = "viewed".
+//    Returns { success, data: presentation }
+//    NOTE: This is called client-side only when opening the share URL directly.
+//    It is NOT protected by protectMulti in the router.
+const apiPublicShare = (token) =>
+  apiService.get(`/agent/lead/presentations/share/${token}`);
+
+// ── Payload builder ───────────────────────────────────────────────────────────
+function buildPayload({ form, sections, propertyId, customNote }) {
+  return {
+    title: form.title || `Presentation — ${new Date().toLocaleDateString("en-AE")}`,
+    tone:  form.tone  || "professional",
+    properties: propertyId
+      ? [{ property: propertyId, customNote: customNote || "", order: 1 }]
+      : [],
+    settings: {
+      language: form.language || "English",
+      currency: form.currency || "AED",
+      areaUnit: form.areaUnit || "sqft",
+      hideSections: {
+        cover:        !sections.cover,
+        projectDesc:  !sections.desc,
+        developer:    !sections.dev,
+        unitPrices:   !sections.prices,
+        paymentPlans: !sections.payment,
+        location:     !sections.location,
+      },
+    },
+  };
+}
 
 // ── Shared micro-components ───────────────────────────────────────────────────
 const StatusTag = ({ status }) => {
@@ -93,44 +137,30 @@ const PipelineTag = ({ status }) => {
   return <Tag color={s.color}>{s.label}</Tag>;
 };
 
-// Toggle switch for section visibility
 function Toggle({ on, onClick }) {
   return (
     <div
       onClick={onClick}
-      className={`w-9 h-5 rounded-full relative flex-shrink-0 transition-colors duration-200 cursor-pointer ${on ? "bg-[#1D9E75]" : "bg-gray-300"}`}
+      style={{
+        width: 36, height: 20, borderRadius: 10,
+        background: on ? T.success : "#d1d5db",
+        position: "relative", cursor: "pointer",
+        transition: "background 0.2s", flexShrink: 0,
+      }}
     >
-      <div className={`w-3.5 h-3.5 rounded-full bg-white absolute top-[3px] shadow-sm transition-all duration-200 ${on ? "left-[18px]" : "left-[3px]"}`} />
+      <div style={{
+        width: 14, height: 14, borderRadius: "50%", background: "#fff",
+        position: "absolute", top: 3,
+        left: on ? 18 : 3,
+        transition: "left 0.2s",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+      }} />
     </div>
   );
 }
 
-// ── Build payload from wizard state ──────────────────────────────────────────
-function buildPayload({ form, sections, propertyId, customNote }) {
-  return {
-    title:      form.title || `Presentation — ${new Date().toLocaleDateString("en-AE")}`,
-    tone:       form.tone || "professional",
-    properties: propertyId
-      ? [{ property: propertyId, customNote: customNote || "", order: 1 }]
-      : [],
-    settings: {
-      language: form.language || "English",
-      currency: form.currency || "AED",
-      areaUnit: form.areaUnit || "sqft",
-      hideSections: {
-        cover:        !sections.cover,
-        projectDesc:  !sections.desc,
-        developer:    !sections.dev,
-        unitPrices:   !sections.prices,
-        paymentPlans: !sections.payment,
-        location:     !sections.location,
-      },
-    },
-  };
-}
-
 // ════════════════════════════════════════════════════════════════════════════
-//  WIZARD — Step 1: Customise
+//  WIZARD STEP 1 — Customise
 // ════════════════════════════════════════════════════════════════════════════
 function WizardStep1({ form, setForm, sections, setSections, propertyId, setPropertyId, customNote, setCustomNote, onNext, onCancel, isEditing }) {
   const tones = [
@@ -151,14 +181,11 @@ function WizardStep1({ form, setForm, sections, setSections, propertyId, setProp
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
       {/* LEFT */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {/* Title & Client */}
         <Card bordered style={{ borderRadius: 14 }} bodyStyle={{ padding: 20 }}>
-          <Text strong style={{ fontSize: 13, color: T.text, display: "block", marginBottom: 14 }}>
-            Presentation details
-          </Text>
+          <Text strong style={{ fontSize: 13, color: T.text, display: "block", marginBottom: 14 }}>Presentation details</Text>
           <div style={{ marginBottom: 12 }}>
             <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: "block", marginBottom: 6 }}>
-              Presentation title <span style={{ color: T.error }}>*</span>
+              Title <span style={{ color: T.error }}>*</span>
             </label>
             <Input
               value={form.title}
@@ -168,29 +195,25 @@ function WizardStep1({ form, setForm, sections, setSections, propertyId, setProp
             />
           </div>
           <Row gutter={12}>
-            <Col span={8}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: "block", marginBottom: 6 }}>Language</label>
-              <Select value={form.language} onChange={v => setForm(f => ({ ...f, language: v }))} style={{ width: "100%" }}>
-                {["English", "Arabic", "Russian", "Chinese", "French"].map(o => <Option key={o} value={o}>{o}</Option>)}
-              </Select>
-            </Col>
-            <Col span={8}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: "block", marginBottom: 6 }}>Currency</label>
-              <Select value={form.currency} onChange={v => setForm(f => ({ ...f, currency: v }))} style={{ width: "100%" }}>
-                {["AED", "USD", "GBP", "EUR"].map(o => <Option key={o} value={o}>{o}</Option>)}
-              </Select>
-            </Col>
-            <Col span={8}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: "block", marginBottom: 6 }}>Area unit</label>
-              <Select value={form.areaUnit} onChange={v => setForm(f => ({ ...f, areaUnit: v }))} style={{ width: "100%" }}>
-                <Option value="sqft">sq ft</Option>
-                <Option value="sqm">sq m</Option>
-              </Select>
-            </Col>
+            {[
+              { label: "Language", key: "language", opts: ["English", "Arabic", "Russian", "Chinese", "French"] },
+              { label: "Currency", key: "currency", opts: ["AED", "USD", "GBP", "EUR"] },
+              { label: "Area unit", key: "areaUnit", opts: [{ v: "sqft", l: "sq ft" }, { v: "sqm", l: "sq m" }] },
+            ].map(({ label, key, opts }) => (
+              <Col span={8} key={key}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: "block", marginBottom: 6 }}>{label}</label>
+                <Select value={form[key]} onChange={v => setForm(f => ({ ...f, [key]: v }))} style={{ width: "100%" }}>
+                  {opts.map(o =>
+                    typeof o === "string"
+                      ? <Option key={o} value={o}>{o}</Option>
+                      : <Option key={o.v} value={o.v}>{o.l}</Option>
+                  )}
+                </Select>
+              </Col>
+            ))}
           </Row>
         </Card>
 
-        {/* Tone */}
         <Card bordered style={{ borderRadius: 14 }} bodyStyle={{ padding: 20 }}>
           <Text strong style={{ fontSize: 13, color: T.text, display: "block", marginBottom: 14 }}>Presentation tone</Text>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
@@ -213,29 +236,18 @@ function WizardStep1({ form, setForm, sections, setSections, propertyId, setProp
           </div>
         </Card>
 
-        {/* Property (only on create) */}
         {!isEditing && (
           <Card bordered style={{ borderRadius: 14 }} bodyStyle={{ padding: 20 }}>
             <Text strong style={{ fontSize: 13, color: T.text, display: "block", marginBottom: 14 }}>Property</Text>
             <div style={{ marginBottom: 12 }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: "block", marginBottom: 6 }}>
-                Property ID <span style={{ fontWeight: 400 }}>(MongoDB ObjectId)</span>
+                Property ID <span style={{ fontWeight: 400, color: T.muted }}>(MongoDB ObjectId)</span>
               </label>
-              <Input
-                value={propertyId}
-                onChange={e => setPropertyId(e.target.value)}
-                placeholder="e.g. 69f9979815abe868e65799af"
-                style={{ borderRadius: 10 }}
-              />
+              <Input value={propertyId} onChange={e => setPropertyId(e.target.value)} placeholder="e.g. 69f9979815abe868e65799af" style={{ borderRadius: 10 }} />
             </div>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: "block", marginBottom: 6 }}>Agent note (optional)</label>
-              <Input
-                value={customNote}
-                onChange={e => setCustomNote(e.target.value)}
-                placeholder="Custom note about this property"
-                style={{ borderRadius: 10 }}
-              />
+              <Input value={customNote} onChange={e => setCustomNote(e.target.value)} placeholder="Custom note about this property" style={{ borderRadius: 10 }} />
             </div>
           </Card>
         )}
@@ -243,11 +255,8 @@ function WizardStep1({ form, setForm, sections, setSections, propertyId, setProp
 
       {/* RIGHT */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {/* Section toggles */}
         <Card bordered style={{ borderRadius: 14 }} bodyStyle={{ padding: 20 }}>
-          <Text strong style={{ fontSize: 13, color: T.text, display: "block", marginBottom: 14 }}>
-            Visible sections — toggle to hide
-          </Text>
+          <Text strong style={{ fontSize: 13, color: T.text, display: "block", marginBottom: 14 }}>Visible sections — toggle to hide</Text>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {sectionList.map(s => (
               <div
@@ -256,7 +265,7 @@ function WizardStep1({ form, setForm, sections, setSections, propertyId, setProp
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "10px 14px", border: "1px solid #e5e7eb", borderRadius: 12,
-                  cursor: "pointer", background: "#fff", transition: "background 0.15s",
+                  cursor: "pointer", background: "#fff",
                 }}
               >
                 <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{s.label}</span>
@@ -266,22 +275,20 @@ function WizardStep1({ form, setForm, sections, setSections, propertyId, setProp
           </div>
         </Card>
 
-        {/* Info card */}
-        <div style={{ padding: "14px 18px", borderRadius: 14, background: "#EEEDFE", border: "1px solid #AFA9EC" }}>
+        <div style={{ padding: "16px 18px", borderRadius: 14, background: "#EEEDFE", border: "1px solid #AFA9EC" }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: T.xotoPurple, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, color: "#fff" }}>ℹ️</div>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: T.xotoPurple, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, color: "#fff" }}>ℹ️</div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#3C3489", marginBottom: 4 }}>How it works</div>
-              <div style={{ fontSize: 12, color: "#534AB7", lineHeight: 1.6 }}>
+              <div style={{ fontSize: 12, color: "#534AB7", lineHeight: 1.7 }}>
                 1. Fill in details and save as draft.<br />
-                2. Click <strong>Generate</strong> to create the PDF + shareable tracking link.<br />
-                3. Share via WhatsApp, email, or copy the link.
+                2. Click <strong>Generate</strong> to build the PDF + shareable link.<br />
+                3. Share via WhatsApp, email, or copy the link. Every open is tracked.
               </div>
             </div>
           </div>
         </div>
 
-        {/* Actions */}
         <div style={{ display: "flex", gap: 10 }}>
           <Button onClick={onCancel} style={{ borderRadius: 10 }}>Cancel</Button>
           <Button
@@ -299,17 +306,21 @@ function WizardStep1({ form, setForm, sections, setSections, propertyId, setProp
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  WIZARD — Step 2: Preview (slides)
+//  WIZARD STEP 2 — Preview & Generate
 // ════════════════════════════════════════════════════════════════════════════
 function SlideShell({ label, badge, children, hidden }) {
   if (hidden) return null;
-  const badgeColor = badge === "AI" ? "#EEEDFE" : badge === "CTA" ? "#E1F5EE" : "#F3F4F6";
-  const badgeText  = badge === "AI" ? "#3C3489" : badge === "CTA" ? "#085041" : "#374151";
+  const badgeStyles = {
+    AI:      { bg: "#EEEDFE", color: "#3C3489" },
+    CTA:     { bg: "#E1F5EE", color: "#085041" },
+    Visible: { bg: "#F3F4F6", color: "#374151" },
+  };
+  const bs = badgeStyles[badge] || badgeStyles.Visible;
   return (
     <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 14px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280" }}>{label}</span>
-        {badge && <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 8px", borderRadius: 99, background: badgeColor, color: badgeText }}>{badge}</span>}
+        {badge && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: bs.bg, color: bs.color }}>{badge}</span>}
       </div>
       <div style={{ padding: 14 }}>{children}</div>
     </div>
@@ -317,8 +328,7 @@ function SlideShell({ label, badge, children, hidden }) {
 }
 
 function WizardStep2({ form, sections, record, onBack, onGenerate, generating }) {
-  const currency = CURRENCY_SYMBOL[form.currency] || "AED";
-
+  const currency = form.currency || "AED";
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
       {/* LEFT — slides 1–4 */}
@@ -326,13 +336,12 @@ function WizardStep2({ form, sections, record, onBack, onGenerate, generating })
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <Text strong style={{ fontSize: 13, color: T.text }}>Presentation preview</Text>
           {record?.pdfUrl && (
-            <Button size="small" icon={<FilePdfOutlined />} onClick={() => window.open(record.pdfUrl, "_blank")} style={{ borderRadius: 8, fontSize: 11 }}>
+            <Button size="small" icon={<FilePdfOutlined />} onClick={() => window.open(record.pdfUrl, "_blank")} style={{ borderRadius: 8 }}>
               View PDF
             </Button>
           )}
         </div>
 
-        {/* Cover */}
         <SlideShell label="1 — Cover" badge="Visible" hidden={!sections.cover}>
           <div style={{ background: T.navyDark, color: "#fff", padding: 18, borderRadius: 10, minHeight: 120, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <div>
@@ -341,24 +350,23 @@ function WizardStep2({ form, sections, record, onBack, onGenerate, generating })
               <div style={{ fontSize: 11, opacity: 0.6 }}>{currency} · {form.language} · {form.tone}</div>
             </div>
             <div style={{ marginTop: 12, paddingTop: 10, borderTop: "0.5px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: T.xotoPurple, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>SA</div>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: T.xotoPurple, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>XA</div>
               <div style={{ fontSize: 11 }}>
-                <div style={{ fontWeight: 600 }}>Sara Al Hashimi</div>
-                <div style={{ opacity: 0.5, fontSize: 10 }}>Xoto Real Estate Advisor</div>
+                <div style={{ fontWeight: 600 }}>Xoto Real Estate Advisor</div>
+                <div style={{ opacity: 0.5, fontSize: 10 }}>Powered by Xoto GRID</div>
               </div>
             </div>
           </div>
           <div style={{ fontSize: 9, color: "#d1d5db", textAlign: "right", marginTop: 4 }}>Powered by Xoto GRID</div>
         </SlideShell>
 
-        {/* Overview */}
         <SlideShell label="2 — Property overview" badge="AI" hidden={!sections.desc}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: T.text }}>AI-generated overview</div>
           <div style={{ fontSize: 11, lineHeight: 1.7, color: "#6b7280", padding: "10px 12px", background: "#f9fafb", borderRadius: 8, border: "1px solid #e5e7eb" }}>
-            Narrative will be generated from property data when you click Generate. The tone will be <strong>{form.tone}</strong> in <strong>{form.language}</strong>.
+            Narrative will be generated from property data. Tone: <strong>{form.tone}</strong> · Language: <strong>{form.language}</strong>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 10 }}>
-            {[["Type", "Property"], ["Currency", currency], ["Area", form.areaUnit], ["Tone", form.tone]].map(([l, v]) => (
+            {[["Currency", currency], ["Area", form.areaUnit], ["Tone", form.tone], ["Lang", form.language]].map(([l, v]) => (
               <div key={l} style={{ background: "#F8F7FF", borderRadius: 8, padding: 8, textAlign: "center" }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#534AB7" }}>{v}</div>
                 <div style={{ fontSize: 9, color: T.muted, marginTop: 2 }}>{l}</div>
@@ -368,21 +376,18 @@ function WizardStep2({ form, sections, record, onBack, onGenerate, generating })
           <div style={{ fontSize: 9, color: "#d1d5db", textAlign: "right", marginTop: 6 }}>Powered by Xoto GRID</div>
         </SlideShell>
 
-        {/* Key highlights */}
         <SlideShell label="3 — Key highlights" badge="AI">
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: T.text }}>Standout features</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {["Prime location advantages", "Investment potential", "Developer reputation", "Amenities & facilities", "Payment flexibility"].map((h, i) => (
+            {["Prime location", "Investment potential", "Developer reputation", "Amenities", "Payment flexibility"].map((h, i) => (
               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "#f9fafb", borderRadius: 8, padding: 10, fontSize: 11, color: "#374151" }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.xotoPurple, marginTop: 3, flexShrink: 0 }} />
-                {h}
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.xotoPurple, marginTop: 3, flexShrink: 0 }} />{h}
               </div>
             ))}
           </div>
           <div style={{ fontSize: 9, color: "#d1d5db", textAlign: "right", marginTop: 6 }}>Powered by Xoto GRID</div>
         </SlideShell>
 
-        {/* Gallery */}
         <SlideShell label="4 — Photo gallery">
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 6, height: 100 }}>
             <div style={{ background: "#f3f4f6", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, color: "#d1d5db" }}>🏙️</div>
@@ -401,10 +406,9 @@ function WizardStep2({ form, sections, record, onBack, onGenerate, generating })
       <div>
         <div style={{ height: 36, marginBottom: 14 }} />
 
-        {/* Location */}
         <SlideShell label="5 — Location & community" badge="AI" hidden={!sections.location}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: T.text }}>Neighbourhood overview</div>
-          <div style={{ fontSize: 11, lineHeight: 1.7, color: "#6b7280", marginBottom: 10 }}>AI-generated location summary based on property data.</div>
+          <div style={{ fontSize: 11, lineHeight: 1.7, color: "#6b7280", marginBottom: 10 }}>AI-generated from property location data.</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
             {[["3 min", "Marina Walk"], ["12 min", "JBR Beach"], ["20 min", "Dubai Mall"]].map(([t, l]) => (
               <div key={l} style={{ textAlign: "center", background: "#F8F7FF", borderRadius: 8, padding: 10 }}>
@@ -416,7 +420,6 @@ function WizardStep2({ form, sections, record, onBack, onGenerate, generating })
           <div style={{ fontSize: 9, color: "#d1d5db", textAlign: "right", marginTop: 6 }}>Powered by Xoto GRID</div>
         </SlideShell>
 
-        {/* Payment plan */}
         <SlideShell label="6 — Payment plan" hidden={!sections.payment}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: T.text }}>Construction-linked plan</div>
           <table style={{ width: "100%", fontSize: 11, borderCollapse: "collapse" }}>
@@ -428,7 +431,7 @@ function WizardStep2({ form, sections, record, onBack, onGenerate, generating })
               </tr>
             </thead>
             <tbody>
-              {[["On booking", "10%", "—", "Reservation"], ["During construction", "50%", "—", "5 instalments"], ["On handover", "40%", "—", "At completion"]].map(([m, p, a, d]) => (
+              {[["On booking", "10%", "—", "Reservation"], ["During construction", "50%", "—", "5 instalments"], ["On handover", "40%", "—", "Completion"]].map(([m, p, a, d]) => (
                 <tr key={m} style={{ borderBottom: "1px solid #f3f4f6" }}>
                   <td style={{ padding: "7px 8px", fontWeight: 600 }}>{m}</td>
                   <td style={{ padding: "7px 8px", color: T.xotoPurple, fontWeight: 700 }}>{p}</td>
@@ -441,7 +444,6 @@ function WizardStep2({ form, sections, record, onBack, onGenerate, generating })
           <div style={{ fontSize: 9, color: "#d1d5db", textAlign: "right", marginTop: 6 }}>Powered by Xoto GRID</div>
         </SlideShell>
 
-        {/* Developer */}
         <SlideShell label="7 — Developer profile" hidden={!sections.dev}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: "#F8F7FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#534AB7", flexShrink: 0 }}>DEV</div>
@@ -450,11 +452,10 @@ function WizardStep2({ form, sections, record, onBack, onGenerate, generating })
               <div style={{ fontSize: 10, color: T.muted }}>Auto-filled from property listing data</div>
             </div>
           </div>
-          <div style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.7 }}>Developer description will be pulled from the property record and displayed here in the generated PDF.</div>
+          <div style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.7 }}>Developer description pulled from the property record and rendered in the generated PDF.</div>
           <div style={{ fontSize: 9, color: "#d1d5db", textAlign: "right", marginTop: 6 }}>Powered by Xoto GRID</div>
         </SlideShell>
 
-        {/* Next steps */}
         <SlideShell label="8 — Next steps" badge="CTA">
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: T.text }}>Ready to move forward?</div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -468,7 +469,6 @@ function WizardStep2({ form, sections, record, onBack, onGenerate, generating })
           <div style={{ fontSize: 9, color: "#d1d5db", textAlign: "right", marginTop: 6 }}>Powered by Xoto GRID</div>
         </SlideShell>
 
-        {/* Actions */}
         <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
           <Button icon={<ArrowLeftOutlined />} onClick={onBack} style={{ borderRadius: 10 }}>Back</Button>
           <Button
@@ -487,10 +487,41 @@ function WizardStep2({ form, sections, record, onBack, onGenerate, generating })
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  WIZARD — Step 3: Share & Track
+//  WIZARD STEP 3 — Share & Track
+//  Uses API #4 (shareViaChannel) and API #8 (public share view tracking)
 // ════════════════════════════════════════════════════════════════════════════
 function WizardStep3({ record, sharing, onShareChannel, onClose, onRefresh }) {
+  const [shareViewData, setShareViewData] = useState(null);
+  const [loadingShareView, setLoadingShareView] = useState(false);
+
   if (!record) return null;
+
+  // ── Open the shareable link AND trigger API #8 to log the open ──────────────
+  const handleOpenShareLink = async () => {
+    if (!record.shareLink) return;
+
+    // Extract token from shareLink (e.g. https://BASE_URL/presentation/share/TOKEN)
+    const token = record.shareLink.split("/").pop();
+
+    // Simulate client open — calls the public share endpoint (API #8)
+    // In production this happens automatically when the client opens the link
+    if (token) {
+      setLoadingShareView(true);
+      try {
+        const res = await apiPublicShare(token);
+        const data = res?.data?.data || res?.data;
+        setShareViewData(data);
+        message.success(`View tracked — pipeline updated to "${data?.pipelineStatus || "viewed"}"`);
+        onRefresh(); // refresh the record to get updated viewCount
+      } catch {
+        // Silently fail — this is a simulation; in real usage the client's browser calls this
+      } finally {
+        setLoadingShareView(false);
+      }
+    }
+
+    window.open(record.shareLink, "_blank");
+  };
 
   const copyLink = () => {
     if (record.shareLink) {
@@ -503,24 +534,28 @@ function WizardStep3({ record, sharing, onShareChannel, onClose, onRefresh }) {
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
       {/* LEFT */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {/* Share link */}
         <Card bordered style={{ borderRadius: 14 }} bodyStyle={{ padding: 20 }}>
-          <Text strong style={{ fontSize: 13, color: T.text, display: "block", marginBottom: 14 }}>Tracking link</Text>
+          <Text strong style={{ fontSize: 13, color: T.text, display: "block", marginBottom: 14 }}>
+            Tracking link
+          </Text>
+
+          {/* Share link row */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", border: "1px solid #e5e7eb", borderRadius: 12, background: "#f9fafb", marginBottom: 14 }}>
-            <span style={{ fontSize: 16, flexShrink: 0 }}>🔗</span>
+            <LinkOutlined style={{ color: "#534AB7", flexShrink: 0 }} />
             <span style={{ flex: 1, fontSize: 11, color: "#534AB7", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 }}>
-              {record.shareLink || "Generating link..."}
+              {record.shareLink || "Generating..."}
             </span>
             <Button size="small" icon={<CopyOutlined />} onClick={copyLink} style={{ borderRadius: 8, flexShrink: 0 }}>Copy</Button>
           </div>
-          {/* Share buttons */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+
+          {/* API #4 — shareViaChannel: WhatsApp + Email */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
             <Button
               icon={<WhatsAppOutlined />}
               loading={sharing === "whatsapp"}
               onClick={() => onShareChannel("whatsapp")}
               style={{
-                height: 56, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                height: 56, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
                 background: record.sharedViaWhatsApp ? "#f0fdf4" : "#fff",
                 borderColor: record.sharedViaWhatsApp ? T.success : "#e5e7eb",
                 color: record.sharedViaWhatsApp ? T.success : T.text,
@@ -545,6 +580,26 @@ function WizardStep3({ record, sharing, onShareChannel, onClose, onRefresh }) {
             </Button>
             <Button icon={<CopyOutlined />} onClick={copyLink} style={{ height: 56, borderRadius: 12, fontSize: 11, fontWeight: 600 }}>Copy link</Button>
           </div>
+
+          {/* API #8 — Public share view: open + track */}
+          <Button
+            block
+            icon={<EyeOutlined />}
+            loading={loadingShareView}
+            onClick={handleOpenShareLink}
+            style={{ borderRadius: 10, marginBottom: 8, fontWeight: 600 }}
+          >
+            Open share link (tracks client view)
+          </Button>
+
+          {shareViewData && (
+            <Alert
+              type="success"
+              showIcon
+              message={<span style={{ fontSize: 11 }}>View tracked · Pipeline: <strong>{shareViewData.pipelineStatus}</strong> · Total opens: <strong>{shareViewData.viewCount}</strong></span>}
+              style={{ borderRadius: 8 }}
+            />
+          )}
         </Card>
 
         {/* PDF */}
@@ -559,13 +614,13 @@ function WizardStep3({ record, sharing, onShareChannel, onClose, onRefresh }) {
           </Button>
         )}
 
-        {/* Client contact (masked) */}
+        {/* Client contact (masked — PRD §10.4) */}
         <Card bordered style={{ borderRadius: 14 }} bodyStyle={{ padding: 20 }}>
           <Text strong style={{ fontSize: 13, color: T.text, display: "block", marginBottom: 12 }}>Client contact</Text>
           <Alert
             type="info"
             showIcon={false}
-            message={<span style={{ fontSize: 11 }}>Contact details are masked per PRD §10.4. Admin assignment unlocks full details.</span>}
+            message={<span style={{ fontSize: 11 }}>Contact details masked per PRD §10.4. Admin assignment unlocks full details.</span>}
             style={{ borderRadius: 8, marginBottom: 10 }}
           />
           {[["Name", "A•••• A• M••••••••"], ["Phone", "+971 •• ••• ••••"], ["Email", "a••••@•••••.com"]].map(([l, v]) => (
@@ -579,13 +634,13 @@ function WizardStep3({ record, sharing, onShareChannel, onClose, onRefresh }) {
 
       {/* RIGHT */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {/* Engagement */}
         <Card bordered style={{ borderRadius: 14 }} bodyStyle={{ padding: 20 }}>
           <Text strong style={{ fontSize: 13, color: T.text, display: "block", marginBottom: 14 }}>Engagement tracking</Text>
+
           <Row gutter={12} style={{ marginBottom: 16 }}>
             {[
-              { label: "Total opens",      value: record.viewCount || 0,     color: T.text },
-              { label: "Engagement score", value: (record.viewCount || 0) * 15, color: T.xotoPurple },
+              { label: "Total opens",      value: record.viewCount || 0,             color: T.text },
+              { label: "Engagement score", value: (record.viewCount || 0) * 15,      color: T.xotoPurple },
               { label: "Last viewed",      value: record.lastViewedAt ? new Date(record.lastViewedAt).toLocaleDateString("en-AE") : "—", color: T.text },
             ].map(s => (
               <Col span={8} key={s.label}>
@@ -597,7 +652,6 @@ function WizardStep3({ record, sharing, onShareChannel, onClose, onRefresh }) {
             ))}
           </Row>
 
-          {/* Pipeline status */}
           <div style={{ padding: "12px 14px", background: "#f9fafb", borderRadius: 12, marginBottom: 14 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 6 }}>Pipeline status</div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -606,7 +660,6 @@ function WizardStep3({ record, sharing, onShareChannel, onClose, onRefresh }) {
             </div>
           </div>
 
-          {/* View history */}
           {record.viewHistory?.length > 0 ? (
             <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" }}>
               {record.viewHistory.slice(0, 5).map((v, i) => (
@@ -627,7 +680,7 @@ function WizardStep3({ record, sharing, onShareChannel, onClose, onRefresh }) {
         </Card>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <Button onClick={onRefresh} icon={<BarChartOutlined />} style={{ borderRadius: 10 }}>Refresh stats</Button>
+          <Button onClick={onRefresh} icon={<ReloadOutlined />} style={{ borderRadius: 10 }}>Refresh stats</Button>
           <Button type="primary" onClick={onClose} style={{ flex: 1, background: T.primary, borderColor: T.primary, borderRadius: 10, fontWeight: 700 }}>Done</Button>
         </div>
       </div>
@@ -639,34 +692,25 @@ function WizardStep3({ record, sharing, onShareChannel, onClose, onRefresh }) {
 //  MAIN COMPONENT
 // ════════════════════════════════════════════════════════════════════════════
 const AgentPresentations = () => {
-  // ── List state ──────────────────────────────────────────────────────────────
   const [presentations, setPresentations] = useState([]);
   const [loading, setLoading]             = useState(false);
   const [filter, setFilter]               = useState("all");
-
-  // ── Wizard state ────────────────────────────────────────────────────────────
   const [wizardOpen, setWizardOpen]       = useState(false);
-  const [wizardStep, setWizardStep]       = useState(1); // 1 = customise, 2 = preview, 3 = share
+  const [wizardStep, setWizardStep]       = useState(1);
   const [isEditing, setIsEditing]         = useState(false);
   const [editingId, setEditingId]         = useState(null);
-  const [activeRecord, setActiveRecord]   = useState(null); // current presentation being worked on
+  const [activeRecord, setActiveRecord]   = useState(null);
+  const [form, setForm]                   = useState({ title: "", tone: "professional", language: "English", currency: "AED", areaUnit: "sqft" });
+  const [sections, setSections]           = useState({ cover: true, desc: true, dev: true, prices: true, payment: true, location: true });
+  const [propertyId, setPropertyId]       = useState("");
+  const [customNote, setCustomNote]       = useState("");
+  const [saving, setSaving]               = useState(false);
+  const [generating, setGenerating]       = useState(false);
+  const [sharing, setSharing]             = useState(null);
+  const [detailDrawer, setDetailDrawer]   = useState(null);
+  const [archiving, setArchiving]         = useState(null);
 
-  // Wizard form fields
-  const [form, setForm]       = useState({ title: "", tone: "professional", language: "English", currency: "AED", areaUnit: "sqft" });
-  const [sections, setSections] = useState({ cover: true, desc: true, dev: true, prices: true, payment: true, location: true });
-  const [propertyId, setPropertyId]   = useState("");
-  const [customNote, setCustomNote]   = useState("");
-
-  // ── Loading states ──────────────────────────────────────────────────────────
-  const [saving, setSaving]         = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [sharing, setSharing]       = useState(null); // "whatsapp" | "email" | null
-
-  // ── Drawer (detail view) ────────────────────────────────────────────────────
-  const [detailDrawer, setDetailDrawer] = useState(null);
-  const [archiving, setArchiving]       = useState(null);
-
-  // ── Fetch list ───────────────────────────────────────────────────────────────
+  // ── API #5 — listPresentations ────────────────────────────────────────────
   const fetchPresentations = useCallback(async () => {
     setLoading(true);
     try {
@@ -682,51 +726,49 @@ const AgentPresentations = () => {
 
   useEffect(() => { fetchPresentations(); }, [fetchPresentations]);
 
-  // ── Open wizard for new presentation ────────────────────────────────────────
-  const openCreateWizard = () => {
-    setIsEditing(false);
-    setEditingId(null);
-    setActiveRecord(null);
+  const resetWizard = () => {
     setForm({ title: "", tone: "professional", language: "English", currency: "AED", areaUnit: "sqft" });
     setSections({ cover: true, desc: true, dev: true, prices: true, payment: true, location: true });
     setPropertyId("");
     setCustomNote("");
+    setIsEditing(false);
+    setEditingId(null);
+    setActiveRecord(null);
     setWizardStep(1);
-    setWizardOpen(true);
   };
 
-  // ── Open wizard to edit a draft ──────────────────────────────────────────────
+  const openCreateWizard = () => { resetWizard(); setWizardOpen(true); };
+
   const openEditWizard = (record) => {
     setIsEditing(true);
     setEditingId(record._id);
     setActiveRecord(record);
     setForm({
-      title:    record.title || "",
-      tone:     record.tone  || "professional",
-      language: record.settings?.language || "English",
-      currency: record.settings?.currency || "AED",
-      areaUnit: record.settings?.areaUnit || "sqft",
+      title:    record.title                        || "",
+      tone:     record.tone                         || "professional",
+      language: record.settings?.language           || "English",
+      currency: record.settings?.currency           || "AED",
+      areaUnit: record.settings?.areaUnit           || "sqft",
     });
     setSections({
-      cover:   !record.settings?.hideSections?.cover,
-      desc:    !record.settings?.hideSections?.projectDesc,
-      dev:     !record.settings?.hideSections?.developer,
-      prices:  !record.settings?.hideSections?.unitPrices,
-      payment: !record.settings?.hideSections?.paymentPlans,
-      location:!record.settings?.hideSections?.location,
+      cover:    !record.settings?.hideSections?.cover,
+      desc:     !record.settings?.hideSections?.projectDesc,
+      dev:      !record.settings?.hideSections?.developer,
+      prices:   !record.settings?.hideSections?.unitPrices,
+      payment:  !record.settings?.hideSections?.paymentPlans,
+      location: !record.settings?.hideSections?.location,
     });
     setWizardStep(1);
     setWizardOpen(true);
   };
 
-  // ── Open share/track wizard for a generated presentation ────────────────────
   const openShareWizard = (record) => {
     setActiveRecord(record);
     setWizardStep(3);
     setWizardOpen(true);
   };
 
-  // ── Step 1: Save draft (create or update) ───────────────────────────────────
+  // ── API #1 / #2 — createPresentationDraft / updatePresentation ────────────
   const handleSaveDraft = async () => {
     if (!form.title?.trim()) { message.warning("Please enter a presentation title"); return; }
     setSaving(true);
@@ -734,17 +776,17 @@ const AgentPresentations = () => {
     try {
       let res;
       if (isEditing && editingId) {
-        res = await apiUpdate(editingId, payload);
+        res = await apiUpdate(editingId, payload);          // API #2
         message.success("Draft updated successfully");
       } else {
-        res = await apiCreate(payload);
+        res = await apiCreate(payload);                     // API #1
         message.success("Draft created successfully");
       }
       const saved = res?.data?.data || res?.data || {};
       setActiveRecord(saved);
       setEditingId(saved._id);
       setIsEditing(true);
-      setWizardStep(2); // → preview
+      setWizardStep(2);
       fetchPresentations();
     } catch (err) {
       message.error(err?.response?.data?.message || "Save failed");
@@ -753,16 +795,16 @@ const AgentPresentations = () => {
     }
   };
 
-  // ── Step 2: Generate PDF ──────────────────────────────────────────────────────
+  // ── API #3 — generatePresentation ────────────────────────────────────────
   const handleGenerate = async () => {
-    if (!editingId) { message.error("No draft found to generate"); return; }
+    if (!editingId) { message.error("No draft to generate"); return; }
     setGenerating(true);
     try {
-      const res = await apiGenerate(editingId);
+      const res       = await apiGenerate(editingId);       // API #3
       const generated = res?.data?.data || res?.data || {};
       setActiveRecord(generated);
-      message.success("Presentation generated! Share link is ready.");
-      setWizardStep(3); // → share & track
+      message.success("PDF generated! Share link is ready.");
+      setWizardStep(3);
       fetchPresentations();
     } catch (err) {
       message.error(err?.response?.data?.message || "Generation failed");
@@ -771,15 +813,14 @@ const AgentPresentations = () => {
     }
   };
 
-  // ── Step 3: Share via channel ────────────────────────────────────────────────
+  // ── API #4 — shareViaChannel ─────────────────────────────────────────────
   const handleShareChannel = async (channel) => {
     if (!activeRecord?._id) return;
     setSharing(channel);
     try {
-      await apiShareChannel(activeRecord._id, channel);
+      await apiShareChannel(activeRecord._id, channel);     // API #4
       message.success(`Marked as shared via ${channel}`);
-      // refresh active record
-      const res = await apiFetchOne(activeRecord._id);
+      const res = await apiFetchOne(activeRecord._id);      // API #6 — refresh
       setActiveRecord(res?.data?.data || res?.data || activeRecord);
       fetchPresentations();
     } catch (err) {
@@ -789,11 +830,11 @@ const AgentPresentations = () => {
     }
   };
 
-  // ── Refresh active record stats ───────────────────────────────────────────────
+  // ── API #6 — getPresentation (refresh stats) ─────────────────────────────
   const refreshActiveRecord = async () => {
     if (!activeRecord?._id) return;
     try {
-      const res = await apiFetchOne(activeRecord._id);
+      const res = await apiFetchOne(activeRecord._id);      // API #6
       setActiveRecord(res?.data?.data || res?.data || activeRecord);
       message.success("Stats refreshed");
     } catch {
@@ -801,14 +842,14 @@ const AgentPresentations = () => {
     }
   };
 
-  // ── Archive ────────────────────────────────────────────────────────────────────
+  // ── API #7 — archivePresentation ─────────────────────────────────────────
   const handleArchive = async (id) => {
     setArchiving(id);
     try {
-      await apiArchive(id);
+      await apiArchive(id);                                  // API #7
       message.success("Presentation archived");
-      fetchPresentations();
       if (detailDrawer?._id === id) setDetailDrawer(null);
+      fetchPresentations();
     } catch (err) {
       message.error(err?.response?.data?.message || "Archive failed");
     } finally {
@@ -816,17 +857,12 @@ const AgentPresentations = () => {
     }
   };
 
-  // ── Close wizard ──────────────────────────────────────────────────────────────
   const closeWizard = () => {
     setWizardOpen(false);
-    setWizardStep(1);
-    setActiveRecord(null);
-    setEditingId(null);
-    setIsEditing(false);
+    resetWizard();
     fetchPresentations();
   };
 
-  // ── Stats ──────────────────────────────────────────────────────────────────────
   const counts = {
     all:       presentations.length,
     draft:     presentations.filter(p => p.status === "draft").length,
@@ -834,19 +870,9 @@ const AgentPresentations = () => {
     archived:  presentations.filter(p => p.status === "archived").length,
   };
 
-  const filterBtns = [
-    { key: "all",       label: `All (${counts.all})` },
-    { key: "draft",     label: `Drafts (${counts.draft})` },
-    { key: "generated", label: `Generated (${counts.generated})` },
-    { key: "archived",  label: `Archived (${counts.archived})` },
-  ];
-
-  // ── Table columns ──────────────────────────────────────────────────────────────
   const columns = [
     {
-      title: "Presentation",
-      dataIndex: "title",
-      key: "title",
+      title: "Presentation", dataIndex: "title", key: "title",
       render: (text, record) => (
         <div>
           <Text strong style={{ color: T.text }}>{text}</Text>
@@ -862,9 +888,7 @@ const AgentPresentations = () => {
       ),
     },
     {
-      title: "Status",
-      key: "status",
-      width: 160,
+      title: "Status", key: "status", width: 160,
       render: (_, record) => (
         <Space direction="vertical" size={4}>
           <StatusTag status={record.status} />
@@ -873,95 +897,67 @@ const AgentPresentations = () => {
       ),
     },
     {
-      title: "Properties",
-      key: "props",
-      width: 90,
-      align: "center",
+      title: "Properties", key: "props", width: 90, align: "center",
       render: (_, record) => <Tag color="blue">{record.properties?.length || 0}</Tag>,
     },
     {
-      title: "Engagement",
-      key: "engagement",
-      width: 130,
+      title: "Engagement", key: "engagement", width: 130,
       render: (_, record) =>
         record.status === "generated" ? (
           <Space direction="vertical" size={2}>
-            <Text style={{ fontSize: 12 }}>
-              <EyeOutlined style={{ marginRight: 4, color: T.primary }} />
-              {record.viewCount || 0} views
-            </Text>
+            <Text style={{ fontSize: 12 }}><EyeOutlined style={{ marginRight: 4, color: T.primary }} />{record.viewCount || 0} views</Text>
             {record.sharedViaWhatsApp && <Text style={{ fontSize: 11, color: T.success }}><WhatsAppOutlined style={{ marginRight: 4 }} />WhatsApp</Text>}
             {record.sharedViaEmail    && <Text style={{ fontSize: 11, color: T.info }}><MailOutlined style={{ marginRight: 4 }} />Email</Text>}
           </Space>
-        ) : (
-          <Text style={{ fontSize: 12, color: T.muted }}>—</Text>
-        ),
+        ) : <Text style={{ fontSize: 12, color: T.muted }}>—</Text>,
     },
     {
-      title: "Actions",
-      key: "actions",
-      width: 240,
+      title: "Actions", key: "actions", width: 240,
       render: (_, record) => (
         <Space size="small" wrap>
-          {/* View details */}
+          {/* API #6 — open detail drawer */}
           <Tooltip title="View details">
             <Button size="small" icon={<EyeOutlined />} onClick={() => setDetailDrawer(record)} />
           </Tooltip>
 
-          {/* Edit draft */}
+          {/* Edit draft → wizard step 1 */}
           {record.status === "draft" && (
             <Tooltip title="Edit draft">
               <Button size="small" icon={<EditOutlined />} onClick={() => openEditWizard(record)} />
             </Tooltip>
           )}
 
-          {/* Generate — opens wizard at step 2 */}
+          {/* API #3 — generate → wizard step 2 */}
           {record.status === "draft" && (
             <Tooltip title="Preview & Generate">
               <Button
-                size="small" type="primary"
-                icon={<ThunderboltOutlined />}
+                size="small" type="primary" icon={<ThunderboltOutlined />}
                 onClick={() => {
-                  setIsEditing(true);
-                  setEditingId(record._id);
-                  setActiveRecord(record);
-                  setForm({
-                    title: record.title, tone: record.tone || "professional",
-                    language: record.settings?.language || "English",
-                    currency: record.settings?.currency || "AED",
-                    areaUnit: record.settings?.areaUnit || "sqft",
-                  });
-                  setSections({
-                    cover:    !record.settings?.hideSections?.cover,
-                    desc:     !record.settings?.hideSections?.projectDesc,
-                    dev:      !record.settings?.hideSections?.developer,
-                    prices:   !record.settings?.hideSections?.unitPrices,
-                    payment:  !record.settings?.hideSections?.paymentPlans,
-                    location: !record.settings?.hideSections?.location,
-                  });
-                  setWizardStep(2);
-                  setWizardOpen(true);
+                  setIsEditing(true); setEditingId(record._id); setActiveRecord(record);
+                  setForm({ title: record.title, tone: record.tone || "professional", language: record.settings?.language || "English", currency: record.settings?.currency || "AED", areaUnit: record.settings?.areaUnit || "sqft" });
+                  setSections({ cover: !record.settings?.hideSections?.cover, desc: !record.settings?.hideSections?.projectDesc, dev: !record.settings?.hideSections?.developer, prices: !record.settings?.hideSections?.unitPrices, payment: !record.settings?.hideSections?.paymentPlans, location: !record.settings?.hideSections?.location });
+                  setWizardStep(2); setWizardOpen(true);
                 }}
                 style={{ background: T.primary, borderColor: T.primary }}
               />
             </Tooltip>
           )}
 
-          {/* Share */}
+          {/* API #4 — share → wizard step 3 */}
           {record.status === "generated" && (
             <Tooltip title="Share & track">
               <Button size="small" type="primary" icon={<ShareAltOutlined />} onClick={() => openShareWizard(record)} style={{ background: T.success, borderColor: T.success }} />
             </Tooltip>
           )}
 
-          {/* View PDF */}
+          {/* PDF direct link */}
           {record.pdfUrl && (
             <Tooltip title="View PDF">
               <Button size="small" icon={<FilePdfOutlined />} onClick={() => window.open(record.pdfUrl, "_blank")} />
             </Tooltip>
           )}
 
-          {/* Archive */}
+          {/* API #7 — archive */}
           {record.status !== "archived" && (
             <Tooltip title="Archive">
               <Button size="small" danger icon={<DeleteOutlined />} loading={archiving === record._id} onClick={() => handleArchive(record._id)} />
@@ -972,7 +968,6 @@ const AgentPresentations = () => {
     },
   ];
 
-  // ── Wizard modal title ─────────────────────────────────────────────────────────
   const wizardTitle = () => {
     if (wizardStep === 3) return <><ShareAltOutlined style={{ marginRight: 8, color: T.success }} />Share & Track</>;
     if (isEditing && wizardStep === 1) return <><EditOutlined style={{ marginRight: 8, color: T.primary }} />Edit Draft</>;
@@ -980,19 +975,13 @@ const AgentPresentations = () => {
     return <><PlusOutlined style={{ marginRight: 8, color: T.primary }} />New Presentation</>;
   };
 
-  // ── Wizard step bar ────────────────────────────────────────────────────────────
   const WizardStepBar = () => (
     <div style={{ display: "flex", borderBottom: "1px solid #f0f0f0", margin: "0 -24px 20px", padding: "0 24px" }}>
       {[{ n: 1, label: "Customise" }, { n: 2, label: "Preview" }, { n: 3, label: "Share & Track" }].map((s, i, arr) => {
         const state = s.n === wizardStep ? "active" : s.n < wizardStep ? "done" : "idle";
         return (
           <div key={s.n} style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "10px 0", borderBottom: state === "active" ? `2px solid ${T.primary}` : "2px solid transparent" }}>
-            <div style={{
-              width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 10, fontWeight: 700,
-              background: state === "active" ? T.primary : state === "done" ? T.success : "#e5e7eb",
-              color: state === "idle" ? T.muted : "#fff",
-            }}>
+            <div style={{ width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, background: state === "active" ? T.primary : state === "done" ? T.success : "#e5e7eb", color: state === "idle" ? T.muted : "#fff" }}>
               {state === "done" ? "✓" : s.n}
             </div>
             <span style={{ fontSize: 12, fontWeight: 600, color: state === "active" ? T.primary : state === "done" ? T.success : T.muted }}>{s.label}</span>
@@ -1003,36 +992,29 @@ const AgentPresentations = () => {
     </div>
   );
 
-  // ══════════════════════════════════════════════════════════════════════════════
   return (
     <div style={{ padding: 24, background: T.bg, minHeight: "100vh" }}>
 
-      {/* ── Page header ─────────────────────────────────────────────────────── */}
+      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
         <div>
           <Title level={3} style={{ margin: 0, color: T.text }}>
-            <ThunderboltOutlined style={{ color: T.primary, marginRight: 8 }} />
-            AI Presentations
+            <ThunderboltOutlined style={{ color: T.primary, marginRight: 8 }} />AI Presentations
           </Title>
           <Text type="secondary">Create, generate and share property presentations</Text>
         </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={openCreateWizard}
-          style={{ background: T.primary, borderColor: T.primary, borderRadius: 10, fontWeight: 700 }}
-        >
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreateWizard} style={{ background: T.primary, borderColor: T.primary, borderRadius: 10, fontWeight: 700 }}>
           New Presentation
         </Button>
       </div>
 
-      {/* ── Stats row ───────────────────────────────────────────────────────── */}
+      {/* Stats */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         {[
-          { label: "Total",     value: counts.all,       color: T.primary,  icon: <BarChartOutlined /> },
-          { label: "Drafts",    value: counts.draft,     color: T.warning,  icon: <EditOutlined /> },
-          { label: "Generated", value: counts.generated, color: T.success,  icon: <CheckCircleOutlined /> },
-          { label: "Archived",  value: counts.archived,  color: T.muted,    icon: <ClockCircleOutlined /> },
+          { label: "Total",     value: counts.all,       color: T.primary, icon: <BarChartOutlined /> },
+          { label: "Drafts",    value: counts.draft,     color: T.warning, icon: <EditOutlined /> },
+          { label: "Generated", value: counts.generated, color: T.success, icon: <CheckCircleOutlined /> },
+          { label: "Archived",  value: counts.archived,  color: T.muted,   icon: <ClockCircleOutlined /> },
         ].map(s => (
           <Col xs={12} sm={6} key={s.label}>
             <Card bordered={false} style={{ borderRadius: 12, borderLeft: `4px solid ${s.color}` }} bodyStyle={{ padding: "16px 20px" }}>
@@ -1047,21 +1029,20 @@ const AgentPresentations = () => {
         ))}
       </Row>
 
-      {/* ── Filter tabs ─────────────────────────────────────────────────────── */}
+      {/* Filter tabs */}
       <div style={{ marginBottom: 16 }}>
         <Space wrap>
-          {filterBtns.map(f => (
+          {[
+            { key: "all",       label: `All (${counts.all})` },
+            { key: "draft",     label: `Drafts (${counts.draft})` },
+            { key: "generated", label: `Generated (${counts.generated})` },
+            { key: "archived",  label: `Archived (${counts.archived})` },
+          ].map(f => (
             <Button
               key={f.key}
               type={filter === f.key ? "primary" : "default"}
               onClick={() => setFilter(f.key)}
-              style={{
-                background:   filter === f.key ? T.primary : "white",
-                borderColor:  filter === f.key ? T.primary : T.border,
-                color:        filter === f.key ? "white" : T.text,
-                borderRadius: 20,
-                fontWeight:   filter === f.key ? 700 : 400,
-              }}
+              style={{ background: filter === f.key ? T.primary : "white", borderColor: filter === f.key ? T.primary : T.border, color: filter === f.key ? "white" : T.text, borderRadius: 20, fontWeight: filter === f.key ? 700 : 400 }}
             >
               {f.label}
             </Button>
@@ -1069,7 +1050,7 @@ const AgentPresentations = () => {
         </Space>
       </div>
 
-      {/* ── Table ───────────────────────────────────────────────────────────── */}
+      {/* Table */}
       <Card bordered={false} bodyStyle={{ padding: 0 }} style={{ borderRadius: 14, overflow: "hidden" }}>
         <Table
           columns={columns}
@@ -1091,9 +1072,7 @@ const AgentPresentations = () => {
         />
       </Card>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          WIZARD MODAL — 3-step full width
-      ══════════════════════════════════════════════════════════════════════ */}
+      {/* Wizard Modal */}
       <Modal
         open={wizardOpen}
         onCancel={closeWizard}
@@ -1117,18 +1096,14 @@ const AgentPresentations = () => {
             onCancel={closeWizard}
           />
         )}
-
         {wizardStep === 2 && (
           <WizardStep2
-            form={form}
-            sections={sections}
-            record={activeRecord}
+            form={form} sections={sections} record={activeRecord}
             generating={generating}
             onGenerate={handleGenerate}
             onBack={() => setWizardStep(1)}
           />
         )}
-
         {wizardStep === 3 && (
           <WizardStep3
             record={activeRecord}
@@ -1147,9 +1122,7 @@ const AgentPresentations = () => {
         )}
       </Modal>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          DETAIL DRAWER
-      ══════════════════════════════════════════════════════════════════════ */}
+      {/* Detail Drawer */}
       <Drawer
         open={!!detailDrawer}
         onClose={() => setDetailDrawer(null)}
@@ -1169,10 +1142,7 @@ const AgentPresentations = () => {
             </Text>
 
             <Divider />
-
-            <Title level={5} style={{ marginBottom: 12 }}>
-              <SettingOutlined style={{ marginRight: 6, color: T.primary }} />Settings
-            </Title>
+            <Title level={5} style={{ marginBottom: 12 }}><SettingOutlined style={{ marginRight: 6, color: T.primary }} />Settings</Title>
             {[
               ["Language",  detailDrawer.settings?.language || "English"],
               ["Currency",  detailDrawer.settings?.currency || "AED"],
@@ -1188,15 +1158,13 @@ const AgentPresentations = () => {
             {detailDrawer.status === "generated" && (
               <>
                 <Divider />
-                <Title level={5} style={{ marginBottom: 12 }}>
-                  <BarChartOutlined style={{ marginRight: 6, color: T.primary }} />Engagement
-                </Title>
+                <Title level={5} style={{ marginBottom: 12 }}><BarChartOutlined style={{ marginRight: 6, color: T.primary }} />Engagement</Title>
                 {[
                   ["Total Views",  detailDrawer.viewCount || 0],
                   ["Last Viewed",  detailDrawer.lastViewedAt ? new Date(detailDrawer.lastViewedAt).toLocaleString("en-AE") : "Never"],
                   ["WhatsApp",     detailDrawer.sharedViaWhatsApp ? "Sent ✓" : "Not sent"],
-                  ["Email",        detailDrawer.sharedViaEmail    ? "Sent ✓" : "Not sent"],
-                  ["White Label",  detailDrawer.isWhiteLabel      ? "Yes"    : "No"],
+                  ["Email",        detailDrawer.sharedViaEmail ? "Sent ✓" : "Not sent"],
+                  ["White Label",  detailDrawer.isWhiteLabel ? "Yes" : "No"],
                 ].map(([l, v]) => (
                   <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${T.border}` }}>
                     <Text type="secondary" style={{ fontSize: 13 }}>{l}</Text>
@@ -1215,9 +1183,7 @@ const AgentPresentations = () => {
                   {p.customNote && <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>Note: {p.customNote}</div>}
                 </div>
               ))
-            ) : (
-              <Text type="secondary">No properties added</Text>
-            )}
+            ) : <Text type="secondary">No properties added</Text>}
 
             {detailDrawer.settings?.hideSections && (
               <>
@@ -1233,9 +1199,7 @@ const AgentPresentations = () => {
             {detailDrawer.viewHistory?.length > 0 && (
               <>
                 <Divider />
-                <Title level={5} style={{ marginBottom: 12 }}>
-                  <EyeOutlined style={{ marginRight: 6, color: T.primary }} />View History
-                </Title>
+                <Title level={5} style={{ marginBottom: 12 }}><EyeOutlined style={{ marginRight: 6, color: T.primary }} />View History</Title>
                 {detailDrawer.viewHistory.slice(0, 5).map((v, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${T.border}`, fontSize: 12 }}>
                     <Text type="secondary">{new Date(v.viewedAt).toLocaleString("en-AE")}</Text>
@@ -1262,36 +1226,19 @@ const AgentPresentations = () => {
               </Button>
             )}
 
-            {/* Quick action buttons */}
             <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
               {detailDrawer.status === "draft" && (
-                <Button
-                  block type="primary"
-                  icon={<EditOutlined />}
-                  onClick={() => { setDetailDrawer(null); openEditWizard(detailDrawer); }}
-                  style={{ background: T.primary, borderColor: T.primary, borderRadius: 8 }}
-                >
+                <Button block type="primary" icon={<EditOutlined />} onClick={() => { setDetailDrawer(null); openEditWizard(detailDrawer); }} style={{ background: T.primary, borderColor: T.primary, borderRadius: 8 }}>
                   Edit Draft
                 </Button>
               )}
               {detailDrawer.status === "generated" && (
-                <Button
-                  block type="primary"
-                  icon={<ShareAltOutlined />}
-                  onClick={() => { setDetailDrawer(null); openShareWizard(detailDrawer); }}
-                  style={{ background: T.success, borderColor: T.success, borderRadius: 8 }}
-                >
+                <Button block type="primary" icon={<ShareAltOutlined />} onClick={() => { setDetailDrawer(null); openShareWizard(detailDrawer); }} style={{ background: T.success, borderColor: T.success, borderRadius: 8 }}>
                   Share & Track
                 </Button>
               )}
               {detailDrawer.status !== "archived" && (
-                <Button
-                  block danger
-                  icon={<DeleteOutlined />}
-                  loading={archiving === detailDrawer._id}
-                  onClick={() => handleArchive(detailDrawer._id)}
-                  style={{ borderRadius: 8 }}
-                >
+                <Button block danger icon={<DeleteOutlined />} loading={archiving === detailDrawer._id} onClick={() => handleArchive(detailDrawer._id)} style={{ borderRadius: 8 }}>
                   Archive
                 </Button>
               )}
