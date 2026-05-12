@@ -234,7 +234,7 @@ export default function DeveloperInventory() {
 
   const fetchProjects = useCallback(async () => {
     try {
-      const res  = await apiService.get("/properties/developer/property/offplan");
+      // const res  = await apiService.get("/properties/developer/property/offplan");
       const list = res?.data || [];
       const opts = (Array.isArray(list) ? list : [])
         .filter(p => p.approvalStatus === "approved")
@@ -251,7 +251,7 @@ export default function DeveloperInventory() {
       let url = `/properties/inventory/${pid}?page=${page}&limit=${PAGE_SIZE}`;
       if (statusFilter)   url += `&status=${statusFilter}`;
       if (unitTypeFilter) url += `&unitType=${unitTypeFilter}`;
-      const res  = await apiService.get(url);
+      // const res  = await apiService.get(url);
       const raw  = res?.data || [];
       const list = (Array.isArray(raw) ? raw : raw.units || []).map(item => ({
         key: item._id, _id: item._id,
@@ -277,14 +277,14 @@ export default function DeveloperInventory() {
     if (!projectId) { message.error("Select a project first"); return; }
     setSaving(true);
     try {
-      await apiService.post("/properties/developer/inventory/create", {
-        propertyId: projectId,
-        units: [{ ...values, buildingName: values.buildingName || "", floorNumber: values.floorNumber || 0,
-          bedrooms: values.bedrooms || 0, bathrooms: values.bathrooms || 0, areaUnit: values.areaUnit || "sqft",
-          currency: values.currency || "AED", hasView: values.hasView || false,
-          viewType: values.viewType || [], parkingSpaces: values.parkingSpaces || 0,
-          furnishing: values.furnishing || "unfurnished" }],
-      });
+      // await apiService.post("/properties/developer/inventory/create", {
+      //   propertyId: projectId,
+      //   units: [{ ...values, buildingName: values.buildingName || "", floorNumber: values.floorNumber || 0,
+      //     bedrooms: values.bedrooms || 0, bathrooms: values.bathrooms || 0, areaUnit: values.areaUnit || "sqft",
+      //     currency: values.currency || "AED", hasView: values.hasView || false,
+      //     viewType: values.viewType || [], parkingSpaces: values.parkingSpaces || 0,
+      //     furnishing: values.furnishing || "unfurnished" }],
+      // });
       message.success("Unit created");
       setCreateModal(false); createForm.resetFields();
       fetchInventory(projectId, currentPage);
