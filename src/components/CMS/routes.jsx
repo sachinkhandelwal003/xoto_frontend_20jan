@@ -242,6 +242,7 @@ import ViewCases from "../ecommerce/vault/case/ViewCases";
 import DetailedViewCases from "../ecommerce/vault/case/DetailedViewCases";
 import ProcessCasesUpdates from "../ecommerce/vault/case/ProcessCasesUpdates";
 // import ReferralPartnerLogin from "../GridReferralPartner/ReferralPartnerLogin";
+// import ReferralPartnerLogin from "../GridReferralPartner/ReferralPartnerLogin"; dfs
 import ReferralPartnerDashboard from "./pages/ReferralPartnerDashboard"
 import TotalLeads from "../GridReferralPartner/GridDashboardpages/TotalLeads";
 import ActiveLeads from "../GridReferralPartner/GridDashboardpages/CreateReferralLead";
@@ -547,6 +548,7 @@ const CmsRoutes = () => {
 
 <Route path="leads/:leadId" element={<VaultLeadDetails />} />
 <Route path="vault/lead/:leadId/documents" element={<VaultLeadDocuments />} /> 
+<Route path="leads/:leadId/documents" element={<VaultLeadDocuments />} /> 
 <Route path="/lead-documents/:leadId"element={<VaultAgentDocument/>} />
 <Route path="partner-leads" element={<PartnerAgentleads />} />
 <Route path="partner/lead/:id"element={<PartnerLeadDetails />}/>
