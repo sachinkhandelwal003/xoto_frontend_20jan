@@ -7,19 +7,26 @@ import AdminProfile from "./AdminProfile";
 import CustomerProfile from "./CustomerProfile";
 import { ConsoleSqlOutlined } from "@ant-design/icons";
 import AccountantProfile from "./AccountantProfile";
+import AgentProfile from "./AgentProfile";
+import VaultAgentProfile from "./VaultAgentprofile";
+import VaultPartnerProfile from "./VaultPartnerProfile";
+import DeveloperProfile from "./DeveloperProfile";
+import GridAdminProfile from "./GridAdmin";
+import GridAdvisorProfile from "./GridAdvisorProfile";
+
 
 const Profile = () => {
   const { user } = useSelector((state) => state.auth);
 
 
-  // console.log(user)
+  // 
   // Safety check
   if (!user || !user.role) {
     return <div>No user found</div>;
   }
 
   const roleCode = Number(user.role.code);
-  // console.log(roleCode)
+  
 
   switch (roleCode) {
     case 0:
@@ -35,6 +42,20 @@ const Profile = () => {
       return <CustomerProfile />;
           case 11:
       return <AccountantProfile />;
+
+      case 16: 
+      return <AgentProfile /> ;
+      case 17: 
+      return <DeveloperProfile /> ;
+      case 22:
+        return <VaultAgentProfile /> ;
+        case 21:
+          return <VaultPartnerProfile /> ;
+
+      case 1:
+        return <GridAdminProfile />
+      case 24:
+        return <GridAdvisorProfile />
 
     default:
       return <VendorMYProfile />;

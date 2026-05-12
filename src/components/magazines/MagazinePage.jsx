@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import wave1 from "../../assets/img/wave/wave1.png";
-// import round from "../../assets/img/round231.mp4";
+// import round from "../../assets/img/round1.mp4";
 import rating from "../../assets/icons/Homeicons/rating.png";
 import partner from "../../assets/icons/Homeicons/partners.png";
 import vector from "../../assets/icons/Homeicons/Vector.png";
@@ -60,9 +60,9 @@ const BuiltForEveryone = () => {
   }, [cardsToShow]);
 
   return (
-    <section className="relative  z-10 py-8 px-4 sm:px-6 lg:px-8 bg-[var(--color-body)]">
+    <section className="relative  z-10 py-8 px-4 sm:px-6 lg:px-8 bg-[var(--color-body)] overflow-hidden">
       {/* Wave */}
-      <div className="absolute bottom-[-20px] sm:bottom-[-50px] md:bottom-[-80px] lg:bottom-[-130px] xl:bottom-[-160px] left-0 w-full z-0  ">
+      <div className="absolute bottom-[-20px] sm:bottom-[-50px] md:bottom-[-80px] lg:bottom-[-130px] xl:bottom-[-160px] left-0 w-full z-20 pointer-events-none  ">
         <img
           src={wave1}
           alt=""
@@ -70,7 +70,7 @@ const BuiltForEveryone = () => {
         />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto  ">
+      <div className="relative z-0 max-w-7xl mx-auto  ">
         <h2
           className="text-center mb-6 lg:mb-16 heading-light"
           style={{ color: "var(--color-black)" }}
@@ -78,16 +78,18 @@ const BuiltForEveryone = () => {
           {t("title")}
         </h2>
 
-        <div className="flex flex-col lg:flex-row items-center justify-between">
+        <div className="flex flex-col lg:flex-row items-center justify-between ">
           {/* Video */}
-          <div className="w-full  z-0 overflow-hidden lg:w-1/2 flex justify-start items-start mb-10 lg:mb-25">
-            <div className="relative w-60 h-60 sm:w-100 sm:h-100 lg:w-110 lg:h-110 mx-auto">
+          <div className="w-full  relative    z-0 overflow-hidden  lg:w-1/2 flex justify-start items-start mb-10 lg:mb-25">
+            <div className="relative  z-0 w-60 h-60 sm:w-100 sm:h-100 lg:w-110 lg:h-110 mx-auto">
               <video
-                src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1768044487658-round231.mp4"}
+                src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1773149793064-round321.mp4"}
                 autoPlay
                 loop
                 muted
                 playsInline
+                disablePictureInPicture
+                controls={false}
                 className="w-full object-contain"
               />
             </div>
@@ -146,27 +148,20 @@ const BuiltForEveryone = () => {
 
   {/* Arrows Section */}
   <div className="flex gap-3 mt-8">
-    <button
-      onClick={() => { prevSlide(); setActiveBtn("left"); }}
-      className={`p-3 rounded-sm border transition-all duration-300 ${
-        activeBtn === "left" 
-          ? "bg-[var(--color-primary)] text-white" 
-          : "bg-white text-black hover:bg-gray-100"
-      }`}
-    >
-      <ChevronLeft className="w-5 h-5" />
-    </button>
-    <button
-      onClick={() => { nextSlide(); setActiveBtn("right"); }}
-      className={`p-3 rounded-sm border transition-all duration-300 ${
-        activeBtn === "right" 
-          ? "bg-[var(--color-primary)] text-white" 
-          : "bg-white text-black hover:bg-gray-100"
-      }`}
-    >
-      <ChevronRight className="w-5 h-5" />
-    </button>
-  </div>
+  <button
+    onClick={prevSlide}
+    className="p-3 rounded-sm border bg-white text-black hover:bg-[var(--color-primary)] hover:text-white transition-all duration-300"
+  >
+    <ChevronLeft className="w-5 h-5" />
+  </button>
+
+  <button
+    onClick={nextSlide}
+    className="p-3 rounded-sm border bg-white text-black hover:bg-[var(--color-primary)] hover:text-white transition-all duration-300"
+  >
+    <ChevronRight className="w-5 h-5" />
+  </button>
+</div>
 </div>
         </div>
       </div>

@@ -1,0 +1,23 @@
+{
+  "heading1": "Hacemos que los prestamistas",
+  "heading2": "trabajen para usted",
+  "description": "Xoto se asocia con los principales bancos e instituciones para que tenga acceso a ofertas hipotecarias exclusivas: más rápido, más fácil y con total transparencia.",
+  "labels": {
+    "aiOffers": {
+      "title": "Ofertas sugeridas por IA",
+      "text": "Le encontramos planes hipotecarios adaptados a sus ingresos, propiedad y objetivos."
+    },
+    "guidance": {
+      "title": "Orientación personal",
+      "text": "Nuestros expertos en hipotecas lo guían en cada paso, incluido el papeleo."
+    },
+    "transparentCost": {
+      "title": "Costo transparente",
+      "text": "Todas las tarifas, intereses y cargos se muestran por adelantado; no hay sorpresas de última hora."
+    },
+    "fastProcess": {
+      "title": "Proceso rápido",
+      "text": "La preaprobación y el desembolso más rápidos."
+    }
+  }
+}

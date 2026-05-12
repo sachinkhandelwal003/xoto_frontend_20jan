@@ -2,7 +2,6 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 
-
 /* =========================
    AR - Arabic
 ========================= */
@@ -24,8 +23,6 @@ import arInterior3 from "./locales/ar/interior3.json";
 import arInterior4 from "./locales/ar/interior4.json";
 import arInterior7 from "./locales/ar/interior7.json";
 import arbook from "./locales/ar/book.json";
-
-
 import arbuy1 from "./locales/Ar/buy1.json";
 import arbuy2 from "./locales/Ar/buy2.json";
 import arbuy3 from "./locales/Ar/buy3.json";
@@ -52,13 +49,14 @@ import arstakeholders from "./locales/Ar/stakeholders.json";
 import arpartnerForm from "./locales/Ar/partnerForm.json";
 import arbuiltForEveryone from "./locales/Ar/builtForEveryone.json";
 import arCta from "./locales/Ar/cta.json";
-
+import arHome6 from "./locales/Ar/home6.json";
 import arMort1 from "./locales/ar/mort1.json";
 import arMort2 from "./locales/ar/mort2.json";
 import arMort3 from "./locales/ar/mort3.json";
+import arMort4 from "./locales/ar/mort4.json"; // <-- NEW
 import arMort6 from "./locales/ar/mort6.json";
+import arMort7 from "./locales/ar/mort7.json";
 import arEcommerce from "./locales/ar/ecommerce.json";
-
 
 /* =========================
    EN - English
@@ -74,6 +72,7 @@ import enHome2 from "./locales/en/home2.json";
 import enHome3 from "./locales/en/home3.json";
 import enHome4 from "./locales/en/home4.json";
 import enHome5 from "./locales/en/home5.json";
+import enHome6 from "./locales/en/home6.json"
 import enFooter from "./locales/en/footer.json";
 import enInterior1 from "./locales/en/interior1.json";
 import enInterior2 from "./locales/en/interior2.json";
@@ -101,7 +100,9 @@ import enCta from "./locales/en/cta.json";
 import enMort1 from "./locales/en/mort1.json";
 import enMort2 from "./locales/en/mort2.json";
 import enMort3 from "./locales/en/mort3.json";
+import enMort4 from "./locales/en/mort4.json"; // <-- NEW
 import enMort6 from "./locales/en/mort6.json";
+import enMort7 from "./locales/en/mort7.json";
 import enbook from "./locales/en/book.json";
 import enlandhero from "./locales/en/landhero.json";
 import enconsultation from "./locales/en/consultation.json";
@@ -127,6 +128,7 @@ import hiHome2 from "./locales/hi/home2.json";
 import hiHome3 from "./locales/hi/home3.json";
 import hiHome4 from "./locales/hi/home4.json";
 import hiHome5 from "./locales/hi/home5.json";
+import hiHome6 from "./locales/hi/home6.json";
 import hiFooter from "./locales/hi/footer.json";
 import hiInterior1 from "./locales/hi/interior1.json";
 import hiInterior2 from "./locales/hi/interior2.json";
@@ -154,7 +156,9 @@ import hiCta from "./locales/hi/cta.json";
 import hiMort1 from "./locales/hi/mort1.json";
 import hiMort2 from "./locales/hi/mort2.json";
 import hiMort3 from "./locales/hi/mort3.json";
+import hiMort4 from "./locales/hi/mort4.json"; // <-- NEW
 import hiMort6 from "./locales/hi/mort6.json";
+import hiMort7 from "./locales/hi/mort7.json";
 import hibook from "./locales/hi/book.json";
 import hiconsultation from "./locales/hi/consultation.json";
 import hiarticle1 from "./locales/hi/article1.json";
@@ -180,6 +184,7 @@ import deHome2 from "./locales/de/home2.json";
 import deHome3 from "./locales/de/home3.json";
 import deHome4 from "./locales/de/home4.json";
 import deHome5 from "./locales/de/home5.json";
+import deHome6 from "./locales/de/home6.json";
 import deFooter from "./locales/de/footer.json";
 import deInterior1 from "./locales/de/interior1.json";
 import deInterior2 from "./locales/de/interior2.json";
@@ -207,7 +212,9 @@ import deCta from "./locales/de/cta.json";
 import deMort1 from "./locales/de/mort1.json";
 import deMort2 from "./locales/de/mort2.json";
 import deMort3 from "./locales/de/mort3.json";
+import deMort4 from "./locales/de/mort4.json"; // <-- NEW
 import deMort6 from "./locales/de/mort6.json";
+import deMort7 from "./locales/de/mort7.json";
 import debook from "./locales/de/book.json";
 import deconsultation from "./locales/de/consultation.json";
 import dearticle1 from "./locales/de/article1.json";
@@ -218,7 +225,6 @@ import dearticle5 from "./locales/de/article5.json";
 import delandhero from "./locales/de/landhero.json";
 import deinteractive from "./locales/de/interactive.json";
 import de from "./locales/de/ecommerce.json";
-
 
 /* =========================
    ES - Spanish
@@ -234,6 +240,7 @@ import esHome2 from "./locales/es/home2.json";
 import esHome3 from "./locales/es/home3.json";
 import esHome4 from "./locales/es/home4.json";
 import esHome5 from "./locales/es/home5.json";
+import esHome6 from "./locales/es/home6.json";
 import esFooter from "./locales/es/footer.json";
 import esInterior1 from "./locales/es/interior1.json";
 import esInterior2 from "./locales/es/interior2.json";
@@ -261,7 +268,9 @@ import esCta from "./locales/es/cta.json";
 import esMort1 from "./locales/es/mort1.json";
 import esMort2 from "./locales/es/mort2.json";
 import esMort3 from "./locales/es/mort3.json";
+import esMort4 from "./locales/es/mort4.json"; // <-- NEW
 import esMort6 from "./locales/es/mort6.json";
+import esMort7 from "./locales/es/mort7.json";
 import esbook from "./locales/es/book.json";
 import esconsultation from "./locales/es/consultation.json";
 import esarticle1 from "./locales/es/article1.json";
@@ -272,7 +281,6 @@ import esarticle5 from "./locales/es/article5.json";
 import eslandhero from "./locales/es/landhero.json";
 import esinteractive from "./locales/es/interactive.json";
 import es from "./locales/es/ecommerce.json";
-
 
 /* =========================
    FR - French
@@ -288,6 +296,7 @@ import frHome2 from "./locales/fr/home2.json";
 import frHome3 from "./locales/fr/home3.json";
 import frHome4 from "./locales/fr/home4.json";
 import frHome5 from "./locales/fr/home5.json";
+import frHome6 from "./locales/fr/home6.json";
 import frFooter from "./locales/fr/footer.json";
 import frInterior1 from "./locales/fr/interior1.json";
 import frInterior2 from "./locales/fr/interior2.json";
@@ -315,7 +324,9 @@ import frCta from "./locales/fr/cta.json";
 import frMort1 from "./locales/fr/mort1.json";
 import frMort2 from "./locales/fr/mort2.json";
 import frMort3 from "./locales/fr/mort3.json";
+import frMort4 from "./locales/fr/mort4.json"; // <-- NEW
 import frMort6 from "./locales/fr/mort6.json";
+import frMort7 from "./locales/fr/mort7.json";
 import frbook from "./locales/fr/book.json";
 import frconsultation from "./locales/fr/consultation.json";
 import frarticle1 from "./locales/fr/article1.json";
@@ -326,7 +337,6 @@ import frarticle5 from "./locales/fr/article5.json";
 import frlandhero from "./locales/fr/landhero.json";
 import frinteractive from "./locales/fr/interactive.json";
 import fr from "./locales/fr/ecommerce.json";
-
 
 /* =========================
    RU - Russian
@@ -342,6 +352,7 @@ import ruHome2 from "./locales/ru/home2.json";
 import ruHome3 from "./locales/ru/home3.json";
 import ruHome4 from "./locales/ru/home4.json";
 import ruHome5 from "./locales/ru/home5.json";
+import ruHome6 from "./locales/ru/home6.json";
 import ruFooter from "./locales/ru/footer.json";
 import ruInterior1 from "./locales/ru/interior1.json";
 import ruInterior2 from "./locales/ru/interior2.json";
@@ -369,7 +380,9 @@ import ruCta from "./locales/ru/cta.json";
 import ruMort1 from "./locales/ru/mort1.json";
 import ruMort2 from "./locales/ru/mort2.json";
 import ruMort3 from "./locales/ru/mort3.json";
+import ruMort4 from "./locales/ru/mort4.json"; // <-- NEW
 import ruMort6 from "./locales/ru/mort6.json";
+import ruMort7 from "./locales/ru/mort7.json";
 import rubook from "./locales/ru/book.json";
 import ruconsultation from "./locales/ru/consultation.json";
 import ruarticle1 from "./locales/ru/article1.json";
@@ -380,7 +393,6 @@ import ruarticle5 from "./locales/ru/article5.json";
 import rulandhero from "./locales/ru/landhero.json";
 import ruinteractive from "./locales/ru/interactive.json";
 import ru from "./locales/ru/ecommerce.json";
-
 
 /* =========================
    TR - Turkish
@@ -396,6 +408,7 @@ import trHome2 from "./locales/tr/home2.json";
 import trHome3 from "./locales/tr/home3.json";
 import trHome4 from "./locales/tr/home4.json";
 import trHome5 from "./locales/tr/home5.json";
+import trHome6 from "./locales/tr/home6.json";
 import trFooter from "./locales/tr/footer.json";
 import trInterior1 from "./locales/tr/interior1.json";
 import trInterior2 from "./locales/tr/interior2.json";
@@ -423,7 +436,9 @@ import trCta from "./locales/tr/cta.json";
 import trMort1 from "./locales/tr/mort1.json";
 import trMort2 from "./locales/tr/mort2.json";
 import trMort3 from "./locales/tr/mort3.json";
+import trMort4 from "./locales/tr/mort4.json"; // <-- NEW
 import trMort6 from "./locales/tr/mort6.json";
+import trMort7 from "./locales/tr/mort7.json";
 import trbook from "./locales/tr/book.json";
 import trconsultation from "./locales/tr/consultation.json";
 import trarticle1 from "./locales/tr/article1.json";
@@ -434,7 +449,6 @@ import trarticle5 from "./locales/tr/article5.json";
 import trlandhero from "./locales/tr/landhero.json";
 import trinteractive from "./locales/tr/interactive.json";
 import tr from "./locales/tr/ecommerce.json";
-
 
 /* =========================
    ZH - Chinese
@@ -450,6 +464,7 @@ import zhHome2 from "./locales/zh/home2.json";
 import zhHome3 from "./locales/zh/home3.json";
 import zhHome4 from "./locales/zh/home4.json";
 import zhHome5 from "./locales/zh/home5.json";
+import zhHome6 from "./locales/zh/home6.json";
 import zhFooter from "./locales/zh/footer.json";
 import zhInterior1 from "./locales/zh/interior1.json";
 import zhInterior2 from "./locales/zh/interior2.json";
@@ -477,7 +492,9 @@ import zhCta from "./locales/zh/cta.json";
 import zhMort1 from "./locales/zh/mort1.json";
 import zhMort2 from "./locales/zh/mort2.json";
 import zhMort3 from "./locales/zh/mort3.json";
+import zhMort4 from "./locales/zh/mort4.json"; // <-- NEW
 import zhMort6 from "./locales/zh/mort6.json";
+import zhMort7 from "./locales/zh/mort7.json";
 import zhbook from "./locales/zh/book.json";
 import zhconsultation from "./locales/zh/consultation.json";
 import zharticle1 from "./locales/zh/article1.json";
@@ -503,6 +520,7 @@ import tlHome2 from "./locales/tl/home2.json";
 import tlHome3 from "./locales/tl/home3.json";
 import tlHome4 from "./locales/tl/home4.json";
 import tlHome5 from "./locales/tl/home5.json";
+import tlHome6 from "./locales/tl/home6.json";
 import tlFooter from "./locales/tl/footer.json";
 import tlInterior1 from "./locales/tl/interior1.json";
 import tlInterior2 from "./locales/tl/interior2.json";
@@ -530,7 +548,9 @@ import tlCta from "./locales/tl/cta.json";
 import tlMort1 from "./locales/tl/mort1.json";
 import tlMort2 from "./locales/tl/mort2.json";
 import tlMort3 from "./locales/tl/mort3.json";
+import tlMort4 from "./locales/tl/mort4.json"; // <-- NEW
 import tlMort6 from "./locales/tl/mort6.json";
+import tlMort7 from "./locales/tl/mort7.json";
 import tlbook from "./locales/tl/book.json";
 import tlconsultation from "./locales/tl/consultation.json";
 import tlarticle1 from "./locales/tl/article1.json";
@@ -556,6 +576,7 @@ import fahome2 from "./locales/fa/home2.json";
 import fahome3 from "./locales/fa/home3.json";
 import fahome4 from "./locales/fa/home4.json";
 import fahome5 from "./locales/fa/home5.json";
+import faHome6 from "./locales/fa/home6.json";
 import fafooter from "./locales/fa/footer.json";
 import faInterior1 from "./locales/fa/interior1.json";
 import faInterior2 from "./locales/fa/interior2.json";
@@ -592,9 +613,10 @@ import faCta from "./locales/fa/cta.json";
 import faMort1 from "./locales/fa/mort1.json";
 import faMort2 from "./locales/fa/mort2.json";
 import faMort3 from "./locales/fa/mort3.json";
+import faMort4 from "./locales/fa/mort4.json"; // <-- NEW
 import faMort6 from "./locales/fa/mort6.json";
+import faMort7 from "./locales/fa/mort7.json";
 import faEcommerce from "./locales/fa/ecommerce.json";
-
 
 /* =========================
    UR - Urdu
@@ -611,6 +633,7 @@ import urhome2 from "./locales/ur/home2.json";
 import urhome3 from "./locales/ur/home3.json";
 import urhome4 from "./locales/ur/home4.json";
 import urhome5 from "./locales/ur/home5.json";
+import urhome6 from "./locales/ur/home6.json";
 import urInterior1 from "./locales/ur/interior1.json";
 import urInterior2 from "./locales/ur/interior2.json";
 import urInterior3 from "./locales/ur/interior3.json";
@@ -646,9 +669,10 @@ import urCta from "./locales/ur/cta.json";
 import urMort1 from "./locales/ur/mort1.json";
 import urMort2 from "./locales/ur/mort2.json";
 import urMort3 from "./locales/ur/mort3.json";
+import urMort4 from "./locales/ur/mort4.json"; // <-- NEW
 import urMort6 from "./locales/ur/mort6.json";
+import urMort7 from "./locales/ur/mort7.json";
 import urEcommerce from "./locales/ur/ecommerce.json";
-
 
 /* =========================
    PA - Punjabi
@@ -664,6 +688,7 @@ import pahome2 from "./locales/pa/home2.json";
 import pahome3 from "./locales/pa/home3.json";
 import pahome4 from "./locales/pa/home4.json";
 import pahome5 from "./locales/pa/home5.json";
+import paHome6 from "./locales/pa/home6.json";
 import pafooter from "./locales/pa/footer.json";
 import paInterior1 from "./locales/pa/interior1.json";
 import paInterior2 from "./locales/pa/interior2.json";
@@ -699,9 +724,15 @@ import paCta from "./locales/pa/cta.json";
 import paMort1 from "./locales/pa/mort1.json";
 import paMort2 from "./locales/pa/mort2.json";
 import paMort3 from "./locales/pa/mort3.json";
+import paMort4 from "./locales/pa/mort4.json"; // <-- NEW
 import paMort6 from "./locales/pa/mort6.json";
+import paMort7 from "./locales/pa/mort7.json";
 import paEcommerce from "./locales/pa/ecommerce.json";
 
+
+// ==========================================
+// Initialization
+// ==========================================
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -719,6 +750,7 @@ i18n
         home3: enHome3,
         home4: enHome4,
         home5: enHome5,
+        home6: enHome6,
         footer: enFooter,
         interior1: enInterior1,
         interior2: enInterior2,
@@ -746,7 +778,9 @@ i18n
         mort1: enMort1,
         mort2: enMort2,
         mort3: enMort3,
+        mort4: enMort4, // <-- ADDED
         mort6: enMort6,
+        mort7: enMort7,
         book: enbook,
         consultation: enconsultation,
         landhero: enlandhero,
@@ -771,6 +805,7 @@ i18n
         home3: arhome3,
         home4: arhome4,
         home5: arhome5,
+        home6: arHome6,
         footer: arfooter,
         interior1: arInterior1,
         interior2: arInterior2,
@@ -807,63 +842,11 @@ i18n
         mort1: arMort1,
         mort2: arMort2,
         mort3: arMort3,
+        mort4: arMort4, // <-- ADDED
         mort6: arMort6,
+        mort7: arMort7,
         ecommerce: arEcommerce,
       },
-
-
-      ar: {
-        common: arCommon,
-        contact: arcontact,
-        contact1: arcontact1,
-        contact3: arcontact3,
-        contact4: arcontact4,
-        home: arhome,
-        home1: arhome1,
-        home2: arhome2,
-        home3: arhome3,
-        home4: arhome4,
-        home5: arhome5,
-        footer: arfooter,
-        interior1: arInterior1,
-        interior2: arInterior2,
-        interior3: arInterior3,
-        interior4: arInterior4,
-        interior5: arinterior5,
-        interior6: arinterior6,
-        interior7: arInterior7,
-        scape1: arscape1,
-        scape2: arscape2,
-        buy1: arbuy1,
-        buy2: arbuy2,
-        buy3: arbuy3,
-        buy4: arbuy4,
-        buy5: arbuy5,
-        buy6: arbuy6,
-        buy7: arbuy7,
-        book: arbook,
-        consultation: arconsultation,
-        landhero: arlandhero,
-        interactive: arinteractive,
-        article1: ararticle1,
-        article2: ararticle2,
-        article3: ararticle3,
-        article4: ararticle4,
-        article5: ararticle5,
-        page3: arpage3,
-        ecosystem: arecosystem,
-        whyPartner: arwhypartner,
-        stakeholders: arstakeholders,
-        partnerForm: arpartnerForm,
-        builtForEveryone: arbuiltForEveryone,
-        cta: arCta,
-        mort1: arMort1,
-        mort2: arMort2,
-        mort3: arMort3,
-        mort6: arMort6,
-        ecommerce: arEcommerce,
-      },
-
 
       hi: {
         common: hiCommon,
@@ -877,6 +860,7 @@ i18n
         home3: hiHome3,
         home4: hiHome4,
         home5: hiHome5,
+        home6: hiHome6,
         footer: hiFooter,
         interior1: hiInterior1,
         interior2: hiInterior2,
@@ -904,7 +888,9 @@ i18n
         mort1: hiMort1,
         mort2: hiMort2,
         mort3: hiMort3,
+        mort4: hiMort4, // <-- ADDED
         mort6: hiMort6,
+        mort7: hiMort7,
         book: hibook,
         consultation: hiconsultation,
         landhero: hilandhero,
@@ -916,7 +902,6 @@ i18n
         article5: hiarticle5,
         ecommerce: hi,
       },
-
 
       de: {
         common: deCommon,
@@ -930,6 +915,7 @@ i18n
         home3: deHome3,
         home4: deHome4,
         home5: deHome5,
+        home6: deHome6,
         footer: deFooter,
         interior1: deInterior1,
         interior2: deInterior2,
@@ -957,7 +943,9 @@ i18n
         mort1: deMort1,
         mort2: deMort2,
         mort3: deMort3,
+        mort4: deMort4, // <-- ADDED
         mort6: deMort6,
+        mort7: deMort7,
         book: debook,
         consultation: deconsultation,
         landhero: delandhero,
@@ -969,7 +957,6 @@ i18n
         article5: dearticle5,
         ecommerce: de,
       },
-
 
       es: {
         common: esCommon,
@@ -983,6 +970,7 @@ i18n
         home3: esHome3,
         home4: esHome4,
         home5: esHome5,
+        home6: esHome6,
         footer: esFooter,
         interior1: esInterior1,
         interior2: esInterior2,
@@ -1010,7 +998,9 @@ i18n
         mort1: esMort1,
         mort2: esMort2,
         mort3: esMort3,
+        mort4: esMort4, // <-- ADDED
         mort6: esMort6,
+        mort7: esMort7,
         book: esbook,
         consultation: esconsultation,
         landhero: eslandhero,
@@ -1022,7 +1012,6 @@ i18n
         article5: esarticle5,
         ecommerce: es,
       },
-
 
       fr: {
         common: frCommon,
@@ -1036,6 +1025,7 @@ i18n
         home3: frHome3,
         home4: frHome4,
         home5: frHome5,
+        home6: frHome6,
         footer: frFooter,
         interior1: frInterior1,
         interior2: frInterior2,
@@ -1063,7 +1053,9 @@ i18n
         mort1: frMort1,
         mort2: frMort2,
         mort3: frMort3,
+        mort4: frMort4, // <-- ADDED
         mort6: frMort6,
+        mort7: frMort7,
         book: frbook,
         consultation: frconsultation,
         landhero: frlandhero,
@@ -1075,7 +1067,6 @@ i18n
         article5: frarticle5,
         ecommerce: fr,
       },
-
 
       ru: {
         common: ruCommon,
@@ -1089,6 +1080,7 @@ i18n
         home3: ruHome3,
         home4: ruHome4,
         home5: ruHome5,
+        home6: ruHome6,
         footer: ruFooter,
         interior1: ruInterior1,
         interior2: ruInterior2,
@@ -1116,7 +1108,9 @@ i18n
         mort1: ruMort1,
         mort2: ruMort2,
         mort3: ruMort3,
+        mort4: ruMort4, // <-- ADDED
         mort6: ruMort6,
+        mort7: ruMort7,
         book: rubook,
         consultation: ruconsultation,
         landhero: rulandhero,
@@ -1128,7 +1122,6 @@ i18n
         article5: ruarticle5,
         ecommerce: ru,
       },
-
 
       tr: {
         common: trCommon,
@@ -1142,6 +1135,7 @@ i18n
         home3: trHome3,
         home4: trHome4,
         home5: trHome5,
+        home6: trHome6,
         footer: trFooter,
         interior1: trInterior1,
         interior2: trInterior2,
@@ -1169,7 +1163,9 @@ i18n
         mort1: trMort1,
         mort2: trMort2,
         mort3: trMort3,
+        mort4: trMort4, // <-- ADDED
         mort6: trMort6,
+        mort7: trMort7,
         book: trbook,
         consultation: trconsultation,
         landhero: trlandhero,
@@ -1181,7 +1177,6 @@ i18n
         article5: trarticle5,
         ecommerce: tr,
       },
-
 
       zh: {
         common: zhCommon,
@@ -1195,6 +1190,7 @@ i18n
         home3: zhHome3,
         home4: zhHome4,
         home5: zhHome5,
+        home6: zhHome6,
         footer: zhFooter,
         interior1: zhInterior1,
         interior2: zhInterior2,
@@ -1222,7 +1218,9 @@ i18n
         mort1: zhMort1,
         mort2: zhMort2,
         mort3: zhMort3,
+        mort4: zhMort4, // <-- ADDED
         mort6: zhMort6,
+        mort7: zhMort7,
         book: zhbook,
         consultation: zhconsultation,
         landhero: zhlandhero,
@@ -1234,7 +1232,6 @@ i18n
         article5: zharticle5,
         ecommerce: zh,
       },
-
 
       tl: {
         common: tlCommon,
@@ -1248,6 +1245,7 @@ i18n
         home3: tlHome3,
         home4: tlHome4,
         home5: tlHome5,
+        home6: tlHome6,
         footer: tlFooter,
         interior1: tlInterior1,
         interior2: tlInterior2,
@@ -1275,7 +1273,9 @@ i18n
         mort1: tlMort1,
         mort2: tlMort2,
         mort3: tlMort3,
+        mort4: tlMort4, // <-- ADDED
         mort6: tlMort6,
+        mort7: tlMort7,
         book: tlbook,
         consultation: tlconsultation,
         landhero: tllandhero,
@@ -1287,7 +1287,6 @@ i18n
         article5: tlarticle5,
         ecommerce: tl,
       },
-
 
       fa: {
         common: faCommon,
@@ -1301,13 +1300,12 @@ i18n
         home3: fahome3,
         home4: fahome4,
         home5: fahome5,
+        home6: faHome6,
         footer: fafooter,
         interior1: faInterior1,
         interior2: faInterior2,
         interior3: faInterior3,
         interior4: faInterior4,
-        interior5: fainterior5,
-        interior6: fainterior6,
         interior7: faInterior7,
         buy1: fabuy1,
         buy2: fabuy2,
@@ -1337,10 +1335,11 @@ i18n
         mort1: faMort1,
         mort2: faMort2,
         mort3: faMort3,
+        mort4: faMort4, // <-- ADDED
         mort6: faMort6,
+        mort7: faMort7,
         ecommerce: faEcommerce,
       },
-
 
       ur: {
         common: urcommon,
@@ -1354,6 +1353,7 @@ i18n
         home3: urhome3,
         home4: urhome4,
         home5: urhome5,
+        home6: urhome6,
         footer: urfooter,
         interior1: urInterior1,
         interior2: urInterior2,
@@ -1390,10 +1390,11 @@ i18n
         mort1: urMort1,
         mort2: urMort2,
         mort3: urMort3,
+        mort4: urMort4, // <-- ADDED
         mort6: urMort6,
+        mort7: urMort7,
         ecommerce: urEcommerce,
       },
-
 
       pa: {
         common: pacommon,
@@ -1407,6 +1408,7 @@ i18n
         home3: pahome3,
         home4: pahome4,
         home5: pahome5,
+        home6: paHome6,
         footer: pafooter,
         interior1: paInterior1,
         interior2: paInterior2,
@@ -1442,7 +1444,9 @@ i18n
         mort1: paMort1,
         mort2: paMort2,
         mort3: paMort3,
+        mort4: paMort4, // <-- ADDED
         mort6: paMort6,
+        mort7: paMort7,
         ecommerce: paEcommerce,
       },
     },
@@ -1450,13 +1454,6 @@ i18n
     fallbackLng: "en",
 
     supportedLngs: ["en", "ar", "hi", "de", "es", "fr", "ru", "tr", "zh", "tl", "fa", "ur", "pa"],
-
-
-    fallbackLng: "en",
-
-
-    supportedLngs: ["en", "ar", "hi", "de", "es", "fr", "ru", "tr", "zh", "tl", "fa", "ur", "pa"],
-
 
     ns: [
       "common",
@@ -1470,6 +1467,7 @@ i18n
       "home3",
       "home4",
       "home5",
+      "home6",
       "footer",
       "interior1",
       "interior2",
@@ -1497,7 +1495,9 @@ i18n
       "mort1",
       "mort2",
       "mort3",
+      "mort4", // <-- ADDED mort4 HERE
       "mort6",
+      "mort7", // <-- FIXED mort7 WAS MISSING HERE PREVIOUSLY
       "book",
       "consultation",
       "article1",
@@ -1510,15 +1510,12 @@ i18n
       "ecommerce",
     ],
 
-
     defaultNS: "common",
-
 
     detection: {
       order: ["localStorage", "navigator"],
       caches: ["localStorage"],
     },
-
 
     interpolation: {
       escapeValue: false,
@@ -1526,4 +1523,3 @@ i18n
   });
 
 export default i18n;
-

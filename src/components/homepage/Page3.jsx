@@ -80,7 +80,7 @@ const Page3 = () => {
 
   const handleReadMore = (id) => {
     setSelectedBlogId(id);
-    navigate("/ai");
+    navigate("/Blog");
   };
 
   const categories = [
@@ -107,7 +107,7 @@ const Page3 = () => {
         <div className="absolute inset-0"></div>
 
         <div className="relative z-10 text-center px-6">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold leading-snug">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold leading-snug leading-[54px]">
             {t("hero.title")}
           </h1>
         </div>
@@ -117,12 +117,31 @@ const Page3 = () => {
 
         <style>{`
           .clip-left-shape {
-            clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
+             position: absolute;
+          bottom: 0; left: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 5;
+          clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
           }
           .clip-right-shape {
-            clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
-          }
-        `}</style>
+            position: absolute;
+          bottom: 0; right: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 5;
+          clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        @media (min-width: 360px) {
+          .xs\\:text-\\[2\\.25rem\\] { font-size: 2.25rem !important; }
+        }
+      `}</style>
       </section>
 
       {/* BLOG LIST */}
@@ -130,9 +149,9 @@ const Page3 = () => {
 
         <div className="max-w-7xl mx-auto relative z-10 w-full">
 
-          <h2 className="text-3xl md:text-5xl text-center text-black font-semibold mb-12">
-            {t("blogs.title")}
-          </h2>
+          <h2 className="text-center text-black font-semibold mb-12" style={{ fontSize: '54px', lineHeight: '1.15' }}>
+  {t("blogs.title")}
+</h2>
 
           {/* SEARCH */}
           <div className="flex justify-center mb-10">

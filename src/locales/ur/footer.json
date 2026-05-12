@@ -13,9 +13,9 @@
   "offerings": [
     { "label": "لینڈ اسکیپنگ", "path": "/landscaping" },
     { "label": "انٹیریئرز", "path": "/services/interior" },
-    { "label": "کرایہ", "path": "/marketplace" },
-    { "label": "خریدیں", "path": "/marketplace" },
-    { "label": "بیچیں", "path": "/marketplace" },
+    { "label": "کرایہ", "path": "/Property" },
+    { "label": "خریدیں", "path": "/Property" },
+    { "label": "بیچیں", "path": "/Property" },
     { "label": "ہوم لون", "path": "/mortgage/services" }
     
   ],
@@ -27,7 +27,7 @@
     { "label": "مالیاتی ادارے", "path": "/" }
   ],
   "knowledge": [
-    { "label": "علمی مرکز", "path": "/explore" },
+    { "label": "علمی مرکز", "path": "/Blogs" },
     { "label": "ہماری پائیداری", "path": "/about" },
     { "label": "فوکس", "path": "/about" },
     { "label": "اپنی رائے دیں", "path": "/about" },
@@ -41,7 +41,7 @@
       "partners": "پارٹنرز کے لیے",
       "customers": "صارفین کے لیے"
     },
-    "partners": "connect@xoto.ae",
+    "partners": "biz@xoto.ae",
     "customers": "care@xoto.ae"
   },
   "social": [

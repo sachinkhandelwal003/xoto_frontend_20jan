@@ -1,437 +1,296 @@
+import { Skeleton } from "antd";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import {
-  Card,
-  Typography,
-  Table,
-  Tag,
-  Button,
-  Input,
-  Row,
-  Col,
-  Statistic,
-  message,
-  Modal,
-  Form,
-  Divider,
-  Select,
-  DatePicker,
-  InputNumber,
-  Upload,
-  Switch
-} from "antd";
-import {
-  PlusOutlined,
-  SearchOutlined,
-  HomeOutlined,
-  UploadOutlined
+  PlusOutlined, SearchOutlined, EnvironmentOutlined,
+  ExpandOutlined, EyeOutlined, EditOutlined, AppstoreOutlined,
+  CheckCircleFilled, ClockCircleFilled, CloseCircleFilled,
+  FireFilled, BuildFilled, ApartmentOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 
-const { Title, Text } = Typography;
-const { TextArea } = Input;
-const { Option } = Select;
+const STATUS_CONFIG = {
+  approved: { color: "#15803d", bg: "#f0fdf4", border: "#bbf7d0", icon: <CheckCircleFilled />, label: "Approved" },
+  pending:  { color: "#92400e", bg: "#fffbeb", border: "#fde68a", icon: <ClockCircleFilled />,  label: "Pending"  },
+  rejected: { color: "#991b1b", bg: "#fef2f2", border: "#fecaca", icon: <CloseCircleFilled />, label: "Rejected" },
+};
 
-// Constants for Modal
-const THEME = { primary: "#6d28d9" };
-const UPLOAD_API = "https://xoto.ae/api/upload"; // Apna actual upload endpoint yahan daalein
+const FILTERS = [
+  { key: "all",      label: "All",      icon: <BuildFilled />,        color: "#6d28d9", bg: "#f5f3ff" },
+  { key: "approved", label: "Approved", icon: <CheckCircleFilled />,  color: "#15803d", bg: "#f0fdf4" },
+  { key: "pending",  label: "Pending",  icon: <ClockCircleFilled />,  color: "#92400e", bg: "#fffbeb" },
+  { key: "rejected", label: "Rejected", icon: <CloseCircleFilled />,  color: "#991b1b", bg: "#fef2f2" },
+];
+
+const projectStatusLabel = (s) => ({
+  presale: "Pre-Sale", under_construction: "Under Construction",
+  ready: "Ready", sold_out: "Sold Out",
+}[s] || s);
 
 export default function DeveloperProjects() {
   const navigate = useNavigate();
+  const [projects, setProjects]     = useState([]);
+  const [filtered, setFiltered]     = useState([]);
+  const [loading, setLoading]       = useState(false);
+  const [search, setSearch]         = useState("");
+  const [activeFilter, setFilter]   = useState("all");
+  const [hoveredCard, setHovCard]   = useState(null);
 
-  // Redux Auth
-  const { user, token } = useSelector((state) => state.auth);
-  const developerId = user?._id || user?.id;
-
-  // Table States
-  const [projects, setProjects] = useState([]);
-  const [filtered, setFiltered] = useState([]);
-  const [tableLoading, setTableLoading] = useState(false);
-  const [search, setSearch] = useState("");
-
-  // Modal & Form States
-  const [modalVisible, setModalVisible] = useState(false);
-  const [formLoading, setFormLoading] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form] = Form.useForm();
-
-  // Upload States
-  const [logoList, setLogoList] = useState([]);
-  const [photoList, setPhotoList] = useState([]);
-  const [brochureUrl, setBrochureUrl] = useState(null);
-
-  // Dummy developers array for the dropdown (Aap ise API se bhi fetch kar sakte hain)
-  const developers = [{ _id: developerId, name: user?.name || "Me (Logged In Developer)" }];
-
-  // ================= FETCH PROJECTS =================
   const fetchProjects = async () => {
-    if (!developerId) return;
     try {
-      setTableLoading(true);
-      // const res = await fetch(
-      //   `https://xoto.ae/api/property/get-all-properties?developerId=${developerId}`,
-      //   { headers: { Authorization: `Bearer ${token}` } }
-      // );
-      const res = await fetch(
-  `http://localhost:5000/api/property/get-all-properties?developerId=${developerId}`,
-  {
-    headers: { Authorization: `Bearer ${token}` }
-  }
-);
-      const json = await res.json();
-      const list = json?.data?.data || json?.data || [];
-
-      const mapped = list.map(p => ({
-        key: p._id,
-        name: p.propertyName,
-        location: `${p.area || ""} ${p.city || ""}`,
-        units: p.builtUpArea_min ? `${p.builtUpArea_min}-${p.builtUpArea_max}` : "-",
-        sold: p.unitType?.length || 0,
-        status: p.isAvailable ? "Available" : "Unavailable"
+      setLoading(true);
+      const res  = await apiService.get("/properties/", { page: 1, limit: 50 });
+      const list = res?.data || [];
+      const mapped = list.map((p, i) => ({
+        key:           p._id || `row-${i}`,
+        propertyName:  p.propertyName || "Untitled",
+        location:      [p.area, p.city].filter(Boolean).join(", "),
+        units:         p.builtUpArea_max ? `${p.builtUpArea_min}–${p.builtUpArea_max} sqft` : null,
+        status:        p.approvalStatus || "pending",
+        image:         p.mainLogo || "",
+        price:         p.price_min && p.price_max
+                         ? `${p.currency || "AED"} ${Number(p.price_min).toLocaleString()} – ${Number(p.price_max).toLocaleString()}`
+                         : null,
+        projectStatus: p.projectStatus || "",
+        isFeatured:    p.isFeatured || false,
+        bedroomType:   p.bedroomType || "",
+        unitType:      p.unitType || "",
       }));
-
       setProjects(mapped);
       setFiltered(mapped);
     } catch (err) {
       console.error(err);
-      message.error("Failed to load your properties.");
     } finally {
-      setTableLoading(false);
+      setLoading(false);
     }
   };
+
+  useEffect(() => { fetchProjects(); }, []);
 
   useEffect(() => {
-    fetchProjects();
-  }, [developerId, token]);
+    const q    = search.toLowerCase();
+    const base = activeFilter === "all" ? projects : projects.filter(p => p.status === activeFilter);
+    setFiltered(base.filter(p =>
+      p.propertyName?.toLowerCase().includes(q) ||
+      p.location?.toLowerCase().includes(q)
+    ));
+  }, [search, projects, activeFilter]);
 
-  // ================= SEARCH =================
-  useEffect(() => {
-    const q = search.toLowerCase();
-    setFiltered(
-      projects.filter(p =>
-        p.name?.toLowerCase().includes(q) ||
-        p.location?.toLowerCase().includes(q)
-      )
-    );
-  }, [search, projects]);
-
-  // ================= MODAL HANDLERS =================
-  const openModal = () => {
-    setEditingId(null);
-    form.resetFields();
-    setLogoList([]);
-    setPhotoList([]);
-    setBrochureUrl(null);
-    setModalVisible(true);
-  };
-
-  const closeModal = () => {
-    setModalVisible(false);
-  };
-
-  const validateImageSize = (file) => {
-    const isLt2M = file.size / 1024 / 1024 < 2;
-    if (!isLt2M) message.error("Image must smaller than 2MB!");
-    return isLt2M;
-  };
-
-  const handleSave = async (values) => {
-    try {
-      setFormLoading(true);
-      
-      // Photos & Logo URLs nikalna upload list se (Backend ke hisaab se adjust karein)
-      const photos = photoList.map(p => p.response?.url || p.url).filter(Boolean);
-      const mainLogo = logoList[0]?.response?.url || logoList[0]?.url || "";
-
-      const payload = {
-        ...values,
-        developerId: developerId,
-        photos: photos,
-        mainLogo: mainLogo,
-        brochure: brochureUrl
-      };
-
-      // const response = await fetch("https://xoto.ae/api/property/create-properties", {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     Authorization: `Bearer ${token}`
-      //   },
-      //   body: JSON.stringify(payload)
-      // });
-const response = await fetch("http://localhost:5000/api/property/create-properties", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`
-  },
-  body: JSON.stringify(payload)
-});
-      const data = await response.json();
-
-      if (response.ok || data.success) {
-        message.success("Property saved successfully!");
-        closeModal();
-        fetchProjects(); // Table update karne ke liye wapas fetch
-      } else {
-        message.error(data.message || "Failed to save property");
-      }
-    } catch (error) {
-      console.error(error);
-      message.error("Something went wrong");
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const getColor = (status) => status === "Available" ? "green" : "red";
-
-  // ================= TABLE COLUMNS =================
- // ================= TABLE COLUMNS =================
-  const columns = [
-    {
-      title: "Property",
-      dataIndex: "name",
-      render: (name, record) => (
-        <div>
-          <Text strong style={{ fontSize: 15 }}>{name || "N/A"}</Text><br />
-          <Text type="secondary" style={{ fontSize: 12 }}>{record.location}</Text>
-        </div>
-      )
-    },
-    { title: "Area Range", dataIndex: "units", render: (u) => <Text>{u}</Text> },
-    { title: "Unit Types", dataIndex: "sold", render: (s) => <Tag color="purple">{s} Units</Tag> },
-    {
-      title: "Status",
-      dataIndex: "status",
-      render: (status) => <Tag color={getColor(status)} style={{ padding: "2px 10px" }}>{status}</Tag>
-    },
-    {
-      title: "Action",
-      render: (_, record) => (
-        <Button
-          type="primary"
-          style={{ background: "#6d28d9", borderColor: "#6d28d9", borderRadius: 8, fontWeight: 500 }}
-          // YAHAN CHANGE KIYA HAI 👇 (projects ki jagah developer-projects kar diya)
-          onClick={() => navigate(`/dashboard/developer/developer-projects/${record.key}`)}
-        >
-          View Details
-        </Button>
-      )
-    }
-  ];
+  const count = (k) => k === "all" ? projects.length : projects.filter(p => p.status === k).length;
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      {/* HEADER */}
-      <Row justify="space-between" align="middle" className="mb-6">
-        <Col>
-          <Title level={3} style={{ margin: 0 }}>My Properties</Title>
-          <Text type="secondary">Manage and track all your listed properties</Text>
-        </Col>
-        <Col>
-          <Button
-            icon={<PlusOutlined />}
-            size="large"
-            type="primary"
-            style={{ background: "#6d28d9", borderRadius: 10, fontWeight: 600 }}
-            onClick={openModal} // Changed from navigate to openModal
-          >
-            Add Property
-          </Button>
-        </Col>
-      </Row>
+    <div style={S.page}>
 
-      {/* STATS + SEARCH */}
-      <Row gutter={[16, 16]} className="mb-6">
-        <Col xs={24} md={8}>
-          <Card className="shadow-sm rounded-xl">
-            <Statistic title="Total Properties" value={projects.length} prefix={<HomeOutlined style={{ color: "#6d28d9" }} />} />
-          </Card>
-        </Col>
-        <Col xs={24} md={16}>
-          <Card className="shadow-sm rounded-xl">
-            <Input
-              size="large"
-              placeholder="Search by property name or location..."
-              prefix={<SearchOutlined />}
-              allowClear
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </Card>
-        </Col>
-      </Row>
+      {/* ─── HEADER ─── */}
+      <div style={S.topBar}>
+        <div>
+          <h1 style={S.pageTitle}>My Properties</h1>
+          <p style={S.pageSubtitle}>Manage and track all your listed properties</p>
+        </div>
+        <button style={S.addBtn} onClick={() => navigate("/dashboard/developer/developer-projects/add")}>
+          <PlusOutlined style={{ fontSize: 13 }} /> Add Property
+        </button>
+      </div>
 
-      {/* TABLE */}
-      <Card className="shadow-sm rounded-xl" bodyStyle={{ padding: 0 }}>
-        <Table columns={columns} dataSource={filtered} loading={tableLoading} pagination={{ pageSize: 10, style: { padding: "16px" } }} />
-      </Card>
+      {/* ─── STAT CARDS ─── */}
+      <div style={S.statsRow}>
+        {FILTERS.map(f => {
+          const active = activeFilter === f.key;
+          return (
+            <button
+              key={f.key}
+              style={{ ...S.statCard, ...(active ? S.statCardActive : {}) }}
+              onClick={() => setFilter(f.key)}
+            >
+              <div style={{ ...S.statIcon, color: f.color, background: f.bg }}>{f.icon}</div>
+              <div>
+                <div style={S.statCount}>{count(f.key)}</div>
+                <div style={S.statLabel}>{f.label}</div>
+              </div>
+              {active && <div style={S.activeDot} />}
+            </button>
+          );
+        })}
+      </div>
 
-      {/* ================= ADD/EDIT PROPERTY MODAL ================= */}
-      <Modal
-        title={editingId ? "View / Edit Property" : "Add New Property"}
-        open={modalVisible}
-        onCancel={closeModal}
-        footer={null}
-        width={1000}
-        style={{ top: 20, marginRight:60 }}
-        
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSave}
-          initialValues={{
-            currency: 'AED', lengthUnit: 'ft', breadthUnit: 'ft', builtUpAreaUnit: 'sqft',
-            transactionType: 'sell', propertySubType: 'off_plan', propertyType: 'Apartment',
-            isAvailable: true, country: 'United Arab Emirates', state: 'Dubai', city: 'Dubai', postalCode: '00000',
-            notReadyYet: true, isFeatured: false,
-            amenities: [], location_highlights: [], unitType: []
-          }}
-        >
-          {/* --- SECTION 1: BASIC INFO --- */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Basic Information</Divider>
-          <Row gutter={16}>
-            <Col xs={24} md={8}><Form.Item name="propertyName" label="Property Name" rules={[{ required: true }]}><Input /></Form.Item></Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="developer" label="Developer" rules={[{ required: true }]}>
-                <Select placeholder="Select Developer" showSearch optionFilterProp="children">
-                  {developers.map(d => <Option key={d._id} value={d._id}>{d.name}</Option>)}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col xs={12} md={4}><Form.Item name="transactionType" label="Transaction"><Select><Option value="sell">Sell</Option><Option value="rent">Rent</Option></Select></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="propertyType" label="Prop Type"><Input placeholder="e.g Apartment" /></Form.Item></Col>
-          </Row>
+      {/* ─── SEARCH ─── */}
+      <div style={S.searchRow}>
+        <div style={S.searchBox}>
+          <SearchOutlined style={S.searchIco} />
+          <input
+            style={S.searchInput}
+            placeholder="Search by name or location..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {search && <button style={S.clearBtn} onClick={() => setSearch("")}>✕</button>}
+        </div>
+        <span style={S.resultTxt}>{filtered.length} {filtered.length === 1 ? "property" : "properties"}</span>
+      </div>
 
-          <Row gutter={16}>
-            <Col xs={24} md={6}><Form.Item name="propertySubType" label="Sub Type"><Select><Option value="ready">Ready</Option><Option value="off_plan">Off Plan</Option><Option value="resale">Resale</Option></Select></Form.Item></Col>
-            <Col xs={24} md={12}>
-              <Form.Item name="unitType" label="Unit Types Available">
-                <Select mode="tags" placeholder="Type and press enter (e.g. Studio, 1 bed)" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}><Form.Item name="handover" label="Handover Date"><DatePicker className="w-full" style={{ width: '100%' }} /></Form.Item></Col>
-          </Row>
+      {/* ─── CONTENT ─── */}
+      {loading ? (
+        <div style={S.grid}>
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} style={{ background:"#fff", borderRadius:10, overflow:"hidden", border:"1px solid #e2e8f0" }}>
+              <div style={{ height:196, background:"#f1f5f9" }} />
+              <div style={{ padding:16 }}><Skeleton active paragraph={{ rows:2 }} /></div>
+            </div>
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={S.empty}>
+          <div style={S.emptyIcon}><ApartmentOutlined style={{ fontSize:28, color:"#94a3b8" }} /></div>
+          <p style={S.emptyTitle}>No properties found</p>
+          <p style={S.emptySub}>{search ? "Try a different search term" : "Add your first property to get started"}</p>
+          {!search && (
+            <button style={S.addBtn} onClick={() => navigate("/dashboard/developer/developer-projects/add")}>
+              <PlusOutlined /> Add Property
+            </button>
+          )}
+        </div>
+      ) : (
+        <div style={S.grid}>
+          {filtered.map(item => {
+            const sc   = STATUS_CONFIG[item.status] || STATUS_CONFIG.pending;
+            const isHov = hoveredCard === item.key;
+            return (
+              <div
+                key={item.key}
+                style={{ ...S.card, ...(isHov ? S.cardHov : {}) }}
+                onMouseEnter={() => setHovCard(item.key)}
+                onMouseLeave={() => setHovCard(null)}
+              >
+                {/* Image */}
+                <div style={S.imgWrap}>
+                  <img
+                    src={item.image || "https://placehold.co/400x220/f1f5f9/94a3b8?text=No+Image"}
+                    alt={item.propertyName}
+                    style={{ ...S.img, transform: isHov ? "scale(1.04)" : "scale(1)" }}
+                  />
 
-          <Form.Item name="description" label="Description"><TextArea rows={3} /></Form.Item>
+                  {/* Top-left badges */}
+                  <div style={S.badgeLeft}>
+                    {item.isFeatured && (
+                      <span style={S.featuredBadge}><FireFilled style={{ fontSize:9 }} /> Featured</span>
+                    )}
+                    {item.projectStatus && (
+                      <span style={S.projectBadge}>{projectStatusLabel(item.projectStatus)}</span>
+                    )}
+                  </div>
 
-          {/* --- SECTION 2: PRICING & PAYMENT --- */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Pricing & Payment Plan</Divider>
-          <Row gutter={16}>
-            <Col xs={12} md={4}><Form.Item name="currency" label="Currency"><Select><Option value="AED">AED</Option><Option value="USD">USD</Option></Select></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="price" label="Fixed Price"><InputNumber className="w-full" style={{ width: '100%' }} formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} /></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="price_min" label="Min Price"><InputNumber className="w-full" style={{ width: '100%' }} formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} /></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="price_max" label="Max Price"><InputNumber className="w-full" style={{ width: '100%' }} formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} /></Form.Item></Col>
-            <Col xs={24} md={5}><Form.Item name="downPayment" label="Down Payment"><InputNumber className="w-full" style={{ width: '100%' }} suffix="%" /></Form.Item></Col>
-          </Row>
-          <Row gutter={16}>
-            <Col xs={12} md={12}><Form.Item name="paymentPlan_initialPercentage" label="Payment Plan (Initial %)"><InputNumber className="w-full" style={{ width: '100%' }} suffix="%" /></Form.Item></Col>
-            <Col xs={12} md={12}><Form.Item name="paymentPlan_laterPercentage" label="Payment Plan (Later %)"><InputNumber className="w-full" style={{ width: '100%' }} suffix="%" /></Form.Item></Col>
-          </Row>
+                  {/* Status top-right */}
+                  <span style={{ ...S.statusBadge, color: sc.color, background: sc.bg, border: `1px solid ${sc.border}` }}>
+                    <span style={{ fontSize:10, lineHeight:1 }}>{sc.icon}</span> {sc.label}
+                  </span>
+                </div>
 
-          {/* --- SECTION 3: CONFIGURATION --- */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Area & Configuration</Divider>
-          <Row gutter={16}>
-            <Col xs={12} md={4}><Form.Item name="bedrooms" label="Bedrooms"><InputNumber className="w-full" style={{ width: '100%' }} /></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="bathrooms" label="Bathrooms"><InputNumber className="w-full" style={{ width: '100%' }} /></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="builtUpArea_min" label="Min Area (sqft)"><InputNumber className="w-full" style={{ width: '100%' }} /></Form.Item></Col>
-            <Col xs={12} md={5}><Form.Item name="builtUpArea_max" label="Max Area (sqft)"><InputNumber className="w-full" style={{ width: '100%' }} /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="builtUpAreaUnit" label="Unit"><Select><Option value="sqft">Sq. Ft</Option><Option value="sqm">Sq. M</Option></Select></Form.Item></Col>
-          </Row>
-          <Row gutter={16}>
-             <Col xs={12} md={6}><Form.Item name="length" label="Length"><InputNumber className="w-full" style={{ width: '100%' }} /></Form.Item></Col>
-             <Col xs={12} md={6}><Form.Item name="lengthUnit" label="Unit"><Select><Option value="ft">ft</Option><Option value="m">m</Option></Select></Form.Item></Col>
-             <Col xs={12} md={6}><Form.Item name="breadth" label="Breadth"><InputNumber className="w-full" style={{ width: '100%' }} /></Form.Item></Col>
-             <Col xs={12} md={6}><Form.Item name="breadthUnit" label="Unit"><Select><Option value="ft">ft</Option><Option value="m">m</Option></Select></Form.Item></Col>
-          </Row>
+                {/* Body */}
+                <div style={S.cardBody}>
+                  <h3 style={S.cardTitle}>{item.propertyName}</h3>
 
-          {/* --- SECTION 4: LOCATION --- */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Location Details</Divider>
-          <Row gutter={16}>
-            <Col xs={24} md={12}><Form.Item name="googleLocation" label="Google Maps Link"><Input placeholder="http://..." /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="buildingNo" label="Building / Plot No"><Input /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="street" label="Street"><Input /></Form.Item></Col>
-          </Row>
-          <Row gutter={16}>
-            <Col xs={12} md={6}><Form.Item name="area" label="Area"><Input /></Form.Item></Col>
-            <Col xs={12} md={6}><Form.Item name="city" label="City"><Input /></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="state" label="State"><Input /></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="country" label="Country"><Input /></Form.Item></Col>
-            <Col xs={12} md={4}><Form.Item name="postalCode" label="Zip Code"><Input /></Form.Item></Col>
-          </Row>
-          <Form.Item name="location_highlights" label="Location Highlights">
-            <Select mode="tags" placeholder="Add highlights (e.g. Near Metro, Beach Access)" />
-          </Form.Item>
+                  {item.location && (
+                    <div style={S.cardLoc}>
+                      <EnvironmentOutlined style={{ color:"#6d28d9", fontSize:11, flexShrink:0 }} />
+                      <span style={S.cardLocTxt}>{item.location}</span>
+                    </div>
+                  )}
 
-          {/* --- SECTION 5: MEDIA --- */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Media & Assets</Divider>
-          <Row gutter={16}>
-            <Col xs={24} md={6}>
-              <Form.Item label="Main Logo">
-                <Upload
-                  listType="picture-card"
-                  fileList={logoList}
-                  action={UPLOAD_API}
-                  maxCount={1}
-                  beforeUpload={validateImageSize}
-                  onChange={({ fileList }) => setLogoList(fileList)}
-                >
-                   {logoList.length >= 1 ? null : <div><PlusOutlined /><div style={{ marginTop: 8 }}>Logo</div></div>}
-                </Upload>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item label="Property Photos">
-                <Upload
-                  listType="picture-card"
-                  fileList={photoList}
-                  action={UPLOAD_API}
-                  multiple
-                  beforeUpload={validateImageSize}
-                  onChange={({ fileList }) => setPhotoList(fileList)}
-                >
-                   <div><PlusOutlined /><div style={{ marginTop: 8 }}>Add Photos</div></div>
-                </Upload>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}>
-              <Form.Item label="Brochure (PDF)">
-                <Upload action={UPLOAD_API} name="file" maxCount={1} onChange={(info) => {
-                  if (info.file.status === 'done') {
-                    setBrochureUrl(info.file.response?.file?.url || info.file.response?.url);
-                    message.success("Brochure linked!");
-                  }
-                }}>
-                  <Button icon={<UploadOutlined />}>Upload PDF</Button>
-                </Upload>
-                {brochureUrl && <Text type="success" style={{ display: 'block', marginTop: 8 }}>Brochure Uploaded</Text>}
-              </Form.Item>
-            </Col>
-          </Row>
+                  <div style={S.tagsRow}>
+                    {item.unitType && <span style={S.tag}>{item.unitType.charAt(0).toUpperCase() + item.unitType.slice(1)}</span>}
+                    {item.bedroomType && <span style={S.tag}>{item.bedroomType.replace(/(\d)(bed)/i,"$1 Bed")}</span>}
+                    {item.units && <span style={S.tag}><ExpandOutlined style={{ fontSize:10 }} /> {item.units}</span>}
+                  </div>
 
-          {/* --- SECTION 6: EXTRAS --- */}
-          <Divider orientation="left" style={{ borderColor: THEME.primary }}>Additional Details</Divider>
-          <Form.Item name="amenities" label="Amenities">
-             <Select mode="tags" placeholder="Add amenities (e.g. Pool, Gym, Parking)" />
-          </Form.Item>
-          <Form.Item name="about_developer" label="About Developer (Specific to project)"><TextArea rows={2} /></Form.Item>
-         
-          <Row gutter={16}>
-            <Col xs={8}><Form.Item name="isAvailable" label="Available" valuePropName="checked"><Switch /></Form.Item></Col>
-            <Col xs={8}><Form.Item name="notReadyYet" label="Construction (Not Ready)" valuePropName="checked"><Switch /></Form.Item></Col>
-            <Col xs={8}><Form.Item name="isFeatured" label="Featured Property" valuePropName="checked"><Switch /></Form.Item></Col>
-          </Row>
+                  {item.price && <div style={S.price}>{item.price}</div>}
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px', paddingBottom: '16px' }}>
-            <Button onClick={closeModal} size="large">Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={formLoading} size="large" style={{ backgroundColor: THEME.primary }}>
-               {editingId ? "Update Property" : "Save Property"}
-            </Button>
-          </div>
-        </Form>
-      </Modal>
+                  <div style={S.divider} />
+
+                  <div style={S.actions}>
+                    <button style={S.btnPrimary} onClick={() => navigate(`/dashboard/developer/developer-projects/${item.key}`)}>
+                      <EyeOutlined style={{ fontSize:11 }} /> View
+                    </button>
+                    <button style={S.btnOutline} onClick={() => navigate(`/dashboard/developer/edit-property/${item.key}`)}>
+                      <EditOutlined style={{ fontSize:11 }} /> Edit
+                    </button>
+
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
+
+// ─── Styles ────────────────────────────────────────────────────────────────────
+const S = {
+  page:         { minHeight:"100vh", background:"#f8fafc", padding:"28px 24px", fontFamily:"'Inter','Segoe UI',sans-serif" },
+
+  topBar:       { display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:24, flexWrap:"wrap", gap:12 },
+  pageTitle:    { margin:0, fontSize:22, fontWeight:700, color:"#0f172a", letterSpacing:"-0.3px" },
+  pageSubtitle: { margin:"3px 0 0", fontSize:13, color:"#64748b" },
+
+  addBtn: {
+    display:"inline-flex", alignItems:"center", gap:7,
+    background:"#6d28d9", color:"#fff", border:"none", borderRadius:8,
+    padding:"9px 18px", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit",
+  },
+
+  statsRow: { display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))", gap:12, marginBottom:20 },
+  statCard: {
+    display:"flex", alignItems:"center", gap:12,
+    background:"#fff", border:"1.5px solid #e2e8f0", borderRadius:10,
+    padding:"14px 16px", cursor:"pointer", position:"relative",
+    textAlign:"left", fontFamily:"inherit", transition:"border 0.15s, box-shadow 0.15s",
+  },
+  statCardActive: { borderColor:"#6d28d9", boxShadow:"0 0 0 3px rgba(109,40,217,0.08)" },
+  statIcon:  { width:36, height:36, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, flexShrink:0 },
+  statCount: { fontSize:20, fontWeight:700, color:"#0f172a", lineHeight:1.1 },
+  statLabel: { fontSize:11, color:"#64748b", fontWeight:500, marginTop:1 },
+  activeDot: { position:"absolute", top:10, right:10, width:7, height:7, borderRadius:"50%", background:"#6d28d9" },
+
+  searchRow:   { display:"flex", alignItems:"center", gap:12, marginBottom:20 },
+  searchBox:   { position:"relative", flex:1 },
+  searchIco:   { position:"absolute", left:13, top:"50%", transform:"translateY(-50%)", color:"#94a3b8", fontSize:14, zIndex:1 },
+  searchInput: {
+    width:"100%", padding:"10px 36px 10px 38px", border:"1.5px solid #e2e8f0",
+    borderRadius:8, fontSize:13, background:"#fff", color:"#0f172a",
+    outline:"none", boxSizing:"border-box", fontFamily:"inherit",
+  },
+  clearBtn:   { position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", color:"#94a3b8", cursor:"pointer", fontSize:12, padding:"2px 4px" },
+  resultTxt:  { fontSize:12, color:"#64748b", whiteSpace:"nowrap", fontWeight:500 },
+
+  grid: { display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(272px,1fr))", gap:16 },
+
+  card:    { background:"#fff", borderRadius:10, overflow:"hidden", border:"1.5px solid #e2e8f0", boxShadow:"0 1px 4px rgba(0,0,0,0.05)", transition:"box-shadow 0.2s,transform 0.2s,border-color 0.2s" },
+  cardHov: { boxShadow:"0 8px 24px rgba(0,0,0,0.1)", transform:"translateY(-3px)", borderColor:"#c4b5fd" },
+
+  imgWrap:       { position:"relative", height:196, overflow:"hidden", background:"#f1f5f9" },
+  img:           { width:"100%", height:"100%", objectFit:"cover", display:"block", transition:"transform 0.35s ease" },
+  badgeLeft:     { position:"absolute", top:10, left:10, display:"flex", gap:6, flexWrap:"wrap" },
+  featuredBadge: { display:"inline-flex", alignItems:"center", gap:4, background:"#78350f", color:"#fef3c7", fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:4 },
+  projectBadge:  { background:"rgba(15,23,42,0.6)", color:"#f8fafc", fontSize:10, fontWeight:600, padding:"3px 8px", borderRadius:4 },
+  statusBadge:   { position:"absolute", top:10, right:10, display:"inline-flex", alignItems:"center", gap:5, fontSize:11, fontWeight:600, padding:"4px 9px", borderRadius:6 },
+
+  cardBody:    { padding:"14px 16px 12px" },
+  cardTitle:   { margin:"0 0 5px", fontSize:14, fontWeight:700, color:"#0f172a", lineHeight:1.35, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" },
+  cardLoc:     { display:"flex", alignItems:"center", gap:5, marginBottom:10 },
+  cardLocTxt:  { fontSize:12, color:"#64748b", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" },
+  tagsRow:     { display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 },
+  tag:         { display:"inline-flex", alignItems:"center", gap:4, background:"#f1f5f9", color:"#475569", fontSize:11, fontWeight:500, padding:"3px 8px", borderRadius:4, border:"1px solid #e2e8f0" },
+  price:       { fontSize:13, fontWeight:700, color:"#6d28d9", marginBottom:10 },
+  divider:     { height:1, background:"#f1f5f9", marginBottom:10 },
+
+  actions:    { display:"flex", gap:6 },
+  btnPrimary: { flex:1, display:"inline-flex", alignItems:"center", justifyContent:"center", gap:5, background:"#6d28d9", color:"#fff", border:"none", borderRadius:6, padding:"7px 0", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit" },
+  btnOutline: { flex:1, display:"inline-flex", alignItems:"center", justifyContent:"center", gap:5, background:"#fff", color:"#374151", border:"1.5px solid #d1d5db", borderRadius:6, padding:"7px 0", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit" },
+  btnGreen:   { flex:1, display:"inline-flex", alignItems:"center", justifyContent:"center", gap:5, background:"#f0fdf4", color:"#15803d", border:"1.5px solid #bbf7d0", borderRadius:6, padding:"7px 0", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit" },
+
+  empty:      { textAlign:"center", padding:"64px 20px", background:"#fff", borderRadius:10, border:"1.5px dashed #e2e8f0" },
+  emptyIcon:  { width:60, height:60, background:"#f8fafc", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px", border:"1px solid #e2e8f0" },
+  emptyTitle: { margin:"0 0 6px", fontSize:16, fontWeight:700, color:"#0f172a" },
+  emptySub:   { margin:"0 0 20px", fontSize:13, color:"#64748b" },
+};

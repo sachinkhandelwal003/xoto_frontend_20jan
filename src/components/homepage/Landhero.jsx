@@ -27,7 +27,7 @@ export default function HeroSection() {
       transition={{ delay }}
       className="bg-white/10 backdrop-blur-md rounded-md p-1 flex items-center justify-center shadow-lg hover:bg-white/30 transition-all cursor-default min-h-[40px]"
     >
-      <h3 className="text-[10px] sm:text-sm md:text-lg font-medium text-white tracking-wide whitespace-normal text-center leading-tight">
+      <h3 className="text-[10px] sm:text-sm md:text-lg font-medium text-white tracking-wide whitespace-normal text-center leading-tight ">
         {title}
       </h3>
     </motion.div>
@@ -39,7 +39,7 @@ export default function HeroSection() {
       {/* Background Image & Overlay */}
       <div className="absolute inset-0">
         <img
-          src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1770009212214-interior.jpg"}
+          src={"https://xotostaging.s3.me-central-1.amazonaws.com/properties/1776513404332-1770009212214-interior%20%281%29%20%281%29.jpg"}
           alt={t("hero.subtitle")}
           className="w-full h-full object-cover"
         />
@@ -51,11 +51,30 @@ export default function HeroSection() {
       <div className="absolute bottom-0 right-0 w-72 h-12 bg-[var(--color-body)] z-[3] clip-right-shape" />
 
       <style>{`
-        .clip-left-shape {
+          .clip-left-shape {
+             position: absolute;
+          bottom: 0; left: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 5;
           clip-path: polygon(0 0, 55% 0, 100% 100%, 0% 100%);
-        }
-        .clip-right-shape {
+          }
+          .clip-right-shape {
+            position: absolute;
+          bottom: 0; right: 0;
+          width: 30vw;
+          max-width: 320px;
+          min-width: 120px;
+          height: clamp(28px, 3.5vw, 48px);
+          background: var(--color-body);
+          z-index: 5;
           clip-path: polygon(47% 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        @media (min-width: 360px) {
+          .xs\\:text-\\[2\\.25rem\\] { font-size: 2.25rem !important; }
         }
       `}</style>
 
@@ -63,14 +82,14 @@ export default function HeroSection() {
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 flex flex-col items-center text-center text-white">
         
         <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="mb-6 heading-light"
-        >
-          {t("hero.title")} <br />
-          <span className="text-white">{t("hero.subtitle")}</span>
-        </motion.h1>
+  initial={{ opacity: 0, y: 30 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.8 }}
+ className="mb-6 heading-light text-[32px] leading-[1.2] md:text-[54px] md:leading-[1.15]"
+  >
+  {t("hero.title")} <br />
+  <span className="text-white">{t("hero.subtitle")}</span>
+</motion.h1>
 
         {/* Feature Pills Container */}
         <div className="w-full flex flex-col items-center gap-3 md:gap-5 mb-12">
@@ -109,7 +128,7 @@ export default function HeroSection() {
             transition={{ delay: 0.8 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-[var(--color-primary)] text-white px-12 py-4 rounded-lg text-lg shadow-xl"
+            className="bg-transparent text-white px-12 py-4 rounded-lg text-lg shadow-xl border-2 border-white/70 hover:bg-[#5C039B] hover:text-white hover:border-[#5C039B]"
           >
             {t("cta.estimate")}
           </motion.button>

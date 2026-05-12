@@ -79,7 +79,7 @@ const Kitchen = () => {
        return;
      }
      
-     console.log('Form submitted:', formData);
+     
      alert('Thank you for booking a 3D design session! We will contact you soon.');
    };
  

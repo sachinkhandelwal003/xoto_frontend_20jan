@@ -1,0 +1,23 @@
+{
+  "heading1": "Wir lassen Kreditgeber",
+  "heading2": "für Sie arbeiten",
+  "description": "Xoto arbeitet mit führenden Banken und Institutionen zusammen, damit Sie Zugang zu exklusiven Hypothekenangeboten erhalten — schneller, einfacher und bei voller Transparenz.",
+  "labels": {
+    "aiOffers": {
+      "title": "KI-abgestimmte Angebote",
+      "text": "Wir vermitteln Ihnen Hypothekenpläne, die zu Ihrem Einkommen, Ihrer Immobilie und Ihren Zielen passen."
+    },
+    "guidance": {
+      "title": "Persönliche Beratung",
+      "text": "Unsere Hypothekenexperten begleiten Sie bei jedem Schritt, einschließlich des Papierkrams."
+    },
+    "transparentCost": {
+      "title": "Transparente Kosten",
+      "text": "Alle Gebühren, Zinsen und Kosten werden im Voraus ausgewiesen — keine Überraschungen in letzter Minute."
+    },
+    "fastProcess": {
+      "title": "Schneller Prozess",
+      "text": "Schnellste Vorabgenehmigung bis zur Auszahlung."
+    }
+  }
+}

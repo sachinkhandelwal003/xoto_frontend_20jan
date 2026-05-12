@@ -8,7 +8,7 @@ import { getChatSessionId } from "../../utils/createSessionID";
 // ✅ 1. Import the New Voice Interface
 import VoiceAIInterface from "./VoiceAIInterface"; 
 
-const API = "https://xoto.ae";
+const API = "https://xoto.ae"; // Change this to your actual backend URL
 
 function XobiaChatbot() {
   const [messages, setMessages] = useState([]);
@@ -63,33 +63,20 @@ function XobiaChatbot() {
     }
   };
 
-  const handleCloseChat = () => {
-    stopAllAudio();
-    setIsOpen(false);
-    setShowVoiceMode(false); // Reset voice mode on close
-  };
+const handleCloseChat = async () => {
+  stopAllAudio();
+  setIsOpen(false);
+  setShowVoiceMode(false);
+  setMessages([]);
+  
+  try {
+    const session_id = getChatSessionId();
+    await fetch(`${API}/api/ai/chat/clear?session_id=${session_id}`, { 
+      method: "DELETE" 
+    });
+  } catch(e) {}
+};
 
-  // --- FETCH MESSAGES ---
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const session_id = getChatSessionId();
-        const res = await fetch(`${API}/api/ai/chat/get-all-messages?session_id=${session_id}`);
-        const data = await res.json();
-        const formatted = data.map((msg) => ({
-          id: msg._id,
-          role: msg.sender === "user" ? "user" : "bot",
-          text: msg.text || "",
-          audioUrl: msg.audioUrl || null,
-          type: msg.audioUrl ? "audio" : "text",
-          autoPlay: false,
-          timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        }));
-        setMessages(formatted);
-      } catch (err) { console.error("Failed to load messages", err); }
-    };
-    if (isOpen) fetchMessages();
-  }, [isOpen]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -167,16 +154,22 @@ function XobiaChatbot() {
             whileHover={{ scale: 1.05, boxShadow: "0px 10px 30px rgba(139, 92, 246, 0.3)" }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[9999] flex items-center gap-4 bg-white border border-slate-100 py-2 pl-6 pr-2 rounded-full shadow-2xl"
+            // ✅ Button shifted UP using bottom-20 and md:bottom-24
+            className="fixed bottom-12 right-3 md:bottom-18 md:right-10 z-[9999] flex items-center gap-4 bg-white border border-slate-100 py-2 pl-6 pr-2 rounded-full shadow-2xl"
           >
-            <div className="flex flex-col text-left">
-              <span className="text-[10px] uppercase tracking-widest text-purple-500 font-bold">AI Expert</span>
-              <span className="text-slate-900 font-extrabold text-sm">Talk with <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600">Xobia</span></span>
-            </div>
-            <div className="relative w-12 h-12 bg-gradient-to-tr from-purple-600 via-fuchsia-500 to-blue-500 rounded-full p-[1px]">
-              <img src={xobiaAvatar} alt="Xobia" className="w-full h-full object-cover rounded-full" />
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
-            </div>
+           <div className="flex flex-col text-left">
+  <span className="text-[9px] uppercase tracking-widest text-purple-500 font-bold leading-tight">AI Expert</span>
+  <span className="text-slate-900 font-extrabold text-[13px] leading-tight whitespace-nowrap">
+    Talk with <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600">Xobia</span>
+  </span>
+</div>
+<div className="relative w-8 h-10 rounded-full flex-shrink-0">
+  <img 
+    src={xobiaAvatar} 
+    alt="Xobia" 
+    className="w-full  rounded-full object-cover object-top" 
+  />
+</div>
           </motion.button>
         )}
       </AnimatePresence>

@@ -13,9 +13,9 @@
   "offerings": [
     { "label": "ਲੈਂਡਸਕੇਪਿੰਗ", "path": "/landscaping" },
     { "label": "ਇੰਟੀਰੀਅਰ", "path": "/services/interior" },
-    { "label": "ਕਿਰਾਇਆ", "path": "/marketplace" },
-    { "label": "ਖਰੀਦੋ", "path": "/marketplace" },
-    { "label": "ਵੇਚੋ", "path": "/marketplace" },
+    { "label": "ਕਿਰਾਇਆ", "path": "/Property" },
+    { "label": "ਖਰੀਦੋ", "path": "/Property" },
+    { "label": "ਵੇਚੋ", "path": "/Property" },
     { "label": "ਹੋਮ ਲੋਨ", "path": "/mortgage/services" }
     
   ],
@@ -27,7 +27,7 @@
     { "label": "ਵਿੱਤੀ ਸੰਸਥਾਵਾਂ", "path": "/" }
   ],
   "knowledge": [
-    { "label": "ਗਿਆਨ ਕੇਂਦਰ", "path": "/explore" },
+    { "label": "ਗਿਆਨ ਕੇਂਦਰ", "path": "/Blogs" },
     { "label": "ਸਾਡੀ ਟਿਕਾਊਤਾ ਫੋਕਸ", "path": "/about" },
     
     { "label": "ਫੀਡਬੈਕ ਭੇਜੋ", "path": "/about" },
@@ -41,7 +41,7 @@
       "partners": "ਭਾਗੀਦਾਰਾਂ ਲਈ",
       "customers": "ਗਾਹਕਾਂ ਲਈ"
     },
-    "partners": "connect@xoto.ae",
+    "partners": " biz@xoto.ae",
     "customers": "care@xoto.ae"
   },
   "social": [

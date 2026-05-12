@@ -2,7 +2,8 @@ import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { 
   UserOutlined, 
   ArrowLeftOutlined, 
-  MobileOutlined 
+  MobileOutlined,
+  CheckCircleFilled
 } from '@ant-design/icons';
 import {
   Form,
@@ -14,7 +15,9 @@ import {
   Col,
   Grid,
   ConfigProvider,
-  Select,message,notification
+  Select,
+  message,
+  notification
 } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../manageApi/context/AuthContext.jsx';
@@ -25,7 +28,7 @@ import { apiService } from '../../manageApi/utils/custom.apiservice.js';
 
 // Assets
 import loginimage from '../../assets/img/one.png';
-import logoNew from '../../assets/img/logoNew.png';
+import logoNew from '../../assets/img/xotothelogo.png';
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
@@ -95,16 +98,14 @@ const CustomerLogin = () => {
   const navigate = useNavigate();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
-const [otpSent, setOtpSent] = useState(false);
-const [otpVerified, setOtpVerified] = useState(false);
-const [otpLoading, setOtpLoading] = useState(false);
-const [enteredOtp, setEnteredOtp] = useState('');
-const mobileNumber = Form.useWatch('mobile', form);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [enteredOtp, setEnteredOtp] = useState('');
+  const mobileNumber = Form.useWatch('mobile', form);
 
-
-
-
-const handleSendOtp = async () => {
+  // ✅ LIVE API FOR SEND OTP
+  const handleSendOtp = async () => {
     const requiredDigits = PHONE_LENGTH_RULES[countryIso] || 10;
     if (!mobileNumber || mobileNumber.length !== requiredDigits) {
       message.error(`Please enter a valid ${requiredDigits}-digit number first.`);
@@ -112,71 +113,72 @@ const handleSendOtp = async () => {
     }
 
     setOtpLoading(true);
-    setTimeout(() => {
-      message.success("OTP sent (Bypass Mode enabled)!");
+    try {
+      const selectedCountryData = Country.getCountryByCode(countryIso);
+      const phoneCode = selectedCountryData ? `+${selectedCountryData.phonecode}` : "+971";
+
+      const payload = {
+        country_code: phoneCode,
+        phone_number: mobileNumber,
+      };
+
+      await apiService.post("/otp/send-otp", payload);
+
+      message.success("OTP sent successfully!");
       setOtpSent(true);
       setOtpVerified(false);
+    } catch (error) {
+      notification.error({
+        message: "Failed to send OTP",
+        description: error?.response?.data?.message || "Something went wrong.",
+      });
+    } finally {
       setOtpLoading(false);
-    }, 800);
+    }
   };
 
- const handleVerifyOtp = async () => {
-  if (!enteredOtp) {
-    message.error("Please enter the OTP");
-    return;
-  }
+  // ✅ LIVE API FOR VERIFY OTP
+  const handleVerifyOtp = async () => {
+    if (!enteredOtp) {
+      message.error("Please enter the OTP");
+      return;
+    }
 
-  setOtpLoading(true);
+    setOtpLoading(true);
 
-  try {
-    // ✅ Get country code properly
-    const selectedCountryData = Country.getCountryByCode(countryIso);
-    const phoneCode = selectedCountryData
-      ? `+${selectedCountryData.phonecode}`
-      : "+971";
+    try {
+      const selectedCountryData = Country.getCountryByCode(countryIso);
+      const phoneCode = selectedCountryData ? `+${selectedCountryData.phonecode}` : "+971";
 
-    const payload = {
-      country_code: phoneCode,
-      phone_number: mobileNumber,
-      otp: enteredOtp
-    };
+      const payload = {
+        country_code: phoneCode,
+        phone_number: mobileNumber,
+        otp: enteredOtp
+      };
 
-    console.log("Verify Payload:", payload); // 👈 check in console
+      await apiService.post("/otp/verify-otp", payload);
 
-    await apiService.post("/otp/verify-otp", payload);
+      message.success("Mobile Verified Successfully!");
+      setOtpVerified(true);
+      setOtpSent(false);
 
-    message.success("Mobile Verified Successfully!");
-    setOtpVerified(true);
-    setOtpSent(false);
+    } catch (error) {
+      notification.error({
+        message: "Verification Failed",
+        description: error?.response?.data?.message || "Invalid OTP"
+      });
+    } finally {
+      setOtpLoading(false);
+    }
+  };
 
-  } catch (error) {
-    console.error("Verify Error:", error); // 👈 check console
-
-    notification.error({
-      message: "Verification Failed",
-      description: error?.response?.data?.message || "Invalid OTP"
-    });
-  } finally {
-    setOtpLoading(false);
-  }
-};
-
-
-
-  // Memoized Country Data
+  // ✅ Memoized Country Data (Strict A-Z Sorting, Priority Removed)
   const countryOptions = useMemo(() => {
-    const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"];
     return Country.getAllCountries().map((country) => ({
       name: country.name,
       code: country.phonecode,
       iso: country.isoCode,
-    })).sort((a, b) => {
-      const aPriority = priorityIsoCodes.includes(a.iso);
-      const bPriority = priorityIsoCodes.includes(b.iso);
-      if (aPriority && !bPriority) return -1;
-      if (!aPriority && bPriority) return 1;
-      return a.name.localeCompare(b.name);
-    });
+    })).sort((a, b) => a.name.localeCompare(b.name));
   }, []);
 
   /* ---------------- AUTH SUCCESS EFFECT ---------------- */
@@ -201,7 +203,6 @@ const handleSendOtp = async () => {
   const onFinish = async (values) => {
     setLoading(true);
     
-    // Get phone code dynamically based on selected ISO
     const selectedCountryData = Country.getCountryByCode(countryIso);
     const phoneCode = selectedCountryData ? `+${selectedCountryData.phonecode}` : '+971';
 
@@ -241,13 +242,13 @@ const handleSendOtp = async () => {
 
             {/* LEFT SECTION */}
             <Col xs={24} lg={12} style={{ padding: 40 }}>
-              <img src={logoNew} alt="Logo" style={{ width: 150 }} />
+              <img src={logoNew} alt="Logo" style={{ width: 250 }} />
               <Title style={{ color: '#fff', marginTop: 24 }}>
                 Customer <span style={{ color: '#03A4F4' }}>Login</span>
               </Title>
-              <Text style={{ color: '#fff' }}>
+              {/* <Text style={{ color: '#fff' }}>
                 Login using your mobile number
-              </Text>
+              </Text> */}
             </Col>
 
             {/* RIGHT SECTION */}
@@ -290,7 +291,7 @@ const handleSendOtp = async () => {
                     <UserOutlined />
                   </div>
 
-                  <Title level={3}>Welcome Back</Title>
+                  <Title level={3}>Welcome</Title>
                   <Text type="secondary">Login using your mobile number</Text>
                 </div>
 
@@ -304,7 +305,6 @@ const handleSendOtp = async () => {
                         validator(_, value) {
                           if (!value) return Promise.resolve();
 
-                          // Dynamic Length Validation
                           const requiredDigits = PHONE_LENGTH_RULES[countryIso] || 10;
                           const regex = new RegExp(`^\\d{${requiredDigits}}$`);
 
@@ -324,7 +324,9 @@ const handleSendOtp = async () => {
                           style={{ width: 100 }}
                           onChange={(val) => {
                             setCountryIso(val);
-                            form.setFieldsValue({ mobile: '' }); // Clear input on country change
+                            form.setFieldsValue({ mobile: '' }); 
+                            setOtpSent(false);
+                            setOtpVerified(false);
                           }}
                           dropdownMatchSelectWidth={300}
                           optionLabelProp="label"
@@ -349,64 +351,59 @@ const handleSendOtp = async () => {
                       placeholder={`Mobile Number`}
                       maxLength={PHONE_LENGTH_RULES[countryIso] || 15}
                       style={{ height: 50, borderRadius: 12 }}
+                      disabled={otpVerified}
+                      onChange={(e) => {
+                        if (otpVerified) setOtpVerified(false);
+                      }}
+                      // ✅ SEND OTP BUTTON (RIGHT SIDE INSIDE INPUT)
+                      suffix={
+                        otpVerified ? (
+                          <CheckCircleFilled style={{ color: "#52c41a", fontSize: "18px" }} />
+                        ) : (
+                          <Button
+                            type="link"
+                            onClick={handleSendOtp}
+                            loading={otpLoading}
+                            disabled={!mobileNumber}
+                            style={{ color: '#5C039B', fontWeight: 'bold', padding: 0 }}
+                          >
+                            {otpSent ? "Resend" : "Send OTP"}
+                          </Button>
+                        )
+                      }
                     />
                   </Form.Item>
- {!otpVerified && !otpSent && (
-                        <Button
-                          type="primary"
-                          size="large"
-                          onClick={handleSendOtp}
-                          loading={otpLoading}
-                          disabled={!mobileNumber}
-                          style={{
-                            backgroundColor: !mobileNumber ? 'white' : '#5C039B',
-                            borderColor: !mobileNumber ? '#d9d9d9' : '#5C039B',
-                            color: !mobileNumber ? 'rgba(0,0,0,0.25)' : 'white',
-                            minWidth: '90px'
-                          }}
-                        >
-                          Send OTP
-                        </Button>
-                      )}
-                    {otpSent && !otpVerified && (
-  <>
-    <Form.Item
-      label="Enter OTP"
-      required
-    >
-      <Input
-        placeholder="Enter 6-digit OTP"
-        value={enteredOtp}
-        onChange={(e) => setEnteredOtp(e.target.value)}
-        maxLength={6}
-        style={{ height: 50, borderRadius: 12 }}
-      />
-    </Form.Item>
 
-    <Button
-      type="primary"
-      size="large"
-      onClick={handleVerifyOtp}
-      loading={otpLoading}
-      block
-      style={{
-        height: 50,
-        borderRadius: 12,
-        fontWeight: 'bold',
-        marginBottom: 10
-      }}
-    >
-      Verify OTP
-    </Button>
-  </>
-)}
-
+                  {otpSent && !otpVerified && (
+                    <Form.Item
+                      label="Enter OTP"
+                      required
+                    >
+                      <Input
+                        placeholder="Enter 6-digit OTP"
+                        value={enteredOtp}
+                        onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ""))}
+                        maxLength={6}
+                        style={{ height: 50, borderRadius: 12 }}
+                        // ✅ VERIFY OTP BUTTON (RIGHT SIDE WITH SPECIFIED BG COLOR)
+                        suffix={
+                          <Button
+                            type="primary"
+                            onClick={handleVerifyOtp}
+                            loading={otpLoading}
+                            style={{ backgroundColor: '#5C039B', borderColor: '#5C039B', fontWeight: 'bold', borderRadius: 8 }}
+                          >
+                            Verify
+                          </Button>
+                        }
+                      />
+                    </Form.Item>
+                  )}
 
                   <Button
                     type="primary"
                     htmlType="submit"
-                      disabled={!otpVerified}
-
+                    disabled={!otpVerified}
                     loading={loading}
                     block
                     style={{

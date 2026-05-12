@@ -14,12 +14,13 @@
 
   "offerings": [
      { "label": "Mortgages", "path": "/mortgage/services" },
-        { "label": "Buy", "path": "/marketplace" },
+        { "label": "Buy", "path": "/search/buy" },
  
-    { "label": "Sell", "path": "/marketplace" },
-    { "label": "Rentals", "path": "/marketplace" },
+    { "label": "Sell", "path": "/Property" },
+    { "label": "Rent", "path": "/rent/search" },
     { "label": "Interiors", "path": "/services/interior" },
-    { "label": "Landscaping", "path": "/landscaping" }
+    { "label": "Landscaping", "path": "/landscaping" },
+    { "label": "Calculators", "path": "/mortgages/calculator" }
    
     
  
@@ -28,28 +29,20 @@
 
   "resources": [
     { "label": "Strategic Alliances", "path": "/login" },
-    { "label": "Business Associates", "path": "/login" },
-    { "label": "Execution Partners", "path": "/login" },
-   {
-  "label": "Developers",
-  "path": "/developers",
-  "comingSoon": true
-},
-{
-  "label": "Financial Institutions",
-  "path": "/financial-institutions",
-  "comingSoon": true
-}
+    { "label": "Agent", "comingSoon": true },
+    { "label": "Execution Partners", "path": "/login "  },
+   {"label": "Developers","comingSoon": true}, 
+   {"label": "Financial  Institutions","comingSoon": true}
   ],
 
   "knowledge": [
-    { "label": "Knowledge Hub", "path": "/explore" },
-    { "label": "Our Sustainability Focus", "path": "/about" },
+    { "label": "Knowledge Hub", "path": "/Blogs" },
+    { "label": "Our Sustainability Focus", "path": "" },
   
-    { "label": "Submit Your Feedback", "path": "/about" },
+    { "label": "Submit Your Feedback", "path": "" },
     { "label": "Contact Us", "path": "/contact" },
-    { "label": "Privacy Policy", "path": "/about" },
-    { "label": "Terms Of Use", "path": "/about" }
+    { "label": "Privacy Policy", "path": "/privacy-policy" },
+    { "label": "Terms Of Use", "path": "" }
   ],
 
   "locations": "UAE | Saudi Arabia",
@@ -59,7 +52,7 @@
       "partners": "For Partners",
       "customers": "For Customers"
     },
-    "partners": "connect@xoto.ae",
+    "partners": " biz@xoto.ae",
     "customers": "care@xoto.ae"
   },
 

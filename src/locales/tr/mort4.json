@@ -1,0 +1,23 @@
+{
+  "heading1": "Kredi Verenleri Sizin",
+  "heading2": "İçin Çalıştırıyoruz",
+  "description": "Xoto, özel ipotek tekliflerine daha hızlı, daha kolay ve tam şeffaflıkla erişebilmeniz için önde gelen bankalar ve kurumlarla işbirliği yapar.",
+  "labels": {
+    "aiOffers": {
+      "title": "Yapay Zeka Eşleşmeli Teklifler",
+      "text": "Sizi geliriniz, mülkünüz ve hedeflerinize uygun ipotek planlarıyla eşleştiriyoruz."
+    },
+    "guidance": {
+      "title": "Kişisel Rehberlik",
+      "text": "İpotek uzmanlarımız, evrak işleri dahil her adımda size rehberlik eder."
+    },
+    "transparentCost": {
+      "title": "Şeffaf Maliyet",
+      "text": "Tüm ücretler, faizler ve masraflar önceden gösterilir — son dakika sürprizi olmaz."
+    },
+    "fastProcess": {
+      "title": "Hızlı Süreç",
+      "text": "Ön onaydan ödemeye kadar en hızlı süreç."
+    }
+  }
+}

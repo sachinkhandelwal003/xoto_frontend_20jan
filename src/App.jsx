@@ -27,12 +27,14 @@ import Productdetails from "./components/ecommerce/Productdetails.jsx";
 import MainEcommercePage from "./components/ecommerce/Index";
 import HomeB2B from "./components/ecommerce/B2B/Home";
 import HomeB2C from "./components/ecommerce/B2C/Home";
-import CartPage from "./components/ecommerce/CartPage";
+import CartPage from "./components/ecommerce/B2C/products/CartPage.jsx";
 import CmsApp from "./components/CMS/CmsApp";
 import AITool from "./components/AI/Tool/AITool";
+import PrivacyPolicy from "./components/homepage/PrivacyPolicy";
 const NotFound = lazy(() => import("./components/NotFound"));
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import VaultPartner from "./components/CMS/pages/VaultPartnerDashboard";
 import Login from "./components/login";
 import Profile from "./components/CMS/components/Profile/Profile";
 import Employeedashboard from "./components/CMS/pages/Employeedashboard";
@@ -82,6 +84,7 @@ import DeveloperRegistration from "./components/ecommerce/B2C/developerregistrat
 import RegistrationAgency from "./components/ecommerce/B2C/registrationagency";
 import Checker from "./Checker";
 import AgentRegistration from "./components/ecommerce/B2C/AgentRegistration";
+import VaultRegister from "./components/ecommerce/B2C/VaultRegister";
 import AgentLayout from "./components/ecommerce/B2C/AgentLayout";
 import AgentDashboard from "./components/ecommerce/B2C/AgentDashboard";
 import AgentList from "./components/CMS/pages/Properties/AgentList";
@@ -89,6 +92,28 @@ import AgencyDashboard from "./components/ecommerce/B2C/AgencyDashboard";
 import AgencyLayout from "./components/ecommerce/B2C/AgencyLayout";
 import Upcoming from "./components/footer/Upcoming";
 import Finicial from "./components/footer/Finicial";
+import XobiaChatbot from "./components/homepage/XobiaChatbot";
+import WaitingApproval from "./components/ecommerce/B2C/WaitingApproval";
+import ForgotPassword from "./components/CMS/pages/forgot-password";
+import ResetPassword from "./components/CMS/pages/reset-password";
+import CheckoutPage from "./components/ecommerce/B2C/products/CheckoutPage";
+import PaymentSuccess from "./components/ecommerce/B2C/products/PaymentSuccess";
+// import PropertyRent from "./component/Rent/SearchSection";
+// import PropertyListings from "./component/Rent/Propertylistings";
+import HeroRent from "./component/Rent/HeroRent";
+import ResultsPage from "./component/Rent/ResultsPage";
+import HeroBuy from "./component/Buy/Herobuy";
+import BuyResultsPage from "./component/Buy/Buyresultspage";
+import MortgageCalculator from "./components/homepage/MortgageCalculator";
+import ProposalLink from "./components/ecommerce/vault/proposal/ProposalLink";
+import PopupManager from "./components/homepage/PopupManager";
+
+import AdvisorLogin from "./components/Grid/AdvisorGrid/AdvisorLogin";
+
+
+import EmployeeLogin from "./components/ecommerce/vault/EmployeeLogin";
+import ReferralPartnerLogin from "./components/GridReferralPartner/ReferralPartnerLogin";
+import ReferralPartnerRegister from "./components/GridReferralPartner/ReferralPartnerRegister";
 // Lazy-loaded components
 const Home = lazy(() => import("./components/homepage/Home"));
 const Consult = lazy(() => import("./components/consultation/Consult"));
@@ -140,13 +165,15 @@ function LayoutWrapper({ children }) {
     "/login", "/quotation", "/freelancer/browse-category", "/freelancer/category",
     "/freelancer/free-listing", "/ecommerce", "/freelancer/create-business",
     "/designs/Tool", "/dashboard", "/customer/dashboard", "/admin/login",
-    "/user/login", "/other/login", "/aiPlanner", "/aiPlanner/interior",
-    "/aiPlanner/landscape", "/estimate/calculator", "/estimate/calculator/interior",
-    "/accountant/login", "/ecommerce/seller", "/ecommerce/cart","/aiPlanner/enhance","/aiPlanner/sky","/aiPlanner/virtual" ,
+    "/user/login", "/other/login", "/aiPlanner", "/aiPlanner/interior","/proposal/view/link",
+    "/aiPlanner/landscape", "/estimate/calculator",
+    "/accountant/login", "/ecommerce/seller","/aiPlanner/enhance","/aiPlanner/sky","/aiPlanner/virtual" ,
   ];
   const isDashboard = location.pathname.startsWith("/dashboard");
-  const hideNavbar = hideNavbarPaths.includes(location.pathname) || isDashboard;
-
+const hideNavbar =
+  hideNavbarPaths.includes(location.pathname) ||
+  location.pathname.startsWith("/proposal/view/link") ||
+  isDashboard;
 
   if (isDashboard && (!user || !token)) {
     return <div className="min-h-screen">{children}</div>;
@@ -166,21 +193,62 @@ function LayoutWrapper({ children }) {
     "/login", "/quotation", "/designs/Tool", "/dashboard", "/customer/dashboard",
     "/profile", "/admin/login", "/user/login", "/other/login", "/aiPlanner",
     "/aiPlanner/interior", "/aiPlanner/landscape", "/estimate/calculator",
-    "/estimate/calculator/interior", "/accountant/login", "/ecommerce/seller",
+     "/accountant/login", "/ecommerce/seller",
     "/freelancer/registration","/aiPlanner/enhance","/aiPlanner/sky","/aiPlanner/virtual" ,
   ];
+// Chatbot sirf in pages par dikhega (jo path chahiye yaha add kar lena)
+  const allowedChatbotPaths = [
+    "/",
+    "/mortgage/services",
+    "/properties",
+    "/services/interior",
+    "/landscaping",
+    "/ecommerce/b2c",
+    "/Blogs",
+    "/case-studies",
+    "/training",
+    "/ecosystem",
+    "/aiPlanner",
+    "/Property",
+    "/ecommerce",
+    "/about",
+    "/contact",
+    "/consultation",
+   "/estimate/calculator/interior"
+  ];
+const hideFooter =
+  hideFooterPaths.includes(location.pathname) ||
+  location.pathname.startsWith("/proposal/view/link") ||
+  isDashboard ||
+  location.pathname.startsWith("/profile/");
 
-  const hideFooter = hideFooterPaths.includes(location.pathname) || isDashboard || location.pathname.startsWith("/profile/");
+  const hidePopup =
+  isDashboard ||
+  location.pathname.includes("login") ||
+  location.pathname.includes("register") ||
+  location.pathname.includes("/freelancer/registration") ||
+  location.pathname.includes("/ecommerce/seller") ||
+  location.pathname.includes("/admin/login") ||
+  location.pathname.startsWith("/dashboard")||
+    location.pathname.startsWith("/proposal/view/link"); // ✅ ADD THIS
 
+
+  
+  const showChatbot = allowedChatbotPaths.includes(location.pathname);
   return (
     <div className="min-h-screen relative">
       {!hideNavbar && <Navbar />}
       {showFreelancerNavbar && <FreelancerNavbar />}
+      {!hidePopup && <PopupManager />}
+      
       {children}
       {!hideFooter && <Footer />}
+      {showChatbot && <XobiaChatbot />}
     </div>
   );
 }
+
+
 
 function App() {
   return (
@@ -190,11 +258,13 @@ function App() {
       <FreelancerProvider><ProductProvider>
         <LayoutWrapper>
           <ScrollToTop />
+        
           <Suspense fallback={<Loader />}>
             <Routes>
               {/* --- ADDED REDIRECT HERE --- */}
               <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
               {/* --------------------------- */}
+             
 
               <Route path="/dashboard" element={<Navigate to="/" replace />} />
               <Route path="/" element={<Home />} />
@@ -202,6 +272,8 @@ function App() {
               <Route path="/aiPlanner" element={<AITools />} />
               <Route path="/aiPlanner/demo" element={<AIPlannerDemoPage />} />
               <Route path="/mortgages" element={<Mortgage />} />
+                            <Route path="/mortgages/calculator" element={<MortgageCalculator/>} />
+
               <Route path="/mortgages-product" element={<MortgagesProduct />} />
               <Route path="/mortgages-product-upload-document" element={<UploadDocuments />} />
               <Route path="/product-requirements-edit" element={<ProductRequirementsEdit />} />
@@ -220,20 +292,33 @@ function App() {
               <Route path="/estimate/calculator/interior" element={<InteriorCalculator />} />
               <Route path="/services/interior" element={<Ynterior />} />
               <Route path="/schedule/estimate" element={<MainCalculatorPage />} />
-              <Route path="/marketplace" element={<Buy />} />
+              <Route path="/Property" element={<Buy />} />
               <Route path="/ecosystem" element={<Ecosystem />} />
               <Route path="/about" element={<About />} />
               <Route path="/aiInterior" element={<Interior />} />
               <Route path="/other/login" element={<OtherLogin />} />
               <Route path="/case-studies" element={<Casestudy />} />
               <Route path="/training" element={<Training />} />
+
+
+
+              {/* secure links */}
+                            <Route path="/proposal/view/link/:id" element={<ProposalLink />} />
+
               <Route path="/login" element={<Login />} />
               <Route path="/grid/login" element={<Login />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/user/login" element={<CustomerLogin />} />
-              <Route path="/accountant/login" element={<AccountantLogin />} />
               <Route path="/consultation" element={<Consult />} />
               <Route path="/designs" element={<Designs />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                            <Route path="/ecommerce/cart" element={<CartPage />} />
+                            <Route path="/ecommerce/checkout" element={<CheckoutPage />} />
+                            <Route path="/ecommerce/payment/success" element={<PaymentSuccess />} />
+<Route path="/vault/vault-register" element={<VaultRegister />} />
+<Route path="/Grid/advisor/login" element={<AdvisorLogin />} />
+              
+{/* <Route path="/vaultpartner" element={<VaultPartner />} /> */}
               <Route
                 path="/designs/Tool"
                 element={
@@ -242,18 +327,18 @@ function App() {
                   </DndProvider>
                 }
               />
-              <Route path="/ai" element={<Ai />} />
+              <Route path="/Blog" element={<Ai />} />
               <Route path="/mortgage/services" element={<Service />} />
               <Route path="/properties" element={<Page2 />} />
-              <Route path="/explore" element={<Page3 />} />
+              <Route path="/Blogs" element={<Page3 />} />
               <Route path="/contact" element={<Page />} />
               <Route path="/quotation" element={<Quotation />} />
               <Route path="/ecommerce" element={<MainEcommercePage />} />
               <Route path="/ecommerce/b2c" element={<HomeB2C />} />
 
             
-  
-
+  <Route path="/referral-partner/login" element={<ReferralPartnerLogin />} />
+<Route path="/referral-partner/register" element={<ReferralPartnerRegister />} />
               <Route path="/developer/registration" element={<DeveloperRegistration />} />
               {/* <Route path="/developer/sidebar" element={<DeveloperSidebar />} /> */}
 
@@ -263,12 +348,19 @@ function App() {
               {/* ✅ Agent Registration Route */}
                 <Route path="/agent/registration" element={<AgentRegistration />} />
 
+               {/* ✅ Rent Search */}
+         {/* <Route path="/rent/search" element={<PropertyRent />} />
+         <Route path="/rent/listings" element={<PropertyListings />} /> */}
+         <Route path="/rent/search" element={<HeroRent />} />
+         <Route path="/results" element={<ResultsPage />} />
+         <Route path="/search/buy" element={<HeroBuy />} />
+         <Route path="/buy-results" element={<BuyResultsPage />} />
 
 
               <Route path="/ecommerce/seller" element={<SellerPage />} />
               <Route path="/ecommerce/seller/b2b" element={<Sellerb2b />} />
               <Route path="/ecommerce/b2b" element={<HomeB2B />} />
-              <Route path="/ecommerce/cart" element={<CartPage />} />
+              
               <Route path="/ecommerce/filter" element={<ProductFilterPage />} />
               <Route path="/ecommerce/product/:id" element={<Productdetails />} />
               <Route path="/social" element={<Social />} />
@@ -284,27 +376,33 @@ function App() {
               {/* <Route path="/freelancer/create-business" element={<CreateBusiness />} /> */}
               {/* <Route path="/freelancer/business" element={<Businesspage />} /> */}
               <Route path="/freelancer/registration" element={<Registration />} />
-              <Route path="/interior/living-room" element={<LivingRoom />} />
-              <Route path="/interior/bathroom" element={<Bathroom />} />
-              <Route path="/interior/bedroom" element={<Bedroom />} />
-              <Route path="/interior/modular-kitchen" element={<Kitchen />} />
-              <Route path="/interior/study-room" element={<Studyroom />} />
-              <Route path="/interior/wardrobe" element={<Wardrobe />} />
-              <Route path="/magazines" element={<Magazine />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/customer/dashboard" element={<Customerdashboard />} />
+              {/* <Route path="/interior/living-room" element={<LivingRoom />} /> */}
+              {/* <Route path="/interior/bathroom" element={<Bathroom />} /> */}
+              {/* <Route path="/interior/bedroom" element={<Bedroom />} /> */}
+              {/* <Route path="/interior/modular-kitchen" element={<Kitchen />} /> */}
+              {/* <Route path="/interior/study-room" element={<Studyroom />} /> */}
+              {/* <Route path="/interior/wardrobe" element={<Wardrobe />} /> */}
+              {/* <Route path="/magazines" element={<Magazine />} /> */}
+              {/* <Route path="/profile" element={<Profile />} /> */}
+              {/* <Route path="/customer/dashboard" element={<Customerdashboard />} /> */}
               <Route path="/check" element={<Checker />} />
               <Route path="/upcoming-soon" element={<Upcoming />} />
               <Route path="/finance-soon" element={<Finicial />} />
-              
+               <Route path="/waiting-approval" element={<WaitingApproval />} />
+               <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+  
+                <Route path="/Vault/testing/login" element={<EmployeeLogin />} />
+
               <Route
                 path="/dashboard/:roleSlug/*"
                 element={
-                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17"]}>
+                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17","18","21", "22","23","26","24", "25"]}>
                     <CmsApp />
                   </PrivateRoute>
                 }
               />
+             
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

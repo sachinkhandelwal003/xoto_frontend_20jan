@@ -309,7 +309,7 @@ const Projects = () => {
             <Title level={3} style={{ margin: 0 }}>Projects Management</Title>
             <Text type="secondary">Track and manage your ongoing and completed projects.</Text>
           </div>
-          <Link to={`/dashboard/${roleSlug}/addProjects`}>
+          {/* <Link to={`/dashboard/${roleSlug}/addProjects`}>
             <Button
               type="primary"
               size="large"
@@ -318,10 +318,10 @@ const Projects = () => {
             >
               Create New Project
             </Button>
-          </Link>
+          </Link> */}
         </div>
 
-        <Row gutter={[16, 16]}>
+        {/* <Row gutter={[16, 16]}>
           <Col xs={24} sm={6}>
             <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.primary }}>
               <Statistic
@@ -359,7 +359,7 @@ const Projects = () => {
               />
             </Card>
           </Col>
-        </Row>
+        </Row> */}
       </div>
 
       {/* 2. Main Content */}

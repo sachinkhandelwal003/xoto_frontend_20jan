@@ -13,9 +13,9 @@
   "offerings": [
     { "label": "लैंडस्केपिंग", "path": "/landscaping" },
     { "label": "इंटीरियर्स", "path": "/services/interior" },
-    { "label": "किराया", "path": "/marketplace" },
-    { "label": "खरीदें", "path": "/marketplace" },
-    { "label": "बेचें", "path": "/marketplace" },
+    { "label": "किराया", "path": "/Property" },
+    { "label": "खरीदें", "path": "/Property" },
+    { "label": "बेचें", "path": "/Property" },
     { "label": "होम लोन", "path": "/mortgage/services" }
     
   ],
@@ -27,7 +27,7 @@
     { "label": "वित्तीय संस्थान", "path": "/" }
   ],
   "knowledge": [
-    { "label": "ज्ञान केंद्र", "path": "/explore" },
+    { "label": "ज्ञान केंद्र", "path": "/Blogs" },
     { "label": "हमारी सस्टेनेबिलिटी फोकस", "path": "/about" },
     
     { "label": "फीडबैक दें", "path": "/about" },
@@ -41,7 +41,7 @@
       "partners": "पार्टनर्स के लिए",
       "customers": "ग्राहकों के लिए"
     },
-    "partners": "connect@xoto.ae",
+    "partners": " biz@xoto.ae",
     "customers": "care@xoto.ae"
   },
   "social": [

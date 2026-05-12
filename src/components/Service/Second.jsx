@@ -1,41 +1,32 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import HouseChart from "../../assets/img/mortgage.png";
+import { useNavigate } from "react-router-dom"; // 🚀 Import Navigate
+import HouseChart from "../../assets/img/new 1.png";
 import waveBg from "../../assets/img/wave/wave2.png";
 import GetPreApprovedModal from "../homepage/GetPreApprovedModal";
 
 const Second = () => {
   const { t, i18n } = useTranslation("mort2");
-
+  const navigate = useNavigate(); // 🚀 Hook initialize kiya
   const [active, setActive] = useState("borrow");
-  const [feature, setFeature] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // 4 steps = 25% each
-  const progress = feature * 25;
   const isRTL = i18n.language === "fa";
-
   const dmSans = { fontFamily: "'DM Sans', sans-serif" };
+
+  // 🚀 Navigation function
+  const handleCalculatorRedirect = () => {
+    navigate("/mortgages/calculator");
+  };
 
   return (
     <>
       <section
         dir={isRTL ? "rtl" : "ltr"}
-        className={`relative w-full py-12 pb-32 bg-[var(--color-body)] overflow-hidden ${
-          isRTL ? "text-right" : "text-left"
-        }`}
+        className="relative w-full py-12 lg:py-15 bg-[var(--color-body)] overflow-hidden"
       >
-        {/* BACKGROUND WAVE - Responsive Positioning */}
-        <div
-          className="
-            absolute
-            bottom-[-80px]     /* default → mobile */
-            sm:bottom-[-120px] /* ≥ 640px */
-            md:bottom-[-80px]  /* ≥ 768px */
-            lg:bottom-[-600px] /* ≥ 1024px */
-            left-0 w-full z-0 pointer-events-none
-          "
-        >
+        {/* BACKGROUND WAVE */}
+        <div className="absolute bottom-0 left-0 w-full z-0 pointer-events-none translate-y-1/4 lg:translate-y-1/2">
           <img
             src={waveBg}
             alt="wave-bg"
@@ -43,170 +34,116 @@ const Second = () => {
           />
         </div>
 
-        {/* CONTENT CONTAINER */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
-          {/* TITLE */}
-          <h2
-            className="text-center text-3xl md:text-5xl font-bold text-black mb-8"
-            style={dmSans}
-          >
-            {t("title")}
-          </h2>
-
-          {/* MODE BUTTONS (Gradient Container) */}
-          <div
-            className="
-              flex flex-nowrap sm:flex-wrap
-              overflow-x-auto sm:overflow-visible scrollbar-hide
-              gap-2 sm:gap-3
-              bg-[linear-gradient(to_right,#03AAF4,#64EF0A)]
-              p-4 sm:p-6 lg:p-2
-              rounded-xl
-              w-full sm:w-auto
-              max-w-full sm:max-w-max
-              mx-auto
-              items-center
-            "
-          >
-            {["borrow", "estimate", "check"].map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setActive(mode)}
-                className={`
-                  flex-shrink-0
-                  px-4 sm:px-6
-                  py-2.5 sm:py-3
-                  text-sm sm:text-base
-                  font-medium text-white
-                  rounded-xl whitespace-nowrap
-                  border-1 transition-all duration-200 ease-out
-                  ${
-                    active === mode
-                      ? "bg-[var(--color-primary)] border-transparent shadow-md sm:shadow-lg sm:scale-[1.03]"
-                      : "bg-transparent border-white hover:bg-[#5C039B] hover:border-transparent"
-                  }
-                `}
-              >
-                {t(`modes.${mode}`)}
-              </button>
-            ))}
-          </div>
-
-          {/* IMAGE */}
-          <div className="w-full flex justify-center mb-10">
-            <img
-              src={HouseChart}
-              alt={t("imageAlt")}
-              className="w-56 sm:w-72 md:w-80 object-contain drop-shadow-xl"
-            />
-          </div>
-
-          {/* --- DESKTOP VIEW (Horizontal Bar) --- */}
-          <div className="hidden lg:block mb-6">
-            <div className="w-full max-w-4xl mx-auto h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-2 bg-green-500 rounded-full transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="hidden lg:flex w-full relative z-20 justify-between max-w-4xl mx-auto text-left gap-4">
-            {[1, 2, 3, 4].map((num) => (
-              <div
-                key={num}
-                onClick={() => setFeature(num)}
-                className={`cursor-pointer transition-all duration-300 ${
-                  feature === num ? "scale-[1.05]" : ""
-                }`}
-              >
-                <p className={`text-xs mb-1 ${feature === num ? "text-[var(--color-primary)]" : "text-gray-400"}`}>
-                  {t(`features.${num}.label`)}
-                </p>
-                <h3 className={`text-lg font-semibold ${feature === num ? "text-[var(--color-primary)]" : "text-black"}`}>
-                  {t(`features.${num}.title`)}
-                </h3>
-              </div>
-            ))}
-          </div>
-
-          {/* --- MOBILE VIEW (Vertical Timeline like screenshot) --- */}
-          <div className="lg:hidden relative max-w-xs mx-auto">
-            {/* Vertical Gray Line */}
-            <div className="absolute left-2 top-2 bottom-4 w-1.5 bg-gray-200 rounded-full"></div>
-
-            {/* Vertical Green Progress Line */}
+          
+          {/* 1. MODE BUTTONS */}
+          {/* <div className="flex justify-center mb-12">
             <div
-              className="absolute left-2 top-2 w-1.5 bg-green-500 rounded-full transition-all duration-500 ease-out"
-              style={{ height: `${(feature / 4) * 100}%` }}
-            ></div>
-
-            <div className="flex flex-col gap-8 pl-8">
-              {[1, 2, 3, 4].map((num) => (
-                <div
-                  key={num}
-                  onClick={() => setFeature(num)}
-                  className="cursor-pointer relative"
+              className="
+                flex flex-nowrap sm:flex-wrap
+                overflow-x-auto sm:overflow-visible scrollbar-hide
+                gap-2 sm:gap-3
+                bg-[linear-gradient(to_right,#03AAF4,#64EF0A)]
+                p-4 sm:p-6 lg:p-2
+                rounded-xl
+                w-full sm:w-auto
+                max-w-full sm:max-w-max
+                mx-auto
+                items-center
+              "
+            >
+              {["borrow", "estimate"].map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setActive(mode)}
+                  className={`
+                    flex-shrink-0
+                    px-4 sm:px-6
+                    py-2.5 sm:py-3
+                    text-sm sm:text-base
+                    font-medium text-white
+                    rounded-xl whitespace-nowrap
+                    border transition-all duration-200 ease-out
+                 hover:bg-[var(--color-primary)]
+          hover:border-[#5C039B]
+          hover:shadow-lg
+                  `}
+                  style={dmSans}
                 >
-                  <p
-                    className={`text-sm font-medium mb-1 transition-colors duration-300 ${
-                      feature >= num ? "text-black" : "text-gray-400"
-                    }`}
-                  >
-                    {t(`features.${num}.label`)}
-                  </p>
-                  <h3
-                    className={`text-xl font-bold transition-colors duration-300 ${
-                      feature === num
-                        ? "text-[var(--color-primary)]"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    {t(`features.${num}.title`)}
-                  </h3>
-                </div>
+                  {t(`modes.${mode}`)}
+                </button>
               ))}
             </div>
+          </div> */}
+
+          {/* 2. MAIN CONTENT ROW */}
+          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16 mb-16">
+            
+            <div className={`w-full lg:w-3/5 text-center ${isRTL ? "lg:text-right" : "lg:text-left"}`}>
+              <h2
+                className="text-3xl sm:text-5xl lg:text-6xl font-semibold text-gray-900 leading-tight mb-6"
+                style={dmSans}
+              >
+                {t("title")}
+              </h2>
+              <p 
+                className="text-lg text-gray-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
+                style={dmSans}
+              >
+                {t("description")}
+              </p>
+            </div>
+
+            <div className="w-full lg:w-2/5 flex justify-center lg:justify-end">
+              <div className="relative w-full max-w-[320px] sm:max-w-[420px] lg:max-w-none">
+                <img
+                  src={HouseChart}
+                  alt={t("imageAlt")}
+                  className="w-full h-auto drop-shadow-2xl animate-float transition-transform duration-500 hover:scale-105 cursor-pointer"
+                  onClick={handleCalculatorRedirect} // 🚀 Image par click karne se bhi calculator par jaye
+                />
+              </div>
+            </div>
           </div>
 
-          {/* CTA BUTTON - Now opens the modal */}
-          <div className="flex justify-center z-20 relative mt-12 px-4">
+          {/* 3. BOTTOM CTA SECTION */}
+          <div className="flex flex-col items-center space-y-6">
             <button
-              onClick={() => setIsModalOpen(true)}
-              className="
-                w-full
-                max-w-[420px] sm:max-w-[480px] md:max-w-[420px]
-                px-8 sm:px-12
-                py-4
-                bg-[var(--color-primary)]
-                text-white
-                text-base sm:text-lg
-                rounded-xl
-                shadow-lg
-                hover:opacity-90
-                transition-opacity
-              "
+              onClick={handleCalculatorRedirect} // 🚀 Ye button ab sidha calculator page par bhejega
+              className="w-full max-w-[500px] py-4 sm:py-5 bg-[#5C039B] text-white text-xl sm:text-2xl font-bold rounded-2xl shadow-[0_10px_25px_-5px_rgba(92,3,155,0.4)] hover:bg-[#4a027d] hover:-translate-y-1 active:scale-[0.98] transition-all duration-300"
               style={dmSans}
             >
               {t("cta")}
             </button>
+            
+            {/* Modal open karne ke liye ek alag chhota link de sakte ho ya is disclaimer ko clickeable bana sakte ho */}
+            <p
+              className="text-base sm:text-lg text-[#5C039B] font-medium italic text-center max-w-lg cursor-pointer hover:underline"
+              style={dmSans}
+              onClick={() => setIsModalOpen(true)} // 🚀 Pre-approved modal ab yahan se open hoga
+            >
+              {t("disclaimer")}
+            </p>
           </div>
 
-          {/* DISCLAIMER */}
-          <p
-            className="text-center mt-6 text-xs sm:text-sm text-[var(--color-primary)] italic px-6"
-            style={dmSans}
-          >
-            {t("disclaimer")}
-          </p>
         </div>
       </section>
 
-      {/* MODAL - Rendered outside the section for proper overlay & z-index */}
       <GetPreApprovedModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
+
+      <style jsx>{`
+        @keyframes float {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-15px); }
+          100% { transform: translateY(0px); }
+        }
+        .animate-float {
+          animation: float 5s ease-in-out infinite;
+        }
+      `}</style>
     </>
   );
 };

@@ -2,12 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Layout, Tag, Button, Affix, Drawer } from 'antd';
 import { VideoCameraOutlined, StarFilled, FilterOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
+import { apiService } from '../../manageApi/utils/custom.apiservice';
+
 import Filters from './Filters';
 import ProductGrid from './ProductGrid';
 
 const { Content } = Layout;
 
 const ProductFilterPage = () => {
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -21,89 +24,134 @@ const ProductFilterPage = () => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
 
-  const BASE_URL = "https://xoto.ae";
   const isMobile = window.innerWidth < 992;
 
   /* ───────── FETCH METADATA ───────── */
-  useEffect(() => {
-    const fetchMetadata = async () => {
-      try {
-        const [catRes, brandRes] = await Promise.all([
-          fetch(`${BASE_URL}/api/products/get-all-category?limit=100`),
-          fetch(`${BASE_URL}/api/products/get-all-brand?limit=100`)
-        ]);
-        const catJson = await catRes.json();
-        const brandJson = await brandRes.json();
 
-        if (catJson.success) setCategories(catJson.data);
-        if (brandJson.success) setBrands(brandJson.data);
+  useEffect(() => {
+
+    const fetchMetadata = async () => {
+
+      try {
+
+        const [catRes, brandRes] = await Promise.all([
+
+          apiService.get("/products/get-all-category", { limit: 100 }),
+          apiService.get("/products/get-all-brand", { limit: 100 })
+
+        ]);
+
+        if (catRes?.success) setCategories(catRes.data || []);
+        if (brandRes?.success) setBrands(brandRes.data || []);
+
       } catch (err) {
+
         console.error(err);
+
       }
+
     };
+
     fetchMetadata();
+
   }, []);
 
   /* ───────── FETCH PRODUCTS ───────── */
+
   const fetchProducts = useCallback(async () => {
+
     setLoading(true);
+
     try {
-      let query = `${BASE_URL}/api/products/get-all-products?page=1&limit=500`;
 
-      if (selectedCategories.length) query += `&category_id=${selectedCategories.join(',')}`;
-      if (selectedBrands.length) query += `&brand_id=${selectedBrands.join(',')}`;
-      if (priceRange[0] > 0) query += `&min_price=${priceRange[0]}`;
-      if (priceRange[1] < 50000) query += `&max_price=${priceRange[1]}`;
+      const params = {
+        page: 1,
+        limit: 500
+      };
 
-      const res = await fetch(query);
-      const json = await res.json();
+      if (selectedCategories.length)
+        params.category_id = selectedCategories.join(',');
 
-      if (json.success) setProducts(json.data.products);
+      if (selectedBrands.length)
+        params.brand_id = selectedBrands.join(',');
+
+      if (priceRange[0] > 0)
+        params.min_price = priceRange[0];
+
+      if (priceRange[1] < 50000)
+        params.max_price = priceRange[1];
+
+      const res = await apiService.get(
+        "/products/get-all-products",
+        params
+      );
+
+      if (res?.success) {
+        setProducts(res?.data?.products || []);
+      }
+
     } catch (err) {
+
       console.error(err);
+
     } finally {
+
       setLoading(false);
+
     }
+
   }, [selectedCategories, selectedBrands, priceRange]);
 
   useEffect(() => {
+
     fetchProducts();
+
   }, [fetchProducts]);
 
   const resetFilters = () => {
+
     setSelectedCategories([]);
     setSelectedBrands([]);
     setPriceRange([0, 50000]);
+
   };
 
   return (
-    <Layout style={{ background: '#f8fafc', minHeight: '100vh' }}>
-      <Content style={{ padding: ' 12px sm:0 16px md:0 24px' }}>
 
-        {/* HERO SECTION — UNCHANGED */}
-        {/* (exactly same as your code) */}
-           <div
-          className="relative rounded-xl sm:rounded-2xl overflow-hidden mt-6 shadow-2xl "
+    <Layout style={{ background: '#f8fafc', minHeight: '100vh' }}>
+
+      <Content style={{ padding: '12px sm:0 16px md:0 24px' }}>
+
+        {/* HERO SECTION */}
+
+        <div
+          className="relative rounded-xl sm:rounded-2xl overflow-hidden mt-6 shadow-2xl"
           style={{
             background: 'linear-gradient(135deg, #420183 0%, #764ba2 100%)',
             height: isMobile ? 260 : 300
           }}
         >
+
           <div className="absolute inset-0 bg-black/20" />
 
           <div className="absolute top-4 right-4 z-20 sm:top-6 sm:right-6">
+
             <Tag color="gold" className="font-bold">
               New Collection
             </Tag>
+
           </div>
 
           <div className="relative z-10 h-full flex flex-col md:flex-row items-center justify-between p-6 sm:p-10 md:p-16">
+
             <div className="max-w-2xl text-center md:text-left">
+
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
               >
+
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
                   Discover Your Perfect Space
                 </h1>
@@ -113,6 +161,7 @@ const ProductFilterPage = () => {
                 </p>
 
                 <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+
                   <Button size="large" className="!bg-white !text-black font-bold">
                     Shop New Arrivals
                   </Button>
@@ -120,39 +169,63 @@ const ProductFilterPage = () => {
                   <Button size="large" disabled className="!bg-white/10 !text-white">
                     <VideoCameraOutlined /> AR Preview
                   </Button>
+
                 </div>
+
               </motion.div>
+
             </div>
 
             {/* Featured Image */}
+
             <div className="hidden lg:block relative">
+
               <img
                 src="https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=500"
                 alt="Furniture"
                 className="w-55 h-55 object-cover rounded-2xl shadow-2xl"
               />
+
               <div className="absolute -bottom-4 -right-4 bg-white p-4 rounded-xl shadow-xl">
+
                 <div className="text-center">
+
                   <div className="text-2xl font-bold text-purple-600">4.8</div>
+
                   <div className="flex justify-center">
+
                     {[...Array(5)].map((_, i) => (
                       <StarFilled key={i} className="text-yellow-500 text-sm" />
                     ))}
+
                   </div>
-                  <div className="text-xs text-gray-600 mt-1">Customer Rating</div>
+
+                  <div className="text-xs text-gray-600 mt-1">
+                    Customer Rating
+                  </div>
+
                 </div>
+
               </div>
+
             </div>
+
           </div>
+
         </div>
 
         {/* ───────── MAIN CONTENT ───────── */}
+
         <div className="relative flex w-full gap-6 mt-9">
 
           {/* DESKTOP SIDEBAR */}
+
           {showFilters && !isMobile && (
+
             <div className="hidden lg:block lg:w-72 lg:shrink-0">
+
               <div className="lg:sticky lg:top-4">
+
                 <Filters
                   categories={categories}
                   brands={brands}
@@ -162,18 +235,23 @@ const ProductFilterPage = () => {
                   setSelectedCategories={setSelectedCategories}
                   selectedBrands={selectedBrands}
                   setSelectedBrands={setSelectedBrands}
-                  mobileFiltersOpen={mobileFiltersOpen}        // ✅ ADDED
-                  setMobileFiltersOpen={setMobileFiltersOpen} // ✅ ADDED
+                  mobileFiltersOpen={mobileFiltersOpen}
+                  setMobileFiltersOpen={setMobileFiltersOpen}
                   showFilters={showFilters}
                   setShowFilters={setShowFilters}
                   resetFilters={resetFilters}
                 />
+
               </div>
+
             </div>
+
           )}
 
           {/* PRODUCT GRID */}
+
           <div className="flex-1 min-w-0">
+
             <ProductGrid
               products={products}
               loading={loading}
@@ -181,10 +259,13 @@ const ProductFilterPage = () => {
               sortOption={sortOption}
               setSortOption={setSortOption}
             />
+
           </div>
+
         </div>
 
-        {/* ───────── MOBILE DRAWER ───────── */}
+        {/* MOBILE FILTER DRAWER */}
+
         <Drawer
           title="Filters"
           placement="left"
@@ -192,6 +273,7 @@ const ProductFilterPage = () => {
           onClose={() => setMobileFiltersOpen(false)}
           width="85%"
         >
+
           <Filters
             categories={categories}
             brands={brands}
@@ -201,23 +283,27 @@ const ProductFilterPage = () => {
             setSelectedCategories={setSelectedCategories}
             selectedBrands={selectedBrands}
             setSelectedBrands={setSelectedBrands}
-            mobileFiltersOpen={mobileFiltersOpen}        // ✅ ADDED
-            setMobileFiltersOpen={setMobileFiltersOpen} // ✅ ADDED
+            mobileFiltersOpen={mobileFiltersOpen}
+            setMobileFiltersOpen={setMobileFiltersOpen}
             showFilters={showFilters}
             setShowFilters={setShowFilters}
             resetFilters={resetFilters}
           />
+
         </Drawer>
 
-        {/* FLOATING BUTTON — UNCHANGED */}
         {(isMobile || !showFilters) && (
+
           <Affix offsetBottom={24}>
+
             <Button
               type="primary"
               size="large"
               icon={<FilterOutlined />}
               onClick={() =>
-                isMobile ? setMobileFiltersOpen(true) : setShowFilters(true)
+                isMobile
+                  ? setMobileFiltersOpen(true)
+                  : setShowFilters(true)
               }
               style={{
                 height: 52,
@@ -229,11 +315,17 @@ const ProductFilterPage = () => {
             >
               {isMobile ? "Filters" : "Show Filters"}
             </Button>
+
           </Affix>
+
         )}
+
       </Content>
+
     </Layout>
+
   );
+
 };
 
 export default ProductFilterPage;

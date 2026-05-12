@@ -11,8 +11,9 @@ const CustomTable = ({
   currentPage: propCurrentPage = 1,
   itemsPerPage: propItemsPerPage = 10,
   onPageChange,
-  onFilter, // Parent function to handle API calls on search (Server Side)
+  onFilter, 
   loading = false,
+  showSearch = true,
 }) => {
   const [filters, setFilters] = useState({
     status: '',
@@ -214,14 +215,18 @@ const CustomTable = ({
 
     for (let i = startPage; i <= endPage; i++) {
       buttons.push(
-        <Button
-          key={i}
-          onClick={() => handlePageChangeInternal(i, itemsPerPage)}
-          type={currentPage === i ? 'primary' : 'default'}
-          className={`px-3 py-1 rounded-md ${currentPage === i ? '' : 'border border-gray-300 text-gray-700 hover:bg-gray-100'}`}
-        >
-          {i}
-        </Button>
+       <Button
+  key={i}
+  onClick={() => handlePageChangeInternal(i, itemsPerPage)}
+  type={currentPage === i ? 'primary' : 'default'}
+  style={
+    currentPage === i
+      ? { backgroundColor: '#4A027C', borderColor: '#4A027C' }
+      : {}
+  }
+>
+  {i}
+</Button>
       );
     }
 
@@ -253,6 +258,7 @@ const CustomTable = ({
 
   return (
     <div className="bg-white shadow-xl overflow-hidden rounded-lg">
+      {showSearch && (
       <div className="p-4 bg-gray-50 border-b border-gray-200">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="relative flex-grow max-w-xl">
@@ -307,6 +313,7 @@ const CustomTable = ({
           </div>
         </div>
       </div>
+      )}
 
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">

@@ -60,30 +60,73 @@ const Topbar = () => {
     fetchProfileData();
   }, []);
 
-  // ✅ Helper to safely get Name (Handles Object vs String)
-  const getDisplayName = () => {
-    // 1. Try API Data
-    if (userProfile?.name) {
-      if (typeof userProfile.name === 'object') {
-        return `${userProfile.name.first_name || ''} ${userProfile.name.last_name || ''}`.trim();
-      }
-      return userProfile.name;
-    }
-    
-    // 2. Try Redux Data (Fallback)
-    if (user?.name) {
-      if (typeof user.name === 'object') {
-        return `${user.name.first_name || ''} ${user.name.last_name || ''}`.trim();
-      }
-      return user.name;
+  // ✅ Helper to safely get Name
+ const getDisplayName = () => {
+  try {
+    const apiData = userProfile?.data || userProfile;
+    const reduxData = user?.data || user;
+
+    // API data se try karo
+    if (apiData?.first_name && typeof apiData.first_name === 'string') {
+      const full = `${apiData.first_name} ${apiData.last_name || ''}`.trim();
+      if (full) return full;
     }
 
-    return "User";
-  };
+    if (apiData?.name) {
+      if (typeof apiData.name === 'object') {
+        const full = `${apiData.name.first_name || ''} ${apiData.name.last_name || ''}`.trim();
+        if (full) return full;
+      }
+      if (typeof apiData.name === 'string' && apiData.name.trim()) {
+        return apiData.name.trim();
+      }
+    }
 
+    // Redux data se try karo
+    if (reduxData?.first_name && typeof reduxData.first_name === 'string') {
+      const full = `${reduxData.first_name} ${reduxData.last_name || ''}`.trim();
+      if (full) return full;
+    }
+
+    if (reduxData?.name) {
+      if (typeof reduxData.name === 'object') {
+        const full = `${reduxData.name.first_name || ''} ${reduxData.name.last_name || ''}`.trim();
+        if (full) return full;
+      }
+      if (typeof reduxData.name === 'string' && reduxData.name.trim()) {
+        return reduxData.name.trim();
+      }
+    }
+
+    // Username ya email se fallback
+    if (reduxData?.username && typeof reduxData.username === 'string') {
+      return reduxData.username.trim();
+    }
+
+    if (reduxData?.email && typeof reduxData.email === 'string') {
+      return reduxData.email.split('@')[0]; // email ka pehla part use karo
+    }
+
+  } catch (e) {
+    // kuch bhi ho, crash mat karo
+  }
+
+  return "User"; // Last fallback
+};
   // ✅ Helper for Email
   const getDisplayEmail = () => {
-    return userProfile?.email || user?.email || "";
+    const apiData = userProfile?.data || userProfile;
+    const reduxData = user?.data || user;
+    return apiData?.email || reduxData?.email || "";
+  };
+
+  // 🚀 NAYA HELPER: Photo ko safely nikalne ke liye
+  const getProfilePhoto = () => {
+    const apiData = userProfile?.data || userProfile;
+    const reduxData = user?.data || user;
+    
+    // Check karega dono formats: profile_photo (Agent) aur profilePic (Customer)
+    return apiData?.profile_photo || apiData?.profilePic || reduxData?.profile_photo || reduxData?.profilePic || null;
   };
 
   /* ---------------- NOTIFICATIONS ---------------- */
@@ -126,6 +169,9 @@ const Topbar = () => {
     "7": "freelancer",
     "11": "accountant",
     "12": "supervisor",
+    "16": "agent",
+    "21":"vaultpartner",
+    "25":"gridreferralpartner",
   }[roleCode] ?? "dashboard";
 
   const handleLogout = async () => {
@@ -294,12 +340,17 @@ const Topbar = () => {
             trigger={["click"]}
           >
             <div className="flex items-center gap-2 cursor-pointer">
-              {/* ✅ Change Here: Using Name's First Letter */}
+              
+              {/* ✅ PHOTO FIX: Naya getProfilePhoto() helper laga diya */}
               <Avatar
                 title={getDisplayName()}
-                style={{ backgroundColor: colors.primary || "#722ed1" }}
+                src={getProfilePhoto()} 
+                style={{ 
+                  backgroundColor: colors?.primary || "#722ed1",
+                  verticalAlign: 'middle' 
+                }}
               >
-                {getDisplayName()?.charAt(0)?.toUpperCase()}
+                {!getProfilePhoto() && getDisplayName()?.charAt(0)?.toUpperCase()}
               </Avatar>
 
               <div className="hidden md:flex flex-col leading-tight">

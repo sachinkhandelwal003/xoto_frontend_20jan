@@ -1,236 +1,404 @@
-import React, { useState } from 'react';
-import { 
-  Table, Tag, Space, Card, Typography, Row, Col, Statistic, 
-  Button, Modal, Input, Select, Badge, Avatar, Divider, Tooltip 
-} from 'antd';
-import { 
-  UserOutlined, 
-  PhoneOutlined, 
-  MailOutlined, 
+import React, { useState, useEffect } from "react";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
+import {
+  Table,
+  Tag,
+  Space,
+  Card,
+  Typography,
+  Row,
+  Col,
+  Statistic,
+  Button,
+  Modal,
+  Input,
+  Select,
+  Avatar,
+  Divider,
+  message
+} from "antd";
+
+import {
+  UserOutlined,
+  PhoneOutlined,
+  MailOutlined,
   SearchOutlined,
-  FilterOutlined,
   EyeOutlined,
   MessageOutlined,
   PropertySafetyOutlined,
   CompassOutlined,
   CheckCircleOutlined,
-  ClockCircleOutlined // ✅ Yeh miss ho gaya tha!
-} from '@ant-design/icons';
+  ClockCircleOutlined,
+  TeamOutlined   // ← agent section ke liye
+} from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-// --- STATIC DUMMY DATA ---
-const mockLeads = [
-  {
-    key: '1',
-    leadName: 'Amit Vikram',
-    email: 'amit@gmail.com',
-    phone: '+971 50 123 4567',
-    agentName: 'Rahul Sharma',
-    propertyInterest: 'Ellington One River Point',
-    budget: 'AED 1.5M - 2M',
-    source: 'Instagram Ad',
-    status: 'Site Visit',
-    createdAt: '2026-02-19',
-  },
-  {
-    key: '2',
-    leadName: 'Sarah Jenkins',
-    email: 'sarah.j@outlook.com',
-    phone: '+971 52 987 6543',
-    agentName: 'Anjali Gupta',
-    propertyInterest: 'Damac Lagoons',
-    budget: 'AED 3M+',
-    source: 'Website',
-    status: 'New',
-    createdAt: '2026-02-20',
-  },
-  {
-    key: '3',
-    leadName: 'John Doe',
-    email: 'john.doe@tech.com',
-    phone: '+91 9876543210',
-    agentName: 'Rahul Sharma',
-    propertyInterest: 'Jumeirah Living',
-    budget: 'AED 5M',
-    source: 'Referral',
-    status: 'Negotiation',
-    createdAt: '2026-02-15',
-  },
-];
-
 const LeadManagement = () => {
+  const [leads, setLeads] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
   const [viewModal, setViewModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
 
-  const getStatusTag = (status) => {
-    const colors = {
-      'New': 'blue',
-      'Contacted': 'cyan',
-      'Site Visit': 'purple',
-      'Negotiation': 'orange',
-      'Won': 'success',
-      'Lost': 'error'
-    };
-    return <Tag color={colors[status] || 'default'}>{status.toUpperCase()}</Tag>;
+  // ================= FETCH LEADS =================
+  const fetchLeads = async () => {
+    try {
+      setLoading(true);
+      const res = await apiService.get("/agent/lead/get-all-leads");
+      const list = Array.isArray(res?.data)
+        ? res.data
+        : res?.data?.data || [];
+         
+      setLeads(list);
+    } catch (error) {
+      message.error("Failed to fetch leads.");
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  // ================= STATUS TAG =================
+  const getStatusTag = (status) => {
+    const colors = {
+      lead: "blue",
+      visit: "purple",
+      deal: "orange",
+      booking: "cyan",
+      closed: "green",
+      lost: "red"
+    };
+    return (
+      <Tag color={colors[status] || "default"}>
+        {status?.toUpperCase() || "UNKNOWN"}
+      </Tag>
+    );
+  };
+
+  // ================= TABLE DATA & FILTERING =================
+  const tableData = leads
+    .map((l) => ({
+      ...l,
+      key: l._id,
+      leadName: `${l?.name?.first_name || ""} ${l?.name?.last_name || ""}`,
+      email: l?.email,
+      phone: l?.phone_number,
+      agentName: `${l?.agent?.first_name || ""} ${l?.agent?.last_name || ""}`,
+      agentEmail: l?.agent?.email || "",
+      agentPhone: l?.agent?.phone_number || l?.agent?.phone || "",
+      createdAtFormatted: new Date(l.createdAt).toLocaleDateString(),
+    }))
+    .filter((l) => {
+      const matchSearch =
+        l.leadName.toLowerCase().includes(searchText.toLowerCase()) ||
+        (l.email && l.email.toLowerCase().includes(searchText.toLowerCase()));
+      const matchStatus = statusFilter === "all" || l.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+
+  // ================= MAIN TABLE COLUMNS =================
   const columns = [
     {
-      title: 'Lead Details',
-      key: 'lead',
+      title: "Lead Details",
       render: (_, r) => (
         <Space>
-          <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#f0f0f0', color: '#1a1a1a' }} />
+          <Avatar icon={<UserOutlined />} className="bg-blue-500" />
           <div>
-            <Text strong className="block">{r.leadName}</Text>
-            <Text type="secondary" style={{ fontSize: '11px' }}>{r.email}</Text>
+            <Text strong>{r.leadName}</Text>
+            <br />
+            <Text type="secondary" style={{ fontSize: 12 }}>{r.email}</Text>
           </div>
         </Space>
       ),
     },
     {
-      title: 'Agent (Owner)',
-      dataIndex: 'agentName',
-      key: 'agent',
-      render: (text) => <Tag icon={<UserOutlined />} color="geekblue">{text}</Tag>
+      title: "Agent",
+      dataIndex: "agentName",
+      render: (text) => <Tag color="geekblue">{text}</Tag>
     },
     {
-      title: 'Property Interest',
-      dataIndex: 'propertyInterest',
-      key: 'property',
-      render: (text) => <Text strong><CompassOutlined /> {text}</Text>
+      title: "Property Type",
+      render: (record) => (
+        <Text strong>
+          <CompassOutlined className="mr-1 text-purple-500" /> {record.property_type || "-"}
+        </Text>
+      ),
     },
     {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => getStatusTag(status)
+      title: "Status",
+      dataIndex: "status",
+      render: (status) => getStatusTag(status),
     },
     {
-      title: 'Date',
-      dataIndex: 'createdAt',
-      key: 'date',
+      title: "Date",
+      dataIndex: "createdAtFormatted",
     },
     {
-      title: 'Action',
-      key: 'action',
+      title: "Action",
       render: (_, record) => (
-        <Button 
-          icon={<EyeOutlined />} 
-          onClick={() => { setSelectedLead(record); setViewModal(true); }}
+        <Button
+          type="primary"
+          ghost
+          icon={<EyeOutlined />}
+          onClick={() => {
+            setSelectedLead(record);
+            setViewModal(true);
+          }}
         >
-          View
+          View Lead
         </Button>
-      )
+      ),
     },
   ];
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <Title level={2}>Lead Management</Title>
-          <Text type="secondary">Track user inquiries and agent performance in the sales funnel.</Text>
-        </div>
-        <Button type="primary" icon={<FilterOutlined />}>Export Report</Button>
+      {/* HEADER */}
+      <div className="mb-6">
+        <Title level={2} style={{ margin: 0 }}>Lead Monitoring</Title>
+        <Text type="secondary">
+          Monitor all leads generated by agents, track their statuses, and view complete details.
+        </Text>
       </div>
 
-      {/* LEAD PIPELINE SNAPSHOTS */}
+      {/* PIPELINE STATS */}
       <Row gutter={[16, 16]} className="mb-8">
         <Col xs={24} sm={6}>
-          <Card bordered={false} className="shadow-sm border-l-4 border-blue-500">
-            <Statistic title="Total Leads" value={145} prefix={<MessageOutlined />} />
+          <Card bordered={false} className="shadow-sm rounded-xl">
+            <Statistic
+              title="Total Leads"
+              value={leads.length}
+              prefix={<MessageOutlined className="text-blue-500" />}
+            />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
-          <Card bordered={false} className="shadow-sm border-l-4 border-purple-500">
-            <Statistic title="Site Visits" value={32} prefix={<CompassOutlined />} />
+          <Card bordered={false} className="shadow-sm rounded-xl">
+            <Statistic
+              title="Site Visits"
+              value={leads.filter((l) => l.status === "visit").length}
+              prefix={<CompassOutlined className="text-purple-500" />}
+            />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
-          <Card bordered={false} className="shadow-sm border-l-4 border-orange-500">
-            <Statistic title="Negotiations" value={12} prefix={<ClockCircleOutlined />} />
+          <Card bordered={false} className="shadow-sm rounded-xl">
+            <Statistic
+              title="Active Deals"
+              value={leads.filter((l) => l.status === "deal").length}
+              prefix={<ClockCircleOutlined className="text-orange-500" />}
+            />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
-          <Card bordered={false} className="shadow-sm border-l-4 border-green-500">
-            <Statistic title="Conversion Rate" value="18.5%" prefix={<CheckCircleOutlined />} />
+          <Card bordered={false} className="shadow-sm rounded-xl">
+            <Statistic
+              title="Successfully Closed"
+              value={leads.filter((l) => l.status === "closed").length}
+              prefix={<CheckCircleOutlined className="text-green-500" />}
+            />
           </Card>
         </Col>
       </Row>
 
-      <Card bordered={false} className="shadow-md rounded-xl overflow-hidden">
-        <div className="p-4 bg-white border-b flex justify-between items-center">
-          <Space>
-            <Input prefix={<SearchOutlined />} placeholder="Search Lead or Agent..." style={{ width: 250 }} />
-            <Select defaultValue="all" style={{ width: 150 }}>
-              <Option value="all">All Status</Option>
-              <Option value="new">New</Option>
-              <Option value="visit">Site Visit</Option>
-            </Select>
-          </Space>
+      {/* LEAD TABLE WITH FILTERS */}
+      <Card bordered={false} className="shadow-md rounded-xl">
+        <div className="mb-4 flex gap-4 flex-wrap">
+          <Input
+            prefix={<SearchOutlined className="text-gray-400" />}
+            placeholder="Search by Lead Name or Email..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 300 }}
+            size="large"
+          />
+          <Select
+            value={statusFilter}
+            onChange={(val) => setStatusFilter(val)}
+            style={{ width: 180 }}
+            size="large"
+          >
+            <Option value="all">All Statuses</Option>
+            <Option value="lead">New Leads</Option>
+            <Option value="visit">Site Visits</Option>
+            <Option value="deal">In Deal</Option>
+            <Option value="booking">Booked</Option>
+            <Option value="closed">Closed</Option>
+            <Option value="lost">Lost</Option>
+          </Select>
         </div>
-        <Table columns={columns} dataSource={mockLeads} pagination={{ pageSize: 5 }} />
+
+        <Table
+          columns={columns}
+          dataSource={tableData}
+          loading={loading}
+          pagination={{ pageSize: 10 }}
+        />
       </Card>
 
-      {/* LEAD DETAIL MODAL */}
+      {/* MODAL: VIEW FULL LEAD DETAILS */}
       <Modal
-        title="Lead Timeline & Details"
+        title={
+          <Space>
+            <UserOutlined />
+            Complete Lead Details
+          </Space>
+        }
         open={viewModal}
         onCancel={() => setViewModal(false)}
         footer={[
-          <Button key="close" onClick={() => setViewModal(false)}>Close</Button>,
-          <Button key="assign" type="primary">Re-assign Agent</Button>
+          <Button key="close" type="primary" onClick={() => setViewModal(false)}>
+            Close
+          </Button>,
         ]}
-        width={600}
+        width={700}
       >
         {selectedLead && (
-          <div className="py-2">
+          <div className="mt-4">
+
+            {/* ── Lead Name + Status ── */}
             <Row gutter={[16, 16]}>
               <Col span={12}>
-                <Text type="secondary" className="block">Lead Name</Text>
-                <Text strong style={{fontSize: 18}}>{selectedLead.leadName}</Text>
+                <Text type="secondary">Lead Name</Text>
+                <br />
+                <Text strong style={{ fontSize: 18 }}>
+                  {selectedLead.leadName}
+                </Text>
               </Col>
               <Col span={12} className="text-right">
                 {getStatusTag(selectedLead.status)}
               </Col>
             </Row>
-            
-            <Divider style={{margin: '12px 0'}} />
-            
+
+            <Divider />
+
+            {/* ── Lead Contact ── */}
             <Row gutter={[16, 16]}>
               <Col span={12}>
-                <Space direction="vertical" size={0}>
-                  <Text type="secondary"><MailOutlined /> Email</Text>
-                  <Text>{selectedLead.email}</Text>
-                </Space>
+                <Text type="secondary">
+                  <MailOutlined className="mr-2" /> Email
+                </Text>
+                <br />
+                <Text strong>{selectedLead.email || "N/A"}</Text>
               </Col>
               <Col span={12}>
-                <Space direction="vertical" size={0}>
-                  <Text type="secondary"><PhoneOutlined /> Phone</Text>
-                  <Text>{selectedLead.phone}</Text>
-                </Space>
+                <Text type="secondary">
+                  <PhoneOutlined className="mr-2" /> Phone
+                </Text>
+                <br />
+                <Text strong>{selectedLead.phone || "N/A"}</Text>
               </Col>
             </Row>
 
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
-              <Title level={5}><PropertySafetyOutlined /> Interest Details</Title>
-              <Row gutter={[8, 8]}>
-                <Col span={12}><Text type="secondary">Property:</Text></Col>
-                <Col span={12}><Text strong>{selectedLead.propertyInterest}</Text></Col>
-                
-                <Col span={12}><Text type="secondary">Budget:</Text></Col>
-                <Col span={12}><Text strong>{selectedLead.budget}</Text></Col>
-                
-                <Col span={12}><Text type="secondary">Source:</Text></Col>
-                <Col span={12}><Tag color="blue">{selectedLead.source}</Tag></Col>
+            <Divider />
+
+            {/* ── Agent Details (NAYA SECTION) ── */}
+            <Title level={5}>
+              <TeamOutlined className="mr-2" /> Assigned Agent
+            </Title>
+
+            <div className="bg-blue-50 p-4 rounded-lg mt-3 mb-2">
+              <Row gutter={[16, 16]} align="middle">
+                <Col span={2}>
+                  <Avatar
+                    icon={<UserOutlined />}
+                    style={{ backgroundColor: "#1677ff" }}
+                    size={42}
+                  />
+                </Col>
+                <Col span={22}>
+                  <Row gutter={[16, 8]}>
+                    <Col span={8}>
+                      <Text type="secondary">Agent Name</Text>
+                      <br />
+                      <Text strong>{selectedLead.agentName || "N/A"}</Text>
+                    </Col>
+                    <Col span={8}>
+                      <Text type="secondary">
+                        <MailOutlined className="mr-1" /> Email
+                      </Text>
+                      <br />
+                      <Text strong>{selectedLead.agentEmail || "N/A"}</Text>
+                    </Col>
+                    <Col span={8}>
+                      <Text type="secondary">
+                        <PhoneOutlined className="mr-1" /> Phone
+                      </Text>
+                      <br />
+                      <Text strong>{selectedLead.agentPhone || "N/A"}</Text>
+                    </Col>
+                  </Row>
+                </Col>
               </Row>
             </div>
+
+            <Divider />
+
+            {/* ── Property & Preferences ── */}
+            <Title level={5}>
+              <PropertySafetyOutlined className="mr-2" /> Property & Preferences
+            </Title>
+
+            <div className="bg-gray-50 p-4 rounded-lg mt-3">
+              <Row gutter={[16, 16]}>
+                <Col span={12}>
+                  <Text type="secondary">Property Type:</Text>
+                  <br />
+                  <Text strong>{selectedLead.property_type || "N/A"}</Text>
+                </Col>
+                <Col span={12}>
+                  <Text type="secondary">Bedrooms:</Text>
+                  <br />
+                  <Text strong>{selectedLead.bedrooms ? `${selectedLead.bedrooms} BHK` : "N/A"}</Text>
+                </Col>
+
+                <Col span={12}>
+                  <Text type="secondary">Budget:</Text>
+                  <br />
+                  <Text strong>{selectedLead.budget ? `AED ${selectedLead.budget}` : "N/A"}</Text>
+                </Col>
+                <Col span={12}>
+                  <Text type="secondary">Preferred Location:</Text>
+                  <br />
+                  <Text strong>{selectedLead.preferred_location || "N/A"}</Text>
+                </Col>
+
+                {selectedLead.visit_date && (
+                  <Col span={12}>
+                    <Text type="secondary">Scheduled Visit:</Text>
+                    <br />
+                    <Text strong style={{ color: "#52c41a" }}>
+                      {selectedLead.visit_date}{selectedLead.visit_time && ` at ${selectedLead.visit_time}`}
+                    </Text>
+                  </Col>
+                )}
+
+                <Col span={12}>
+                  <Text type="secondary">Source:</Text>
+                  <br />
+                  <Tag color="purple" className="mt-1">{selectedLead.source || "Direct"}</Tag>
+                </Col>
+
+                <Col span={12}>
+                  <Text type="secondary">Added On:</Text>
+                  <br />
+                  <Text strong>{new Date(selectedLead.createdAt).toLocaleString()}</Text>
+                </Col>
+              </Row>
+            </div>
+
           </div>
         )}
       </Modal>
+
     </div>
   );
 };

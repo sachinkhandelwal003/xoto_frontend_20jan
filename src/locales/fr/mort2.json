@@ -1,17 +1,11 @@
 {
-    "title": "Planifiez votre prêt immobilier en toute confiance",
-    "modes": {
-      "borrow": "Combien puis-je emprunter ?",
-      "estimate": "Estimation du paiement mensuel",
-      "check": "Vérification de l’accessibilité"
-    },
-    "features": {
-      "1": { "label": "Étape 1", "title": "Valeur du bien" },
-      "2": { "label": "Étape 2", "title": "Acompte" },
-      "3": { "label": "Étape 3", "title": "Durée" },
-      "4": { "label": "Étape 4", "title": "Montant maximal du prêt" }
-    },
-    "cta": "Obtenir une pré-approbation",
-    "disclaimer": "Les estimations sont indicatives. Conditions finales soumises à l’approbation du crédit."
-  }
-  
+  "title": "Comprenez votre budget d'achat immobilier",
+  "description": "Utilisez nos calculatrices basées sur l'IA pour voir combien vous pouvez emprunter et estimer vos paiements hypothécaires mensuels.",
+  "modes": {
+    "borrow": "Connaissez votre budget d'achat immobilier",
+    "estimate": "Comprenez vos mensualités (EMI)"
+  },
+  "imageAlt": "Illustration d'hypothèque",
+  "cta": "Calculer",
+  "disclaimer": "Les estimations sont indicatives. Les conditions finales sont soumises à l'approbation du crédit."
+}

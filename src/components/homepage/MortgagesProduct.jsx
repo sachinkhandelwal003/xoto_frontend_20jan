@@ -96,7 +96,7 @@ const Card = ({ title, subTitle, children, onEdit, isEditing, isSaving, onUpload
     </div>
 );
 
-// --- PRODUCT OFFER COMPONENT ---
+
 const ProductOffer = ({ productData, isSelected, onSelect, isDetailsOpen, onToggleDetails }) => {
   const { _id, bankInfo, offerSummary, costBreakdown, loanDetails, insurance } = productData;
   const fmt = (val) => val !== undefined && val !== null ? Number(val).toLocaleString() + ` ${offerSummary?.currency || 'AED'}` : '0 AED';
@@ -161,7 +161,7 @@ const MortgageProduct = () => {
             const response = await fetch(`${BASE_URL}/api/mortgages/get-lead-data?lead_id=${leadId}`);
             const result = await response.json();
             
-            console.log("🔥 API RESULT (Dashboard):", result); 
+            
 
             if (result.success && result.data) {
                 setApiData(result.data); // Save full data
@@ -400,7 +400,7 @@ const MortgageProduct = () => {
         </div>
 
         {/* RIGHT COLUMN - ADVISOR CARD */}
-        <div className="w-full lg:w-80 flex-shrink-0 sticky top-6">
+        {/* <div className="w-full lg:w-80 flex-shrink-0 sticky top-6">
           <div className="bg-[#F3F5F7] rounded-2xl p-6 border border-gray-200">
               <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-300 flex-shrink-0 bg-gray-200">
@@ -413,7 +413,7 @@ const MortgageProduct = () => {
                   <a href="tel:+971566138560" className="flex items-center bg-white px-4 py-3.5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all group no-underline"><div className="text-gray-500 group-hover:text-[#5c039b] transition-colors"><Phone size={20} /></div><span className="text-gray-800 font-medium text-sm ml-4">+971 56 613 8560</span></a>
               </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

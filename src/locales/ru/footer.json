@@ -13,9 +13,9 @@
   "offerings": [
     { "label": "Ландшафтный дизайн", "path": "/landscaping" },
     { "label": "Интерьеры", "path": "/services/interior" },
-    { "label": "Аренда", "path": "/marketplace" },
-    { "label": "Купить", "path": "/marketplace" },
-    { "label": "Продать", "path": "/marketplace" },
+    { "label": "Аренда", "path": "/Property" },
+    { "label": "Купить", "path": "/Property" },
+    { "label": "Продать", "path": "/Property" },
     { "label": "Ипотека", "path": "/mortgage/services" }
     
   ],
@@ -27,7 +27,7 @@
     { "label": "Финансовые институты", "path": "/" }
   ],
   "knowledge": [
-    { "label": "Центр знаний", "path": "/explore" },
+    { "label": "Центр знаний", "path": "/Blogs" },
     { "label": "Наша устойчивость Фокус", "path": "/about" },
 
     { "label": "Оставить отзыв", "path": "/about" },
@@ -41,7 +41,7 @@
       "partners": "Для партнеров",
       "customers": "Для клиентов"
     },
-    "partners": "connect@xoto.ae",
+    "partners": "biz@xoto.ae",
     "customers": "care@xoto.ae"
   },
   "social": [

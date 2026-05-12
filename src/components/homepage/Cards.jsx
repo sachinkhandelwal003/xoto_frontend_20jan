@@ -135,7 +135,7 @@ const Cards = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-12 md:py-20">
         <div className="mb-12 flex flex-col md:flex-row items-start justify-between">
           <h2 className="text-white font-bold text-3xl md:text-4xl">
-            Hot Property Deals
+            Xoto exclusive  Deals
           </h2>
           <p className="text-white text-base sm:text-lg font-normal max-w-sm mt-3 md:mt-0">
             Discover exclusive properties with the best value in Dubai's premium

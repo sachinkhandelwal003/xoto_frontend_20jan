@@ -93,11 +93,11 @@ const ProductRequirementsEdit = () => {
         const leadId = getLeadId();
         if (!leadId) { setIsLoading(false); return; }
 
-        console.log("Fetching for Lead ID:", leadId);
+       
         const response = await fetch(`${BASE_URL}/api/mortgages/get-lead-data?lead_id=${leadId}`);
         const json = await response.json();
 
-        console.log("🔥 API Data:", json);
+        
 
         if (json.success && json.data) {
             const data = json.data;

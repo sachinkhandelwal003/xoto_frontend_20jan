@@ -1,458 +1,538 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  Form,
-  Input,
-  Button,
-  Card,
-  Typography,
-  Row,
-  Col,
-  Grid,
-  ConfigProvider,
-  Divider,
-  Select,
-  Upload,
-  Tag,
-  Space as AntSpace
+  Form, Input, Button, Card, Typography, Row, Col, Grid,
+  ConfigProvider, Divider, Select, Upload, message, Steps
 } from "antd";
-import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import styled from "styled-components";
-import { toast } from "react-toastify";
-import axios from "axios"; 
-import PhoneInput from "react-phone-input-2"; 
-import "react-phone-input-2/lib/style.css"; 
-
+import { Country } from "country-state-city";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import {
-  MailOutlined,
-  LockOutlined,
-  UploadOutlined,
-  UserOutlined,
-  SolutionOutlined,
-  CheckCircleFilled,
-  SafetyCertificateOutlined,
-  CheckOutlined
+  MailOutlined, LockOutlined, UploadOutlined, UserOutlined,
+  EnvironmentOutlined, IdcardOutlined, CheckCircleFilled, ArrowLeftOutlined
 } from "@ant-design/icons";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 const { Title, Text } = Typography;
-const { useBreakpoint } = Grid;
 const { Option } = Select;
-
-/* ===================== XOTO BRAND STYLES ===================== */
-
-const PageWrapper = styled.div`
-  min-height: 100vh;
-  background: #5c039b;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-family: 'Inter', sans-serif;
-
-  .react-tel-input .form-control {
-    height: 45px;
-    width: 100%;
-    border-radius: 8px;
-    border: 1px solid #d9d9d9;
-    font-family: 'Inter', sans-serif;
-  }
-  .react-tel-input .flag-dropdown {
-    border-radius: 8px 0 0 8px;
-    border: 1px solid #d9d9d9;
-    background: #fafafa;
-  }
-`;
-
-const HeaderSection = styled.div`
-  text-align: center;
-  padding: 60px 20px 40px;
-  color: white;
-`;
-
-const IconCircle = styled.div`
-  width: 70px;
-  height: 70px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-`;
-
-const MainCard = styled(Card)`
-  width: 100%;
-  max-width: 850px;
-  border-radius: 20px !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2) !important;
-  margin-bottom: 50px;
-  border: none !important;
-
-  .ant-card-body {
-    padding: ${(props) => (props.$isMobile ? "30px 20px" : "50px 60px")} !important;
-  }
-`;
-
-const StyledInput = styled(Input)`
-  height: 45px;
-  border-radius: 8px;
-  background: #ffffff;
-  border: 1px solid #d9d9d9;
-  
-  &:hover, &:focus {
-    border-color: #5c039b !important;
-  }
-`;
-
-const InlineButton = styled(Button)`
-  height: 45px;
-  border-radius: 8px;
-  font-weight: 500;
-  margin-left: 8px;
-`;
-
-const SubmitButton = styled(Button)`
-  height: 55px;
-  background: #5c039b !important;
-  border: none !important;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0.5px;
-  margin-top: 20px;
-  
-  &:hover {
-    background: #4a027d !important;
-    transform: translateY(-1px);
-  }
-`;
-
-/* ===================== COMPONENT ===================== */
 
 const RegistrationAgent = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const screens = useBreakpoint();
+  const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
 
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [otpValue, setOtpValue] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  // ── OTP States ───────────────────────────────────────────────────
+  const [mobileOtpSent, setMobileOtpSent]       = useState(false);
+  const [mobileOtpVerified, setMobileOtpVerified] = useState(false);
+  const [mobileOtp, setMobileOtp]               = useState("");
 
-  const [phone, setPhone] = useState("");
-  const [countryData, setCountryData] = useState({});
+  const [emailOtpSent, setEmailOtpSent]         = useState(false);
+  const [emailOtpVerified, setEmailOtpVerified]   = useState(false);
+  const [emailOtp, setEmailOtp]                 = useState("");
 
-  // ✅ INSTANT UPLOAD STATES
-  const [urls, setUrls] = useState({ profile: "", idProof: "", rera: "" });
-  const [uploading, setUploading] = useState({ profile: false, idProof: false, rera: false });
+  // ── Phone ────────────────────────────────────────────────────────
+  const [countryCode, setCountryCode] = useState("971");
+  const [phoneNumber, setPhoneNumber] = useState("");
 
-  // LIVE APIs
-  const UPLOAD_API = "https://xoto.ae/api/upload";
-  const SIGNUP_API = "https://xoto.ae/api/agent/agent-signup";
+  // ── Agencies ─────────────────────────────────────────────────────
+  const [agencies, setAgencies]           = useState([]);
+  const [loadingAgencies, setLoadingAgencies] = useState(false);
+  const [selectedAgency, setSelectedAgency]   = useState("");   // persisted across steps
+const [verifiedEmail, setVerifiedEmail] = useState(""); 
+  // ── Uploads ──────────────────────────────────────────────────────
+  const [uploading, setUploading] = useState({
+    profile_photo: false,
+    emiratesIdUrl: false,
+    reraCardUrl:   false,
+  });
+  const [urls, setUrls] = useState({
+    profile_photo: "",
+    emiratesIdUrl: "",
+    reraCardUrl:   "",
+  });
 
-  // ✅ INSTANT UPLOAD FUNCTION (Fixed API Response Parsing)
-  const handleInstantUpload = async (file, type) => {
-    setUploading((prev) => ({ ...prev, [type]: true }));
-    
+  // ── Step ─────────────────────────────────────────────────────────
+  const [currentStep, setCurrentStep] = useState(0);
+  const [submitting, setSubmitting]   = useState(false);
+
+  // ── Country codes ─────────────────────────────────────────────────
+  const countryOptions = useMemo(() =>
+    Country.getAllCountries()
+      .map(c => ({ name: c.name, code: c.phonecode, iso: c.isoCode }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  []);
+
+  // ── Fetch agencies ────────────────────────────────────────────────
+  useEffect(() => { fetchAgencies(); }, []);
+
+  const fetchAgencies = async () => {
+    setLoadingAgencies(true);
+    try {
+      const res = await apiService.get("/agency/public/agencies");
+      setAgencies(res?.data || []);
+    } catch {
+      message.error("Failed to load agencies");
+    } finally {
+      setLoadingAgencies(false);
+    }
+  };
+
+  // ── OTP Handlers ──────────────────────────────────────────────────
+  const sendMobileOtp = async () => {
+    const full   = `+${countryCode}${phoneNumber}`;
+    const parsed = parsePhoneNumberFromString(full);
+    if (!parsed || !parsed.isValid()) { message.error("Invalid phone number"); return; }
+    try {
+      await apiService.post("/otp/send-otp", {
+        country_code: `+${countryCode}`,
+        phone_number: phoneNumber,
+      });
+      setMobileOtpSent(true);
+      message.success("OTP sent to your mobile");
+    } catch { message.error("Failed to send OTP"); }
+  };
+
+  const verifyMobileOtp = async () => {
+    try {
+      await apiService.post("/otp/verify-otp", {
+        country_code: `+${countryCode}`,
+        phone_number: phoneNumber,
+        otp: mobileOtp,
+      });
+      setMobileOtpVerified(true);
+      message.success("Mobile verified ✓");
+    } catch { message.error("Invalid OTP. Try again."); }
+  };
+
+  const sendEmailOtp = async () => {
+    const email = form.getFieldValue("email");
+    if (!email) return message.error("Enter email first");
+    try {
+      await apiService.post("/otp/email-otp/send", { email });
+      setEmailOtpSent(true);
+      message.success("OTP sent to your email");
+    } catch { message.error("Failed to send email OTP"); }
+  };
+
+  const verifyEmailOtp = async () => {
+    try {
+      await apiService.post("/otp/email-otp/verify", {
+        email: form.getFieldValue("email"),
+        otp: emailOtp,
+      });   
+       setVerifiedEmail(form.getFieldValue("email")); 
+      setEmailOtpVerified(true);
+      message.success("Email verified ✓");
+    } catch { message.error("Invalid OTP. Try again."); }
+  };
+
+  // ── Upload ────────────────────────────────────────────────────────
+  const handleUpload = async (file, field) => {
+    setUploading(prev => ({ ...prev, [field]: true }));
     const formData = new FormData();
     formData.append("file", file);
-
     try {
-      console.log(`📤 Uploading ${type} instantly...`);
-      const response = await axios.post(UPLOAD_API, formData, {
+      const res        = await apiService.post("/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      
-      console.log(`✅ Upload API Response for ${type}:`, response.data);
-
-      // 🎯 FIXED URL EXTRACTION: Added `response.data?.file?.url` based on your JSON
-      const uploadedUrl = response.data?.file?.url || response.data?.url || ""; 
-      
-      if(uploadedUrl) {
-        setUrls((prev) => ({ ...prev, [type]: uploadedUrl }));
-        toast.success(`${type} uploaded successfully!`);
-      } else {
-        toast.error("Upload failed: API didn't return a URL.");
-      }
-    } catch (error) {
-      console.error(`❌ Instant upload error for ${type}:`, error);
-      toast.error(`Failed to upload ${type}.`);
+      const uploadedUrl = res?.data?.file?.url || res?.data?.url || "";
+      setUrls(prev => ({ ...prev, [field]: uploadedUrl }));
+      message.success("File uploaded successfully");
+    } catch {
+      message.error("Upload failed. Please try again.");
     } finally {
-      setUploading((prev) => ({ ...prev, [type]: false }));
+      setUploading(prev => ({ ...prev, [field]: false }));
     }
-
-    // Return false to stop AntD's default form upload behavior
-    return false; 
+    return false; // prevent auto-upload
   };
 
-  // 2. Send OTP Handler
-  const handleSendOtp = async () => {
-    if (!phone || phone.length < 8) {
-      toast.error("Please enter a valid mobile number first");
+  // ── Submit ────────────────────────────────────────────────────────
+  const handleFinish = async (values) => {
+    const firstName = values.first_name?.trim() || "";
+    const lastName  = values.last_name?.trim()  || "";
+
+    const payload = {
+      // Schema fields — exact match
+      first_name:     firstName,
+      last_name:      lastName,
+  email:          verifiedEmail,
+        country_code:   `+${countryCode}`,
+      phone_number:   phoneNumber,
+      password:       values.password,
+      country:        values.country        || "UAE",
+      operating_city: values.operating_city,
+      specialization: values.specialization || "",
+      agency:         selectedAgency,
+      // Documents
+      profile_photo:  urls.profile_photo || "",
+      emiratesIdUrl:  urls.emiratesIdUrl || "",
+      reraCardUrl:    urls.reraCardUrl   || "",
+      reraCardNumber: values.reraCardNumber || "",
+      // Status
+      onboarding_status: "pending",
+    };
+
+    // Pre-flight check
+    const required = [
+      'first_name', 'last_name', 'email',
+      'phone_number', 'country_code', 'password',
+      'operating_city', 'agency',
+    ];
+    const missing = required.filter(k => !payload[k]);
+    if (missing.length > 0) {
+      message.error(`Missing required fields: ${missing.join(', ')}`);
       return;
     }
-    
-    setLoading(true);
-    setTimeout(() => {
-      setOtpSent(true);
-      setLoading(false);
-      toast.info("Verification code sent! (Use 000033)");
-    }, 1000);
-  };
 
-  // 3. Verify OTP Handler
-  const handleVerifyOtp = () => {
-    if (otpValue === "000033") {
-      setOtpVerified(true);
-      setOtpSent(false);
-      toast.success("Mobile Verified Successfully!");
-    } else {
-      toast.error("Invalid OTP. Hint: 000033");
-    }
-  };
-
-  // 4. Main Form Submit Handler
-  const handleFinish = async (values) => {
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-
-      const payload = {
-        first_name: values.first_name,
-        last_name: values.last_name,
-        email: values.email,
-        password: values.password,
-        phone_number: phone.replace(countryData.dialCode, ""),
-        country_code: `+${countryData.dialCode}`,
-        country: countryData.name || "United Arab Emirates",
-        operating_city: values.operating_city,
-        specialization: values.specialization,
-        profile_photo: urls.profile,   
-        id_proof: urls.idProof,        
-        rera_certificate: urls.rera    
-      };
-
-      console.log("🚀 Final JSON Payload being sent to Live Signup API:", payload);
-
-      const response = await axios.post(
-        SIGNUP_API,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json"
-          }
-        }
-      );
-
-      toast.success("Agent Registration Successful");
-      console.log("🎉 Signup Response:", response.data);
-
-    } catch (error) {
-      console.error("Signup Error:", error);
-      toast.error(
-        error.message || error.response?.data?.message || "Registration failed"
-      );
+      await apiService.post("/agency/public/register-agent", payload);
+      message.success("Registration submitted for approval!");
+      navigate("/waiting-approval");
+    } catch (err) {
+      message.error(err?.response?.data?.message || "Registration failed. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
+  // ── Steps config ──────────────────────────────────────────────────
+  const steps = [
+    { title: "Mobile"    },
+    { title: "Email"     },
+    { title: "Agency"    },
+    { title: "Details"   },
+  ];
+
+  // ── Render ────────────────────────────────────────────────────────
   return (
     <ConfigProvider theme={{ token: { colorPrimary: "#5C039B" } }}>
-      <PageWrapper>
-        <HeaderSection>
-          <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-            <IconCircle>
-              <SolutionOutlined style={{ fontSize: 30, color: "white" }} />
-            </IconCircle>
-            <Title level={1} style={{ color: "white", margin: 0, fontWeight: 700 }}>
-              Agent Registration
-            </Title>
-            <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 16 }}>
-              Join the Xoto Network
-            </Text>
-          </motion.div>
-        </HeaderSection>
+      <div style={{ minHeight: "100vh", background: "#f8f9fa", padding: isMobile ? 20 : 40 }}>
+        <Card
+          style={{ maxWidth: 800, margin: "0 auto", borderRadius: 16 }}
+          bodyStyle={{ padding: isMobile ? 24 : 40 }}
+        >
+          <Title level={2} style={{ textAlign: "center", marginBottom: 8 }}>
+            <IdcardOutlined style={{ marginRight: 8 }} />
+            Agent Registration
+          </Title>
+          <Text type="secondary" style={{ display: "block", textAlign: "center", marginBottom: 24 }}>
+            Join Xoto Network – verify your phone, email, choose your agency, and complete your profile.
+          </Text>
 
-        <MainCard $isMobile={isMobile} bordered={false}>
-          <Form 
-            form={form} 
-            layout="vertical" 
-            onFinish={handleFinish} 
-            onFinishFailed={(errorInfo) => {
-              console.error("❌ Form Validation Failed! Required fields are missing:", errorInfo);
-            }}
-            initialValues={{ specialization: 'residential' }}
-          >
-            
-            {/* --- PERSONAL DETAILS --- */}
-            <div style={{ marginBottom: 30 }}>
-              <AntSpace style={{ marginBottom: 20, color: '#f26522', fontWeight: 600 }}>
-                <UserOutlined /> Personal Details
-              </AntSpace>
-              
-              <Row gutter={16}>
-                <Col xs={24} md={12}>
-                  <Form.Item name="first_name" label="First Name" rules={[{ required: true, message: 'Required' }]}>
-                    <StyledInput placeholder="First Name" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item name="last_name" label="Last Name" rules={[{ required: true, message: 'Required' }]}>
-                    <StyledInput placeholder="Last Name" />
-                  </Form.Item>
-                </Col>
-              </Row>
+          <Steps current={currentStep} size="small" style={{ marginBottom: 32 }}>
+            {steps.map(s => <Steps.Step key={s.title} title={s.title} />)}
+          </Steps>
 
-              <Form.Item name="email" label="Email" rules={[{ required: true, type: "email" }]}>
-                <StyledInput prefix={<MailOutlined />} placeholder="Email Address" />
-              </Form.Item>
+          <Form form={form} layout="vertical" onFinish={handleFinish}>
 
-              <Form.Item name="password" label="Password" rules={[{ required: true, min: 6 }]}>
-                <Input.Password style={{height: 45, borderRadius: 8}} prefix={<LockOutlined />} placeholder="Password" />
-              </Form.Item>
-            </div>
-
-            {/* --- PHONE VERIFICATION --- */}
-            <div style={{ marginBottom: 30 }}>
-              <Form.Item label="Phone Number" required>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <div style={{ flex: 1 }}>
-                    <PhoneInput
-                      country={'ae'} 
-                      value={phone}
-                      onChange={(phone, data) => {
-                        setPhone(phone);
-                        setCountryData(data);
-                      }}
-                      enableSearch={true}
-                      inputStyle={{
-                        width: '100%',
-                        height: '45px',
-                        fontSize: '16px'
-                      }}
-                      disabled={otpVerified}
-                    />
-                  </div>
-                  
-                  {otpVerified ? (
-                    <Button 
-                      icon={<CheckCircleFilled style={{ color: "#52c41a" }} />} 
-                      style={{ height: 45, border: '1px solid #52c41a', color: '#52c41a', background: '#f6ffed' }}
-                    >
-                      Verified
-                    </Button>
-                  ) : (
-                    <InlineButton type="default" onClick={handleSendOtp} loading={loading}>
-                      Send OTP
-                    </InlineButton>
-                  )}
-                </div>
-              </Form.Item>
-
-              <AnimatePresence>
-                {otpSent && !otpVerified && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} style={{ overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', marginTop: 10 }}>
-                      <StyledInput 
-                        prefix={<SafetyCertificateOutlined />}
-                        placeholder="Enter 6-digit OTP" 
-                        value={otpValue}
-                        onChange={(e) => setOtpValue(e.target.value)}
+            {/* ── STEP 0: Mobile Verification ─────────────────────────── */}
+            {currentStep === 0 && (
+              <>
+                <Divider>Phone Verification</Divider>
+                <Row gutter={12} align="middle">
+                  <Col span={8}>
+                    <Form.Item label="Country Code">
+                      <Select
+                        value={countryCode}
+                        onChange={setCountryCode}
+                        showSearch
+                        optionFilterProp="children"
+                        style={{ width: "100%" }}
+                      >
+                        {countryOptions.map(c => (
+                          <Option key={c.iso} value={c.code}>+{c.code} ({c.iso})</Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                  </Col>
+                  <Col span={16}>
+                    <Form.Item label="Phone Number">
+                      <Input
+                        value={phoneNumber}
+                        onChange={e => setPhoneNumber(e.target.value)}
+                        placeholder="501234567"
+                        suffix={mobileOtpVerified
+                          ? <CheckCircleFilled style={{ color: "#52c41a" }} />
+                          : null
+                        }
                       />
-                      <InlineButton type="primary" onClick={handleVerifyOtp} style={{background: '#000'}}>
-                        Verify
-                      </InlineButton>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                    </Form.Item>
+                  </Col>
+                </Row>
 
-            {/* --- PROFESSIONAL DETAILS --- */}
-            <Divider />
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item name="operating_city" label="Operating City" rules={[{ required: true }]}>
-                  <StyledInput placeholder="e.g. Dubai, Abu Dhabi" />
+                {mobileOtpSent && !mobileOtpVerified && (
+                  <Input.Search
+                    placeholder="Enter OTP"
+                    enterButton="Verify OTP"
+                    value={mobileOtp}
+                    onChange={e => setMobileOtp(e.target.value)}
+                    onSearch={verifyMobileOtp}
+                    style={{ marginBottom: 16 }}
+                  />
+                )}
+
+                {mobileOtpVerified ? (
+                  <div style={{ color: "#52c41a", fontWeight: 600, textAlign: "center", marginBottom: 8 }}>
+                    <CheckCircleFilled style={{ marginRight: 6 }} />
+                    Mobile number verified
+                  </div>
+                ) : (
+                  <Button type="primary" block onClick={sendMobileOtp} disabled={!phoneNumber}>
+                    {mobileOtpSent ? "Resend OTP" : "Send OTP"}
+                  </Button>
+                )}
+              </>
+            )}
+
+            {/* ── STEP 1: Email Verification ──────────────────────────── */}
+            {currentStep === 1 && (
+              <>
+                <Divider>Email Verification</Divider>
+                <Form.Item
+                  name="email"
+                  label="Email Address"
+                  rules={[
+                    { required: true, message: "Email is required" },
+                    { type: "email",  message: "Enter a valid email" },
+                  ]}
+                >
+                  <Input
+                    prefix={<MailOutlined />}
+                    placeholder="you@example.com"
+                    disabled={emailOtpVerified}
+                  />
                 </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item name="specialization" label="Specialization" rules={[{ required: true }]}>
-                  <Select placeholder="Select specialization" style={{height: 45}}>
-                    <Option value="residential">Residential</Option>
-                    <Option value="commercial">Commercial</Option>
-                    <Option value="luxury">Luxury Real Estate</Option>
+
+                {emailOtpSent && !emailOtpVerified && (
+                  <Input.Search
+                    placeholder="Enter Email OTP"
+                    enterButton="Verify OTP"
+                    value={emailOtp}
+                    onChange={e => setEmailOtp(e.target.value)}
+                    onSearch={verifyEmailOtp}
+                    style={{ marginBottom: 16 }}
+                  />
+                )}
+
+                {emailOtpVerified ? (
+                  <div style={{ color: "#52c41a", fontWeight: 600, textAlign: "center", marginBottom: 8 }}>
+                    <CheckCircleFilled style={{ marginRight: 6 }} />
+                    Email verified
+                  </div>
+                ) : (
+                  <Button type="primary" block onClick={sendEmailOtp} disabled={emailOtpVerified}>
+                    {emailOtpSent ? "Resend OTP" : "Send OTP"}
+                  </Button>
+                )}
+              </>
+            )}
+
+            {/* ── STEP 2: Agency Selection ────────────────────────────── */}
+            {currentStep === 2 && (
+              <>
+                <Divider>Choose Your Agency</Divider>
+                <Form.Item
+                  name="agency"
+                  label="Agency Affiliation"
+                  rules={[{ required: true, message: "Please select your agency" }]}
+                >
+                  <Select
+                    placeholder="Search and select an agency"
+                    loading={loadingAgencies}
+                    showSearch
+                    optionFilterProp="children"
+                    notFoundContent="No agencies found"
+                    onChange={(val) => setSelectedAgency(val)}
+                  >
+                    {agencies.map(a => (
+                      <Option key={a._id} value={a._id}>{a.companyName}</Option>
+                    ))}
                   </Select>
                 </Form.Item>
-              </Col>
-            </Row>
+                {selectedAgency && (
+                  <div style={{ color: "#52c41a", fontWeight: 600 }}>
+                    <CheckCircleFilled style={{ marginRight: 6 }} />
+                    Agency selected
+                  </div>
+                )}
+                <Text type="secondary" style={{ display: "block", marginTop: 8 }}>
+                  Your agency manages your listings, leads, and commissions.
+                </Text>
+              </>
+            )}
 
-            {/* --- INSTANT FILE UPLOADS --- */}
-            <Row gutter={16} style={{ marginTop: 20 }}>
-              <Col xs={24} md={8}>
+            {/* ── STEP 3: Personal Details + Documents ────────────────── */}
+            {currentStep === 3 && (
+              <>
+                <Divider>Personal Information</Divider>
+
+                {/* Name */}
+                <Row gutter={16}>
+                  <Col xs={24} md={12}>
+                    <Form.Item
+                      name="first_name"
+                      label="First Name"
+                      rules={[{ required: true, message: "First name is required" }]}
+                    >
+                      <Input prefix={<UserOutlined />} placeholder="John" />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} md={12}>
+                    <Form.Item
+                      name="last_name"
+                      label="Last Name"
+                      rules={[{ required: true, message: "Last name is required" }]}
+                    >
+                      <Input prefix={<UserOutlined />} placeholder="Doe" />
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                {/* Location + Country */}
+                <Row gutter={16}>
+                  <Col xs={24} md={12}>
+                    <Form.Item
+                      name="operating_city"
+                      label="Operating City"
+                      rules={[{ required: true, message: "City is required" }]}
+                    >
+                      <Input prefix={<EnvironmentOutlined />} placeholder="Dubai" />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} md={12}>
+                    <Form.Item name="country" label="Country" initialValue="UAE">
+                      <Input prefix={<EnvironmentOutlined />} placeholder="UAE" />
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                {/* Specialization */}
+                <Form.Item
+                  name="specialization"
+                  label="Specialization"
+                >
+                  <Select placeholder="Select your specialization">
+                    <Option value="Residential">Residential</Option>
+                    <Option value="Commercial">Commercial</Option>
+                    <Option value="Industrial">Industrial</Option>
+                    <Option value="Land">Land</Option>
+                    <Option value="General">General</Option>
+                  </Select>
+                </Form.Item>
+
+                {/* Password */}
+                <Form.Item
+                  name="password"
+                  label="Password"
+                  rules={[
+                    { required: true, message: "Password is required" },
+                    { min: 6, message: "At least 6 characters" },
+                  ]}
+                >
+                  <Input.Password prefix={<LockOutlined />} placeholder="At least 6 characters" />
+                </Form.Item>
+
+                <Divider>Documents</Divider>
+
+                {/* RERA Card Number */}
+                <Form.Item name="reraCardNumber" label="RERA Card Number (optional)">
+                  <Input placeholder="e.g. 12345678" />
+                </Form.Item>
+
+                {/* Profile Photo */}
                 <Form.Item label="Profile Photo">
-                  <Upload 
-                    showUploadList={false} 
-                    beforeUpload={(file) => handleInstantUpload(file, 'profile')}
+                  <Upload
+                    beforeUpload={file => handleUpload(file, "profile_photo")}
+                    showUploadList={false}
+                    accept="image/*"
                   >
-                    <Button 
-                      icon={urls.profile ? <CheckOutlined /> : <UploadOutlined />} 
-                      block 
-                      style={{ height: 45, borderColor: urls.profile ? '#52c41a' : '#d9d9d9', color: urls.profile ? '#52c41a' : 'inherit' }}
-                      loading={uploading.profile}
+                    <Button
+                      icon={<UploadOutlined />}
+                      loading={uploading.profile_photo}
+                      block
+                      style={urls.profile_photo ? { borderColor: "#52c41a", color: "#52c41a" } : {}}
                     >
-                      {urls.profile ? "Uploaded" : "Upload Photo"}
+                      {urls.profile_photo ? "✓ Profile Photo Uploaded" : "Upload Profile Photo"}
                     </Button>
                   </Upload>
-                  {urls.profile && <div style={{marginTop: 5, fontSize: 12, color: '#52c41a'}}>Image saved!</div>}
                 </Form.Item>
-              </Col>
-              <Col xs={24} md={8}>
-                <Form.Item label="ID Proof">
-                  <Upload 
-                    showUploadList={false} 
-                    beforeUpload={(file) => handleInstantUpload(file, 'idProof')}
-                  >
-                    <Button 
-                      icon={urls.idProof ? <CheckOutlined /> : <UploadOutlined />} 
-                      block 
-                      style={{ height: 45, borderColor: urls.idProof ? '#52c41a' : '#d9d9d9', color: urls.idProof ? '#52c41a' : 'inherit' }}
-                      loading={uploading.idProof}
-                    >
-                      {urls.idProof ? "Uploaded" : "Upload Emirates ID"}
-                    </Button>
-                  </Upload>
-                  {urls.idProof && <div style={{marginTop: 5, fontSize: 12, color: '#52c41a'}}>ID saved!</div>}
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={8}>
-                <Form.Item label="RERA Certificate">
-                  <Upload 
-                    showUploadList={false} 
-                    beforeUpload={(file) => handleInstantUpload(file, 'rera')}
-                  >
-                    <Button 
-                      icon={urls.rera ? <CheckOutlined /> : <UploadOutlined />} 
-                      block 
-                      style={{ height: 45, borderColor: urls.rera ? '#52c41a' : '#d9d9d9', color: urls.rera ? '#52c41a' : 'inherit' }}
-                      loading={uploading.rera}
-                    >
-                      {urls.rera ? "Uploaded" : "Upload RERA"}
-                    </Button>
-                  </Upload>
-                  {urls.rera && <div style={{marginTop: 5, fontSize: 12, color: '#52c41a'}}>Certificate saved!</div>}
-                </Form.Item>
-              </Col>
-            </Row>
 
-            <SubmitButton type="primary" block htmlType="submit" loading={submitting} disabled={!otpVerified}>
-              COMPLETE REGISTRATION
-            </SubmitButton>
+                {/* Emirates ID */}
+                <Form.Item label="Emirates ID">
+                  <Upload
+                    beforeUpload={file => handleUpload(file, "emiratesIdUrl")}
+                    showUploadList={false}
+                    accept="image/*,.pdf"
+                  >
+                    <Button
+                      icon={<UploadOutlined />}
+                      loading={uploading.emiratesIdUrl}
+                      block
+                      style={urls.emiratesIdUrl ? { borderColor: "#52c41a", color: "#52c41a" } : {}}
+                    >
+                      {urls.emiratesIdUrl ? "✓ Emirates ID Uploaded" : "Upload Emirates ID"}
+                    </Button>
+                  </Upload>
+                </Form.Item>
+
+                {/* RERA Certificate */}
+                <Form.Item label="RERA Certificate">
+                  <Upload
+                    beforeUpload={file => handleUpload(file, "reraCardUrl")}
+                    showUploadList={false}
+                    accept="image/*,.pdf"
+                  >
+                    <Button
+                      icon={<UploadOutlined />}
+                      loading={uploading.reraCardUrl}
+                      block
+                      style={urls.reraCardUrl ? { borderColor: "#52c41a", color: "#52c41a" } : {}}
+                    >
+                      {urls.reraCardUrl ? "✓ RERA Certificate Uploaded" : "Upload RERA Certificate"}
+                    </Button>
+                  </Upload>
+                </Form.Item>
+              </>
+            )}
+
+            {/* ── Navigation ───────────────────────────────────────────── */}
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32 }}>
+              {currentStep > 0 && (
+                <Button onClick={() => setCurrentStep(prev => prev - 1)}>
+                  <ArrowLeftOutlined /> Previous
+                </Button>
+              )}
+
+              {currentStep < 3 ? (
+                <Button
+                  type="primary"
+                  onClick={() => setCurrentStep(prev => prev + 1)}
+                  disabled={
+                    (currentStep === 0 && !mobileOtpVerified) ||
+                    (currentStep === 1 && !emailOtpVerified)  ||
+                    (currentStep === 2 && !selectedAgency)
+                  }
+                  style={{ marginLeft: "auto" }}
+                >
+                  Next →
+                </Button>
+              ) : (
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={submitting}
+                  disabled={!mobileOtpVerified || !emailOtpVerified || !selectedAgency}
+                  style={{ marginLeft: "auto", height: 48, paddingInline: 32 }}
+                >
+                  Submit Registration
+                </Button>
+              )}
+            </div>
+
           </Form>
-        </MainCard>
-      </PageWrapper>
+        </Card>
+      </div>
     </ConfigProvider>
   );
 };

@@ -129,7 +129,7 @@ const ManageProjectFreelancer = () => {
   const { user } = useSelector((s) => s.auth);
   const { projectId } = useParams();
   const navigate = useNavigate();
-  console.log("Project ID:", projectId);
+ 
 
   /* ------------------------------- State ----------------------------------- */
   const [project, setProject] = useState(null);

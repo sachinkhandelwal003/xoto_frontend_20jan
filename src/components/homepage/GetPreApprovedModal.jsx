@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { FiX, FiChevronDown } from "react-icons/fi";
+import { FiX } from "react-icons/fi";
 import toast, { Toaster } from "react-hot-toast";
 import { Select } from "antd"; 
 import { Country, State, City } from "country-state-city"; 
@@ -28,9 +28,9 @@ export default function GetPreApprovedModal({ open, onClose }) {
     phone: "",
     email: "",
     foundProperty: "No",
-    contact: [],
-    marketing: false,
-    terms: false,
+    contact: "WhatsApp", // ✅ Default single selection
+    marketing: false,    // ✅ Track Marketing Checkbox
+    terms: false,        // ✅ Track Terms Checkbox
     country_code: "971", 
     location_country: null, 
     state: null,           
@@ -81,7 +81,7 @@ export default function GetPreApprovedModal({ open, onClose }) {
   };
 
   // Location Cascade Handlers
-  const handleLocationCountryChange = (isoCode) => {
+  const handleLocationCountryChange = (isoCode) => {  
     const updatedStates = State.getStatesOfCountry(isoCode);
     setStatesList(updatedStates);
     setCitiesList([]);
@@ -99,12 +99,6 @@ export default function GetPreApprovedModal({ open, onClose }) {
   const handleLocationCityChange = (cityName) => {
     setForm((prev) => ({ ...prev, city: cityName }));
     if (errors.city) setErrors((prev) => ({ ...prev, city: "" }));
-  };
-
-  const toggleContact = (v) => {
-    setForm((p) => ({
-      ...p, contact: p.contact.includes(v) ? p.contact.filter((x) => x !== v) : [...p.contact, v],
-    }));
   };
 
   // --- VALIDATION ---
@@ -127,8 +121,6 @@ export default function GetPreApprovedModal({ open, onClose }) {
     if (!form.location_country) { newErrors.location_country = "Country is required"; isValid = false; }
     if (!form.state) { newErrors.state = "State is required"; isValid = false; }
     if (citiesList.length > 0 && !form.city) { newErrors.city = "City is required"; isValid = false; }
-
-    if (!form.terms) { toast.error("Please accept the Terms & Privacy Policy"); isValid = false; }
 
     setErrors(newErrors);
     return isValid;
@@ -167,7 +159,7 @@ export default function GetPreApprovedModal({ open, onClose }) {
       state: stateName,
       city: form.city, 
       preferred_city: form.city || stateName, 
-      preferred_contact: form.contact[0]?.toLowerCase() || "whatsapp",
+      preferred_contact: form.contact.toLowerCase(), // ✅ Using the single string state
       terms_accepted: form.terms,
       marketing_consent: form.marketing,
       status: "submit",
@@ -190,7 +182,7 @@ export default function GetPreApprovedModal({ open, onClose }) {
         
         // --- DATA RESET LOGIC ---
         setForm({
-          name: "", phone: "", email: "", foundProperty: "No", contact: [],
+          name: "", phone: "", email: "", foundProperty: "No", contact: "WhatsApp",
           marketing: false, terms: false, country_code: "971", 
           location_country: null, state: null, city: null 
         });
@@ -377,31 +369,39 @@ export default function GetPreApprovedModal({ open, onClose }) {
                 </div>
               </div>
 
+              {/* ✅ CONTACT PREFERENCE (Now Radio Buttons) */}
               <div>
                 <label className="block text-left mb-2 font-medium">How do you prefer to be contacted?</label>
                 <div className="flex gap-6 flex-wrap">
                   {["Call", "WhatsApp", "Email"].map((v) => (
                     <label key={v} className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={form.contact.includes(v)} onChange={() => toggleContact(v)} /> {v}
+                      <input 
+                        type="radio" 
+                        name="contact_pref"
+                        checked={form.contact === v} 
+                        onChange={() => setForm({...form, contact: v})} 
+                      /> {v}
                     </label>
                   ))}
                 </div>
               </div>
 
+              {/* ✅ CHECKBOXES FOR TERMS & MARKETING */}
               <div className="space-y-3">
                 <label className="flex items-start gap-2 cursor-pointer">
                   <input type="checkbox" checked={form.marketing} onChange={(e) => setForm({...form, marketing: e.target.checked})} />
                   <span>I agree to receive newsletters and marketing communications.</span>
                 </label>
                 <label className="flex items-start gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.checked })} />
+                  <input type="checkbox" required checked={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.checked })} />
                   <span>I accept the <span className="underline">Terms</span> & <span className="underline">Privacy Policy</span> <span className="text-red-500">*</span></span>
                 </label>
               </div>
 
+              {/* ✅ BUTTON WITH DISABLED CONDITION */}
               <button
                 onClick={handleSubmit}
-                disabled={loading}
+                disabled={loading || !form.terms || !form.marketing}
                 className="w-full mt-4 bg-[#5C039B] hover:bg-purple-800 disabled:bg-gray-400 text-white py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg transition"
               >
                 {loading ? "Submitting..." : "Submit"}

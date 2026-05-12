@@ -1,178 +1,260 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useCmsContext } from '../../contexts/CmsContext'; 
+import { useCmsContext } from '../../contexts/CmsContext';
 import { FiX, FiChevronDown } from 'react-icons/fi';
 import { useFreelancer } from '../../../../../src/context/FreelancerContext';
-
-import logoNew from '../../../../assets/img/logoNew.png'; 
-import favicon from '../../../../assets/img/logonewww.png'; 
+import { apiService } from '../../../../manageApi/utils/custom.apiservice';
+import logoNew from '../../../../assets/img/logoNew.png';
+import vault from "../../../../assets/img/logo/logovault.png";
+import favicon from '../../../../assets/img/logonewww.png';
+import { icon } from '@fortawesome/fontawesome-svg-core';
 
 /* --- CUSTOM LINKS CONFIGURATION --- */
 // /dashboard/superadmin/developer/property
 const CUSTOM_ROLE_LINKS = {
   "0": [
-  {
-    title: "Properties",
-    icon: "fas fa-building",
-    path: "/dashboard/superadmin/properties",
-    submenus: [
-      {
-        title: "Create Developer",
-        path: "/dashboard/superadmin/developer/create"
-      },
-      {
-        title: "Property Management",
-        path: "/dashboard/superadmin/developer/property"
-      },
-      {
-        title: "Agents",
-        path: "/dashboard/superadmin/agent-list"
-      },
-      {
-        title: "Agencies",
-        path: "/dashboard/superadmin/agency-list"
-      }
-    ]
-  },
-  {
-    title: "Setting",
-    icon: "fas fa-cog",
-    path: "/dashboard/superadmin/setting",
-    submenus: [
-      {
-        title: "Email Setting",
-        path: "/dashboard/superadmin/setting/email"
-      }
-    ]
-  }
-],
-
-"1": [
-    /* --- CATEGORY 1: User Management (Logistics) --- */
     {
-      title: "User Management",
-      icon: "fas fa-users-cog",
-      path: "/dashboard/{roleSlug}/users",
+      title: "Properties",
+      icon: "fas fa-building",
+      path: "/dashboard/superadmin/properties",
       submenus: [
-        { 
-          title: "Agencies", 
-          path: "/dashboard/{roleSlug}/agency-list",
-          icon: "fas fa-network-wired" // Network icon represents agency umbrella
+        {
+          title: "Create Developer",
+          path: "/dashboard/superadmin/developer/create"
         },
-        { 
-          title: "Developers", 
-          path: "/dashboard/{roleSlug}/developer-list",
-          icon: "fas fa-user-tie" 
+        {
+          title: "Property Management",
+          path: "/dashboard/superadmin/developer/property"
         },
-        { 
-          title: "Agents", 
-          path: "/dashboard/{roleSlug}/agent-list",
-          icon: "fas fa-user-friends" 
-        },
-        // { 
-        //   title: "Verification Queue", 
-        //   path: "/dashboard/{roleSlug}/verification-queue", 
-        //   icon: "fas fa-user-check" 
+        // {
+        //   title: "Agents",
+        //   path: "/dashboard/superadmin/agent-list"
+        // },
+
+        // {
+        //   title: "Agencies",
+        //   path: "/dashboard/superadmin/agency-list"
         // }
       ]
     },
-
-    /* --- CATEGORY 2: Inventory & CRM (Operations) --- */
     {
-      title: "Inventory & CRM",
-      icon: "fas fa-boxes",
-      path: "/dashboard/{roleSlug}/operations",
+      title: "Customers",
+      icon: "fas fa-users",
+      path: "/dashboard/superadmin/customers",
       submenus: [
-        { 
-          title: "Global Properties", 
-          path: "/dashboard/{roleSlug}/property-list",
-          icon: "fas fa-building" 
-        },
-        { 
-          title: "Lead Management", 
-          path: "/dashboard/{roleSlug}/lead-management",
-          icon: "fas fa-filter" 
-        },
-        { 
-          title: "Deals & Commissions", 
-          path: "/dashboard/{roleSlug}/DealCommissionManager",
-          icon: "fas fa-file-invoice-dollar" 
-        }
+        { title: "All Customers", path: "/dashboard/superadmin/customers/list" },
       ]
     },
-
-    /* --- CATEGORY 3: Business & Revenue --- */
     {
-      title: "Business Growth",
-      icon: "fas fa-chart-line",
-      path: "/dashboard/{roleSlug}/business",
+      title: "User Feedbacks",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/feedbacks",
       submenus: [
-        { 
-          title: "Subscription Plans", 
-          path: "/dashboard/{roleSlug}/subscription-plans",
-          icon: "fas fa-tags" 
-        },
-        { 
-          title: "XOTO Blitz (Campaigns)", 
-          path: "/dashboard/{roleSlug}/marketing-hub",
-          icon: "fas fa-bullhorn" 
-        }
+        { title: "All Customers", path: "/dashboard/{roleSlug}/feedbacks" },
       ]
     },
-
-    /* --- CATEGORY 4: Support & AI Settings --- */
     {
-      title: "System Control",
-      icon: "fas fa-sliders-h",
-      path: "/dashboard/{roleSlug}/settings",
+      title: "Rental Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/rental/properties",
       submenus: [
-        { 
-          title: "Xobia AI Training", 
-          path: "/dashboard/{roleSlug}/ai-training",
-          icon: "fas fa-robot" 
-        },
-        { 
-          title: "Global Settings", 
-          path: "/dashboard/{roleSlug}/global-settings",
-          icon: "fas fa-cog" 
-        }
-      ]
-    }
+        { title: "Create Rental Properties", path: "/dashboard/{roleSlug}/rental/properties" },
+        { title: "Rental Proprties", path: "/dashboard/{roleSlug}/rental/propertieslist" },
+        { title: "Rental Lead List", path: "/dashboard/{roleSlug}/rental/leadlist" },
+
+
+      ],
+    },
+    // {
+    //   title: "Setting",
+    //   icon: "fas fa-cog",
+    //   path: "/dashboard/superadmin/setting",
+    //   submenus: [
+    //     {
+    //       title: "Email Setting",
+    //       path: "/dashboard/superadmin/setting/email"
+    //     }
+    //   ]
+    // }
   ],
+
+  "1": [
+
+  /* ── Listings & Approvals ── */
+{
+  title: "Listings",
+  path: "/dashboard/{roleSlug}/property-list",
+  icon: "fas fa-building",
+  submenus: [
+    { title: "All Listings",          path: "/dashboard/{roleSlug}/admin/property" },
+    { title: "Approval Queue",        path: "/dashboard/{roleSlug}/listings/approval-queue" },
+    { title: "Edit Review Queue",     path: "/dashboard/{roleSlug}/listings/edit-review-queue" },
+    { title: "Create Rental Properties", path: "/dashboard/{roleSlug}/rental/properties" },
+  ]
+},
+
+  /* ── Enquiry Handling ── */
+  {
+    title: "Enquiries",
+    path: "/dashboard/{roleSlug}/enquiries",
+    icon: "fas fa-inbox",
+    submenus: [
+      { title: "Enquiry Queue",   path: "/dashboard/{roleSlug}/enquiries/queue" },
+      { title: "Bulk Upload",     path: "/dashboard/{roleSlug}/enquiries/bulk-upload" },
+    ]
+  },
+
+  /* ── Lead Management ── */
+  {
+    title: "Lead Management",
+    path: "/dashboard/{roleSlug}/lead-management",
+    icon: "fas fa-filter",
+    submenus: [
+      { title: "All Leads",       path: "/dashboard/{roleSlug}/grid/agentleads" },
+      { title: "Platform Leads",  path: "/dashboard/{roleSlug}/GridAdmin/propertyleads" },
+      { title: "Agent Leads",     path: "/dashboard/{roleSlug}/grid/agentleads" },
+      { title: "General Leads",   path: "/dashboard/{roleSlug}/leads/general" },
+    ]
+  },
+
+  /* ── User Management ── */
+  {
+    title: "Agencies",
+    path: "/dashboard/{roleSlug}/agency-list",
+    icon: "fas fa-network-wired",
+    submenus: [
+      { title: "Agency List",      path: "/dashboard/{roleSlug}/agency-list" },
+      { title: "Create Agency",    path: "/dashboard/{roleSlug}/onboarding/agency" },
+    ]
+  },
+  {
+    title: "Developers",
+    path: "/dashboard/{roleSlug}/developer-list",
+    icon: "fas fa-user-tie",
+    submenus: [
+      { title: "Developer List",    path: "/dashboard/{roleSlug}/developer-list" },
+      { title: "Create Developer",  path: "/dashboard/{roleSlug}/onboarding/developer" },
+    ]
+  },
+  {
+    title: "Agents",
+    path: "/dashboard/{roleSlug}/agent-list",
+    icon: "fas fa-user-friends",
+    submenus: [
+      { title: "Agent List",        path: "/dashboard/{roleSlug}/agent-list" },
+      { title: "Verification Queue",path: "/dashboard/{roleSlug}/agents/verification-queue" },
+    ]
+  },
+  {
+    title: "Xoto Advisors",
+    path: "/dashboard/{roleSlug}/advisor-list",
+    icon: "fas fa-user-shield",
+    submenus: [
+      { title: "Advisor List",      path: "/dashboard/{roleSlug}/advisors" },
+      { title: "Create Advisor",    path: "/dashboard/{roleSlug}/advisor/create" },
+      { title: "Leaderboard",       path: "/dashboard/{roleSlug}/advisors/leaderboard" },
+    ]
+  },
+  {
+    title: "Referral Partners",
+    path: "/dashboard/{roleSlug}/referral-list",
+    icon: "fas fa-handshake",
+  },
+  {
+    title: "Customers",
+    path: "/dashboard/{roleSlug}/customer-list",
+    icon: "fas fa-users",
+    submenus: [
+      { title: "Customer List",     path: "/dashboard/{roleSlug}/customer-list" },
+      { title: "Enquiry History",   path: "/dashboard/{roleSlug}/customers/enquiry-history" },
+    ]
+  },
+
+  /* ── Commission Management ── */
+  {
+    title: "Commission",
+    path: "/dashboard/{roleSlug}/commission",
+    icon: "fas fa-file-invoice-dollar",
+    submenus: [
+      { title: "Deal Records",        path: "/dashboard/{roleSlug}/commission/deal-records" },
+      { title: "Commission Ledger",   path: "/dashboard/{roleSlug}/commission/ledger" },
+      { title: "Partner Agreements",  path: "/dashboard/{roleSlug}/commission/agreements" },
+    ]
+  },
+
+  /* ── Content Management ── */
+  {
+    title: "Content Management",
+    path: "/dashboard/{roleSlug}/content",
+    icon: "fas fa-photo-video",
+    submenus: [
+      { title: "Featured Properties", path: "/dashboard/{roleSlug}/content/featured" },
+      { title: "Promo Banners",       path: "/dashboard/{roleSlug}/content/banners" },
+    ]
+  },
+
+  /* ── Analytics ── */
+  {
+    title: "Analytics",
+    path: "/dashboard/{roleSlug}/analytics",
+    icon: "fas fa-chart-line",
+    submenus: [
+      { title: "Platform Overview",   path: "/dashboard/{roleSlug}/analytics/overview" },
+      { title: "Agent Metrics",       path: "/dashboard/{roleSlug}/analytics/agents" },
+      { title: "Developer Metrics",   path: "/dashboard/{roleSlug}/analytics/developers" },
+      { title: "Commission Metrics",  path: "/dashboard/{roleSlug}/analytics/commission" },
+    ]
+  },
+
+],
   "2": [
-     {
+    {
       title: "Estimates", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
       submenus: [
         { title: "Submitted Estimates", path: "/dashboard/{roleSlug}/estimate/submitted" },
-                { title: "Received Quotation", path: "/dashboard/{roleSlug}/quotation/received" },
-                { title: "Response Submitted", path: "/dashboard/{roleSlug}/quotation/response" },
+        { title: "Received Quotation", path: "/dashboard/{roleSlug}/quotation/received" },
+        { title: "Response Submitted", path: "/dashboard/{roleSlug}/quotation/response" },
 
       ],
     },
-      {
+    {
       title: "My Projects", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects",
       submenus: [
         { title: "Ongoing Projects", path: "/dashboard/{roleSlug}/projects/ongoing" },
-                
+
 
       ],
-    }, {
+    },
+    {
+      title: "My Favourites", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/My-favourite-Properties",
+      submenus: [
+        { title: "My Favourite Properties", path: "/dashboard/{roleSlug}/My-favourite-Properties" },
+
+
+      ],
+    },
+    {
       title: "Bills", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects",
       submenus: [
         { title: "My Bills", path: "/dashboard/{roleSlug}/projects/milestone/bills" },
-                        { title: "My Invoice", path: "/dashboard/{roleSlug}/projects/invoices" },
+        // { title: "My Invoice", path: "/dashboard/{roleSlug}/projects/invoices" },
 
 
       ],
-    }
+    },
+    {
+      title: "View Library", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/ViewLibrary",
+
+
+
+    },
+
   ],
-   "12": [
-     {
+  "12": [
+    {
       title: "Projects", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/projects/view",
       submenus: [
         { title: "Manage Projects", path: "/dashboard/{roleSlug}/projects/manage" },
-         
+
 
       ],
     }
@@ -180,224 +262,422 @@ const CUSTOM_ROLE_LINKS = {
   "4": [
 
   ],
+  "5": [
+    {
+      title: "Inventory",
+      icon: "fas fa-warehouse",
+      path: "/dashboard/vendor-b2c/inventory",
+    },
+  ],
   "7": [
     {
       title: "Quotations", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/quotations",
       submenus: [
         { title: "Submitted Quotation", path: "/dashboard/{roleSlug}/quotation/submitted" },
-                { title: "Approved Quotation", path: "/dashboard/{roleSlug}/quotation/approved" },
+        { title: "Approved Quotation", path: "/dashboard/{roleSlug}/quotation/approved" },
 
       ],
     },
   ],
   "8": [
     {
-      title: "Property Management", 
-      icon: "fas fa-building", 
-      path: "/dashboard/developer/property-management", 
+      title: "Property Management",
+      icon: "fas fa-building",
+      path: "/dashboard/developer/property-management",
       submenus: [
         { title: "All Properties", path: "/dashboard/developer/property-management/list" },
       ],
     },
   ],
-"16": [
- 
-  {
-    title: "Leads",
-    icon: "fas fa-user-friends",
-    path: "/dashboard/{roleSlug}/agent-leads",
+  "16": [
+    {
+      title: "Catalogs",
+      icon: "fas fa-building",
+      path: "/dashboard/{roleSlug}/agent-projects",
+    },
+
+    {
+      title: "Leads", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/GridAgent-lead",
+      submenus: [
+        { title: "Leads", path: "/dashboard/{roleSlug}/GridAgent-lead" },
+
+
+      ],
+    },
+
+
+  ],
+  "10": [],
+  "17": [
+    {
+      title: "Projects",
+      icon: "fas fa-building",
+      path: "/dashboard/{roleSlug}/developer-projects"
+    },
+    //   {
+    //   title: "Global Projects",
+    //   icon: "fas fa-building",
+    //   path: "/dashboard/{roleSlug}/property-list"
+    // },
+    {
+      title: "Listings",
+      icon: "fas fa-layer-group",
+      path: "/dashboard/{roleSlug}/developerinventory",
+    },
+
+  ],
+  "15": [
+    {
+      title: "Projects", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects",
+      submenus: [
+        { title: "Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects" },
+        { title: "Agent Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-agent-properties" },
+
+
+      ],
+    },
+    {
+    title: "Agents",
+    icon: "fas fa-user-friends",       // or any icon you like
+    path: "/dashboard/{roleSlug}/agents",
+    submenus: [
+      { title: "All Agents",   path: "/dashboard/{roleSlug}/all-agents" },
+    ],
   },
-  {
-    title: "Subscription",
-    icon: "fas fa-credit-card",
-    path: "/dashboard/{roleSlug}/subscription",
-  },
-  {
-  title: "Projects",
-  icon: "fas fa-building",
-  path: "/dashboard/{roleSlug}/projects",
+
+  ],
+
+  "18": [
+    {
+      title: "Agents",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/agents",
+      submenus: [
+        { title: "Onboard Agent", path: "/dashboard/{roleSlug}/agent-onboard" },
+        { title: "All Agents", path: "/dashboard/{roleSlug}/vault/agent-list" },
+      ],
+    },
+    {
+      title: "Leads",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/leads",
+      submenus: [
+        { title: "Leads", path: "/dashboard/{roleSlug}/vault/agent-leads" },
+      ],
+    },
+ {
+  title: "Advisors",
+  icon: "fas fa-user-tie",
+  path: "/dashboard/{roleSlug}/advisor",  // parent path (optional)
+  submenus: [
+    { 
+      title: "Create Advisor", 
+      path: "/dashboard/{roleSlug}/create/vault-advisor" 
+    },
+    { 
+      title: "All Advisors", 
+      path: "/dashboard/{roleSlug}/advisor/list" 
+    },
+  ],
 },
-{
-  title: "Presentations",
-  icon: "fas fa-file-powerpoint",
-  path: "/dashboard/{roleSlug}/presentations",
+ {
+  title: "Mortgages",
+  icon: "fas fa-file-invoice-dollar",   // ✅ Distinct icon
+  path: "/dashboard/{roleSlug}/mortgage-ops",
+  submenus: [
+    { 
+      title: "Create Mortgage", 
+      path: "/dashboard/{roleSlug}/mortgage-ops/create" 
+    },
+    { 
+      title: "All Mortgages", 
+      path: "/dashboard/{roleSlug}/mortgage-ops/list" 
+    },
+  ],
 },
-{
-  title: "Site Visits",
-  icon: "fas fa-map-marker-alt",
-  path: "/dashboard/{roleSlug}/visits",
-},
-{
-  title: "Deals",
-  icon: "fas fa-handshake",
-  path: "/dashboard/{roleSlug}/deals",
-},
-{
-  title: "Commission",
-  icon: "fas fa-rupee-sign",
-  path: "/dashboard/{roleSlug}/commission",
-},
-],
-"10": [],
-"17": [
-  {
-    title: "Projects",
-    icon: "fas fa-building",
-    path: "/dashboard/{roleSlug}/developer-projects"
-  },
-  {
-  title: "Global Projects",
-  icon: "fas fa-building",
-  path: "/dashboard/{roleSlug}/property-list"
-},
-  {
-  title:"Inventory / Units",
-  icon:"fas fa-layer-group",
-  path:"/dashboard/{roleSlug}/inventory",
-},
-{
-  title:"Leads Tracking",
-  icon:"fas fa-users",
-  path:"/dashboard/{roleSlug}/developer-leads",
-},
-{
-  title:"Sales Revenue",
-  icon:"fas fa-chart-line",
-  path:"/dashboard/{roleSlug}/revenue",
-},
-{
-  title:"Bookings",
-  icon:"fas fa-file-signature",
-  path:"/dashboard/{roleSlug}/bookings",
-},
-  // {
-  //     title: "Analytics",
-  //     icon: "fas fa-chart-pie",
-  //     path: "/dashboard/{roleSlug}/analytics"
-  //   },
-  {
-  title: "Commission Scheme",
-  icon: "fas fa-percent",
-  path: "/dashboard/{roleSlug}/commission-scheme"
+   
+    {
+      title: "Propersals",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Proposals", path: "/dashboard/{roleSlug}/proposals/create" },
+        { title: "View Proposals", path: "/dashboard/{roleSlug}/proposals/view" },
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+
+       
+    {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Cases", path: "/dashboard/{roleSlug}/case/create" },
+        { title: "View Cases", path: "/dashboard/{roleSlug}/case/view" },
+                { title: "Process Cases", path: "/dashboard/{roleSlug}/case/view/all" },
+                { title: "Manage Cases", path: "/dashboard/{roleSlug}/case/manage" },
+
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+    {
+      
+      title: "Vault Partners",
+      icon: "fas fa-handshake",
+      path: "/dashboard/{roleSlug}/partners",
+      submenus: [
+        { title: "Onboard Partner", path: "/dashboard/{roleSlug}/partners" }, // handle query param in component
+        { title: "All Partners", path: "/dashboard/{roleSlug}/partner-list" }
+      ]
+    },
+
+    
+    {
+      title: "Bank Library",
+      icon: "fas fa-university",
+      path: "/dashboard/{roleSlug}/bank/products",
+    }
+  ],
+  "22": [
+    {
+    title: "Leads",   
+    icon: "fas fa-users",
+    path: "/dashboard/{roleSlug}/leads",
+    submenus: [
+      {
+        title: "Create Leads",
+        path: "/dashboard/{roleSlug}/leads/create"
+      },
+      {
+  title: "My  Leads",
+  path: "/dashboard/{roleSlug}/leads" 
 }
-],
-"15" :[ 
-  {
-    title: "Manage Agents",
-    icon: "fas fa-user-tie",
-    path: "/dashboard/{roleSlug}/manage-agents"
+    ]
+  }
+    ,
+  ],
+"21": [
+    {
+    title: "Create Lead",
+    icon: "fas fa-plus-circle",
+    path: "/dashboard/{roleSlug}/leads/partner/create",
+    // no submenu – direct link
   },
   {
-  title: "Performance",
-  icon: "fas fa-chart-line",
-  path: "/dashboard/{roleSlug}/performance"
-},
+    title: "Vault Partners",
+    icon: "fas fa-users",
+    path: "/dashboard/{roleSlug}/vaultpartner",
+    submenus: [
+      { title: "Onboard Agent", path: "/dashboard/{roleSlug}/onboard-partner" },
+      { title: "All Agents", path: "/dashboard/{roleSlug}/AgentVaultlisting" },
+    ],
+  },
+  {
+      title: "Bank Library",
+      icon: "fas fa-university",
+      path: "/dashboard/{roleSlug}/bank/products",
+    },
+   
+  {
+    title: "All Leads",
+    icon: "fas fa-file-alt",
+    path: "/dashboard/{roleSlug}/partner-leads",
+  },
 {
-  title: "Commission",
-  icon: "fas fa-money-bill-wave",
-  path: "/dashboard/{roleSlug}/commission"
-},
-{
-  title: "Lead Management",
-  icon: "fas fa-user-check",
-  path: "/dashboard/{roleSlug}/lead-management"
-},
-// {
-//   title: "Agent Targets",
-//   icon: "fas fa-bullseye",
-//   path: "/dashboard/{roleSlug}/targets"
-// },
-// {
-//   title: "Leaderboard",
-//   icon: "fas fa-trophy",
-//   path: "/dashboard/{roleSlug}/leaderboard"
-// },
-// {
-//   title: "Incentives",
-//   icon: "fas fa-gift",
-//   path: "/dashboard/{roleSlug}/incentives"
-// },
-// {
-//   title: "Branches",
-//   icon: "fas fa-building",
-//   path: "/dashboard/{roleSlug}/branches"
-// },
-// {
-//   title: "Internal Roles",
-//   icon: "fas fa-user-shield",
-//   path: "/dashboard/{roleSlug}/internal-roles"
-// },
-// {
-//   title: "Advanced Analytics",
-//   icon: "fas fa-chart-area",
-//   path: "/dashboard/{roleSlug}/advanced-analytics"
-// },
-// {
-//   title: "Profit Engine",
-//   icon: "fas fa-calculator",
-//   path: "/dashboard/{roleSlug}/profit-engine"
-// },
-{
-  title: "Projects",
-  icon: "fas fa-building",
-  path: "/dashboard/{roleSlug}/projects"
-},
-{
-  title: "Deals",
-  icon: "fas fa-handshake",
-  path: "/dashboard/{roleSlug}/deals"
-},
-{
-  title: "Subscription",
-  icon: "fas fa-credit-card",
-  path: "/dashboard/{roleSlug}/subscription"
-},
+      title: "Propersals",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Proposals", path: "/dashboard/{roleSlug}/proposals/create" },
+        { title: "View Proposals", path: "/dashboard/{roleSlug}/proposals/view" },
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
 
-// {
-//   title: "Assign Projects",
-//   icon: "fas fa-tasks",
-//   path: "/dashboard/{roleSlug}/assign-projects"
-// }
+    },
+     {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Cases", path: "/dashboard/{roleSlug}/case/create" },
+        { title: "View Cases", path: "/dashboard/{roleSlug}/case/view" },
+                { title: "Process Cases", path: "/dashboard/{roleSlug}/case/view/all" },
 
-]
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+],
+'24': [
+  {
+    title: "My Leads",
+    icon: "fas fa-users",
+    path: "/dashboard/{roleSlug}/gridAdvisorLeads",
+  },
+  {
+    title: "Property Catalogue",
+    icon: "fas fa-building",
+    path: "/dashboard/{roleSlug}/property-catalogue",
+  }
+],
+// Baaki purane roles ke neeche ye paste karo:
+  "25": [
+    {
+      title: "Referrals",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/referrals",
+      submenus: [
+        { 
+          title: "Submit Lead", 
+          path: "/dashboard/{roleSlug}/submit-leads" 
+        },
+        { 
+          title: "My Referrals", 
+          path: "/dashboard/{roleSlug}/all-referrals" 
+        }
+      ]
+    },
+    {
+      title: "Leaderboard",
+      icon: "fas fa-trophy",
+      path: "/dashboard/{roleSlug}/leaderboard"
+    },
+    {
+      title: "Profile",
+      icon: "fas fa-user-cog",
+      path: "/dashboard/{roleSlug}/profile"
+    }
+  ],
+
+"26": [
+  {
+    title: "My Leads",
+    icon : "fas fa-file-alt",
+    path : "/dashboard/{roleSlug}/leads",  
+  },
+   {
+      title: "Proposals",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Proposals", path: "/dashboard/{roleSlug}/proposals/create" },
+        { title: "View Proposals", path: "/dashboard/{roleSlug}/proposals/view" },
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+
+       
+    {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Create Cases", path: "/dashboard/{roleSlug}/case/create" },
+        { title: "View Cases", path: "/dashboard/{roleSlug}/case/view" },
+                { title: "Process Cases", path: "/dashboard/{roleSlug}/case/view/all" },
+
+        // { title: "Disbursed", path: "/dashboard/{roleSlug}/cases/disbursed" },
+      ],
+
+    },
+],
+"23": [
+   
+    {
+      title: "Case",
+      icon: "fas fa-folder-open",
+      path: "/dashboard/{roleSlug}/cases",
+      submenus: [
+        { title: "Queue Cases", path: "/dashboard/{roleSlug}/case/queue/view" },
+                { title: "My Assigned Cases", path: "/dashboard/{roleSlug}/case/assigned/all" },
+
+        { title: "Disbursed Cases", path: "/dashboard/{roleSlug}/case/disbursed" },
+      ],
+
+    },
+],
+
+
+// "23": [
+//   {
+//     title: "Mortgage Cases",
+//     icon: "fas fa-file-invoice-dollar",   // same icon as mortgage, or use fas fa-gavel
+//     path: "/dashboard/{roleSlug}/mortgage-ops",
+//     submenus: [
+//       {
+//         title: "All Cases",
+//         path: "/dashboard/{roleSlug}/mortgage-ops/case/:caseId"
+//       },
+//       // Optional: Add a direct case detail link if needed, but usually you'd navigate from the list.
+//     ]
+//   } 
+// ],
+
 
 };
 
 
 const roleSlugMap = {
-  '0': 'superadmin', 
-  '1': 'admin', 
+  '0': 'superadmin',
+  '1': 'admin',
   '2': "customer",
-  '5': 'vendor-b2c', 
-  '6': 'vendor-b2b', 
+  '5': 'vendor-b2c',
+  '6': 'vendor-b2b',
   '7': 'freelancer',
-  '11': 'accountant', 
+  '11': 'accountant',
   '12': 'supervisor',
-    '15': "agency",        // Agency
+  '15': "agency",        // Agency
   '16': "agent",         // Agent
   '17': "developer",
+  '18': "vault-admin", //vault
+  '22': "vaultagent",
+  '21': "vaultpartner",
+  '24': "GridAdvisor",
+  // '23': "vault-advisor",
+  // '26': "vault-ops",
+  // '26': "vault-advisor",
+  '23': "vault-ops",
+  '25': "gridreferralpartner",
+  '26': "vault-advisor",
+  // '23': "vault-ops",
+  
+   
+ 
 
 
 };
 
 const ROLE_MODULE_ORDER = {
-  '0': ['Dashboard', "All Estimation", "Deals", 'Xoto Partners', 'Projects', 'Packages', 'Estimate master', 'Consultation Bookings', 'All Users', 'Products', 'Seller B2C', 'Request', 'Payout', 'Module','properties', 'Permission', 'Role', 'Inventory', 'Settings'],
+  '0': ['Dashboard', "All Estimation", "Deals", 'Xoto Partners', 'Projects', 'Customers', 'Packages', 'Estimate master', 'Consultation Bookings', 'All Users', 'Products', 'Seller B2C', 'Request', 'Payout', 'Module', 'properties', 'Permission', 'Role', 'Inventory', 'Settings'],
   '1': ['Dashboard', 'Grid Admin'],
-  '5': ['Dashboard', 'Products', 'My Products', 'Orders', 'Payout', 'Settings'],
+  '5': ['Dashboard', 'Products', 'My Products', 'Inventory', 'Orders', 'Payout', 'Settings'],
   '6': ['Dashboard', 'Products', 'Projects', 'Inventory', 'Payout'],
   '7': ['Dashboard', 'My Projects', 'All Projects', 'Add Projects', 'Payout'],
-'17': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
+  '17': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
   '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
-'16': ['Dashboard','AgentLead Management'],
-'15': ['Dashboard','Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
+  '16': ['Dashboard', 'AgentLead Management'],
+  '15': ['Dashboard', 'Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
+  '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners', 'Advisors', 'Mortgages'],
+  '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
+  // '21': ['Dashboard', 'Vault Partners', 'All Leads'],
 
+  '25':['Dashboard' , 'Total leads ' , 'Active Leads' , 'Recent Leads'],
+  '21': ['Dashboard','Create Lead',  'Vault Partners', 'All Leads',],
+  '24': ['Dashboard', 'My Leads', 'Property Catalogue', 'Calculator', 'Leaderboard'],
+  // '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],
+    '26': ['Dashboard', 'All Leads','Case','Proposals'],
+    '23': ['Dashboard', 'Mortgage Cases'], 
 };
 
 
 const Sidebar = () => {
-  const { 
-    sidebarCollapsed, 
+  const {
+    sidebarCollapsed,
     mobileSidebarCollapsed,
     toggleMobileSidebar,
     setMobileSidebarCollapsed
@@ -411,29 +691,54 @@ const Sidebar = () => {
 
   useEffect(() => {
     if (!mobileSidebarCollapsed) {
-      setMobileSidebarCollapsed(true); 
+      setMobileSidebarCollapsed(true);
     }
   }, [location.pathname, setMobileSidebarCollapsed]);
 
   // --- ROLE DETECTION LOGIC ---
-  let roleCode = '0'; 
+  let roleCode = '0';
   let displayRoleName = 'User';
 
   if (user && user.role) {
-      if (typeof user.role === 'string') {
-          roleCode = user.role; 
-          displayRoleName = user.role;
-      } else {
-          roleCode = user.role.code ? user.role.code.toString() : '0';
-          displayRoleName = user.role.name || 'User';
-      }
+    if (typeof user.role === 'string') {
+      roleCode = user.role;
+      displayRoleName = user.role;
+    } else {
+      roleCode = user.role.code ? user.role.code.toString() : '0';
+      displayRoleName = user.role.name || 'User';
+    }
   }
 
 
 
   const roleSlug = roleSlugMap[roleCode] ?? 'dashboard';
   const basePath = `/dashboard/${roleSlug}`;
-  
+const [partnerCategory, setPartnerCategory] = useState(null);
+
+useEffect(() => {
+  if (roleCode !== '21' || !token) return;
+
+  const loadPartnerProfile = async () => {
+    try {
+      const response = await apiService.get('/profile/get-profile-data');
+
+         
+
+      const category = response?.data?.partnerCategory
+        ?.toString()
+        .trim()
+        .toLowerCase();
+      
+      setPartnerCategory(category || null);
+    } catch (error) {
+      console.error('partner profile fetch failed:', error);
+      setPartnerCategory(null);
+    }
+  };
+
+  loadPartnerProfile();
+}, [roleCode, token]);
+
   const isFreelancer = roleCode === '7';
   const isPendingApproval = isFreelancer && freelancer && freelancer.status_info?.status !== 1;
 
@@ -472,20 +777,37 @@ const Sidebar = () => {
         submenus: processedSubmenus
       };
     });
+if (roleCode === '21' && partnerCategory !== 'individual') {
+  delete modulesMap['Create Lead'];
+}
+ if (partnerCategory === 'individual') {
+    delete modulesMap['Vault Partners'];
+  }
 
     // 3. Sorting
     const ordered = [];
     const customOrder = ROLE_MODULE_ORDER[roleCode] || [];
-    customOrder.forEach(t => { 
-      if (modulesMap[t]) { 
-        ordered.push(modulesMap[t]); 
-        delete modulesMap[t]; 
-      } 
+    customOrder.forEach(t => {
+      if (modulesMap[t]) {
+        ordered.push(modulesMap[t]);
+        delete modulesMap[t];
+      }
     });
-    
-    ordered.push(...Object.values(modulesMap));
-    return [...tree, ...ordered];
-  }, [permissions, basePath, isPendingApproval, roleCode, user, token, roleSlug]);
+
+    // ordered.push(...Object.values(modulesMap));
+    // return [...tree, ...ordered];
+    const HIDE_MODULES = ['Permission'];
+
+    ordered.push(
+      ...Object.values(modulesMap).filter(
+        m => !HIDE_MODULES.includes(m.title)
+      )
+    );
+
+    return [...tree, ...ordered.filter(
+      m => !HIDE_MODULES.includes(m.title)
+    )];
+  },  [permissions, basePath, isPendingApproval, roleCode, user, token, roleSlug, partnerCategory]);
 
   // --- RENDER ---
   const toggleModule = (mod) => setOpenModule(openModule === mod ? null : mod);
@@ -501,6 +823,7 @@ const Sidebar = () => {
     ${mobileOpen ? 'w-64 translate-x-0' : '-translate-x-full lg:translate-x-0'}
     ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
   `;
+const isVaultRole = ['18', '21', '22', '23', '26'].includes(roleCode);
 
   return (
     <>
@@ -517,11 +840,19 @@ const Sidebar = () => {
         <div className={`flex items-center p-4 border-b border-purple-800/50 ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
           <div className="flex flex-col items-center gap-3 flex-1 overflow-hidden">
             <div className="flex flex-col items-center flex-shrink-0">
-              <img 
-                src={sidebarCollapsed ? favicon : logoNew} 
-                alt="Logo" 
-                className={`transition-all duration-300 ${sidebarCollapsed ? 'h-8 w-8' : 'h-10 sm:h-12 lg:h-14 w-auto'}`} 
-              />
+             <img
+  src={
+    sidebarCollapsed
+      ? favicon
+      : isVaultRole
+        ? vault
+        : logoNew
+  }
+  alt="Logo"
+  className={`transition-all duration-300 ${
+    sidebarCollapsed ? 'h-10 w-10' : 'h-10 sm:h-12 lg:h-16 w-auto'
+  }`}
+/>
               {!sidebarCollapsed && (
                 <span className="text-white text-[8px] sm:text-[10px] whitespace-nowrap mt-1">
                   Powered by AI. Inspired by you.
@@ -533,6 +864,11 @@ const Sidebar = () => {
               <div className="text-center">
                 <div className="text-xs uppercase tracking-widest text-purple-300/80">Welcome</div>
                 <div className="text-sm font-bold text-purple-200 capitalize">{displayRoleName}</div>
+                  {roleCode === '21' && partnerCategory && (
+    <div className="text-[11px] mt-1 px-2 py-[2px] rounded-full bg-purple-700/40 text-purple-200 capitalize inline-block">
+      {partnerCategory}
+    </div>
+  )}
               </div>
             )}
           </div>
@@ -608,4 +944,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar;
+export default Sidebar; 

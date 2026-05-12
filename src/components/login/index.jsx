@@ -1,21 +1,13 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
-import {
-  Form,
-  Input,
-  Button,
-  Card,
-  Typography,
-  Alert,
-  Row,
-  Col,
-  Grid,
-  ConfigProvider,
-} from "antd";
+import React, { useState, useEffect, useContext, useRef, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { Form, Input, Button, Card, Typography, Alert, Row, Col, Grid, ConfigProvider, Space, Select } from "antd";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../manageApi/context/AuthContext.jsx";
 import { toast } from "react-toastify";
 import styled from "styled-components";
+import { Country } from "country-state-city";
+
 
 // Assets
 import loginimage from "../../assets/img/one.png";
@@ -27,16 +19,17 @@ import {
   ArrowLeftOutlined,
   MailOutlined,
   LockOutlined,
-  TeamOutlined,
   CodeOutlined,
   IdcardOutlined,
   ApartmentOutlined,
+  BankOutlined,
+  PhoneOutlined,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 
-// --- Styled Components ---
+// --- Styled Components --- (ALL ORIGINAL, UNCHANGED)
 const PageWrapper = styled.div`
   min-height: 100vh;
   position: relative;
@@ -111,19 +104,35 @@ const Login = () => {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   const { login, isAuthenticated, user, token } = useContext(AuthContext);
+const selectedPartnerTypeRef = useRef(null);
 
-  // ✅ 1. Determine Mode based on Route
   const isGridMode = location.pathname.includes("/grid/login");
 
-  // view states: 'main' | 'xoto-select' | 'login'
-  // If Grid Mode, default view is 'xoto-select', else 'main'
+  // ── view states: 'main' | 'xoto-select' | 'agent-select' | 'alliance-select' | 'login'
   const [view, setView] = useState(isGridMode ? "xoto-select" : "main"); 
   const [selectedPartnerType, setSelectedPartnerType] = useState(null);
+  const [parentMenu, setParentMenu] = useState(null); 
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState("");
   const hasRedirected = useRef(false);
 
-  // Sync view if URL changes manually
+  const countryOptions = useMemo(() => {
+  const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"];
+  return Country.getAllCountries()
+    .map((country) => ({
+      name: country.name,
+      code: country.phonecode,
+      iso: country.isoCode,
+    }))
+    .sort((a, b) => {
+      const aPriority = priorityIsoCodes.includes(a.iso);
+      const bPriority = priorityIsoCodes.includes(b.iso);
+      if (aPriority && !bPriority) return -1;
+      if (!aPriority && bPriority) return 1;
+      return a.name.localeCompare(b.name);
+    });
+}, []);
+
   useEffect(() => {
     if (location.pathname.includes("/grid/login")) {
         setView("xoto-select");
@@ -134,9 +143,13 @@ const Login = () => {
     }
   }, [location.pathname]);
 
+  useEffect(() => {
+  if (selectedPartnerType) {
+    selectedPartnerTypeRef.current = selectedPartnerType;
+  }
+}, [selectedPartnerType]);
+
   // --- Configuration ---
-  
-  // 1. Main Categories (Only visible on standard Login)
   const mainCategories = [
     {
       id: "freelancer",
@@ -150,128 +163,190 @@ const Login = () => {
     {
       id: "vendor-b2c",
       label: "Strategic Alliances",
-      desc: "For Product Sellers",
+      desc: "For Product Sellers & Vault",
       icon: <ShopOutlined style={{ fontSize: "28px" }} />,
       color: "#03A4F4",
       gradient: "linear-gradient(135deg, #03A4F4, #0077b6)",
       type: "direct",
     },
     {
-      id: "business-association",
-      label: "Business Associates",
-      desc: "For Business Networks",
-      icon: <TeamOutlined style={{ fontSize: "28px" }} />,
+      id: "agent",
+      label: "Agents",
+      desc: "For Agents",
+      icon: <IdcardOutlined style={{ fontSize: "28px" }} />,
       color: "#10B981",
       gradient: "linear-gradient(135deg, #10B981, #059669)",
       type: "direct",
     },
-    // Note: Xoto Grid removed from here as it has its own route now
+    // ── DEVELOPER COMMENTED OUT ──────────────────────────────────────────
+    {
+      id: "developer",
+      label: "Developers",
+      desc: "For Developers",
+      icon: <CodeOutlined style={{ fontSize: "28px" }} />,
+      color: "#F97316",
+      gradient: "linear-gradient(135deg, #10B981, #059669)",
+      type: "direct",
+    },
+    // ─────────────────────────────────────────────────────────────────────
   ];
 
-  // 2. All Partner Types (Used for Login Logic & Grid Menu)
   const partnerTypes = [
     ...mainCategories,
-    {
-      value: "developer",
-      label: "Developer",
-      desc: "For Real Estate Developers",
-      icon: <CodeOutlined style={{ fontSize: "28px" }} />,
-      color: "#F97316", // Orange
-      gradient: "linear-gradient(135deg, #F97316, #EA580C)",
-    },
-    {
-      value: "agent",
-      label: "Agent",
-      desc: "For Real Estate Agents",
-      icon: <IdcardOutlined style={{ fontSize: "28px" }} />,
-      color: "#E11D48", // Rose/Red
-      gradient: "linear-gradient(135deg, #E11D48, #BE123C)",
-    },
-    {
-      value: "agency",
-      label: "Agency",
-      desc: "For Property Agencies",
-      icon: <ApartmentOutlined style={{ fontSize: "28px" }} />,
-      color: "#4F46E5", // Indigo/Blue
-      gradient: "linear-gradient(135deg, #4F46E5, #4338ca)",
-    },
+    // {
+    //   value: "developer",
+    //   label: "Developer",
+    //   desc: "For Real Estate Developers",
+    //   icon: <CodeOutlined style={{ fontSize: "28px" }} />,
+    //   color: "#F97316",
+    //   gradient: "linear-gradient(135deg, #F97316, #EA580C)",
+    // // },
+    // {
+    //   value: "agent",
+    //   label: "Agent",
+    //   desc: "For Real Estate Agents",
+    //   icon: <IdcardOutlined style={{ fontSize: "28px" }} />,
+    //   color: "#E11D48",
+    //   gradient: "linear-gradient(135deg, #E11D48, #BE123C)",
+    // },
+    // {
+    //   value: "agency",
+    //   label: "Agency",
+    //   desc: "For Property Agencies",
+    //   icon: <ApartmentOutlined style={{ fontSize: "28px" }} />,
+    //   color: "#4F46E5",
+    //   gradient: "linear-gradient(135deg, #4F46E5, #4338ca)",
+    // },
+    // {
+    //   value: "vault-admin",
+    //   label: "Vault Partner",
+    //   desc: "Vault Platform Access",
+    //   icon: <BankOutlined style={{ fontSize: "28px" }} />,
+    //   color: "#5C039B",
+    //   gradient: "linear-gradient(135deg, #5C039B, #03A4F4)",
+    // },
+    // {
+    //   value: "vaultagent",
+    //   label: "Xoto Vault Agent",
+    //   desc: "Mortgage Platform - Agent",
+    //   icon: <BankOutlined style={{ fontSize: "28px" }} />,
+    //   color: "#5C039B",
+    //   gradient: "linear-gradient(135deg, #5C039B, #03A4F4)",
+    // },
   ];
 
   const getSelectedPartner = () =>
     partnerTypes.find((t) => t.value === selectedPartnerType) || 
     partnerTypes.find((t) => t.id === selectedPartnerType);
 
- // ✅ Login success effect (CORRECTED)
-  useEffect(() => {
-    if (isAuthenticated && token && !hasRedirected.current) {
-      hasRedirected.current = true;
+  // ✅ Login success effect
+useEffect(() => {
+  if (isAuthenticated && token && !hasRedirected.current) {
+    hasRedirected.current = true;
 
-      // Safe access for role code
-      const roleCode = user?.role?.code?.toString() || (typeof user?.role === 'string' ? user.role : "");
-      
-      // 1. Priority Check: Agar User ne UI se "Developer" select kiya tha
-      if (selectedPartnerType === "developer") {
-
-  const developerId = user?._id || user?.id;
-
-  localStorage.setItem("developerId", developerId);
-
-  toast.success("Welcome Developer! Accessing your dashboard...");
-
-  setTimeout(() => {
-    navigate("/dashboard/developer", { replace: true });
-  }, 1500);
-
-  return;
-}
-
-      if (selectedPartnerType === "agent") {
-         toast.success("Welcome Agent! Accessing your dashboard...");
-         setTimeout(() => {
-           // Yahan apna sahi Agent Dashboard route daal dena
-           navigate("/dashboard/agent", { replace: true });
-         }, 1500);
-         return;
-      }
-
-      
-
-      // 2. Role Code Based Redirect (Backend ID Logic)
-      const rolePathMap = {
-        "0": "/dashboard/superadmin",
-        "1": "/dashboard/admin",
-        "2": "/dashboard/customer",
-        "5": "/dashboard/vendor-b2c",
-        "6": "/dashboard/vendor-b2b",
-        "7": "/dashboard/freelancer",
-        
-        // ✅ FIX: Ab ID 8 seedha Developer Dashboard par jayegi
-        // ✅ Updated Role Codes
-  "15": "/dashboard/agency",        // Agency
-  "16": "/dashboard/agent",         // Agent
-  "17": "/dashboard/developer",     // Developer
-      };
-
-      const path = rolePathMap[roleCode] || "/dashboard";
-      
-      // Agar path mil gaya toh wahan bhejo, nahi toh default dashboard
-      if (rolePathMap[roleCode]) {
-        toast.success(`Welcome back! Redirecting...`);
-        setTimeout(() => {
-          navigate(path, { replace: true });
-        }, 1500);
-      } else {
-        // Fallback agar koi unknown role ID aa gayi
-        navigate("/dashboard", { replace: true });
-      }
+    if (user) {
+      localStorage.setItem("user_data", JSON.stringify(user));
     }
-  }, [isAuthenticated, user, token, navigate, selectedPartnerType]);
 
+    // ✅ Use ref as primary, state as fallback
+    const partnerType = selectedPartnerTypeRef.current || selectedPartnerType;
+
+    const roleCode = user?.role?.code?.toString() || (typeof user?.role === 'string' ? user.role : "");
+    
+    if (partnerType === "developer") {
+      const developerId = user?._id || user?.id;
+      localStorage.setItem("developerId", developerId);
+      toast.success("Welcome Developer! Accessing your dashboard...");
+      setTimeout(() => navigate("/dashboard/developer", { replace: true }), 1500);
+      return;
+    }
+
+    if (partnerType === "agent") {
+      toast.success("Welcome Agent! Accessing your dashboard...");
+      setTimeout(() => navigate("/dashboard/agent", { replace: true }), 1500);
+      return;
+    }
+
+    if (partnerType === "agency") {
+      toast.success("Welcome Agency! Accessing your dashboard...");
+      setTimeout(() => navigate("/dashboard/agency", { replace: true }), 1500);
+      return;
+    }
+
+    if (partnerType === "vaultpartner") {
+      toast.success("Welcome to Xoto Vault!");
+      setTimeout(() => navigate("/dashboard/vaultpartner", { replace: true }), 1500);
+      return;
+    }
+
+    if (partnerType === "vaultagent") {
+      toast.success("Welcome to Xoto Vault!");
+      setTimeout(() => navigate("/dashboard/vaultagent", { replace: true }), 1500);
+      return;
+    }
+
+    // ✅ Also check user.type from JWT as extra fallback
+    const userType = user?.type?.toLowerCase();
+    if (userType === 'agent') {
+      setTimeout(() => navigate("/dashboard/agent", { replace: true }), 1500);
+      return;
+    }
+    if (userType === 'agency') {
+      setTimeout(() => navigate("/dashboard/agency", { replace: true }), 1500);
+      return;
+    }
+    if (userType === 'developer') {
+      setTimeout(() => navigate("/dashboard/developer", { replace: true }), 1500);
+      return;
+    }
+
+    const rolePathMap = {
+      "0":  "/dashboard/superadmin",
+      "1":  "/dashboard/admin",
+      "2":  "/dashboard/customer",
+      "5":  "/dashboard/vendor-b2c",
+      "6":  "/dashboard/vendor-b2b",
+      "7":  "/dashboard/freelancer",
+      "15": "/dashboard/agency",
+      "16": "/dashboard/agent",
+      "17": "/dashboard/developer",
+      "18": "/dashboard/vault-admin",
+      "22": "/dashboard/vaultagent",
+      "21": "/dashboard/vaultpartner",
+    };
+
+    const path = rolePathMap[roleCode] || "/dashboard";
+    if (rolePathMap[roleCode]) {
+      toast.success("Welcome back! Redirecting...");
+      setTimeout(() => navigate(path, { replace: true }), 1500);
+    } else {
+      navigate("/dashboard", { replace: true });
+    }
+  }
+}, [isAuthenticated, user, token, navigate, selectedPartnerType]);
+  
   // --- Handlers ---
   
   const handleMainSelect = (category) => {
+    if (category.id === "agent") {
+      // Vault Agent commented out hai, isliye seedha login pe le jao
+      setSelectedPartnerType("agent");
+      setView("login");
+      setParentMenu("main");
+      setGeneralError("");
+      form.resetFields();
+      return;
+    }
+    if (category.id === "vendor-b2c") {
+      setView("alliance-select"); 
+      setParentMenu("alliance-select");
+      setGeneralError("");
+      return;
+    }
+    
     setSelectedPartnerType(category.id);
     setView("login");
+    setParentMenu("main");
     setGeneralError("");
     form.resetFields();
   };
@@ -289,67 +364,102 @@ const Login = () => {
     
     if (view === "login") {
         if (isGridMode) {
-            // Grid Mode: Back goes to Grid Selection
             setView("xoto-select"); 
+        } else if (selectedPartnerType === "vault-admin") {
+            setView(parentMenu || "main");
+            setSelectedPartnerType(null);
+        } else if (selectedPartnerType === "agent") {
+            setView("agent-select");
+            setSelectedPartnerType(null);
+        } else if (selectedPartnerType === "vendor-b2c") {
+            setView("alliance-select");
+            setSelectedPartnerType(null);
         } else {
-            // Normal Mode: Back goes to Main Selection
             setView("main"); 
             setSelectedPartnerType(null);
         }
+    } else if (view === "agent-select" || view === "alliance-select") {
+        setView("main");
+        setSelectedPartnerType(null);
+        setParentMenu(null);
     } else if (view === "xoto-select") {
-        // Grid Mode Top Level Back: Go Home or specific path
         navigate("/");
     }
   };
 
-  // ✅ MAIN LOGIN SUBMIT
-  const onFinish = async (values) => {
-    setLoading(true);
-    setGeneralError("");
+const onFinish = async (values) => {
+  setLoading(true);
+  setGeneralError("");
 
-    try {
-      let endpoint = "";
+  try {
+    let endpoint = "";
 
-      if (selectedPartnerType === "freelancer") endpoint = "/freelancer/login";
-      else if (selectedPartnerType === "vendor-b2c")
-        endpoint = "/vendor/login";
-      else if (selectedPartnerType === "business-association")
-        endpoint = "/association/login";
-      else if (selectedPartnerType === "developer")
-        endpoint = "/property/login-developer"; 
-      else if (selectedPartnerType === "agent") endpoint = "/agent/login-agent";
-else if (selectedPartnerType === "agency")
-  endpoint = "/agency/agency-login";
-      await login(endpoint, {
-        email: values.email,
-        password: values.password,
-      });
-    } catch (err) {
-      const errorMessage = err?.message || err?.status || "Invalid credentials";
-      setGeneralError(errorMessage);
-      toast.error(errorMessage, { position: "top-center" });
-    } finally {
-      setLoading(false);
+ if (selectedPartnerType === "agent") {
+  const countryCode = values.agent_country_code || "971";
+  const rawPhone    = values.agent_phone;
+  const fullPhone   = `+${countryCode}${rawPhone}`;
+
+  await login("/agent/login-agent", {
+    phone:    fullPhone,        // ✅ "+917850006052"
+    password: values.password,
+  });
+} else {
+  let endpoint = "";
+  if (selectedPartnerType === "freelancer")    endpoint = "/freelancer/login";
+  else if (selectedPartnerType === "vendor-b2c")  endpoint = "/vendor/login";
+  else if (selectedPartnerType === "developer")   endpoint = "/developer/login-developer";
+  else if (selectedPartnerType === "agency")      endpoint = "/agency/auth/login";
+  else if (selectedPartnerType === "vaultpartner")endpoint = "/vault/partner/login";
+  else if (selectedPartnerType === "vaultagent")  endpoint = "/vault/agent/login";
+
+  await login(endpoint, {
+    email:    values.email,
+    password: values.password,
+  });
+}
+  } catch (err) {
+    console.log("🔥 Backend Error Object:", err);
+
+    let errorMessage = "Invalid credentials";
+
+    if (err?.response?.data?.message) {
+      errorMessage = err.response.data.message;
+    } else if (err?.data?.message) {
+      errorMessage = err.data.message;
+    } else if (typeof err === 'object' && err?.message && !err.message.includes("status code")) {
+      errorMessage = err.message;
+    } else if (typeof err === 'string') {
+      errorMessage = err;
     }
-  };
+
+    const errorStr = errorMessage.toLowerCase();
+    const isPendingOrUnapproved = errorStr.includes("not approved") || errorStr.includes("pending") || errorStr.includes("approv");
+
+    if (isPendingOrUnapproved) {
+      toast.warning(errorMessage, { position: "top-center", autoClose: 5000 });
+    } else {
+      toast.error(errorMessage, { position: "top-center" });
+    }
+
+    setGeneralError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleRegister = () => {
-    if (selectedPartnerType === "freelancer")
-      navigate("/freelancer/registration");
+    if (selectedPartnerType === "freelancer") navigate("/freelancer/registration");
     else if (selectedPartnerType === "vendor-b2c") navigate("/ecommerce/seller");
-    else if (selectedPartnerType === "business-association")
-      navigate("/ecommerce/seller");
-    else if (selectedPartnerType === "developer")
-      navigate("/developer/registration");
-    else if (selectedPartnerType === "agent")
-      navigate("/agent/registration"); 
-    else if (selectedPartnerType === "agency")
-      navigate("/agency/registration"); 
+    else if (selectedPartnerType === "developer") navigate("/developer/registration");
+    else if (selectedPartnerType === "agent") navigate("/agent/registration"); 
+    else if (selectedPartnerType === "agency") navigate("/agency/registration"); 
+    else if (selectedPartnerType === "vaultpartner") navigate("/vault/vault-register");
+    else if (selectedPartnerType === "vaultagent") navigate("/vault/vault-register");
   };
 
   // --- RENDER CONTENT ---
   
-  // 1. Main Selection Screen (For Standard Login)
+  // 1. Main Selection Screen 
   const renderMainSelection = () => (
     <motion.div
       key="main-selection"
@@ -403,7 +513,178 @@ else if (selectedPartnerType === "agency")
     </motion.div>
   );
 
-  // 2. Xoto Sub-Selection Screen (For Grid Login)
+  // ── Agent Sub-Selection Screen ───────────────────────────────────────────────
+  const renderAgentSelection = () => (
+    <motion.div
+      key="agent-selection"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Button
+        type="text"
+        icon={<ArrowLeftOutlined />}
+        onClick={handleBack}
+        style={{ marginBottom: 16, paddingLeft: 0, color: "#888" }}
+      >
+        Back to Selection
+      </Button>
+
+      <div style={{ textAlign: "center", marginBottom: 30 }}>
+        <Title level={3} style={{ margin: 0, color: "#333" }}>Agents</Title>
+        <Text type="secondary">Select your platform to continue</Text>
+      </div>
+
+      <Row gutter={[20, 20]} justify="center">
+        {/* Existing Agent */}
+        <Col xs={24} sm={12}>
+          <SelectionCard
+            $active={false}
+            $color="#10B981"
+            onClick={() => handleSubSelect("agent")}
+          >
+            <div
+              style={{
+                width: 70, height: 70, borderRadius: "50%",
+                background: "linear-gradient(135deg, #10B981, #059669)",
+                color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+              }}
+            >
+              <IdcardOutlined style={{ fontSize: "28px" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: "bold", color: "#333" }}>
+                Agent
+              </div>
+              <div style={{ fontSize: 14, color: "#888" }}>
+                Real Estate Platform
+              </div>
+            </div>
+          </SelectionCard>
+        </Col>
+
+        {/* ── VAULT AGENT COMMENTED OUT ────────────────────────────────────── */}
+        <Col xs={24} sm={12}>
+          <SelectionCard
+            $active={false}
+            $color="#5C039B"
+            onClick={() => handleSubSelect("vaultagent")}
+          >
+            <div
+              style={{
+                width: 70, height: 70, borderRadius: "50%",
+                background: "linear-gradient(135deg, #5C039B, #03A4F4)",
+                color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 4px 10px rgba(92,3,155,0.3)",
+              }}
+            >
+              <BankOutlined style={{ fontSize: "28px" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: "bold", color: "#333" }}>
+                Xoto Vault
+              </div>
+              <div style={{ fontSize: 14, color: "#888" }}>
+                Mortgage Platform
+              </div>
+            </div>
+          </SelectionCard>
+        </Col>
+        {/* ─────────────────────────────────────────────────────────────────── */}
+      </Row>
+    </motion.div>
+  );
+
+  // ── Strategic Alliances Sub-Selection Screen ──────────────────────────────
+  const renderAllianceSelection = () => (
+    <motion.div
+      key="alliance-selection"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Button
+        type="text"
+        icon={<ArrowLeftOutlined />}
+        onClick={handleBack}
+        style={{ marginBottom: 16, paddingLeft: 0, color: "#888" }}
+      >
+        Back to Selection
+      </Button>
+
+      <div style={{ textAlign: "center", marginBottom: 30 }}>
+        <Title level={3} style={{ margin: 0, color: "#333" }}>Strategic Alliances</Title>
+        <Text type="secondary">Select your portal to continue</Text>
+      </div>
+
+      <Row gutter={[20, 20]} justify="center">
+        {/* Strategic Alliance (B2C Vendor) */}
+        <Col xs={24} sm={12}>
+          <SelectionCard
+            $active={false}
+            $color="#03A4F4"
+            onClick={() => handleSubSelect("vendor-b2c")}
+          >
+            <div
+              style={{
+                width: 70, height: 70, borderRadius: "50%",
+                background: "linear-gradient(135deg, #03A4F4, #0077b6)",
+                color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+              }}
+            >
+              <ShopOutlined style={{ fontSize: "28px" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: "bold", color: "#333" }}>
+                Alliance Partner
+              </div>
+              <div style={{ fontSize: 14, color: "#888" }}>
+                For Product Sellers
+              </div>
+            </div>
+          </SelectionCard>
+        </Col>
+
+        {/* ── VAULT PARTNER COMMENTED OUT ──────────────────────────────────── */}
+        {/* <Col xs={24} sm={12}>
+          <SelectionCard
+            $active={false}
+            $color="#5C039B"
+onClick={() => handleSubSelect("vaultpartner")}          >
+            <div
+              style={{
+                width: 70, height: 70, borderRadius: "50%",
+                background: "linear-gradient(135deg, #5C039B, #03A4F4)",
+                color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 4px 10px rgba(92,3,155,0.3)",
+              }}
+            >
+              <BankOutlined style={{ fontSize: "28px" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: "bold", color: "#333" }}>
+                Vault Partner
+              </div>
+              <div style={{ fontSize: 14, color: "#888" }}>
+                Vault Access Portal
+              </div>
+            </div>
+          </SelectionCard>
+        </Col> */}
+        {/* ─────────────────────────────────────────────────────────────────── */}
+      </Row>
+    </motion.div>
+  );
+
+  // 2. Xoto Sub-Selection Screen (ORIGINAL, UNCHANGED)
   const renderXotoSelection = () => (
     <motion.div
       key="xoto-selection"
@@ -516,69 +797,108 @@ else if (selectedPartnerType === "agency")
     </motion.div>
   );
 
-  // 3. Login Form
+  // 3. Login Form (ORIGINAL, UNCHANGED)
   const renderLoginForm = () => {
     const activePartner = getSelectedPartner();
 
-    return (
-      <motion.div
-        key="form"
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 20 }}
-        transition={{ duration: 0.3 }}
+   return (
+    <motion.div
+      key="form"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Button
+        type="text"
+        icon={<ArrowLeftOutlined />}
+        onClick={handleBack}
+        style={{ marginBottom: 16, paddingLeft: 0, color: "#888" }}
       >
-        <Button
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={handleBack}
-          style={{ marginBottom: 16, paddingLeft: 0, color: "#888" }}
+        {isGridMode ? "Back to Xoto Grid" : "Back to Selection"}
+      </Button>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
+        <div
+          style={{
+            width: 60,
+            height: 60,
+            borderRadius: 12,
+            background: activePartner?.gradient,
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+          }}
         >
-          {isGridMode ? "Back to Xoto Grid" : "Back to Selection"}
-        </Button>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
-          <div
-            style={{
-              width: 60,
-              height: 60,
-              borderRadius: 12,
-              background: activePartner?.gradient,
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-            }}
-          >
-            {activePartner?.icon}
-          </div>
-          <div>
-            <Title level={4} style={{ margin: 0, color: "#333" }}>
-              Login as {activePartner?.label}
-            </Title>
-            <Text type="secondary">
-              Enter your credentials to access dashboard
-            </Text>
-          </div>
+          {activePartner?.icon}
         </div>
+        <div>
+          <Title level={4} style={{ margin: 0, color: "#333" }}>
+            Login as {activePartner?.label}
+          </Title>
+          <Text type="secondary">
+            Enter your credentials to access dashboard
+          </Text>
+        </div>
+      </div>
 
-        {generalError && (
-          <Alert
-            message={generalError}
-            type="error"
-            showIcon
-            style={{ marginBottom: 24, borderRadius: 12 }}
-            closable
-          />
-        )}
+      {generalError && (
+        <Alert
+          message={generalError}
+          type={generalError.toLowerCase().includes("not approved") || generalError.toLowerCase().includes("pending") ? "warning" : "error"}
+          showIcon
+          style={{ marginBottom: 24, borderRadius: 12 }}
+          closable
+        />
+      )}
 
-        <Form form={form} layout="vertical" onFinish={onFinish} size="large">
+      <Form form={form} layout="vertical" onFinish={onFinish} size="large">
+        {/* Agent → phone input, Others → email input */}
+        {selectedPartnerType === "agent" ? (
+          <Form.Item label="Phone Number" style={{ marginBottom: 0 }} required>
+            <Space.Compact style={{ width: '100%' }}>
+              <Form.Item
+                name="agent_country_code"
+                noStyle
+                initialValue="971"
+                rules={[{ required: true }]}
+              >
+                <Select
+                  showSearch
+                  optionFilterProp="children"
+                  style={{ width: '120px', height: '48px' }}
+                >
+                  {countryOptions.map((item) => (
+                    <Option key={item.iso} value={item.code}>
+                      +{item.code}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              <Form.Item
+                name="agent_phone"
+                noStyle
+                getValueFromEvent={(e) => e.target.value.replace(/\D/g, '')}
+                rules={[{ required: true, message: 'Phone number is required' }]}
+              >
+                <Input
+                  placeholder="50 123 4567"
+                  style={{
+                    width: '100%',
+                    height: '48px',
+                    borderTopLeftRadius: 0,
+                    borderBottomLeftRadius: 0,
+                  }}
+                />
+              </Form.Item>
+            </Space.Compact>
+          </Form.Item>
+        ) : (
           <Form.Item
             name="email"
-            rules={[
-              { required: true, type: "email", message: "Valid email required" },
-            ]}
+            rules={[{ required: true, type: "email", message: "Valid email required" }]}
           >
             <Input
               prefix={<MailOutlined style={{ color: "#bfbfbf" }} />}
@@ -586,57 +906,88 @@ else if (selectedPartnerType === "agency")
               style={{ borderRadius: 12, height: 48 }}
             />
           </Form.Item>
+        )}
 
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: "Password required" }]}
-          >
-            <Input.Password
-              prefix={<LockOutlined style={{ color: "#bfbfbf" }} />}
-              placeholder="Password"
-              style={{ borderRadius: 12, height: 48 }}
-            />
-          </Form.Item>
+        <Form.Item
+          name="password"
+          rules={[{ required: true, message: "Password required" }]}
+        >
+          <Input.Password
+            prefix={<LockOutlined style={{ color: "#bfbfbf" }} />}
+            placeholder="Password"
+            style={{ borderRadius: 12, height: 48 }}
+          />
+        </Form.Item>
 
-          <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              block
+        {/* Forgot Password — only for certain roles */}
+        {(selectedPartnerType === "agent" ||
+          selectedPartnerType === "vendor-b2c" ||
+          selectedPartnerType === "freelancer" ||
+          selectedPartnerType === "developer" ||
+          selectedPartnerType === "vault-admin") && (
+          <div style={{ textAlign: "right", marginTop: -8, marginBottom: 16 }}>
+            <Link
+              to={`/forgot-password?role=${
+                selectedPartnerType === "agent" ? "agent" :
+                selectedPartnerType === "vendor-b2c" ? "vendor" :
+                selectedPartnerType === "freelancer" ? "freelancer" :
+                selectedPartnerType === "developer" ? "developer" :
+                selectedPartnerType === "vault-admin" ? "vault" : ""
+              }`}
               style={{
-                height: 52,
-                borderRadius: 12,
-                fontWeight: "bold",
-                fontSize: "15px",
-                background: activePartner?.gradient,
-                border: "none",
-                boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+                color:
+                  selectedPartnerType === "agent" ? "#E11D48" :
+                  selectedPartnerType === "vendor-b2c" ? "#03A4F4" :
+                  selectedPartnerType === "freelancer" ? "#5C039B" :
+                  selectedPartnerType === "developer" ? "#F97316" :
+                  selectedPartnerType === "vault-admin" ? "#5C039B" : "#888",
+                fontSize: 13,
+                fontWeight: 500,
               }}
             >
-              {loading ? "Signing In..." : "Login Now"}
-            </Button>
-
-            <Button
-              onClick={handleRegister}
-              block
-              style={{
-                height: 52,
-                borderRadius: 12,
-                fontWeight: "bold",
-                fontSize: "15px",
-                borderColor: activePartner?.color,
-                color: activePartner?.color,
-              }}
-            >
-              Register
-            </Button>
+              Forgot Password?
+            </Link>
           </div>
-        </Form>
-      </motion.div>
-    );
-  };
+        )}
 
+        <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={loading}
+            block
+            style={{
+              height: 52,
+              borderRadius: 12,
+              fontWeight: "bold",
+              fontSize: "15px",
+              background: activePartner?.gradient,
+              border: "none",
+              boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+            }}
+          >
+            {loading ? "Signing In..." : "Login Now"}
+          </Button>
+
+          <Button
+            onClick={handleRegister}
+            block
+            style={{
+              height: 52,
+              borderRadius: 12,
+              fontWeight: "bold",
+              fontSize: "15px",
+              borderColor: activePartner?.color,
+              color: activePartner?.color,
+            }}
+          >
+            Register
+          </Button>
+        </div>
+      </Form>
+    </motion.div>
+  );
+};
   return (
     <ConfigProvider
       theme={{
@@ -644,14 +995,16 @@ else if (selectedPartnerType === "agency")
           colorPrimary:
             selectedPartnerType === "vendor-b2c"
               ? "#03A4F4"
-              : selectedPartnerType === "business-association"
-              ? "#10B981"
               : selectedPartnerType === "developer"
               ? "#F97316"
               : selectedPartnerType === "agent"
-              ? "#E11D48"
+              ? "#10B981"
               : selectedPartnerType === "agency"
               ? "#4F46E5"
+              : selectedPartnerType === "vaultpartner" 
+              ? "#5C039B"
+              : selectedPartnerType === "vaultagent"  
+              ? "#5C039B"
               : "#5C039B",
           borderRadius: 8,
           fontFamily: "Poppins, sans-serif",
@@ -685,7 +1038,6 @@ else if (selectedPartnerType === "agency")
                   alt="Logo"
                   style={{
                     width: isMobile ? 200 : 260,
-                    // height: isMobile ? 200 : 260,
                     marginBottom: 4,
                     marginLeft: isMobile ? "auto" : 0,
                     marginRight: isMobile ? "auto" : 0,
@@ -732,9 +1084,11 @@ else if (selectedPartnerType === "agency")
               >
                 <GlassCard bordered={false} $isMobile={isMobile}>
                   <AnimatePresence mode="wait">
-                    {view === "main" && renderMainSelection()}
-                    {view === "xoto-select" && renderXotoSelection()}
-                    {view === "login" && renderLoginForm()}
+                    {view === "main"            && renderMainSelection()}
+                    {view === "xoto-select"     && renderXotoSelection()}
+                    {view === "agent-select"    && renderAgentSelection()}    
+                    {view === "alliance-select" && renderAllianceSelection()} 
+                    {view === "login"           && renderLoginForm()}
                   </AnimatePresence>
                 </GlassCard>
               </motion.div>

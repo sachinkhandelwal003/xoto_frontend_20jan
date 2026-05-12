@@ -1,113 +1,181 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  FaShoppingBag,
-  FaHeart,
-  FaTimes,
-  FaChevronRight,
-  FaMapMarkerAlt,
-  FaShippingFast,
-  FaTicketAlt,
-  FaMinus,
-  FaPlus,
-  FaTrash,
-  FaArrowLeft,
-  FaShieldAlt,
-  FaCreditCard,
-  FaTruck,
-  FaStar
+  FaShoppingBag, FaHeart, FaTimes, FaChevronRight,
+  FaMapMarkerAlt, FaShippingFast, FaTicketAlt,
+  FaMinus, FaPlus, FaTrash, FaArrowLeft,
+  FaShieldAlt, FaCreditCard, FaTruck, FaStar
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Stepper,
-  Step,
-  StepLabel,
-  Chip,
-  Button,
-  Divider,
-  CircularProgress
-} from '@mui/material';
+import { useSelector } from 'react-redux';
+import { Chip, Divider, CircularProgress } from '@mui/material';
+import { apiService } from "../../../../manageApi/utils/custom.apiservice";
+import { toast } from 'react-toastify';
 
-// DUMMY DATA
-const dummyCart = {
-  items: [
-    {
-      _id: "1",
-      product: {
-        _id: "p1",
-        name: "Premium Wireless Headphones",
-        images: [{ url: "/images/headphones.jpg", is_primary: true }],
-      },
-      product_type: "Electronics",
-      price_per_unit: 2999,
-      quantity: 1
-    },
-    {
-      _id: "2",
-      product: {
-        _id: "p2",
-        name: "Organic Cotton T-Shirt",
-        images: [{ url: "/images/tshirt.jpg", is_primary: true }],
-      },
-      product_type: "Apparel",
-      price_per_unit: 799,
-      quantity: 2
-    }
-  ],
-  total_amount: 4597
-};
-
-const SHIPPING_COST = 499;
-const DISCOUNT_MULTIPLIER = 1.67;
+const SHIPPING_COST = 0; // Free shipping
 
 const CartPage = () => {
   const navigate = useNavigate();
-  const [cart, setCart] = useState(dummyCart);
-  const [updatingItems, setUpdatingItems] = useState(new Set());
+  const { user, token } = useSelector((state) => state.auth);
+  const customerId = user?._id || user?.id;
 
-  const handleQuantityUpdate = (itemId, newQuantity) => {
-    if (newQuantity < 1) return;
+  const [cartItems, setCartItems]     = useState([]);
+  const [loading, setLoading]         = useState(true);
+  // { [cartItemId]: true } — track which item is being updated
+  const [updatingIds, setUpdatingIds] = useState({});
 
-    setUpdatingItems(prev => new Set(prev).add(itemId));
-    
-    setTimeout(() => {
-      setCart(prev => ({
-        ...prev,
-        items: prev.items.map(item =>
-          item._id === itemId ? { ...item, quantity: newQuantity } : item
-        ),
-        total_amount: prev.items.reduce((sum, item) => 
-          sum + (item._id === itemId ? newQuantity * item.price_per_unit : item.quantity * item.price_per_unit)
-        , 0)
-      }));
-      setUpdatingItems(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(itemId);
-        return newSet;
-      });
-    }, 500);
+  // ─────────────────────────────────────────────
+  // Fetch cart
+  // ─────────────────────────────────────────────
+  const fetchCart = async () => {
+    if (!customerId) return;
+    try {
+      const res = await apiService.get(`/products/cart/get?customerId=${customerId}`);
+      const items = res?.data?.items || res?.items || [];
+      setCartItems(items);
+    } catch (err) {
+      toast.error("Failed to load cart");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRemoveItem = (itemId) => {
-    setUpdatingItems(prev => new Set(prev).add(itemId));
-    setTimeout(() => {
-      setCart(prev => ({
-        ...prev,
-        items: prev.items.filter(item => item._id !== itemId),
-        total_amount: prev.items
-          .filter(item => item._id !== itemId)
-          .reduce((sum, item) => sum + item.quantity * item.price_per_unit, 0)
-      }));
-      setUpdatingItems(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(itemId);
-        return newSet;
+  useEffect(() => {
+    if (!token || !customerId) {
+      navigate("/user/login");
+      return;
+    }
+    fetchCart();
+  }, [customerId]);
+
+  // ─────────────────────────────────────────────
+  // Set updating state for one item
+  // ─────────────────────────────────────────────
+  const setItemUpdating = (id, val) =>
+    setUpdatingIds(prev => ({ ...prev, [id]: val }));
+
+  // ─────────────────────────────────────────────
+  // Increase quantity
+  // ─────────────────────────────────────────────
+  const handleIncrease = async (item) => {
+    const newQty = item.quantity + 1;
+    setItemUpdating(item._id, true);
+
+    // ✅ Optimistic update — UI turant change ho
+    setCartItems(prev =>
+      prev.map(i => i._id === item._id ? { ...i, quantity: newQty } : i)
+    );
+
+    try {
+      await apiService.put("/products/cart/update", {
+        cartItemId: item._id,
+        quantity: newQty,
       });
-    }, 500);
+    } catch (err) {
+      // Rollback on error
+      setCartItems(prev =>
+        prev.map(i => i._id === item._id ? { ...i, quantity: item.quantity } : i)
+      );
+      toast.error("Failed to update quantity");
+    } finally {
+      setItemUpdating(item._id, false);
+    }
   };
 
-  if (cart.items.length === 0) {
+  // ─────────────────────────────────────────────
+  // Decrease quantity
+  // ─────────────────────────────────────────────
+  const handleDecrease = async (item) => {
+    if (item.quantity <= 1) {
+      handleRemove(item);
+      return;
+    }
+
+    const newQty = item.quantity - 1;
+    setItemUpdating(item._id, true);
+
+    // ✅ Optimistic update
+    setCartItems(prev =>
+      prev.map(i => i._id === item._id ? { ...i, quantity: newQty } : i)
+    );
+
+    try {
+      await apiService.put("/products/cart/update", {
+        cartItemId: item._id,
+        quantity: newQty,
+      });
+    } catch (err) {
+      // Rollback
+      setCartItems(prev =>
+        prev.map(i => i._id === item._id ? { ...i, quantity: item.quantity } : i)
+      );
+      toast.error("Failed to update quantity");
+    } finally {
+      setItemUpdating(item._id, false);
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // Remove item
+  // ─────────────────────────────────────────────
+  const handleRemove = async (item) => {
+    setItemUpdating(item._id, true);
+
+    // ✅ Optimistic remove
+    setCartItems(prev => prev.filter(i => i._id !== item._id));
+
+    try {
+      await apiService.delete(`/products/cart/remove?cartItemId=${item._id}`);
+      toast.success("Item removed from cart");
+    } catch (err) {
+      // Rollback
+      setCartItems(prev => [...prev, item]);
+      toast.error("Failed to remove item");
+    } finally {
+      setItemUpdating(item._id, false);
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // Clear cart
+  // ─────────────────────────────────────────────
+  const handleClearCart = async () => {
+    try {
+      await apiService.delete(`/products/cart/clear?customerId=${customerId}`);
+      setCartItems([]);
+      toast.success("Cart cleared");
+    } catch {
+      toast.error("Failed to clear cart");
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // Totals — computed from state, no re-render needed
+  // ─────────────────────────────────────────────
+  const subtotal = cartItems.reduce(
+    (acc, item) => acc + Number(item.price || 0) * Number(item.quantity || 1), 0
+  );
+  const total = subtotal + SHIPPING_COST;
+  const totalItems = cartItems.reduce((acc, item) => acc + Number(item.quantity || 1), 0);
+
+  // ─────────────────────────────────────────────
+  // Loading
+  // ─────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-purple-600 font-semibold">Loading your cart...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // Empty cart
+  // ─────────────────────────────────────────────
+  if (cartItems.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-4">
         <motion.div
@@ -118,12 +186,12 @@ const CartPage = () => {
           <FaShoppingBag className="text-6xl text-gray-300 mb-6 mx-auto" />
           <h2 className="text-3xl font-bold text-gray-800 mb-3">Your Cart is Empty</h2>
           <p className="text-gray-600 mb-8 text-lg">
-            Looks like you haven't added any products to your cart yet.
+            Looks like you haven't added any products yet.
           </p>
           <button
             onClick={() => navigate('/ecommerce/b2c')}
-            className="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl"
-            aria-label="Start shopping"
+            className="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 
+                       transition-all duration-200 font-semibold text-lg shadow-lg"
           >
             Start Shopping
           </button>
@@ -132,35 +200,13 @@ const CartPage = () => {
     );
   }
 
-  const calculateSavings = (item) => {
-    const originalPrice = item.price_per_unit * DISCOUNT_MULTIPLIER;
-    return (originalPrice - item.price_per_unit) * item.quantity;
-  };
-
-  const totalSavings = cart.items.reduce((sum, item) => sum + calculateSavings(item), 0);
-  const subtotal = cart.total_amount;
-  const total = subtotal + SHIPPING_COST;
-
+  // ─────────────────────────────────────────────
+  // Cart UI
+  // ─────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <style jsx>{`
-        :root {
-          --color-primary: #5C039B;
-          --color-btn-primary: #5C039B;
-          --color-btn-hover: #4A0380;
-        }
-        .btn-purple {
-          background-color: var(--color-btn-primary);
-        }
-        .btn-purple:hover {
-          background-color: var(--color-btn-hover);
-        }
-        .text-purple {
-          color: var(--color-primary);
-        }
-      `}</style>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -168,222 +214,211 @@ const CartPage = () => {
               onClick={() => navigate('/ecommerce/b2c')}
               className="flex items-center text-purple-600 hover:text-purple-700 transition-colors font-medium"
             >
-              <FaArrowLeft className="mr-2" />
-              Continue Shopping
+              <FaArrowLeft className="mr-2" /> Continue Shopping
             </button>
             <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
-            <div className="w-24"></div>
+            <button
+              onClick={handleClearCart}
+              className="text-sm text-red-400 hover:text-red-600 font-medium transition"
+            >
+              🗑 Clear All
+            </button>
           </div>
 
-          <Box sx={{ width: '100%', mb: 6 }}> 
-            <Stepper activeStep={0} alternativeLabel>
-              {['Cart', 'Shipping', 'Payment', 'Confirmation'].map((label) => (
-                <Step key={label}>
-                  <StepLabel sx={{ '& .MuiStepLabel-label': { fontSize: '0.875rem', fontWeight: 600 } }}>
-                    {label}
-                  </StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-          </Box>
-
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {cart.items.length} {cart.items.length === 1 ? 'Item' : 'Items'} in Cart
-                </h2>
-                <p className="text-gray-600">Review your items and proceed to checkout</p>
-              </div>
-              <Chip
-                label={`Total: AED${total.toLocaleString('en-IN')}`}
-                sx={{ backgroundColor: '#5C039B', color: 'white', fontWeight: 600 }}
-              />
+          {/* Summary strip */}
+          <div className="bg-white rounded-xl shadow-sm p-5 mb-6 flex justify-between items-center"
+            style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                {totalItems} {totalItems === 1 ? "Item" : "Items"} in Cart
+              </h2>
+              <p className="text-gray-500 text-sm">Review your items and proceed to checkout</p>
             </div>
+            <Chip
+              label={`Total: AED ${total.toFixed(2)}`}
+              sx={{ backgroundColor: '#5C039B', color: 'white', fontWeight: 700, fontSize: 14 }}
+            />
           </div>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-6">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-purple-50 rounded-lg">
-                    <FaMapMarkerAlt className="text-purple-600 text-xl" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Delivery Address</h3>
-                    <p className="text-gray-600">Bangalore, Karnataka - 560001</p>
-                  </div>
-                </div>
-                <button className="text-purple-600 font-medium hover:underline">Change</button>
-              </div>
-            </motion.div>
 
-            <AnimatePresence>
-              {cart.items.map((item, index) => {
-                const isUpdating = updatingItems.has(item._id);
-                return (
-                  <motion.div
-                    key={item._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="bg-white rounded-xl shadow-sm overflow-hidden"
-                  >
-                    <div className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                        <div className="md:col-span-3">
-                          <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                            <div className="w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
-                              <FaShoppingBag className="text-4xl text-purple-600" />
-                            </div>
-                            {item.quantity > 1 && (
-                              <div className="absolute top-2 right-2 bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
-                                {item.quantity}
-                              </div>
-                            )}
-                          </div>
-                        </div>
+          {/* ── Cart Items ── */}
+          <div className="lg:col-span-2 space-y-4">
+  <AnimatePresence mode="popLayout">   {/* ✅ popLayout */}
+    {cartItems.map((item) => {          {/* ✅ index hata diya */}
+      const product    = item.productId;
+      const color      = item.productColorId;
+      const image      = color?.photos?.[0] || product?.images?.[0] || null;
+      const isUpdating = updatingIds[item._id];
 
-                        <div className="md:col-span-6">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                            {item.product.name}
-                          </h3>
-                          <div className="flex items-center space-x-4 mb-4">
-                            <Chip label={item.product_type} size="small" sx={{ backgroundColor: '#5C039B', color: 'white' }} />
-                            <div className="flex items-center text-yellow-500">
-                              <span className="text-sm font-medium">4.5</span>
-                              <FaStar className="h-3 w-3 ml-1" />
-                            </div>
-                          </div>
+      return (
+        <motion.div
+          key={item._id}
+          layout                                       // ✅ smooth layout shift
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, x: -40, scale: 0.96 }}
+          transition={{ duration: 0.2 }}              // ✅ no index delay
+          className="bg-white rounded-2xl overflow-hidden"
+          style={{ border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
+        >
+          <div className="p-5 flex gap-5 items-center">
 
-                          <div className="flex items-center space-x-4 mb-4">
-                            <div className="flex items-center border border-gray-300 rounded-lg">
-                              <button
-                                className="p-2 hover:bg-gray-100 disabled:opacity-50"
-                                onClick={() => handleQuantityUpdate(item._id, item.quantity - 1)}
-                                disabled={isUpdating || item.quantity <= 1}
-                              >
-                                <FaMinus className="h-3 w-3" />
-                              </button>
-                              <span className="px-4 py-2 border-x border-gray-300 font-medium min-w-[3rem] text-center">
-                                {isUpdating ? '...' : item.quantity}
-                              </span>
-                              <button
-                                className="p-2 hover:bg-gray-100"
-                                onClick={() => handleQuantityUpdate(item._id, item.quantity + 1)}
-                                disabled={isUpdating}
-                              >
-                                <FaPlus className="h-3 w-3" />
-                              </button>
-                            </div>
+            {/* Product Image */}
+            <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0"
+              style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
+              {image ? (
+                <img src={image} alt={product?.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-3xl">📦</div>
+              )}
+            </div>
 
-                            <button
-                              onClick={() => handleRemoveItem(item._id)}
-                              disabled={isUpdating}
-                              className="text-red-600 hover:text-red-700 flex items-center space-x-2 text-sm px-3 py-2 rounded-lg hover:bg-red-50"
-                            >
-                              {isUpdating ? <CircularProgress size={12} /> : <FaTrash className="h-4 w-4" />}
-                              <span>Remove</span>
-                            </button>
-                          </div>
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-800 text-base leading-snug mb-1 truncate">
+                {product?.name || "Product"}
+              </h3>
+              {color?.colourName && (
+                <p className="text-xs text-gray-400 mb-2">🎨 {color.colourName}</p>
+              )}
+              <p className="text-purple-700 font-bold text-lg">
+                AED {Number(item.price).toFixed(2)}
+              </p>
+              {/* ✅ Subtotal bhi live update hoga */}
+              <p className="text-xs text-gray-400 mt-0.5">
+                Subtotal: AED {(Number(item.price) * Number(item.quantity)).toFixed(2)}
+              </p>
+            </div>
 
-                          <div className="flex items-center text-gray-600 text-sm">
-                            <FaShippingFast className="h-4 w-4 mr-2 text-purple-600" />
-                            <span>Delivery by {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}</span>
-                          </div>
-                        </div>
+            {/* Quantity Controls */}
+            <div className="flex flex-col items-end gap-3 flex-shrink-0">
+              <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1"
+                style={{ border: "1px solid rgba(0,0,0,0.08)" }}>
 
-                        <div className="md:col-span-3 text-right">
-                          <div className="space-y-2">
-                            <p className="text-2xl font-bold text-gray-900">
-                              AED{(item.price_per_unit * item.quantity).toLocaleString('en-IN')}
-                            </p>
-                            <p className="text-sm text-gray-500 line-through">
-                              AED{Math.round(item.price_per_unit * DISCOUNT_MULTIPLIER * item.quantity).toLocaleString('en-IN')}
-                            </p>
-                            <p className="text-green-600 text-sm font-medium">
-                              Save AED{Math.round(calculateSavings(item)).toLocaleString('en-IN')}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="sticky top-6 space-y-6">
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h3 className="text-xl font-bold mb-4 text-gray-900">Order Summary</h3>
-                <div className="space-y-3 mb-4">
-                  <div className="flex justify-between text-gray-600">
-                    <span>Subtotal ({cart.items.length} items)</span>
-                    <span>AED{subtotal.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between text-green-600">
-                    <span>Total Savings</span>
-                    <span>-AED{Math.round(totalSavings).toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-600">
-                    <span>Shipping</span>
-                    <span>AED{SHIPPING_COST.toLocaleString('en-IN')}</span>
-                  </div>
-                  <Divider />
-                  <div className="flex justify-between text-lg font-bold text-gray-900">
-                    <span>Total Amount</span>
-                    <span>AED{total.toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-
-                <Button
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  onClick={() => navigate('/ecommerce/checkout')}
-                  sx={{
-                    backgroundColor: '#5C039B',
-                    padding: '12px',
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    '&:hover': { backgroundColor: '#4A0380' }
-                  }}
+                <button
+                  onClick={() => handleDecrease(item)}
+                  disabled={isUpdating}
+                  className="w-8 h-8 rounded-lg bg-white flex items-center justify-center
+                             text-gray-600 hover:bg-red-50 hover:text-red-500
+                             transition disabled:opacity-40"
+                  style={{ border: "1px solid rgba(0,0,0,0.08)" }}
                 >
-                  Proceed to Checkout
-                </Button>
+                  {item.quantity === 1
+                    ? <FaTrash size={11} className="text-red-400" />
+                    : <FaMinus size={11} />
+                  }
+                </button>
 
-                <button className="w-full mt-3 border border-purple-600 text-purple-600 py-2 rounded-lg flex items-center justify-center space-x-2 hover:bg-purple-600 hover:text-white transition-all font-medium">
-                  <FaTicketAlt />
-                  <span>Apply Coupon Code</span>
+                {/* ✅ Sirf count area update hoga — baaki nahi */}
+                <div className="w-10 text-center">
+                  {isUpdating ? (
+                    <span className="inline-block w-4 h-4 border-2 border-purple-500 
+                                     border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <span className="font-bold text-gray-800 text-sm">
+                      {item.quantity}
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => handleIncrease(item)}
+                  disabled={isUpdating}
+                  className="w-8 h-8 rounded-lg bg-purple-600 flex items-center 
+                             justify-center text-white hover:bg-purple-700
+                             transition disabled:opacity-40"
+                >
+                  <FaPlus size={11} />
                 </button>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h4 className="font-semibold mb-3 text-gray-900">Payment Security</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3 text-gray-600">
-                    <FaCreditCard className="h-5 w-5 text-purple-600" />
-                    <span className="text-sm">SSL Secure Payment</span>
+              <button
+                onClick={() => handleRemove(item)}
+                disabled={isUpdating}
+                className="text-xs text-red-400 hover:text-red-600 flex items-center 
+                           gap-1 font-medium transition disabled:opacity-40"
+              >
+                <FaTrash size={10} /> Remove
+              </button>
+            </div>
+
+          </div>
+        </motion.div>
+      );
+    })}
+  </AnimatePresence>
+</div>
+
+          {/* ── Order Summary Sidebar ── */}
+          <div className="lg:col-span-1">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="sticky top-6 space-y-5"
+            >
+
+              {/* Summary box */}
+              <div className="bg-white rounded-2xl p-6"
+                style={{ border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 12px rgba(92,3,155,0.08)" }}>
+                <h3 className="text-lg font-bold mb-5 text-gray-900">Order Summary</h3>
+
+                <div className="space-y-3 mb-5">
+                  <div className="flex justify-between text-gray-600 text-sm">
+                    <span>Subtotal ({totalItems} items)</span>
+                    <span className="font-medium">AED {subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex items-center space-x-3 text-gray-600">
-                    <FaShieldAlt className="h-5 w-5 text-green-500" />
-                    <span className="text-sm">100% Payment Protection</span>
+                  <div className="flex justify-between text-gray-600 text-sm">
+                    <span>Shipping</span>
+                    <span className="text-green-600 font-medium">Free</span>
                   </div>
-                  <div className="flex items-center space-x-3 text-gray-600">
-                    <FaTruck className="h-5 w-5 text-purple-600" />
-                    <span className="text-sm">Free Returns & Exchange</span>
+                  <Divider />
+                  <div className="flex justify-between font-bold text-gray-900 text-lg">
+                    <span>Total</span>
+                    <span className="text-purple-700">AED {total.toFixed(2)}</span>
                   </div>
                 </div>
+
+                {/* Checkout button */}
+                <button
+                  onClick={() => navigate('/ecommerce/checkout')}
+                  className="w-full py-3.5 rounded-xl font-bold text-white text-base
+                             transition duration-200 hover:opacity-90 active:scale-95"
+                  style={{ background: "linear-gradient(135deg,#5C039B,#8b5cf6)" }}
+                >
+                  Proceed to Checkout →
+                </button>
+
+                {/* Coupon */}
+                <button className="w-full mt-3 border border-purple-200 text-purple-600 py-2.5 
+                                   rounded-xl flex items-center justify-center gap-2 
+                                   hover:bg-purple-50 transition font-medium text-sm">
+                  <FaTicketAlt /> Apply Coupon Code
+                </button>
               </div>
+
+              {/* Security box */}
+              <div className="bg-white rounded-2xl p-5"
+                style={{ border: "1px solid rgba(0,0,0,0.07)" }}>
+                <h4 className="font-semibold mb-4 text-gray-800 text-sm">Secure Checkout</h4>
+                <div className="space-y-3">
+                  {[
+                    { icon: <FaCreditCard className="text-purple-600" />, text: "SSL Secure Payment" },
+                    { icon: <FaShieldAlt className="text-green-500" />, text: "100% Payment Protection" },
+                    { icon: <FaTruck className="text-purple-600" />, text: "Free Delivery" },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3 text-gray-500 text-sm">
+                      {item.icon}
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
             </motion.div>
           </div>
+
         </div>
       </div>
     </div>

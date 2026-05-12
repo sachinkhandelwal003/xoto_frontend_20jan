@@ -21,7 +21,7 @@ export default function AgentLeadDetails(){
   return(
     <div className="p-6">
 
-      <Title level={3}>Lead Details</Title>
+      <Title level={3}>Lead Details fgdsfgdsgsd</Title>
 
       <Row gutter={[16,16]}>
 
@@ -78,7 +78,7 @@ export default function AgentLeadDetails(){
   type="primary"
   block
   onClick={() => {
-  console.log("clicked", id);
+  
   navigate(`/dashboard/agent/lead/${id}/create-deal`)
 ;
 }}

@@ -6,8 +6,8 @@ import { motion } from "framer-motion";
 // these keys are working perfectly:---
 // const PUBLIC_KEY = "16018716-ebb1-4148-a6f5-70cb3a6bf952";
 // const ASSISTANT_ID = "5a97a57e-d69d-4b1b-9ed8-5a51ddcc96c2";
-const PUBLIC_KEY = "8fd55b08-704d-4627-8c05-9a98771f8b3a";
-const ASSISTANT_ID = "7258123b-9188-46d9-9f28-e1bc145c9379";
+const PUBLIC_KEY = "84f99b6b-e6b3-4aa1-9a60-94efb8e117a7";
+const ASSISTANT_ID = "607d8457-2f03-4e11-a12f-0a4192feddcf";
 
 
 function VoiceAIInterface({ onClose }) {
@@ -57,9 +57,7 @@ function VoiceAIInterface({ onClose }) {
       // 1. Jaise hi user tap kare, status update karo
       setStatus("AI Initializing..."); 
       vapiRef.current.start(ASSISTANT_ID);
-      console.log("Vapi call started");
-      console.log("assistant id:", ASSISTANT_ID);
-      console.log("public key:", PUBLIC_KEY);
+      
     }
   };
 

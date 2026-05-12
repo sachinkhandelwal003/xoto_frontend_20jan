@@ -13,14 +13,19 @@ import {
   Avatar,
   Slider,
   Switch,
-  InputNumber
+  InputNumber,
+  Tag,
+  Empty
 } from "antd";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import { 
   InfoCircleOutlined, 
   SearchOutlined, 
   SlidersOutlined,
   DownOutlined,
-  CloseCircleOutlined
+  CloseCircleOutlined,
+  HomeOutlined,
+  BuildOutlined,ClockCircleOutlined 
 } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -28,23 +33,37 @@ import { useNavigate } from "react-router-dom";
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const BASE_URL = "http://localhost:5000/api";
-
 export default function AgentProjects() {
   const navigate = useNavigate();
 
   // ================= STATES =================
-  const [projects, setProjects] = useState([]);
+  const [properties, setProperties] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(false);
   const [developers, setDevelopers] = useState([]);
+  const [stats, setStats] = useState({
+    secondaryTotal: 0,
+    secondaryPending: 0,
+    secondaryApproved: 0,
+    secondaryRejected: 0,
+    secondaryActive: 0,
+    offplanTotal: 0,
+    featuredSecondary: 0,
+    featuredOffplan: 0
+  });
 
   // Pagination
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
 
   // --- FILTER STATES ---
   const [search, setSearch] = useState("");
+  const [propertyType, setPropertyType] = useState("all"); // 'all', 'secondary', 'off_plan'
+  
+  // Status Filters
+  const [approvalStatus, setApprovalStatus] = useState("all");
+  const [listingStatus, setListingStatus] = useState("all");
   
   // Developer
   const [devPopoverOpen, setDevPopoverOpen] = useState(false);
@@ -56,37 +75,73 @@ export default function AgentProjects() {
   const [priceMin, setPriceMin] = useState(null);
   const [priceMax, setPriceMax] = useState(null);
 
-  // Payments (Pre-handover / Post-handover)
-  const [paymentPopoverOpen, setPaymentPopoverOpen] = useState(false);
-  const [preHandoverPct, setPreHandoverPct] = useState(100);
-  const [postHandoverOnly, setPostHandoverOnly] = useState(false);
-
-  // Handover
-  const [handoverPopoverOpen, setHandoverPopoverOpen] = useState(false);
-  const [handoverFrom, setHandoverFrom] = useState(null);
-  const [handoverTo, setHandoverTo] = useState(null);
-
   // Unit Type
   const [unitTypePopoverOpen, setUnitTypePopoverOpen] = useState(false);
   const [selectedUnitTypes, setSelectedUnitTypes] = useState([]);
 
-  const unitTypeOptions = ["Apartments", "Villa", "Townhouse", "Duplex", "Penthouse"];
+  // Bedroom Type
+  const [bedroomPopoverOpen, setBedroomPopoverOpen] = useState(false);
+  const [selectedBedrooms, setSelectedBedrooms] = useState([]);
+
+  // Area Filters
+  const [areaPopoverOpen, setAreaPopoverOpen] = useState(false);
+  const [minArea, setMinArea] = useState(null);
+  const [maxArea, setMaxArea] = useState(null);
+
+  // Sort
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
+
+  const unitTypeOptions = ["apartment", "villa", "townhouse", "duplex", "penthouse"];
+  const bedroomOptions = ["studio", "1bed", "2bed", "3bed", "4bed", "5bed", "6bed", "7bed", "8plus"];
   const priceOptions = [500000, 1000000, 1500000, 3000000, 5000000];
 
   // ================= API CALLS =================
-  const fetchProjects = async (pageNo = 1, append = false) => {
+  const fetchProperties = async (pageNo = 1, append = false) => {
     try {
       setLoading(true);
-      const res = await fetch(`${BASE_URL}/property/get-all-properties?page=${pageNo}&limit=20`);
-      const json = await res.json();
-      const list = json?.data?.data || json?.data || [];
+      
+      // Build query params
+      const params = new URLSearchParams();
+      params.append("page", pageNo);
+      params.append("limit", 12);
+      if (propertyType !== 'all') params.append("propertySubType", propertyType);
+      
+      if (approvalStatus !== "all") params.append("approvalStatus", approvalStatus);
+     if (listingStatus !== "all") {
+  params.append("listingStatus", listingStatus);
+}
+      if (search) params.append("search", search);
+      if (priceMin) params.append("minPrice", priceMin);
+      if (priceMax) params.append("maxPrice", priceMax);
+      if (minArea) params.append("minArea", minArea);
+      if (maxArea) params.append("maxArea", maxArea);
+      if (sortBy) params.append("sortBy", sortBy);
+      if (sortOrder) params.append("sortOrder", sortOrder);
+      
+      // Unit Type filter
+      if (selectedUnitTypes.length > 0) {
+        params.append("unitType", selectedUnitTypes[0]);
+      }
+      
+      // Bedroom filter
+      if (selectedBedrooms.length > 0) {
+        params.append("bedroomType", selectedBedrooms[0]);
+      }
 
-      if (!list.length) setHasMore(false);
-
-      setProjects(prev => append ? [...prev, ...list] : list);
+      const res = await apiService.get(`/properties?${params.toString()}`);
+      
+const list = Array.isArray(res?.data) ? res.data : [];
+setProperties(prev => append ? [...prev, ...list] : list);
+setFiltered(list);
+setTotalItems(res?.pagination?.totalItems || list.length);
+setHasMore(pageNo < (res?.pagination?.totalPages || 1));
+if (res?.stats) setStats(res.stats);
     } catch (err) {
       console.error(err);
       message.error("Failed to load properties");
+      setProperties([]);
+      setFiltered([]);
     } finally {
       setLoading(false);
     }
@@ -94,72 +149,124 @@ export default function AgentProjects() {
 
   const fetchDevelopers = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/property/get-all-developers`);
-      const json = await res.json();
-      setDevelopers(json?.data?.data || json?.data || []);
+      const res = await apiService.get("/developer/get-all-developers");
+      const list = Array.isArray(res?.data) ? res.data : res?.data?.data || [];
+      setDevelopers(list);
     } catch (err) {
-      console.error(err);
+      
     }
   };
 
   useEffect(() => {
-    fetchProjects(1, false);
-    fetchDevelopers(); 
-  }, []);
+    setPage(1);
+    fetchProperties(1, false);
+    fetchDevelopers();
+  }, [propertyType, approvalStatus, listingStatus, sortBy, sortOrder]);
 
-  // ================= CORE FILTER LOGIC =================
   useEffect(() => {
-    const q = search.toLowerCase();
+    if (page > 1) {
+      fetchProperties(page, true);
+    }
+  }, [page]);
+
+  // Apply filters
+  useEffect(() => {
+    let results = [...properties];
     
-    const result = projects.filter(p => {
-      // 1. Search Box
-      const matchSearch = !q || p.propertyName?.toLowerCase().includes(q) || p.city?.toLowerCase().includes(q) || p.area?.toLowerCase().includes(q);
-      
-      // 2. Developer
-      const devId = p.developer?._id || p.developer; 
-      const matchDeveloper = selectedDevelopers.length === 0 || selectedDevelopers.includes(devId);
-
-      // 3. Price
-      const propertyPrice = Number(p.price || p.price_min || 0);
-      const matchPriceMin = !priceMin || propertyPrice >= priceMin;
-      const matchPriceMax = !priceMax || propertyPrice <= priceMax;
-
-      // 4. Unit Type (Assuming p.propertyType holds values like 'Apartment', 'Villa' etc.)
-      const pType = p.propertyType ? p.propertyType.toLowerCase() : "";
-      const matchUnitType = selectedUnitTypes.length === 0 || selectedUnitTypes.some(ut => pType.includes(ut.toLowerCase().replace('s', ''))); // 'Apartments' -> 'Apartment'
-
-      // 5. Payment Plan (Initial vs Later)
-      const initialPct = Number(p.paymentPlan_initialPercentage || 100);
-      const laterPct = Number(p.paymentPlan_laterPercentage || 0);
-      const matchPaymentPct = initialPct <= preHandoverPct;
-      const matchPostHandover = !postHandoverOnly || laterPct > 0;
-
-      // 6. Handover (Basic year matching logic)
-      // Assuming p.handover is a string like "Q4 2027" or "2027"
-      let matchHandover = true;
-      if (handoverFrom || handoverTo) {
-        const propYear = p.handover ? parseInt(p.handover.match(/\d{4}/)?.[0]) : 0;
-        if (propYear) {
-          if (handoverFrom && propYear < parseInt(handoverFrom)) matchHandover = false;
-          if (handoverTo && propYear > parseInt(handoverTo)) matchHandover = false;
-        }
-      }
-
-      return matchSearch && matchDeveloper && matchPriceMin && matchPriceMax && matchUnitType && matchPaymentPct && matchPostHandover && matchHandover;
-    });
-
-    setFiltered(result);
-  }, [search, selectedDevelopers, priceMin, priceMax, selectedUnitTypes, preHandoverPct, postHandoverOnly, handoverFrom, handoverTo, projects]);
+    // Search filter
+    if (search) {
+      const q = search.toLowerCase();
+      results = results.filter(p => 
+        p.propertyName?.toLowerCase().includes(q) || 
+        p.city?.toLowerCase().includes(q) || 
+        p.area?.toLowerCase().includes(q) ||
+        p.developerName?.toLowerCase().includes(q)
+      );
+    }
+    
+    // Developer filter
+    if (selectedDevelopers.length > 0) {
+      results = results.filter(p => {
+        const devId = p.developer?._id;
+        return selectedDevelopers.includes(devId);
+      });
+    }
+    
+    // Price filter
+    if (priceMin) {
+      results = results.filter(p => {
+        const propPrice = p.price || p.price_min || 0;
+        return propPrice >= priceMin;
+      });
+    }
+    if (priceMax) {
+      results = results.filter(p => {
+        const propPrice = p.price || p.price_min || 0;
+        return propPrice <= priceMax;
+      });
+    }
+    
+    // Unit Type filter
+    if (selectedUnitTypes.length > 0) {
+      results = results.filter(p => 
+        selectedUnitTypes.some(ut => p.unitType?.toLowerCase().includes(ut.toLowerCase()))
+      );
+    }
+    
+    // Bedroom filter
+    if (selectedBedrooms.length > 0) {
+      results = results.filter(p => 
+        selectedBedrooms.includes(p.bedroomType)
+      );
+    }
+    
+    // Area filter
+    if (minArea) {
+      results = results.filter(p => {
+        const propArea = p.builtUpArea || p.builtUpArea_min || 0;
+        return propArea >= minArea;
+      });
+    }
+    if (maxArea) {
+      results = results.filter(p => {
+        const propArea = p.builtUpArea || p.builtUpArea_min || 0;
+        return propArea <= maxArea;
+      });
+    }
+    
+    setFiltered(results);
+  }, [search, selectedDevelopers, priceMin, priceMax, selectedUnitTypes, selectedBedrooms, minArea, maxArea, properties]);
 
   const loadMore = () => {
     const next = page + 1;
     setPage(next);
-    fetchProjects(next, true);
+  };
+
+  // Date Format Helper
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+  };
+
+  // Price Display Helper
+  const getPriceDisplay = (property) => {
+    if (property.price_min && property.price_max) {
+      return `${property.price_min.toLocaleString()} - ${property.price_max.toLocaleString()}`;
+    }
+    if (property.price) {
+      return property.price.toLocaleString();
+    }
+    return "Contact Us";
   };
 
   // ================= POPOVER CONTENTS =================
 
-  // 1. Developer Popover Content (Already done, keeping it)
   const devPopoverContent = (
     <div style={{ width: 320, padding: '12px 0 0', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '0 16px 12px' }}>
@@ -167,17 +274,22 @@ export default function AgentProjects() {
         <Input prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} placeholder="Search..." value={devSearchText} onChange={e => setDevSearchText(e.target.value)} style={{ borderRadius: 6 }} allowClear />
       </div>
       <div style={{ maxHeight: 250, overflowY: 'auto', padding: '8px 16px', borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0' }}>
-        {developers.filter(d => d.name.toLowerCase().includes(devSearchText.toLowerCase())).map(dev => (
-            <div key={dev._id || dev.id} style={{ padding: '8px 0', display: 'flex', alignItems: 'center' }}>
-              <Checkbox checked={selectedDevelopers.includes(dev._id || dev.id)} onChange={(e) => {
-                  const id = dev._id || dev.id;
-                  setSelectedDevelopers(e.target.checked ? [...selectedDevelopers, id] : selectedDevelopers.filter(item => item !== id));
-                }}/>
-              <Avatar shape="square" src={dev.logo} style={{ margin: '0 12px', background: '#f3e8ff', color: '#5c039b' }} size="small">
-                {!dev.logo && dev.name.charAt(0)}
-              </Avatar>
-              <Text>{dev.name}</Text>
-            </div>
+        {developers.filter(d => d.name?.toLowerCase().includes(devSearchText.toLowerCase())).map(dev => (
+          <div key={dev._id} style={{ padding: '8px 0', display: 'flex', alignItems: 'center' }}>
+            <Checkbox 
+              checked={selectedDevelopers.includes(dev._id)} 
+              onChange={(e) => {
+                setSelectedDevelopers(e.target.checked 
+                  ? [...selectedDevelopers, dev._id] 
+                  : selectedDevelopers.filter(item => item !== dev._id)
+                );
+              }}
+            />
+            <Avatar shape="square" src={dev.logo} style={{ margin: '0 12px', background: '#f3e8ff', color: '#5c039b' }} size="small">
+              {!dev.logo && dev.name?.charAt(0)}
+            </Avatar>
+            <Text>{dev.name}</Text>
+          </div>
         ))}
       </div>
       <div style={{ display: 'flex' }}>
@@ -188,115 +300,24 @@ export default function AgentProjects() {
     </div>
   );
 
-  // 2. Price Popover Content
   const pricePopoverContent = (
     <div style={{ width: 350, padding: '16px' }}>
-      <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: 8, padding: 4, marginBottom: 16 }}>
-        <div style={{ flex: 1, textAlign: 'center', background: '#fff', borderRadius: 6, padding: '4px 0', fontWeight: 500, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>Per unit</div>
-        <div style={{ flex: 1, textAlign: 'center', padding: '4px 0', color: '#6b7280' }}>Per ft²</div>
-        <div style={{ flex: 1, textAlign: 'center', padding: '4px 0', color: '#6b7280' }}>Per m²</div>
-      </div>
-      
       <Row gutter={12} style={{ marginBottom: 16 }}>
         <Col span={12}>
           <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Minimum price</Text>
-          <InputNumber style={{ width: '100%' }} placeholder="From" value={priceMin} onChange={setPriceMin} suffix="AED" formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} />
+          <InputNumber style={{ width: '100%' }} placeholder="From" value={priceMin} onChange={setPriceMin} suffix="AED" />
         </Col>
         <Col span={12}>
           <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Maximum price</Text>
-          <InputNumber style={{ width: '100%' }} placeholder="To" value={priceMax} onChange={setPriceMax} suffix="AED" formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} />
+          <InputNumber style={{ width: '100%' }} placeholder="To" value={priceMax} onChange={setPriceMax} suffix="AED" />
         </Col>
       </Row>
-
-      <Row gutter={12}>
-        <Col span={12}>
-          {priceOptions.map(val => (
-            <div key={`min-${val}`} style={{ padding: '6px 0', cursor: 'pointer' }} onClick={() => setPriceMin(val)}>
-              <Text style={{ fontWeight: 500 }}>{val.toLocaleString()} AED</Text>
-            </div>
-          ))}
-        </Col>
-        <Col span={12}>
-          {priceOptions.map(val => (
-            <div key={`max-${val}`} style={{ padding: '6px 0', cursor: 'pointer' }} onClick={() => setPriceMax(val)}>
-              <Text style={{ fontWeight: 500 }}>{val.toLocaleString()} AED</Text>
-            </div>
-          ))}
-        </Col>
-      </Row>
-
       <Button type="primary" block style={{ marginTop: 16, height: 40, background: '#111827' }} onClick={() => setPricePopoverOpen(false)}>
         Apply filter
       </Button>
     </div>
   );
 
-  // 3. Payments Popover Content
-  const paymentPopoverContent = (
-    <div style={{ width: 320, padding: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Text strong style={{ fontSize: 16 }}>Projects payment plan</Text>
-        <Text type="secondary" style={{ cursor: 'pointer', fontSize: 12 }} onClick={() => { setPreHandoverPct(100); setPostHandoverOnly(false); }}>Reset <CloseCircleOutlined /></Text>
-      </div>
-
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: -8 }}>
-          <Text type="secondary">0%</Text>
-          <Text style={{ background: '#111827', color: '#fff', padding: '2px 6px', borderRadius: 4, fontSize: 12, transform: 'translateY(-10px)' }}>{preHandoverPct}%</Text>
-        </div>
-        <Slider min={0} max={100} value={preHandoverPct} onChange={setPreHandoverPct} trackStyle={{ background: '#111827' }} handleStyle={{ borderColor: '#111827' }} />
-      </div>
-
-      <Row gutter={12} style={{ marginBottom: 16 }}>
-        <Col span={12}>
-          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Maximum pre-handover</Text>
-          <InputNumber style={{ width: '100%' }} value={preHandoverPct} onChange={setPreHandoverPct} max={100} min={0} suffix="%" />
-        </Col>
-        <Col span={12}>
-          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>After handover</Text>
-          <InputNumber style={{ width: '100%' }} value={100 - preHandoverPct} disabled suffix="%" />
-        </Col>
-      </Row>
-
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginTop: 16 }}>
-        <Switch checked={postHandoverOnly} onChange={setPostHandoverOnly} />
-        <Text type="secondary" style={{ fontSize: 13, lineHeight: '1.2' }}>Search projects only with post handover payment plans</Text>
-      </div>
-    </div>
-  );
-
-  // 4. Handover Popover Content
-  const handoverPopoverContent = (
-    <div style={{ width: 300, padding: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Text strong style={{ fontSize: 16 }}>Project handover by</Text>
-        <Text type="secondary" style={{ cursor: 'pointer', fontSize: 12 }} onClick={() => { setHandoverFrom(null); setHandoverTo(null); }}>Reset <CloseCircleOutlined /></Text>
-      </div>
-      <Row gutter={12}>
-        <Col span={12}>
-          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>From</Text>
-          <Select style={{ width: '100%' }} placeholder="Not selected" value={handoverFrom} onChange={setHandoverFrom} allowClear>
-            <Option value="2024">2024</Option>
-            <Option value="2025">2025</Option>
-            <Option value="2026">2026</Option>
-            <Option value="2027">2027</Option>
-          </Select>
-        </Col>
-        <Col span={12}>
-          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>To</Text>
-          <Select style={{ width: '100%' }} placeholder="Not selected" value={handoverTo} onChange={setHandoverTo} allowClear>
-            <Option value="2025">2025</Option>
-            <Option value="2026">2026</Option>
-            <Option value="2027">2027</Option>
-            <Option value="2028">2028</Option>
-            <Option value="2029">2029</Option>
-          </Select>
-        </Col>
-      </Row>
-    </div>
-  );
-
-  // 5. Unit Type Popover Content
   const unitTypePopoverContent = (
     <div style={{ width: 380, padding: '12px' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -320,16 +341,63 @@ export default function AgentProjects() {
                 transition: 'all 0.2s'
               }}
             >
-              {type}
+              {type.charAt(0).toUpperCase() + type.slice(1)}
             </div>
-          )
+          );
         })}
       </div>
     </div>
   );
 
+  const bedroomPopoverContent = (
+    <div style={{ width: 380, padding: '12px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {bedroomOptions.map(bed => {
+          const isSelected = selectedBedrooms.includes(bed);
+          return (
+            <div 
+              key={bed}
+              onClick={() => {
+                if(isSelected) setSelectedBedrooms(selectedBedrooms.filter(b => b !== bed));
+                else setSelectedBedrooms([...selectedBedrooms, bed]);
+              }}
+              style={{
+                padding: '6px 12px',
+                background: isSelected ? '#111827' : '#f3f4f6',
+                color: isSelected ? '#fff' : '#4b5563',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontWeight: 500,
+                fontSize: 13,
+                transition: 'all 0.2s'
+              }}
+            >
+              {bed === "8plus" ? "8+ Bed" : bed === "studio" ? "Studio" : `${bed.replace('bed', '')} Bed`}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 
-  // Helper for UI
+  const areaPopoverContent = (
+    <div style={{ width: 320, padding: '16px' }}>
+      <Row gutter={12}>
+        <Col span={12}>
+          <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Min Area (sqft)</Text>
+          <InputNumber style={{ width: '100%' }} placeholder="Min" value={minArea} onChange={setMinArea} />
+        </Col>
+        <Col span={12}>
+          <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Max Area (sqft)</Text>
+          <InputNumber style={{ width: '100%' }} placeholder="Max" value={maxArea} onChange={setMaxArea} />
+        </Col>
+      </Row>
+      <Button type="primary" block style={{ marginTop: 16, height: 40, background: '#111827' }} onClick={() => setAreaPopoverOpen(false)}>
+        Apply filter
+      </Button>
+    </div>
+  );
+
   const getFilterBtnStyle = (isActive) => ({
     height: 40, 
     borderRadius: 8, 
@@ -340,101 +408,290 @@ export default function AgentProjects() {
     borderColor: isActive ? '#d8b4fe' : '#d9d9d9',
   });
 
+  // Stats Cards
+  const statsCards = [
+    { title: "Total Properties", value: totalItems, icon: <HomeOutlined />, color: "#2563eb", bg: "#dbeafe" },
+    { title: "Off-Plan Projects", value: stats.offplanTotal, icon: <BuildOutlined />, color: "#059669", bg: "#d1fae5" },
+    { title: "Secondary Properties", value: stats.secondaryTotal, icon: <HomeOutlined />, color: "#d97706", bg: "#fef3c7" },
+    { title: "Pending Approval", value: stats.secondaryPending, icon: <ClockCircleOutlined />, color: "#ef4444", bg: "#fee2e2" },
+  ];
 
   return (
     <div style={{ padding: "32px", background: "#f8f9fa", minHeight: "100vh" }}>
+      
+      {/* Stats Cards */}
+      {/* <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
+        {statsCards.map((stat, index) => (
+          <Col xs={24} sm={12} md={6} key={index}>
+            <Card 
+              bordered={false} 
+              style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+              bodyStyle={{ padding: "24px" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <div style={{ 
+                  width: "56px", height: "56px", borderRadius: "12px", 
+                  background: stat.bg, color: stat.color,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px"
+                }}>
+                  {stat.icon}
+                </div>
+                <div>
+                  <Text type="secondary" style={{ fontSize: "13px", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    {stat.title}
+                  </Text>
+                  <Title level={2} style={{ margin: "4px 0 0 0", color: "#1f2937" }}>
+                    {stat.value}
+                  </Title>
+                </div>
+              </div>
+            </Card>
+          </Col>
+        ))}
+      </Row> */}
+
+      {/* Property Type Tabs */}
+      <div style={{ marginBottom: 24, display: 'flex', gap: '12px', borderBottom: '1px solid #e8e8e8', paddingBottom: 12 }}>
+        <Button 
+          type={propertyType === 'all' ? 'primary' : 'default'}
+          onClick={() => setPropertyType('all')}
+          style={{ borderRadius: 20 }}
+        >
+          All Properties
+        </Button>
+        <Button 
+          type={propertyType === 'off_plan' ? 'primary' : 'default'}
+          onClick={() => setPropertyType('off_plan')}
+          style={{ borderRadius: 20 }}
+        >
+          Off-Plan Projects
+        </Button>
+        <Button 
+          type={propertyType === 'secondary' ? 'primary' : 'default'}
+          onClick={() => setPropertyType('secondary')}
+          style={{ borderRadius: 20 }}
+        >
+          Secondary Properties
+        </Button>
+      </div>
+
+      {/* Status Filter Tabs (for secondary only) */}
+      {/* {propertyType !== 'off_plan' && (
+        <div style={{ marginBottom: 24, display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <Button 
+            size="small"
+            type={approvalStatus === 'all' ? 'primary' : 'default'}
+            onClick={() => setApprovalStatus('all')}
+          >
+            All Status
+          </Button>
+          <Button 
+            size="small"
+            type={approvalStatus === 'pending' ? 'primary' : 'default'}
+            onClick={() => setApprovalStatus('pending')}
+          >
+            Pending
+          </Button>
+          <Button 
+            size="small"
+            type={approvalStatus === 'approved' ? 'primary' : 'default'}
+            onClick={() => setApprovalStatus('approved')}
+          >
+            Approved
+          </Button>
+          <Button 
+            size="small"
+            type={approvalStatus === 'rejected' ? 'primary' : 'default'}
+            onClick={() => setApprovalStatus('rejected')}
+          >
+            Rejected
+          </Button>
+          <Button 
+            size="small"
+            type={listingStatus === 'active' ? 'primary' : 'default'}
+            onClick={() => setListingStatus(listingStatus === 'active' ? 'all' : 'active')}
+          >
+            Active Listings
+          </Button>
+        </div>
+      )} */}
       
       {/* FILTER BAR */}
       <div style={{ marginBottom: 24, display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
         
         {/* Basic Search */}
         <Input
-          prefix={<SearchOutlined />} placeholder="Search & filters"
-          style={{ width: 220, borderRadius: 8, height: 40 }}
-          value={search} onChange={(e) => setSearch(e.target.value)}
-          allowClear suffix={<SlidersOutlined style={{color: '#888'}}/>}
+          prefix={<SearchOutlined />} 
+          placeholder="Search by name, city, area..."
+          style={{ width: 260, borderRadius: 8, height: 40 }}
+          value={search} 
+          onChange={(e) => setSearch(e.target.value)}
+          allowClear 
         />
         
-        {/* 1. Developer Filter */}
+        {/* Sort Dropdown */}
+        <Select
+          style={{ width: 140, height: 40 }}
+          value={sortBy}
+          onChange={setSortBy}
+        >
+          <Option value="createdAt">Newest First</Option>
+          <Option value="price">Price: Low to High</Option>
+          <Option value="updatedAt">Recently Updated</Option>
+        </Select>
+        
+        {/* Developer Filter */}
         <Popover content={devPopoverContent} trigger="click" open={devPopoverOpen} onOpenChange={setDevPopoverOpen} placement="bottomLeft" overlayInnerStyle={{ padding: 0 }}>
           <Button style={getFilterBtnStyle(selectedDevelopers.length > 0)}>
             Developer {selectedDevelopers.length > 0 && `(${selectedDevelopers.length})`} <DownOutlined style={{ fontSize: 10 }} />
           </Button>
         </Popover>
 
-        {/* 2. Price Filter */}
+        {/* Price Filter */}
         <Popover content={pricePopoverContent} trigger="click" open={pricePopoverOpen} onOpenChange={setPricePopoverOpen} placement="bottomLeft" overlayInnerStyle={{ borderRadius: 12 }}>
           <Button style={getFilterBtnStyle(priceMin || priceMax)}>
             Price {(priceMin || priceMax) && "•"} <DownOutlined style={{ fontSize: 10 }} />
           </Button>
         </Popover>
 
-        {/* 3. Payments Filter */}
-        <Popover content={paymentPopoverContent} trigger="click" open={paymentPopoverOpen} onOpenChange={setPaymentPopoverOpen} placement="bottomLeft" overlayInnerStyle={{ borderRadius: 12 }}>
-          <Button style={getFilterBtnStyle(preHandoverPct < 100 || postHandoverOnly)}>
-            Payments {(preHandoverPct < 100 || postHandoverOnly) && "•"} <DownOutlined style={{ fontSize: 10 }} />
-          </Button>
-        </Popover>
-
-        {/* 4. Handover Filter */}
-        <Popover content={handoverPopoverContent} trigger="click" open={handoverPopoverOpen} onOpenChange={setHandoverPopoverOpen} placement="bottomLeft" overlayInnerStyle={{ borderRadius: 12 }}>
-          <Button style={getFilterBtnStyle(handoverFrom || handoverTo)}>
-            Handover {(handoverFrom || handoverTo) && "•"} <DownOutlined style={{ fontSize: 10 }} />
-          </Button>
-        </Popover>
-
-        {/* 5. Unit Type Filter */}
+        {/* Unit Type Filter */}
         <Popover content={unitTypePopoverContent} trigger="click" open={unitTypePopoverOpen} onOpenChange={setUnitTypePopoverOpen} placement="bottomLeft" overlayInnerStyle={{ borderRadius: 12 }}>
           <Button style={getFilterBtnStyle(selectedUnitTypes.length > 0)}>
-            Unit type {selectedUnitTypes.length > 0 && `(${selectedUnitTypes.length})`} <DownOutlined style={{ fontSize: 10 }} />
+            Unit Type {selectedUnitTypes.length > 0 && `(${selectedUnitTypes.length})`} <DownOutlined style={{ fontSize: 10 }} />
           </Button>
         </Popover>
 
-     
+        {/* Bedroom Filter */}
+        <Popover content={bedroomPopoverContent} trigger="click" open={bedroomPopoverOpen} onOpenChange={setBedroomPopoverOpen} placement="bottomLeft" overlayInnerStyle={{ borderRadius: 12 }}>
+          <Button style={getFilterBtnStyle(selectedBedrooms.length > 0)}>
+            Bedrooms {selectedBedrooms.length > 0 && `(${selectedBedrooms.length})`} <DownOutlined style={{ fontSize: 10 }} />
+          </Button>
+        </Popover>
+
+        {/* Area Filter */}
+        <Popover content={areaPopoverContent} trigger="click" open={areaPopoverOpen} onOpenChange={setAreaPopoverOpen} placement="bottomLeft" overlayInnerStyle={{ borderRadius: 12 }}>
+          <Button style={getFilterBtnStyle(minArea || maxArea)}>
+            Area {(minArea || maxArea) && "•"} <DownOutlined style={{ fontSize: 10 }} />
+          </Button>
+        </Popover>
       </div>
 
       {/* CARDS GRID */}
-      <Row gutter={[20, 24]}>
-        {filtered.map(p => (
-          <Col xs={24} sm={12} md={8} lg={6} key={p._id}>
-            <Card hoverable onClick={() => navigate(`/dashboard/agent/projects/${p._id}`)} style={{ borderRadius: 12, overflow: "hidden", border: "1px solid #e8e8e8", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }} bodyStyle={{ padding: "20px 16px 16px" }}>
-              <div style={{ position: "relative", height: 210, margin: "-20px -16px 16px -16px" }}>
-                <img src={p?.photos?.[0] || p?.mainLogo || "https://images.unsplash.com/photo-1560518883-ce09059eeffa"} alt={p.propertyName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                
-                <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 8 }}>
-                  <span style={{ background: "#fff", color: "#333", padding: "4px 8px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
-                    {p.propertySubType === "off_plan" ? "Presale" : "Ready"}
-                  </span>
-                  {p.handover && <span style={{ background: "#fff", color: "#333", padding: "4px 8px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{p.handover}</span>}
+      {filtered.length === 0 && !loading ? (
+        <Empty description="No properties found" style={{ marginTop: 60 }} />
+      ) : (
+        <Row gutter={[20, 24]}>
+          {filtered.map(p => (
+            <Col xs={24} sm={12} md={8} lg={6} key={p._id}>
+              <Card 
+                hoverable 
+                onClick={() => navigate(`/dashboard/agent/projects/${p._id}`)} 
+                style={{ borderRadius: 12, overflow: "hidden", border: "1px solid #e8e8e8", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", height: "100%", display: "flex", flexDirection: "column" }} 
+                bodyStyle={{ padding: "20px 16px 16px", flex: 1 }}
+              >
+                <div style={{ position: "relative", height: 200, margin: "-20px -16px 16px -16px", borderRadius: "12px 12px 0 0", overflow: "hidden" }}>
+                  <img 
+                    src={p?.photos?.architecture?.[0] || p?.mainLogo || "https://images.unsplash.com/photo-1560518883-ce09059eeffa"} 
+                    alt={p.propertyName} 
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                  />
+                  
+                  {/* Property Type Tag */}
+                  <div style={{ position: "absolute", top: 12, left: 12 }}>
+                    <Tag color={p.propertySubType === "off_plan" ? "purple" : "blue"} style={{ fontWeight: 600, borderRadius: 6 }}>
+                      {p.propertySubType === "off_plan" ? "🏗️ Off-Plan" : "🏠 Secondary"}
+                    </Tag>
+                  </div>
+                  
+                  {/* Approval Status Tag (for secondary) */}
+                  {p.propertySubType === "secondary" && p.approvalStatus && (
+                    <div style={{ position: "absolute", top: 12, right: 12 }}>
+                      <Tag 
+                        color={
+                          p.approvalStatus === "approved" ? "green" : 
+                          p.approvalStatus === "rejected" ? "red" : "orange"
+                        } 
+                        style={{ fontWeight: 600, borderRadius: 6 }}
+                      >
+                        {p.approvalStatus === "approved" ? "✓ Approved" : 
+                         p.approvalStatus === "rejected" ? "✗ Rejected" : "⏳ Pending"}
+                      </Tag>
+                    </div>
+                  )}
+                  
+                  {/* Listing Status Tag */}
+                  {p.listingStatus === "active" && (
+                    <div style={{ position: "absolute", bottom: 12, left: 12 }}>
+                      <Tag color="green" style={{ background: "#dcfce7", color: "#166534", border: "none", borderRadius: 6 }}>
+                        Active Listing
+                      </Tag>
+                    </div>
+                  )}
+
+                  {/* Developer Logo */}
+                  {p.developer?.logo && (
+                    <div style={{ position: "absolute", bottom: -16, left: 16, width: 44, height: 44, backgroundColor: "#fff", borderRadius: 8, border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                      <img src={p.developer.logo} alt="dev" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </div>
+                  )}
                 </div>
 
-                <div style={{ position: "absolute", bottom: -16, left: 16, width: 44, height: 44, backgroundColor: "#000", borderRadius: 6, border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                  {p.developer?.logo ? <img src={p.developer.logo} alt="dev" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>{p.developer?.name ? p.developer.name.charAt(0) : "D"}</span>}
+                <Title level={5} style={{ margin: "8px 0 4px", fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {p.propertyName}
+                </Title>
+                <Text type="secondary" style={{ display: "block", marginBottom: 12, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {p.area || p.city} • {p.developer?.name || p.developerName || "Developer"}
+                </Text>
+
+                {/* Property Details */}
+                <div style={{ display: "flex", gap: 16, marginBottom: 16, fontSize: 13 }}>
+                  {p.bedrooms > 0 && (
+                    <span>{p.bedrooms} {p.bedrooms === 1 ? "Bed" : "Beds"}</span>
+                  )}
+                  {p.bathrooms > 0 && (
+                    <span>{p.bathrooms} {p.bathrooms === 1 ? "Bath" : "Baths"}</span>
+                  )}
+                  {(p.builtUpArea || p.builtUpArea_min) && (
+                    <span>{p.builtUpArea || p.builtUpArea_min} sqft</span>
+                  )}
                 </div>
-              </div>
 
-              <Title level={5} style={{ margin: "4px 0 2px", fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.propertyName}</Title>
-              <Text type="secondary" style={{ display: "block", marginBottom: 16, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.area || p.city} • by {p.developer?.name || "Developer"}</Text>
+                <div style={{ marginTop: "auto" }}>
+                  <Row justify="space-between" align="bottom">
+                    <Col>
+                      <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 2 }}>Price from</Text>
+                      <Text strong style={{ fontSize: 16 }}>
+                        {getPriceDisplay(p)} {p.currency || "AED"}
+                      </Text>
+                    </Col>
+                    {p.paymentPlan && p.paymentPlan.length > 0 && (
+                      <Col style={{ textAlign: "right" }}>
+                        <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 2 }}>Payment plan</Text>
+                        <Text strong style={{ fontSize: 12 }}>
+                          {p.paymentPlan[0]?.stages?.[0]?.percentage || "Contact Us"}% 
+                          <InfoCircleOutlined style={{ color: "#bfbfbf", marginLeft: 4 }} />
+                        </Text>
+                      </Col>
+                    )}
+                  </Row>
+                </div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
 
-              <Row justify="space-between" align="bottom">
-                <Col>
-                  <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 2 }}>Price from</Text>
-                  <Text strong style={{ fontSize: 16 }}>{Number(p.price || 0).toLocaleString()} {p.currency || "AED"}</Text>
-                </Col>
-                <Col style={{ textAlign: "right" }}>
-                  <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 2 }}>Payment plan</Text>
-                  <Text strong style={{ fontSize: 14 }}>{p.paymentPlan_initialPercentage ? `${p.paymentPlan_initialPercentage}/${p.paymentPlan_laterPercentage}%` : "Contact Us"} <InfoCircleOutlined style={{ color: "#bfbfbf", marginLeft: 4 }} /></Text>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
-      <div style={{textAlign:"center",marginTop:40}}>
-        {loading ? <Spin size="large" /> : hasMore ? <Button size="large" onClick={loadMore} style={{ borderRadius: 8, height: 44, padding: "0 32px", fontWeight: 600 }}>Show More</Button> : <Text type="secondary">No more projects found</Text>}
+      <div style={{ textAlign: "center", marginTop: 40 }}>
+        {loading ? (
+          <Spin size="large" />
+        ) : hasMore && filtered.length > 0 ? (
+          <Button size="large" onClick={loadMore} style={{ borderRadius: 8, height: 44, padding: "0 32px", fontWeight: 600 }}>
+            Show More
+          </Button>
+        ) : filtered.length > 0 ? (
+          <Text type="secondary">No more properties found</Text>
+        ) : null}
       </div>
-
     </div>
   );
 }

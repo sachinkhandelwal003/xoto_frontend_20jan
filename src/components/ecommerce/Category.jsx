@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus } from 'react-icons/fa';
-
-const BASE_URL = 'https://xoto.ae';
+import { apiService } from '../../manageApi/utils/custom.apiservice'; // path adjust kar lena
 
 const Category = () => {
   const navigate = useNavigate();
@@ -13,15 +12,12 @@ const Category = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        // Bhai yahan limit 100 hai isliye load slow ho sakta hai, par logic wahi rakha hai
-        const response = await fetch(`${BASE_URL}/api/products/get-all-category?limit=100`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        const response = await apiService.get(
+          "/products/get-all-category",
+          { limit: 100 }
+        );
 
-        const json = await response.json();
-        let apiCategories = json.data || [];
+        let apiCategories = response?.data || [];
 
         apiCategories.sort((a, b) => {
           const nameA = (a.name || "").toLowerCase();
@@ -32,8 +28,11 @@ const Category = () => {
         });
 
         const formatted = apiCategories.map((cat, index) => {
-          const name = cat.name || 'Category';
-          const imageUrl = cat.icon ? cat.icon : `https://via.placeholder.com/64?text=${name}`;
+          const name = cat.name || "Category";
+
+          const imageUrl = cat.icon
+            ? cat.icon
+            : `https://via.placeholder.com/64?text=${name}`;
 
           return {
             id: cat._id || index + 1,
@@ -42,10 +41,12 @@ const Category = () => {
               <img
                 src={imageUrl}
                 alt={name}
-                loading="lazy" // <-- Ye loading speed fast karega
-                className="w-full h-full object-cover"
+                loading="lazy"
+                // 👇 Yahan se brightness-0 aur invert hata diya hai
+                className="w-full h-full object-contain p-1" 
                 onError={(e) => {
-                  e.target.src = "https://via.placeholder.com/64?text=Error";
+                  e.target.src =
+                    "https://via.placeholder.com/64?text=Error";
                 }}
               />
             ),
@@ -64,7 +65,7 @@ const Category = () => {
 
         setCategories(formatted);
       } catch (err) {
-        console.error('❌ Fetch failed:', err.message);
+        console.error("❌ Fetch failed:", err.message);
       } finally {
         setLoading(false);
       }
@@ -73,27 +74,31 @@ const Category = () => {
     fetchCategories();
   }, []);
 
-  const getOriginalColor = (index) => {
-    const colors = [
-      "from-[var(--color-primary)] to-pink-500",
-      "from-blue-500 to-cyan-400",
-      "from-emerald-500 to-teal-400",
-      "from-amber-500 to-orange-400",
-      "from-rose-500 to-pink-400",
-      "from-indigo-500 to-purple-400",
-      "from-violet-500 to-purple-400",
-      "from-gray-600 to-gray-400",
-      "from-fuchsia-500 to-pink-400",
-      "from-green-500 to-emerald-400",
-      "from-red-500 to-orange-400",
-      "from-red-500 to-pink-500",
-      "from-purple-600 to-blue-500",
-    ];
-    return colors[index % colors.length];
-  };
+ const getOriginalColor = (index) => {
+  const colors = [
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+    "from-[#5c039b] to-[#5c039b]",
+  ];
+  return colors[index % colors.length];
+};
 
   const handleCategoryClick = (categoryName) => {
-    const slug = categoryName.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and');
+    const slug = categoryName
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/&/g, "and");
+
     navigate(`/ecommerce/filter?category=${slug}`);
   };
 
@@ -105,11 +110,16 @@ const Category = () => {
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
               Shop by <span className="text-[var(--color-primary)]">Category</span>
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">Loading categories...</p>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Loading categories...
+            </p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-8 gap-6">
             {Array(8).fill(0).map((_, i) => (
-              <div key={i} className="w-[140px] h-[140px] bg-white rounded-2xl border border-gray-100 shadow-sm animate-pulse" />
+              <div
+                key={i}
+                className="w-[140px] h-[140px] bg-white rounded-2xl border border-gray-100 shadow-sm animate-pulse"
+              />
             ))}
           </div>
         </div>
@@ -150,12 +160,6 @@ const Category = () => {
                     {category.name}
                   </span>
                 </div>
-
-                {(category.isNew || category.isDeal) && (
-                  <div className={`absolute -top-1 -right-1 ${category.isDeal ? 'bg-red-500' : 'bg-[var(--color-primary)]'} text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm`}>
-                    {category.isDeal ? 'HOT' : 'NEW'}
-                  </div>
-                )}
               </div>
             </motion.button>
           ))}

@@ -15,6 +15,7 @@ import {
   notification,
   Upload,
   Divider,
+  Space
 } from "antd";
 import {
   UserOutlined,
@@ -31,9 +32,11 @@ import {
   LinkOutlined,
   LoadingOutlined,
   DeleteOutlined,
+  EditOutlined
 } from "@ant-design/icons";
 import { useForm, Controller } from "react-hook-form";
 import { Country, State, City } from "country-state-city";
+// ✅ IMPORTED parsePhoneNumberFromString for strict validation
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
@@ -51,7 +54,7 @@ const GenericUploader = ({ value, onChange, label, listType = "text" }) => {
     formData.append("file", file);
 
     try {
-      console.log(`Uploading ${label}...`);
+      
       const response = await apiService.post(`/upload`, formData);
       const responseBody = response.data || response;
       const url =
@@ -246,6 +249,7 @@ const SellerPage = () => {
     handleSubmit,
     trigger,
     setError,
+    clearErrors, 
     watch,
     setValue,
     getValues,
@@ -253,9 +257,9 @@ const SellerPage = () => {
   } = useForm({
     mode: "onChange",
     defaultValues: {
-      mobile: { country_code: "+971" }, // UAE Default
+      mobile: { country_code: "971" }, // UAE Default (Without + for visual match)
       store_details: {
-        country: "AE", // UAE Default ISO
+        country: "AE", 
         social_links: {
           facebook: "",
           instagram: "",
@@ -284,17 +288,20 @@ const SellerPage = () => {
 
   const selectedCountry = watch("store_details.country");
   const selectedState = watch("store_details.state");
+  const watchMobileNumber = watch("mobile.number");
 
-  const countryPhoneData = useMemo(() => {
-    const allCountries = Country.getAllCountries();
-    return allCountries.map((c) => ({
-      iso: c.isoCode,
-      name: c.name,
-      code: c.isoCode,
-      phone: `+${c.phonecode}`,
-      value: `+${c.phonecode}`,
-      search: `${c.name} ${c.isoCode} +${c.phonecode}`,
-    }));
+  // 🔥 CUSTOM COUNTRY OPTIONS WITH FLAGCDN LOGIC
+  const countryOptions = useMemo(() => {
+    const priorityIsoCodes = ["AE", "IN", "SA", "US", "GB", "AU"]; 
+    return Country.getAllCountries().map((country) => ({
+      name: country.name, code: country.phonecode, iso: country.isoCode,
+    })).sort((a, b) => {
+      const aPriority = priorityIsoCodes.includes(a.iso);
+      const bPriority = priorityIsoCodes.includes(b.iso);
+      if (aPriority && !bPriority) return -1;
+      if (!aPriority && bPriority) return 1;
+      return a.name.localeCompare(b.name);
+    });
   }, []);
 
   useEffect(() => {
@@ -365,25 +372,41 @@ const SellerPage = () => {
     { title: "Documents", icon: <CloudUploadOutlined /> },
   ];
 
-  // --- OTP HANDLERS ---
+  // --- OTP HANDLERS (LIVE API) ---
   const handleSendOtp = async () => {
-    const countryCode = getValues("mobile.country_code");
+    const isMobileValid = await trigger("mobile.number");
+    if (!isMobileValid) return;
+
+    let countryCode = getValues("mobile.country_code");
     const number = getValues("mobile.number");
-    if (!countryCode || !number) {
-      message.error("Please enter a valid mobile number first.");
-      return;
-    }
+    
+    // Ensure country code has '+' for API
+    if (!countryCode.startsWith("+")) countryCode = `+${countryCode}`;
+
     setOtpLoading(true);
     try {
-      // API call simulation or real call
+      await apiService.post("/otp/send-otp", {
+        country_code: countryCode,
+        phone_number: number,
+      });
       message.success("OTP sent successfully!");
-      setOtpSent(true);
+      setOtpSent(true); // ✅ FIXED
       setOtpVerified(false);
     } catch (error) {
-      notification.error({
-        message: "OTP Error",
-        description: "Failed to send OTP",
-      });
+      const errData = error.response?.data;
+      if (errData?.errors && errData.errors.length > 0) {
+        errData.errors.forEach(err => {
+          const fieldName = (err.field === 'mobile' || err.field === 'mobile.number') ? 'mobile.number' : err.field;
+          setError(fieldName, { type: "manual", message: err.message });
+        });
+      } else if (errData?.message && /(mobile|number|phone)/i.test(errData.message)) {
+        setError("mobile.number", { type: "manual", message: errData.message });
+      } else {
+        notification.error({
+          message: "OTP Error",
+          description: errData?.message || "Failed to send OTP",
+        });
+      }
     } finally {
       setOtpLoading(false);
     }
@@ -394,48 +417,59 @@ const SellerPage = () => {
       message.error("Please enter the OTP");
       return;
     }
+    
+    let countryCode = getValues("mobile.country_code");
+    if (!countryCode.startsWith("+")) countryCode = `+${countryCode}`;
+
     setOtpLoading(true);
     try {
       await apiService.post("/otp/verify-otp", {
-        country_code: getValues("mobile.country_code"),
+        country_code: countryCode,
         phone_number: getValues("mobile.number"),
         otp: enteredOtp,
       });
       message.success("Mobile Verified Successfully!");
       setOtpVerified(true);
-      setOtpSent(false);
+      setOtpSent(false); // ✅ FIXED
     } catch (error) {
-      // Mock success for development if API fails
-      // setOtpVerified(true); setOtpSent(false);
-      message.error("Invalid Mobile OTP");
+      message.error(error?.response?.data?.message || "Invalid Mobile OTP");
     } finally {
       setOtpLoading(false);
     }
   };
 
   const handleChangeNumber = () => {
-    setOtpSent(false);
+    setOtpSent(false); // ✅ FIXED
     setOtpVerified(false);
     setEnteredOtp("");
   };
 
+  // --- EMAIL OTP HANDLERS (LIVE API) ---
   const handleSendEmailOtp = async () => {
+    const isEmailValid = await trigger("email");
+    if (!isEmailValid) return;
+
     const email = getValues("email");
-    if (!email) {
-      message.error("Please enter a valid email first.");
-      return;
-    }
     setEmailOtpLoading(true);
     try {
       await apiService.post("/otp/email-otp/send", { email });
       message.success("OTP sent successfully! Please check your mail.");
-      setEmailOtpSent(true);
+      setEmailOtpSent(true); // ✅ FIXED
       setEmailOtpVerified(false);
     } catch (error) {
-      notification.error({
-        message: "OTP Error",
-        description: "Failed to send OTP",
-      });
+      const errData = error.response?.data;
+      if (errData?.errors && errData.errors.length > 0) {
+        errData.errors.forEach(err => {
+          if (err.field === 'email') setError("email", { type: "manual", message: err.message });
+        });
+      } else if (errData?.message && /email/i.test(errData.message)) {
+        setError("email", { type: "manual", message: errData.message });
+      } else {
+        notification.error({
+          message: "OTP Error",
+          description: errData?.message || "Failed to send OTP",
+        });
+      }
     } finally {
       setEmailOtpLoading(false);
     }
@@ -454,16 +488,16 @@ const SellerPage = () => {
       });
       message.success("Email Verified Successfully!");
       setEmailOtpVerified(true);
-      setEmailOtpSent(false);
+      setEmailOtpSent(false); // ✅ FIXED
     } catch (error) {
-      message.error("Invalid Email OTP");
+      message.error(error?.response?.data?.message || "Invalid Email OTP");
     } finally {
       setEmailOtpLoading(false);
     }
   };
 
   const handleChangeEmail = () => {
-    setEmailOtpSent(false);
+    setEmailOtpSent(false); // ✅ FIXED
     setEmailOtpVerified(false);
     setEnteredEmailOtp("");
   };
@@ -482,7 +516,7 @@ const SellerPage = () => {
         "first_name",
         "last_name",
         "email",
-        "mobile",
+        "mobile.number",
         "password",
         "confirmPassword",
       ];
@@ -514,7 +548,6 @@ const SellerPage = () => {
       ];
     }
 
-    // ✅ STEP 4: DO NOT VALIDATE
     else if (currentStep === 4) {
       setCurrentStep((prev) => prev + 1);
       return;
@@ -532,9 +565,8 @@ const SellerPage = () => {
     else setCurrentStep((prev) => prev - 1);
   };
 
-  // --- FORM ERROR HANDLER (FIX) ---
   const onError = (errors) => {
-    console.log("Validation Failed:", errors);
+    
     if (Object.keys(errors).length > 0) {
       if (errors.bank_details || errors.registration) {
         message.error("Please fix errors in Business & Bank Details (Step 3)");
@@ -568,12 +600,15 @@ const SellerPage = () => {
       data.store_details.country,
     );
 
+    let submitCountryCode = data.mobile.country_code;
+    if (!submitCountryCode.startsWith("+")) submitCountryCode = `+${submitCountryCode}`;
+
     const payload = {
       first_name: data.first_name,
       last_name: data.last_name,
       email: data.email,
       mobile: {
-        country_code: data.mobile.country_code,
+        country_code: submitCountryCode,
         number: data.mobile.number,
       },
       password: data.password,
@@ -617,16 +652,42 @@ const SellerPage = () => {
       message.success("Registration successful! Awaiting approval.");
     } catch (err) {
       const res = err.response?.data;
-      if (res?.errors && Array.isArray(res.errors)) {
-        res.errors.forEach((e) =>
-          setError(e.field, { type: "server", message: e.message }),
-        );
-        notification.error({
-          message: "Validation Error",
-          description: res.errors[0]?.message,
+      
+      if (res?.errors && Array.isArray(res.errors) && res.errors.length > 0) {
+        let isStep0Error = false;
+
+        res.errors.forEach((e) => {
+          let fieldName = e.field;
+          if (fieldName === "mobile.number" || fieldName === "mobile") fieldName = "mobile.number";
+          
+          setError(fieldName, { type: "server", message: e.message });
+          if (["email", "mobile", "mobile.number"].includes(fieldName)) {
+            isStep0Error = true;
+          }
         });
+
+        if (isStep0Error) setCurrentStep(0);
+
+      } else if (res?.message) {
+        const msg = res.message.toLowerCase();
+        let isSet = false;
+        
+        if (msg.includes("email")) {
+          setError("email", { type: "server", message: res.message });
+          isSet = true;
+        }
+        if (msg.includes("mobile") || msg.includes("phone") || msg.includes("number")) {
+          setError("mobile.number", { type: "server", message: res.message });
+          isSet = true;
+        }
+        
+        if (isSet) {
+          setCurrentStep(0); 
+        } else {
+          message.error(res.message || "Registration failed.");
+        }
       } else {
-        message.error(res?.message || "Registration failed.");
+        message.error("Registration failed.");
       }
     } finally {
       setSubmitting(false);
@@ -752,7 +813,6 @@ const SellerPage = () => {
               }}
               bodyStyle={{ padding: 40 }}
             >
-              {/* --- FIX START: Changed <form> to <Form> with layout="vertical" --- */}
               <Form
                 layout="vertical"
                 onFinish={handleSubmit(onSubmit, onError)}
@@ -824,6 +884,10 @@ const SellerPage = () => {
                               size="large"
                               {...field}
                               disabled={emailOtpVerified}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                clearErrors("email"); 
+                              }}
                             />
                           )}
                         />
@@ -835,117 +899,157 @@ const SellerPage = () => {
                           }
                           type={emailOtpVerified ? "default" : "primary"}
                           loading={emailOtpLoading}
+                          style={!emailOtpVerified ? { backgroundColor: '#5C039B', borderColor: '#5C039B' } : {}}
                         >
                           {emailOtpVerified ? "Change" : "Send OTP"}
                         </Button>
                       </div>
-                      {emailOtpSent && !emailOtpVerified && (
+                      {emailOtpSent && !emailOtpVerified && ( // ✅ FIXED
                         <div className="mt-2 flex gap-2">
                           <Input
                             placeholder="Enter Email OTP"
                             value={enteredEmailOtp}
                             onChange={(e) => setEnteredEmailOtp(e.target.value)}
                           />
-                          <Button onClick={handleVerifyEmailOtp} type="primary">
+                          <Button onClick={handleVerifyEmailOtp} type="primary" style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}>
                             Verify
                           </Button>
                         </div>
                       )}
                       {emailOtpVerified && (
-                        <span className="text-green-500">
+                        <span className="text-green-500 mt-2 inline-block">
                           <CheckCircleFilled /> Verified
                         </span>
                       )}
                     </Form.Item>
+
+                    {/* 🔥 FLAGCDN MOBILE INPUT WITH STRICT VALIDATION */}
                     <Form.Item
-                      label="Mobile"
+                      label="Mobile Number"
                       required
                       validateStatus={errors.mobile?.number ? "error" : ""}
                       help={errors.mobile?.number?.message}
                     >
-                      <div className="flex gap-2">
-                        <div style={{ width: 100 }}>
-                          <Controller
-                            name="mobile.country_code"
-                            control={control}
-                            render={({ field }) => (
-                              <Select
-                                {...field}
-                                showSearch
-                                optionFilterProp="children"
-                                disabled={otpVerified}
-                              >
-                                {countryPhoneData.map((c) => (
-                                  <Option key={c.code} value={c.value}>
-                                    {c.code} {c.phone}
-                                  </Option>
-                                ))}
-                              </Select>
-                            )}
-                          />
-                        </div>
+                      <Space.Compact style={{ width: '100%' }}>
+                        <Controller
+                          name="mobile.country_code"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              {...field}
+                              showSearch
+                              optionFilterProp="children"
+                              disabled={otpVerified || otpSent} // ✅ FIXED
+                              className="custom-phone-select"
+                              style={{ width: '30%', minWidth: '120px' }}
+                              popupMatchSelectWidth={300}
+                              onChange={(val) => {
+                                field.onChange(val);
+                                trigger("mobile.number");
+                              }}
+                            >
+                              {countryOptions.map((item) => (
+                                <Option key={item.iso} value={item.code}>
+                                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <img 
+                                      src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`} 
+                                      width="20" 
+                                      alt={item.name} 
+                                      style={{ marginRight: 8, borderRadius: 2 }} 
+                                    />
+                                    <span>+{item.code}</span>
+                                  </div>
+                                </Option>
+                              ))}
+                            </Select>
+                          )}
+                        />
                         <Controller
                           name="mobile.number"
                           control={control}
                           rules={{
-                            required: "Required",
+                            required: "Mobile number is required",
                             validate: (value) => {
-                              const countryCode = getValues(
-                                "mobile.country_code",
-                              );
-                              if (!countryCode) return "Select code";
-                              const fullNumber = `${countryCode}${value}`;
-                              const phoneNumber =
-                                parsePhoneNumberFromString(fullNumber);
-                              return (
-                                (phoneNumber && phoneNumber.isValid()) ||
-                                "Invalid mobile number"
-                              );
-                            },
+                              if (!value) return "Mobile number is required";
+                              const code = getValues("mobile.country_code");
+                              const fullNum = `+${code}${value}`;
+                              const phoneNumber = parsePhoneNumberFromString(fullNum);
+                              return (phoneNumber && phoneNumber.isValid()) || `Invalid mobile number format for +${code}`;
+                            }
                           }}
                           render={({ field }) => (
                             <Input
                               size="large"
                               {...field}
-                              disabled={otpVerified}
+                              disabled={otpVerified || otpSent} // ✅ FIXED
                               className="w-full"
+                              style={{ width: '50%', borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
+                              placeholder="501234567"
                               onChange={(e) => {
-                                field.onChange(
-                                  e.target.value.replace(/\D/g, ""),
-                                );
-                                if (otpVerified) setOtpVerified(false);
+                                field.onChange(e.target.value.replace(/\D/g, ""));
+                                clearErrors("mobile.number");
+                                trigger("mobile.number");
                               }}
                             />
                           )}
                         />
-                        <Button
-                          onClick={
-                            !otpVerified ? handleSendOtp : handleChangeNumber
-                          }
-                          type={otpVerified ? "default" : "primary"}
-                          loading={otpLoading}
-                        >
-                          {otpVerified ? "Change" : "Send OTP"}
-                        </Button>
-                      </div>
-                      {otpSent && !otpVerified && (
-                        <div className="mt-2 flex gap-2">
-                          <Input
-                            placeholder="Enter Mobile OTP"
-                            value={enteredOtp}
-                            onChange={(e) => setEnteredOtp(e.target.value)}
-                          />
-                          <Button onClick={handleVerifyOtp} type="primary">
-                            Verify
+                        {!otpVerified && !otpSent && ( // ✅ FIXED
+                          <Button
+                            type="primary"
+                            size="large"
+                            onClick={handleSendOtp}
+                            disabled={!watchMobileNumber || errors.mobile?.number}
+                            loading={otpLoading}
+                            style={{ backgroundColor: '#5C039B', borderColor: '#5C039B', color: '#fff', width: '20%', minWidth: '100px' }}
+                          >
+                            Send OTP
                           </Button>
+                        )}
+                        {(otpSent || otpVerified) && ( // ✅ FIXED
+                          <Button
+                            size="large"
+                            icon={<EditOutlined />}
+                            onClick={handleChangeNumber}
+                            style={{ width: '20%', minWidth: '100px' }}
+                          >
+                            Change
+                          </Button>
+                        )}
+                      </Space.Compact>
+
+                      {otpSent && ( // ✅ FIXED
+                        <div className="mt-4 p-4 bg-gray-50 border border-purple-100 rounded-lg">
+                          <Text type="secondary" className="block mb-3">
+                            Enter the 6-digit code sent to <strong>+{getValues("mobile.country_code")} {watchMobileNumber}</strong>
+                          </Text>
+                          <div className="flex gap-3 items-center">
+                            <Input
+                              placeholder="Enter OTP"
+                              maxLength={6}
+                              value={enteredOtp}
+                              onChange={(e) => setEnteredOtp(e.target.value)}
+                              size="large"
+                              style={{ width: '200px' }}
+                            />
+                            <Button
+                              type="primary"
+                              onClick={handleVerifyOtp}
+                              loading={otpLoading}
+                              size="large"
+                              style={{ backgroundColor: '#5C039B', borderColor: '#5C039B' }}
+                            >
+                              Verify OTP
+                            </Button>
+                          </div>
                         </div>
                       )}
                       {otpVerified && (
-                        <span className="text-green-500">
+                        <span className="text-green-500 mt-2 inline-block">
                           <CheckCircleFilled /> Verified
                         </span>
                       )}
                     </Form.Item>
+
                     <Row gutter={16}>
                       <Col span={12}>
                         <Form.Item
@@ -1489,7 +1593,7 @@ const SellerPage = () => {
                             control={control}
                             rules={{
                               validate: (value) => {
-                                if (!value) return true; // Allow empty
+                                if (!value) return true; 
                                 return (
                                   /^[A-Z0-9]{8,11}$/.test(value) ||
                                   "Invalid SWIFT/BIC (8-11 alphanum)"
@@ -1667,6 +1771,9 @@ const SellerPage = () => {
                           <Controller
                             name="contacts.support_contact.mobile"
                             control={control}
+                            rules={{
+                              minLength: { value: 9, message: "Min 9 digits" },
+                            }}
                             render={({ field }) => (
                               <Input
                                 size="large"
@@ -1776,17 +1883,12 @@ const SellerPage = () => {
                               control={control}
                               rules={{
                                 validate: (value) => {
-                                  // Step 4 pe nahi ho → validate hi mat karo
                                   if (currentStep !== 4) return true;
-
-                                  // Step 4 pe ho + Mandatory doc
                                   if (doc.label.includes("Mandatory")) {
                                     return value
                                       ? true
                                       : "Document is required";
                                   }
-
-                                  // Optional docs
                                   return true;
                                 },
                               }}
@@ -1876,11 +1978,24 @@ const SellerPage = () => {
                   </div>
                 </Spin>
               </Form>
-              {/* --- FIX END --- */}
             </Card>
           </Col>
         </Row>
       </div>
+      <style jsx global>{`
+        .custom-phone-select .ant-select-selector {
+          border-top-left-radius: 8px !important;
+          border-bottom-left-radius: 8px !important;
+          height: 40px !important;
+          display: flex !important;
+          align-items: center !important;
+        }
+        .custom-phone-select .ant-select-selection-item {
+          display: flex !important;
+          align-items: center !important;
+          line-height: 1 !important;
+        }
+      `}</style>
     </div>
   );
 };
