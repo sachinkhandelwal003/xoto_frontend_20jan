@@ -264,6 +264,8 @@ import DisbursedFullAmountCases from "../ecommerce/vault/case/DisbursedFullAmoun
 import AgentsLeadFullView from "../ecommerce/B2C/AgentsLeadFullView";
 import Adminfeedbacks from "../../components/footer/Adminfeedbacks";
 import Presentations from "../ecommerce/B2C/PresentationManager";
+import BankProductViewwithdocuments from "../homepage/BankProductViewwithdocuments";
+import BankProductDocuments from "../homepage/BankProductDocuments";
 
 
 
@@ -284,7 +286,6 @@ const roleSlugMap = {
   26: "vault-advisor",
   23: "vault-ops",
   25: "gridreferralpartner",
-  23: "vault-mortgage-ops",
 
   21: "vaultpartner",
   24: "GridAdvisor"
@@ -308,11 +309,6 @@ const dashboardMap = {
   23: <MortgageOpsDashboard />,
 
   25: <ReferralPartnerDashboard />,
-  12: <SupervisorDashboard />,
-  16: <AgentDashboard />,
-  17: <DeveloperDashboard />,
-  15: <AgencyDashboard />,
-  18: <VaultAdminDashboard />,
   // 21:<VaultPartnerDashboard/>
   21: <VaultpartnerDashboard />,
   24: <GridAdvisorDashboard />
@@ -481,10 +477,7 @@ const CmsRoutes = () => {
 
       {/* Projects */}
       <Route path="agent-projects" element={<AgentProjects />} />
-      <Route
-        path="projects/:id"
-        element={<AgentProjectDetails />}
-      />
+      <Route path="projects/:id"element={<AgentProjectDetails />}/>
 
       {/* Deals */}
       <Route path="deals" element={<AgentDeals />} />
