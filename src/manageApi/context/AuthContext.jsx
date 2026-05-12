@@ -13,9 +13,9 @@ import {
 
 export const AuthContext = createContext();
 
-// const API_BASE = 'https://kotiboxglobaltech.online/api';
-const API_BASE = 'http://localhost:5000/api';
-// const API_BASE = 'https://xoto.ae/api';
+// dfsf const API_BASE = 'https://kotiboxglobaltech.online/api'; 
+// const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'https://xoto.ae/api';
 
 
 export const AuthProvider = ({ children }) => {
