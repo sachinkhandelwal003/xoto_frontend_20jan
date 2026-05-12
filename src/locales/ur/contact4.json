@@ -1,0 +1,40 @@
+{
+  "title": { "line1": "پارٹنر اور", "line2": "اشتراک فارم" },
+  "subtitle": {
+    "line1": "XOTO کے ساتھ شراکت میں دلچسپی ہے؟",
+    "line2": "اپنے کاروبار یا منصوبے کے بارے میں بتائیں۔"
+  },
+  "form": {
+    "organization": "ادارے کا نام",
+    "email": "رابطہ ای میل",
+    "partnerType": "پارٹنر کی قسم",
+    "proposal": "تجویز کی تفصیل"
+  },
+  "placeholders": {
+    "organization": "ادارے کا نام درج کریں",
+    "email": "ای میل درج کریں",
+    "proposal": "اپنی تجویز لکھیں"
+  },
+  "options": {
+    "select": "پارٹنر کی قسم منتخب کریں",
+    "business": "بزنس ایسوسی ایٹس",
+    "execution": "ایگزیکیوشن پارٹنر",
+    "alliance": "اسٹریٹجک اتحاد",
+    "developers": "ڈیولپرز",
+    "finance": "مالیاتی ادارہ"
+  },
+  "buttons": { "submit": "جمع کریں" },
+  "chat": {
+    "title": "Xobia چیٹ (24/7 AI مدد)",
+    "description": "کسی بھی وقت سوال ہو؟ Xobia 24/7 مدد کے لیے موجود ہے۔",
+    "button": "Xobia سے چیٹ کریں"
+  },
+  "validation": {
+    "organization": "ادارے کا نام ضروری ہے۔",
+    "emailRequired": "ای میل ضروری ہے۔",
+    "emailInvalid": "درست ای میل درج کریں۔",
+    "partnerType": "پارٹنر کی قسم ضروری ہے۔",
+    "proposal": "تجویز کی تفصیل ضروری ہے۔"
+  },
+  "notification": { "success": "فارم کامیابی سے جمع ہو گیا!" }
+}

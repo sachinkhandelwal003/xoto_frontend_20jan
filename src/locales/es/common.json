@@ -1,0 +1,21 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "homeUpgrade": "Mejora del Hogar",
+    "landscaping": "Paisajismo",
+    "interiors": "Interiores",
+    "homeOwnership": "Propiedad de Vivienda",
+    "mortgages": "Hipotecas",
+    "properties": "Propiedades",
+    "store": "Tienda Xoto",
+    "knowledgeHub": "Centro de Conocimiento",
+    "blogs": "Blogs",
+    "caseStudies": "Casos de Estudio",
+    "training": "Capacitación",
+    "ecosystem": "Ecosistema de Socios",
+    "about": "Sobre Nosotros",
+    "contact": "Contáctanos",
+    "login": "Iniciar Sesión",
+    "tagline": "Impulsado por IA. Inspirado en ti."
+  }
+}

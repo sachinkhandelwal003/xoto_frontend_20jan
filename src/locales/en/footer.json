@@ -1,0 +1,69 @@
+{
+  "company": {
+    "slogan": "A Unified Ecosystem Creating <br/> life time property Value.",
+    "description": "Scalable. AI–powered. Asset–light."
+  },
+
+  "titles": {
+    "offerings": "Our Offerings",
+    "resources": "Partner Ecosystem",
+    "knowledge": "About Us",
+    "location": "Locations",
+    "email": "Email"
+  },
+
+  "offerings": [
+     { "label": "Mortgages", "path": "/mortgage/services" },
+        { "label": "Buy", "path": "/search/buy" },
+ 
+    { "label": "Sell", "path": "/Property" },
+    { "label": "Rent", "path": "/rent/search" },
+    { "label": "Interiors", "path": "/services/interior" },
+    { "label": "Landscaping", "path": "/landscaping" },
+    { "label": "Calculators", "path": "/mortgages/calculator" }
+   
+    
+ 
+   
+  ],
+
+  "resources": [
+    { "label": "Strategic Alliances", "path": "/login" },
+    { "label": "Agent", "comingSoon": true },
+    { "label": "Execution Partners", "path": "/login "  },
+   {"label": "Developers","comingSoon": true}, 
+   {"label": "Financial  Institutions","comingSoon": true}
+  ],
+
+  "knowledge": [
+    { "label": "Knowledge Hub", "path": "/Blogs" },
+    { "label": "Our Sustainability Focus", "path": "" },
+  
+    { "label": "Submit Your Feedback", "path": "" },
+    { "label": "Contact Us", "path": "/contact" },
+    { "label": "Privacy Policy", "path": "/privacy-policy" },
+    { "label": "Terms Of Use", "path": "" }
+  ],
+
+  "locations": "UAE | Saudi Arabia",
+
+  "email": {
+    "labels": {
+      "partners": "For Partners",
+      "customers": "For Customers"
+    },
+    "partners": " biz@xoto.ae",
+    "customers": "care@xoto.ae"
+  },
+
+  "social": [
+    { "name": "Facebook", "url": "#" },
+    { "name": "Instagram", "url": "#" },
+    { "name": "Twitter", "url": "#" },
+    { "name": "LinkedIn", "url": "#" }
+  ],
+
+  "bottom": {
+    "copyright": "©2026 XOTO. All rights reserved"
+  }
+}

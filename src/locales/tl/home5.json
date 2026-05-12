@@ -1,0 +1,18 @@
+{
+  "title": "Tiwala at Presensya",
+
+  "cards": {
+    "card1": {
+      "title": "Landscaping",
+      "desc": "Baguhin ang iyong bahay at labas gamit ang AI-powered na solusyon."
+    },
+    "card2": {
+      "title": "Muling Pagbenta",
+      "desc": "Dagdagan ang halaga ng ari-arian. Mas mabilis na magbenta."
+    },
+    "card3": {
+      "title": "Paupahan",
+      "desc": "Umakit ng mas mabubuting tenant. Kumita ng mas malaki."
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "title": { "line1": "ਸਾਂਝेदारी", "line2": "ਅਤੇ ਸਹਿਯੋਗ ਫਾਰਮ" },
+  "subtitle": {
+    "line1": "XOTO ਨਾਲ ਸਾਂਝेदारी ਕਰਨੀ ਹੈ?",
+    "line2": "ਆਪਣੇ ਕਾਰੋਬਾਰ ਜਾਂ ਪ੍ਰੋਜੈਕਟ ਬਾਰੇ ਦੱਸੋ।"
+  },
+  "form": {
+    "organization": "ਸੰਗਠਨ ਦਾ ਨਾਮ",
+    "email": "ਸੰਪਰਕ ਈਮੇਲ",
+    "partnerType": "ਸਾਥੀ ਦੀ ਕਿਸਮ",
+    "proposal": "ਪ੍ਰਸਤਾਵ ਦਾ ਵੇਰਵਾ"
+  },
+  "placeholders": {
+    "organization": "ਸੰਗਠਨ ਦਾ ਨਾਮ ਦਰਜ ਕਰੋ",
+    "email": "ਈਮੇਲ ਦਰਜ ਕਰੋ",
+    "proposal": "ਪ੍ਰਸਤਾਵ ਦਾ ਵੇਰਵਾ ਲਿਖੋ"
+  },
+  "options": {
+    "select": "ਸਾਥੀ ਦੀ ਕਿਸਮ ਚੁਣੋ",
+    "business": "ਬਿਜ਼ਨਸ ਸਾਥੀ",
+    "execution": "ਕਾਰਜਨਵੀਤ ਸਾਥੀ",
+    "alliance": "ਰਣਨੀਤਿਕ ਗਠਜੋੜ",
+    "developers": "ਡਿਵੈਲਪਰ",
+    "finance": "ਵਿੱਤੀ ਸੰਸਥਾ"
+  },
+  "buttons": { "submit": "ਜਮ੍ਹਾ ਕਰੋ" },
+  "chat": {
+    "title": "Xobia ਚੈਟ (24/7 AI ਮਦਦ)",
+    "description": "ਸਵਾਲ ਹੈ? Xobia ਹਮੇਸ਼ਾ ਉਪਲਬਧ ਹੈ।",
+    "button": "Xobia ਨਾਲ ਗੱਲ ਕਰੋ"
+  },
+  "validation": {
+    "organization": "ਸੰਗਠਨ ਦਾ ਨਾਮ ਲਾਜ਼ਮੀ ਹੈ।",
+    "emailRequired": "ਈਮੇਲ ਲਾਜ਼ਮੀ ਹੈ।",
+    "emailInvalid": "ਠੀਕ ਈਮੇਲ ਦਰਜ ਕਰੋ।",
+    "partnerType": "ਸਾਥੀ ਦੀ ਕਿਸਮ ਲਾਜ਼ਮੀ ਹੈ।",
+    "proposal": "ਪ੍ਰਸਤਾਵ ਦਾ ਵੇਰਵਾ ਲਾਜ਼ਮੀ ਹੈ।"
+  },
+  "notification": { "success": "ਫਾਰਮ ਸਫਲਤਾਪੂਰਵਕ ਭੇਜਿਆ ਗਿਆ!" }
+}

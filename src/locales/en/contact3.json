@@ -1,0 +1,34 @@
+{
+  "title": "Quick Enquiry",
+  "description": "Need answers fast? Drop your details below and we'll get back to you shortly.",
+
+  "form": {
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email Address",
+    "mobile": "Mobile Number",
+    "message": "Your Message"
+  },
+
+  "buttons": {
+    "submit": "Submit Enquiry",
+    "submitting": "Submitting..."
+  },
+
+  "privacy": "We respect your privacy. Your information is safe with us.",
+
+  "validation": {
+    "firstName": "First name is required",
+    "lastName": "Last name is required",
+    "email": "Valid email is required",
+    "mobile": "Mobile number must be at least 8 digits",
+    "message": "Message is required"
+  },
+
+  "notification": {
+    "successTitle": "Thank You!",
+    "successMessage": "Your enquiry has been submitted successfully.",
+    "errorTitle": "Error",
+    "errorMessage": "Something went wrong. Please try again."
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "heading": "Mag-book ng Konsultasyon",
+  "description": "Isang simpleng form upang makipag-ugnayan sa mga eksperto ng XOTO para sa custom na landscape planning.",
+  "form": {
+    "firstName": "Unang Pangalan",
+    "lastName": "Apelyido",
+    "email": "Email Address",
+    "message": "Iyong Mensahe",
+    "submit": "Mag-book ng Libreng Konsultasyon",
+    "submitting": "Ipinapadala ang Kahilingan..."
+  },
+  "validation": {
+    "firstName": "Kinakailangan ang unang pangalan",
+    "lastName": "Kinakailangan ang apelyido",
+    "email": "Kinakailangan ang wastong email",
+    "mobile": "Dapat may hindi bababa sa 8 digit ang numero",
+    "message": "Kinakailangan ang mensahe"
+  },
+  "success": {
+    "title": "Salamat!",
+    "text": "Matagumpay na naisumite ang iyong kahilingan sa konsultasyon."
+  },
+  "error": "Nabigo ang pagpapadala",
+  "privacy": "Iginagalang namin ang iyong privacy. Ligtas ang iyong impormasyon."
+}

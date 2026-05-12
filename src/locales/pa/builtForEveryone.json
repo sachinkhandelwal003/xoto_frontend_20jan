@@ -1,0 +1,24 @@
+{
+  "title": "Nuestro ecosistema de socios",
+  "cards": {
+    "commonDesc": "ਐਲੀਟ ਠੇਕੇਦਾਰ ਨੈੱਟਵਰਕ",
+    "business": {
+      "title": "ਬਿਜ਼ਨਸ ਅਸੋਸੀਏਟਸ"
+    },
+    "contractors": {
+      "title": "ਠੇਕੇਦਾਰ"
+    },
+    "execution": {
+      "title": "ਇਗਜ਼ਿਕਿਊਸ਼ਨ ਪਾਰਟਨਰ"
+    },
+    "strategic": {
+      "title": "ਸਟ੍ਰੈਟਜਿਕ ਅਲਾਇੰਸਜ਼"
+    },
+    "developers": {
+      "title": "ਡਿਵੈਲਪਰ"
+    },
+    "financial": {
+      "title": "ਵਿੱਤੀ ਸੰਸਥਾਵਾਂ"
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "hero": {
+    "title1": "Muling pagbibigay-kahulugan sa pamumuhay",
+    "title2": "Mula sa pagpopondo ng bahay hanggang sa magandang disenyo ng espasyo",
+    "description": "Tuklasin ang matatalinong mortgage, piling ari-arian, at AI-powered na landscape na nagpapaganda sa bawat sulok ng iyong buhay.",
+    "buttons": {
+      "design": "I-design ang aking espasyo",
+      "explore": "Tuklasin ang mga bahay",
+      "loan": "Kumuha ng home loan"
+    },
+    "features": [
+      { "line1": "One-stop", "line2": "solution" },
+      { "line1": "Mas mabilis", "line2": "na proseso" },
+      { "line1": "Propesyonal", "line2": "na team" },
+      { "line1": "Presensya sa", "line2": "buong UAE" }
+    ]
+  }
+}

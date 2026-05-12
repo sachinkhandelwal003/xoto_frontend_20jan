@@ -1,0 +1,21 @@
+{
+  "nav": {
+    "home": "首页",
+    "homeUpgrade": "房屋升级",
+    "landscaping": "园林设计",
+    "interiors": "室内设计",
+    "homeOwnership": "房屋所有权",
+    "mortgages": "抵押贷款",
+    "properties": "房产",
+    "store": "Xoto 商店",
+    "knowledgeHub": "知识中心",
+    "blogs": "博客",
+    "caseStudies": "案例研究",
+    "training": "培训",
+    "ecosystem": "合作生态系统",
+    "about": "关于我们",
+    "contact": "联系我们",
+    "login": "登录",
+    "tagline": "由人工智能驱动。为你而生。"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "title": "Grow. Earn. XOTO is your one-stop property ecosystem.",
+  "ctaButton": "Talk to our team today",
+
+  "modal": {
+    "title": "Team Inquiry Form"
+  },
+
+  "form": {
+    "name": "Name",
+    "namePlaceholder": "Your name",
+    "email": "Email",
+    "emailPlaceholder": "Your email",
+    "phone": "Phone Number",
+    "phonePlaceholder": "Phone number",
+    "inquiry": "Type of Inquiry",
+    "select": "Select inquiry type",
+    "options": [
+      "Buying Property",
+      "Selling Property",
+      "Renting Property",
+      "Real Estate Investment",
+      "Property Management",
+      "Property Valuation",
+      "Other Inquiry"
+    ],
+    "message": "Message",
+    "messagePlaceholder": "How can we help you?",
+    "submit": "Submit Inquiry"
+  },
+
+  "toast": {
+    "error": "Please fill in required fields.",
+    "success": "Thank you, {{name}}!\nYour {{inquiryType}} inquiry has been submitted.\nXOTO team will contact you soon."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "homeDesign": {
+    "title1": "Votre espace,",
+    "title2": "redéfini instantanément.",
+    "description": "Téléchargez le plan de votre villa et laissez Xoto AI créer de superbes options extérieures et de design, adaptées à vos goûts.",
+    "cta": "Obtenir une estimation gratuite",
+    "hotspots": {
+      "exterior": "Amélioration extérieure",
+      "interior": "Transformation intérieure",
+      "furniture": "Remplacement du mobilier intelligent",
+      "landscaping": "Aménagement paysager",
+      "image": "Perfection de l'image",
+      "virtual": "Studio de design virtuel"
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "title": "Vertrauen & Präsenz",
+
+  "cards": {
+    "card1": {
+      "title": "Landschaftsgestaltung",
+      "desc": "Gestalten Sie Ihr Zuhause und den Außenbereich neu – mit mühelosen, KI-gestützten Landschafts- und Upgrade-Lösungen."
+    },
+    "card2": {
+      "title": "Weiterverkauf",
+      "desc": "Gestalten Sie Ihr Zuhause neu – mit mühelosen, KI-gestützten Lösungen."
+    },
+    "card3": {
+      "title": "Vermietung",
+      "desc": "Gestalten Sie Ihren Raum neu – mit mühelosen, KI-gestützten Upgrade-Lösungen."
+    }
+  }
+}

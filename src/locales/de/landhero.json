@@ -1,0 +1,15 @@
+{
+  "hero": {
+    "title": "Wir verwandeln Häuser mit hochwertigen",
+    "subtitle": "Outdoor-Lösungen"
+  },
+  "services": {
+    "design": "Landschaftsdesign und Umsetzung",
+    "hardscape": "Pflaster- und Hardscape-Arbeiten",
+    "outdoor": "Außenstrukturen und Wohnbereiche",
+    "pool": "Swimmingpools und Wasserelemente"
+  },
+  "cta": {
+    "estimate": "Kostenloses Angebot erhalten"
+  }
+}

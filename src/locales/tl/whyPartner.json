@@ -1,0 +1,22 @@
+{
+  "title": "Bakit Makipag-partner sa XOTO",
+  "featureLabel": "Tampok {{id}}",
+  "features": {
+    "1": {
+      "title": "All-in-One na Plataporma",
+      "desc": "Madaling makipag-ugnayan sa mga customer."
+    },
+    "2": {
+      "title": "Mga Tool na Pinapagana ng AI",
+      "desc": "Pasimplehin ang mga workflow, subaybayan ang progreso, at tuklasin ang mga oportunidad sa kita."
+    },
+    "3": {
+      "title": "Palaguin ang Iyong Negosyo",
+      "desc": "Palawakin ang abot, pabilisin ang mga deal, at i-maximize ang kita."
+    },
+    "4": {
+      "title": "Transparency at Kontrol",
+      "desc": "Buong visibility sa mga proyekto, lead, at pakikipag-ugnayan sa mga kliyente."
+    }
+  }
+}

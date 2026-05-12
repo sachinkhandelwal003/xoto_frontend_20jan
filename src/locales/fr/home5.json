@@ -1,0 +1,18 @@
+{
+  "title": "Confiance & Présence",
+
+ "cards": {
+    "card1": {
+      "title": "Aménagement paysager",
+      "desc": "Réinventez votre maison et vos extérieurs avec des solutions IA intelligentes."
+    },
+    "card2": {
+      "title": "Revente",
+      "desc": "Augmentez la valeur du bien. Vendez plus vite avec un meilleur attrait."
+    },
+    "card3": {
+      "title": "Location",
+      "desc": "Attirez de meilleurs locataires. Générez des revenus locatifs plus élevés."
+    }
+  }
+}

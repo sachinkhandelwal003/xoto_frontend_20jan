@@ -1,0 +1,11 @@
+{
+  "title": "Comprenda su presupuesto para comprar casa",
+  "description": "Utilice nuestras calculadoras impulsadas por IA para ver cuánto puede pedir prestado y estimar los pagos mensuales de su hipoteca.",
+  "modes": {
+    "borrow": "Conozca su presupuesto para comprar casa",
+    "estimate": "Comprenda sus cuotas mensuales (EMI)"
+  },
+  "imageAlt": "Ilustración de hipoteca",
+  "cta": "Calcular",
+  "disclaimer": "Las estimaciones son indicativas. Los términos finales están sujetos a la aprobación del crédito."
+}

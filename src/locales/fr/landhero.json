@@ -1,0 +1,15 @@
+{
+  "hero": {
+    "title": "Nous transformons les maisons avec des",
+    "subtitle": "solutions extérieures premium"
+  },
+  "services": {
+    "design": "Conception et réalisation paysagère",
+    "hardscape": "Pavage et hardscape",
+    "outdoor": "Structures extérieures et espaces de vie",
+    "pool": "Piscines et éléments aquatiques"
+  },
+  "cta": {
+    "estimate": "Obtenir une estimation gratuite"
+  }
+}

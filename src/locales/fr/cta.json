@@ -1,0 +1,36 @@
+{
+  "title": "Développez. Gagnez. XOTO est votre écosystème immobilier tout-en-un.",
+  "ctaButton": "Parlez à notre équipe dès aujourd’hui",
+
+  "modal": {
+    "title": "Formulaire de contact de l’équipe"
+  },
+
+  "form": {
+    "name": "Nom",
+    "namePlaceholder": "Votre nom",
+    "email": "E-mail",
+    "emailPlaceholder": "Votre e-mail",
+    "phone": "Numéro de téléphone",
+    "phonePlaceholder": "Entrez le numéro",
+    "inquiry": "Type de demande",
+    "select": "Sélectionnez le type de demande",
+    "options": [
+      "Achat de propriété",
+      "Vente de propriété",
+      "Location de propriété",
+      "Investissement immobilier",
+      "Gestion immobilière",
+      "Évaluation immobilière",
+      "Autre demande"
+    ],
+    "message": "Message",
+    "messagePlaceholder": "Comment pouvons-nous vous aider ?",
+    "submit": "Envoyer la demande"
+  },
+
+  "toast": {
+    "error": "Veuillez remplir tous les champs obligatoires.",
+    "success": "Merci, {{name}} !\nVotre demande concernant {{inquiryType}} a été envoyée.\nL’équipe XOTO vous contactera bientôt."
+  }
+}

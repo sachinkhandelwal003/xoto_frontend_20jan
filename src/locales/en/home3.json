@@ -1,0 +1,33 @@
+{
+  "title": "Built For Everyone",
+
+  "customers": {
+    "title": "Customers",
+    "desc": "Reimagine your home and outdoors with effortless, AI-powered landscaping and upgrade solutions."
+  },
+
+  "business": {
+    "title": "For Agents",
+    "desc": "Empower your real estate network with AI tools that streamline clients, convert leads, and close deals faster."
+  },
+
+  "execution": {
+    "title": "For Execution Partner",
+    "desc": "Deliver projects faster with real-time task allocation, transparent tracking, and seamless cross-team coordination."
+  },
+
+"alliances": {
+    "title": "For Strategic Alliances",
+    "desc": "Partner with XOTO to expand market presence through an integrated, growth-focused ecosystem."
+  },
+
+    "developers": {
+    "title": "For Developers",
+    "desc": "Access pre-qualified buyers and accelerate sales with data-driven insights."
+  },
+
+  "finance": {
+    "title": "For Financial Institutions",
+    "desc": "Boost mortgage conversions through integrated property and financing solutions."
+  }
+}

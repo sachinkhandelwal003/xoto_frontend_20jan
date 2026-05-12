@@ -1,0 +1,26 @@
+{
+    "title": "Votre prêt immobilier en 4 étapes simples",
+    "steps": {
+      "1": {
+        "label": "ÉTAPE 01",
+        "title": "Consultation & Pré-vérification",
+        "description": "Nous analysons votre situation financière et proposons les meilleures options."
+      },
+      "2": {
+        "label": "ÉTAPE 02",
+        "title": "Comparaison des offres",
+        "description": "Nous comparons plusieurs prêteurs pour trouver la meilleure offre."
+      },
+      "3": {
+        "label": "ÉTAPE 03",
+        "title": "Sélection & Demande",
+        "description": "Choisissez votre offre et nous gérons toute la documentation."
+      },
+      "4": {
+        "label": "ÉTAPE 04",
+        "title": "Approbation & Décaissement",
+        "description": "Les fonds sont débloqués avec notre accompagnement."
+      }
+    }
+  }
+  

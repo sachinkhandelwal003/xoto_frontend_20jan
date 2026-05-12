@@ -1,0 +1,71 @@
+{
+  "hero": {
+    "title": {
+       "line1": "改变您",
+    "line2": "租赁、购买和出售房屋的方式。"
+    },
+    "buttons": {
+      "rent": "租房",
+      "find": "找房",
+      "sell": "卖房"
+    }
+  },
+
+  "modal": {
+    "tabs": {
+      "buy": "购买",
+      "sell": "出售"
+    },
+    "buy": {
+      "title": "找到您的梦想之家",
+      "desc": "告诉我们您的需求，我们的专家将与您联系。"
+    },
+    "sell": {
+      "title": "出售您的房产",
+      "desc": "分享您的房产信息，获取最佳市场价格。"
+    }
+  },
+
+  "form": {
+    "firstName": "名字",
+    "lastName": "姓氏",
+    "email": "电子邮箱",
+    "phone": "手机号码",
+    "bedrooms": "卧室数量",
+
+    "preferredContactTitle": "首选联系方式",
+
+    "contact": {
+      "call": "电话",
+      "whatsapp": "WhatsApp",
+      "email": "电子邮箱"
+    },
+
+    "sell": {
+      "listing_type": "房源类型（例如：公寓）",
+      "city": "城市",
+      "area": "区域",
+      "project_name": "项目名称",
+      "bedroom_config": "卧室配置（例如：2 BHK）",
+      "price": "价格（AED）",
+      "description": "请提供更多关于您房产的信息（可选）"
+    },
+
+    "submit": {
+      "buy": "提交购买请求",
+      "sell": "提交出售请求"
+    },
+
+    "processing": "处理中..."
+  },
+
+  "checkbox": {
+    "marketing": "我同意通过数字媒体接收新闻通讯和营销信息，并理解我可以随时取消订阅。",
+    "terms": "我已阅读、理解并同意 Xoto 的条款与条件及隐私政策。 *"
+  },
+
+  "toast": {
+    "success": "谢谢 {{name}}！您的信息已成功提交。",
+    "error": "发生错误。请再试一次。"
+  }
+}

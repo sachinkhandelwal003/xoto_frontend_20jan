@@ -1,0 +1,16 @@
+{
+  "heading": "EcoSmart Living",
+  "description": "Sa XOTO, ang EcoSmart Living ay nangangahulugang paglikha ng mga landscape na may perpektong balanse ng ganda, sustainability, at makabagong teknolohiya. Ginagamit ng aming mga disenyo ang smart automation at mga eco-friendly na solusyon upang gawing mas episyente, self-sustaining, at modernong-tingnan ang mga outdoor space.",
+  "subheading": "Paano Namin Ito Isinasakatuparan",
+  "features": {
+    "smartIrrigation": {
+      "title": "Smart Irrigation",
+      "text": "Mga sensor-based na sistema ng patubig para makatipid ng tubig."
+    },
+    "solarLighting": "Solar Lighting",
+    "lowWaterPlant": "Mga Halamang Mababa ang Konsumo ng Tubig",
+    "ecoMaterials": "Eco-Friendly na Materyales",
+    "automatedControl": "Automated Control",
+    "futureReady": "Handa sa Hinaharap na Disenyo"
+  }
+}

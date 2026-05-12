@@ -1,0 +1,23 @@
+{
+  "title": "Why Partner With",
+  "featureLabel": "Feature {{id}}",
+  "features": {
+    "1": {
+      "title": "All-in-One Platform",
+      "desc": "Connect with customers seamlessly."
+    },
+    "2": {
+      "title": "AI-Powered Tools",
+      "desc": "Streamline workflows, track progress, and uncover revenue opportunities."
+    },
+    "3": {
+      "title": "Grow Your Business",
+      "desc": "Expand your reach, accelerate deals, and maximize earnings."
+    },
+    "4": {
+      "title": "Transparency & Control",
+      "desc": "Full visibility into projects, leads, and client interactions."
+    
+    }
+  }
+}

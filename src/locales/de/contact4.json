@@ -1,0 +1,40 @@
+{
+  "title": { "line1": "Partner- &", "line2": "Kooperationsformular" },
+  "subtitle": {
+    "line1": "Interesse an einer Zusammenarbeit mit XOTO?",
+    "line2": "Erzählen Sie uns mehr über Ihr Unternehmen oder Projekt."
+  },
+  "form": {
+    "organization": "Name der Organisation",
+    "email": "Kontakt-E-Mail",
+    "partnerType": "Partnertyp",
+    "proposal": "Projektbeschreibung"
+  },
+  "placeholders": {
+    "organization": "Organisationsnamen eingeben",
+    "email": "E-Mail eingeben",
+    "proposal": "Projektbeschreibung eingeben"
+  },
+  "options": {
+    "select": "Partnertyp auswählen",
+    "business": "Geschäftspartner",
+    "execution": "Ausführungspartner",
+    "alliance": "Strategische Allianzen",
+    "developers": "Entwickler",
+    "finance": "Finanzinstitut"
+  },
+  "buttons": { "submit": "Jetzt senden" },
+  "chat": {
+    "title": "Xobia Chat (24/7 KI-Hilfe)",
+    "description": "Haben Sie Fragen? Xobia ist rund um die Uhr verfügbar.",
+    "button": "Mit Xobia chatten"
+  },
+  "validation": {
+    "organization": "Name der Organisation ist erforderlich.",
+    "emailRequired": "E-Mail ist erforderlich.",
+    "emailInvalid": "Gültige E-Mail eingeben.",
+    "partnerType": "Partnertyp ist erforderlich.",
+    "proposal": "Projektbeschreibung ist erforderlich."
+  },
+  "notification": { "success": "Formular erfolgreich gesendet!" }
+}

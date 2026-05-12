@@ -1,0 +1,22 @@
+{
+  "heading": "Ano ang Sinasabi ng Aming Mga Kliyente",
+  "cards": {
+    "title1": "Nakahanap ng magandang lugar",
+    "title2": "Napakagandang komunidad!",
+    "title3": "Kamangha-manghang lugar",
+    "text": "Pinadali ng RentBro ang paglipat sa bagong lungsod."
+  },
+   "names": {
+    "shubham": "Shubham",
+    "punit": "Punit",
+    "harsh": "Harsh",
+    "jaiMathur": "Jai Mathur",
+    "madhur": "Madhur",
+    "avn": "Avn",
+    "sam": "Sam"
+  },
+  "locations": {
+    "pune": "Pune, Maharashtra",
+    "bangalore": "HSR Area, Bangalore"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "heading": "Müşterilerimiz Ne Diyor",
+  "items": [
+    {
+      "text": "Dubai'de ilk daireme sahip olmak XOTO'yu keşfedene kadar çok zordu. Ekipleri, borçlanma gücümü anlamama, mortgage seçeneklerini karşılaştırmama ve anlaşmayı sorunsuz kapatmama yardımcı oldu. Her şey şeffaf ve hızlıydı.",
+      "name": "Ahmed R.",
+      "location": "Downtown Dubai",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859324353-ChatGPT%20Image%20Mar%2014%2C%202026%20at%2001_38_32%20PM%201.png"
+    },
+    {
+      "text": "XOTO, mortgage sürecini inanılmaz derecede basit hale getirdi. Birkaç gün içinde birden fazla banka seçeneğim ve mevcut en iyi oranlar hakkında net rehberliğim oldu. Danışmanlar evraklardan onaylara kadar her şeyi halletti.",
+      "name": "Sarah K.",
+      "location": "Dubai Marina",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859238209-Group%20309.png"
+    },
+    {
+      "text": "XOTO'da en çok beğendiğim şey, emlak araması ve mortgage desteğinin tek bir yerde olmasıydı. Bu bana haftalarca zaman kazandırdı ve doğru mülkle ilerlemem için güven verdi.",
+      "name": "Rohan Mehta",
+      "location": "Business Bay",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859119654-Group%20309%20%281%29.png"
+    },
+    {
+      "text": "Dubai'de bir gayrimenkul yatırımcısı olarak hız ve netlik önemlidir. XOTO'nun platformu, finansman seçeneklerini hızla değerlendirmeme ve ikinci yatırım mülküm için mortgage almama yardımcı oldu.",
+      "name": "Khalid A.",
+      "location": "Jumeirah Village Circle",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859149102-Group%20309%20%282%29.png"
+    },
+    {
+      "text": "XOTO, mortgage sürecini inanılmaz derecede basit hale getirdi. Birkaç gün içinde birden fazla banka seçeneğim ve mevcut en iyi oranlar hakkında net rehberliğim oldu.",
+      "name": "Sarah K.",
+      "location": "Dubai Marina",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859238209-Group%20309.png"
+    },
+    {
+      "text": "XOTO'da en çok beğendiğim şey, emlak araması ve mortgage desteğinin tek bir yerde olmasıydı. Bu bana haftalarca zaman kazandırdı.",
+      "name": "Rohan Mehta",
+      "location": "Business Bay",
+      "image": "https://xotostaging.s3.me-central-1.amazonaws.com/properties/1774859119654-Group%20309%20%281%29.png"
+    }
+  ]
+}

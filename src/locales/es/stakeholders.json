@@ -1,0 +1,77 @@
+{
+  "title": "Diseñado para cada stakeholder",
+  "subtitle": "Nuestra plataforma atiende a diversos actores del ecosistema inmobiliario con soluciones personalizadas",
+  "cta": "Regístrate",
+  "tabs": {
+    "businessAssociates": {
+      "heading": "Socios Comerciales",
+      "qa": [
+        { "question": "¿Quiénes?", "answer": "Agentes inmobiliarios, brokers y socios de red." },
+        {
+          "question": "¿Qué obtienen?",
+          "answer": ["Gestión de clientes simplificada", "Insights impulsados por IA", "Cierre de acuerdos más rápido"]
+        },
+        {
+          "question": "¿Por qué XOTO?",
+          "answer": "Maximiza conversiones e ingresos con un ecosistema inmobiliario completo."
+        }
+      ]
+    },
+    "executionPartner": {
+      "heading": "Socios de Ejecución",
+      "qa": [
+        { "question": "¿Quiénes?", "answer": "Contratistas, paisajistas, diseñadores de interiores y gestores de proyectos." },
+        {
+          "question": "¿Qué obtienen?",
+          "answer": ["Asignación de tareas en tiempo real", "Seguimiento transparente del progreso", "Coordinación fluida de proyectos"]
+        },
+        {
+          "question": "¿Por qué XOTO?",
+          "answer": "Gestiona proyectos de forma eficiente y conéctate con clientes cualificados."
+        }
+      ]
+    },
+    "strategicAlliances": {
+      "heading": "Alianzas Estratégicas",
+      "qa": [
+        { "question": "¿Quiénes?", "answer": "Empresas que buscan colaborar y ampliar su alcance." },
+        {
+          "question": "¿Qué obtienen?",
+          "answer": ["Ecosistema integrado orientado al crecimiento", "Acceso a nuevos mercados y alianzas"]
+        },
+        {
+          "question": "¿Por qué XOTO?",
+          "answer": "Acelera presencia de mercado e ingresos desde una sola plataforma."
+        }
+      ]
+    },
+    "developers": {
+      "heading": "Desarrolladores",
+      "qa": [
+        { "question": "¿Quiénes?", "answer": "Desarrolladores inmobiliarios que buscan compradores e insights." },
+        {
+          "question": "¿Qué obtienen?",
+          "answer": ["Acceso a compradores pre-calificados", "Ventas aceleradas basadas en datos"]
+        },
+        {
+          "question": "¿Por qué XOTO?",
+          "answer": "Cierra acuerdos más rápido y optimiza ventas con IA."
+        }
+      ]
+    },
+    "financialInstitution": {
+      "heading": "Instituciones Financieras",
+      "qa": [
+        { "question": "¿Quiénes?", "answer": "Bancos, proveedores hipotecarios y entidades de crédito." },
+        {
+          "question": "¿Qué obtienen?",
+          "answer": ["Mayor conversión hipotecaria", "Ecosistema integrado de propiedad y financiación"]
+        },
+        {
+          "question": "¿Por qué XOTO?",
+          "answer": "Ofrece una experiencia fluida y aumenta los ingresos financieros."
+        }
+      ]
+    }
+  }
+}

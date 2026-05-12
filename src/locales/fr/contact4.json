@@ -1,0 +1,40 @@
+{
+  "title": { "line1": "Formulaire de", "line2": "Partenariat" },
+  "subtitle": {
+    "line1": "Intéressé par une collaboration avec XOTO ?",
+    "line2": "Parlez-nous de votre entreprise ou projet."
+  },
+  "form": {
+    "organization": "Nom de l'organisation",
+    "email": "Email de contact",
+    "partnerType": "Type de partenaire",
+    "proposal": "Description du projet"
+  },
+  "placeholders": {
+    "organization": "Entrez le nom",
+    "email": "Entrez l'email",
+    "proposal": "Décrivez votre projet"
+  },
+  "options": {
+    "select": "Sélectionnez le type",
+    "business": "Associés commerciaux",
+    "execution": "Partenaire d'exécution",
+    "alliance": "Alliances stratégiques",
+    "developers": "Développeurs",
+    "finance": "Institution financière"
+  },
+  "buttons": { "submit": "Soumettre" },
+  "chat": {
+    "title": "Chat Xobia (Assistance AI 24/7)",
+    "description": "Besoin d'aide ? Xobia est toujours disponible.",
+    "button": "Discuter avec Xobia"
+  },
+  "validation": {
+    "organization": "Nom requis.",
+    "emailRequired": "Email requis.",
+    "emailInvalid": "Email invalide.",
+    "partnerType": "Type requis.",
+    "proposal": "Description requise."
+  },
+  "notification": { "success": "Formulaire soumis avec succès !" }
+}

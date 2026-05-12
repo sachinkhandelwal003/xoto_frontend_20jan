@@ -1,0 +1,43 @@
+{
+  "heading": "İpotek Ürün Portföyümüz",
+  "cards": {
+    "residential": {
+      "title": "Konut\nİpotek Çözümleri",
+      "features": [
+        "Ev Satın Alma Kredileri",
+        "Projeden ve Hazır Emlak Finansmanı",
+        "Yerleşik Olmayan İpotekler",
+        "İnşaat ve Ev Yapım Finansmanı"
+      ]
+    },
+    "commercial": {
+      "title": "Ticari\nİpotek Çözümleri",
+      "features": [
+        "Ofis ve Perakende Finansmanı",
+        "Otel ve Konaklama Finansmanı",
+        "Ticari Yeniden Finansman"
+      ]
+    },
+    "equity": {
+      "title": "Saf Özsermaye",
+      "features": [
+        "Emlak karşılığı kredi"
+      ]
+    },
+    "buyout": {
+      "title": "Satın Alma (Yeniden Finansman)",
+      "features": [
+        "İpotek Yeniden Finansmanı",
+        "Mevcut ipoteğin satın alınması",
+        "Özsermaye serbest bırakılması",
+        "Ek Krediler"
+      ]
+    },
+    "buyoutEquity": {
+      "title": "Satın Alma + Özsermaye",
+      "features": [
+        "Emlak Karşılığı Borç Konsolidasyonu"
+      ]
+    }
+  }
+}

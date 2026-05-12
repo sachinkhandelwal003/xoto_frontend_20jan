@@ -1,0 +1,18 @@
+{
+  "hero": {
+    "title1": "Redefiniendo la vida",
+    "title2": "Desde financiar hogares hasta diseñar espacios hermosos",
+    "description": "Descubre hipotecas inteligentes, propiedades seleccionadas y paisajes impulsados por IA que elevan cada rincón de tu vida.",
+    "buttons": {
+      "design": "Diseñar mi espacio",
+      "explore": "Explorar casas",
+      "loan": "Obtener un préstamo hipotecario"
+    },
+    "features": [
+      { "line1": "Solución", "line2": "integral" },
+      { "line1": "Procesos", "line2": "más rápidos" },
+      { "line1": "Equipos", "line2": "profesionales" },
+      { "line1": "Presencia", "line2": "en todo EAU" }
+    ]
+  }
+}

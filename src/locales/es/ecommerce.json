@@ -1,0 +1,38 @@
+{
+  "hero": {
+    "title": "Redefine tu Espacio",
+    "subtitle": "Colecciones de muebles seleccionadas por IA.",
+    "explore": "Explorar Colecciones",
+    "vendor": "Convertirse en Vendedor"
+  },
+  "ar": {
+    "title": "Prueba antes de comprar con AR",
+    "desc": "Visualiza los muebles en tu espacio."
+  },
+  "cards": {
+    "arScan": { "title": "Escaneo AR de la Habitación", "desc": "Escanea tu habitación con el móvil.", "btn": "Iniciar Escaneo" },
+    "virtual": { "title": "Escenografía Virtual", "desc": "Mira muebles con ayuda de IA.", "btn": "Probar Ahora" },
+    "fit": { "title": "Ajuste Preciso", "desc": "Verifica medidas antes de comprar.", "btn": "Ver Ajuste" }
+  },
+  "how": {
+    "title": "Cómo Funciona",
+    "step1": { "number": "1", "title": "Escanea tu Espacio", "desc": "Usa la cámara del móvil." },
+    "step2": { "number": "2", "title": "Elige Muebles", "desc": "Selecciona de las colecciones." },
+    "step3": { "number": "3", "title": "Vista AR", "desc": "Visualiza en tiempo real." }
+  },
+  "demo": {
+    "title": "Video Demo AR",
+    "desc": "Mira cómo funciona",
+    "btn": "Reproducir"
+  },
+  "experience": {
+    "alt": "Sala de estar moderna con muebles XOTO",
+    "title": {
+      "prefix": "La experiencia",
+      "brand": "XOTO",
+      "suffix": ""
+    },
+    "subtitle": "Donde la innovación se une con la comodidad. Diseños impulsados por IA que inspiran espacios.",
+    "cta": "Descubre la Colección XOTO"
+  }
+}

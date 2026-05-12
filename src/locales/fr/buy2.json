@@ -1,0 +1,25 @@
+{
+  "heading": {
+    "title": "Que recherchez-vous",
+    "subtitle": "Xobia vous guide dans votre parcours immobilier idéal grâce à des recommandations personnalisées."
+  },
+  "buttons": {
+    "rent": "Louer une maison",
+    "buy": "Acheter une maison",
+    "sell": "Vendre une maison"
+  },
+  "tabs": {
+    "rent": {
+      "title": "Louer une maison",
+      "text": "Locations sélectionnées avec des conditions flexibles, des annonces vérifiées et des recommandations intelligentes."
+    },
+    "buy": {
+      "title": "Acheter une maison",
+      "text": "Découvrez des maisons premium avec des informations détaillées, des recommandations IA et des vendeurs vérifiés."
+    },
+    "sell": {
+      "title": "Vendre une maison",
+      "text": "Listez votre propriété facilement avec un accompagnement expert, des informations de valorisation et une large portée d’acheteurs."
+    }
+  }
+}

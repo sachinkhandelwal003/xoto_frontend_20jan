@@ -1,0 +1,27 @@
+{
+  "heading": {
+    "title": "What are you looking for",
+    "subtitle": "Let Xobia guide you through your perfect property journey with personalized recommendations."
+  },
+
+  "buttons": {
+    "rent": "Rent Home",
+    "buy": "Buy Home",
+    "sell": "Sell Home"
+  },
+
+  "tabs": {
+    "rent": {
+      "title": "Rent Home",
+      "text": "Curated rentals with flexible terms, verified listings, and smart match recommendations."
+    },
+    "buy": {
+      "title": "Buy Home",
+      "text": "Explore premium homes with detailed insights, AI-guided recommendations, and verified sellers."
+    },
+    "sell": {
+      "title": "Sell Home",
+      "text": "List your property effortlessly with expert support, valuation insights, and broad buyer reach."
+    }
+  }
+}

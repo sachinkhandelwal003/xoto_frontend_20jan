@@ -1,0 +1,22 @@
+{
+  "title": "Pourquoi devenir partenaire de XOTO",
+  "featureLabel": "Fonctionnalité {{id}}",
+  "features": {
+    "1": {
+      "title": "Plateforme tout-en-un",
+      "desc": "Connectez-vous aux clients en toute simplicité."
+    },
+    "2": {
+      "title": "Outils alimentés par l’IA",
+      "desc": "Optimisez les flux de travail, suivez les progrès et découvrez de nouvelles opportunités de revenus."
+    },
+    "3": {
+      "title": "Développez votre entreprise",
+      "desc": "Élargissez votre portée, accélérez les transactions et maximisez vos gains."
+    },
+    "4": {
+      "title": "Transparence et contrôle",
+      "desc": "Visibilité complète sur les projets, les prospects et les interactions clients."
+    }
+  }
+}

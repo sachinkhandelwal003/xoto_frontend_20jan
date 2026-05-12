@@ -1,0 +1,71 @@
+{
+  "hero": {
+    "title": {
+      "line1": "Binabago ang Paraan ng Iyong",
+    "line2": "Pag-upa, Pagbili, at Pagbebenta ng Bahay."
+    },
+    "buttons": {
+      "rent": "Umarkila ng Bahay",
+      "find": "Maghanap ng Bahay",
+      "sell": "Magbenta ng Bahay"
+    }
+  },
+
+  "modal": {
+    "tabs": {
+      "buy": "Bumili",
+      "sell": "Magbenta"
+    },
+    "buy": {
+      "title": "Hanapin ang Pangarap Mong Bahay",
+      "desc": "Sabihin sa amin kung ano ang hinahanap mo at makikipag-ugnayan sa iyo ang aming mga eksperto."
+    },
+    "sell": {
+      "title": "Ibenta ang Iyong Ari-arian",
+      "desc": "Ibahagi ang mga detalye ng iyong ari-arian at makuha ang pinakamahusay na halaga sa merkado."
+    }
+  },
+
+  "form": {
+    "firstName": "Pangalan",
+    "lastName": "Apelyido",
+    "email": "Email Address",
+    "phone": "Numero ng Mobile",
+    "bedrooms": "Bilang ng mga Silid-tulugan",
+
+    "preferredContactTitle": "Mas Gustong Paraan ng Pakikipag-ugnayan",
+
+    "contact": {
+      "call": "Tawag sa Telepono",
+      "whatsapp": "WhatsApp",
+      "email": "Email"
+    },
+
+    "sell": {
+      "listing_type": "Uri ng Listing (hal. Apartment)",
+      "city": "Lungsod",
+      "area": "Lugar",
+      "project_name": "Pangalan ng Proyekto",
+      "bedroom_config": "Ayos ng mga Silid-tulugan (hal. 2 BHK)",
+      "price": "Presyo (AED)",
+      "description": "Ikwento pa ang tungkol sa iyong ari-arian (opsyonal)"
+    },
+
+    "submit": {
+      "buy": "Ipadala ang Kahilingan sa Pagbili",
+      "sell": "Ipadala ang Kahilingan sa Pagbebenta"
+    },
+
+    "processing": "Pinoproseso..."
+  },
+
+  "checkbox": {
+    "marketing": "Sumasang-ayon akong makatanggap ng mga newsletter at mensaheng pang-marketing sa pamamagitan ng digital media at nauunawaan kong maaari akong mag-unsubscribe anumang oras.",
+    "terms": "Nabasa ko, naunawaan, at tinatanggap ko ang Mga Tuntunin at Kundisyon at ang Patakaran sa Privacy ng Xoto. *"
+  },
+
+  "toast": {
+    "success": "Salamat {{name}}! Matagumpay na naisumite ang iyong impormasyon.",
+    "error": "May nangyaring mali. Pakisubukang muli."
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "title": "Verstehen Sie Ihr Budget für den Hauskauf",
+  "description": "Nutzen Sie unsere KI-gestützten Rechner, um zu sehen, wie viel Sie leihen können, und um Ihre monatlichen Hypothekenzahlungen zu schätzen.",
+  "modes": {
+    "borrow": "Kennen Sie Ihr Budget für den Hauskauf",
+    "estimate": "Verstehen Sie Ihre monatlichen Raten (EMI)"
+  },
+  "imageAlt": "Hypotheken-Illustration",
+  "cta": "Berechnen",
+  "disclaimer": "Schätzungen sind Richtwerte. Die endgültigen Bedingungen unterliegen der Kreditgenehmigung."
+}

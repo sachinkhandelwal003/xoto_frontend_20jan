@@ -1,0 +1,15 @@
+{
+  "showcase": {
+    "title": "Özenle seçilmiş",
+    "subtitle": "hayal alanlarımızı keşfedin",
+    "description": "Portföyümüz, sürdürülebilir yaşamı yeniden tanımlayan olağanüstü alanlar yaratma tutkumuzu yansıtır."
+  },
+  "projects": {
+    "kitchen": "Modern modüler mutfak",
+    "kitchenLocation": "Kaliforniya, Seaside",
+    "penthouse": "Minimalist çatı katı",
+    "penthouseLocation": "Dubai Marina, BAE",
+    "villa": "Toskana tarzı villa yaşamı",
+    "villaLocation": "Beverly Hills, ABD"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "homeDesign": {
+    "title1": "Tout ce dont vous",
+    "title2": "avez besoin pour votre",
+    "title3": "parcours immobilier",
+    "description": "De la recherche de la bonne propriété à son financement et à la transformation de votre maison — XOTO rassemble chaque étape sur une plateforme intelligente.",
+    "hotspots": {
+      "exterior": "Trouvez votre propriété idéale",
+      "interior": "Concevez l'intérieur de vos rêves",
+      "furniture": "Achetez tout ce dont votre maison a besoin",
+      "landscaping": "Créez de superbes espaces extérieurs",
+      "image": "Monétisez votre propriété",
+      "virtual": "Financez votre maison intelligemment"
+    }
+  }
+}

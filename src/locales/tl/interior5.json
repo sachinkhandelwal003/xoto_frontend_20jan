@@ -1,0 +1,15 @@
+{
+  "showcase": {
+    "title": "Tuklasin ang aming mga",
+    "subtitle": "pangarap na espasyo",
+    "description": "Ipinapakita ng aming portfolio ang aming dedikasyon sa paglikha ng natatangi at napapanatiling mga espasyo."
+  },
+  "projects": {
+    "kitchen": "Makabagong modular na kusina",
+    "kitchenLocation": "California, Seaside",
+    "penthouse": "Minimalist na penthouse",
+    "penthouseLocation": "Dubai Marina, UAE",
+    "villa": "Tirahang villa na istilong Tuscan",
+    "villaLocation": "Beverly Hills, USA"
+  }
+}

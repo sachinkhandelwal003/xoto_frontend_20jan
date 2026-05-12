@@ -1,0 +1,12 @@
+{
+  "title": "Unser Partner-Ökosystem",
+  "cards": {
+    "commonDesc": "Elite Auftragnehmer-Netzwerk",
+    "business": { "title": "Geschäftspartner" },
+    "contractors": { "title": "Auftragnehmer" },
+    "execution": { "title": "Ausführungspartner" },
+    "strategic": { "title": "Strategische Allianzen" },
+    "developers": { "title": "Projektentwickler" },
+    "financial": { "title": "Finanzinstitute" }
+  }
+}

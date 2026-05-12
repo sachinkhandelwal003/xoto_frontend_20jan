@@ -1,0 +1,11 @@
+{
+  "title": "Hizmet Portföyümüz",
+  "services": {
+    "kitchen": "Modüler Mutfaklar",
+    "wardrobe": "Modüler Dolaplar",
+    "electrical": "Elektrik",
+    "civil": "İnşaat İşleri",
+    "lighting": "Aydınlatma",
+    "wall": "Duvar Dekoru"
+  }
+}

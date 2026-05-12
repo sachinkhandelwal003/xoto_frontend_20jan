@@ -1,0 +1,34 @@
+{
+  "title": "İç Mekan Projenizi Konuşalım",
+  "description": "Uzmanlarımızla iletişime geçin ve hayalinizdeki mekanı oluşturun.",
+  "imageAlt": "İç mekan danışmanlığı arka planı",
+
+  "form": {
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "email": "E-posta",
+    "mobile": "Telefon numarası",
+    "message": "Mesajınız"
+  },
+
+  "buttons": {
+    "submit": "Gönder",
+    "submitting": "Gönderiliyor..."
+  },
+
+  "errors": {
+    "firstName": "Ad girin",
+    "lastName": "Soyad girin",
+    "email": "Geçerli e-posta girin",
+    "mobile": "Geçerli numara girin",
+    "message": "Mesaj girin",
+    "submit": "Gönderme hatası"
+  },
+
+  "success": {
+    "title": "Başarılı!",
+    "message": "Ekibimiz yakında sizinle iletişime geçecek."
+  },
+
+  "privacy": "Bilgileriniz güvende ve paylaşılmaz."
+}

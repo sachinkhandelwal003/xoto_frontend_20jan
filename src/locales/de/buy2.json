@@ -1,0 +1,25 @@
+{
+  "heading": {
+    "title": "Wonach suchen Sie",
+    "subtitle": "Xobia begleitet Sie auf Ihrer perfekten Immobilienreise mit personalisierten Empfehlungen."
+  },
+  "buttons": {
+    "rent": "Haus mieten",
+    "buy": "Haus kaufen",
+    "sell": "Haus verkaufen"
+  },
+  "tabs": {
+    "rent": {
+      "title": "Haus mieten",
+      "text": "Ausgewählte Mietobjekte mit flexiblen Bedingungen, geprüften Inseraten und intelligenten Empfehlungen."
+    },
+    "buy": {
+      "title": "Haus kaufen",
+      "text": "Entdecken Sie Premium-Häuser mit detaillierten Einblicken, KI-gestützten Empfehlungen und geprüften Verkäufern."
+    },
+    "sell": {
+      "title": "Haus verkaufen",
+      "text": "Listen Sie Ihre Immobilie mühelos mit Expertenunterstützung, Bewertungseinblicken und großer Käuferreichweite."
+    }
+  }
+}

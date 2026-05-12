@@ -1,0 +1,21 @@
+{
+  "title": "Confianza y Presencia",
+
+  
+  "cards": {
+    "card1": {
+      "title": "Paisajismo",
+      "desc": "Reimagina tu hogar y exteriores con soluciones de paisajismo impulsadas por IA."
+    },
+    "card2": {
+      "title": "Reventa",
+      "desc": "Aumenta el valor de la propiedad. Vende más rápido con mejor presentación."
+    },
+    "card3": {
+      "title": "Alquiler",
+      "desc": "Atrae mejores inquilinos. Obtén mayores ingresos por alquiler."
+    }
+  }
+
+
+}

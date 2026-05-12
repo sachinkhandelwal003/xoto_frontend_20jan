@@ -1,0 +1,34 @@
+{
+  "title": "Discutons de votre projet d’intérieur",
+  "description": "Contactez nos experts et concrétisez votre intérieur idéal.",
+  "imageAlt": "Arrière-plan consultation intérieure",
+
+  "form": {
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "E-mail",
+    "mobile": "Numéro de téléphone",
+    "message": "Votre message"
+  },
+
+  "buttons": {
+    "submit": "Envoyer",
+    "submitting": "Envoi en cours..."
+  },
+
+  "errors": {
+    "firstName": "Veuillez entrer le prénom",
+    "lastName": "Veuillez entrer le nom",
+    "email": "Veuillez entrer un e-mail valide",
+    "mobile": "Veuillez entrer un numéro valide",
+    "message": "Veuillez entrer un message",
+    "submit": "Erreur lors de l’envoi"
+  },
+
+  "success": {
+    "title": "Succès !",
+    "message": "Notre équipe vous contactera bientôt."
+  },
+
+  "privacy": "Vos informations sont sécurisées et confidentielles."
+}

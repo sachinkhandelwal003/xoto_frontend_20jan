@@ -1,0 +1,51 @@
+{
+  "hero": {
+    "titleDesktop": "ਅੱਜ ਹੀ XOTO\nਪਾਰਟਨਰ ਇਕੋਸਿਸਟਮ\nਨਾਲ ਜੁੜੋ",
+    "titleMobile": "ਅੱਜ ਹੀ XOTO ਪਾਰਟਨਰ ਇਕੋਸਿਸਟਮ ਨਾਲ ਜੁੜੋ"
+  },
+
+  "form": {
+    "firstName": {
+      "label": "ਪਹਿਲਾ ਨਾਮ",
+      "placeholder": "ਪਹਿਲਾ ਨਾਮ ਭਰੋ"
+    },
+    "lastName": {
+      "label": "ਆਖਰੀ ਨਾਮ",
+      "placeholder": "ਆਖਰੀ ਨਾਮ ਭਰੋ"
+    },
+    "email": {
+      "label": "ਈਮੇਲ ਪਤਾ",
+      "placeholder": "ਈਮੇਲ ਭਰੋ"
+    },
+    "company": {
+      "label": "ਕੰਪਨੀ",
+      "placeholder": "ਕੰਪਨੀ ਦਾ ਨਾਮ ਭਰੋ"
+    },
+    "phone": {
+      "label": "ਸੰਪਰਕ ਨੰਬਰ",
+      "placeholder": "ਨੰਬਰ ਭਰੋ"
+    },
+    "message": {
+      "label": "ਸੁਨੇਹਾ",
+      "placeholder": "ਆਪਣਾ ਸੁਨੇਹਾ ਭਰੋ"
+    },
+
+    "stakeholder": {
+      "label": "ਹਿੱਸੇਦਾਰ",
+      "select": "ਹਿੱਸੇਦਾਰ ਦੀ ਕਿਸਮ ਚੁਣੋ",
+      "business": "ਬਿਜ਼ਨਸ ਅਸੋਸੀਏਟ",
+      "execution": "ਇਗਜ਼ਿਕਿਊਸ਼ਨ ਪਾਰਟਨਰ",
+      "developer": "ਡਿਵੈਲਪਰ",
+      "investor": "ਨਿਵੇਸ਼ਕ"
+    },
+
+    "submit": "ਹੁਣ ਭੇਜੋ",
+    "submitting": "ਭੇਜਿਆ ਜਾ ਰਿਹਾ ਹੈ..."
+  },
+
+  "toast": {
+    "success": "ਧੰਨਵਾਦ! ਤੁਹਾਡੀ ਭਾਈਵਾਲੀ ਬੇਨਤੀ ਭੇਜ ਦਿੱਤੀ ਗਈ ਹੈ।",
+    "error": "ਭੇਜਣ ਵਿੱਚ ਅਸਫਲ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+    "invalid": "ਕਿਰਪਾ ਕਰਕੇ ਸਾਰੇ ਖੇਤਰ ਠੀਕ ਤਰ੍ਹਾਂ ਭਰੋ"
+  }
+}

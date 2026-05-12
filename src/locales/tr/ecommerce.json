@@ -1,0 +1,38 @@
+{
+  "hero": {
+    "title": "Yaşam Alanınızı Yeniden Tanımlayın",
+    "subtitle": "Yapay zekâ ile seçilmiş mobilya koleksiyonları.",
+    "explore": "Koleksiyonları Keşfet",
+    "vendor": "Satıcı Ol"
+  },
+  "ar": {
+    "title": "Satın Almadan Önce AR ile Deneyin",
+    "desc": "Mobilyayı alanınızda görün."
+  },
+  "cards": {
+    "arScan": { "title": "AR Oda Taraması", "desc": "Odanızı telefonla tarayın.", "btn": "Taramayı Başlat" },
+    "virtual": { "title": "Sanal Yerleştirme", "desc": "AI önerileriyle mobilyayı görün.", "btn": "Deneyin" },
+    "fit": { "title": "Mükemmel Uyum", "desc": "Ölçüleri kontrol edin.", "btn": "Uyumu Kontrol Et" }
+  },
+  "how": {
+    "title": "Nasıl Çalışır",
+    "step1": { "number": "1", "title": "Odayı Tara", "desc": "Alanınızı kaydedin." },
+    "step2": { "number": "2", "title": "Mobilya Seç", "desc": "Koleksiyonlardan seçin." },
+    "step3": { "number": "3", "title": "AR Önizleme", "desc": "Gerçek zamanlı görün." }
+  },
+  "demo": {
+    "title": "AR Demo Videosu",
+    "desc": "Nasıl çalıştığını izleyin",
+    "btn": "Oynat"
+  },
+   "experience": {
+    "alt": "XOTO mobilyalarıyla modern oturma odası",
+    "title": {
+      "prefix": "",
+      "brand": "XOTO",
+      "suffix": "Deneyimi"
+    },
+    "subtitle": "Yeniliğin konforla buluştuğu yer. AI destekli tasarımlarımız ilham verir.",
+    "cta": "XOTO Koleksiyonunu Keşfet"
+  }
+}

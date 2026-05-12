@@ -1,0 +1,22 @@
+{
+  "heading": "Müşterilerimiz Ne Diyor",
+  "cards": {
+    "title1": "Harika bir yer buldum",
+    "title2": "Harika bir mahalle!",
+    "title3": "Harika yer",
+    "text": "RentBro yeni bir şehirde yerleşmeyi çok kolaylaştırdı."
+  },
+   "names": {
+    "shubham": "Shubham",
+    "punit": "Punit",
+    "harsh": "Harsh",
+    "jaiMathur": "Jai Mathur",
+    "madhur": "Madhur",
+    "avn": "Avn",
+    "sam": "Sam"
+  },
+  "locations": {
+    "pune": "Pune, Maharaştra",
+    "bangalore": "HSR Bölgesi, Bangalore"
+  }
+}

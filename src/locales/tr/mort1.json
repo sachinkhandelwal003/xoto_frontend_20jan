@@ -1,0 +1,13 @@
+{
+  "title": "Akıllı Konut Kredileri, Basitleştirildi",
+  "description": {
+    "line1": "Kredi verenleri karşılaştırın, ön onay alın ve",
+    "line2": "hayalinizdeki eve daha hızlı ulaşın — hepsi tek yerde."
+  },
+  "cta": {
+    "preApproved": "Ön Onay Al",
+    "calculate": "Konut Kredisi Hesapla",
+    "preApprovedAlert": "Ön onay tıklandı",
+    "calculateAlert": "Konut kredisi hesaplama tıklandı"
+  }
+}

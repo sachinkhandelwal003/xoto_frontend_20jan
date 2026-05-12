@@ -1,0 +1,71 @@
+{
+  "hero": {
+    "title": {
+      "line1": "Transforming the Way You",
+      "line2": "Rent, Buy, & Sell Your Home."
+    },
+    "buttons": {
+      "rent": "Rent a Home",
+      "find": "Find a Home",
+      "sell": "Sell a Home"
+    }
+  },
+
+  "modal": {
+    "tabs": {
+      "buy": "Buy",
+      "sell": "Sell"
+    },
+    "buy": {
+      "title": "Find Your Dream Home",
+      "desc": "Tell us what you're looking for and our experts will contact you."
+    },
+    "sell": {
+      "title": "Sell Your Property",
+      "desc": "Share your property details and get the best market value."
+    }
+  },
+
+  "form": {
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email Address",
+    "phone": "Mobile Number",
+    "bedrooms": "Number of Bedrooms",
+
+    "preferredContactTitle": "Preferred Contact Method",
+
+    "contact": {
+      "call": "Phone Call",
+      "whatsapp": "WhatsApp",
+      "email": "Email"
+    },
+
+    "sell": {
+      "listing_type": "Listing Type (e.g. Apartment)",
+      "city": "City",
+      "area": "Area",
+      "project_name": "Project Name",
+      "bedroom_config": "Bedroom Configuration (e.g. 2 BHK)",
+      "price": "Price (AED)",
+      "description": "Tell us more about your property (optional)"
+    },
+
+    "submit": {
+      "buy": "Submit Buy Request",
+      "sell": "Submit Sell Request"
+    },
+
+    "processing": "Processing..."
+  },
+
+  "checkbox": {
+    "marketing": "I agree to receive newsletters and marketing communications via digital media and understand that I can unsubscribe at any time.",
+    "terms": "I have read, understood, and agree to the Terms & Conditions and Privacy Policy of Xoto. *"
+  },
+
+  "toast": {
+    "success": "Thank you {{name}}! Your information has been submitted successfully.",
+    "error": "Something went wrong. Please try again."
+  }
+}

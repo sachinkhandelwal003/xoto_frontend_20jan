@@ -1,0 +1,21 @@
+{
+  "nav": {
+    "home": "Главная",
+    "homeUpgrade": "Улучшение Дома",
+    "landscaping": "Ландшафтный Дизайн",
+    "interiors": "Интерьеры",
+    "homeOwnership": "Владение Домом",
+    "mortgages": "Ипотека",
+    "properties": "Недвижимость",
+    "store": "Магазин Xoto",
+    "knowledgeHub": "Центр Знаний",
+    "blogs": "Блоги",
+    "caseStudies": "Кейсы",
+    "training": "Обучение",
+    "ecosystem": "Партнёрская Экосистема",
+    "about": "О Нас",
+    "contact": "Связаться",
+    "login": "Войти",
+    "tagline": "Работает на ИИ. Создано для вас."
+  }
+}
