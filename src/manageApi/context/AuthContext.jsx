@@ -13,11 +13,7 @@ import {
 
 export const AuthContext = createContext();
 
-<<<<<<< HEAD
-// const API_BASE = 'https://kotiboxglobaltech.online/api';
-=======
 // dfsf const API_BASE = 'https://kotiboxglobaltech.online/api'; 
->>>>>>> ecb30f775d3b7c1a5f5982fc610d701a4fb50e79
 // const API_BASE = 'http://localhost:5000/api';
 const API_BASE = 'https://xoto.ae/api';
 

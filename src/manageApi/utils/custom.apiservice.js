@@ -4,12 +4,8 @@ import { showToast } from './toast';
 
 // const API_BASE_URL = 'http://localhost:5000/api/';
 // const API_BASE_URL = 'https://kotiboxglobaltech.online/api/';
-<<<<<<< HEAD
 const API_BASE_URL = 'https://xoto.ae/api/';
-=======
->>>>>>> ecb30f775d3b7c1a5f5982fc610d701a4fb50e79
 
-const API_BASE_URL = 'https://xoto.ae/api/';
 
 
 

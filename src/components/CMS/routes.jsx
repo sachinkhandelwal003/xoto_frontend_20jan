@@ -92,7 +92,7 @@ import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";
 import AgentSubscription from "../ecommerce/B2C/AgentSubscription";
 import AgentProjects from "../ecommerce/B2C/AgentProjects";
 import AgentProjectDetails from "../ecommerce/B2C/AgentProjectDetails";
-import AgentPresentations from "../ecommerce/B2C/AgentPresentations";
+// import AgentPresentations from "../ecommerce/B2C/AgentPresentations";
 import AgentSiteVisits from "../ecommerce/B2C/AgentSiteVisits";
 import AgentDeals from "../ecommerce/B2C/AgentDeals";
 import AgentCommission from "../ecommerce/B2C/AgentCommission";
@@ -505,7 +505,7 @@ const CmsRoutes = () => {
       <Route path="subscription" element={<AgentSubscription />} />
 
       {/* Presentations */}
-      <Route path="presentations" element={<AgentPresentations />} />
+      {/* <Route path="presentations" element={<AgentPresentations />} /> */}
 
       <Route path="create-secondary-plans" element={<CreateSecondaryProperty />} />
       <Route path="create-secondary-plans/:id" element={<CreateSecondaryProperty />} />
