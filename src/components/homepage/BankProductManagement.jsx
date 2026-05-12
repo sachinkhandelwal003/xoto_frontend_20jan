@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import BankProductList from './BankProductList';
-import BankProductForm from './BankProductForm';
-import BankProductView from './BankProductView';
+import BankProductList from './Bankproductlist';
+import BankProductForm from './Bankproductform';
+import BankProductView from './Bankproductview';
 
 /*
  * pages:
