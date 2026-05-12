@@ -123,6 +123,7 @@ import DeveloperCommissionScheme from "../ecommerce/B2C/DeveloperCommisionScheme
 import DeveloperDetail from "./pages/Developerdetail";
 import DealCommissionManager from "./pages/DealCommissionManager";
 import DeveloperAddProperty from "../ecommerce/B2C/DeveloperAddProperty";
+import DeveloperEditProperty from "../ecommerce/B2C/DeveloperEditProperty";
 import DeveloperPropertyEdit from "../ecommerce/B2C/DeveloperPropertyEdit";
 import BankProductManagement from "../homepage/BankProductManagement";
 // {Agency}------------------------------------------------------------
@@ -633,6 +634,7 @@ const CmsRoutes = () => {
       <Route path="developer-projects/add" element={<DeveloperAddProperty />} />
       <Route path="developer-projects/add" element={<DeveloperAddProject />} />
       <Route path="developer-projects/:id" element={<DeveloperProjectDetails />} />
+      <Route path="edit-property/:id" element={<DeveloperEditProperty />} />
       <Route path="edit-property/:id" element={<DeveloperPropertyEdit />} />
       <Route path="developerinventory" element={<DeveloperInventory />} />
       <Route path="/inventory/add" element={<DeveloperAddUnit />} />

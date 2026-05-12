@@ -19,7 +19,7 @@ import {
 } from "antd";
 import dayjs from "dayjs";
 import { PlusOutlined, ArrowLeftOutlined, MinusCircleOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 import { showToast } from "../../../manageApi/utils/toast";
@@ -37,7 +37,6 @@ const extractPhotoUrl = (fileItem) => {
   if (!r) return null;
   return (
     r.url || r.imageUrl || r.image_url || r.secure_url || r.link || r.path ||
-    r.filePath || r.fileUrl ||
     r.data?.url || r.data?.imageUrl || r.data?.secure_url || r.data?.path || r.data?.link ||
     r.file?.url || r.file?.imageUrl || r.file?.image_url || r.file?.secure_url ||
     r.file?.path || r.file?.filePath || r.file?.fileUrl || r.file?.link ||
@@ -85,18 +84,15 @@ const STEPS = [
   "Submission",
 ];
 
-export default function DeveloperAddProperty() {
+export default function DeveloperEditProperty() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const { user } = useSelector((state) => state.auth);
-  const developerId = user?.id || user?._id || user?.sub || user?.userId || null;
+  const developerId = user?.id || user?._id || null;
 
   const [form] = Form.useForm();
-  const hasView = Form.useWatch("hasView", form);
-  const allFormValues = Form.useWatch([], form);
-  useEffect(() => {
-    console.log("Form values updated:", allFormValues);
-  }, [allFormValues]);
   const [formLoading, setFormLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   const [photoError, setPhotoError] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -108,33 +104,29 @@ export default function DeveloperAddProperty() {
   const [brochureFileList, setBrochureFileList] = useState([]);
   const [developerProfile, setDeveloperProfile] = useState(null);
 
-  useEffect(() => {
-    if (!user) {
-      showToast("error", "Developer not found. Please log in again.");
-      navigate("/dashboard/developer");
-    }
-  }, [user, navigate]);
-
   const fetchDeveloperProfile = async () => {
     try {
       const res = await apiService.get("/profile/get-profile-data");
-      console.log("Full API response from profile/get-profile-data:", res);
-      console.log("res?.data:", res?.data);
-      const profile = res?.data; // because api returns { data: profile }
-      console.log("Parsed profile:", profile);
+      const profile = res?.data;
       if (profile) {
         setDeveloperProfile(profile);
-        const devDetails = {
+        console.log("Setting developerDetails from profile:", {
           companyName: profile.companyName || "",
           developerLicenseNumber: profile.developerLicenseNumber || "",
           primaryContactName: profile.primaryContactName || profile.name || "",
           phone: profile.phone_number || "",
           email: profile.email || "",
           logo: profile.logo || ""
-        };
-        console.log("Setting developerDetails in form:", devDetails);
+        });
         form.setFieldsValue({
-          developerDetails: devDetails
+          developerDetails: {
+            companyName: profile.companyName || "",
+            developerLicenseNumber: profile.developerLicenseNumber || "",
+            primaryContactName: profile.primaryContactName || profile.name || "",
+            phone: profile.phone_number || "",
+            email: profile.email || "",
+            logo: profile.logo || ""
+          }
         });
       }
     } catch (err) {
@@ -143,18 +135,132 @@ export default function DeveloperAddProperty() {
   };
 
   useEffect(() => {
-    fetchDeveloperProfile();
-  }, []);
+    if (!developerId) {
+      showToast("error", "Developer not found. Please log in again.");
+      navigate("/dashboard/developer");
+    }
+  }, [developerId, navigate]);
 
   useEffect(() => {
-    if (user && !developerProfile) {
-      form.setFieldsValue({
-        developerName:
-          user?.username || user?.companyName || user?.company_name ||
-          user?.name || user?.fullName || user?.full_name || "",
-      });
-    }
-  }, [user, form]);
+    const initialize = async () => {
+      await fetchDeveloperProfile();
+      if (id) {
+        console.log("Calling fetchProperty after fetchDeveloperProfile!");
+        await fetchProperty();
+      }
+    };
+    initialize();
+  }, [id]);
+
+  const fetchProperty = async () => {
+      try {
+        setFetchLoading(true);
+        const res = await apiService.get(`/properties/${id}`);
+        console.log("=== ✏️ Edit Property - Fetching property ===");
+        console.log("Full API response from /properties/:id:", res);
+        console.log("res.data:", res?.data);
+        const p = res?.data?.data || res?.data;
+        console.log("=== ✏️ Property data from API ===");
+        console.log(p);
+        
+        if (p) {
+          console.log("=== ✏️ Setting form fields ===");
+          
+          form.setFieldsValue({
+            propertyName: p.projectName || p.propertyName,
+            locality: p.locality || p.area,
+            propertyType: p.propertyType || "Residential",
+            overview: p.overview || p.description,
+            priceRangeFrom: p.priceRange?.from || p.price_min,
+            priceRangeTo: p.priceRange?.to || p.price_max,
+            completionDate: p.completionDate?.fullDate
+              ? dayjs(p.completionDate.fullDate)
+              : null,
+            address: p.location?.address || "",
+            latitude: p.location?.latitude || p.coordinates?.lat,
+            longitude: p.location?.longitude || p.coordinates?.lng,
+            amenities: p.amenities || [],
+            floorPlans: p.floorPlans || [],
+            inventory: p.inventory || [],
+            parkingAllocation: p.parkingAllocation || "",
+            parkingSpaces: p.parkingSpaces || 0,
+            floors: p.floors || p.numberOfFloors,
+            numberOfFloors: p.numberOfFloors || p.floors,
+            furnishing: (p.furnishingStatus === "Unfurnished" ? "unfurnished" : p.furnishingStatus === "Semi-Furnished" ? "semi-furnished" : p.furnishingStatus === "Fully Furnished" ? "fully-furnished" : p.furnishing || "unfurnished"),
+            serviceCharge: p.serviceCharge || p.serviceChargeInfo,
+            constructionProgress: p.constructionProgress,
+            paymentPlan: p.paymentPlan || [],
+            developerName: p.developerName,
+            youtubeVideos: p.youtubeVideos || [],
+            propertySubType: p.propertySubType,
+            transactionType: p.transactionType,
+            projectStatus: p.projectStatus || "presale",
+            developmentStatus: p.developmentStatus || "Planned",
+            saleStatus: p.saleStatus || "Available",
+            isFeatured: p.isFeatured || false,
+            readinessProgress: p.readinessProgress || "0%",
+            hasView: p.hasView || false,
+            viewType: p.viewType || [],
+            showContactOnlyVerified: p.showContactOnlyVerified || false,
+            shareCommission: p.shareCommission || false,
+            shareCommissionPercentage: p.shareCommissionPercentage || 0,
+            currency: p.currency || "AED",
+            builtUpAreaUnit: p.builtUpAreaUnit || "sqft",
+            unitType: p.unitType || "apartment",
+            bedroomType: p.bedroomType || "1bed",
+            bedrooms: p.bedrooms || 1,
+            bathrooms: p.bathrooms || 1,
+            ownershipType: p.ownershipType || "freehold",
+            developerDetails: {
+              companyName: p.developerDetails?.companyName || "",
+              developerLicenseNumber: p.developerDetails?.developerLicenseNumber || "",
+              primaryContactName: p.developerDetails?.primaryContactName || "",
+              phone: p.developerDetails?.phone || "",
+              email: p.developerDetails?.email || "",
+              logo: p.developerDetails?.logo || ""
+            }
+          });
+          
+          console.log("=== ✏️ Form fields set! ===");
+
+          if (p.media?.mainLogo || p.mainLogo) {
+            setMainLogoFileList([{
+              uid: "-1",
+              name: "main-logo.jpg",
+              status: "done",
+              url: p.media?.mainLogo || p.mainLogo,
+            }]);
+          }
+
+          const mapImagesToFileList = (urls) =>
+            urls.map((url, i) => ({
+              uid: `img-${i}`,
+              name: `image-${i}.jpg`,
+              status: "done",
+              url,
+            }));
+
+          setPhotosArchitecture(mapImagesToFileList(p.media?.architectureImages || p.photos?.architecture || []));
+          setPhotosInterior(mapImagesToFileList(p.media?.interiorImages || p.photos?.interior || []));
+          setPhotosLobby(mapImagesToFileList(p.media?.lobbyImages || p.photos?.lobby || []));
+          setPhotosOther(mapImagesToFileList(p.media?.otherImages || p.photos?.other || []));
+
+          if (p.brochure) {
+            setBrochureFileList([{
+              uid: "-1",
+              name: "brochure.pdf",
+              status: "done",
+              url: p.brochure,
+            }]);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("error", "Failed to fetch property details");
+      } finally {
+        setFetchLoading(false);
+      }
+    };
 
   const validateImageSize = (file) => {
     const isLt5M = file.size / 1024 / 1024 < 5;
@@ -174,27 +280,27 @@ export default function DeveloperAddProperty() {
       .filter(Boolean);
 
   const handleSaveDraft = async () => {
-    console.log("=== 🚀 Add Property - handleSaveDraft called ===");
+    console.log("=== ✏️ Edit Property - handleSaveDraft called ===");
     await handleSave("draft");
   };
 
   const handleSubmitForApproval = async () => {
-    console.log("=== 🚀 Add Property - handleSubmitForApproval called ===");
+    console.log("=== ✏️ Edit Property - handleSubmitForApproval called ===");
     await handleSave("submit");
   };
 
   const handleSave = async (saveType) => {
-    console.log("=== 🚀 Add Property - handleSave called with saveType:", saveType, " ===");
+    console.log("=== ✏️ Edit Property - handleSave called with saveType:", saveType, " ===");
     
     const values = form.getFieldsValue();
-    console.log("📝 All form values (from form.getFieldsValue()):", values);
-    console.log("🏢 Form values.projectName:", values.propertyName);
-    console.log("📍 Form values.locality:", values.locality);
-    console.log("💰 Form values.priceRange:", values.priceRangeFrom, "-", values.priceRangeTo);
-    console.log("🏷️ Form values.propertyType:", values.propertyType);
-    console.log("🏗️ Form values.developmentStatus:", values.developmentStatus);
-    console.log("🔖 Form values.saleStatus:", values.saleStatus);
-    console.log("⭐ Form values.isFeatured:", values.isFeatured);
+    console.log("📝 All edit form values (from form.getFieldsValue()):", values);
+    console.log("🏢 Edit Form values.projectName:", values.propertyName);
+    console.log("📍 Edit Form values.locality:", values.locality);
+    console.log("💰 Edit Form values.priceRange:", values.priceRangeFrom, "-", values.priceRangeTo);
+    console.log("🏷️ Edit Form values.propertyType:", values.propertyType);
+    console.log("🏗️ Edit Form values.developmentStatus:", values.developmentStatus);
+    console.log("🔖 Edit Form values.saleStatus:", values.saleStatus);
+    console.log("⭐ Edit Form values.isFeatured:", values.isFeatured);
 
     if (isAnyUploading()) {
       showToast("error", "Please wait for all photos to finish uploading.");
@@ -210,11 +316,6 @@ export default function DeveloperAddProperty() {
     }
 
     const mainLogoUrls = collectUrls(mainLogoFileList);
-    if (mainLogoUrls.length === 0) {
-      setPhotoError("Please upload a main logo image.");
-      return;
-    }
-
     let brochureUrl = "";
     if (brochureFileList.length > 0 && brochureFileList[0].status === "done") {
       brochureUrl =
@@ -225,7 +326,6 @@ export default function DeveloperAddProperty() {
 
     const payload = {
       developerId,
-      propertyType: values.propertyType || "Residential",
       propertySubType: "off_plan",
       transactionType: "sell",
       status: saveType === "submit" ? "pending" : "draft",
@@ -234,6 +334,7 @@ export default function DeveloperAddProperty() {
       propertyName: values.propertyName?.trim(),
       locality: values.locality,
       area: values.locality,
+      propertyType: values.propertyType,
       completionDate: {
         fullDate: values.completionDate ? values.completionDate.format("YYYY-MM-DD") : null,
       },
@@ -288,45 +389,44 @@ export default function DeveloperAddProperty() {
       if (payload[k] === undefined) delete payload[k];
     });
 
-    console.log("=== 📦 Final payload to send to backend ===");
-    console.log("Payload.projectName:", payload.projectName);
-    console.log("Payload.propertyName:", payload.propertyName);
-    console.log("Payload.locality:", payload.locality);
-    console.log("Payload.area:", payload.area);
-    console.log("Payload.propertyType:", payload.propertyType);
-    console.log("Payload.developmentStatus:", payload.developmentStatus);
-    console.log("Payload.saleStatus:", payload.saleStatus);
-    console.log("Payload.isFeatured:", payload.isFeatured);
-    console.log("Payload.priceRange:", payload.priceRange);
-    console.log("Payload.price_min:", payload.price_min);
-    console.log("Payload.price_max:", payload.price_max);
-    console.log("Payload.media.mainLogo:", payload.media?.mainLogo);
-    console.log("=== 📦 FULL PAYLOAD JSON ===");
+    console.log("=== 📦 Edit Property - Final payload to send to backend ===");
+    console.log("Edit Payload.projectName:", payload.projectName);
+    console.log("Edit Payload.propertyName:", payload.propertyName);
+    console.log("Edit Payload.locality:", payload.locality);
+    console.log("Edit Payload.area:", payload.area);
+    console.log("Edit Payload.propertyType:", payload.propertyType);
+    console.log("Edit Payload.developmentStatus:", payload.developmentStatus);
+    console.log("Edit Payload.saleStatus:", payload.saleStatus);
+    console.log("Edit Payload.isFeatured:", payload.isFeatured);
+    console.log("Edit Payload.priceRange:", payload.priceRange);
+    console.log("Edit Payload.price_min:", payload.price_min);
+    console.log("Edit Payload.price_max:", payload.price_max);
+    console.log("=== 📦 Edit FULL PAYLOAD JSON ===");
     console.log(JSON.stringify(payload, null, 2));
-    console.log("=== 🔍 FORM VALUES AGAIN ===");
+    console.log("=== 🔍 Edit FORM VALUES AGAIN ===");
     console.log(JSON.stringify(values, null, 2));
 
     setPhotoError("");
 
     try {
       setFormLoading(true);
-      console.log("=== 📡 Sending POST to /properties ===");
-      const res = await apiService.post("/properties", payload);
-      console.log("=== 📨 Response from /properties ===");
-      console.log("Response:", res);
+      console.log("=== 📡 Edit Property - Sending PATCH to /properties/:id ===");
+      const res = await apiService.patch(`/properties/${id}`, payload);
+      console.log("=== 📨 Edit Property - Response from /properties/:id ===");
+      console.log("Edit Response:", res);
       const savedProperty = res?.data?.data || res?.data;
       if (savedProperty) {
-        console.log("Saved property data:", savedProperty);
-        console.log("Saved projectName:", savedProperty.projectName);
-        console.log("Saved propertyName:", savedProperty.propertyName);
+        console.log("Edit Saved property data:", savedProperty);
+        console.log("Edit Saved projectName:", savedProperty.projectName);
+        console.log("Edit Saved propertyName:", savedProperty.propertyName);
       }
       if (res?.status !== "fail" && res?.status !== "error") {
         showToast("success", saveType === "submit"
-          ? "Property submitted. Waiting for admin approval."
+          ? "Property updated. Waiting for admin approval."
           : "Property saved as draft.");
         navigate("/dashboard/developer/developer-projects");
       } else {
-        showToast("error", res?.message || "Failed to save property.");
+        showToast("error", "Failed to update property.");
       }
     } catch (error) {
       console.error("Save error:", error);
@@ -831,7 +931,7 @@ export default function DeveloperAddProperty() {
               </Col>
             </Row>
             <Row gutter={16}>
-              <Col xs={24} md={12}>
+              <Col xs={24}>
                 <Form.Item name={["developerDetails", "email"]} label="Email">
                   <Input
                     readOnly
@@ -872,6 +972,22 @@ export default function DeveloperAddProperty() {
     setCurrentStep(currentStep - 1);
   };
 
+  if (fetchLoading) {
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen">
+        <Card className="shadow-sm rounded-xl">
+          <div className="animate-pulse">
+            <div className="h-6 bg-gray-200 rounded mb-4 w-1/3"></div>
+            <div className="h-4 bg-gray-200 rounded mb-4 w-1/2"></div>
+            <div className="h-4 bg-gray-200 rounded mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded"></div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <Row justify="space-between" align="middle" className="mb-6">
@@ -884,7 +1000,7 @@ export default function DeveloperAddProperty() {
             Back
           </Button>
           <Title level={3} style={{ display: "inline-block", margin: 0 }}>
-            Create New Project Listing
+            Edit Project Listing
           </Title>
         </Col>
       </Row>
@@ -896,28 +1012,6 @@ export default function DeveloperAddProperty() {
           form={form}
           layout="vertical"
           preserve={true}
-          initialValues={{
-            currency: "AED",
-            builtUpAreaUnit: "sqft",
-            unitType: "apartment",
-            bedroomType: "1bed",
-            bedrooms: 1,
-            bathrooms: 1,
-            propertyType: "Residential",
-            furnishing: "unfurnished",
-            parkingSpaces: 0,
-            ownershipType: "freehold",
-            projectStatus: "presale",
-            developmentStatus: "Planned",
-            saleStatus: "Available",
-            isFeatured: false,
-            readinessProgress: "0%",
-            hasView: false,
-            viewType: [],
-            showContactOnlyVerified: false,
-            shareCommission: false,
-            shareCommissionPercentage: 0,
-          }}
         >
           {renderStepContent()}
 
@@ -936,18 +1030,21 @@ export default function DeveloperAddProperty() {
                 </Button>
               ) : (
                 <>
-                 <Button
-  onClick={handleSaveDraft}
->
-  Save Draft
-</Button>
-
-<Button
-  type="primary"
-  onClick={handleSubmitForApproval}
->
-  Submit For Approval
-</Button>
+                  <Button
+                    onClick={handleSaveDraft}
+                    style={{ marginRight: 8 }}
+                  >
+                    Save as Draft
+                  </Button>
+                  <Button
+                    type="primary"
+                    onClick={handleSubmitForApproval}
+                    loading={formLoading}
+                    disabled={isAnyUploading()}
+                    style={{ backgroundColor: THEME.primary }}
+                  >
+                    Submit for Approval
+                  </Button>
                 </>
               )}
             </div>

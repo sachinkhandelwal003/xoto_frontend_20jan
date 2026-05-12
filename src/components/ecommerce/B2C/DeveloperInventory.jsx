@@ -234,8 +234,8 @@ export default function DeveloperInventory() {
 
   const fetchProjects = useCallback(async () => {
     try {
-      // const res  = await apiService.get("/properties/developer/property/offplan");
-      const list = res?.data || [];
+   const res = await apiService.get("/properties/developer/property/offplan");
+const list = res?.data || [];
       const opts = (Array.isArray(list) ? list : [])
         .filter(p => p.approvalStatus === "approved")
         .map(p => ({ label: p.propertyName, value: p._id }));
@@ -251,8 +251,8 @@ export default function DeveloperInventory() {
       let url = `/properties/inventory/${pid}?page=${page}&limit=${PAGE_SIZE}`;
       if (statusFilter)   url += `&status=${statusFilter}`;
       if (unitTypeFilter) url += `&unitType=${unitTypeFilter}`;
-      // const res  = await apiService.get(url);
-      const raw  = res?.data || [];
+     const res = await apiService.get(url);
+const raw = res?.data || [];
       const list = (Array.isArray(raw) ? raw : raw.units || []).map(item => ({
         key: item._id, _id: item._id,
         unitNumber: item.unitNumber, buildingName: item.buildingName,
