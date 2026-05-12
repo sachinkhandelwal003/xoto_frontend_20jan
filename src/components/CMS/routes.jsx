@@ -36,7 +36,7 @@ import Currency from "./pages/settings/Currency";
 import Tax from "./pages/settings/Tax";
 import ProductReview from "./pages/dashboardPages/manageProducts/ProductReview";
 import ProductProfile from "../ecommerce/B2C/products/ProductProfile";
-import VendorProfile from "./pages/dashboardPages/managevendor/vendorprofile";
+import VendorProfile from "./pages/dashboardPages/managevendor/VendorProfile";
 import UsersRoleList from "./pages/dashboardPages/users/UsersRoleList";
 import LeadsList from "./pages/dashboardPages/leads/LeadsList";
 
