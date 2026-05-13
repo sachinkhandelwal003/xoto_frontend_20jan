@@ -313,33 +313,37 @@ const handleCreate = async (values) => {
   setSaving(true);
   try {
     await apiService.post("/properties/inventory", {
-      propertyId: projectId,  // This is what your backend expects
-      units: [{
-        ...values, 
-        buildingName: values.buildingName || "", 
+      propertyId: projectId,  // ✅ Changed from projectId to propertyId
+      units: [{               // ✅ Wrap in units array
+        unitNumber: values.unitNumber,
+        buildingName: values.buildingName || "",
         floorNumber: values.floorNumber || 0,
-        bedrooms: values.bedrooms || 0, 
-        bathrooms: values.bathrooms || 0, 
+        unitType: values.unitType,
+        bedroomType: values.bedroomType,
+        bedrooms: values.bedrooms || 0,
+        bathrooms: values.bathrooms || 0,
+        area: values.area,
         areaUnit: values.areaUnit || "sqft",
-        currency: values.currency || "AED", 
+        price: values.price,
+        currency: values.currency || "AED",
         hasView: values.hasView || false,
-        viewType: values.viewType || [], 
+        viewType: values.viewType || [],
         parkingSpaces: values.parkingSpaces || 0,
-        furnishing: values.furnishing || "unfurnished"
+        furnishing: values.furnishing || "unfurnished",
+        status: "available"
       }],
     });
     message.success("Unit created");
-    setCreateModal(false); 
+    setCreateModal(false);
     createForm.resetFields();
     fetchInventory(projectId, currentPage);
-  } catch (err) { 
+  } catch (err) {
     console.error("Create error:", err.response?.data);
-    message.error(err?.response?.data?.message || "Create failed"); 
-  } finally { 
-    setSaving(false); 
+    message.error(err?.response?.data?.message || "Create failed");
+  } finally {
+    setSaving(false);
   }
 };
-
  const handleUpdate = async (values) => {
   setSaving(true);
   try {
