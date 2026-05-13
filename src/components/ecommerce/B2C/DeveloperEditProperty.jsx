@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Card,
   Typography,
@@ -55,7 +55,6 @@ const customUploadRequest = async ({ file, onSuccess, onError }) => {
     if (!res.ok || data.success === false) throw new Error(data.message || "Upload failed");
     onSuccess(data, file);
   } catch (err) {
-    console.error("Upload error:", err);
     onError(err);
   }
 };
@@ -91,6 +90,8 @@ export default function DeveloperEditProperty() {
   const developerId = user?.id || user?._id || null;
 
   const [form] = Form.useForm();
+  // Cache values across step unmount/remount (defensive)
+  const formCacheRef = useRef({});
   const [formLoading, setFormLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [photoError, setPhotoError] = useState("");
@@ -107,17 +108,10 @@ export default function DeveloperEditProperty() {
   const fetchDeveloperProfile = async () => {
     try {
       const res = await apiService.get("/profile/get-profile-data");
-      const profile = res?.data;
+      // Handle multiple API shapes: profile OR { data: profile } OR { status, data: profile }
+      const profile = res?.data || res?.profile || res;
       if (profile) {
         setDeveloperProfile(profile);
-        console.log("Setting developerDetails from profile:", {
-          companyName: profile.companyName || "",
-          developerLicenseNumber: profile.developerLicenseNumber || "",
-          primaryContactName: profile.primaryContactName || profile.name || "",
-          phone: profile.phone_number || "",
-          email: profile.email || "",
-          logo: profile.logo || ""
-        });
         form.setFieldsValue({
           developerDetails: {
             companyName: profile.companyName || "",
@@ -130,13 +124,13 @@ export default function DeveloperEditProperty() {
         });
       }
     } catch (err) {
-      console.error("Failed to fetch developer profile:", err);
+      // errors are surfaced via global apiService interceptor toast
     }
   };
 
   useEffect(() => {
     if (!developerId) {
-      showToast("error", "Developer not found. Please log in again.");
+      showToast("Developer not found. Please log in again.", "error");
       navigate("/dashboard/developer");
     }
   }, [developerId, navigate]);
@@ -145,126 +139,133 @@ export default function DeveloperEditProperty() {
     const initialize = async () => {
       await fetchDeveloperProfile();
       if (id) {
-        console.log("Calling fetchProperty after fetchDeveloperProfile!");
         await fetchProperty();
       }
     };
     initialize();
   }, [id]);
 
+
   const fetchProperty = async () => {
-      try {
-        setFetchLoading(true);
-        const res = await apiService.get(`/properties/${id}`);
-        console.log("=== ✏️ Edit Property - Fetching property ===");
-        console.log("Full API response from /properties/:id:", res);
-        console.log("res.data:", res?.data);
-        const p = res?.data?.data || res?.data;
-        console.log("=== ✏️ Property data from API ===");
-        console.log(p);
-        
-        if (p) {
-          console.log("=== ✏️ Setting form fields ===");
-          
+    try {
+      setFetchLoading(true);
+      // Add timestamp to prevent caching
+      const res = await apiService.get(`/properties/${id}?_t=${Date.now()}`);
+      const p = res?.data?.data || res?.data;
+
+      if (p) {
+        const fieldsToSet = {
+          propertyName: p.projectName || p.propertyName,
+          locality: p.locality || p.area,
+          propertyType: p.propertyType || "Residential",
+          overview: p.overview || p.description,
+          priceRangeFrom: p.priceRange?.from || p.price_min,
+          priceRangeTo: p.priceRange?.to || p.price_max,
+          completionDate: p.completionDate?.fullDate
+            ? dayjs(p.completionDate.fullDate)
+            : null,
+          address: p.location?.address || "",
+          latitude: p.location?.latitude || p.coordinates?.lat,
+          longitude: p.location?.longitude || p.coordinates?.lng,
+          amenities: p.amenities || [],
+          floorPlans: p.floorPlans || [],
+          inventory: p.inventory || [],
+          parkingAllocation: p.parkingAllocation || "",
+          parkingSpaces: p.parkingSpaces || 0,
+          floors: p.floors || p.numberOfFloors,
+          numberOfFloors: p.numberOfFloors || p.floors,
+          furnishing: (p.furnishingStatus === "Unfurnished" ? "unfurnished" : p.furnishingStatus === "Semi-Furnished" ? "semi-furnished" : p.furnishingStatus === "Fully Furnished" ? "fully-furnished" : p.furnishing || "unfurnished"),
+          serviceCharge: p.serviceCharge || p.serviceChargeInfo,
+          constructionProgress: p.constructionProgress,
+          paymentPlan: p.paymentPlan || [],
+          developerName: p.developerName,
+          youtubeVideos: p.youtubeVideos || [],
+          propertySubType: p.propertySubType,
+          transactionType: p.transactionType,
+          projectStatus: p.projectStatus || "presale",
+          developmentStatus: p.developmentStatus || "Planned",
+          saleStatus: p.saleStatus || "Available",
+          isFeatured: p.isFeatured || false,
+          readinessProgress: p.readinessProgress || "0%",
+          hasView: p.hasView || false,
+          viewType: p.viewType || [],
+          showContactOnlyVerified: p.showContactOnlyVerified || false,
+          shareCommission: p.shareCommission || false,
+          shareCommissionPercentage: p.shareCommissionPercentage || 0,
+          currency: p.currency || "AED",
+          builtUpAreaUnit: p.builtUpAreaUnit || "sqft",
+          unitType: p.unitType || "apartment",
+          bedroomType: p.bedroomType || "1bed",
+          bedrooms: p.bedrooms || 1,
+          bathrooms: p.bathrooms || 1,
+          ownershipType: p.ownershipType || "freehold",
+        };
+
+        form.setFieldsValue(fieldsToSet);
+
+        // IMPORTANT: don't wipe profile-populated developer details with empty values
+        const hasAnyDeveloperDetails =
+          !!(p.developerDetails?.companyName ||
+            p.developerDetails?.developerLicenseNumber ||
+            p.developerDetails?.primaryContactName ||
+            p.developerDetails?.phone ||
+            p.developerDetails?.email ||
+            p.developerDetails?.logo);
+
+        if (hasAnyDeveloperDetails) {
           form.setFieldsValue({
-            propertyName: p.projectName || p.propertyName,
-            locality: p.locality || p.area,
-            propertyType: p.propertyType || "Residential",
-            overview: p.overview || p.description,
-            priceRangeFrom: p.priceRange?.from || p.price_min,
-            priceRangeTo: p.priceRange?.to || p.price_max,
-            completionDate: p.completionDate?.fullDate
-              ? dayjs(p.completionDate.fullDate)
-              : null,
-            address: p.location?.address || "",
-            latitude: p.location?.latitude || p.coordinates?.lat,
-            longitude: p.location?.longitude || p.coordinates?.lng,
-            amenities: p.amenities || [],
-            floorPlans: p.floorPlans || [],
-            inventory: p.inventory || [],
-            parkingAllocation: p.parkingAllocation || "",
-            parkingSpaces: p.parkingSpaces || 0,
-            floors: p.floors || p.numberOfFloors,
-            numberOfFloors: p.numberOfFloors || p.floors,
-            furnishing: (p.furnishingStatus === "Unfurnished" ? "unfurnished" : p.furnishingStatus === "Semi-Furnished" ? "semi-furnished" : p.furnishingStatus === "Fully Furnished" ? "fully-furnished" : p.furnishing || "unfurnished"),
-            serviceCharge: p.serviceCharge || p.serviceChargeInfo,
-            constructionProgress: p.constructionProgress,
-            paymentPlan: p.paymentPlan || [],
-            developerName: p.developerName,
-            youtubeVideos: p.youtubeVideos || [],
-            propertySubType: p.propertySubType,
-            transactionType: p.transactionType,
-            projectStatus: p.projectStatus || "presale",
-            developmentStatus: p.developmentStatus || "Planned",
-            saleStatus: p.saleStatus || "Available",
-            isFeatured: p.isFeatured || false,
-            readinessProgress: p.readinessProgress || "0%",
-            hasView: p.hasView || false,
-            viewType: p.viewType || [],
-            showContactOnlyVerified: p.showContactOnlyVerified || false,
-            shareCommission: p.shareCommission || false,
-            shareCommissionPercentage: p.shareCommissionPercentage || 0,
-            currency: p.currency || "AED",
-            builtUpAreaUnit: p.builtUpAreaUnit || "sqft",
-            unitType: p.unitType || "apartment",
-            bedroomType: p.bedroomType || "1bed",
-            bedrooms: p.bedrooms || 1,
-            bathrooms: p.bathrooms || 1,
-            ownershipType: p.ownershipType || "freehold",
             developerDetails: {
               companyName: p.developerDetails?.companyName || "",
               developerLicenseNumber: p.developerDetails?.developerLicenseNumber || "",
               primaryContactName: p.developerDetails?.primaryContactName || "",
               phone: p.developerDetails?.phone || "",
               email: p.developerDetails?.email || "",
-              logo: p.developerDetails?.logo || ""
-            }
+              logo: p.developerDetails?.logo || "",
+            },
           });
-          
-          console.log("=== ✏️ Form fields set! ===");
-
-          if (p.media?.mainLogo || p.mainLogo) {
-            setMainLogoFileList([{
-              uid: "-1",
-              name: "main-logo.jpg",
-              status: "done",
-              url: p.media?.mainLogo || p.mainLogo,
-            }]);
-          }
-
-          const mapImagesToFileList = (urls) =>
-            urls.map((url, i) => ({
-              uid: `img-${i}`,
-              name: `image-${i}.jpg`,
-              status: "done",
-              url,
-            }));
-
-          setPhotosArchitecture(mapImagesToFileList(p.media?.architectureImages || p.photos?.architecture || []));
-          setPhotosInterior(mapImagesToFileList(p.media?.interiorImages || p.photos?.interior || []));
-          setPhotosLobby(mapImagesToFileList(p.media?.lobbyImages || p.photos?.lobby || []));
-          setPhotosOther(mapImagesToFileList(p.media?.otherImages || p.photos?.other || []));
-
-          if (p.brochure) {
-            setBrochureFileList([{
-              uid: "-1",
-              name: "brochure.pdf",
-              status: "done",
-              url: p.brochure,
-            }]);
-          }
         }
-      } catch (err) {
-        console.error(err);
-        showToast("error", "Failed to fetch property details");
-      } finally {
-        setFetchLoading(false);
+
+        if (p.media?.mainLogo || p.mainLogo) {
+          setMainLogoFileList([{
+            uid: "-1",
+            name: "main-logo.jpg",
+            status: "done",
+            url: p.media?.mainLogo || p.mainLogo,
+          }]);
+        }
+
+        const mapImagesToFileList = (urls) =>
+          urls.map((url, i) => ({
+            uid: `img-${i}`,
+            name: `image-${i}.jpg`,
+            status: "done",
+            url,
+          }));
+
+        setPhotosArchitecture(mapImagesToFileList(p.media?.architectureImages || p.photos?.architecture || []));
+        setPhotosInterior(mapImagesToFileList(p.media?.interiorImages || p.photos?.interior || []));
+        setPhotosLobby(mapImagesToFileList(p.media?.lobbyImages || p.photos?.lobby || []));
+        setPhotosOther(mapImagesToFileList(p.media?.otherImages || p.photos?.other || []));
+
+        if (p.brochure) {
+          setBrochureFileList([{
+            uid: "-1",
+            name: "brochure.pdf",
+            status: "done",
+            url: p.brochure,
+          }]);
+        }
       }
-    };
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to fetch property details", "error");
+    } finally {
+      setFetchLoading(false);
+    }
+  };
 
   const validateImageSize = (file) => {
     const isLt5M = file.size / 1024 / 1024 < 5;
-    if (!isLt5M) showToast("error", "Image must be smaller than 5MB!");
+    if (!isLt5M) showToast("Image must be smaller than 5MB!", "error");
     return isLt5M || Upload.LIST_IGNORE;
   };
 
@@ -280,165 +281,145 @@ export default function DeveloperEditProperty() {
       .filter(Boolean);
 
   const handleSaveDraft = async () => {
-    console.log("=== ✏️ Edit Property - handleSaveDraft called ===");
     await handleSave("draft");
   };
-
   const handleSubmitForApproval = async () => {
-    console.log("=== ✏️ Edit Property - handleSubmitForApproval called ===");
     await handleSave("submit");
   };
 
-  const handleSave = async (saveType) => {
-    console.log("=== ✏️ Edit Property - handleSave called with saveType:", saveType, " ===");
-    
-    const values = form.getFieldsValue();
-    console.log("📝 All edit form values (from form.getFieldsValue()):", values);
-    console.log("🏢 Edit Form values.projectName:", values.propertyName);
-    console.log("📍 Edit Form values.locality:", values.locality);
-    console.log("💰 Edit Form values.priceRange:", values.priceRangeFrom, "-", values.priceRangeTo);
-    console.log("🏷️ Edit Form values.propertyType:", values.propertyType);
-    console.log("🏗️ Edit Form values.developmentStatus:", values.developmentStatus);
-    console.log("🔖 Edit Form values.saleStatus:", values.saleStatus);
-    console.log("⭐ Edit Form values.isFeatured:", values.isFeatured);
+ const handleSave = async (saveType) => {
+  // IMPORTANT: in step-based forms, earlier step fields may be unmounted.
+  // `getFieldsValue(true)` reads the full store (including unregistered fields).
+  const values = form.getFieldsValue(true);
+  
+  // Validate required fields
+  if (!values.propertyName?.trim()) {
+    showToast("Project Name is required", "error");
+    return;
+  }
+  if (!values.locality) {
+    showToast("Property Locality is required", "error");
+    return;
+  }
+  if (!values.overview?.trim()) {
+    showToast("Project Overview is required", "error");
+    return;
+  }
+  if (!values.priceRangeFrom || !values.priceRangeTo) {
+    showToast("Price range is required", "error");
+    return;
+  }
 
-    if (isAnyUploading()) {
-      showToast("error", "Please wait for all photos to finish uploading.");
-      return;
-    }
+  if (isAnyUploading()) {
+    showToast("Please wait for all photos to finish uploading.", "error");
+    return;
+  }
 
-    const anyFailed = [mainLogoFileList, photosArchitecture, photosInterior,
-      photosLobby, photosOther, brochureFileList]
-      .some((list) => list.some((f) => f.status === "error"));
-    if (anyFailed) {
-      setPhotoError("Some media failed to upload. Please remove and re-upload them.");
-      return;
-    }
+  const anyFailed = [mainLogoFileList, photosArchitecture, photosInterior,
+    photosLobby, photosOther, brochureFileList]
+    .some((list) => list.some((f) => f.status === "error"));
+  if (anyFailed) {
+    setPhotoError("Some media failed to upload. Please remove and re-upload them.");
+    return;
+  }
 
-    const mainLogoUrls = collectUrls(mainLogoFileList);
-    let brochureUrl = "";
-    if (brochureFileList.length > 0 && brochureFileList[0].status === "done") {
-      brochureUrl =
-        brochureFileList[0]?.url ||
-        extractPhotoUrl(brochureFileList[0]) ||
-        "";
-    }
+  const mainLogoUrls = collectUrls(mainLogoFileList);
+  let brochureUrl = "";
+  if (brochureFileList.length > 0 && brochureFileList[0].status === "done") {
+    brochureUrl = brochureFileList[0]?.url || extractPhotoUrl(brochureFileList[0]) || "";
+  }
 
-    const payload = {
-      developerId,
-      propertySubType: "off_plan",
-      transactionType: "sell",
-      status: saveType === "submit" ? "pending" : "draft",
-      approvalStatus: saveType === "submit" ? "pending" : "draft",
-      projectName: values.propertyName?.trim(),
-      propertyName: values.propertyName?.trim(),
-      locality: values.locality,
-      area: values.locality,
-      propertyType: values.propertyType,
-      completionDate: {
-        fullDate: values.completionDate ? values.completionDate.format("YYYY-MM-DD") : null,
-      },
-      overview: values.overview?.trim(),
-      description: values.overview?.trim(),
-      priceRange: {
-        from: values.priceRangeFrom || 0,
-        to: values.priceRangeTo || 0,
-      },
-      price_min: values.priceRangeFrom || 0,
-      price_max: values.priceRangeTo || 0,
-      price: values.priceRangeFrom || 0,
-      media: {
-        mainLogo: mainLogoUrls[0],
-        architectureImages: collectUrls(photosArchitecture),
-        interiorImages: collectUrls(photosInterior),
-        lobbyImages: collectUrls(photosLobby),
-        otherImages: collectUrls(photosOther),
-        youtubeVideos: values.youtubeVideos || [],
-      },
-      location: {
-        address: values.address || "",
-        latitude: values.latitude || null,
-        longitude: values.longitude || null,
-      },
-      brochure: brochureUrl,
-      buildings: values.buildings || [],
-      amenities: values.amenities || [],
-      floorPlans: values.floorPlans || [],
-      inventory: values.inventory || [],
-      parkingAllocation: values.parkingAllocation || "",
-      parkingSpaces: values.parkingSpaces || 0,
-      numberOfFloors: values.floors || 0,
-      furnishingStatus: (values.furnishing === "unfurnished" ? "Unfurnished" : values.furnishing === "semi-furnished" ? "Semi-Furnished" : values.furnishing === "fully-furnished" ? "Fully Furnished" : "Unfurnished"),
-      serviceCharge: values.serviceCharge || "",
-      constructionProgress: values.constructionProgress || 0,
-      paymentPlan: values.paymentPlan || [],
-      projectStatus: values.projectStatus || "presale",
-      developmentStatus: values.developmentStatus || "Planned",
-      saleStatus: values.saleStatus || "Available",
-      isFeatured: values.isFeatured || false,
-      developerDetails: {
-        companyName: developerProfile?.companyName || user?.companyName || user?.username || "",
-        contactName: developerProfile?.primaryContactName || developerProfile?.name || user?.name || "",
-        email: developerProfile?.email || user?.email || "",
-        phone: developerProfile?.phone_number || developerProfile?.phone || user?.phone || "",
-        logo: developerProfile?.logo || user?.logo || "",
-      },
-    };
-
-    Object.keys(payload).forEach((k) => {
-      if (payload[k] === undefined) delete payload[k];
-    });
-
-    console.log("=== 📦 Edit Property - Final payload to send to backend ===");
-    console.log("Edit Payload.projectName:", payload.projectName);
-    console.log("Edit Payload.propertyName:", payload.propertyName);
-    console.log("Edit Payload.locality:", payload.locality);
-    console.log("Edit Payload.area:", payload.area);
-    console.log("Edit Payload.propertyType:", payload.propertyType);
-    console.log("Edit Payload.developmentStatus:", payload.developmentStatus);
-    console.log("Edit Payload.saleStatus:", payload.saleStatus);
-    console.log("Edit Payload.isFeatured:", payload.isFeatured);
-    console.log("Edit Payload.priceRange:", payload.priceRange);
-    console.log("Edit Payload.price_min:", payload.price_min);
-    console.log("Edit Payload.price_max:", payload.price_max);
-    console.log("=== 📦 Edit FULL PAYLOAD JSON ===");
-    console.log(JSON.stringify(payload, null, 2));
-    console.log("=== 🔍 Edit FORM VALUES AGAIN ===");
-    console.log(JSON.stringify(values, null, 2));
-
-    setPhotoError("");
-
-    try {
-      setFormLoading(true);
-      console.log("=== 📡 Edit Property - Sending PATCH to /properties/:id ===");
-      const res = await apiService.patch(`/properties/${id}`, payload);
-      console.log("=== 📨 Edit Property - Response from /properties/:id ===");
-      console.log("Edit Response:", res);
-      const savedProperty = res?.data?.data || res?.data;
-      if (savedProperty) {
-        console.log("Edit Saved property data:", savedProperty);
-        console.log("Edit Saved projectName:", savedProperty.projectName);
-        console.log("Edit Saved propertyName:", savedProperty.propertyName);
-      }
-      if (res?.status !== "fail" && res?.status !== "error") {
-        showToast("success", saveType === "submit"
-          ? "Property updated. Waiting for admin approval."
-          : "Property saved as draft.");
-        navigate("/dashboard/developer/developer-projects");
-      } else {
-        showToast("error", "Failed to update property.");
-      }
-    } catch (error) {
-      console.error("Save error:", error);
-      showToast("error", error?.message || "Something went wrong.");
-    } finally {
-      setFormLoading(false);
-    }
+  // ✅ CRITICAL FIX: Explicitly set approvalStatus based on saveType
+  const approvalStatusValue = saveType === "submit" ? "pending" : "draft";
+  
+  const payload = {
+    developerId: developerId,
+    developer: developerId,
+    propertySubType: "off_plan",
+    transactionType: "sell",
+    approvalStatus: approvalStatusValue, // ✅ Explicitly set
+    status: approvalStatusValue, // Also set status field for compatibility
+    projectName: values.propertyName?.trim(),
+    propertyName: values.propertyName?.trim(),
+    locality: values.locality,
+    area: values.locality,
+    propertyType: values.propertyType || "Residential",
+    completionDate: {
+      fullDate: values.completionDate ? values.completionDate.format("YYYY-MM-DD") : null,
+    },
+    overview: values.overview?.trim(),
+    description: values.overview?.trim(),
+    priceRange: {
+      from: values.priceRangeFrom || 0,
+      to: values.priceRangeTo || 0,
+    },
+    price_min: values.priceRangeFrom || 0,
+    price_max: values.priceRangeTo || 0,
+    price: values.priceRangeFrom || 0,
+    media: {
+      mainLogo: mainLogoUrls[0],
+      architectureImages: collectUrls(photosArchitecture),
+      interiorImages: collectUrls(photosInterior),
+      lobbyImages: collectUrls(photosLobby),
+      otherImages: collectUrls(photosOther),
+      youtubeVideos: values.youtubeVideos || [],
+    },
+    location: {
+      address: values.address || "",
+      latitude: values.latitude || null,
+      longitude: values.longitude || null,
+    },
+    brochure: brochureUrl,
+    buildings: values.buildings || [],
+    amenities: values.amenities || [],
+    floorPlans: values.floorPlans || [],
+    inventory: values.inventory || [],
+    parkingAllocation: values.parkingAllocation || "",
+    parkingSpaces: values.parkingSpaces || 0,
+    numberOfFloors: values.floors || 0,
+    furnishingStatus: (values.furnishing === "unfurnished" ? "Unfurnished" : 
+                       values.furnishing === "semi-furnished" ? "Semi-Furnished" : 
+                       values.furnishing === "fully-furnished" ? "Fully Furnished" : "Unfurnished"),
+    serviceCharge: values.serviceCharge || "",
+    constructionProgress: values.constructionProgress || 0,
+    paymentPlan: values.paymentPlan || [],
+    projectStatus: values.projectStatus || "presale",
+    developmentStatus: values.developmentStatus || "Planned",
+    saleStatus: values.saleStatus || "Available",
+    isFeatured: values.isFeatured || false,
+    developerDetails: {
+      companyName: developerProfile?.companyName || user?.companyName || user?.username || "",
+      contactName: developerProfile?.primaryContactName || developerProfile?.name || user?.name || "",
+      email: developerProfile?.email || user?.email || "",
+      phone: developerProfile?.phone_number || developerProfile?.phone || user?.phone || "",
+      logo: developerProfile?.logo || user?.logo || "",
+    },
   };
+
+  setPhotoError("");
+
+  try {
+    setFormLoading(true);
+    const res = await apiService.patch(`/properties/${id}`, payload);
+    
+    const updatedProperty = res?.data?.data || res?.data;
+    if (updatedProperty) {
+      showToast(saveType === "submit"
+        ? "Property submitted for approval! Admin will review it."
+        : "Property saved as draft successfully!", "success");
+      
+      navigate("/dashboard/developer/developer-properties");
+    }
+  } catch (error) {
+    showToast(error?.response?.data?.message || error?.message || "Something went wrong.", "error");
+  } finally {
+    setFormLoading(false);
+  }
+};
 
   const handleFinishFailed = ({ errorFields }) => {
     if (errorFields?.length > 0) {
-      showToast("error", errorFields[0]?.errors?.[0] || "Please fill in all required fields.");
+      showToast(errorFields[0]?.errors?.[0] || "Please fill in all required fields.", "error");
     }
   };
 
@@ -634,7 +615,7 @@ export default function DeveloperEditProperty() {
                 customRequest={customUploadRequest}
                 beforeUpload={(file) => {
                   const isPDF = file.type === "application/pdf";
-                  if (!isPDF) showToast("error", "Only PDF files are allowed!");
+                  if (!isPDF) showToast("Only PDF files are allowed!", "error");
                   return isPDF || Upload.LIST_IGNORE;
                 }}
                 accept=".pdf"
@@ -962,15 +943,23 @@ export default function DeveloperEditProperty() {
   const handleNext = async () => {
     try {
       await form.validateFields();
+      formCacheRef.current = { ...formCacheRef.current, ...form.getFieldsValue(true) };
       setCurrentStep(currentStep + 1);
     } catch (error) {
-      console.error("Validation error:", error);
     }
   };
 
   const handlePrev = () => {
+    formCacheRef.current = { ...formCacheRef.current, ...form.getFieldsValue(true) };
     setCurrentStep(currentStep - 1);
   };
+
+  // Re-apply cached values when step changes (prevents “lost data” reports)
+  useEffect(() => {
+    if (Object.keys(formCacheRef.current).length > 0) {
+      form.setFieldsValue(formCacheRef.current);
+    }
+  }, [currentStep, form]);
 
   if (fetchLoading) {
     return (
@@ -1012,6 +1001,9 @@ export default function DeveloperEditProperty() {
           form={form}
           layout="vertical"
           preserve={true}
+          onValuesChange={(_, all) => {
+            formCacheRef.current = { ...formCacheRef.current, ...all };
+          }}
         >
           {renderStepContent()}
 

@@ -23,6 +23,7 @@ import {
 } from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import dayjs from "dayjs";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 const { Title, Text, Paragraph } = Typography;
@@ -57,6 +58,21 @@ const FACILITY_LABELS = {
   gardens: "Landscaped Gardens",
   security: "24/7 Security",
   concierge: "Concierge Services",
+  lounge: "Lounge",
+  smartHome: "Smart Home",
+};
+
+// Map the values stored in `project.amenities` by DeveloperAddProperty.jsx
+const AMENITY_LABELS = {
+  "Swimming Pool": "Swimming Pool",
+  Gym: "Gym & Fitness",
+  Parking: "Parking",
+  "Children Play Area": "Children's Play Area",
+  Gardens: "Landscaped Gardens",
+  Security: "24/7 Security",
+  Concierge: "Concierge Services",
+  Lounge: "Lounge",
+  "Smart Home": "Smart Home",
 };
 
 export default function DeveloperProjectDetails() {
@@ -122,9 +138,47 @@ export default function DeveloperProjectDetails() {
 
   const completionLabel = project.completionDate?.quarter && project.completionDate?.year
     ? `${project.completionDate.quarter} ${project.completionDate.year}`
-    : "Not specified";
+    : project.completionDate?.fullDate
+      ? dayjs(project.completionDate.fullDate).isValid()
+        ? dayjs(project.completionDate.fullDate).format("MMM D, YYYY")
+        : String(project.completionDate.fullDate)
+      : "Not specified";
 
   const readinessValue = parseInt(project.readinessProgress) || 0;
+
+  const firstFloorPlan = project.floorPlans?.[0] || {};
+  const builtUpMin = project.builtUpArea_min ?? firstFloorPlan.areaFrom ?? 0;
+  const builtUpMax = project.builtUpArea_max ?? firstFloorPlan.areaTo ?? 0;
+  const builtUpUnit = project.builtUpAreaUnit || "sqft";
+
+  const developerDisplayName =
+    project.developerName ||
+    project.developerDetails?.companyName ||
+    project.developerDetails?.contactName ||
+    project.developerDetails?.primaryContactName ||
+    "—";
+
+  // Facilities/amenities are stored differently in DB:
+  // - `amenities` is a string array from the checkbox.Group.
+  // - `facilities` is a boolean map (defaults exist, but might not be set by the form).
+  // So we display ONLY the actually selected items.
+  const selectedAmenities = Array.isArray(project.amenities) ? project.amenities : [];
+  const amenityRendered = selectedAmenities
+    .map((a) => AMENITY_LABELS[a] || a)
+    .filter(Boolean);
+
+  const selectedFacilityKeys = project.facilities
+    ? Object.entries(project.facilities)
+      .filter(([, v]) => !!v)
+      .map(([k]) => k)
+    : [];
+  const facilityRendered = selectedFacilityKeys
+    .map((k) => FACILITY_LABELS[k] || k)
+    .filter(Boolean);
+
+  const amenitiesAndFacilitiesToShow = Array.from(
+    new Set([...amenityRendered, ...facilityRendered])
+  );
 
   // ── Bedroom label ──────────────────────────────────────────
   const bedroomLabel = project.bedroomType
@@ -331,7 +385,7 @@ export default function DeveloperProjectDetails() {
                 {project.propertyName || "—"}
               </Descriptions.Item>
               <Descriptions.Item label="Developer Name">
-                {project.developerName || "—"}
+                {developerDisplayName}
               </Descriptions.Item>
               <Descriptions.Item label="Unit Type">
                 <Tag color="purple" className="m-0 bg-purple-50 text-purple-700 border-purple-200">
@@ -356,7 +410,7 @@ export default function DeveloperProjectDetails() {
               </Descriptions.Item>
 
               <Descriptions.Item label="Built-Up Area">
-                {project.builtUpArea_min?.toLocaleString()} – {project.builtUpArea_max?.toLocaleString()} {project.builtUpAreaUnit}
+                {Number(builtUpMin).toLocaleString()} – {Number(builtUpMax).toLocaleString()} {builtUpUnit}
               </Descriptions.Item>
               <Descriptions.Item label="Price Range">
                 <Text strong style={{ color: THEME.primary }}>
@@ -545,20 +599,20 @@ export default function DeveloperProjectDetails() {
         {/* ROW 2: Facilities and Commission */}
         <Col xs={24} lg={12}>
           <Card title={<span className="text-base font-bold">Facilities & Amenities</span>} className="shadow-sm rounded-2xl border border-gray-100 h-full">
-            {Object.entries(project.facilities || {}).length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {Object.entries(project.facilities).map(([key, val]) => (
-                  <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <Text className="text-sm text-gray-700 font-medium">{FACILITY_LABELS[key] || key}</Text>
-                    {val
-                      ? <CheckCircleFilled className="text-green-500 text-lg" />
-                      : <CloseCircleFilled className="text-gray-300 text-lg" />
-                    }
-                  </div>
+            {amenitiesAndFacilitiesToShow.length > 0 ? (
+              <div className="flex flex-wrap gap-2 p-1">
+                {amenitiesAndFacilitiesToShow.map((label, i) => (
+                  <Tag
+                    key={`${label}-${i}`}
+                    color="blue"
+                    className="m-0 bg-blue-50 text-blue-700 border-blue-100"
+                  >
+                    {label}
+                  </Tag>
                 ))}
               </div>
             ) : (
-              <Text type="secondary" className="italic">No facilities listed</Text>
+              <Text type="secondary" className="italic">No facilities/amenities listed</Text>
             )}
           </Card>
         </Col>

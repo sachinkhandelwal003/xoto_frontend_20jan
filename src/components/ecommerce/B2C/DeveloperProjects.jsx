@@ -63,9 +63,6 @@ export default function DeveloperProjects() {
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  
-  console.log("=== 🔐 Current user:", user);
-  console.log("=== 🔐 User ID:", user?.id || user?._id);
 
   // Quick Filters
   const [postHandover, setPostHandover] = useState(false);
@@ -84,64 +81,35 @@ export default function DeveloperProjects() {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      console.log("=== 📋 DeveloperProjects - Fetching projects ===");
       const res = await apiService.get("/properties/", { page: 1, limit: 50 });
-      console.log("=== 📋 Full API response from /properties:", res);
-      const list = res?.data?.data || res?.data || [];
-      console.log("=== 📋 Raw properties list from res.data.data:", list);
-      console.log("=== 📋 Number of properties found:", list.length);
-      
-      list.forEach((p, i) => {
-        console.log(`=== 📋 Property ${i+1}:`, {
-          _id: p._id,
-          developer: p.developer,
-          developerMatches: String(p.developer) === String(user?.id || user?._id),
-          projectName: p.projectName,
-          propertyName: p.propertyName,
-          locality: p.locality,
-          area: p.area,
-          propertyType: p.propertyType,
-          priceRange: p.priceRange,
-          price_min: p.price_min,
-          price_max: p.price_max,
-          developmentStatus: p.developmentStatus,
-          saleStatus: p.saleStatus,
-          isFeatured: p.isFeatured,
-          media: p.media
-        });
-      });
 
-      const mapped = list.map((p, i) => {
-        console.log(`=== 📦 Mapping property ${i+1}:`, {
-          raw: p,
-          projectName: p.projectName,
-          propertyName: p.propertyName,
-          locality: p.locality,
-          area: p.area,
-          priceRange: p.priceRange,
-          price_min: p.price_min,
-          price_max: p.price_max
-        });
-        
-        return {
+      // Backend returns: { status, count, pagination, data: [properties] }
+      // But keep this defensive since older versions sometimes returned arrays directly.
+      const list =
+        (Array.isArray(res) && res) ||
+        (Array.isArray(res?.data) && res.data) ||
+        (Array.isArray(res?.data?.data) && res.data.data) ||
+        (Array.isArray(res?.data?.properties) && res.data.properties) ||
+        [];
+
+      const mapped = list.map((p, i) => ({
         key: p._id || `row-${i}`,
         propertyName: p.projectName || p.propertyName || "Untitled Project",
         location: p.location?.address || p.locality || p.area || "Location not added",
         units: p.floorPlans?.length > 0
           ? `${p.floorPlans[0]?.areaFrom || 0} - ${p.floorPlans[0]?.areaTo || 0} sqft`
           : null,
-        status: p.status || "draft",
-        image:
+        status: p.approvalStatus || p.status || "draft",
+        image: p.media?.mainLogo ||
           p.media?.architectureImages?.[0] ||
           p.media?.interiorImages?.[0] ||
           p.media?.lobbyImages?.[0] ||
           "",
-        price:
-          (p.priceRange?.from && p.priceRange?.to)
-            ? `AED ${Number(p.priceRange.from).toLocaleString()} - AED ${Number(p.priceRange.to).toLocaleString()}`
-            : (p.price_min && p.price_max)
-              ? `AED ${Number(p.price_min).toLocaleString()} - AED ${Number(p.price_max).toLocaleString()}`
-              : null,
+        price: (p.priceRange?.from && p.priceRange?.to)
+          ? `AED ${Number(p.priceRange.from).toLocaleString()} - AED ${Number(p.priceRange.to).toLocaleString()}`
+          : (p.price_min && p.price_max)
+            ? `AED ${Number(p.price_min).toLocaleString()} - AED ${Number(p.price_max).toLocaleString()}`
+            : null,
         priceMin: p.priceRange?.from || p.price_min || 0,
         priceMax: p.priceRange?.to || p.price_max || 0,
         projectStatus: p.projectStatus || "",
@@ -156,11 +124,12 @@ export default function DeveloperProjects() {
         totalUnitTypes: p.inventory?.length || 0,
         saleStatus: p.saleStatus || "Available",
         isPostHandover: p.projectStatus === "ready" || p.developmentStatus === "Completed",
-      }});
+      }));
+
       setProjects(mapped);
       setFiltered(mapped);
     } catch (err) {
-      console.error(err);
+      // errors are surfaced via global apiService interceptor toast
     } finally {
       setLoading(false);
     }
@@ -232,7 +201,7 @@ export default function DeveloperProjects() {
           <h1 style={S.pageTitle}>Property Management</h1>
           <p style={S.pageSubtitle}>Manage all your listings from this central hub</p>
         </div>
-        <button style={S.addBtn} onClick={() => navigate("/dashboard/developer/developer-projects/add")}>
+        <button style={S.addBtn} onClick={() => navigate("/dashboard/developer/developer-properties/add")}>
           <PlusOutlined style={{ fontSize: 13 }} /> Add Listing
         </button>
       </div>
@@ -304,20 +273,20 @@ export default function DeveloperProjects() {
       {/* CONTENT */}
       {loading ? (
         <div style={S.grid}>
-          {[1,2,3,4,5,6].map(i => (
-            <div key={i} style={{ background:"#fff", borderRadius:10, overflow:"hidden", border:"1px solid #e2e8f0" }}>
-              <div style={{ height:196, background:"#f1f5f9" }} />
-              <div style={{ padding:16 }}><Skeleton active paragraph={{ rows:2 }} /></div>
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} style={{ background: "#fff", borderRadius: 10, overflow: "hidden", border: "1px solid #e2e8f0" }}>
+              <div style={{ height: 196, background: "#f1f5f9" }} />
+              <div style={{ padding: 16 }}><Skeleton active paragraph={{ rows: 2 }} /></div>
             </div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
         <div style={S.empty}>
-          <div style={S.emptyIcon}><ApartmentOutlined style={{ fontSize:28, color:"#94a3b8" }} /></div>
+          <div style={S.emptyIcon}><ApartmentOutlined style={{ fontSize: 28, color: "#94a3b8" }} /></div>
           <p style={S.emptyTitle}>No listings found</p>
           <p style={S.emptySub}>{search ? "Try a different search term" : "Add your first listing to get started"}</p>
           {!search && (
-            <button style={S.addBtn} onClick={() => navigate("/dashboard/developer/developer-projects/add")}>
+            <button style={S.addBtn} onClick={() => navigate("/dashboard/developer/developer-properties/add")}>
               <PlusOutlined /> Add Listing
             </button>
           )}
@@ -336,14 +305,14 @@ export default function DeveloperProjects() {
                   />
                   <div style={S.badgeLeft}>
                     {item.isFeatured && (
-                      <span style={S.featuredBadge}><FireFilled style={{ fontSize:9 }} /> Featured</span>
+                      <span style={S.featuredBadge}><FireFilled style={{ fontSize: 9 }} /> Featured</span>
                     )}
                     {item.developmentStatus && (
                       <span style={S.projectBadge}>{item.developmentStatus}</span>
                     )}
                   </div>
                   <span style={{ ...S.statusBadge, color: sc.color, background: sc.bg, border: `1px solid ${sc.border}` }}>
-                    <span style={{ fontSize:10, lineHeight:1 }}>{sc.icon}</span> {sc.label}
+                    <span style={{ fontSize: 10, lineHeight: 1 }}>{sc.icon}</span> {sc.label}
                   </span>
                 </div>
 
@@ -351,7 +320,7 @@ export default function DeveloperProjects() {
                   <h3 style={S.cardTitle}>{item.propertyName}</h3>
                   {item.location && (
                     <div style={S.cardLoc}>
-                      <EnvironmentOutlined style={{ color:"#6d28d9", fontSize:11, flexShrink:0 }} />
+                      <EnvironmentOutlined style={{ color: "#6d28d9", fontSize: 11, flexShrink: 0 }} />
                       <span style={S.cardLocTxt}>{item.location}</span>
                     </div>
                   )}
@@ -373,26 +342,15 @@ export default function DeveloperProjects() {
 
                   {item.price && <div style={S.price}>{item.price}</div>}
 
-                  {item.constructionProgress > 0 && (
-                    <div style={S.progressWrap}>
-                      <div style={S.progressHeader}>
-                        <span>Construction Progress</span>
-                        <span>{item.constructionProgress}%</span>
-                      </div>
-                      <div style={S.progressBar}>
-                        <div style={{ ...S.progressFill, width: `${item.constructionProgress}%` }} />
-                      </div>
-                    </div>
-                  )}
-
+                  
                   <div style={S.divider} />
 
                   <div style={S.actions}>
-                    <button style={S.btnPrimary} onClick={() => navigate(`/dashboard/developer/developer-projects/${item.key}`)}>
-                      <EyeOutlined style={{ fontSize:11 }} /> View
+                    <button style={S.btnPrimary} onClick={() => navigate(`/dashboard/developer/developer-properties/${item.key}`)}>
+                      <EyeOutlined style={{ fontSize: 11 }} /> View
                     </button>
                     <button style={S.btnOutline} onClick={() => navigate(`/dashboard/developer/edit-property/${item.key}`)}>
-                      <EditOutlined style={{ fontSize:11 }} /> Edit
+                      <EditOutlined style={{ fontSize: 11 }} /> Edit
                     </button>
                   </div>
                 </div>

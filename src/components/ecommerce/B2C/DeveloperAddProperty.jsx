@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Card,
   Typography,
@@ -56,7 +56,6 @@ const customUploadRequest = async ({ file, onSuccess, onError }) => {
     if (!res.ok || data.success === false) throw new Error(data.message || "Upload failed");
     onSuccess(data, file);
   } catch (err) {
-    console.error("Upload error:", err);
     onError(err);
   }
 };
@@ -91,11 +90,11 @@ export default function DeveloperAddProperty() {
   const developerId = user?.id || user?._id || user?.sub || user?.userId || null;
 
   const [form] = Form.useForm();
+  // Cache values across step unmount/remount (defensive)
+  const formCacheRef = useRef({});
   const hasView = Form.useWatch("hasView", form);
   const allFormValues = Form.useWatch([], form);
-  useEffect(() => {
-    console.log("Form values updated:", allFormValues);
-  }, [allFormValues]);
+  useEffect(() => {}, [allFormValues]);
   const [formLoading, setFormLoading] = useState(false);
   const [photoError, setPhotoError] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
@@ -110,7 +109,7 @@ export default function DeveloperAddProperty() {
 
   useEffect(() => {
     if (!user) {
-      showToast("error", "Developer not found. Please log in again.");
+      showToast("Developer not found. Please log in again.", "error");
       navigate("/dashboard/developer");
     }
   }, [user, navigate]);
@@ -118,10 +117,7 @@ export default function DeveloperAddProperty() {
   const fetchDeveloperProfile = async () => {
     try {
       const res = await apiService.get("/profile/get-profile-data");
-      console.log("Full API response from profile/get-profile-data:", res);
-      console.log("res?.data:", res?.data);
       const profile = res?.data; // because api returns { data: profile }
-      console.log("Parsed profile:", profile);
       if (profile) {
         setDeveloperProfile(profile);
         const devDetails = {
@@ -132,13 +128,12 @@ export default function DeveloperAddProperty() {
           email: profile.email || "",
           logo: profile.logo || ""
         };
-        console.log("Setting developerDetails in form:", devDetails);
         form.setFieldsValue({
           developerDetails: devDetails
         });
       }
     } catch (err) {
-      console.error("Failed to fetch developer profile:", err);
+      // errors are surfaced via global apiService interceptor toast
     }
   };
 
@@ -158,7 +153,7 @@ export default function DeveloperAddProperty() {
 
   const validateImageSize = (file) => {
     const isLt5M = file.size / 1024 / 1024 < 5;
-    if (!isLt5M) showToast("error", "Image must be smaller than 5MB!");
+    if (!isLt5M) showToast("Image must be smaller than 5MB!", "error");
     return isLt5M || Upload.LIST_IGNORE;
   };
 
@@ -174,30 +169,38 @@ export default function DeveloperAddProperty() {
       .filter(Boolean);
 
   const handleSaveDraft = async () => {
-    console.log("=== 🚀 Add Property - handleSaveDraft called ===");
     await handleSave("draft");
   };
 
   const handleSubmitForApproval = async () => {
-    console.log("=== 🚀 Add Property - handleSubmitForApproval called ===");
     await handleSave("submit");
   };
 
   const handleSave = async (saveType) => {
-    console.log("=== 🚀 Add Property - handleSave called with saveType:", saveType, " ===");
-    
-    const values = form.getFieldsValue();
-    console.log("📝 All form values (from form.getFieldsValue()):", values);
-    console.log("🏢 Form values.projectName:", values.propertyName);
-    console.log("📍 Form values.locality:", values.locality);
-    console.log("💰 Form values.priceRange:", values.priceRangeFrom, "-", values.priceRangeTo);
-    console.log("🏷️ Form values.propertyType:", values.propertyType);
-    console.log("🏗️ Form values.developmentStatus:", values.developmentStatus);
-    console.log("🔖 Form values.saleStatus:", values.saleStatus);
-    console.log("⭐ Form values.isFeatured:", values.isFeatured);
+    // IMPORTANT: in step-based forms, earlier step fields may be unmounted.
+    // `getFieldsValue(true)` reads the full store (including unregistered fields).
+    const values = form.getFieldsValue(true);
+
+    // Validate required fields
+    if (!values.propertyName?.trim()) {
+      showToast("Project Name is required", "error");
+      return;
+    }
+    if (!values.locality) {
+      showToast("Property Locality is required", "error");
+      return;
+    }
+    if (!values.overview?.trim()) {
+      showToast("Project Overview is required", "error");
+      return;
+    }
+    if (!values.priceRangeFrom || !values.priceRangeTo) {
+      showToast("Price range is required", "error");
+      return;
+    }
 
     if (isAnyUploading()) {
-      showToast("error", "Please wait for all photos to finish uploading.");
+      showToast("Please wait for all photos to finish uploading.", "error");
       return;
     }
 
@@ -217,19 +220,16 @@ export default function DeveloperAddProperty() {
 
     let brochureUrl = "";
     if (brochureFileList.length > 0 && brochureFileList[0].status === "done") {
-      brochureUrl =
-        brochureFileList[0]?.url ||
-        extractPhotoUrl(brochureFileList[0]) ||
-        "";
+      brochureUrl = brochureFileList[0]?.url || extractPhotoUrl(brochureFileList[0]) || "";
     }
 
+    // FIX: Use 'developer' not 'developerId' - this matches backend schema
     const payload = {
-      developerId,
+      developer: developerId,  // ← CHANGED: developer instead of developerId
       propertyType: values.propertyType || "Residential",
       propertySubType: "off_plan",
       transactionType: "sell",
-      status: saveType === "submit" ? "pending" : "draft",
-      approvalStatus: saveType === "submit" ? "pending" : "draft",
+      approvalStatus: saveType === "submit" ? "pending" : "draft",  // ← CHANGED: use approvalStatus
       projectName: values.propertyName?.trim(),
       propertyName: values.propertyName?.trim(),
       locality: values.locality,
@@ -267,7 +267,9 @@ export default function DeveloperAddProperty() {
       parkingAllocation: values.parkingAllocation || "",
       parkingSpaces: values.parkingSpaces || 0,
       numberOfFloors: values.floors || 0,
-      furnishingStatus: (values.furnishing === "unfurnished" ? "Unfurnished" : values.furnishing === "semi-furnished" ? "Semi-Furnished" : values.furnishing === "fully-furnished" ? "Fully Furnished" : "Unfurnished"),
+      furnishingStatus: (values.furnishing === "unfurnished" ? "Unfurnished" :
+        values.furnishing === "semi-furnished" ? "Semi-Furnished" :
+          values.furnishing === "fully-furnished" ? "Fully Furnished" : "Unfurnished"),
       serviceCharge: values.serviceCharge || "",
       constructionProgress: values.constructionProgress || 0,
       paymentPlan: values.paymentPlan || [],
@@ -284,53 +286,29 @@ export default function DeveloperAddProperty() {
       },
     };
 
+    // Remove undefined values
     Object.keys(payload).forEach((k) => {
       if (payload[k] === undefined) delete payload[k];
     });
-
-    console.log("=== 📦 Final payload to send to backend ===");
-    console.log("Payload.projectName:", payload.projectName);
-    console.log("Payload.propertyName:", payload.propertyName);
-    console.log("Payload.locality:", payload.locality);
-    console.log("Payload.area:", payload.area);
-    console.log("Payload.propertyType:", payload.propertyType);
-    console.log("Payload.developmentStatus:", payload.developmentStatus);
-    console.log("Payload.saleStatus:", payload.saleStatus);
-    console.log("Payload.isFeatured:", payload.isFeatured);
-    console.log("Payload.priceRange:", payload.priceRange);
-    console.log("Payload.price_min:", payload.price_min);
-    console.log("Payload.price_max:", payload.price_max);
-    console.log("Payload.media.mainLogo:", payload.media?.mainLogo);
-    console.log("=== 📦 FULL PAYLOAD JSON ===");
-    console.log(JSON.stringify(payload, null, 2));
-    console.log("=== 🔍 FORM VALUES AGAIN ===");
-    console.log(JSON.stringify(values, null, 2));
 
     setPhotoError("");
 
     try {
       setFormLoading(true);
-      console.log("=== 📡 Sending POST to /properties ===");
       const res = await apiService.post("/properties", payload);
-      console.log("=== 📨 Response from /properties ===");
-      console.log("Response:", res);
+
       const savedProperty = res?.data?.data || res?.data;
       if (savedProperty) {
-        console.log("Saved property data:", savedProperty);
-        console.log("Saved projectName:", savedProperty.projectName);
-        console.log("Saved propertyName:", savedProperty.propertyName);
-      }
-      if (res?.status !== "fail" && res?.status !== "error") {
-        showToast("success", saveType === "submit"
-          ? "Property submitted. Waiting for admin approval."
-          : "Property saved as draft.");
-        navigate("/dashboard/developer/developer-projects");
+        showToast(saveType === "submit"
+          ? "Property submitted successfully! Waiting for admin approval."
+          : "Property saved as draft successfully!", "success");
+
+        navigate("/dashboard/developer/developer-properties");
       } else {
-        showToast("error", res?.message || "Failed to save property.");
+        showToast(res?.message || "Failed to save property. No data returned.", "error");
       }
     } catch (error) {
-      console.error("Save error:", error);
-      showToast("error", error?.message || "Something went wrong.");
+      showToast(error?.response?.data?.message || error?.message || "Something went wrong while saving.", "error");
     } finally {
       setFormLoading(false);
     }
@@ -338,7 +316,7 @@ export default function DeveloperAddProperty() {
 
   const handleFinishFailed = ({ errorFields }) => {
     if (errorFields?.length > 0) {
-      showToast("error", errorFields[0]?.errors?.[0] || "Please fill in all required fields.");
+      showToast(errorFields[0]?.errors?.[0] || "Please fill in all required fields.", "error");
     }
   };
 
@@ -534,7 +512,7 @@ export default function DeveloperAddProperty() {
                 customRequest={customUploadRequest}
                 beforeUpload={(file) => {
                   const isPDF = file.type === "application/pdf";
-                  if (!isPDF) showToast("error", "Only PDF files are allowed!");
+                  if (!isPDF) showToast("Only PDF files are allowed!", "error");
                   return isPDF || Upload.LIST_IGNORE;
                 }}
                 accept=".pdf"
@@ -862,15 +840,24 @@ export default function DeveloperAddProperty() {
   const handleNext = async () => {
     try {
       await form.validateFields();
+      formCacheRef.current = { ...formCacheRef.current, ...form.getFieldsValue(true) };
       setCurrentStep(currentStep + 1);
     } catch (error) {
-      console.error("Validation error:", error);
+      
     }
   };
 
   const handlePrev = () => {
+    formCacheRef.current = { ...formCacheRef.current, ...form.getFieldsValue(true) };
     setCurrentStep(currentStep - 1);
   };
+
+  // Re-apply cached values when step changes (prevents “lost data” reports)
+  useEffect(() => {
+    if (Object.keys(formCacheRef.current).length > 0) {
+      form.setFieldsValue(formCacheRef.current);
+    }
+  }, [currentStep, form]);
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -896,6 +883,9 @@ export default function DeveloperAddProperty() {
           form={form}
           layout="vertical"
           preserve={true}
+          onValuesChange={(_, all) => {
+            formCacheRef.current = { ...formCacheRef.current, ...all };
+          }}
           initialValues={{
             currency: "AED",
             builtUpAreaUnit: "sqft",
@@ -936,18 +926,18 @@ export default function DeveloperAddProperty() {
                 </Button>
               ) : (
                 <>
-                 <Button
-  onClick={handleSaveDraft}
->
-  Save Draft
-</Button>
+                  <Button
+                    onClick={handleSaveDraft}
+                  >
+                    Save Draft
+                  </Button>
 
-<Button
-  type="primary"
-  onClick={handleSubmitForApproval}
->
-  Submit For Approval
-</Button>
+                  <Button
+                    type="primary"
+                    onClick={handleSubmitForApproval}
+                  >
+                    Submit For Approval
+                  </Button>
                 </>
               )}
             </div>

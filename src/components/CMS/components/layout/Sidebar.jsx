@@ -310,9 +310,9 @@ const CUSTOM_ROLE_LINKS = {
   "10": [],
   "17": [
     {
-      title: "Projects",
+      title: "Properties",
       icon: "fas fa-building",
-      path: "/dashboard/{roleSlug}/developer-projects"
+      path: "/dashboard/{roleSlug}/developer-properties"
     },
     //   {
     //   title: "Global Projects",
@@ -320,9 +320,9 @@ const CUSTOM_ROLE_LINKS = {
     //   path: "/dashboard/{roleSlug}/property-list"
     // },
     {
-      title: "Listings",
+      title: "Inventory",
       icon: "fas fa-layer-group",
-      path: "/dashboard/{roleSlug}/developerinventory",
+      path: "/dashboard/{roleSlug}/developer-inventory",
     },
 
   ],
