@@ -266,6 +266,9 @@ import Adminfeedbacks from "../../components/footer/Adminfeedbacks";
 import Presentations from "../ecommerce/B2C/PresentationManager";
 import BankProductViewwithdocuments from "../homepage/BankProductViewwithdocuments";
 import BankProductDocuments from "../homepage/BankProductDocuments";
+import GridAgentLeadDetail from "../Grid/GridAgent/GridAgentLeadDetail";
+import GridAgentLeadDetailadmin from "../Grid/GridAdmin.jsx/GridAgentLeadDetailadmin";
+import GridAdvisorLeadDetail from "../Grid/AdvisorGrid/GridAdvisorLeadDetail";
 
 
 
@@ -606,7 +609,11 @@ const CmsRoutes = () => {
 
 
       <Route path="/GridAdmin/propertyleads" element={<PlatformLeads />} />
-      <Route path="/grid/agentleads" element={<AgentLeads />} />
+      <Route path="/grid/agentleads" element={<AgentLeads />} /> 
+      <Route path="/lead-detail/:id" element={<GridAgentLeadDetail />} />
+      <Route path="/lead-detail-admin/:id" element={<GridAgentLeadDetailadmin />} />
+     <Route path="gridAdvisorLeads/:id" element={<GridAdvisorLeadDetail />} />
+      
 
 
       {/* Agency */}
