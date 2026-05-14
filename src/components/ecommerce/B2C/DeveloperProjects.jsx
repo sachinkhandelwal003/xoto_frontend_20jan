@@ -69,6 +69,9 @@ export default function DeveloperProjects() {
   const [quickLocation, setQuickLocation] = useState("All");
   const [quickSaleStatus, setQuickSaleStatus] = useState("All");
 
+  // Status Filter (Live/Pending/Rejected/Draft)
+  const [statusFilter, setStatusFilter] = useState("All");
+
   // Advanced Filters
   const [advancedDrawerOpen, setAdvancedDrawerOpen] = useState(false);
   const [advDevelopmentStatus, setAdvDevelopmentStatus] = useState("All");
@@ -154,6 +157,15 @@ export default function DeveloperProjects() {
     const q = search.toLowerCase();
     let base = [...projects];
 
+    // Status Filter (Live/Pending/Rejected/Draft)
+    if (statusFilter !== "All") {
+      if (statusFilter === "Live") {
+        base = base.filter(p => p.status === "approved");
+      } else {
+        base = base.filter(p => p.status === statusFilter.toLowerCase());
+      }
+    }
+
     if (postHandover) {
       base = base.filter(p => p.isPostHandover);
     }
@@ -200,7 +212,7 @@ export default function DeveloperProjects() {
       p.location?.toLowerCase().includes(q)
     ));
   }, [
-    search, projects, postHandover, quickLocation, quickSaleStatus,
+    search, projects, statusFilter, postHandover, quickLocation, quickSaleStatus,
     advDevelopmentStatus, advLocation, advUnitType, advCompletionBy, advSaleStatus, advPriceRange
   ]);
 
@@ -210,11 +222,30 @@ export default function DeveloperProjects() {
       <div style={S.topBar}>
         <div>
           <h1 style={S.pageTitle}>Property Management</h1>
-          <p style={S.pageSubtitle}>Manage all your listings from this central hub</p>
+          <p style={S.pageSubtitle}>
+            {projects.length} listings total · {projects.filter(p => p.status === "approved").length} live · {projects.filter(p => p.status === "pending").length} pending
+          </p>
         </div>
         <button style={S.addBtn} onClick={() => navigate("/dashboard/developer/developer-properties/add")}>
           <PlusOutlined style={{ fontSize: 13 }} /> Add Listing
         </button>
+      </div>
+
+      {/* STATUS FILTER TABS */}
+      <div style={S.statusTabs}>
+        {["All", "Live", "Pending", "Rejected", "Draft"].map(tab => (
+          <button
+            key={tab}
+            style={{
+              ...S.statusTab,
+              ...(statusFilter === tab ? S.statusTabActive : {})
+            }}
+            onClick={() => setStatusFilter(tab)}
+          >
+            {tab}
+            {tab === "All" ? "" : tab === "Live" ? ` (${projects.filter(p => p.status === "approved").length})` : ` (${projects.filter(p => p.status === tab.toLowerCase()).length})`}
+          </button>
+        ))}
       </div>
 
       {/* FILTER BAR */}
@@ -474,9 +505,19 @@ export default function DeveloperProjects() {
 const S = {
   page: { minHeight: "100vh", background: "#f8fafc", padding: "28px 24px", fontFamily: "'Inter','Segoe UI',sans-serif" },
 
-  topBar: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 },
+  topBar: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap", gap: 12 },
   pageTitle: { margin: 0, fontSize: 22, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.3px" },
   pageSubtitle: { margin: "3px 0 0", fontSize: 13, color: "#64748b" },
+
+  statusTabs: { display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" },
+  statusTab: {
+    padding: "8px 20px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b",
+    fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+    transition: "all 0.2s ease"
+  },
+  statusTabActive: {
+    background: "#6d28d9", borderColor: "#6d28d9", color: "#fff"
+  },
 
   addBtn: {
     display: "inline-flex", alignItems: "center", gap: 7,

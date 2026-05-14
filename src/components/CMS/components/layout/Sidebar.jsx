@@ -314,17 +314,16 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-building",
       path: "/dashboard/{roleSlug}/developer-properties"
     },
-    //   {
-    //   title: "Global Projects",
-    //   icon: "fas fa-building",
-    //   path: "/dashboard/{roleSlug}/property-list"
-    // },
     {
       title: "Inventory",
       icon: "fas fa-layer-group",
       path: "/dashboard/{roleSlug}/developer-inventory",
     },
-
+    {
+      title: "Analytics",
+      icon: "fas fa-chart-line",
+      path: "/dashboard/{roleSlug}/analytics",
+    },
   ],
   "15": [
     {
@@ -657,7 +656,7 @@ const ROLE_MODULE_ORDER = {
   '5': ['Dashboard', 'Products', 'My Products', 'Inventory', 'Orders', 'Payout', 'Settings'],
   '6': ['Dashboard', 'Products', 'Projects', 'Inventory', 'Payout'],
   '7': ['Dashboard', 'My Projects', 'All Projects', 'Add Projects', 'Payout'],
-  '17': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
+  '17': ['Dashboard', 'Properties', 'Inventory', 'Analytics'],
   '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '16': ['Dashboard', 'AgentLead Management'],

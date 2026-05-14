@@ -143,45 +143,45 @@ const DeveloperDashboard = () => {
         </div>
 
         {/* STATS */}
-        <Row gutter={[16, 16]} className="mb-8">
-          {dashboardData?.stats?.map((stat, i) => (
-            <Col xs={24} sm={12} lg={6} key={i}>
-              <Card bordered={false}>
-                <div className="flex justify-between mb-2">
-                  <div>
-                    <Text type="secondary">{stat.label}</Text>
-                    <Title level={3} style={{ margin: "4px 0" }}>{stat.value}</Title>
-                  </div>
-                  <div style={{
-                    background: stat.bg,
-                    color: stat.color,
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "20px"
-                  }}>
+      <Row gutter={[16, 16]} className="mb-8">
+        {dashboardData?.stats?.map((stat, i) => (
+          <Col xs={24} sm={12} md={6} lg={6} xl={6} key={i}>
+            <Card bordered={false} className="h-full">
+              <div className="flex justify-between mb-2">
+                <div>
+                  <Text type="secondary">{stat.label}</Text>
+                  <Title level={3} style={{ margin: "4px 0" }}>{stat.value}</Title>
+                </div>
+                <div style={{
+                  background: stat.bg,
+                  color: stat.color,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "20px"
+                }}>
                     {statsIcons[i]}
                   </div>
-                </div>
-                {stat.change !== 0 && (
-                  <Tag
-                    color={stat.change > 0 ? "green" : "red"}
-                    icon={stat.change > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-                  >
-                    {Math.abs(stat.change)}%
-                  </Tag>
-                )}
-              </Card>
-            </Col>
-          ))}
-        </Row>
+              </div>
+              {stat.change !== 0 && (
+                <Tag
+                  color={stat.change > 0 ? "green" : "red"}
+                  icon={stat.change > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                >
+                  {Math.abs(stat.change)}%
+                </Tag>
+              )}
+            </Card>
+          </Col>
+        ))}
+      </Row>
 
-        {/* PROPERTY-WISE INVENTORY STATUS */}
+      {/* PROPERTY-WISE INVENTORY STATUS */}
       <Row gutter={[16, 16]} className="mb-8">
-        <Col xs={24} lg={8}>
+        <Col xs={24} md={8} lg={8} xl={8}>
           <Card title="Top Performing Listing" className="h-full">
             <div className="flex flex-col items-center justify-center h-full text-center py-6">
               <TrophyOutlined style={{ fontSize: "48px", color: "#f59e0b", marginBottom: "16px" }} />
@@ -191,7 +191,7 @@ const DeveloperDashboard = () => {
           </Card>
         </Col>
 
-        <Col xs={24} lg={8}>
+        <Col xs={24} md={8} lg={8} xl={8}>
           <Card title="Overall Inventory Status">
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
@@ -207,7 +207,7 @@ const DeveloperDashboard = () => {
           </Card>
         </Col>
 
-        <Col xs={24} lg={8}>
+        <Col xs={24} md={8} lg={8} xl={8}>
           <Card title="Sales Pipeline">
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={dashboardData?.dealFunnel || []}>
