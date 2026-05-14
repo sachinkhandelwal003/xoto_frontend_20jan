@@ -158,6 +158,7 @@ export default function DeveloperEditProperty() {
           propertyName: p.projectName || p.propertyName,
           locality: p.locality || p.area,
           propertyType: p.propertyType || "Residential",
+          unitTypes: p.unitTypes || [],
           overview: p.overview || p.description,
           priceRangeFrom: p.priceRange?.from || p.price_min,
           priceRangeTo: p.priceRange?.to || p.price_max,
@@ -344,6 +345,8 @@ export default function DeveloperEditProperty() {
     locality: values.locality,
     area: values.locality,
     propertyType: values.propertyType || "Residential",
+    unitTypes: values.unitTypes || [],
+    unitType: values.unitTypes?.[0] || "apartment",
     completionDate: {
       fullDate: values.completionDate ? values.completionDate.format("YYYY-MM-DD") : null,
     },
@@ -525,6 +528,21 @@ export default function DeveloperEditProperty() {
                     <Option value="Residential">Residential</Option>
                     <Option value="Commercial">Commercial</Option>
                     <Option value="Mixed-Use">Mixed-Use</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item name="unitTypes" label="Unit Types" rules={[{ required: true, message: "Select at least one unit type" }]}>
+                  <Select mode="multiple" placeholder="Select unit types">
+                    <Option value="apartment">Apartment</Option>
+                    <Option value="penthouse">Penthouse</Option>
+                    <Option value="villa">Villa</Option>
+                    <Option value="townhouse">Townhouse</Option>
+                    <Option value="duplex">Duplex</Option>
+                    <Option value="office">Office</Option>
+                    <Option value="retail">Retail</Option>
+                    <Option value="warehouse">Warehouse</Option>
+                    <Option value="plot">Plot</Option>
                   </Select>
                 </Form.Item>
               </Col>

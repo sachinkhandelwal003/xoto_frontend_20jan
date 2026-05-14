@@ -1,20 +1,20 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Select, Input, Upload, message, Popconfirm,
-  Modal, Form, InputNumber, Divider, Switch, Spin, Pagination
+  Modal, Form, InputNumber, Divider, Switch, Spin, Pagination, Button
 } from "antd";
 import {
   SearchOutlined, UploadOutlined, PlusOutlined,
-  EditOutlined, ReloadOutlined, AppstoreOutlined,
+  EditOutlined, ReloadOutlined, AppstoreOutlined, EyeOutlined,
   CheckCircleFilled, ClockCircleFilled, CloseCircleFilled,
-  DollarOutlined, HomeOutlined, FilterOutlined,
+  DollarOutlined, HomeOutlined, FilterOutlined, ThunderboltOutlined,
 }  from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 const { Option } = Select;
 
-const UNIT_TYPES = ["apartment", "villa", "townhouse", "duplex", "penthouse"];
+const UNIT_TYPES = ["apartment", "villa", "townhouse", "duplex", "penthouse", "plot", "office", "retail", "warehouse", "hotel_apartment"];
 const BEDROOM_TYPES = ["studio", "1bed", "2bed", "3bed", "4bed", "5bed", "6bed", "7bed", "8plus"];
 const VIEW_TYPES = ["sea", "city", "garden", "landmark", "pool", "park"];
 const FURNISHING = ["furnished", "semi_furnished", "unfurnished"];
@@ -23,9 +23,13 @@ const CURRENCIES = ["AED", "USD", "EUR"];
 
 const STATUS_CONFIG = {
   available: { color: "#15803d", bg: "#f0fdf4", border: "#bbf7d0", dot: "#22c55e", label: "Available" },
+  hold: { color: "#ca8a04", bg: "#fefce8", border: "#fde047", dot: "#eab308", label: "On Hold" },
   reserved: { color: "#6d28d9", bg: "#f5f3ff", border: "#ddd6fe", dot: "#8b5cf6", label: "Reserved" },
   booked: { color: "#92400e", bg: "#fffbeb", border: "#fde68a", dot: "#f59e0b", label: "Booked" },
+  spa_signed: { color: "#0f172a", bg: "#f1f5f9", border: "#cbd5e1", dot: "#475569", label: "SPA Signed" },
   sold: { color: "#1e40af", bg: "#eff6ff", border: "#bfdbfe", dot: "#3b82f6", label: "Sold" },
+  handover: { color: "#065f46", bg: "#ecfdf5", border: "#a7f3d0", dot: "#10b981", label: "Handover" },
+  cancelled: { color: "#b91c1c", bg: "#fef2f2", border: "#fecaca", dot: "#ef4444", label: "Cancelled" },
 };
 
 const STAT_CARDS = [
@@ -54,6 +58,11 @@ const InventoryCard = ({ unit, onEdit, onAction, onView }) => {
   const sc = STATUS_CONFIG[unit.status] || STATUS_CONFIG.available;
   const status = unit.status?.toLowerCase();
   const [hov, setHov] = useState(null);
+  const unitType = unit.unitType?.toLowerCase();
+
+  const isResidential = ["apartment", "villa", "townhouse", "duplex", "penthouse"].includes(unitType);
+  const isCommercial = ["office", "retail", "warehouse"].includes(unitType);
+  const isPlot = unitType === "plot";
 
   return (
     <div style={S.card}>
@@ -75,13 +84,28 @@ const InventoryCard = ({ unit, onEdit, onAction, onView }) => {
       {/* Body */}
       <div style={S.cardBody}>
         <Field label="Type" value={toLabel(unit.unitType)} />
-        <Field label="Bedroom" value={toLabel(unit.bedroomType)} />
-        <Field label="Bathrooms" value={unit.bathrooms} />
+        
+        {isResidential && (
+          <>
+            <Field label="Bedroom" value={toLabel(unit.bedroomType)} />
+            <Field label="Bathrooms" value={unit.bathrooms} />
+          </>
+        )}
+        
         <Field label="Area" value={unit.area ? `${Number(unit.area).toLocaleString()} ${unit.areaUnit || "sqft"}` : "—"} />
         <Field label="Price" value={fmt(unit.price, unit.currency)} highlight />
-        <Field label="View" value={unit.viewType?.length ? unit.viewType.map(toLabel).join(", ") : "—"} />
-        <Field label="Furnishing" value={toLabel(unit.furnishing)} />
-        <Field label="Parking" value={unit.parkingSpaces ?? "—"} />
+        
+        {!isPlot && (
+          <>
+            <Field label="Furnishing" value={toLabel(unit.furnishing)} />
+            <Field label="Parking" value={unit.parkingSpaces ?? "—"} />
+          </>
+        )}
+        
+        {isResidential && (
+          <Field label="View" value={unit.viewType?.length ? unit.viewType.map(toLabel).join(", ") : "—"} />
+        )}
+        
         {unit.reservedAt && <Field label="Reserved" value={new Date(unit.reservedAt).toLocaleDateString("en-AE", { day: "2-digit", month: "short", year: "numeric" })} />}
         {unit.bookedAt && <Field label="Booked" value={new Date(unit.bookedAt).toLocaleDateString("en-AE", { day: "2-digit", month: "short", year: "numeric" })} />}
         {unit.soldAt && <Field label="Sold" value={new Date(unit.soldAt).toLocaleDateString("en-AE", { day: "2-digit", month: "short", year: "numeric" })} />}
@@ -123,7 +147,7 @@ const InventoryCard = ({ unit, onEdit, onAction, onView }) => {
         {(status === "booked" || status === "sold") && (
           <button
             style={{ ...S.actBtn, ...S.actBtnPurple, flex: 2 }}
-            onClick={() => onView(unit.key)}
+            onClick={() => onView(unit)}
           >View Details</button>
         )}
       </div>
@@ -132,84 +156,113 @@ const InventoryCard = ({ unit, onEdit, onAction, onView }) => {
 };
 
 // Form Fields Component
-const InventoryFormFields = ({ isEdit = false, selectedUnit = null }) => (
-  <>
-    <div style={S.formSection}>Unit Identity</div>
-    <div style={S.formGrid3}>
-      <Form.Item name="unitNumber" label="Unit Number" rules={[{ required: true }]}><Input placeholder="e.g. T1-1001" /></Form.Item>
-      <Form.Item name="buildingName" label="Building Name"><Input placeholder="e.g. Tower A" /></Form.Item>
-      <Form.Item name="floorNumber" label="Floor Number"><InputNumber min={0} style={{ width: "100%" }} /></Form.Item>
-    </div>
+const InventoryFormFields = ({ isEdit = false, selectedUnit = null }) => {
+  const isResidentialUnitType = (unitType) => 
+    ["apartment", "villa", "townhouse", "duplex", "penthouse", "hotel_apartment"].includes(unitType);
+  
+  const isPlotUnitType = (unitType) => unitType === "plot";
 
-    <div style={S.formSection}>Unit Type & Size</div>
-    <div style={S.formGrid4}>
-      <Form.Item name="unitType" label="Unit Type" rules={[{ required: true }]}>
-        <Select placeholder="Select">{UNIT_TYPES.map(t => <Option key={t} value={t}>{toLabel(t)}</Option>)}</Select>
-      </Form.Item>
-      <Form.Item name="bedroomType" label="Bedroom Type" rules={[{ required: true }]}>
-        <Select placeholder="Select">{BEDROOM_TYPES.map(t => <Option key={t} value={t}>{toLabel(t)}</Option>)}</Select>
-      </Form.Item>
-      <Form.Item name="bedrooms" label="Bedrooms"><InputNumber min={0} style={{ width: "100%" }} /></Form.Item>
-      <Form.Item name="bathrooms" label="Bathrooms"><InputNumber min={0} style={{ width: "100%" }} /></Form.Item>
-    </div>
+  return (
+    <>
+      <div style={S.formSection}>Unit Identity</div>
+      <div style={S.formGrid3}>
+        <Form.Item name="unitNumber" label="Unit Number" rules={[{ required: true }]}><Input placeholder="e.g. T1-1001" /></Form.Item>
+        <Form.Item name="buildingName" label="Building Name"><Input placeholder="e.g. Tower A" /></Form.Item>
+        <Form.Item name="floorNumber" label="Floor Number"><InputNumber min={0} style={{ width: "100%" }} /></Form.Item>
+      </div>
 
-    <div style={S.formSection}>Area & Price</div>
-    <div style={S.formGrid4}>
-      <Form.Item name="area" label="Area" rules={[{ required: true }]}><InputNumber min={0} style={{ width: "100%" }} /></Form.Item>
-      <Form.Item name="areaUnit" label="Unit" initialValue="sqft"><Select>{AREA_UNITS.map(u => <Option key={u} value={u}>{u}</Option>)}</Select></Form.Item>
-      <Form.Item name="price" label="Price" rules={[{ required: true }]}>
-        <InputNumber min={0} style={{ width: "100%" }}
-          formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-          parser={v => v.replace(/,/g, "")} />
-      </Form.Item>
-      <Form.Item name="currency" label="Currency" initialValue="AED"><Select>{CURRENCIES.map(c => <Option key={c} value={c}>{c}</Option>)}</Select></Form.Item>
-    </div>
-
-    <div style={S.formSection}>View & Features</div>
-    <div style={S.formGrid4}>
-      <Form.Item name="hasView" label="Has View" valuePropName="checked">
-        <Switch />
-      </Form.Item>
-
-      <Form.Item shouldUpdate={(prev, curr) => prev.hasView !== curr.hasView}>
-        {({ getFieldValue }) =>
-          getFieldValue("hasView") ? (
-            <Form.Item
-              name="viewType"
-              label="View Types"
-              style={{ gridColumn: "span 2" }}
-            >
-              <Select mode="multiple" placeholder="Select" allowClear>
-                {VIEW_TYPES.map(v => (
-                  <Option key={v} value={v}>{toLabel(v)}</Option>
-                ))}
-              </Select>
-            </Form.Item>
-          ) : null
-        }
-      </Form.Item>
-
-      <Form.Item name="parkingSpaces" label="Parking"><InputNumber min={0} style={{ width: "100%" }} /></Form.Item>
-    </div>
-    <div style={{ maxWidth: 240 }}>
-      <Form.Item name="furnishing" label="Furnishing" initialValue="unfurnished">
-        <Select>{FURNISHING.map(f => <Option key={f} value={f}>{toLabel(f)}</Option>)}</Select>
-      </Form.Item>
-    </div>
-
-    {isEdit && (<>
-      <div style={S.formSection}>Status</div>
-      <div style={{ maxWidth: 240 }}>
-        <Form.Item name="status" label="Unit Status">
-          <Select>
-            {["available", "reserved", "booked"].map(s => <Option key={s} value={s}>{toLabel(s)}</Option>)}
-            <Option value="sold" disabled={selectedUnit?.status !== "booked"}>Sold</Option>
-          </Select>
+      <div style={S.formSection}>Unit Type & Size</div>
+      <div style={S.formGrid4}>
+        <Form.Item name="unitType" label="Unit Type" rules={[{ required: true }]}>
+          <Select placeholder="Select">{UNIT_TYPES.map(t => <Option key={t} value={t}>{toLabel(t)}</Option>)}</Select>
+        </Form.Item>
+        
+        <Form.Item shouldUpdate={(prev, curr) => prev.unitType !== curr.unitType}>
+          {({ getFieldValue }) => {
+            const unitType = getFieldValue("unitType");
+            return isResidentialUnitType(unitType) ? (
+              <>
+                <Form.Item name="bedroomType" label="Bedroom Type" rules={[{ required: true }]}>
+                  <Select placeholder="Select">{BEDROOM_TYPES.map(t => <Option key={t} value={t}>{toLabel(t)}</Option>)}</Select>
+                </Form.Item>
+                <Form.Item name="bedrooms" label="Bedrooms"><InputNumber min={0} style={{ width: "100%" }} /></Form.Item>
+                <Form.Item name="bathrooms" label="Bathrooms"><InputNumber min={0} style={{ width: "100%" }} /></Form.Item>
+              </>
+            ) : null;
+          }}
         </Form.Item>
       </div>
-    </>)}
-  </>
-);
+
+      <div style={S.formSection}>Area & Price</div>
+      <div style={S.formGrid4}>
+        <Form.Item name="area" label="Area" rules={[{ required: true }]}><InputNumber min={0} style={{ width: "100%" }} /></Form.Item>
+        <Form.Item name="areaUnit" label="Unit" initialValue="sqft"><Select>{AREA_UNITS.map(u => <Option key={u} value={u}>{u}</Option>)}</Select></Form.Item>
+        <Form.Item name="price" label="Price" rules={[{ required: true }]}>
+          <InputNumber min={0} style={{ width: "100%" }}
+            formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+            parser={v => v.replace(/,/g, "")} />
+        </Form.Item>
+        <Form.Item name="currency" label="Currency" initialValue="AED"><Select>{CURRENCIES.map(c => <Option key={c} value={c}>{c}</Option>)}</Select></Form.Item>
+      </div>
+
+      <Form.Item shouldUpdate={(prev, curr) => prev.unitType !== curr.unitType}>
+        {({ getFieldValue }) => {
+          const unitType = getFieldValue("unitType");
+          if (!isPlotUnitType(unitType)) {
+            return (
+              <>
+                <div style={S.formSection}>View & Features</div>
+                <div style={S.formGrid4}>
+                  <Form.Item name="hasView" label="Has View" valuePropName="checked">
+                    <Switch />
+                  </Form.Item>
+
+                  <Form.Item shouldUpdate={(prev, curr) => prev.hasView !== curr.hasView}>
+                    {({ getFieldValue }) =>
+                      getFieldValue("hasView") ? (
+                        <Form.Item
+                          name="viewType"
+                          label="View Types"
+                          style={{ gridColumn: "span 2" }}
+                        >
+                          <Select mode="multiple" placeholder="Select" allowClear>
+                            {VIEW_TYPES.map(v => (
+                              <Option key={v} value={v}>{toLabel(v)}</Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      ) : null
+                    }
+                  </Form.Item>
+
+                  <Form.Item name="parkingSpaces" label="Parking"><InputNumber min={0} style={{ width: "100%" }} /></Form.Item>
+                </div>
+                <div style={{ maxWidth: 240 }}>
+                  <Form.Item name="furnishing" label="Furnishing" initialValue="unfurnished">
+                    <Select>{FURNISHING.map(f => <Option key={f} value={f}>{toLabel(f)}</Option>)}</Select>
+                  </Form.Item>
+                </div>
+              </>
+            );
+          }
+          return null;
+        }}
+      </Form.Item>
+
+      {isEdit && (<>
+        <div style={S.formSection}>Status</div>
+        <div style={{ maxWidth: 240 }}>
+          <Form.Item name="status" label="Unit Status">
+            <Select>
+              {["available", "reserved", "booked"].map(s => <Option key={s} value={s}>{toLabel(s)}</Option>)}
+              <Option value="sold" disabled={selectedUnit?.status !== "booked"}>Sold</Option>
+            </Select>
+          </Form.Item>
+        </div>
+      </>)}
+    </>
+  );
+};
 
 // Main Component
 export default function DeveloperInventory() {
@@ -226,11 +279,76 @@ export default function DeveloperInventory() {
   const [totalItems, setTotalItems] = useState(0);
   const [createModal, setCreateModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
+  const [viewModal, setViewModal] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState(null);
   const [createForm] = Form.useForm();
   const [editForm] = Form.useForm();
   const [saving, setSaving] = useState(false);
+  const [categoryConfig, setCategoryConfig] = useState(null);
+  const [propertyConfig, setPropertyConfig] = useState(null);
+  const [configModalVisible, setConfigModalVisible] = useState(false);
+  const [configForm] = Form.useForm();
+  const [generating, setGenerating] = useState(false);
   const PAGE_SIZE = 12;
+
+  const fetchCategoryConfig = useCallback(async () => {
+    try {
+      const res = await apiService.get("/properties/inventory-categories");
+      if (res) {
+        setCategoryConfig(res);
+      }
+    } catch (err) {
+      console.error("Failed to fetch category config:", err);
+    }
+  }, []);
+
+  const fetchPropertyConfig = useCallback(async (pid) => {
+    try {
+      const res = await apiService.get(`/properties/${pid}/required-config`);
+      if (res?.data) {
+        setPropertyConfig(res.data);
+        return res.data;
+      }
+    } catch (err) {
+      console.error("Failed to fetch property config:", err);
+      message.error(err?.response?.data?.message || "Failed to load config");
+    }
+  }, []);
+
+  const handleAutoGenerate = async () => {
+    if (!projectId) {
+      message.error("Select a project first");
+      return;
+    }
+    // Fetch property config and open modal
+    const config = await fetchPropertyConfig(projectId);
+    if (config) {
+      setConfigModalVisible(true);
+    }
+  };
+
+  const handleSubmitConfigAndGenerate = async () => {
+    try {
+      await configForm.validateFields();
+      const configData = configForm.getFieldsValue();
+      setGenerating(true);
+      setConfigModalVisible(false);
+      
+      const res = await apiService.post("/properties/inventory/auto-generate", {
+        propertyId: projectId,
+        config: configData
+      });
+      
+      message.success(res?.message || "Units generated successfully!");
+      fetchInventory(projectId, currentPage);
+      configForm.resetFields();
+    } catch (err) {
+      console.error("Auto-generate error:", err);
+      message.error(err?.response?.data?.message || "Auto-generate failed");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -271,10 +389,13 @@ export default function DeveloperInventory() {
       if (unitTypeFilter) url += `&unitType=${unitTypeFilter}`;
 
       const res = await apiService.get(url);
-
-      const inventoryData = res?.data || [];
-      const list = (Array.isArray(inventoryData) ? inventoryData : []).map(item => ({
-        key: item._id,
+      
+      // Handle different response formats
+      const resData = res?.data || res;
+      const inventoryList = Array.isArray(resData) ? resData : (resData?.data || []);
+      
+      const list = inventoryList.map(item => ({
+        key: item._id || item.key,
         _id: item._id,
         unitNumber: item.unitNumber,
         buildingName: item.buildingName,
@@ -298,10 +419,21 @@ export default function DeveloperInventory() {
       }));
 
       setUnits(list);
-      setStats(res?.counts || null);
-      setTotalItems(res?.pagination?.totalItems || list.length);
-      setCurrentPage(res?.pagination?.currentPage || page);
+      
+      // Get counts and pagination
+      const counts = resData?.counts || res?.counts;
+      if (counts) {
+        setStats(counts);
+      }
+      
+      const totalItems = resData?.pagination?.totalItems || res?.pagination?.totalItems || list.length;
+      const currentPage = resData?.pagination?.currentPage || res?.pagination?.currentPage || page;
+      
+      setTotalItems(totalItems);
+      setCurrentPage(currentPage);
+      
     } catch (err) {
+      console.error("Failed to load inventory:", err);
       message.error(err?.response?.data?.message || "Failed to load inventory");
     } finally {
       setLoading(false);
@@ -391,6 +523,11 @@ const handleCreate = async (values) => {
     setEditModal(true);
   };
 
+  const openView = (unit) => {
+    setSelectedUnit(unit);
+    setViewModal(true);
+  };
+
   const handleCSV = async (file) => {
   if (!projectId) { message.error("Select project first"); return false; }
   const text = await file.text();
@@ -423,7 +560,7 @@ const handleCreate = async (values) => {
 };
 ;
 
-  useEffect(() => { fetchProjects(); }, [fetchProjects]);
+  useEffect(() => { fetchProjects(); fetchCategoryConfig(); }, [fetchProjects, fetchCategoryConfig]);
   useEffect(() => { if (projectId) fetchInventory(projectId, 1); }, [projectId, statusFilter, unitTypeFilter]);
 
   const displayed = search
@@ -450,6 +587,13 @@ const handleCreate = async (values) => {
           <Upload beforeUpload={handleCSV} accept=".csv" showUploadList={false}>
             <button style={S.outlineBtn}><UploadOutlined style={{ fontSize: 13 }} /> Import CSV</button>
           </Upload>
+          <button
+            style={{ ...S.primaryBtn, background: "#15803d", opacity: !projectId ? 0.5 : 1 }}
+            disabled={!projectId || generating}
+            onClick={handleAutoGenerate}
+          >
+            <ThunderboltOutlined style={{ fontSize: 13 }} /> {generating ? "Generating..." : "Auto-Generate"}
+          </button>
           <button
             style={{ ...S.primaryBtn, opacity: !projectId ? 0.5 : 1 }}
             disabled={!projectId}
@@ -498,7 +642,7 @@ const handleCreate = async (values) => {
           <label style={S.filterLabel}><FilterOutlined style={{ fontSize: 11 }} /> Status</label>
           <Select style={{ width: 140 }} placeholder="All" allowClear value={statusFilter}
             onChange={val => { setStatusFilter(val); setCurrentPage(1); }}>
-            {["available", "reserved", "booked", "sold"].map(s => (
+            {Object.keys(STATUS_CONFIG).map(s => (
               <Option key={s} value={s}>
                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ width: 7, height: 7, borderRadius: "50%", background: STATUS_CONFIG[s]?.dot, display: "inline-block" }} />
@@ -609,7 +753,7 @@ const handleCreate = async (values) => {
                 unit={unit}
                 onEdit={openEdit}
                 onAction={handleAction}
-                onView={id => navigate(`/dashboard/developer/inventory/${id}`)}
+                onView={openView}
               />
             ))}
           </div>
@@ -647,6 +791,110 @@ const handleCreate = async (values) => {
         </Form>
       </Modal>
 
+      {/* View Modal */}
+      <Modal
+        title={<span style={S.modalTitle}><EyeOutlined style={{ color: "#6d28d9" }} /> Unit Details — {selectedUnit?.unitNumber}</span>}
+        open={viewModal}
+        onCancel={() => { setViewModal(false); setSelectedUnit(null); }}
+        footer={[
+          <Button key="close" onClick={() => { setViewModal(false); setSelectedUnit(null); }}>Close</Button>,
+          <Button key="edit" type="primary" style={{ backgroundColor: "#6d28d9" }} onClick={() => {
+            setViewModal(false);
+            openEdit(selectedUnit);
+          }}>Edit</Button>
+        ]}
+        width={600}
+        destroyOnClose
+      >
+        {selectedUnit && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Unit Type</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{toLabel(selectedUnit.unitType)}</div>
+              </div>
+              <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Status</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{toLabel(selectedUnit.status)}</div>
+              </div>
+              {selectedUnit.bedroomType && (
+                <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Bedroom Type</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{toLabel(selectedUnit.bedroomType)}</div>
+                </div>
+              )}
+              {selectedUnit.bedrooms != null && (
+                <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Bedrooms</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{selectedUnit.bedrooms}</div>
+                </div>
+              )}
+              {selectedUnit.bathrooms != null && (
+                <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Bathrooms</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{selectedUnit.bathrooms}</div>
+                </div>
+              )}
+              {selectedUnit.area != null && (
+                <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Area</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{Number(selectedUnit.area).toLocaleString()} {selectedUnit.areaUnit || 'sqft'}</div>
+                </div>
+              )}
+              {selectedUnit.price != null && (
+                <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Price</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#6d28d9' }}>{fmt(selectedUnit.price, selectedUnit.currency)}</div>
+                </div>
+              )}
+              {selectedUnit.buildingName && (
+                <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Building Name</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{selectedUnit.buildingName}</div>
+                </div>
+              )}
+              {selectedUnit.floorNumber != null && (
+                <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Floor Number</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{selectedUnit.floorNumber}</div>
+                </div>
+              )}
+              {selectedUnit.furnishing && (
+                <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Furnishing</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{toLabel(selectedUnit.furnishing)}</div>
+                </div>
+              )}
+              {selectedUnit.parkingSpaces != null && (
+                <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Parking Spaces</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{selectedUnit.parkingSpaces}</div>
+                </div>
+              )}
+              {selectedUnit.hasView && selectedUnit.viewType?.length > 0 && (
+                <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', gridColumn: 'span 2' }}>
+                  <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>View Types</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {selectedUnit.viewType.map((v, idx) => (
+                      <span key={idx} style={{
+                        fontSize: 12,
+                        padding: '4px 10px',
+                        borderRadius: 20,
+                        background: '#e0e7ff',
+                        color: '#4f46e5',
+                        fontWeight: 600
+                      }}>
+                        {toLabel(v)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
       {/* Edit Modal */}
       <Modal
         title={<span style={S.modalTitle}><EditOutlined style={{ color: "#6d28d9" }} /> Edit Unit — {selectedUnit?.unitNumber}</span>}
@@ -660,6 +908,159 @@ const handleCreate = async (values) => {
             <button style={S.outlineBtn} type="button" onClick={() => { setEditModal(false); editForm.resetFields(); setSelectedUnit(null); }}>Cancel</button>
             <button style={{ ...S.primaryBtn, opacity: saving ? 0.7 : 1 }} type="submit" disabled={saving}>
               {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </Form>
+      </Modal>
+
+      {/* Config Modal for Auto-Generate */}
+      <Modal
+        title={<span style={S.modalTitle}><ThunderboltOutlined style={{ color: "#6d28d9" }} /> Configure & Generate Inventory</span>}
+        open={configModalVisible}
+        onCancel={() => { setConfigModalVisible(false); configForm.resetFields(); }}
+        footer={null} width={800} destroyOnClose
+      >
+        {propertyConfig?.message && (
+          <div style={{
+            marginBottom: "16px",
+            padding: "12px 16px",
+            borderRadius: "8px",
+            background: propertyConfig.mismatchedTypes ? "#fef2f2" : "#f0fdf4",
+            border: `1px solid ${propertyConfig.mismatchedTypes ? "#fecaca" : "#bbf7d0"}`,
+            color: propertyConfig.mismatchedTypes ? "#b91c1c" : "#15803d",
+            fontSize: "13px"
+          }}>
+            {propertyConfig.message}
+          </div>
+        )}
+
+        <Form form={configForm} layout="vertical">
+          {propertyConfig?.categoryConfig?.configFields?.map((field, idx) => (
+            <div key={idx}>
+              <Divider style={{ margin: "16px 0 8px" }}>{field.label}</Divider>
+              {field.type === "array" && field.fields && (
+                <Form.List name={field.key}>
+                  {(fields, { add, remove }) => (
+                    <>
+                      {fields.map((listField, i) => (
+                        <div key={listField.key} style={{
+                          marginBottom: "12px",
+                          padding: "12px",
+                          border: "1px solid #e2e8f0",
+                          borderRadius: "8px",
+                          background: "#f8fafc"
+                        }}>
+                          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "8px" }}>
+                            <button
+                              type="button"
+                              onClick={() => remove(i)}
+                              style={{
+                                background: "#fff",
+                                border: "1px solid #fecaca",
+                                color: "#dc2626",
+                                borderRadius: "4px",
+                                padding: "4px 8px",
+                                cursor: "pointer",
+                                fontSize: "12px"
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
+                            {field.fields.map((subField) => (
+                              <Form.Item
+                                key={subField.key}
+                                name={[listField.name, subField.key]}
+                                label={subField.label}
+                                rules={subField.required ? [{ required: true, message: `${subField.label} is required` }] : []}
+                                initialValue={subField.default}
+                              >
+                                {subField.type === "select" && subField.options ? (
+                                  <Select placeholder={`Select ${subField.label}`}>
+                                    {subField.options.map(opt => (
+                                      <Option key={opt} value={opt}>{toLabel(opt)}</Option>
+                                    ))}
+                                  </Select>
+                                ) : subField.type === "multiSelect" && subField.options ? (
+                                  <Select mode="multiple" placeholder={`Select ${subField.label}`} allowClear>
+                                    {subField.options.map(opt => (
+                                      <Option key={opt} value={opt}>{toLabel(opt)}</Option>
+                                    ))}
+                                  </Select>
+                                ) : subField.type === "boolean" ? (
+                                  <Switch />
+                                ) : subField.type === "number" ? (
+                                  <InputNumber style={{ width: "100%" }} />
+                                ) : (
+                                  <Input placeholder={`Enter ${subField.label}`} />
+                                )}
+                              </Form.Item>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => add()}
+                        style={{
+                          width: "100%",
+                          border: "1.5px dashed #d1d5db",
+                          borderRadius: "8px",
+                          padding: "12px",
+                          background: "#fafafa",
+                          color: "#6d28d9",
+                          cursor: "pointer",
+                          fontSize: "13px",
+                          fontWeight: 600
+                        }}
+                      >
+                        <PlusOutlined /> Add {field.label.slice(0, -1)}
+                      </button>
+                    </>
+                  )}
+                </Form.List>
+              )}
+
+              {field.type !== "array" && (
+                <Form.Item
+                  name={field.key}
+                  label={field.label}
+                  rules={field.required ? [{ required: true, message: `${field.label} is required` }] : []}
+                  initialValue={field.default}
+                >
+                  {field.type === "select" && field.options ? (
+                    <Select placeholder={`Select ${field.label}`}>
+                      {field.options.map(opt => (
+                        <Option key={opt} value={opt}>{toLabel(opt)}</Option>
+                      ))}
+                    </Select>
+                  ) : field.type === "number" ? (
+                    <InputNumber style={{ width: "100%" }} />
+                  ) : (
+                    <Input placeholder={`Enter ${field.label}`} />
+                  )}
+                </Form.Item>
+              )}
+            </div>
+          ))}
+
+          <div style={S.modalFooter}>
+            <button
+              style={S.outlineBtn}
+              type="button"
+              onClick={() => { setConfigModalVisible(false); configForm.resetFields(); }}
+              disabled={generating}
+            >
+              Cancel
+            </button>
+            <button
+              style={{ ...S.primaryBtn, opacity: generating ? 0.7 : 1 }}
+              type="button"
+              onClick={handleSubmitConfigAndGenerate}
+              disabled={generating}
+            >
+              {generating ? "Generating..." : "Generate Inventory"}
             </button>
           </div>
         </Form>

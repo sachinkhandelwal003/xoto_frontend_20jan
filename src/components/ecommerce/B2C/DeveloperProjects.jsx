@@ -92,24 +92,34 @@ export default function DeveloperProjects() {
         (Array.isArray(res?.data?.properties) && res.data.properties) ||
         [];
 
-      const mapped = list.map((p, i) => ({
-        key: p._id || `row-${i}`,
-        propertyName: p.projectName || p.propertyName || "Untitled Project",
-        location: p.location?.address || p.locality || p.area || "Location not added",
-        units: p.floorPlans?.length > 0
-          ? `${p.floorPlans[0]?.areaFrom || 0} - ${p.floorPlans[0]?.areaTo || 0} sqft`
-          : null,
-        status: p.approvalStatus || p.status || "draft",
-        image: p.media?.mainLogo ||
-          p.media?.architectureImages?.[0] ||
-          p.media?.interiorImages?.[0] ||
-          p.media?.lobbyImages?.[0] ||
-          "",
-        price: (p.priceRange?.from && p.priceRange?.to)
-          ? `AED ${Number(p.priceRange.from).toLocaleString()} - AED ${Number(p.priceRange.to).toLocaleString()}`
-          : (p.price_min && p.price_max)
-            ? `AED ${Number(p.price_min).toLocaleString()} - AED ${Number(p.price_max).toLocaleString()}`
+      console.log("Property data for mapping:", list[0]);
+      
+      const mapped = list.map((p, i) => {
+        // Get the first available image with proper fallbacks
+        let imageUrl = "";
+        
+        // Check all possible image sources
+        if (p.media?.architectureImages?.length > 0) imageUrl = p.media.architectureImages[0];
+        else if (p.media?.interiorImages?.length > 0) imageUrl = p.media.interiorImages[0];
+        else if (p.media?.lobbyImages?.length > 0) imageUrl = p.media.lobbyImages[0];
+        else if (p.media?.otherImages?.length > 0) imageUrl = p.media.otherImages[0];
+        
+        console.log(`Property ${p.propertyName || p.projectName} imageUrl:`, imageUrl);
+        
+        return {
+          key: p._id || `row-${i}`,
+          propertyName: p.projectName || p.propertyName || "Untitled Project",
+          location: p.location?.address || p.locality || p.area || "Location not added",
+          units: p.floorPlans?.length > 0
+            ? `${p.floorPlans[0]?.areaFrom || 0} - ${p.floorPlans[0]?.areaTo || 0} sqft`
             : null,
+          status: p.approvalStatus || p.status || "draft",
+          image: imageUrl,
+          price: (p.priceRange?.from && p.priceRange?.to)
+            ? `AED ${Number(p.priceRange.from).toLocaleString()} - AED ${Number(p.priceRange.to).toLocaleString()}`
+            : (p.price_min && p.price_max)
+              ? `AED ${Number(p.price_min).toLocaleString()} - AED ${Number(p.price_max).toLocaleString()}`
+              : null,
         priceMin: p.priceRange?.from || p.price_min || 0,
         priceMax: p.priceRange?.to || p.price_max || 0,
         projectStatus: p.projectStatus || "",
@@ -124,7 +134,8 @@ export default function DeveloperProjects() {
         totalUnitTypes: p.inventory?.length || 0,
         saleStatus: p.saleStatus || "Available",
         isPostHandover: p.projectStatus === "ready" || p.developmentStatus === "Completed",
-      }));
+        };
+      });
 
       setProjects(mapped);
       setFiltered(mapped);
@@ -299,9 +310,12 @@ export default function DeveloperProjects() {
               <div key={item.key} style={S.card}>
                 <div style={S.imgWrap}>
                   <img
-                    src={item.image || "https://placehold.co/400x220/f1f5f9/94a3b8?text=No+Image"}
+                    src={item.image || "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=220&fit=crop"}
                     alt={item.propertyName}
                     style={S.img}
+                    onError={(e) => {
+                      e.target.src = "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=220&fit=crop";
+                    }}
                   />
                   <div style={S.badgeLeft}>
                     {item.isFeatured && (
@@ -497,7 +511,7 @@ const S = {
 
   card: { background: "#fff", borderRadius: 10, overflow: "hidden", border: "1.5px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" },
   imgWrap: { position: "relative", height: 196, overflow: "hidden", background: "#f1f5f9" },
-  img: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
+  img: { width: "100%", height: "100%", objectFit: "contain", display: "block", backgroundColor: "#f1f5f9" },
   badgeLeft: { position: "absolute", top: 10, left: 10, display: "flex", gap: 6, flexWrap: "wrap" },
   featuredBadge: { display: "inline-flex", alignItems: "center", gap: 4, background: "#78350f", color: "#fef3c7", fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 4 },
   projectBadge: { background: "rgba(15,23,42,0.6)", color: "#f8fafc", fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 4 },

@@ -227,6 +227,8 @@ export default function DeveloperAddProperty() {
     const payload = {
       developer: developerId,  // ← CHANGED: developer instead of developerId
       propertyType: values.propertyType || "Residential",
+      unitTypes: values.unitTypes || [],
+      unitType: values.unitTypes?.[0] || "apartment",
       propertySubType: "off_plan",
       transactionType: "sell",
       approvalStatus: saveType === "submit" ? "pending" : "draft",  // ← CHANGED: use approvalStatus
@@ -422,6 +424,21 @@ export default function DeveloperAddProperty() {
                     <Option value="Residential">Residential</Option>
                     <Option value="Commercial">Commercial</Option>
                     <Option value="Mixed-Use">Mixed-Use</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item name="unitTypes" label="Unit Types" rules={[{ required: true, message: "Select at least one unit type" }]}>
+                  <Select mode="multiple" placeholder="Select unit types">
+                    <Option value="apartment">Apartment</Option>
+                    <Option value="penthouse">Penthouse</Option>
+                    <Option value="villa">Villa</Option>
+                    <Option value="townhouse">Townhouse</Option>
+                    <Option value="duplex">Duplex</Option>
+                    <Option value="office">Office</Option>
+                    <Option value="retail">Retail</Option>
+                    <Option value="warehouse">Warehouse</Option>
+                    <Option value="plot">Plot</Option>
                   </Select>
                 </Form.Item>
               </Col>
@@ -837,15 +854,19 @@ export default function DeveloperAddProperty() {
     }
   };
 
-  const handleNext = async () => {
-    try {
-      await form.validateFields();
-      formCacheRef.current = { ...formCacheRef.current, ...form.getFieldsValue(true) };
-      setCurrentStep(currentStep + 1);
-    } catch (error) {
-      
+ const handleNext = async () => {
+  try {
+    const values = await form.validateFields();
+    formCacheRef.current = { ...formCacheRef.current, ...values };
+    setCurrentStep(currentStep + 1);
+  } catch (error) {
+    // Ant Design's validateFields throws an object with errorFields
+    if (error.errorFields) {
+      // Form automatically shows errors, you can just log or add analytics
+      console.log('Form has errors:', error.errorFields);
     }
-  };
+  }
+};
 
   const handlePrev = () => {
     formCacheRef.current = { ...formCacheRef.current, ...form.getFieldsValue(true) };
