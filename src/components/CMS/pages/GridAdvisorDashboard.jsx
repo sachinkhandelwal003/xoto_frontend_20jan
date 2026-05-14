@@ -36,18 +36,18 @@ const THEME = {
 
 // ─── Sub‑components (unchanged) ──────────────────────────────────────────────
 const StagePill = ({ stage }) => {
-  const map = {
-    'New':           { bg: '#e0f2fe', color: '#0369a1' },
-    'Contacted':     { bg: '#e0f2fe', color: '#0369a1' },
-    'Qualified':     { bg: '#f3e8ff', color: '#7e22ce' },
-    'In Discussion':  { bg: '#fef3c7', color: '#b45309' },
-    'Site Visit Scheduled': { bg: '#fef3c7', color: '#b45309' },
-    'Offer Made':    { bg: '#f3e8ff', color: '#7e22ce' },
-    'Reserved':      { bg: '#dcfce7', color: '#16a34a' },
-    'SPA Signed':    { bg: '#dcfce7', color: '#16a34a' },
-    'Completed':     { bg: '#dcfce7', color: '#16a34a' },
-    'Not Proceeding':{ bg: '#f1f5f9', color: '#475569' },
-  };
+const map = {
+  'new':                   { bg: '#e0f2fe', color: '#0369a1' },
+  'contacted':             { bg: '#e0f2fe', color: '#0369a1' },
+  'qualified':             { bg: '#f3e8ff', color: '#7e22ce' },
+  'in_discussion':         { bg: '#fef3c7', color: '#b45309' },
+  'site_visit_scheduled':  { bg: '#fef3c7', color: '#b45309' },
+  'offer_made':            { bg: '#f3e8ff', color: '#7e22ce' },
+  'reserved':              { bg: '#dcfce7', color: '#16a34a' },
+  'spa_signed':            { bg: '#dcfce7', color: '#16a34a' },
+  'completed':             { bg: '#dcfce7', color: '#16a34a' },
+  'not_proceeding':        { bg: '#f1f5f9', color: '#475569' },
+};
   const s = map[stage] || { bg: '#f1f5f9', color: '#475569' };
   return (
     <span style={{

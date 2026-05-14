@@ -247,7 +247,6 @@ import ReferralPartnerDashboard from "./pages/ReferralPartnerDashboard"
 import TotalLeads from "../GridReferralPartner/GridDashboardpages/TotalLeads";
 import ActiveLeads from "../GridReferralPartner/GridDashboardpages/CreateReferralLead";
 import RecentLeads from "../GridReferralPartner/GridDashboardpages/RecentLeads";
-import ReferralPartnerProfile from "../GridReferralPartner/ReferralPartnerProfile";
 import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
 import QueueCases from "../ecommerce/vault/case/QueueCases";
 import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
@@ -255,6 +254,7 @@ import AddAgent from "../Grid/grid agency/AgentCreate";
 import AllAgents from "../Grid/grid agency/AllAgents";
 import GridAdvisorDashboard from "./pages/GridAdvisorDashboard";
 import GridAdvisorProfile from "./pages/dashboardPages/Profiles/GridAdvisorProfile";
+import ReferralProfile from "./pages/dashboardPages/Profiles/ReferraProfile";
 import OpsAssignedReview from "../ecommerce/vault/case/OpsAssignedReview";
 import VaultCreateadvisor from "../ecommerce/B2C/VaultCreateadviosor";
 import AdminManagecases from "../ecommerce/vault/case/AdminManagecases";
@@ -268,6 +268,7 @@ import Presentations from "../ecommerce/B2C/PresentationManager";
 import BankProductViewwithdocuments from "../homepage/BankProductViewwithdocuments";
 import BankProductDocuments from "../homepage/BankProductDocuments";
 import LoanEligibilitycheck from "../ecommerce/B2C/LoanEligibilitycheck";
+import ReferralLeaderboard from "../GridReferralPartner/GridDashboardpages/Referralleaderboard";
 
 
 
@@ -669,13 +670,14 @@ const CmsRoutes = () => {
 <Route path="/total-leads" element={<TotalLeads />} />
 <Route path="/Submit-leads" element={<ActiveLeads />} />
 <Route path="/recent-leads" element={<RecentLeads />} />
-<Route path="/profile" element={<ReferralPartnerProfile />} />
 
 
 <Route path="advisors/:id" element={<AdvisorDetail />} />   
 <Route path="advisors" element={<AllAdvisors />} />         
 <Route path="create-advisor" element={<CreateAdvisor />} />
 <Route path="dashboard/myprofile" element={<GridAdvisorProfile />} />
+<Route path="dashboard/myprofile" element={<ReferralProfile/>} />
+<Route path="leaderboard" element={< ReferralLeaderboard />} />
 <Route path="gridAdvisorLeads" element={<AdvisorLeadsPage />} />
 <Route path="property-catalogue" element={<PropertyCatalogue />} />
 

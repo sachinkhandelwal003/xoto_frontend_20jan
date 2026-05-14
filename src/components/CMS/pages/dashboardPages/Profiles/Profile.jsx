@@ -13,6 +13,7 @@ import VaultPartnerProfile from "./VaultPartnerProfile";
 import DeveloperProfile from "./DeveloperProfile";
 import GridAdminProfile from "./GridAdmin";
 import GridAdvisorProfile from "./GridAdvisorProfile";
+import ReferralProfile from "./ReferraProfile";
 
 
 const Profile = () => {
@@ -56,6 +57,8 @@ const Profile = () => {
         return <GridAdminProfile />
       case 24:
         return <GridAdvisorProfile />
+        case 25:
+          return <ReferralProfile />
 
     default:
       return <VendorMYProfile />;

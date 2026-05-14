@@ -545,11 +545,6 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-trophy",
       path: "/dashboard/{roleSlug}/leaderboard"
     },
-    {
-      title: "Profile",
-      icon: "fas fa-user-cog",
-      path: "/dashboard/{roleSlug}/profile"
-    }
   ],
 
 "26": [
