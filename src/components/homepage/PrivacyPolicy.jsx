@@ -492,12 +492,7 @@ const PrivacyPolicyPage = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-5">
-                    <p className="text-sm text-gray-700">For privacy-related requests or to exercise your data protection rights, please contact us using the details provided. We may request proof of identity before responding.</p>
-                    <button className="mt-4 w-full py-2.5 rounded-lg font-medium text-white transition-all hover:shadow-lg flex items-center justify-center gap-2" style={{ background: themeGradient }}>
-                      <Send className="h-4 w-4" /> Send Privacy Request
-                    </button>
-                  </div>
+      
                 </div>
               </div>
             </section>
