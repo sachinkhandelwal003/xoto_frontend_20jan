@@ -38,59 +38,32 @@ const Topbar = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((s) => s.auth);
   
-  // ✅ State for Profile Data
-  const [userProfile, setUserProfile] = useState(null);
+  // ✅ State for Notifications only (no more failing profile API call)
   const [notifOpen, setNotifOpen] = useState(false);
 
   const colors = getRoleColors(user?.role?.code);
 
-  // ✅ Fetch Profile Data from API
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const res = await apiService.get('/profile/get-profile-data');
-        if (res.data) {
-          setUserProfile(res.data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch profile data in Topbar", err);
-      }
-    };
-
-    fetchProfileData();
-  }, []);
-
-  // ✅ Helper to safely get Name
+  // ✅ Helper to safely get Name - prioritize referral partner's firstName/lastName
  const getDisplayName = () => {
   try {
-    const apiData = userProfile?.data || userProfile;
     const reduxData = user?.data || user;
 
-    // API data se try karo
-    if (apiData?.first_name && typeof apiData.first_name === 'string') {
-      const full = `${apiData.first_name} ${apiData.last_name || ''}`.trim();
+    // 1. Check for referral partner's JWT format (firstName, lastName - no underscore)
+    if (reduxData?.firstName && typeof reduxData.firstName === 'string') {
+      const full = `${reduxData.firstName} ${reduxData.lastName || ''}`.trim();
       if (full) return full;
     }
 
-    if (apiData?.name) {
-      if (typeof apiData.name === 'object') {
-        const full = `${apiData.name.first_name || ''} ${apiData.name.last_name || ''}`.trim();
-        if (full) return full;
-      }
-      if (typeof apiData.name === 'string' && apiData.name.trim()) {
-        return apiData.name.trim();
-      }
-    }
-
-    // Redux data se try karo
+    // 2. Check for underscore format (first_name, last_name)
     if (reduxData?.first_name && typeof reduxData.first_name === 'string') {
       const full = `${reduxData.first_name} ${reduxData.last_name || ''}`.trim();
       if (full) return full;
     }
 
+    // 3. Check for name (string or object)
     if (reduxData?.name) {
       if (typeof reduxData.name === 'object') {
-        const full = `${reduxData.name.first_name || ''} ${reduxData.name.last_name || ''}`.trim();
+        const full = `${reduxData.name.first_name || reduxData.name.firstName || ''} ${reduxData.name.last_name || reduxData.name.lastName || ''}`.trim();
         if (full) return full;
       }
       if (typeof reduxData.name === 'string' && reduxData.name.trim()) {
@@ -98,13 +71,13 @@ const Topbar = () => {
       }
     }
 
-    // Username ya email se fallback
+    // 4. Username or email fallback
     if (reduxData?.username && typeof reduxData.username === 'string') {
       return reduxData.username.trim();
     }
 
     if (reduxData?.email && typeof reduxData.email === 'string') {
-      return reduxData.email.split('@')[0]; // email ka pehla part use karo
+      return reduxData.email.split('@')[0];
     }
 
   } catch (e) {
@@ -115,18 +88,16 @@ const Topbar = () => {
 };
   // ✅ Helper for Email
   const getDisplayEmail = () => {
-    const apiData = userProfile?.data || userProfile;
     const reduxData = user?.data || user;
-    return apiData?.email || reduxData?.email || "";
+    return reduxData?.email || "";
   };
 
   // 🚀 NAYA HELPER: Photo ko safely nikalne ke liye
   const getProfilePhoto = () => {
-    const apiData = userProfile?.data || userProfile;
     const reduxData = user?.data || user;
     
     // Check karega dono formats: profile_photo (Agent) aur profilePic (Customer)
-    return apiData?.profile_photo || apiData?.profilePic || reduxData?.profile_photo || reduxData?.profilePic || null;
+    return reduxData?.profile_photo || reduxData?.profilePic || null;
   };
 
   /* ---------------- NOTIFICATIONS ---------------- */

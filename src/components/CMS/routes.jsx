@@ -247,7 +247,9 @@ import ReferralPartnerDashboard from "./pages/ReferralPartnerDashboard"
 import TotalLeads from "../GridReferralPartner/GridDashboardpages/TotalLeads";
 import ActiveLeads from "../GridReferralPartner/GridDashboardpages/CreateReferralLead";
 import RecentLeads from "../GridReferralPartner/GridDashboardpages/RecentLeads";
-import ReferralPartnerProfile from "../GridReferralPartner/ReferralPartnerProfile";
+import ReferralPartnerLeaderboard from "../GridReferralPartner/GridDashboardpages/ReferralPartnerLeaderboard";
+import ReferralPartnerProfile from "../../components/CMS/pages/dashboardPages/Profiles/ReferralPartnerProfile";
+import ReferralPartnerLeadDetail from "../GridReferralPartner/GridDashboardpages/ReferralPartnerLeadDetail";
 import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
 import QueueCases from "../ecommerce/vault/case/QueueCases";
 import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
@@ -398,6 +400,18 @@ const CmsRoutes = () => {
     <Routes>
       {/* Dashboard */}
       <Route path="/" element={dashboardMap[user.role.code] ?? <Dashboard />} />
+
+      {/* Static routes for Referral Partner (role 25) */}
+      {user.role.code === 25 && (
+        <>
+          <Route path="submit-leads" element={<ActiveLeads />} />
+          <Route path="total-leads" element={<TotalLeads />} />
+          <Route path="recent-leads" element={<RecentLeads />} />
+          <Route path="profile" element={<ReferralPartnerProfile />} />
+          <Route path="leaderboard" element={<ReferralPartnerLeaderboard />} />
+          <Route path="lead/:id" element={<ReferralPartnerLeadDetail />} />
+        </>
+      )}
 
       {/* Dynamic Routes from Permissions */}
       {Object.entries(permissions ?? {}).map(([key, p]) => {
@@ -668,6 +682,7 @@ const CmsRoutes = () => {
       <Route path="/Submit-leads" element={<ActiveLeads />} />
       <Route path="/recent-leads" element={<RecentLeads />} />
       <Route path="/profile" element={<ReferralPartnerProfile />} />
+      <Route path="/dashboard/gridreferralpartner/leaderboard" element={<ReferralPartnerLeaderboard />} />
 
 
       <Route path="advisors/:id" element={<AdvisorDetail />} />

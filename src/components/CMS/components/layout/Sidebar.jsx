@@ -535,8 +535,9 @@ const CUSTOM_ROLE_LINKS = {
         },
         { 
           title: "My Referrals", 
-          path: "/dashboard/{roleSlug}/all-referrals" 
-        }
+          path: "/dashboard/{roleSlug}/total-leads" 
+        },
+
       ]
     },
     {
@@ -546,9 +547,10 @@ const CUSTOM_ROLE_LINKS = {
     },
     {
       title: "Profile",
-      icon: "fas fa-user-cog",
+      icon: "fas fa-user",
       path: "/dashboard/{roleSlug}/profile"
-    }
+    },
+   
   ],
 
 "26": [
@@ -665,7 +667,7 @@ const ROLE_MODULE_ORDER = {
   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
   // '21': ['Dashboard', 'Vault Partners', 'All Leads'],
 
-  '25':['Dashboard' , 'Total leads ' , 'Active Leads' , 'Recent Leads'],
+  '25':['Dashboard' , 'Referrals', 'Leaderboard', 'Profile'],
   '21': ['Dashboard','Create Lead',  'Vault Partners', 'All Leads',],
   '24': ['Dashboard', 'My Leads', 'Property Catalogue', 'Calculator', 'Leaderboard'],
   // '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],

@@ -1,596 +1,416 @@
-// src/components/leads/SubmitLeads.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Card, Row, Col, Form, Input, InputNumber, Select, Button, message, Tabs, Spin } from 'antd';
 import {
-  Card, Drawer, Descriptions, Tag, Button, Space, Badge,
-  message, Avatar, Row, Col, Tabs, Statistic, Tooltip, Empty,
-  Modal, Form, Input, InputNumber, Select
-} from 'antd';
-import {
-  PhoneOutlined, MailOutlined, UserOutlined,
-  CheckCircleOutlined, EyeOutlined, DeleteOutlined, BellOutlined,
-  UsergroupAddOutlined, MessageOutlined, GlobalOutlined,
-  AppstoreAddOutlined, PlusOutlined
+  UserOutlined, PhoneOutlined, MailOutlined, HomeOutlined, DollarOutlined,
+  PlusOutlined
 } from '@ant-design/icons';
-
-// Make sure your apiService is correctly imported
+import { Country } from 'country-state-city';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
-import { showSuccessAlert, showConfirmDialog } from '../../../manageApi/utils/sweetAlert';
-import CustomTable from '../../CMS/pages/custom/CustomTable';
 
-// --- THEME CONFIGURATION ---
+const { Option } = Select;
+const { TextArea } = Input;
+
 const THEME = {
-  primary: "#722ed1",
-  secondary: "#1890ff",
-  success: "#52c41a",
-  warning: "#faad14",
-  error: "#ff4d4f",
-  bgLight: "#f9f0ff",
+  primary: '#5C039B',
+  primaryMid: '#7C3AED',
+  primaryLight: '#F5F0FF',
+  textDark: '#0F172A',
+  textMuted: '#64748B',
+  bgPage: '#F8FAFC',
 };
 
-// --- CONFIGURATION FOR SUBMIT LEAD TYPES ---
-const typeConfig = {
-  general: { label: 'General', color: 'blue', icon: <AppstoreAddOutlined /> },
-  support: { label: 'Support', color: 'purple', icon: <MessageOutlined /> },
-  sales: { label: 'Sales', color: 'cyan', icon: <GlobalOutlined /> },
-  referral: { label: 'Referral', color: 'volcano', icon: <UsergroupAddOutlined /> },
-};
-
-const statusConfig = {
-  new: { label: 'New Lead', color: 'orange', icon: <BellOutlined /> },
-  in_progress: { label: 'In Progress', color: 'blue', icon: <CheckCircleOutlined /> },
-  resolved: { label: 'Resolved', color: 'green', icon: <CheckCircleOutlined /> },
-  spam: { label: 'Spam/Dead', color: 'red', icon: <DeleteOutlined /> }
-};
-
-// --- MOCK DATA FOR UI TESTING ---
-const INITIAL_MOCK_DATA = [
-  {
-    _id: '1',
-    full_name: 'Rahul Sharma',
-    email: 'rahul@example.com',
-    mobile: { country_code: '+91', number: '9876543210' },
-    type: 'support',
-    status: 'new',
-    subject: 'Need help with property listing',
-    message: 'I am unable to upload photos for my new property listing. Please guide.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    _id: '2',
-    full_name: 'Priya Verma',
-    email: 'priya@example.com',
-    mobile: { country_code: '+91', number: '9988776655' },
-    type: 'sales',
-    status: 'in_progress',
-    subject: 'Premium Plan Pricing',
-    message: 'Can you share the pricing plan for broker agencies?',
-    createdAt: new Date(Date.now() - 86400000).toISOString()
-  },
-  {
-    _id: '3',
-    full_name: 'Amit Patel',
-    email: 'amit@example.com',
-    mobile: { country_code: '+91', number: '9123456780' },
-    type: 'general',
-    status: 'resolved',
-    subject: 'Feedback on website',
-    message: 'The new UI looks great, but loading time can be improved.',
-    createdAt: new Date(Date.now() - 172800000).toISOString()
-  },
-  {
-    _id: '4',
-    full_name: 'Sunil Kumar',
-    email: 'sunil.kumar@example.com',
-    mobile: { country_code: '+971', number: '501234567' },
-    type: 'referral',
-    status: 'new',
-    subject: 'Interested in Dubai Marina Apartment',
-    message: 'Looking for a 2BHK apartment with a budget around 2,500,000 AED.',
-    createdAt: new Date().toISOString()
-  }
-];
-
-const SubmitLeads = () => {
-  const [allMockLeads, setAllMockLeads] = useState(INITIAL_MOCK_DATA);
-  const [leads, setLeads] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [selectedLead, setSelectedLead] = useState(null);
-  const [activeTab, setActiveTab] = useState('all');
-
-  // Modal States
-  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-  const [addLoading, setAddLoading] = useState(false);
+const CreateReferralLead = () => {
   const [form] = Form.useForm();
+  const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('client');
+  const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const leadId = searchParams.get('id');
 
-  const [filters, setFilters] = useState({ search: '' });
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    itemsPerPage: 10,
-    totalItems: 0
-  });
-
-  const stats = useMemo(() => {
-    return {
-      total: allMockLeads.length,
-      new: allMockLeads.filter(l => l.status === 'new').length,
-      resolved: allMockLeads.filter(l => l.status === 'resolved').length,
-    };
-  }, [allMockLeads]);
-
-  // Fetch Logic (Using Mock Data for now)
-  const fetchLeads = (tab = activeTab, page = 1, limit = 10, search = '') => {
-    setLoading(true);
-    setTimeout(() => {
-      let filteredData = [...allMockLeads];
-
-      if (tab !== 'all') {
-        filteredData = filteredData.filter(item => item.type === tab);
-      }
-
-      if (search) {
-        const lowerQuery = search.toLowerCase();
-        filteredData = filteredData.filter(item => 
-          item.full_name?.toLowerCase().includes(lowerQuery) || 
-          item.email?.toLowerCase().includes(lowerQuery)
-        );
-      }
-
-      setLeads(filteredData);
-      setPagination({
-        currentPage: page,
-        itemsPerPage: limit,
-        totalItems: filteredData.length
-      });
-      
-      setLoading(false);
-    }, 500); 
-  };
+  const countryOptions = useMemo(() => {
+    return Country.getAllCountries()
+      .map((country) => ({
+        name: country.name,
+        code: `+${country.phonecode}`,
+        isoCode: country.isoCode,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, []);
 
   useEffect(() => {
-    fetchLeads(activeTab, 1, pagination.itemsPerPage, filters.search);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, allMockLeads]);
+    if (leadId) {
+      fetchLeadData(leadId);
+    }
+  }, [leadId]);
 
-  const handleTabChange = (key) => {
-    setActiveTab(key);
-  };
-
-  const handlePageChange = (page, pageSize) => {
-    fetchLeads(activeTab, page, pageSize, filters.search);
-  };
-
-  const handleFilter = (newFilters) => {
-    const updatedFilters = {
-      ...filters,
-      ...newFilters,
-      search: (newFilters?.search || '').trim(),
-    };
-    setFilters(updatedFilters);
-    fetchLeads(activeTab, 1, pagination.itemsPerPage, updatedFilters.search);
-  };
-
-  // Status Update Mock
-  const updateLeadStatus = async (id, newStatus) => {
-    showSuccessAlert('Success!', `Lead marked as ${newStatus}`);
-    setAllMockLeads(prev => 
-      prev.map(l => (l._id === id ? { ...l, status: newStatus } : l))
-    );
-    if (selectedLead?._id === id) {
-      setSelectedLead({ ...selectedLead, status: newStatus });
+  const fetchLeadData = async (id) => {
+    setLoading(true);
+    try {
+      const res = await apiService.get(`/gridlead/${id}`);
+      const data = res?.data?.data || res?.data;
+      
+      form.setFieldsValue({
+        firstName: data.contact_info?.name?.first_name,
+        lastName: data.contact_info?.name?.last_name,
+        countryCode: data.contact_info?.mobile?.country_code || '+971',
+        phoneNumber: data.contact_info?.mobile?.number,
+        email: data.contact_info?.email?.address,
+        transactionType: data.requirements?.transaction_type,
+        propertyType: data.requirements?.property_type,
+        areaOfInterest: data.requirements?.location_preferences?.[0]?.area,
+        budgetMin: data.requirements?.budget_min,
+        budgetMax: data.requirements?.budget_max,
+        bedrooms: data.requirements?.bedrooms,
+        bathrooms: data.requirements?.bathrooms,
+        areaMin: data.requirements?.area_sqft_min,
+        areaMax: data.requirements?.area_sqft_max,
+        furnished: data.requirements?.furnished,
+        readyByDate: data.requirements?.ready_by_date,
+        additionalNotes: data.requirements?.additional_notes,
+      });
+    } catch (err) {
+      console.error('Failed to fetch lead data', err);
+      message.error('Failed to load lead for editing');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Delete Mock
-  const softDelete = async (id) => {
-    const result = await showConfirmDialog('Delete Lead?', 'This will move it to trash.', 'Yes, Delete');
-    if (result.isConfirmed) {
-      showSuccessAlert('Deleted', 'Lead moved to trash');
-      setAllMockLeads(prev => prev.filter(l => l._id !== id));
-      setDrawerVisible(false);
-    }
-  };
-
-  // --- ADD LEAD API INTEGRATION (With Token Fix) ---
-  const handleAddLead = async (values) => {
-    setAddLoading(true);
+  const handleSubmit = async (values) => {
+    setSubmitting(true);
     try {
       const payload = {
-        customerName: values.customerName,
-        countryCode: values.countryCode || '+91',
-        customerPhone: values.customerPhone,
-        interestArea: values.interestArea,
-        budget: Number(values.budget),
-        propertyType: values.propertyType
+        first_name: values.firstName,
+        last_name: values.lastName,
+        phone_number: values.phoneNumber,
+        country_code: values.countryCode || '+971',
+        email: values.email,
+        property_type: values.propertyType,
+        transaction_type: values.transactionType,
+        location_preferences: values.areaOfInterest ? [{ area: values.areaOfInterest }] : [],
+        budget_min: values.budgetMin,
+        budget_max: values.budgetMax,
+        bedrooms: values.bedrooms,
+        bathrooms: values.bathrooms,
+        area_sqft_min: values.areaMin,
+        area_sqft_max: values.areaMax,
+        furnished: values.furnished,
+        ready_by_date: values.readyByDate,
+        additional_notes: values.additionalNotes,
       };
 
-      // 🔥 TOKEN GET KIYA: check karo aap local storage mein kis naam se save karte ho (token ya accessToken)
-      const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
-
-      // API Call
-      await apiService.post('/referral/add-lead', payload, {
-        headers: {
-          Authorization: `Bearer ${token}` // 🔥 Authorization header yahan add kiya
-        }
-      });
-
-      // Show SweetAlert
-      showSuccessAlert('Lead Created!', 'Your referral lead has been added successfully.');
+      if (leadId) {
+        await apiService.put(`/gridlead/referral/${leadId}/update-requirements`, {
+          requirements: payload,
+          reason: 'Updated by referral partner'
+        });
+        message.success('Referral lead updated successfully!');
+      } else {
+        await apiService.post('/gridlead/referral/create-lead', payload);
+        message.success('Referral lead submitted successfully!');
+        form.resetFields();
+      }
       
-      // Close Modal and Reset
-      setIsAddModalVisible(false);
-      form.resetFields();
-
-      // UI Update ke liye Mock Store me data dal rahe hain 
-      const newMockEntry = {
-        _id: Math.random().toString(36).substr(2, 9),
-        full_name: payload.customerName,
-        email: 'N/A',
-        mobile: { country_code: payload.countryCode, number: payload.customerPhone },
-        type: 'referral',
-        status: 'new',
-        subject: `Interested in ${payload.propertyType} at ${payload.interestArea}`,
-        message: `Budget: ${payload.budget}`,
-        createdAt: new Date().toISOString()
-      };
-
-      setAllMockLeads(prev => [newMockEntry, ...prev]);
-
+      setActiveTab('client');
+      navigate('/dashboard/gridreferralpartner/total-leads');
     } catch (err) {
-      console.error("Add Lead Error:", err);
-      message.error(err?.response?.data?.message || 'Failed to add new lead.');
+      console.error('Failed to submit/update referral lead', err);
+      message.error(err?.response?.data?.message || `Failed to ${leadId ? 'update' : 'submit'} referral lead.`);
     } finally {
-      setAddLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const getFullName = (record) => {
-    if (record.full_name) return record.full_name;
-    if (record.name && record.name.first_name) {
-      return `${record.name.first_name} ${record.name.last_name || ''}`.trim();
-    }
-    return 'Unknown User';
-  };
-
-  const columns = [
+  const items = [
     {
-      title: 'User Details',
-      key: 'name',
-      width: 250,
-      render: (_, record) => (
-        <Space>
-          <Avatar style={{ backgroundColor: THEME.secondary }} icon={<UserOutlined />} size="large">
-            {getFullName(record)?.[0]?.toUpperCase()}
-          </Avatar>
-          <div>
-            <div className="font-bold text-gray-800">{getFullName(record)}</div>
-            <div className="text-xs text-gray-500">{new Date(record.createdAt).toLocaleDateString()}</div>
-          </div>
-        </Space>
-      )
+      key: 'client',
+      label: 'Client Info',
     },
     {
-      title: 'Category',
-      key: 'type',
-      render: (_, record) => {
-        const config = typeConfig[record.type] || { label: record.type || 'General', color: 'default', icon: <AppstoreAddOutlined /> };
-        return (
-          <Tag icon={config.icon} color={config.color} style={{ borderRadius: 12, padding: '2px 10px' }}>
-            {config.label}
-          </Tag>
-        );
-      }
+      key: 'property',
+      label: 'Property Requirements',
     },
-    {
-      title: 'Contact Info',
-      key: 'contact',
-      render: (_, record) => (
-        <div className="flex flex-col gap-1 text-gray-600">
-          <div className="flex items-center gap-2">
-            <MailOutlined className="text-gray-400" />
-            <span className="text-xs">{record.email || 'N/A'}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <PhoneOutlined className="text-gray-400" />
-            <span className="text-xs">{record.mobile?.number ? `${record.mobile?.country_code || ''} ${record.mobile?.number}` : 'N/A'}</span>
-          </div>
-        </div>
-      )
-    },
-    {
-      title: 'Status',
-      key: 'status',
-      render: (_, record) => {
-        const config = statusConfig[record.status] || { label: record.status || 'Pending', color: 'default', icon: <BellOutlined /> };
-        return <Badge status={record.status === 'resolved' ? 'success' : (record.status === 'new' ? 'warning' : 'processing')} text={config.label} />;
-      }
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      align: 'right',
-      render: (_, record) => (
-        <Space>
-          <Tooltip title="View Request Details">
-            <Button
-              shape="circle"
-              icon={<EyeOutlined style={{ color: THEME.primary }} />}
-              style={{ borderColor: THEME.primary }}
-              onClick={() => {
-                setSelectedLead(record);
-                setDrawerVisible(true);
-              }}
-            />
-          </Tooltip>
-
-          {record.status === 'new' && (
-            <Tooltip title="Mark as Resolved">
-              <Button
-                shape="circle"
-                type="primary"
-                ghost
-                icon={<CheckCircleOutlined />}
-                onClick={() => updateLeadStatus(record._id, 'resolved')}
-              />
-            </Tooltip>
-          )}
-
-          <Tooltip title="Delete">
-            <Button shape="circle" danger icon={<DeleteOutlined />} onClick={() => softDelete(record._id)} />
-          </Tooltip>
-        </Space>
-      )
-    }
-  ];
-
-  const tabItems = [
-    { key: 'all', label: (<span><UsergroupAddOutlined /> All Submissions</span>) },
-    ...Object.keys(typeConfig).map(key => ({
-      key,
-      label: (<span>{typeConfig[key].icon} {typeConfig[key].label}</span>)
-    }))
   ];
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      
-      {/* Header with Add Lead Button */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 m-0">Submit Leads Management</h1>
-        <Button 
-          type="primary" 
-          icon={<PlusOutlined />} 
-          size="large"
-          style={{ backgroundColor: THEME.primary }}
-          onClick={() => setIsAddModalVisible(true)}
-        >
-          Add New Lead
-        </Button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="mb-6">
-        <Row gutter={[16, 16]}>
-          <Col xs={24} sm={8}>
-            <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.primary }}>
-              <Statistic title="Total Submissions" value={stats.total} prefix={<UsergroupAddOutlined style={{ color: THEME.primary }} />} />
-            </Card>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.warning }}>
-              <Statistic title="New & Pending" value={stats.new} prefix={<BellOutlined style={{ color: THEME.warning }} />} />
-            </Card>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Card bordered={false} className="shadow-sm border-t-4" style={{ borderColor: THEME.success }}>
-              <Statistic title="Resolved" value={stats.resolved} prefix={<CheckCircleOutlined style={{ color: THEME.success }} />} />
-            </Card>
-          </Col>
-        </Row>
-      </div>
-
-      <Card bordered={false} className="shadow-md rounded-lg" bodyStyle={{ padding: 0 }}>
-        <Tabs
-          activeKey={activeTab}
-          onChange={handleTabChange}
-          items={tabItems}
-          type="card"
-          size="large"
-          tabBarStyle={{ margin: 0, paddingLeft: 16, paddingTop: 16, background: '#fafafa' }}
-        />
-
-        <div className="p-0">
-          <CustomTable
-            columns={columns}
-            data={leads}
-            loading={loading}
-            totalItems={pagination.totalItems}
-            currentPage={pagination.currentPage}
-            itemsPerPage={pagination.itemsPerPage}
-            onPageChange={handlePageChange}
-            onFilter={handleFilter}
-          />
+    <div style={{ backgroundColor: THEME.bgPage, minHeight: '100vh', padding: '24px 20px' }}>
+      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '24px' }}>
+          <h1 style={{ fontSize: '26px', fontWeight: 700, color: THEME.textDark, margin: 0 }}>
+            {leadId ? 'Edit Referral' : 'Submit a New Referral'}
+          </h1>
+          <p style={{ color: THEME.textMuted, fontSize: '14px', marginTop: '6px', margin: 0 }}>
+            {leadId ? 'Update the referral details below.' : 'Fill in the details below to refer a client.'}
+          </p>
         </div>
-      </Card>
 
-      {/* View Lead Details Drawer */}
-      <Drawer
-        title={
-          <div className="flex items-center gap-2">
-            <AppstoreAddOutlined style={{ color: THEME.primary }} />
-            <span>Submission Details</span>
-          </div>
-        }
-        placement="right"
-        width={600}
-        onClose={() => setDrawerVisible(false)}
-        open={drawerVisible}
-        destroyOnClose
-        bodyStyle={{ backgroundColor: '#f9fafb' }}
-      >
-        {selectedLead && (
-          <div className="space-y-6">
-            <Card bordered={false} className="shadow-sm">
-              <div className="flex items-start gap-4">
-                <Avatar size={64} icon={<UserOutlined />} style={{ backgroundColor: THEME.primary }} />
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold m-0 text-gray-800">{getFullName(selectedLead)}</h3>
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <Tag color={typeConfig[selectedLead.type]?.color} icon={typeConfig[selectedLead.type]?.icon}>
-                      {typeConfig[selectedLead.type]?.label || 'General'}
-                    </Tag>
-                    <Tag color={statusConfig[selectedLead.status]?.color}>
-                      {statusConfig[selectedLead.status]?.label || 'Pending'}
-                    </Tag>
-                  </div>
-                  <div className="text-xs text-gray-400 mt-2">
-                    Submitted On: {new Date(selectedLead.createdAt).toLocaleString()}
-                  </div>
+        <Card
+          bordered={false}
+          style={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(15, 23, 42, 0.02)', border: '1px solid #E2E8F0' }}
+        >
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '60px 0' }}><Spin size="large" /></div>
+          ) : (
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleSubmit}
+              initialValues={{
+                countryCode: '+971',
+                transactionType: 'buy',
+                furnished: 'any',
+              }}
+            >
+              <Tabs activeKey={activeTab} onChange={setActiveTab} items={items} />
+
+              <div style={{ padding: '24px 0' }}>
+              {activeTab === 'client' && (
+                <div>
+                  <Row gutter={[16, 16]}>
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        name="firstName"
+                        label="First Name"
+                        rules={[{ required: true, message: 'First name is required' }]}
+                      >
+                        <Input placeholder="John" prefix={<UserOutlined />} />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        name="lastName"
+                        label="Last Name"
+                        rules={[{ required: true, message: 'Last name is required' }]}
+                      >
+                        <Input placeholder="Doe" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  <Row gutter={[16, 16]}>
+                    <Col xs={24} sm={8}>
+                      <Form.Item
+                        name="countryCode"
+                        label="Country Code"
+                        rules={[{ required: true, message: 'Required' }]}
+                      >
+                        <Select placeholder="Select Country Code" showSearch optionFilterProp="children">
+                          {countryOptions.map((country) => (
+                            <Option key={country.isoCode} value={country.code}>
+                              {country.name} ({country.code})
+                            </Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} sm={16}>
+                      <Form.Item
+                        name="phoneNumber"
+                        label="Phone Number"
+                        rules={[{ required: true, message: 'Phone number is required' }]}
+                      >
+                        <Input placeholder="501234567" prefix={<PhoneOutlined />} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  <Form.Item
+                    name="email"
+                    label="Email (Optional)"
+                  >
+                    <Input placeholder="john@example.com" prefix={<MailOutlined />} />
+                  </Form.Item>
                 </div>
-              </div>
-            </Card>
+              )}
 
-            <Card title="Contact Information" size="small" bordered={false} className="shadow-sm">
-              <Descriptions column={1} bordered size="small">
-                <Descriptions.Item label={<span className="text-gray-500"><MailOutlined /> Email</span>}>
-                  <a href={`mailto:${selectedLead.email}`} className="text-blue-600">{selectedLead.email || 'N/A'}</a>
-                </Descriptions.Item>
-                <Descriptions.Item label={<span className="text-gray-500"><PhoneOutlined /> Mobile</span>}>
-                  <a href={`tel:${selectedLead.mobile?.country_code}${selectedLead.mobile?.number}`} className="text-blue-600">
-                    {selectedLead.mobile?.country_code} {selectedLead.mobile?.number}
-                  </a>
-                </Descriptions.Item>
-              </Descriptions>
-            </Card>
+              {activeTab === 'property' && (
+                <div>
+                  <Row gutter={[16, 16]}>
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        name="transactionType"
+                        label="Looking to"
+                        rules={[{ required: true, message: 'Required' }]}
+                      >
+                        <Select placeholder="Select">
+                          <Option value="buy">Buy</Option>
+                          <Option value="rent">Rent</Option>
+                          <Option value="sell">Sell</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        name="propertyType"
+                        label="Property Type"
+                        rules={[{ required: true, message: 'Property type is required' }]}
+                      >
+                        <Select placeholder="Select Property Type">
+                          <Option value="Apartment">Apartment</Option>
+                          <Option value="Villa">Villa</Option>
+                          <Option value="Townhouse">Townhouse</Option>
+                          <Option value="Commercial">Commercial</Option>
+                          <Option value="Land">Land</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                  </Row>
 
-            <div className="space-y-2">
-              <div className="text-sm font-semibold text-gray-500 uppercase ml-1">Message / Request</div>
-              <Descriptions bordered column={1} size="small" className="bg-white p-4 rounded border">
-                <Descriptions.Item label="Subject">{selectedLead.subject || 'N/A'}</Descriptions.Item>
-                <Descriptions.Item label="Detailed Message">
-                  {selectedLead.message || <Empty description="No message provided" />}
-                </Descriptions.Item>
-              </Descriptions>
+                  <Form.Item
+                    name="areaOfInterest"
+                    label="Area of Interest"
+                  >
+                    <Input placeholder="e.g., Dubai Marina, Jumeirah" />
+                  </Form.Item>
+
+                  <Row gutter={[16, 16]}>
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        name="budgetMin"
+                        label="Budget (Min) - AED"
+                      >
+                        <InputNumber
+                          style={{ width: '100%' }}
+                          placeholder="Minimum budget"
+                          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        name="budgetMax"
+                        label="Budget (Max) - AED"
+                      >
+                        <InputNumber
+                          style={{ width: '100%' }}
+                          placeholder="Maximum budget"
+                          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  <Row gutter={[16, 16]}>
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        name="bedrooms"
+                        label="Bedrooms"
+                      >
+                        <Select placeholder="Any">
+                          <Option value={0}>Studio</Option>
+                          <Option value={1}>1</Option>
+                          <Option value={2}>2</Option>
+                          <Option value={3}>3</Option>
+                          <Option value={4}>4</Option>
+                          <Option value={5}>5+</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        name="bathrooms"
+                        label="Bathrooms"
+                      >
+                        <Select placeholder="Any">
+                          <Option value={1}>1</Option>
+                          <Option value={2}>2</Option>
+                          <Option value={3}>3</Option>
+                          <Option value={4}>4+</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  <Row gutter={[16, 16]}>
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        name="areaMin"
+                        label="Area (Min) - Sq Ft"
+                      >
+                        <InputNumber
+                          style={{ width: '100%' }}
+                          placeholder="Minimum area"
+                          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        name="areaMax"
+                        label="Area (Max) - Sq Ft"
+                      >
+                        <InputNumber
+                          style={{ width: '100%' }}
+                          placeholder="Maximum area"
+                          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  <Form.Item
+                    name="furnished"
+                    label="Furnished"
+                  >
+                    <Select placeholder="Any">
+                      <Option value="any">Any</Option>
+                      <Option value="furnished">Furnished</Option>
+                      <Option value="semi">Semi-Furnished</Option>
+                      <Option value="unfurnished">Unfurnished</Option>
+                    </Select>
+                  </Form.Item>
+
+                  <Form.Item
+                    name="readyByDate"
+                    label="Ready By Date (Optional)"
+                  >
+                    <Input placeholder="e.g., Q1 2025" />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="additionalNotes"
+                    label="Additional Notes"
+                  >
+                    <TextArea
+                      rows={4}
+                      placeholder="Any other requirements or notes about the client..."
+                    />
+                  </Form.Item>
+                </div>
+              )}
             </div>
 
-            {selectedLead.status !== 'resolved' && (
-              <div className="mt-8 pt-4 border-t border-gray-200">
-                <Button
-                  type="primary"
-                  size="large"
-                  block
-                  icon={<CheckCircleOutlined />}
-                  style={{ backgroundColor: THEME.success, borderColor: THEME.success }}
-                  onClick={() => {
-                    updateLeadStatus(selectedLead._id, 'resolved');
-                    setDrawerVisible(false);
-                  }}
-                >
-                  Mark as Resolved
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </Drawer>
-
-      {/* --- ADD NEW LEAD MODAL --- */}
-      <Modal
-        title={
-          <div className="flex items-center gap-2">
-            <UsergroupAddOutlined style={{ color: THEME.primary }} />
-            <span>Add New Referral Lead</span>
-          </div>
-        }
-        open={isAddModalVisible}
-        onCancel={() => {
-          setIsAddModalVisible(false);
-          form.resetFields();
-        }}
-        confirmLoading={addLoading}
-        onOk={() => form.submit()}
-        okText="Submit Lead"
-        okButtonProps={{ style: { backgroundColor: THEME.primary } }}
-        destroyOnClose
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleAddLead}
-          initialValues={{ countryCode: '+91' }}
-          className="mt-4"
-        >
-          <Form.Item
-            name="customerName"
-            label="Customer Name"
-            rules={[{ required: true, message: 'Please enter customer name' }]}
-          >
-            <Input placeholder="e.g. Amit" prefix={<UserOutlined className="text-gray-400" />} />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item
-                name="countryCode"
-                label="Code"
-                rules={[{ required: true, message: 'Required' }]}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                type="primary"
+                size="large"
+                htmlType="submit"
+                loading={submitting}
+                icon={<PlusOutlined />}
+                style={{
+                  backgroundColor: THEME.primary,
+                  borderColor: THEME.primary,
+                  borderRadius: '10px',
+                  height: '44px',
+                  fontWeight: 600,
+                  minWidth: '160px',
+                }}
               >
-                <Select>
-                  <Select.Option value="+91">+91 (IND)</Select.Option>
-                  <Select.Option value="+971">+971 (UAE)</Select.Option>
-                  <Select.Option value="+1">+1 (USA)</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={16}>
-              <Form.Item
-                name="customerPhone"
-                label="Phone Number"
-                rules={[{ required: true, message: 'Please enter phone number' }]}
-              >
-                <Input placeholder="e.g. 9999999999" prefix={<PhoneOutlined className="text-gray-400" />} />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="propertyType"
-            label="Property Type"
-            rules={[{ required: true, message: 'Please specify property type' }]}
-          >
-            <Select placeholder="Select Property Type">
-              <Select.Option value="Apartment">Apartment</Select.Option>
-              <Select.Option value="Villa">Villa</Select.Option>
-              <Select.Option value="Townhouse">Townhouse</Select.Option>
-              <Select.Option value="Commercial">Commercial</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="interestArea"
-            label="Area of Interest"
-            rules={[{ required: true, message: 'Please enter interest area' }]}
-          >
-            <Input placeholder="e.g. Dubai Marina" />
-          </Form.Item>
-
-          <Form.Item
-            name="budget"
-            label="Budget"
-            rules={[{ required: true, message: 'Please enter budget' }]}
-          >
-            <InputNumber 
-              style={{ width: '100%' }} 
-              placeholder="e.g. 2000000"
-              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
-
+                {submitting ? (leadId ? 'Updating...' : 'Submitting...') : (leadId ? 'Update Referral' : 'Submit Referral')}
+              </Button>
+            </div>
+          </Form>
+          )}
+        </Card>
+      </div>
     </div>
   );
 };
 
-export default SubmitLeads;
+export default CreateReferralLead;
