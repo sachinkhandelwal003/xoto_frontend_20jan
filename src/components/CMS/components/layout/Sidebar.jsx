@@ -327,23 +327,29 @@ const CUSTOM_ROLE_LINKS = {
   ],
   "15": [
     {
-      title: "Projects", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects",
+      title: "Agents",
+      icon: "fas fa-user-friends",
+      path: "/dashboard/{roleSlug}/agents",
       submenus: [
-        { title: "Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects" },
-        { title: "Agent Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-agent-properties" },
-
-
-      ],
+        { title: "Agent Team", path: "/dashboard/{roleSlug}/all-agents" },
+      ]
     },
     {
-    title: "Agents",
-    icon: "fas fa-user-friends",       // or any icon you like
-    path: "/dashboard/{roleSlug}/agents",
-    submenus: [
-      { title: "All Agents",   path: "/dashboard/{roleSlug}/all-agents" },
-    ],
-  },
-
+      title: "Leads",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/leads",
+      submenus: [
+        { title: "All Leads", path: "/dashboard/{roleSlug}/lead-management" },
+      ]
+    },
+    {
+      title: "Listings",
+      icon: "fas fa-building",
+      path: "/dashboard/{roleSlug}/listings",
+      submenus: [
+        { title: "All Listings", path: "/dashboard/{roleSlug}/agency-agent-properties" },
+      ]
+    },
   ],
 
   "18": [
@@ -662,7 +668,7 @@ const ROLE_MODULE_ORDER = {
   '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '16': ['Dashboard', 'AgentLead Management'],
-  '15': ['Dashboard', 'Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
+  '15': ['Dashboard', 'Agents', 'Leads', 'Listings'],
   '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners', 'Advisors', 'Mortgages'],
   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
   // '21': ['Dashboard', 'Vault Partners', 'All Leads'],

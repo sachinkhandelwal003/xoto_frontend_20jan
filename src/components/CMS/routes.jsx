@@ -143,6 +143,7 @@ import AgencyAgentProperties from "./pages/Properties/AgencyAgentProperties";
 import AgencySubscription from "../ecommerce/B2C/AgencySubscription";
 import AgencyProjects from "../ecommerce/B2C/AgencyProjects";
 import AgencyDeals from "../ecommerce/B2C/AgencyDeals";
+import AgencyProfile from "./pages/dashboardPages/Profiles/AgencyProfile";
 
 // import AgencyAssignProjects from "../ecommerce/B2C/AgencyAssignProjects";
 
@@ -647,6 +648,7 @@ const CmsRoutes = () => {
       <Route path="/agency-projects" element={<AgencyProjects />} />
       <Route path="/agency/deals" element={<AgencyDeals />} />
       <Route path="/agency-agent-properties" element={<AgencyAgentProperties />} />
+      <Route path="/agency-profile" element={<AgencyProfile />} />
       <Route path="/presentations" element={<Presentations />} />
 
       {/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}

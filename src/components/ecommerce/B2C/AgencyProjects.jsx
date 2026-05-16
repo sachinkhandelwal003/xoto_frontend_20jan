@@ -338,8 +338,8 @@ export default function AgencyProjects() {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const response = await apiService.get("properties/agency/properties/all");
-      const data = response?.data?.data || response?.data || [];
+      const response = await apiService.get("/agency/listings");
+      const data = response?.data?.data || [];
       setProperties(data);
       setFiltered(data);
     } catch (err) {
