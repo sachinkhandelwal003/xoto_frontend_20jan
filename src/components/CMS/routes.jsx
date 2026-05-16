@@ -674,7 +674,7 @@ const CmsRoutes = () => {
       <Route path="/agency/deals" element={<AgencyDeals />} />
       <Route path="/agency-agent-properties" element={<AgencyAgentProperties />} />
       <Route path="/agency-profile" element={<AgencyProfile />} />
-      {/* <Route path="/presentations" element={<Presentations />} /> */}
+      <Route path="/presentations" element={<Presentations />} />
 
       {/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
       {/* Developer */}

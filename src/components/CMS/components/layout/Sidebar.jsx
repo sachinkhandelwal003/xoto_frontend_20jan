@@ -370,23 +370,29 @@ const CUSTOM_ROLE_LINKS = {
   ],
   "15": [
     {
-      title: "Projects", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects",
+      title: "Agents",
+      icon: "fas fa-user-friends",
+      path: "/dashboard/{roleSlug}/agents",
       submenus: [
-        { title: "Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects" },
-        { title: "Agent Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-agent-properties" },
-
-
-      ],
+        { title: "Agent Team", path: "/dashboard/{roleSlug}/all-agents" },
+      ]
     },
     {
-    title: "Agents",
-    icon: "fas fa-user-friends",       
-    path: "/dashboard/{roleSlug}/agents",
-    submenus: [
-      { title: "All Agents",   path: "/dashboard/{roleSlug}/all-agents" },
-    ],
-  },
-
+      title: "Leads",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/leads",
+      submenus: [
+        { title: "All Leads", path: "/dashboard/{roleSlug}/lead-management" },
+      ]
+    },
+    {
+      title: "Listings",
+      icon: "fas fa-building",
+      path: "/dashboard/{roleSlug}/listings",
+      submenus: [
+        { title: "All Listings", path: "/dashboard/{roleSlug}/agency-agent-properties" },
+      ]
+    },
   ],
 
   "18": [
