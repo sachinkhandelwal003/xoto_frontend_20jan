@@ -71,7 +71,7 @@ const ReferralPartnerLeaderboard = () => {
   const fetchLeaderboard = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiService.get(`/gridlead/referral/leaderboard?period=${activePeriod}`);
+      const res = await apiService.get(`/referral/leaderboard?period=${activePeriod}`);
       const data = res?.data?.data;
       if (data?.leaderboard) {
         setLeaderboard(data.leaderboard);
