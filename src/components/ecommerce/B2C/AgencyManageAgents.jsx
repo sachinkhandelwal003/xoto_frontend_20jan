@@ -299,8 +299,8 @@ const AgencyManageAgents = () => {
   const fetchAgents = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiService.get("/agent/get-all-agents/agency");
-      const data = res?.data;
+      const res = await apiService.get("/agency/agents");
+      const data = res?.data?.data;
       if (!Array.isArray(data)) { setAgents(loadFromStorage()); return; }
       const formatted = data.map((a) => ({
         id: a._id, _id: a._id,
@@ -313,7 +313,7 @@ const AgencyManageAgents = () => {
         city: a.operating_city || "",
         country: a.country || "",
         specialization: a.specialization || "",
-        experience_years: Number(v.experience_years) || 0,
+        experience_years: Number(a.experience_years) || 0,
         reraNumber: a.rera_number || "",
         idProof: a.id_proof || null,
         reraCertificate: a.rera_certificate || null,

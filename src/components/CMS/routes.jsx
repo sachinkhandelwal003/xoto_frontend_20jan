@@ -6,13 +6,13 @@ import { useSelector } from "react-redux";
 import Dashboard from "./pages/Dashboard";
 import VendorDashboard from "./pages/VendorDashboard";
 import Freelancerdashboard from "./pages/Freelancerdashboard";
-import CustomerList from "./pages/dashboardPages/customerlist";
+import CustomerList from "./pages/dashboardPages/Customerlist";
 import Modules from "./pages/modules/Modules";
 import Permission from "./pages/permission/Permission";
 import Role from "./pages/role/Role";
 import VendorB2C from "./pages/dashboardPages/managevendor/VendorB2C";
 import VendorB2CProfile from "./pages/dashboardPages/managevendor/VendorB2CProfile";
-import VendorInventory from "../ecommerce/B2C/products/vendorinventory";
+import VendorInventory from "../ecommerce/B2C/products/Vendorinventory";
 import ProductRequestB2C from "./pages/dashboardPages/manageProducts/ProductRequestB2C";
 import CategoryFreelancers from "./pages/dashboardPages/managefreelancer/freelancer/categoryandsubcategory/CategoryFreelancers";
 import Freelancers from "./pages/dashboardPages/managefreelancer/freelancer/Freelancers";
@@ -92,7 +92,7 @@ import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";
 import AgentSubscription from "../ecommerce/B2C/AgentSubscription";
 import AgentProjects from "../ecommerce/B2C/AgentProjects";
 import AgentProjectDetails from "../ecommerce/B2C/AgentProjectDetails";
-import AgentPresentations from "../ecommerce/B2C/AgentPresentations";
+// import AgentPresentations from "../ecommerce/B2C/AgentPresentations";
 import AgentSiteVisits from "../ecommerce/B2C/AgentSiteVisits";
 import AgentDeals from "../ecommerce/B2C/AgentDeals";
 import AgentCommission from "../ecommerce/B2C/AgentCommission";
@@ -123,6 +123,7 @@ import DeveloperCommissionScheme from "../ecommerce/B2C/DeveloperCommisionScheme
 import DeveloperDetail from "./pages/Developerdetail";
 import DealCommissionManager from "./pages/DealCommissionManager";
 import DeveloperAddProperty from "../ecommerce/B2C/DeveloperAddProperty";
+import DeveloperEditProperty from "../ecommerce/B2C/DeveloperEditProperty";
 import DeveloperPropertyEdit from "../ecommerce/B2C/DeveloperPropertyEdit";
 import BankProductManagement from "../homepage/BankProductManagement";
 // {Agency}------------------------------------------------------------
@@ -142,6 +143,7 @@ import AgencyAgentProperties from "./pages/Properties/AgencyAgentProperties";
 import AgencySubscription from "../ecommerce/B2C/AgencySubscription";
 import AgencyProjects from "../ecommerce/B2C/AgencyProjects";
 import AgencyDeals from "../ecommerce/B2C/AgencyDeals";
+import AgencyProfile from "./pages/dashboardPages/Profiles/AgencyProfile";
 
 // import AgencyAssignProjects from "../ecommerce/B2C/AgencyAssignProjects";
 
@@ -217,11 +219,11 @@ import ProposalForm from "../ecommerce/B2C/ProposalForm";
 import AllProposals from "../ecommerce/B2C/AllProposals";
 import CreateAdvisor from "../ecommerce/B2C/VaultCreateadviosor";
 import AdvisorList   from "../ecommerce/B2C/VaultAdvisorlist";
-import VaultAdvisorDetail from "../ecommerce/B2C/VaultAdvisorDetail";
-import VaultCreateMortgage from "../ecommerce/B2C/VaultCreateMortgage";
-import VaultMortgageList from "../ecommerce/B2C/VaultMortgageList";
+import VaultAdvisorDetail from "../ecommerce/B2C/VaultAdvisordetail";
+import VaultCreateMortgage from "../ecommerce/B2C/VaultCreatemortgage";
+import VaultMortgageList from "../ecommerce/B2C/VaultMortgagelist";
 import VaultMortgagedetail from "../ecommerce/B2C/VaultMortgagedetail";
-import MortgageOpsDashboard from "../ecommerce/B2C/MortgageOpsDashboard";
+import MortgageOpsDashboard from "../ecommerce/B2C/MortgageopsDashboard";
 import AdvisorDashboard from "../ecommerce/B2C/AdvisorDashboard";
 import IndividualLeadCreate from "../ecommerce/vault/individualpartner/IndividualLead";
 import AdvisorLeads from "../ecommerce/vault/vaultadvisor/index";
@@ -247,6 +249,9 @@ import ReferralPartnerDashboard from "./pages/ReferralPartnerDashboard"
 import TotalLeads from "../GridReferralPartner/GridDashboardpages/TotalLeads";
 import ActiveLeads from "../GridReferralPartner/GridDashboardpages/CreateReferralLead";
 import RecentLeads from "../GridReferralPartner/GridDashboardpages/RecentLeads";
+import ReferralPartnerLeaderboard from "../GridReferralPartner/GridDashboardpages/ReferralPartnerLeaderboard";
+import ReferralPartnerProfile from "../../components/CMS/pages/dashboardPages/Profiles/ReferralPartnerProfile";
+import ReferralPartnerLeadDetail from "../GridReferralPartner/GridDashboardpages/ReferralPartnerLeadDetail";
 import LeadsVault from "../ecommerce/vault/Lead/LeadsVault";
 import QueueCases from "../ecommerce/vault/case/QueueCases";
 import OpsAssignedcases from "../ecommerce/vault/case/OpsAssignedcases";
@@ -269,6 +274,9 @@ import BankProductViewwithdocuments from "../homepage/BankProductViewwithdocumen
 import BankProductDocuments from "../homepage/BankProductDocuments";
 import LoanEligibilitycheck from "../ecommerce/B2C/LoanEligibilitycheck";
 import ReferralLeaderboard from "../GridReferralPartner/GridDashboardpages/Referralleaderboard";
+import GridAgentLeadDetail from "../Grid/GridAgent/GridAgentLeadDetail";
+import GridAgentLeadDetailadmin from "../Grid/GridAdmin.jsx/GridAgentLeadDetailadmin";
+import GridAdvisorLeadDetail from "../Grid/AdvisorGrid/GridAdvisorLeadDetail";
 
 
 
@@ -281,18 +289,17 @@ const roleSlugMap = {
   7: "freelancer",
   11: "accountant",
   12: "supervisor",
-  15: "agency",        
-  16: "agent",         
+  15: "agency",
+  16: "agent",
   17: "developer",
   18: "vault-admin",
-  22: "vaultagent" ,
+  22: "vaultagent",
   26: "vault-advisor",
   23: "vault-ops",
-25:"gridreferralpartner",
-  23: "vault-mortgage-ops",
+  25: "gridreferralpartner",
 
-21:"vaultpartner",
-24:"GridAdvisor"
+  21: "vaultpartner",
+  24: "GridAdvisor"
 };
 
 const dashboardMap = {
@@ -312,15 +319,10 @@ const dashboardMap = {
   26: <AdvisorDashboard />,
   23: <MortgageOpsDashboard />,
 
-25: <ReferralPartnerDashboard />,
-    12: <SupervisorDashboard />,
-    16:<AgentDashboard/>,
-    17:<DeveloperDashboard/>,
-    15:<AgencyDashboard/>,
-  18:<VaultAdminDashboard/>,
-// 21:<VaultPartnerDashboard/>
-21:<VaultpartnerDashboard/>,
-24: <GridAdvisorDashboard />
+  25: <ReferralPartnerDashboard />,
+  // 21:<VaultPartnerDashboard/>
+  21: <VaultpartnerDashboard />,
+  24: <GridAdvisorDashboard />
 };
 
 const componentMap = {
@@ -404,6 +406,18 @@ const CmsRoutes = () => {
       {/* Dashboard */}
       <Route path="/" element={dashboardMap[user.role.code] ?? <Dashboard />} />
 
+      {/* Static routes for Referral Partner (role 25) */}
+      {user.role.code === 25 && (
+        <>
+          <Route path="submit-leads" element={<ActiveLeads />} />
+          <Route path="total-leads" element={<TotalLeads />} />
+          <Route path="recent-leads" element={<RecentLeads />} />
+          <Route path="profile" element={<ReferralPartnerProfile />} />
+          <Route path="leaderboard" element={<ReferralPartnerLeaderboard />} />
+          <Route path="lead/:id" element={<ReferralPartnerLeadDetail />} />
+        </>
+      )}
+
       {/* Dynamic Routes from Permissions */}
       {Object.entries(permissions ?? {}).map(([key, p]) => {
         if (!p?.canView || !p?.route) return null;
@@ -475,7 +489,7 @@ const CmsRoutes = () => {
       {/* Leads */}
       <Route path="agent-leads" element={<AgentLeadDashboard />} />
       <Route path="agent-leads/add" element={<AgentLeadSuggestionCreate />} />
-      <Route path="lead-details/:id" element={<LeadDetails />} /> 
+      <Route path="lead-details/:id" element={<LeadDetails />} />
       <Route path="lead-details/brocure" element={<BrochureGenerator />} />
       <Route path="track-brochures" element={<TrackBrochure />} />
       <Route path="GridAgent-lead" element={<GridAgentLead />} />
@@ -506,7 +520,7 @@ const CmsRoutes = () => {
       <Route path="subscription" element={<AgentSubscription />} />
 
       {/* Presentations */}
-      <Route path="presentations" element={<AgentPresentations />} />
+      {/* <Route path="presentations" element={<AgentPresentations />} /> */}
 
       <Route path="create-secondary-plans" element={<CreateSecondaryProperty />} />
       <Route path="create-secondary-plans/:id" element={<CreateSecondaryProperty />} />
@@ -529,23 +543,23 @@ const CmsRoutes = () => {
       <Route path="agent-details/:id" element={<VaultAgentdetail />} />
 
       <Route path="dashboard/vaultagent" element={<VaultAgentDashboard />} />
-{/* Xoto Vault */}
-<Route path="/" element={user?.role?.code == 18 ? <VaultAdminDashboard /> : (dashboardMap[user.role.code] ?? <Dashboard />)} />
-<Route path="agents"   element={<VaultAgents />} />
-<Route path="clients"  element={<VaultClients />} />
-<Route path="cases"    element={<VaultCases />} />
-<Route path="partners" element={<VaultPartners/>}/>
-<Route path="partner-list" element={<PartnerList/>}/>
-<Route path="partner-details/:id" element={<PartnerDetail/>}/>
-<Route path="agent-onboard" element={<VaultAgentonboard/>} />
-<Route path="agent-details/:id" element={<VaultAgentdetail/>} />
-<Route path="xotovaultpartner" element={<VaultpartnerDashboard />} />
-<Route path="onboard-partner" element={<OnboardPartner />} />
-<Route path="AgentVaultlisting" element={<AgentVaultListing />} />
-<Route path="leads/create" element={<VaultCreateLeads />} />
-<Route path="leads" element={<LeadsVault />} />
-<Route path="leads/advisor" element={<AdvisorLeads />} />
-<Route path="leads/advisor/view/:id" element={<VaultAgentLeadDetail />} />
+      {/* Xoto Vault */}
+      <Route path="/" element={user?.role?.code == 18 ? <VaultAdminDashboard /> : (dashboardMap[user.role.code] ?? <Dashboard />)} />
+      <Route path="agents" element={<VaultAgents />} />
+      <Route path="clients" element={<VaultClients />} />
+      <Route path="cases" element={<VaultCases />} />
+      <Route path="partners" element={<VaultPartners />} />
+      <Route path="partner-list" element={<PartnerList />} />
+      <Route path="partner-details/:id" element={<PartnerDetail />} />
+      <Route path="agent-onboard" element={<VaultAgentonboard />} />
+      <Route path="agent-details/:id" element={<VaultAgentdetail />} />
+      <Route path="xotovaultpartner" element={<VaultpartnerDashboard />} />
+      <Route path="onboard-partner" element={<OnboardPartner />} />
+      <Route path="AgentVaultlisting" element={<AgentVaultListing />} />
+      <Route path="leads/create" element={<VaultCreateLeads />} />
+      <Route path="leads" element={<LeadsVault />} />
+      <Route path="leads/advisor" element={<AdvisorLeads />} />
+      <Route path="leads/advisor/view/:id" element={<VaultAgentLeadDetail />} />
 
 <Route path="leads/:leadId" element={<VaultLeadDetails />} />
 <Route path="vault/lead/:leadId/documents" element={<VaultLeadDocuments />} /> 
@@ -562,18 +576,18 @@ const CmsRoutes = () => {
 <Route path="mortgage-ops/create" element={<VaultCreateMortgage />} />
 <Route path="create/vault-advisor" element={<VaultCreateadvisor />} />
 
-<Route path="mortgage-ops/list"   element={<VaultMortgageList />} />
-<Route path="mortgage-ops/:id" element={<VaultMortgagedetail />} />
-<Route path="mortgage/dashboard" element={<MortgageOpsDashboard />} />
-<Route path="advisor/dashboard" element={<AdvisorDashboard />} />
-<Route path="/advisor/adv-leads" element={<AdvisorLeads />} />
-<Route path="advisor/upload-documents" element={<AdvisorLeadUploadDocuments />} />
-<Route path="leads/partner/create" element={<IndividualLeadCreate />} />
+      <Route path="mortgage-ops/list" element={<VaultMortgageList />} />
+      <Route path="mortgage-ops/:id" element={<VaultMortgagedetail />} />
+      <Route path="mortgage/dashboard" element={<MortgageOpsDashboard />} />
+      <Route path="advisor/dashboard" element={<AdvisorDashboard />} />
+      <Route path="/advisor/adv-leads" element={<AdvisorLeads />} />
+      <Route path="advisor/upload-documents" element={<AdvisorLeadUploadDocuments />} />
+      <Route path="leads/partner/create" element={<IndividualLeadCreate />} />
 
 
-{/* Mortgage ops case details */}
+      {/* Mortgage ops case details */}
 
-<Route path= "mortgage-ops/case/:caseId" element={<MortgageOpsCaseDetail/>} />
+      <Route path="mortgage-ops/case/:caseId" element={<MortgageOpsCaseDetail />} />
 
 
 <Route path="vault/agent-leads" element={<VaultAgentLeadList />} />
@@ -612,7 +626,11 @@ const CmsRoutes = () => {
 
 
       <Route path="/GridAdmin/propertyleads" element={<PlatformLeads />} />
-      <Route path="/grid/agentleads" element={<AgentLeads />} />
+      <Route path="/grid/agentleads" element={<AgentLeads />} /> 
+      <Route path="/lead-detail/:id" element={<GridAgentLeadDetail />} />
+      <Route path="/lead-detail-admin/:id" element={<GridAgentLeadDetailadmin />} />
+     <Route path="gridAdvisorLeads/:id" element={<GridAdvisorLeadDetail />} />
+      
 
 
       {/* Agency */}
@@ -637,16 +655,18 @@ const CmsRoutes = () => {
       <Route path="/agency-projects" element={<AgencyProjects />} />
       <Route path="/agency/deals" element={<AgencyDeals />} />
       <Route path="/agency-agent-properties" element={<AgencyAgentProperties />} />
+      <Route path="/agency-profile" element={<AgencyProfile />} />
       <Route path="/presentations" element={<Presentations />} />
 
       {/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
       {/* Developer */}
-      <Route path="developer-projects" element={<DeveloperProjects />} />
-      <Route path="developer-projects/add" element={<DeveloperAddProperty />} />
-      <Route path="developer-projects/add" element={<DeveloperAddProject />} />
-      <Route path="developer-projects/:id" element={<DeveloperProjectDetails />} />
+      <Route path="developer-properties" element={<DeveloperProjects />} />
+      <Route path="developer-properties/add" element={<DeveloperAddProperty />} />
+      <Route path="developer-properties/add" element={<DeveloperAddProject />} />
+      <Route path="developer-properties/:id" element={<DeveloperProjectDetails />} />
+      <Route path="edit-property/:id" element={<DeveloperEditProperty />} />
       <Route path="edit-property/:id" element={<DeveloperPropertyEdit />} />
-      <Route path="developerinventory" element={<DeveloperInventory />} />
+      <Route path="developer-inventory" element={<DeveloperInventory />} />
       <Route path="/inventory/add" element={<DeveloperAddUnit />} />
       <Route path="/inventory/:id" element={<DeveloperUnitDetails />} />
       <Route path="/inventory/:id/edit" element={<DeveloperEditUnit />} />
@@ -660,7 +680,7 @@ const CmsRoutes = () => {
       <Route path="commission-scheme" element={<DeveloperCommissionScheme />} />
       <Route path="commission-scheme/:id" element={<DeveloperCommissionScheme />} />
       <Route path="/developer/view/:id" element={<DeveloperDetail />} />
-      
+
 
       {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
       {/* <Route path="team" element={<DeveloperTeam/>}/> */}
@@ -680,42 +700,49 @@ const CmsRoutes = () => {
 <Route path="leaderboard" element={< ReferralLeaderboard />} />
 <Route path="gridAdvisorLeads" element={<AdvisorLeadsPage />} />
 <Route path="property-catalogue" element={<PropertyCatalogue />} />
+      {/* Grid Referral Partner   */}
+      <Route path="/grid-referral-partner" element={<ReferralPartnerDashboard />} />
+      <Route path="/total-leads" element={<TotalLeads />} />
+      <Route path="/Submit-leads" element={<ActiveLeads />} />
+      <Route path="/recent-leads" element={<RecentLeads />} />
+      <Route path="/profile" element={<ReferralPartnerProfile />} />
+      <Route path="/dashboard/gridreferralpartner/leaderboard" element={<ReferralPartnerLeaderboard />} />
+
+
+      <Route path="advisors/:id" element={<AdvisorDetail />} />
+      <Route path="advisors" element={<AllAdvisors />} />
+      <Route path="create-advisor" element={<CreateAdvisor />} />
+      <Route path="dashboard/myprofile" element={<GridAdvisorProfile />} />
+      <Route path="gridAdvisorLeads" element={<AdvisorLeadsPage />} />
+      <Route path="property-catalogue" element={<PropertyCatalogue />} />
 
 
 
-{/* vault */}
+      {/* vault */}
 
       <Route path="/bank/products" element={< BankProductListVault />} />
-<Route
-  path="/bank/products/view/:productId"
-  element={< BankProductViewwithdocuments />}
-/>
-<Route
-  path="/bank/products/documents/:productId"
-  element={< BankProductDocuments />}
-/>
-            <Route path="/proposals/create" element={< CreateProposalAdmin />} />
-            <Route path="/proposals/view" element={< ViewProposal />} />
+      <Route path="/proposals/create" element={< CreateProposalAdmin />} />
+      <Route path="/proposals/view" element={< ViewProposal />} />
 
 
 
-            {/* cases vault */}
+      {/* cases vault */}
 
-            <Route path="/case/create" element={< CreateCase />} />
-            <Route path="/case/view" element={< ViewCases />} />
-                        <Route path="/case/manage" element={< AdminManagecases />} />
+      <Route path="/case/create" element={< CreateCase />} />
+      <Route path="/case/view" element={< ViewCases />} />
+      <Route path="/case/manage" element={< AdminManagecases />} />
 
-                        <Route path="/case/queue/view" element={< QueueCases />} />
-            <Route path="/case/assigned/all" element={< OpsAssignedcases />} />
+      <Route path="/case/queue/view" element={< QueueCases />} />
+      <Route path="/case/assigned/all" element={< OpsAssignedcases />} />
 
-                        <Route path="/case/view/all" element={< ProcessCasesUpdates />} />
-                                                <Route path="/case/disbursed" element={< DisbursedCases />} />
+      <Route path="/case/view/all" element={< ProcessCasesUpdates />} />
+      <Route path="/case/disbursed" element={< DisbursedCases />} />
 
 
-            <Route path="/case/view/:caseId" element={< DetailedViewCases/>} />
-            <Route path="/case/amount/view/:caseId" element={< DisbursedFullAmountCases/>} />
+      <Route path="/case/view/:caseId" element={< DetailedViewCases />} />
+      <Route path="/case/amount/view/:caseId" element={< DisbursedFullAmountCases />} />
 
-            <Route path="/case/assigned/view/:caseId" element={< OpsAssignedReview/>} />
+      <Route path="/case/assigned/view/:caseId" element={< OpsAssignedReview />} />
 
 
 

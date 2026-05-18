@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
 import {
   Modal, Button, Tag, Tooltip, Avatar, Radio,
-  Spin, Empty, message, Drawer,
+  Spin, Empty, message,
 } from 'antd';
 import {
   UserAddOutlined, EyeOutlined, CheckCircleFilled,
   ReloadOutlined, UserOutlined, FireOutlined,
-  HomeOutlined, FileTextOutlined, TeamOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import CustomTable from '../../CMS/pages/custom/CustomTable';
 
@@ -48,19 +49,7 @@ const CLASSIFICATION_CONFIG = {
   cold: { color: 'blue', label: 'Cold' },
 };
 
-// PRD workflow order (screenshot ke according)
-const PRD_WORKFLOW_ORDER = [
-  'new',
-  'contacted',
-  'in_discussion',
-  'site_visit_scheduled',
-  'offer_made',
-  'reserved',
-  'spa_signed',
-  'completed',
-];
-
-const TypeTag = ({ type }) => {
+export const TypeTag = ({ type }) => {
   const t = TYPE_COLORS[type] || { bg: '#f3f4f6', color: '#374151', label: type };
   return (
     <span style={{
@@ -73,12 +62,12 @@ const TypeTag = ({ type }) => {
   );
 };
 
-const StatusBadge = ({ status }) => {
+export const StatusBadge = ({ status }) => {
   const s = STATUS_COLORS[status] || { color: 'default', label: status };
   return <Tag color={s.color} style={{ borderRadius: 20, fontSize: 11 }}>{s.label}</Tag>;
 };
 
-const ClassificationBadge = ({ value }) => {
+export const ClassificationBadge = ({ value }) => {
   const c = CLASSIFICATION_CONFIG[value] || { color: 'default', label: value };
   return (
     <Tag color={c.color} style={{ borderRadius: 20, fontSize: 11, textTransform: 'capitalize' }}>
@@ -120,56 +109,8 @@ const AgentChip = ({ agent }) => {
   );
 };
 
-const SectionTitle = ({ icon, label }) => (
-  <div style={{
-    fontSize: 11, fontWeight: 700, color: '#374151',
-    marginBottom: 10, marginTop: 4,
-    textTransform: 'uppercase', letterSpacing: 0.6,
-    display: 'flex', alignItems: 'center', gap: 6,
-    paddingBottom: 6, borderBottom: '1px solid #f3f4f6',
-  }}>
-    {icon && <span style={{ color: PRIMARY, fontSize: 13 }}>{icon}</span>}
-    {label}
-  </div>
-);
-
-const Row = ({ label, children }) => (
-  <div style={{
-    display: 'flex', justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    padding: '7px 0', borderBottom: '0.5px solid #f3f4f6', fontSize: 13,
-  }}>
-    <span style={{ color: '#6b7280', minWidth: 150, flexShrink: 0 }}>{label}</span>
-    <span style={{ color: '#111827', textAlign: 'right' }}>{children}</span>
-  </div>
-);
-
-const getPrdNextStepLabel = (status) => {
-  const idx = PRD_WORKFLOW_ORDER.indexOf(status);
-  if (idx === -1) return '—';
-  const next = PRD_WORKFLOW_ORDER[idx + 1];
-  if (!next) return STATUS_COLORS.completed?.label || 'Completed';
-  return STATUS_COLORS[next]?.label || next;
-};
-
-const getPrdLastStatusUpdate = (lead) => {
-  const history = lead?.status_history || [];
-  if (!history.length) return '—';
-
-  const latest = [...history].sort((a, b) => {
-    const da = a?.changed_at ? new Date(a.changed_at).getTime() : 0;
-    const db = b?.changed_at ? new Date(b.changed_at).getTime() : 0;
-    return db - da;
-  })[0];
-
-  return latest?.changed_at
-    ? new Date(latest.changed_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-    : '—';
-};
-
 // ─── Assign Modal ─────────────────────────────────────────────────────────────
-
-const AssignModal = ({ lead, visible, onClose, onAssigned }) => {
+export const AssignModal = ({ lead, visible, onClose, onAssigned }) => {
   const [loading, setLoading] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [options, setOptions] = useState([]);
@@ -238,6 +179,7 @@ const AssignModal = ({ lead, visible, onClose, onAssigned }) => {
           <div style={{
             background: '#ffffff', borderRadius: 8, padding: '10px 14px',
             marginBottom: 16, fontSize: 12, color: '#374151',
+            border: '1px solid #e5e7eb'
           }}>
             <strong>
               {lead?.contact_info?.name?.first_name
@@ -260,7 +202,7 @@ const AssignModal = ({ lead, visible, onClose, onAssigned }) => {
               <span style={{ fontWeight: 700 }}>⭐ Best Match:</span>
               {recommended.firstName} {recommended.lastName}
               <span style={{ color: '#7c3aed', marginLeft: 4 }}>
-                (Score: {recommended.leaderboard?.compositeScore || 0} ·
+                (Score: {recommended.leaderboard?.compositeScore || 0} · 
                 Active Leads: {recommended.workload?.activeLeadsCount || 0})
               </span>
             </div>
@@ -347,204 +289,15 @@ const AssignModal = ({ lead, visible, onClose, onAssigned }) => {
   );
 };
 
-// ─── Detail Drawer ────────────────────────────────────────────────────────────
-
-const AgentLeadDetailDrawer = ({ lead, visible, onClose, onAssign }) => {
-  if (!lead) return null;
-
-  const req = lead.requirements || {};
-  const contact = lead.contact_info || {};
-  const agent = lead.created_by_agent || null;
-  const advisor = lead.assignedAdvisor || null;
-
-  const agentFirst = agent?.first_name || agent?.firstName || '';
-  const agentLast = agent?.last_name || agent?.lastName || '';
-  const agentPhone = agent?.phone_number || agent?.phone || '—';
-
-  const formatBudget = () => {
-    const min = req.budget_min ? `AED ${(req.budget_min / 1000).toFixed(0)}k` : null;
-    const max = req.budget_max ? `AED ${(req.budget_max / 1000).toFixed(0)}k` : null;
-    if (min && max) return `${min} – ${max}`;
-    return min || max || '—';
-  };
-
-  return (
-    <Drawer
-      open={visible} onClose={onClose}
-      width={560} title="Agent Lead Details"
-      styles={{ body: { padding: '20px 24px' } }}
-      extra={
-        <Button
-          type="primary" icon={<UserAddOutlined />}
-          style={{ background: PRIMARY }}
-          onClick={() => { onClose(); onAssign(lead); }}
-        >
-          {lead.assigned_to ? 'Reassign' : 'Assign Advisor'}
-        </Button>
-      }
-    >
-      <SectionTitle icon={<UserOutlined />} label="Client Contact" />
-      <div style={{ marginBottom: 20 }}>
-        <Row label="Full Name">
-          {contact.name?.first_name
-            ? `${contact.name.first_name} ${contact.name.last_name || ''}`
-            : <span style={{ color: '#9ca3af' }}>— Not provided</span>}
-        </Row>
-
-        <Row label="Phone">
-          {contact.mobile?.number
-            ? `${contact.mobile.country_code || ''} ${contact.mobile.number}`
-            : <span style={{ color: '#9ca3af' }}>— Not provided</span>}
-        </Row>
-
-        <Row label="Email">
-          {contact.email?.address || <span style={{ color: '#9ca3af' }}>— Not provided</span>}
-        </Row>
-
-        <Row label="Preferred Contact">
-          {{ whatsapp: 'WhatsApp', call: 'Call', email: 'Email' }[contact.preferred_contact] || '—'}
-        </Row>
-      </div>
-
-      <SectionTitle icon={<FileTextOutlined />} label="Lead Info" />
-      <div style={{ marginBottom: 20 }}>
-        <Row label="Enquiry Type"> <TypeTag type={lead.enquiry_type} /> </Row>
-        <Row label="Status"> <StatusBadge status={lead.status} /> </Row>
-        <Row label="Grade"> <ClassificationBadge value={lead.classification} /> </Row>
-        <Row label="Source"> {lead.source?.channel?.replace(/_/g, ' ') || '—'} </Row>
-        <Row label="Created">
-          {lead.createdAt
-            ? new Date(lead.createdAt).toLocaleString('en-IN', {
-              day: '2-digit', month: 'short', year: 'numeric',
-              hour: '2-digit', minute: '2-digit',
-            })
-            : '—'}
-        </Row>
-
-        {/* PRD workflow helpers (small rows, UI style same) */}
-        <Row label="Workflow Next">{getPrdNextStepLabel(lead.status)}</Row>
-        <Row label="Last Status Update">{getPrdLastStatusUpdate(lead)}</Row>
-      </div>
-
-      <SectionTitle icon={<TeamOutlined />} label="Created By Agent" />
-      <div style={{ marginBottom: 20 }}>
-        {!agent ? (
-          <span style={{ fontSize: 13, color: '#9ca3af' }}>— No agent info</span>
-        ) : (
-          <>
-            <Row label="Name">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
-                <Avatar size={22} style={{ background: AGENT_TEAL, fontSize: 9, fontWeight: 700 }}>
-                  {`${agentFirst[0] || ''}${agentLast[0] || ''}`.toUpperCase()}
-                </Avatar>
-                <span>{agentFirst} {agentLast}</span>
-              </div>
-            </Row>
-            <Row label="Phone">{agentPhone}</Row>
-            <Row label="Email">{agent.email || '—'}</Row>
-            <Row label="Role">
-              <span style={{ textTransform: 'capitalize' }}>{agent.role || '—'}</span>
-            </Row>
-          </>
-        )}
-      </div>
-
-      <SectionTitle icon={<UserOutlined />} label="Assigned Advisor" />
-      <div style={{ marginBottom: 20 }}>
-        {!advisor ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 13, color: '#9ca3af' }}>— Not assigned yet</span>
-            <Button
-              size="small" type="primary"
-              style={{ background: PRIMARY, fontSize: 11 }}
-              onClick={() => { onClose(); onAssign(lead); }}
-            >
-              Assign Now
-            </Button>
-          </div>
-        ) : (
-          <>
-            <Row label="Name">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
-                <Avatar size={22} style={{ background: PRIMARY, fontSize: 9, fontWeight: 700 }}>
-                  {`${advisor.firstName?.[0] || ''}${advisor.lastName?.[0] || ''}`.toUpperCase()}
-                </Avatar>
-                <span>{advisor.firstName} {advisor.lastName}</span>
-              </div>
-            </Row>
-            <Row label="Email">{advisor.email || '—'}</Row>
-            <Row label="Assigned On">
-              {lead.assigned_at
-                ? new Date(lead.assigned_at).toLocaleDateString('en-IN', {
-                  day: '2-digit', month: 'short', year: 'numeric',
-                })
-                : '—'}
-            </Row>
-          </>
-        )}
-      </div>
-
-      <SectionTitle icon={<HomeOutlined />} label="Client Requirements" />
-      <div style={{ marginBottom: 20 }}>
-        <Row label="Property Type"> {req.property_type || '—'} </Row>
-        <Row label="Transaction"> {req.transaction_type || '—'} </Row>
-        <Row label="Bedrooms"> {req.bedrooms || '—'} </Row>
-        <Row label="Bathrooms"> {req.bathrooms || '—'} </Row>
-        <Row label="Budget"> {formatBudget()} </Row>
-        <Row label="Area (sqft)">
-          {req.area_sqft_min || req.area_sqft_max
-            ? `${req.area_sqft_min || '—'} – ${req.area_sqft_max || '—'}`
-            : '—'}
-        </Row>
-        <Row label="Furnished"> {req.furnished || '—'} </Row>
-
-        {req.location_preferences?.length > 0 && (
-          <div style={{ padding: '7px 0', borderBottom: '0.5px solid #f3f4f6' }}>
-            <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 6 }}>Preferred Locations</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {req.location_preferences.map((loc, i) => (
-                <span
-                  key={i}
-                  style={{
-                    background: '#f0fdfa', color: AGENT_TEAL,
-                    fontSize: 11, padding: '2px 8px', borderRadius: 20,
-                    fontWeight: 500, border: `1px solid ${AGENT_TEAL}22`,
-                  }}
-                >
-                  {typeof loc === 'object' ? loc.area : loc}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {req.additional_notes && (
-          <div style={{ padding: '7px 0' }}>
-            <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 6 }}>Additional Notes</div>
-            <div style={{
-              background: '#f9fafb', borderRadius: 8,
-              padding: '10px 12px', fontSize: 12,
-              color: '#374151', lineHeight: 1.7,
-              border: '0.5px solid #e5e7eb',
-            }}>
-              {req.additional_notes}
-            </div>
-          </div>
-        )}
-      </div>
-    </Drawer>
-  );
-};
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-
 const AgentLeads = () => {
+  const navigate = useNavigate();
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
 
   const [assignLead, setAssignLead] = useState(null);
-  const [viewLead, setViewLead] = useState(null);
   const [filters, setFilters] = useState(FIXED_AGENT_FILTERS);
 
   const [stats, setStats] = useState({ total: 0, unassigned: 0, hot: 0, completed: 0 });
@@ -599,6 +352,11 @@ const AgentLeads = () => {
     fetchLeads(merged, 1, pagination.limit);
   };
 
+  // Navigates to the new full page detail view
+const handleViewLead = (row) => {
+  navigate(`/dashboard/admin/lead-detail-admin/${row._id}`); 
+};
+
   const columns = [
     {
       title: 'Client Name',
@@ -609,13 +367,6 @@ const AgentLeads = () => {
             {row.contact_info?.name?.first_name
               ? `${row.contact_info.name.first_name} ${row.contact_info.name.last_name || ''}`
               : <span style={{ color: '#9ca3af', fontWeight: 400 }}>— No client</span>}
-            {row.contact_info?.name?.is_masked && (
-              <span style={{
-                marginLeft: 6, fontSize: 10, background: '#fef3c7', color: '#92400e',
-                padding: '1px 6px', borderRadius: 20
-              }}>
-              </span>
-            )}
           </div>
 
           {row.contact_info?.email?.address && (
@@ -686,7 +437,7 @@ const AgentLeads = () => {
       render: (_, row) => (
         <div style={{ display: 'flex', gap: 6 }}>
           <Tooltip title="View Details">
-            <Button size="small" icon={<EyeOutlined />} onClick={() => setViewLead(row)} />
+            <Button size="small" icon={<EyeOutlined />} onClick={() => handleViewLead(row)} />
           </Tooltip>
           <Tooltip title={row.assigned_to ? 'Reassign Advisor' : 'Assign Advisor'}>
             <Button
@@ -773,13 +524,6 @@ const AgentLeads = () => {
           setAssignLead(null);
           fetchLeads(filters, pagination.page, pagination.limit);
         }}
-      />
-
-      <AgentLeadDetailDrawer
-        lead={viewLead}
-        visible={!!viewLead}
-        onClose={() => setViewLead(null)}
-        onAssign={(lead) => setAssignLead(lead)}
       />
     </div>
   );

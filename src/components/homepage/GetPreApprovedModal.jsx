@@ -211,14 +211,12 @@ export default function GetPreApprovedModal({ open, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 overflow-y-auto">
+    <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm overflow-y-auto">
       <Toaster position="top-center" reverseOrder={false} />
       
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="relative w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden text-black max-h-[95vh] md:max-h-none">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#f4f1ff] via-white to-[#e9fbff]" />
-          <div className="relative bg-white rounded-3xl px-5 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10 overflow-y-auto">
-            <button onClick={onClose} className="absolute right-4 top-4 sm:right-6 sm:top-6 p-2 rounded-full hover:bg-gray-100">
+<div className="flex min-h-screen items-start justify-center pt-24 pb-8 px-4">
+<div className="relative w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden text-black max-h-[85vh]">          <div className="absolute inset-0 bg-gradient-to-br from-[#f4f1ff] via-white to-[#e9fbff]" />
+<div className="relative bg-white rounded-3xl px-5 py-6 sm:px-6 sm:py-8 md:px-8 md:py-8 overflow-y-auto max-h-[85vh]">            <button onClick={onClose} className="absolute right-4 top-4 sm:right-6 sm:top-6 p-2 rounded-full hover:bg-gray-100">
               <FiX className="text-xl" />
             </button>
 

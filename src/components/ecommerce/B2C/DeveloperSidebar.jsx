@@ -56,7 +56,17 @@ const DeveloperSidebar = ({
     {
       title: "Property Management",
       icon: "fas fa-building",
-      to: "/dashboard/developer/property-management",
+      to: "/dashboard/developer/developer-properties",
+    },
+    {
+      title: "Inventory",
+      icon: "fas fa-boxes-stacked",
+      to: "/dashboard/developer/developer-inventory",
+    },
+    {
+      title: "Analytics",
+      icon: "fas fa-chart-line",
+      to: "/dashboard/developer/analytics",
     },
   ];
 
