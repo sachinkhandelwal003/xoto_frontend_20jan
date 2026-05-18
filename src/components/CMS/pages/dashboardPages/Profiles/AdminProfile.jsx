@@ -13,16 +13,26 @@ const AdminProfile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const getProfile = async () => {
-    try {
-      const response = await apiService.get("profile/get-profile-data");
-      setProfile(response.data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+ const getProfile = async () => {
+  try {
+    const res = await apiService.get("profile/get-profile-data");
+
+    const profileData =
+      res?.data?.data?.data ||
+      res?.data?.data ||
+      res?.data ||
+      res ||
+      null;
+
+    console.log("PROFILE DATA:", profileData);
+
+    setProfile(profileData);
+  } catch (error) {
+    console.error("PROFILE ERROR:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     getProfile();
