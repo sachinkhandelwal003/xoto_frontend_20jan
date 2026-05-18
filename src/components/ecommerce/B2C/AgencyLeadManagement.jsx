@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Table,
@@ -8,50 +8,72 @@ import {
   Row,
   Col,
   Button,
+  Spin,
+  message
 } from "antd";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 const { Title } = Typography;
 const { Option } = Select;
 
 const AgencyLeadManagement = () => {
-  const [leads, setLeads] = useState([
-    {
-      key: 1,
-      client: "Amit Verma",
-      project: "Palm Residency",
-      budget: "80L",
-      status: "New",
-      assignedTo: null,
-    },
-    {
-      key: 2,
-      client: "Neha Singh",
-      project: "Skyline Towers",
-      budget: "1.2Cr",
-      status: "Assigned",
-      assignedTo: "Rahul Sharma",
-    },
-  ]);
+  const [leads, setLeads] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState({ total: 0, active: 0, closed: 0 });
 
-  const agents = ["Rahul Sharma", "Priya Mehta", "Amit Jain"];
+  const fetchLeads = async () => {
+    setLoading(true);
+    try {
+      const [leadsRes, dashboardRes] = await Promise.all([
+        apiService.get("/agency/leads"),
+        apiService.get("agency/dashboard")
+      ]);
+      
+      console.log('leadsRes:', leadsRes);
+      console.log('dashboardRes:', dashboardRes);
+      
+      const data = leadsRes?.data?.data || [];
+      const dashboardData = dashboardRes?.data;
+      
+      console.log('data:', data);
+      console.log('dashboardData:', dashboardData);
+      
+      const formattedLeads = data.map((lead, idx) => ({
+        key: lead._id || idx,
+        client: lead.contact_info?.name?.first_name ? 
+          `${lead.contact_info.name.first_name} ${lead.contact_info.name.last_name || ""}` : 
+          "Client",
+        project: lead.requirements?.property_type || "Project",
+        budget: lead.requirements?.budget || "-",
+        status: lead.status || "New",
+        assignedTo: lead.created_by_agent?.first_name ? 
+          `${lead.created_by_agent.first_name} ${lead.created_by_agent.last_name || ""}` : 
+          null,
+      }));
 
-  const assignLead = (key, agent) => {
-    setLeads(
-      leads.map((lead) =>
-        lead.key === key
-          ? { ...lead, assignedTo: agent, status: "Assigned" }
-          : lead
-      )
-    );
+      setLeads(formattedLeads);
+      
+      const total = dashboardData?.stats?.total_leads || data.length;
+      const active = dashboardData?.stats?.active_leads || data.filter(l => 
+        l.status && !['completed', 'not_proceeding'].includes(l.status)
+      ).length;
+      const closed = (dashboardData?.stats?.total_deals || 0) || data.filter(l => 
+        l.status && ['completed', 'not_proceeding'].includes(l.status)
+      ).length;
+
+      setStats({ total, active, closed });
+
+    } catch (err) {
+      console.error("Failed to fetch leads:", err);
+      message.error("Failed to load leads");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const closeLead = (key) => {
-    setLeads(
-      leads.map((lead) =>
-        lead.key === key ? { ...lead, status: "Closed" } : lead
-      )
-    );
-  };
+  useEffect(() => {
+    fetchLeads();
+  }, []);
 
   const columns = [
     {
@@ -78,41 +100,8 @@ const AgencyLeadManagement = () => {
     {
       title: "Assigned To",
       dataIndex: "assignedTo",
-      render: (val, record) =>
-        record.status === "Closed" ? (
-          val || "-"
-        ) : (
-          <Select
-            value={val}
-            placeholder="Assign Agent"
-            style={{ width: 160 }}
-            onChange={(value) => assignLead(record.key, value)}
-          >
-            {agents.map((agent) => (
-              <Option key={agent} value={agent}>
-                {agent}
-              </Option>
-            ))}
-          </Select>
-        ),
-    },
-    {
-      title: "Action",
-      render: (_, record) =>
-        record.status !== "Closed" ? (
-          <Button
-            type="primary"
-            onClick={() => closeLead(record.key)}
-          >
-            Mark Closed
-          </Button>
-        ) : null,
     },
   ];
-
-  const totalLeads = leads.length;
-  const assigned = leads.filter((l) => l.status === "Assigned").length;
-  const closed = leads.filter((l) => l.status === "Closed").length;
 
   return (
     <div style={{ padding: 24 }}>
@@ -123,25 +112,31 @@ const AgencyLeadManagement = () => {
         <Col span={8}>
           <Card bordered={false}>
             <Title level={5}>Total Leads</Title>
-            <Title level={3}>{totalLeads}</Title>
+            <Title level={3}>{stats.total}</Title>
           </Card>
         </Col>
         <Col span={8}>
           <Card bordered={false}>
-            <Title level={5}>Assigned</Title>
-            <Title level={3}>{assigned}</Title>
+            <Title level={5}>Active</Title>
+            <Title level={3}>{stats.active}</Title>
           </Card>
         </Col>
         <Col span={8}>
           <Card bordered={false}>
             <Title level={5}>Closed</Title>
-            <Title level={3}>{closed}</Title>
+            <Title level={3}>{stats.closed}</Title>
           </Card>
         </Col>
       </Row>
 
       <Card bordered={false}>
-        <Table columns={columns} dataSource={leads} pagination={false} />
+        <Spin spinning={loading}>
+          <Table 
+            columns={columns} 
+            dataSource={leads} 
+            pagination={false} 
+          />
+        </Spin>
       </Card>
     </div>
   );

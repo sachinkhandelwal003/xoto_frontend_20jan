@@ -310,41 +310,46 @@ const CUSTOM_ROLE_LINKS = {
   "10": [],
   "17": [
     {
-      title: "Projects",
+      title: "Properties",
       icon: "fas fa-building",
-      path: "/dashboard/{roleSlug}/developer-projects"
+      path: "/dashboard/{roleSlug}/developer-properties"
     },
-    //   {
-    //   title: "Global Projects",
-    //   icon: "fas fa-building",
-    //   path: "/dashboard/{roleSlug}/property-list"
-    // },
     {
-      title: "Listings",
+      title: "Inventory",
       icon: "fas fa-layer-group",
-      path: "/dashboard/{roleSlug}/developerinventory",
+      path: "/dashboard/{roleSlug}/developer-inventory",
     },
-
+    {
+      title: "Analytics",
+      icon: "fas fa-chart-line",
+      path: "/dashboard/{roleSlug}/analytics",
+    },
   ],
   "15": [
     {
-      title: "Projects", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects",
+      title: "Agents",
+      icon: "fas fa-user-friends",
+      path: "/dashboard/{roleSlug}/agents",
       submenus: [
-        { title: "Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects" },
-        { title: "Agent Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-agent-properties" },
-
-
-      ],
+        { title: "Agent Team", path: "/dashboard/{roleSlug}/all-agents" },
+      ]
     },
     {
-    title: "Agents",
-    icon: "fas fa-user-friends",       // or any icon you like
-    path: "/dashboard/{roleSlug}/agents",
-    submenus: [
-      { title: "All Agents",   path: "/dashboard/{roleSlug}/all-agents" },
-    ],
-  },
-
+      title: "Leads",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/leads",
+      submenus: [
+        { title: "All Leads", path: "/dashboard/{roleSlug}/lead-management" },
+      ]
+    },
+    {
+      title: "Listings",
+      icon: "fas fa-building",
+      path: "/dashboard/{roleSlug}/listings",
+      submenus: [
+        { title: "All Listings", path: "/dashboard/{roleSlug}/agency-agent-properties" },
+      ]
+    },
   ],
 
   "18": [
@@ -536,8 +541,9 @@ const CUSTOM_ROLE_LINKS = {
         },
         { 
           title: "My Referrals", 
-          path: "/dashboard/{roleSlug}/all-referrals" 
-        }
+          path: "/dashboard/{roleSlug}/total-leads" 
+        },
+
       ]
     },
     {
@@ -547,9 +553,10 @@ const CUSTOM_ROLE_LINKS = {
     },
     {
       title: "Profile",
-      icon: "fas fa-user-cog",
+      icon: "fas fa-user",
       path: "/dashboard/{roleSlug}/profile"
-    }
+    },
+   
   ],
 
 "26": [
@@ -657,16 +664,16 @@ const ROLE_MODULE_ORDER = {
   '5': ['Dashboard', 'Products', 'My Products', 'Inventory', 'Orders', 'Payout', 'Settings'],
   '6': ['Dashboard', 'Products', 'Projects', 'Inventory', 'Payout'],
   '7': ['Dashboard', 'My Projects', 'All Projects', 'Add Projects', 'Payout'],
-  '17': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
+  '17': ['Dashboard', 'Properties', 'Inventory', 'Analytics'],
   '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '16': ['Dashboard', 'AgentLead Management'],
-  '15': ['Dashboard', 'Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
+  '15': ['Dashboard', 'Agents', 'Leads', 'Listings'],
   '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners', 'Advisors', 'Mortgages'],
   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
   // '21': ['Dashboard', 'Vault Partners', 'All Leads'],
 
-  '25':['Dashboard' , 'Total leads ' , 'Active Leads' , 'Recent Leads'],
+  '25':['Dashboard' , 'Referrals', 'Leaderboard', 'Profile'],
   '21': ['Dashboard','Create Lead',  'Vault Partners', 'All Leads',],
   '24': ['Dashboard', 'My Leads', 'Property Catalogue', 'Calculator', 'Leaderboard'],
   // '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],

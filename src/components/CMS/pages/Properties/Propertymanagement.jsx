@@ -362,6 +362,7 @@ const PropertyManagement = () => {
   const [stats,            setStats]            = useState(null);
   const [filterOpen,       setFilterOpen]       = useState(false);
   const [viewMode,         setViewMode]         = useState('grid');
+  const [statusFilter, setStatusFilter] = useState('All');
 
   const [filters, setFilters] = useState({
     search: '', propertySubType: '', approvalStatus: '', listingStatus: '',
@@ -380,6 +381,16 @@ const [requestChangesModal, setRequestChangesModal] = useState({
                   'minPrice','maxPrice','area','bedroomType','furnishing'];
     setActiveFilterCount(keys.filter(k => filters[k] !== '').length);
   }, [filters]);
+
+  useEffect(() => {
+    let newApprovalStatus = '';
+    if (statusFilter === 'Live') {
+      newApprovalStatus = 'approved';
+    } else if (statusFilter !== 'All') {
+      newApprovalStatus = statusFilter.toLowerCase();
+    }
+    setFilters(f => ({ ...f, approvalStatus: newApprovalStatus, page: 1 }));
+  }, [statusFilter]);
 
   const fetchProperties = useCallback(async () => {
     setLoading(true);
@@ -515,6 +526,30 @@ const handleRequestChanges = async () => {
             {stats && ` · ${stats.byStatus?.pendingCount || 0} pending`}
           </p>
         </div>
+      </div>
+
+      {/* STATUS FILTER TABS */}
+      <div style={{
+        display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap'
+      }}>
+        {["All", "Live", "Pending", "Rejected", "Draft"].map(tab => (
+          <button
+            key={tab}
+            style={{
+              padding: "8px 20px", borderRadius: 8, border: "1.5px solid #e2e8f0",
+              background: statusFilter === tab ? '#7c3aed' : '#fff',
+              color: statusFilter === tab ? '#fff' : '#64748b',
+              fontSize: 13, fontWeight: 600, cursor: "pointer",
+              fontFamily: "inherit", transition: "all 0.2s ease"
+            }}
+            onClick={() => setStatusFilter(tab)}
+          >
+            {tab}
+            {tab === "All" ? "" :
+             tab === "Live" ? ` (${stats?.byStatus?.activeCount || 0})` :
+             ` (${tab === "Pending" ? (stats?.byStatus?.pendingCount || 0) : 0})`}
+          </button>
+        ))}
       </div>
 
       {/* Stats bar */}

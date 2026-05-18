@@ -165,15 +165,15 @@ function LayoutWrapper({ children }) {
     "/login", "/quotation", "/freelancer/browse-category", "/freelancer/category",
     "/freelancer/free-listing", "/ecommerce", "/freelancer/create-business",
     "/designs/Tool", "/dashboard", "/customer/dashboard", "/admin/login",
-    "/user/login", "/other/login", "/aiPlanner", "/aiPlanner/interior","/proposal/view/link",
+    "/user/login", "/other/login", "/aiPlanner", "/aiPlanner/interior", "/proposal/view/link",
     "/aiPlanner/landscape", "/estimate/calculator",
-    "/accountant/login", "/ecommerce/seller","/aiPlanner/enhance","/aiPlanner/sky","/aiPlanner/virtual" ,
+    "/accountant/login", "/ecommerce/seller", "/aiPlanner/enhance", "/aiPlanner/sky", "/aiPlanner/virtual",
   ];
   const isDashboard = location.pathname.startsWith("/dashboard");
-const hideNavbar =
-  hideNavbarPaths.includes(location.pathname) ||
-  location.pathname.startsWith("/proposal/view/link") ||
-  isDashboard;
+  const hideNavbar =
+    hideNavbarPaths.includes(location.pathname) ||
+    location.pathname.startsWith("/proposal/view/link") ||
+    isDashboard;
 
   if (isDashboard && (!user || !token)) {
     return <div className="min-h-screen">{children}</div>;
@@ -193,10 +193,10 @@ const hideNavbar =
     "/login", "/quotation", "/designs/Tool", "/dashboard", "/customer/dashboard",
     "/profile", "/admin/login", "/user/login", "/other/login", "/aiPlanner",
     "/aiPlanner/interior", "/aiPlanner/landscape", "/estimate/calculator",
-     "/accountant/login", "/ecommerce/seller",
-    "/freelancer/registration","/aiPlanner/enhance","/aiPlanner/sky","/aiPlanner/virtual" ,
+    "/accountant/login", "/ecommerce/seller",
+    "/freelancer/registration", "/aiPlanner/enhance", "/aiPlanner/sky", "/aiPlanner/virtual",
   ];
-// Chatbot sirf in pages par dikhega (jo path chahiye yaha add kar lena)
+  // Chatbot sirf in pages par dikhega (jo path chahiye yaha add kar lena)
   const allowedChatbotPaths = [
     "/",
     "/mortgage/services",
@@ -214,33 +214,33 @@ const hideNavbar =
     "/about",
     "/contact",
     "/consultation",
-   "/estimate/calculator/interior"
+    "/estimate/calculator/interior"
   ];
-const hideFooter =
-  hideFooterPaths.includes(location.pathname) ||
-  location.pathname.startsWith("/proposal/view/link") ||
-  isDashboard ||
-  location.pathname.startsWith("/profile/");
+  const hideFooter =
+    hideFooterPaths.includes(location.pathname) ||
+    location.pathname.startsWith("/proposal/view/link") ||
+    isDashboard ||
+    location.pathname.startsWith("/profile/");
 
   const hidePopup =
-  isDashboard ||
-  location.pathname.includes("login") ||
-  location.pathname.includes("register") ||
-  location.pathname.includes("/freelancer/registration") ||
-  location.pathname.includes("/ecommerce/seller") ||
-  location.pathname.includes("/admin/login") ||
-  location.pathname.startsWith("/dashboard")||
+    isDashboard ||
+    location.pathname.includes("login") ||
+    location.pathname.includes("register") ||
+    location.pathname.includes("/freelancer/registration") ||
+    location.pathname.includes("/ecommerce/seller") ||
+    location.pathname.includes("/admin/login") ||
+    location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/proposal/view/link"); // ✅ ADD THIS
 
 
-  
+
   const showChatbot = allowedChatbotPaths.includes(location.pathname);
   return (
     <div className="min-h-screen relative">
       {!hideNavbar && <Navbar />}
       {showFreelancerNavbar && <FreelancerNavbar />}
       {!hidePopup && <PopupManager />}
-      
+
       {children}
       {!hideFooter && <Footer />}
       {showChatbot && <XobiaChatbot />}
@@ -253,165 +253,165 @@ const hideFooter =
 function App() {
   return (
     <AuthProvider>
-    <CmsProvider>
-    <BlogProvider>
-      <FreelancerProvider><ProductProvider>
-        <LayoutWrapper>
-          <ScrollToTop />
-        
-          <Suspense fallback={<Loader />}>
-            <Routes>
-              {/* --- ADDED REDIRECT HERE --- */}
-              <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-              {/* --------------------------- */}
-             
+      <CmsProvider>
+        <BlogProvider>
+          <FreelancerProvider><ProductProvider>
+            <LayoutWrapper>
+              <ScrollToTop />
 
-              <Route path="/dashboard" element={<Navigate to="/" replace />} />
-              <Route path="/" element={<Home />} />
-              <Route path="/landscaping" element={<Landspackng />} />
-              <Route path="/aiPlanner" element={<AITools />} />
-              <Route path="/aiPlanner/demo" element={<AIPlannerDemoPage />} />
-              <Route path="/mortgages" element={<Mortgage />} />
-                            <Route path="/mortgages/calculator" element={<MortgageCalculator/>} />
-
-              <Route path="/mortgages-product" element={<MortgagesProduct />} />
-              <Route path="/mortgages-product-upload-document" element={<UploadDocuments />} />
-              <Route path="/product-requirements-edit" element={<ProductRequirementsEdit />} />
-              <Route path="/my-applications" element={<MyApplications />} />
-              <Route path="/aiPlanner/interior" element={<InteriorPlanner />} />
-              <Route path="/aiPlanner/enhance" element={<ImageEnhancer />} />
-              <Route path="/aiPlanner/sky" element={<SkyReplacement />} />
-              <Route path="/aiPlanner/virtual" element={<VirtualStaging />} />
-              <Route path="/aiPlanner/landscape" element={<AIPlanner />} />
-              <Route path="/register" element={<RegisterNowPage />} />
-              <Route path="/aiPlanner/exterior" element={<ComingSoon />} />
-              <Route path="/aiPlanner/furniture" element={<ComingSoon />} />
-              <Route path="/aiPlanner/image" element={<ComingSoon />} />
-              <Route path="/aiPlanner/virtual" element={<ComingSoon />} />
-              <Route path="/estimate/calculator" element={<Calculator />} />
-              <Route path="/estimate/calculator/interior" element={<InteriorCalculator />} />
-              <Route path="/services/interior" element={<Ynterior />} />
-              <Route path="/schedule/estimate" element={<MainCalculatorPage />} />
-              <Route path="/Property" element={<Buy />} />
-              <Route path="/ecosystem" element={<Ecosystem />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/aiInterior" element={<Interior />} />
-              <Route path="/other/login" element={<OtherLogin />} />
-              <Route path="/case-studies" element={<Casestudy />} />
-              <Route path="/training" element={<Training />} />
+              <Suspense fallback={<Loader />}>
+                <Routes>
+                  {/* --- ADDED REDIRECT HERE --- */}
+                  <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+                  {/* --------------------------- */}
 
 
+                  <Route path="/dashboard" element={<Navigate to="/" replace />} />
+                  <Route path="/" element={<Home />} />
+                  <Route path="/landscaping" element={<Landspackng />} />
+                  <Route path="/aiPlanner" element={<AITools />} />
+                  <Route path="/aiPlanner/demo" element={<AIPlannerDemoPage />} />
+                  <Route path="/mortgages" element={<Mortgage />} />
+                  <Route path="/mortgages/calculator" element={<MortgageCalculator />} />
 
-              {/* secure links */}
-                            <Route path="/proposal/view/link/:id" element={<ProposalLink />} />
+                  <Route path="/mortgages-product" element={<MortgagesProduct />} />
+                  <Route path="/mortgages-product-upload-document" element={<UploadDocuments />} />
+                  <Route path="/product-requirements-edit" element={<ProductRequirementsEdit />} />
+                  <Route path="/my-applications" element={<MyApplications />} />
+                  <Route path="/aiPlanner/interior" element={<InteriorPlanner />} />
+                  <Route path="/aiPlanner/enhance" element={<ImageEnhancer />} />
+                  <Route path="/aiPlanner/sky" element={<SkyReplacement />} />
+                  <Route path="/aiPlanner/virtual" element={<VirtualStaging />} />
+                  <Route path="/aiPlanner/landscape" element={<AIPlanner />} />
+                  <Route path="/register" element={<RegisterNowPage />} />
+                  <Route path="/aiPlanner/exterior" element={<ComingSoon />} />
+                  <Route path="/aiPlanner/furniture" element={<ComingSoon />} />
+                  <Route path="/aiPlanner/image" element={<ComingSoon />} />
+                  <Route path="/aiPlanner/virtual" element={<ComingSoon />} />
+                  <Route path="/estimate/calculator" element={<Calculator />} />
+                  <Route path="/estimate/calculator/interior" element={<InteriorCalculator />} />
+                  <Route path="/services/interior" element={<Ynterior />} />
+                  <Route path="/schedule/estimate" element={<MainCalculatorPage />} />
+                  <Route path="/Property" element={<Buy />} />
+                  <Route path="/ecosystem" element={<Ecosystem />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/aiInterior" element={<Interior />} />
+                  <Route path="/other/login" element={<OtherLogin />} />
+                  <Route path="/case-studies" element={<Casestudy />} />
+                  <Route path="/training" element={<Training />} />
 
-              <Route path="/login" element={<Login />} />
-              <Route path="/grid/login" element={<Login />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/user/login" element={<CustomerLogin />} />
-              <Route path="/consultation" element={<Consult />} />
-              <Route path="/designs" element={<Designs />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                            <Route path="/ecommerce/cart" element={<CartPage />} />
-                            <Route path="/ecommerce/checkout" element={<CheckoutPage />} />
-                            <Route path="/ecommerce/payment/success" element={<PaymentSuccess />} />
-<Route path="/vault/vault-register" element={<VaultRegister />} />
-<Route path="/Grid/advisor/login" element={<AdvisorLogin />} />
-              
-{/* <Route path="/vaultpartner" element={<VaultPartner />} /> */}
-              <Route
-                path="/designs/Tool"
-                element={
-                  <DndProvider backend={HTML5Backend}>
-                    <AITool />
-                  </DndProvider>
-                }
-              />
-              <Route path="/Blog" element={<Ai />} />
-              <Route path="/mortgage/services" element={<Service />} />
-              <Route path="/properties" element={<Page2 />} />
-              <Route path="/Blogs" element={<Page3 />} />
-              <Route path="/contact" element={<Page />} />
-              <Route path="/quotation" element={<Quotation />} />
-              <Route path="/ecommerce" element={<MainEcommercePage />} />
-              <Route path="/ecommerce/b2c" element={<HomeB2C />} />
 
-            
-  <Route path="/referral-partner/login" element={<ReferralPartnerLogin />} />
-<Route path="/referral-partner/register" element={<ReferralPartnerRegister />} />
-              <Route path="/developer/registration" element={<DeveloperRegistration />} />
-              {/* <Route path="/developer/sidebar" element={<DeveloperSidebar />} /> */}
 
-              {/* ✅ Agency Route */}
-              <Route path="/agency/registration" element={<RegistrationAgency />} />
+                  {/* secure links */}
+                  <Route path="/proposal/view/link/:id" element={<ProposalLink />} />
 
-              {/* ✅ Agent Registration Route */}
-                <Route path="/agent/registration" element={<AgentRegistration />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/grid/login" element={<Login />} />
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/user/login" element={<CustomerLogin />} />
+                  <Route path="/consultation" element={<Consult />} />
+                  <Route path="/designs" element={<Designs />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/ecommerce/cart" element={<CartPage />} />
+                  <Route path="/ecommerce/checkout" element={<CheckoutPage />} />
+                  <Route path="/ecommerce/payment/success" element={<PaymentSuccess />} />
+                  <Route path="/vault/vault-register" element={<VaultRegister />} />
+                  <Route path="/Grid/advisor/login" element={<AdvisorLogin />} />
 
-               {/* ✅ Rent Search */}
-         {/* <Route path="/rent/search" element={<PropertyRent />} />
+                  {/* <Route path="/vaultpartner" element={<VaultPartner />} /> */}
+                  <Route
+                    path="/designs/Tool"
+                    element={
+                      <DndProvider backend={HTML5Backend}>
+                        <AITool />
+                      </DndProvider>
+                    }
+                  />
+                  <Route path="/Blog" element={<Ai />} />
+                  <Route path="/mortgage/services" element={<Service />} />
+                  <Route path="/properties" element={<Page2 />} />
+                  <Route path="/Blogs" element={<Page3 />} />
+                  <Route path="/contact" element={<Page />} />
+                  <Route path="/quotation" element={<Quotation />} />
+                  <Route path="/ecommerce" element={<MainEcommercePage />} />
+                  <Route path="/ecommerce/b2c" element={<HomeB2C />} />
+
+
+                  <Route path="/referral-partner/login" element={<ReferralPartnerLogin />} />
+                  <Route path="/referral-partner/register" element={<ReferralPartnerRegister />} />
+                  <Route path="/developer/registration" element={<DeveloperRegistration />} />
+                  {/* <Route path="/developer/sidebar" element={<DeveloperSidebar />} /> */}
+
+                  {/* ✅ Agency Route */}
+                  <Route path="/agency/registration" element={<RegistrationAgency />} />
+
+                  {/* ✅ Agent Registration Route */}
+                  <Route path="/agent/registration" element={<AgentRegistration />} />
+
+                  {/* ✅ Rent Search */}
+                  {/* <Route path="/rent/search" element={<PropertyRent />} />
          <Route path="/rent/listings" element={<PropertyListings />} /> */}
-         <Route path="/rent/search" element={<HeroRent />} />
-         <Route path="/results" element={<ResultsPage />} />
-         <Route path="/search/buy" element={<HeroBuy />} />
-         <Route path="/buy-results" element={<BuyResultsPage />} />
+                  <Route path="/rent/search" element={<HeroRent />} />
+                  <Route path="/results" element={<ResultsPage />} />
+                  <Route path="/search/buy" element={<HeroBuy />} />
+                  <Route path="/buy-results" element={<BuyResultsPage />} />
 
 
-              <Route path="/ecommerce/seller" element={<SellerPage />} />
-              <Route path="/ecommerce/seller/b2b" element={<Sellerb2b />} />
-              <Route path="/ecommerce/b2b" element={<HomeB2B />} />
-              
-              <Route path="/ecommerce/filter" element={<ProductFilterPage />} />
-              <Route path="/ecommerce/product/:id" element={<Productdetails />} />
-              <Route path="/social" element={<Social />} />
-              <Route path="/how-it-works" element={<Howitworks />} />
-              <Route path="/project-view" element={<Completeproductview />} />
-              <Route path="/designers" element={<Designers />} />
-              {/* <Route path="/freelancer" element={<Freelancers />} /> */}
-              <Route path="/freelancer/browse-subcategory/:id" element={<Browsecategory />} />
-              <Route path="/services/landscaping/:id" element={<Category />} />
-              {/* <Route path="/freelancer/home" element={<Mainfreelancers />} /> */}
-              {/* <Route path="/freelancer/profile" element={<FreelancerProfile />} /> */}
-              {/* <Route path="/freelancer/free-listing" element={<Freelisting />} /> */}
-              {/* <Route path="/freelancer/create-business" element={<CreateBusiness />} /> */}
-              {/* <Route path="/freelancer/business" element={<Businesspage />} /> */}
-              <Route path="/freelancer/registration" element={<Registration />} />
-              {/* <Route path="/interior/living-room" element={<LivingRoom />} /> */}
-              {/* <Route path="/interior/bathroom" element={<Bathroom />} /> */}
-              {/* <Route path="/interior/bedroom" element={<Bedroom />} /> */}
-              {/* <Route path="/interior/modular-kitchen" element={<Kitchen />} /> */}
-              {/* <Route path="/interior/study-room" element={<Studyroom />} /> */}
-              {/* <Route path="/interior/wardrobe" element={<Wardrobe />} /> */}
-              {/* <Route path="/magazines" element={<Magazine />} /> */}
-              {/* <Route path="/profile" element={<Profile />} /> */}
-              {/* <Route path="/customer/dashboard" element={<Customerdashboard />} /> */}
-              <Route path="/check" element={<Checker />} />
-              <Route path="/upcoming-soon" element={<Upcoming />} />
-              <Route path="/finance-soon" element={<Finicial />} />
-               <Route path="/waiting-approval" element={<WaitingApproval />} />
-               <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-  
-                <Route path="/Vault/testing/login" element={<EmployeeLogin />} />
+                  <Route path="/ecommerce/seller" element={<SellerPage />} />
+                  <Route path="/ecommerce/seller/b2b" element={<Sellerb2b />} />
+                  <Route path="/ecommerce/b2b" element={<HomeB2B />} />
 
-              <Route
-                path="/dashboard/:roleSlug/*"
-                element={
-                  <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12","9","10","15","16","17","18","21", "22","23","26","24", "25"]}>
-                    <CmsApp />
-                  </PrivateRoute>
-                }
-              />
-             
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </LayoutWrapper>
-      </ProductProvider>
-      </FreelancerProvider>
+                  <Route path="/ecommerce/filter" element={<ProductFilterPage />} />
+                  <Route path="/ecommerce/product/:id" element={<Productdetails />} />
+                  <Route path="/social" element={<Social />} />
+                  <Route path="/how-it-works" element={<Howitworks />} />
+                  <Route path="/project-view" element={<Completeproductview />} />
+                  <Route path="/designers" element={<Designers />} />
+                  {/* <Route path="/freelancer" element={<Freelancers />} /> */}
+                  <Route path="/freelancer/browse-subcategory/:id" element={<Browsecategory />} />
+                  <Route path="/services/landscaping/:id" element={<Category />} />
+                  {/* <Route path="/freelancer/home" element={<Mainfreelancers />} /> */}
+                  {/* <Route path="/freelancer/profile" element={<FreelancerProfile />} /> */}
+                  {/* <Route path="/freelancer/free-listing" element={<Freelisting />} /> */}
+                  {/* <Route path="/freelancer/create-business" element={<CreateBusiness />} /> */}
+                  {/* <Route path="/freelancer/business" element={<Businesspage />} /> */}
+                  <Route path="/freelancer/registration" element={<Registration />} />
+                  {/* <Route path="/interior/living-room" element={<LivingRoom />} /> */}
+                  {/* <Route path="/interior/bathroom" element={<Bathroom />} /> */}
+                  {/* <Route path="/interior/bedroom" element={<Bedroom />} /> */}
+                  {/* <Route path="/interior/modular-kitchen" element={<Kitchen />} /> */}
+                  {/* <Route path="/interior/study-room" element={<Studyroom />} /> */}
+                  {/* <Route path="/interior/wardrobe" element={<Wardrobe />} /> */}
+                  {/* <Route path="/magazines" element={<Magazine />} /> */}
+                  {/* <Route path="/profile" element={<Profile />} /> */}
+                  {/* <Route path="/customer/dashboard" element={<Customerdashboard />} /> */}
+                  <Route path="/check" element={<Checker />} />
+                  <Route path="/upcoming-soon" element={<Upcoming />} />
+                  <Route path="/finance-soon" element={<Finicial />} />
+                  <Route path="/waiting-approval" element={<WaitingApproval />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
 
-    </BlogProvider>
-    </CmsProvider>
+                  <Route path="/Vault/testing/login" element={<EmployeeLogin />} />
+
+                  <Route
+                    path="/dashboard/:roleSlug/*"
+                    element={
+                      <PrivateRoute allowedRoles={["0", "1", "2", "3", "6", "5", "8", "7", "11", "12", "9", "10", "15", "16", "17", "18", "21", "22", "23", "26", "24", "25"]}>
+                        <CmsApp />
+                      </PrivateRoute>
+                    }
+                  />
+
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </LayoutWrapper>
+          </ProductProvider>
+          </FreelancerProvider>
+
+        </BlogProvider>
+      </CmsProvider>
     </AuthProvider>
   );
 }
