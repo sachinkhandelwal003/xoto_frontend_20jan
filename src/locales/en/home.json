@@ -1,0 +1,18 @@
+{
+  "hero": {
+    "title1": "Discover . Finance . Enhance",
+    "title2": "Your Home Journey, Powered by AI",
+    "description": "From finding the right home to maximizing its value",
+    "buttons": {
+      "design": "Design My Space",
+      "explore": "Explore Homes",
+      "loan":"Get a Home Loan "
+    },
+    "features": [
+      { "line1": "One Stop", "line2": "Solution" },
+      { "line1": "Faster Turn", "line2": "Around Time" },
+      { "line1": "Professional", "line2": "Teams" },
+      { "line1": "PAN UAE", "line2": "Presence" }
+    ]
+  }
+}

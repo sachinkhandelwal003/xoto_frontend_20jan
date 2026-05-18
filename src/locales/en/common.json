@@ -1,0 +1,23 @@
+{
+  "nav": {
+    "home": "Home",
+    "homeUpgrade": "Home Upgrades",
+    "landscaping": "Landscaping",
+    "interiors": "Interiors",
+    "homeOwnership": "Home Ownership",
+    "mortgages": "Mortgages",
+    "rental": "Rental",
+    "properties": "Properties",
+    "store": "Xoto Store",
+    "knowledgeHub": "Knowledge Hub",
+    "calculators": "Calculators",
+    "blogs": "Blogs",
+    "caseStudies": "Case Studies",
+    "training": "Training",
+    "ecosystem": "Partner Ecosystem",
+    "about": "About Us",
+    "contact": "Contact Us",
+    "login": "Login",
+    "tagline": "Powered by AI. Inspired by you."
+  }
+}

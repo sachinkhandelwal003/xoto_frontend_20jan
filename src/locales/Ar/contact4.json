@@ -1,0 +1,40 @@
+{
+  "title": { "line1": "نموذج", "line2": "الشراكة والتعاون" },
+  "subtitle": {
+    "line1": "هل ترغب في التعاون مع XOTO؟",
+    "line2": "أخبرنا المزيد عن عملك أو مشروعك."
+  },
+  "form": {
+    "organization": "اسم المؤسسة",
+    "email": "البريد الإلكتروني",
+    "partnerType": "نوع الشريك",
+    "proposal": "وصف المقترح"
+  },
+  "placeholders": {
+    "organization": "أدخل اسم المؤسسة",
+    "email": "أدخل البريد الإلكتروني",
+    "proposal": "اكتب وصف المقترح"
+  },
+  "options": {
+    "select": "اختر نوع الشريك",
+    "business": "شركاء الأعمال",
+    "execution": "شريك التنفيذ",
+    "alliance": "تحالفات استراتيجية",
+    "developers": "المطورون",
+    "finance": "مؤسسة مالية"
+  },
+  "buttons": { "submit": "إرسال" },
+  "chat": {
+    "title": "دردشة Xobia (مساعدة AI على مدار الساعة)",
+    "description": "هل لديك سؤال؟ Xobia متاح 24/7 لمساعدتك.",
+    "button": "تحدث مع Xobia"
+  },
+  "validation": {
+    "organization": "اسم المؤسسة مطلوب.",
+    "emailRequired": "البريد الإلكتروني مطلوب.",
+    "emailInvalid": "أدخل بريدًا إلكترونيًا صالحًا.",
+    "partnerType": "نوع الشريك مطلوب.",
+    "proposal": "وصف المقترح مطلوب."
+  },
+  "notification": { "success": "تم إرسال النموذج بنجاح!" }
+}

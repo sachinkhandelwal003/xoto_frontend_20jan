@@ -1,0 +1,11 @@
+{
+  "title": "Unawain ang Badyet Mo sa Pagbili ng Bahay",
+  "description": "Gamitin ang aming mga AI-powered calculator para makita kung magkano ang maaari mong mahiram at matantya ang iyong buwanang bayad sa mortgage.",
+  "modes": {
+    "borrow": "Alamin ang iyong badyet sa pagbili ng bahay",
+    "estimate": "Unawain ang iyong buwanang EMI"
+  },
+  "imageAlt": "Ilustrasyon ng Mortgage",
+  "cta": "Kalkulahin",
+  "disclaimer": "Ang mga pagtatantya ay indikasyon lamang. Ang mga pinal na tuntunin ay sasailalim sa pag-apruba ng kredito."
+}

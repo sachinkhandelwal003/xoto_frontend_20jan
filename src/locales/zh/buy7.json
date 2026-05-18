@@ -1,0 +1,25 @@
+{
+  "heroTitle": "梦想与家相遇的地方",
+  "heroSub": "更智能、更快捷地寻找、出售和融资您的房屋",
+
+  "formTitle": "发现 · 决定 · 成交",
+  "formSub": "一站式服务",
+
+  "firstName": "名字*",
+  "lastName": "姓氏*",
+  "email": "电子邮箱*",
+  "countryCode": "区号*",
+  "phone": "电话号码*",
+
+  "country": "国家*",
+  "lookingFor": "需求*",
+  "city": "首选城市*",
+  "budget": "预算*",
+
+  "submit": "提交",
+  "submitting": "提交中...",
+
+  "success": "感谢您！我们将很快与您联系",
+  "error": "请填写所有字段",
+  "genericError": "发生错误，请重试。"
+}

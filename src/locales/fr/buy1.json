@@ -1,0 +1,71 @@
+{
+  "hero": {
+    "title": {
+      "line1": "Transformer la façon dont vous",
+    "line2": "Louez, achetez et vendez votre maison."
+    },
+    "buttons": {
+      "rent": "Louer un logement",
+      "find": "Trouver un logement",
+      "sell": "Vendre un logement"
+    }
+  },
+
+  "modal": {
+    "tabs": {
+      "buy": "Acheter",
+      "sell": "Vendre"
+    },
+    "buy": {
+      "title": "Trouvez la maison de vos rêves",
+      "desc": "Dites-nous ce que vous recherchez et nos experts vous contacteront."
+    },
+    "sell": {
+      "title": "Vendez votre propriété",
+      "desc": "Partagez les détails de votre propriété et obtenez le meilleur prix du marché."
+    }
+  },
+
+  "form": {
+    "firstName": "Prénom",
+    "lastName": "Nom de famille",
+    "email": "Adresse e-mail",
+    "phone": "Numéro de mobile",
+    "bedrooms": "Nombre de chambres",
+
+    "preferredContactTitle": "Méthode de contact préférée",
+
+    "contact": {
+      "call": "Appel téléphonique",
+      "whatsapp": "WhatsApp",
+      "email": "E-mail"
+    },
+
+    "sell": {
+      "listing_type": "Type d’annonce (ex. : Appartement)",
+      "city": "Ville",
+      "area": "Quartier",
+      "project_name": "Nom du projet",
+      "bedroom_config": "Configuration des chambres (ex. : 2 BHK)",
+      "price": "Prix (AED)",
+      "description": "Parlez-nous davantage de votre propriété (optionnel)"
+    },
+
+    "submit": {
+      "buy": "Envoyer la demande d’achat",
+      "sell": "Envoyer la demande de vente"
+    },
+
+    "processing": "Traitement en cours..."
+  },
+
+  "checkbox": {
+    "marketing": "J’accepte de recevoir des newsletters et des communications marketing via des supports numériques et je comprends que je peux me désinscrire à tout moment.",
+    "terms": "J’ai lu, compris et accepté les Conditions générales et la Politique de confidentialité de Xoto. *"
+  },
+
+  "toast": {
+    "success": "Merci {{name}} ! Vos informations ont été envoyées avec succès.",
+    "error": "Une erreur s’est produite. Veuillez réessayer."
+  }
+}

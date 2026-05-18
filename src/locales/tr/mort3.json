@@ -1,0 +1,26 @@
+{
+    "title": "İpotek Süreciniz 4 Adımda Kolay",
+    "steps": {
+      "1": {
+        "label": "ADIM 01",
+        "title": "Danışma & Ön Kontrol",
+        "description": "Mali durumunuzu analiz eder ve uygun seçenekler sunarız."
+      },
+      "2": {
+        "label": "ADIM 02",
+        "title": "Teklif Karşılaştırması",
+        "description": "En uygun kredi verenleri karşılaştırırız."
+      },
+      "3": {
+        "label": "ADIM 03",
+        "title": "Seçim & Başvuru",
+        "description": "Seçiminizi yapın, evrak işlerini biz hallederiz."
+      },
+      "4": {
+        "label": "ADIM 04",
+        "title": "Onay & Ödeme",
+        "description": "Fonlar güvenli şekilde serbest bırakılır."
+      }
+    }
+  }
+  

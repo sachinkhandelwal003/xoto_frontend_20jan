@@ -1,0 +1,25 @@
+{
+  "heading": {
+    "title": "Ne arıyorsunuz",
+    "subtitle": "Xobia, kişiselleştirilmiş önerilerle mükemmel emlak yolculuğunuzda size rehberlik eder."
+  },
+  "buttons": {
+    "rent": "Ev Kirala",
+    "buy": "Ev Satın Al",
+    "sell": "Ev Sat"
+  },
+  "tabs": {
+    "rent": {
+      "title": "Ev Kirala",
+      "text": "Esnek şartlar, doğrulanmış ilanlar ve akıllı önerilerle seçilmiş kiralık evler."
+    },
+    "buy": {
+      "title": "Ev Satın Al",
+      "text": "Detaylı bilgiler, yapay zeka destekli öneriler ve doğrulanmış satıcılarla premium evleri keşfedin."
+    },
+    "sell": {
+      "title": "Ev Sat",
+      "text": "Uzman desteği, değerleme bilgileri ve geniş alıcı erişimiyle mülkünüzü kolayca listeleyin."
+    }
+  }
+}

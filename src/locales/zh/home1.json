@@ -1,0 +1,16 @@
+{
+  "homeDesign": {
+    "title1": "你的空间，",
+    "title2": "瞬间焕然一新。",
+    "description": "上传您的别墅布局，让 XOTO AI 根据您的喜好定制户外与室内的惊艳设计方案。",
+    "cta": "立即获取免费估价",
+    "hotspots": {
+      "exterior": "户外升级",
+      "interior": "室内改造",
+      "furniture": "智能家具替换",
+      "landscaping": "景观设计",
+      "image": "图像优化",
+      "virtual": "虚拟设计工作室"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "title": "Hablemos de su proyecto de interiores",
+  "description": "Conéctese con nuestros expertos y haga realidad su espacio soñado.",
+  "imageAlt": "Fondo de consulta de interiores",
+
+  "form": {
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "email": "Correo electrónico",
+    "mobile": "Número móvil",
+    "message": "Su mensaje"
+  },
+
+  "buttons": {
+    "submit": "Enviar",
+    "submitting": "Enviando..."
+  },
+
+  "errors": {
+    "firstName": "Ingrese su nombre",
+    "lastName": "Ingrese su apellido",
+    "email": "Ingrese un correo válido",
+    "mobile": "Ingrese un número válido",
+    "message": "Ingrese un mensaje",
+    "submit": "Error al enviar"
+  },
+
+  "success": {
+    "title": "¡Éxito!",
+    "message": "Nuestro equipo se pondrá en contacto pronto."
+  },
+
+  "privacy": "Respetamos su privacidad y no compartimos sus datos."
+}

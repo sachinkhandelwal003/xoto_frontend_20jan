@@ -1,0 +1,24 @@
+{
+  "title": "ہمارا شرکاء کا ایکوسسٹم",
+  "cards": {
+    "commonDesc": "ایلیٹ کنٹریکٹرز نیٹ ورک",
+    "business": {
+      "title": "بزنس ایسوسی ایٹس"
+    },
+    "contractors": {
+      "title": "کنٹریکٹرز"
+    },
+    "execution": {
+      "title": "ایگزیکیوشن پارٹنر"
+    },
+    "strategic": {
+      "title": "اسٹریٹجک الائنسز"
+    },
+    "developers": {
+      "title": "ڈیولپرز"
+    },
+    "financial": {
+      "title": "مالیاتی ادارے"
+    }
+  }
+}

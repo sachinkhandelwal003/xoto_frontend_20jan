@@ -1,0 +1,16 @@
+{
+  "title": "Réserver une consultation",
+  "description": "Un formulaire simple pour contacter les experts XOTO et obtenir des conseils personnalisés en design d’intérieur.",
+  "form": {
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Adresse e-mail",
+    "mobile": "Numéro de téléphone",
+    "message": "Votre message"
+  },
+  "buttons": {
+    "submit": "Réserver une consultation gratuite",
+    "submitting": "Envoi en cours..."
+  },
+  "privacy": "Nous respectons votre vie privée. Vos informations sont en sécurité."
+}

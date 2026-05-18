@@ -1,0 +1,34 @@
+{
+  "hero": {
+    "title": "Explore the Future of Living — Smarter, Greener, and AI-Driven.",
+    "subtitle": "Your hub for insights on PropTech, sustainable strategy, and intelligent design & construction.",
+    "buttons": {
+      "categories": "Browse Categories",
+      "ai": "Ask Xobia AI"
+    }
+  },
+  "blogs": {
+    "title": "Latest Blogs & Articles",
+    "readMore": "Read More",
+    "loadMore": "Load More",
+    "1": { "date": "November 04, 2024", "title": "Exploring Luxury Real Estate Markets" },
+    "2": { "date": "July 16, 2024", "title": "A Guide to Buying Real Estate in Metropolitan Areas" },
+    "3": { "date": "November 04, 2024", "title": "Eco-Friendly Practices in Residential Real Estate" },
+    "4": { "date": "September 20, 2024", "title": "Renovating Historic Properties in Modern Deal" },
+    "5": { "date": "November 04, 2024", "title": "Exploring Luxury Real Estate Markets" },
+    "6": { "date": "July 16, 2024", "title": "A Guide to Buying Real Estate in Metropolitan Areas" },
+    "7": { "date": "November 04, 2024", "title": "Exploring Luxury Real Estate Markets" },
+    "8": { "date": "July 16, 2024", "title": "A Guide to Buying Real Estate in Metropolitan Areas" }
+  },
+  "search": {
+    "placeholder": "SEARCH ARTICLES ..."
+  },
+  "categories": {
+    "title": "Explore Insights That Redefine Modern Living",
+    "subtitle": "From smart landscaping to sustainable design — dive into expert guides, trends, and innovations shaping the future of homes in the UAE.",
+    "1": "Landscaping Trends & Smart Homes",
+    "2": "AI & PropTech",
+    "3": "Home Financing Simplified",
+    "4": "Sustainable Living in UAE"
+  }
+}

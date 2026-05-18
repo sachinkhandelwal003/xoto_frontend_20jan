@@ -1,0 +1,25 @@
+{
+  "heroTitle": "Hayallerin Gerçeğe Dönüştüğü Yer",
+  "heroSub": "Evinizi akıllıca bulun, satın alın ve finanse edin",
+
+  "formTitle": "Keşfet, Karar Ver, Tamamla",
+  "formSub": "Hepsi Tek Yerde",
+
+  "firstName": "Ad*",
+  "lastName": "Soyad*",
+  "email": "E-posta adresi*",
+  "countryCode": "Kod*",
+  "phone": "Telefon numarası*",
+
+  "country": "Ülke*",
+  "lookingFor": "Aranan*",
+  "city": "Tercih edilen şehir*",
+  "budget": "Bütçe*",
+
+  "submit": "Gönder",
+  "submitting": "Gönderiliyor...",
+
+  "success": "Teşekkürler! En kısa sürede iletişime geçeceğiz",
+  "error": "Lütfen tüm alanları doldurun",
+  "genericError": "Bir hata oluştu. Lütfen tekrar deneyin."
+}

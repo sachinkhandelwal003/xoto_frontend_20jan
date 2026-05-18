@@ -1,0 +1,133 @@
+   
+   
+   /* linear-gradient(135deg, #D26C44   0%, #8B3F2B  100%) */
+   .zigzag-card:nth-child(odd) {
+      transform: translateY(10%);
+    }
+    .zigzag-card:nth-child(even) {
+      transform: translateY(-10%);
+    }
+    
+
+
+    @keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+.step-indicator{
+clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+
+
+}
+
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 1s ease-out forwards;
+}
+
+.animate-fade-in.delay-100 {
+  animation-delay: 0.3s;
+}
+
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* First aur last card ke liye space */
+.scrollbar-hide > *:first-child {
+  margin-left: 0.5rem;
+}
+.scrollbar-hide > *:last-child {
+  margin-right: 0.5rem;
+}
+
+
+
+
+/* Add to your main CSS file */
+.blog-content {
+  font-size: 18px;
+  line-height: 1.8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.blog-content h1 { font-size: 32px; margin: 32px 0 16px; font-weight: 700; }
+.blog-content h2 { font-size: 28px; margin: 28px 0 14px; font-weight: 600; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }
+.blog-content h3 { font-size: 24px; margin: 24px 0 12px; font-weight: 600; }
+.blog-content h4 { font-size: 20px; margin: 20px 0 10px; font-weight: 600; }
+.blog-content p { margin-bottom: 20px; color: #374151; }
+.blog-content img { max-width: 100%; border-radius: 8px; margin: 20px 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.blog-content blockquote { border-left: 4px solid #7c3aed; padding-left: 20px; margin: 20px 0; font-style: italic; color: #4b5563; background: #f9fafb; padding: 16px 20px; border-radius: 8px; }
+.blog-content code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+.blog-content pre { background: #1f2937; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 20px 0; }
+.blog-content pre code { background: transparent; color: #e5e7eb; padding: 0; }
+.blog-content ul, .blog-content ol { margin: 16px 0; padding-left: 32px; }
+.blog-content li { margin: 8px 0; }
+.blog-content a { color: #7c3aed; text-decoration: underline; }
+.blog-content a:hover { color: #5b21b6; }
+.blog-content table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+.blog-content th, .blog-content td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; }
+.blog-content th { background: #f9fafb; font-weight: 600; }
+
+/* Quill editor improvements */
+.ql-editor {
+  min-height: 400px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.ql-editor h1 { font-size: 2em; }
+.ql-editor h2 { font-size: 1.5em; }
+.ql-editor h3 { font-size: 1.17em; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .blog-content {
+    font-size: 16px;
+  }
+  .blog-content h1 { font-size: 28px; }
+  .blog-content h2 { font-size: 24px; }
+  .blog-content h3 { font-size: 20px; }
+}

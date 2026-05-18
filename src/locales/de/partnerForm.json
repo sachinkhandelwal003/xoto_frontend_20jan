@@ -1,0 +1,51 @@
+{
+  "hero": {
+    "titleDesktop": "Treten Sie noch heute\n dem XOTO Partner-\nÖkosystem bei",
+    "titleMobile": "Treten Sie dem XOTO\nPartner-Ökosystem bei"
+  },
+
+  "form": {
+    "firstName": {
+      "label": "Vorname",
+      "placeholder": "Vornamen eingeben"
+    },
+    "lastName": {
+      "label": "Nachname",
+      "placeholder": "Nachnamen eingeben"
+    },
+    "email": {
+      "label": "E-Mail-Adresse",
+      "placeholder": "E-Mail eingeben"
+    },
+    "company": {
+      "label": "Firmenname",
+      "placeholder": "Firmenname eingeben"
+    },
+    "phone": {
+      "label": "Telefonnummer",
+      "placeholder": "Nummer eingeben"
+    },
+    "message": {
+      "label": "Nachricht",
+      "placeholder": "Nachricht eingeben"
+    },
+
+    "stakeholder": {
+      "label": "Stakeholder",
+      "select": "Auswählen",
+      "business": "Geschäftspartner",
+      "execution": "Ausführungspartner",
+      "developer": "Entwickler",
+      "investor": "Investor"
+    },
+
+    "submit": "Jetzt senden",
+    "submitting": "Wird gesendet..."
+  },
+
+  "toast": {
+    "success": "Vielen Dank! Ihre Partneranfrage wurde gesendet.",
+    "error": "Senden fehlgeschlagen. Bitte erneut versuchen.",
+    "invalid": "Bitte alle Felder korrekt ausfüllen"
+  }
+}

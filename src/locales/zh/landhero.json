@@ -1,0 +1,15 @@
+{
+  "hero": {
+    "title": "以高端",
+    "subtitle": "户外解决方案焕新家居"
+  },
+  "services": {
+    "design": "景观设计与实施",
+    "hardscape": "铺装与硬景工程",
+    "outdoor": "户外结构与生活空间",
+    "pool": "泳池与水景设计"
+  },
+  "cta": {
+    "estimate": "获取免费报价"
+  }
+}

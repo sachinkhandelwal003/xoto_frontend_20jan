@@ -1,0 +1,11 @@
+{
+  "title": "Comprenez votre budget d'achat immobilier",
+  "description": "Utilisez nos calculatrices basées sur l'IA pour voir combien vous pouvez emprunter et estimer vos paiements hypothécaires mensuels.",
+  "modes": {
+    "borrow": "Connaissez votre budget d'achat immobilier",
+    "estimate": "Comprenez vos mensualités (EMI)"
+  },
+  "imageAlt": "Illustration d'hypothèque",
+  "cta": "Calculer",
+  "disclaimer": "Les estimations sont indicatives. Les conditions finales sont soumises à l'approbation du crédit."
+}

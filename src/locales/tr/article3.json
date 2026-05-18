@@ -1,0 +1,19 @@
+{
+  "vision": {
+    "label": "Vizyon",
+    "title": "Vizyon",
+    "points": [
+      "Her müşteri ve her emlak danışmanı için gayrimenkulü demokratikleştirmek,",
+      "Yapay zeka ile desteklenmiştir."
+    ]
+  },
+  "mission": {
+    "label": "Misyon",
+    "title": "Misyon",
+    "points": [
+      "BAE’de ev geliştirme, gayrimenkul ve mortgage alanlarında teknoloji odaklı lider dağıtım şirketlerinden biri olmak.",
+      "Pazardaki en büyük danışman ve freelancer ağını kurmak ve sürdürmek.",
+      "Ölçeklenebilirlik ve sorunsuz büyüme için teknoloji ve yapay zekadan yararlanmak."
+    ]
+  }
+}

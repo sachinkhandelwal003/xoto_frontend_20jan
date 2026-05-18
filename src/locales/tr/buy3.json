@@ -1,0 +1,39 @@
+{
+  "heading": {
+    "title": "Öne Çıkan Gayrimenkul Fırsatları",
+    "subtitle": "Dubai'nin seçkin bölgelerinde en iyi değere sahip özel mülkleri keşfedin."
+  },
+  "modal": {
+    "title": "Ziyaret Planla",
+    "subtitle": "Bilgilerinizi girin, size özel bir ziyaret ayarlayalım"
+  },
+  "form": {
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "email": "E-posta adresi",
+    "phone": "Telefon numarası",
+    "occupation": "Meslek",
+    "location": "Tercih edilen konum / site",
+    "contactTitle": "Sizinle nasıl iletişime geçelim?",
+    "contact": {
+      "call": "Telefon",
+      "whatsapp": "WhatsApp",
+      "email": "E-posta"
+    },
+    "marketing": "Pazarlama ve bülten mesajları almayı kabul ediyorum.",
+    "terms": "Şartlar ve Gizlilik Politikasını kabul ediyorum."
+  },
+  "actions": {
+    "submit": "Ziyaret Planla",
+    "loading": "Ziyaret planlanıyor..."
+  },
+  "card": {
+    "bed": "Yatak Odası",
+    "bath": "Banyo",
+    "schedule": "Ziyaret Planla"
+  },
+  "toast": {
+    "success": "Ziyaret planlandı! Yakında sizinle iletişime geçeceğiz.",
+    "error": "Ziyaret planlanamadı. Tekrar deneyin."
+  }
+}

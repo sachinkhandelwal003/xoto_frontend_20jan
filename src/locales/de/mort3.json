@@ -1,0 +1,29 @@
+{
+    "title": {
+      "line1": "Ihre Hypothek,",
+      "line2": "in 4 Schritten vereinfacht"
+    },
+    "steps": {
+      "1": {
+        "label": "SCHRITT 01",
+        "title": "Beratung & Vorprüfung",
+        "desc": "Wir prüfen Ihre Finanzen und schlagen Optionen vor."
+      },
+      "2": {
+        "label": "SCHRITT 02",
+        "title": "Angebotsvergleich",
+        "desc": "Mehrere Kreditgeber werden für die beste Lösung verglichen."
+      },
+      "3": {
+        "label": "SCHRITT 03",
+        "title": "Auswahl & Antrag",
+        "desc": "Wählen Sie Ihr Angebot, wir kümmern uns um die Unterlagen."
+      },
+      "4": {
+        "label": "SCHRITT 04",
+        "title": "Genehmigung & Auszahlung",
+        "desc": "Auszahlung der Mittel mit unserer Unterstützung."
+      }
+    }
+  }
+  

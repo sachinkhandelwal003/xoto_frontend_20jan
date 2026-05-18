@@ -1,0 +1,25 @@
+{
+  "heading": "Reservar Consulta",
+  "description": "Un formulario sencillo para conectar con expertos de XOTO para una planificación paisajística personalizada.",
+  "form": {
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "email": "Correo electrónico",
+    "message": "Tu mensaje",
+    "submit": "Reservar consulta gratuita",
+    "submitting": "Enviando solicitud..."
+  },
+  "validation": {
+    "firstName": "El nombre es obligatorio",
+    "lastName": "El apellido es obligatorio",
+    "email": "Correo electrónico válido requerido",
+    "mobile": "El número debe tener al menos 8 dígitos",
+    "message": "El mensaje es obligatorio"
+  },
+  "success": {
+    "title": "¡Gracias!",
+    "text": "Tu solicitud de consulta se ha enviado correctamente."
+  },
+  "error": "Error al enviar",
+  "privacy": "Respetamos tu privacidad. Tu información está segura con nosotros."
+}

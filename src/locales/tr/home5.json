@@ -1,0 +1,17 @@
+{
+  "title": "Güven ve Varlık",
+"cards": {
+    "card1": {
+      "title": "Peyzaj",
+      "desc": "Yapay zeka destekli çözümlerle evinizi yeniden tasarlayın."
+    },
+    "card2": {
+      "title": "Yeniden Satış",
+      "desc": "Mülk değerini artırın. Daha hızlı satın."
+    },
+    "card3": {
+      "title": "Kiralama",
+      "desc": "Daha iyi kiracılar çekin. Daha fazla gelir elde edin."
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "heading": "What Our Clients Say",
+
+  "cards": {
+    "title1": "Found amazing place",
+    "title2": "Amazing neighborhood!",
+    "title3": "Amazing place",
+    "text": "RentBro made it easy to settle in a new city with fair pricing and great neighborhoods."
+  },
+
+  "names": {
+    "shubham": "Shubham",
+    "punit": "Punit",
+    "harsh": "Harsh",
+    "jaiMathur": "Jai Mathur",
+    "madhur": "Madhur",
+    "avn": "Avn",
+    "sam": "Sam"
+  },
+
+  "locations": {
+    "pune": "Pune, Maharashtra",
+    "bangalore": "HSR Layout, Bangalore"
+  }
+}

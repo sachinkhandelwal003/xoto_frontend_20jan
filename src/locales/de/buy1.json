@@ -1,0 +1,71 @@
+{
+  "hero": {
+    "title": {
+      "line1": "Die Art und Weise verändern, wie Sie",
+    "line2": "Ihr Zuhause mieten, kaufen und verkaufen."
+    },
+    "buttons": {
+      "rent": "Haus mieten",
+      "find": "Haus finden",
+      "sell": "Haus verkaufen"
+    }
+  },
+
+  "modal": {
+    "tabs": {
+      "buy": "Kaufen",
+      "sell": "Verkaufen"
+    },
+    "buy": {
+      "title": "Finden Sie Ihr Traumhaus",
+      "desc": "Sagen Sie uns, wonach Sie suchen, und unsere Experten werden Sie kontaktieren."
+    },
+    "sell": {
+      "title": "Verkaufen Sie Ihre Immobilie",
+      "desc": "Teilen Sie Ihre Immobiliendetails und erhalten Sie den besten Marktpreis."
+    }
+  },
+
+  "form": {
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "email": "E-Mail-Adresse",
+    "phone": "Mobilnummer",
+    "bedrooms": "Anzahl der Schlafzimmer",
+
+    "preferredContactTitle": "Bevorzugte Kontaktmethode",
+
+    "contact": {
+      "call": "Telefonanruf",
+      "whatsapp": "WhatsApp",
+      "email": "E-Mail"
+    },
+
+    "sell": {
+      "listing_type": "Art der Anzeige (z. B. Wohnung)",
+      "city": "Stadt",
+      "area": "Gebiet",
+      "project_name": "Projektname",
+      "bedroom_config": "Schlafzimmer-Konfiguration (z. B. 2 BHK)",
+      "price": "Preis (AED)",
+      "description": "Erzählen Sie uns mehr über Ihre Immobilie (optional)"
+    },
+
+    "submit": {
+      "buy": "Kaufanfrage senden",
+      "sell": "Verkaufsanfrage senden"
+    },
+
+    "processing": "Wird verarbeitet..."
+  },
+
+  "checkbox": {
+    "marketing": "Ich stimme zu, Newsletter und Marketingmitteilungen über digitale Medien zu erhalten, und verstehe, dass ich mich jederzeit abmelden kann.",
+    "terms": "Ich habe die Allgemeinen Geschäftsbedingungen und die Datenschutzrichtlinie von Xoto gelesen, verstanden und akzeptiert. *"
+  },
+
+  "toast": {
+    "success": "Vielen Dank {{name}}! Ihre Informationen wurden erfolgreich übermittelt.",
+    "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
+  }
+}

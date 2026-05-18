@@ -1,0 +1,33 @@
+{
+  "title": "Herkes İçin Tasarlandı",
+
+  "customers": {
+    "title": "Müşteriler",
+    "desc": "Evinizi ve açık alanlarınızı yapay zekâ destekli, zahmetsiz peyzaj ve yenileme çözümleriyle yeniden hayal edin."
+  },
+
+  "business": {
+    "title": "İş Ortakları için",
+    "desc": "Müşteri süreçlerini sadeleştiren, potansiyel müşterileri dönüştüren ve anlaşmaları daha hızlı kapatan yapay zekâ araçlarıyla gayrimenkul ağınızı güçlendirin."
+  },
+
+  "execution": {
+    "title": "Uygulama Ortağı için",
+    "desc": "Gerçek zamanlı görev ataması, şeffaf takip ve ekipler arası sorunsuz koordinasyonla projeleri daha hızlı teslim edin."
+  },
+
+  "alliances": {
+    "title": "Stratejik Ortaklıklar İçin",
+    "desc": "Entegre ve büyüme odaklı bir ekosistemle pazar varlığınızı genişletmek için XOTO ile iş birliği yapın."
+  },
+
+  "developers": {
+    "title": "Geliştiriciler İçin",
+    "desc": "Önceden nitelendirilmiş alıcılara erişin ve veri odaklı içgörülerle satışları hızlandırın."
+  },
+
+  "finance": {
+    "title": "Finansal Kurumlar İçin",
+    "desc": "Entegre gayrimenkul ve finansman çözümleriyle mortgage dönüşümlerini artırın."
+  }
+}

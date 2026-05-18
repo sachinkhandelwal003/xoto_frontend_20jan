@@ -1,0 +1,23 @@
+{
+  "heading": "Lo que dicen nuestros clientes",
+  "cards": {
+    "title1": "Encontré un lugar increíble",
+    "title2": "¡Vecindario increíble!",
+    "title3": "Lugar increíble",
+    "text": "RentBro hizo que mudarse a una nueva ciudad fuera muy fácil."
+  },
+
+  "names": {
+    "shubham": "Shubham",
+    "punit": "Punit",
+    "harsh": "Harsh",
+    "jaiMathur": "Jai Mathur",
+    "madhur": "Madhur",
+    "avn": "Avn",
+    "sam": "Sam"
+  },
+  "locations": {
+    "pune": "Pune, Maharashtra",
+    "bangalore": "Zona HSR, Bangalore"
+  }
+}

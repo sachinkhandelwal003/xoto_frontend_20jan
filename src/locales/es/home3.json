@@ -1,0 +1,33 @@
+{
+  "title": "Construido para todos",
+
+  "customers": {
+    "title": "Clientes",
+    "desc": "Reimagina tu hogar y exteriores con soluciones de jardinería y mejoras impulsadas por IA, sin esfuerzo."
+  },
+
+  "business": {
+    "title": "Para socios comerciales",
+    "desc": "Potencia tu red inmobiliaria con herramientas de IA que optimizan la gestión de clientes, convierten leads y cierran acuerdos más rápido."
+  },
+
+  "execution": {
+    "title": "Para el socio de ejecución",
+    "desc": "Entrega proyectos más rápido con asignación de tareas en tiempo real, seguimiento transparente y coordinación fluida entre equipos."
+  },
+
+   "alliances": {
+    "title": "Para alianzas estratégicas",
+    "desc": "Asóciate con XOTO para ampliar tu presencia en el mercado a través de un ecosistema integrado y enfocado en el crecimiento."
+  },
+
+  "developers": {
+    "title": "Para desarrolladores",
+    "desc": "Accede a compradores pre-calificados y acelera las ventas con información basada en datos."
+  },
+
+  "finance": {
+    "title": "Para instituciones financieras",
+    "desc": "Impulsa las conversiones hipotecarias mediante soluciones integradas de propiedad y financiamiento."
+  }
+}

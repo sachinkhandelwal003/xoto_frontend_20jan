@@ -1,0 +1,26 @@
+
+> frontend@0.0.0 build
+> vite build
+
+[36mvite v6.4.2 [32mbuilding for production...[36m[39m
+transforming...
+System.Management.Automation.RemoteException
+<--- Last few GCs --->
+System.Management.Automation.RemoteException
+[11056:000002445CF8C000]   616360 ms: Mark-Compact (reduce) 2040.8 (2054.0) -> 2038.2 (2048.7) MB, pooled: 0 MB, 7479.47 / 0.00 ms  (+ 1143.0 ms in 52 steps since start of marking, biggest step 475.9 ms, walltime since start of marking 10332 ms) (average [11056:000002445CF8C000]   629119 ms: Mark-Compact 2039.3 (2048.7) -> 2038.0 (2052.2) MB, pooled: 0 MB, 12508.55 / 0.00 ms  (average mu = 0.162, current mu = 0.020) allocation failure; scavenge might not succeed
+System.Management.Automation.RemoteException
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+System.Management.Automation.RemoteException
+ 1: 00007FF6245BC44F node::OnFatalError+1343
+ 2: 00007FF625206217 v8::Function::NewInstance+423
+ 3: 00007FF625006C07 v8::base::AddressSpaceReservation::AddressSpaceReservation+322071
+ 4: 00007FF62500A914 v8::base::AddressSpaceReservation::AddressSpaceReservation+337700
+ 5: 00007FF62501986C v8::internal::StrongRootAllocatorBase::deallocate_impl+16604
+ 6: 00007FF6250190AB v8::internal::StrongRootAllocatorBase::deallocate_impl+14619
+ 7: 00007FF62649F8ED v8::base::UnsignedDivisionByConstant<unsigned __int64>+2794685
+ 8: 00007FF6250046D0 v8::base::AddressSpaceReservation::AddressSpaceReservation+312544
+ 9: 00007FF62501EF1A X509_STORE_set_cleanup+5098
+10: 00007FF62502B3B6 uv_timer_set_repeat+20694
+11: 00007FF624BFD0F7 v8::String::Utf8Value::~Utf8Value+144199
+12: 000002441FE775FA 

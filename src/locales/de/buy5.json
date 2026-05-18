@@ -1,0 +1,31 @@
+{
+  "heading": {
+    "title": "Immobilien entdecken"
+  },
+  "card": {
+    "bed": "Schlafzimmer",
+    "bath": "Bad"
+  },
+  "actions": {
+    "schedule": "Besichtigung planen",
+    "viewMore": "Mehr anzeigen",
+    "submit": "Besichtigung planen",
+    "loading": "Besichtigung wird geplant..."
+  },
+  "modal": {
+    "title": "Besichtigung planen",
+    "subtitle": "Geben Sie Ihre Daten ein, wir melden uns bald!"
+  },
+  "form": {
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "email": "E-Mail-Adresse",
+    "phone": "Telefonnummer",
+    "occupation": "Beruf",
+    "location": "Bevorzugter Standort"
+  },
+  "toast": {
+    "success": "Besichtigung geplant! Wir melden uns in Kürze.",
+    "error": "Besichtigung fehlgeschlagen. Bitte erneut versuchen."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "title": "Our Services Portfolio",
+  "services": {
+    "kitchen": "Modular Kitchens",
+    "wardrobe": "Modular Wardrobes",
+    "electrical": "Electrical Work",
+    "civil": "Civil Work",
+    "lighting": "Lighting",
+    "wall": "Wall Design, Painting & Paper",
+    "frushing":"Interior Furnishing",
+    "falsi":"False Ceiling"
+  }
+}

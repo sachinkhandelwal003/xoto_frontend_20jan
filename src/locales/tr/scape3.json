@@ -1,0 +1,25 @@
+{
+  "heading": "Danışmanlık Al",
+  "description": "XOTO uzmanlarıyla peyzaj planlaması için basit bir form.",
+  "form": {
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "email": "E-posta adresi",
+    "message": "Mesajınız",
+    "submit": "Ücretsiz Danışmanlık Al",
+    "submitting": "İstek gönderiliyor..."
+  },
+  "validation": {
+    "firstName": "Ad gerekli",
+    "lastName": "Soyad gerekli",
+    "email": "Geçerli bir e-posta girin",
+    "mobile": "Telefon numarası en az 8 haneli olmalı",
+    "message": "Mesaj gerekli"
+  },
+  "success": {
+    "title": "Teşekkürler!",
+    "text": "Danışmanlık talebiniz başarıyla gönderildi."
+  },
+  "error": "Gönderim başarısız",
+  "privacy": "Gizliliğinize saygı duyuyoruz. Bilgileriniz güvende."
+}

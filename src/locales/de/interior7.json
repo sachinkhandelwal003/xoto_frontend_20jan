@@ -1,0 +1,31 @@
+{
+  "heading": "EcoSmart Wohnen – Innenräume",
+  "description": "Bei XOTO bedeutet EcoSmart Living im Interior Design, Wohnräume zu gestalten, die Stil, Nachhaltigkeit und intelligente Technologie harmonisch vereinen. Unsere Innenräume werden sorgfältig geplant, um energieeffizient, umweltfreundlich und zugleich mühelos modern zu sein.",
+  "subheading": "So erwecken wir es zum Leben",
+  "features": {
+    "smartClimate": {
+      "title": "Intelligente Klimasteuerung",
+      "text": "Automatisierte Temperatur- und Lüftungssysteme zur nachhaltigen Energieeinsparung."
+    },
+    "lighting": {
+      "title": "LED- & Solarbeleuchtung",
+      "text": "Energieeffiziente, stimmungsvolle Beleuchtungslösungen für den gesamten Wohnbereich."
+    },
+    "materials": {
+      "title": "Nachhaltige Materialien",
+      "text": "Umweltfreundliches Holz, Naturstein und Oberflächen mit minimalem CO₂-Fußabdruck."
+    },
+    "water": {
+      "title": "Wassersparende Armaturen",
+      "text": "Moderne Armaturen, Duschen und Geräte zur Reduzierung des Wasserverbrauchs."
+    },
+    "automation": {
+      "title": "Automatisiertes Hausmanagement",
+      "text": "Steuerung von Beleuchtung, Klima und Haushaltsgeräten per App oder Sprachbefehl."
+    },
+    "future": {
+      "title": "Zukunftsfähige Innenräume",
+      "text": "Flexible, modulare Designkonzepte, bereit für zukünftige grüne Technologien."
+    }
+  }
+}

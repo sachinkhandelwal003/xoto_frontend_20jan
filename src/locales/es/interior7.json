@@ -1,0 +1,31 @@
+{
+  "heading": "Vida EcoSmart – Interiores",
+  "description": "En XOTO, EcoSmart Living significa diseñar interiores que integran estilo, sostenibilidad y tecnología inteligente. Nuestros espacios se crean cuidadosamente para ser energéticamente eficientes, respetuosos con el medio ambiente y naturalmente modernos.",
+  "subheading": "Cómo Lo Hacemos Realidad",
+  "features": {
+    "smartClimate": {
+      "title": "Control Climático Inteligente",
+      "text": "Sistemas automatizados de temperatura y ventilación que optimizan el consumo de energía."
+    },
+    "lighting": {
+      "title": "Iluminación LED y Solar",
+      "text": "Soluciones de iluminación ambiental de bajo consumo en todo el hogar."
+    },
+    "materials": {
+      "title": "Materiales Sostenibles",
+      "text": "Maderas, piedras y acabados ecológicos con una baja huella de carbono."
+    },
+    "water": {
+      "title": "Accesorios Eficientes en Agua",
+      "text": "Griferías, duchas y electrodomésticos modernos diseñados para reducir el uso de agua."
+    },
+    "automation": {
+      "title": "Gestión Domótica",
+      "text": "Control de iluminación, climatización y dispositivos mediante app o comandos de voz."
+    },
+    "future": {
+      "title": "Interiores Preparados para el Futuro",
+      "text": "Diseños flexibles y modulares listos para integrar tecnologías verdes emergentes."
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "title": "Lumago. Kumita. Ang XOTO ay ang iyong all-in-one property ecosystem.",
+  "ctaButton": "Makipag-usap sa aming team ngayon",
+
+  "modal": {
+    "title": "Form ng Pakikipag-ugnayan sa Team"
+  },
+
+  "form": {
+    "name": "Pangalan",
+    "namePlaceholder": "Ilagay ang iyong pangalan",
+    "email": "Email",
+    "emailPlaceholder": "Ilagay ang iyong email",
+    "phone": "Numero ng Telepono",
+    "phonePlaceholder": "Ilagay ang numero",
+    "inquiry": "Uri ng Inquiry",
+    "select": "Piliin ang uri ng inquiry",
+    "options": [
+      "Pagbili ng Ari-arian",
+      "Pagbebenta ng Ari-arian",
+      "Pag-upa ng Ari-arian",
+      "Pamumuhunan sa Real Estate",
+      "Pamamahala ng Ari-arian",
+      "Pagsusuri ng Ari-arian",
+      "Iba pang Inquiry"
+    ],
+    "message": "Mensahe",
+    "messagePlaceholder": "Paano kami makakatulong?",
+    "submit": "Isumite ang Inquiry"
+  },
+
+  "toast": {
+    "error": "Pakipunan ang lahat ng kinakailangang field.",
+    "success": "Salamat, {{name}}!\nAng iyong {{inquiryType}} inquiry ay naisumite na.\nMakikipag-ugnayan sa iyo ang XOTO team sa lalong madaling panahon."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "heading": "EcoSmart 生活",
+  "description": "在 XOTO，EcoSmart Living 意味着打造兼具美观、可持续性与科技的景观。",
+  "subheading": "我们的实现方式",
+  "features": {
+    "smartIrrigation": {
+      "title": "智能灌溉",
+      "text": "基于传感器的灌溉系统，节约用水。"
+    },
+    "solarLighting": "太阳能照明",
+    "lowWaterPlant": "低耗水植物",
+    "ecoMaterials": "环保材料",
+    "automatedControl": "自动化控制",
+    "futureReady": "面向未来的设计"
+  }
+}

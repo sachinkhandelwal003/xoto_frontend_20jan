@@ -1,0 +1,34 @@
+{
+  "title": "Demande rapide",
+  "description": "Besoin de réponses rapides ? Laissez vos coordonnées ci-dessous.",
+
+  "form": {
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Adresse e-mail",
+    "mobile": "Numéro de téléphone",
+    "message": "Votre message"
+  },
+
+  "buttons": {
+    "submit": "Envoyer la demande",
+    "submitting": "Envoi en cours..."
+  },
+
+  "privacy": "Nous respectons votre confidentialité.",
+
+  "validation": {
+    "firstName": "Le prénom est requis",
+    "lastName": "Le nom est requis",
+    "email": "Entrez un e-mail valide",
+    "mobile": "Au moins 8 chiffres requis",
+    "message": "Le message est requis"
+  },
+
+  "notification": {
+    "successTitle": "Merci!",
+    "successMessage": "Votre demande a été envoyée.",
+    "errorTitle": "Erreur",
+    "errorMessage": "Une erreur s'est produite."
+  }
+}

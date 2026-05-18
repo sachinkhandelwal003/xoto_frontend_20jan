@@ -1,0 +1,16 @@
+{
+  "heading": "Vida EcoSmart",
+  "description": "En XOTO, EcoSmart Living significa crear paisajes que equilibran belleza, sostenibilidad y tecnología. Nuestros diseños incorporan automatización inteligente y soluciones ecológicas para lograr espacios exteriores eficientes, autosostenibles y con un estilo moderno sin esfuerzo.",
+  "subheading": "Cómo lo hacemos realidad",
+  "features": {
+    "smartIrrigation": {
+      "title": "Riego Inteligente",
+      "text": "Sistemas de riego con sensores que ahorran agua."
+    },
+    "solarLighting": "Iluminación Solar",
+    "lowWaterPlant": "Plantas de Bajo Consumo de Agua",
+    "ecoMaterials": "Materiales Ecológicos",
+    "automatedControl": "Control Automatizado",
+    "futureReady": "Diseño Preparado para el Futuro"
+  }
+}

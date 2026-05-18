@@ -1,0 +1,31 @@
+{
+  "heading": {
+    "title": "Explorar Propiedades"
+  },
+  "card": {
+    "bed": "Habitación",
+    "bath": "Baño"
+  },
+  "actions": {
+    "schedule": "Agendar Visita",
+    "viewMore": "Ver Más",
+    "submit": "Agendar Visita",
+    "loading": "Agendando visita..."
+  },
+  "modal": {
+    "title": "Agendar Visita",
+    "subtitle": "Complete sus datos y organizaremos una visita privada."
+  },
+  "form": {
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "email": "Correo electrónico",
+    "phone": "Número de teléfono",
+    "occupation": "Ocupación",
+    "location": "Ubicación preferida"
+  },
+  "toast": {
+    "success": "¡Visita programada! Nos pondremos en contacto pronto.",
+    "error": "Error al programar la visita. Inténtalo de nuevo."
+  }
+}

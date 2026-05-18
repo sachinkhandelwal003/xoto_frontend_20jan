@@ -1,0 +1,21 @@
+{
+  "nav": {
+    "home": "Startseite",
+    "homeUpgrade": "Hausmodernisierung",
+    "landscaping": "Landschaftsbau",
+    "interiors": "Innenausstattung",
+    "homeOwnership": "Wohneigentum",
+    "mortgages": "Hypotheken",
+    "properties": "Immobilien",
+    "store": "Xoto Shop",
+    "knowledgeHub": "Wissenszentrum",
+    "blogs": "Blogs",
+    "caseStudies": "Fallstudien",
+    "training": "Schulungen",
+    "ecosystem": "Partner-Ökosystem",
+    "about": "Über uns",
+    "contact": "Kontakt",
+    "login": "Anmelden",
+    "tagline": "Angetrieben von KI. Inspiriert von Ihnen."
+  }
+}

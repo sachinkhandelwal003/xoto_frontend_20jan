@@ -1,0 +1,34 @@
+{
+  "title": "讨论您的室内设计项目",
+  "description": "联系我们的专家，实现您理想的室内空间。",
+  "imageAlt": "室内咨询背景",
+
+  "form": {
+    "firstName": "名字",
+    "lastName": "姓氏",
+    "email": "电子邮箱",
+    "mobile": "手机号",
+    "message": "您的留言"
+  },
+
+  "buttons": {
+    "submit": "提交",
+    "submitting": "提交中..."
+  },
+
+  "errors": {
+    "firstName": "请输入名字",
+    "lastName": "请输入姓氏",
+    "email": "请输入有效邮箱",
+    "mobile": "请输入有效手机号",
+    "message": "请输入留言",
+    "submit": "提交失败"
+  },
+
+  "success": {
+    "title": "成功！",
+    "message": "我们的团队将尽快联系您。"
+  },
+
+  "privacy": "我们重视您的隐私并保护您的信息。"
+}

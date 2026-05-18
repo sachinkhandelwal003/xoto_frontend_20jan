@@ -1,0 +1,13 @@
+{
+  "title": "我们的服务组合",
+  "services": {
+    "kitchen": "模块化厨房",
+    "wardrobe": "模块化衣柜",
+    "electrical": "电气工程",
+    "civil": "土木工程",
+    "lighting": "照明",
+    "wall": "墙面设计、油漆和壁纸",
+    "frushing": "室内软装",
+    "falsi": "吊顶"
+  }
+}

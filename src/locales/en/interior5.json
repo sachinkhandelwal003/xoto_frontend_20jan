@@ -1,0 +1,15 @@
+{
+  "showcase": {
+    "title": "Explore our curated",
+    "subtitle": "dream spaces",
+    "description": "Our portfolio showcases our passion for crafting extraordinary spaces that redefine sustainable living. As a trustead prop-tech in UAE, we bring each client’s unique vision to life, transforming spaces into timeless expressions of elegance."
+  },
+  "projects": {
+    "kitchen": "Modern Modular Kitchen",
+    "kitchenLocation": "California, Seaside",
+    "penthouse": "Minimalist Penthouse",
+    "penthouseLocation": "Dubai Marina, UAE",
+    "villa": "Tuscan Villa Living",
+    "villaLocation": "Beverly Hills, USA"
+  }
+}

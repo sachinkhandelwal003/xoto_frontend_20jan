@@ -1,0 +1,11 @@
+{
+  "title": "Understand Your\nHome Buying\n Budget",
+  "description": "Use our AI-powered calculators to see how much you can borrow and estimate your monthly mortgage payments.",
+  "modes": {
+    "borrow": "Know your home buying budget",
+    "estimate": "Understand your monthly EMIs"
+  },
+  "imageAlt": "Mortgage Illustration",
+  "cta": "Calculate",
+  "disclaimer": "Estimates are indicative. Final terms subject to credit approval."
+}

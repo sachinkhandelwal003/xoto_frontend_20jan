@@ -1,0 +1,31 @@
+{
+  "heading": {
+    "title": "Tuklasin ang mga Ari-arian"
+  },
+  "card": {
+    "bed": "Silid-tulugan",
+    "bath": "Banyo"
+  },
+  "actions": {
+    "schedule": "Mag-iskedyul ng Bisita",
+    "viewMore": "Tingnan Pa",
+    "submit": "Mag-iskedyul ng Bisita",
+    "loading": "Iniiskedyul ang bisita..."
+  },
+  "modal": {
+    "title": "Mag-iskedyul ng Bisita",
+    "subtitle": "Ilagay ang iyong detalye at kami ay kokontak sa iyo."
+  },
+  "form": {
+    "firstName": "Pangalan",
+    "lastName": "Apelyido",
+    "email": "Email Address",
+    "phone": "Numero ng Telepono",
+    "occupation": "Trabaho",
+    "location": "Gustong Lokasyon"
+  },
+  "toast": {
+    "success": "Na-iskedyul ang bisita! Kokontakin ka namin.",
+    "error": "Hindi ma-iskedyul ang bisita."
+  }
+}

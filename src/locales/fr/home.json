@@ -1,0 +1,18 @@
+{
+  "hero": {
+    "title1": "Redéfinir la vie",
+    "title2": "Du financement immobilier à la création de beaux espaces",
+    "description": "Découvrez des prêts hypothécaires intelligents, des propriétés sélectionnées et des paysages alimentés par l’IA qui améliorent chaque coin de votre vie.",
+    "buttons": {
+      "design": "Concevoir mon espace",
+      "explore": "Explorer les maisons",
+      "loan": "Obtenir un prêt immobilier"
+    },
+    "features": [
+      { "line1": "Solution", "line2": "tout-en-un" },
+      { "line1": "Traitement", "line2": "plus rapide" },
+      { "line1": "Équipes", "line2": "professionnelles" },
+      { "line1": "Présence", "line2": "dans tout les EAU" }
+    ]
+  }
+}

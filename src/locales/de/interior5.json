@@ -1,0 +1,15 @@
+{
+  "showcase": {
+    "title": "Entdecken Sie unsere kuratierten",
+    "subtitle": "Traumräume",
+    "description": "Unser Portfolio zeigt unsere Leidenschaft für außergewöhnliche Räume, die nachhaltiges Wohnen neu definieren."
+  },
+  "projects": {
+    "kitchen": "Moderne modulare Küche",
+    "kitchenLocation": "Kalifornien, Seaside",
+    "penthouse": "Minimalistisches Penthouse",
+    "penthouseLocation": "Dubai Marina, VAE",
+    "villa": "Toskanisches Villa-Wohnen",
+    "villaLocation": "Beverly Hills, USA"
+  }
+}

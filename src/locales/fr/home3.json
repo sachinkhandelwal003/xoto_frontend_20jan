@@ -1,0 +1,33 @@
+{
+  "title": "Conçu pour Tous",
+
+  "customers": {
+    "title": "Clients",
+    "desc": "Réinventez votre maison et vos extérieurs grâce à des solutions d’aménagement et d’amélioration alimentées par l’IA."
+  },
+
+  "business": {
+    "title": "Pour les associés commerciaux",
+    "desc": "Renforcez votre réseau immobilier grâce à des outils d’IA qui simplifient la gestion des clients, convertissent les prospects et accélèrent la conclusion des ventes."
+  },
+
+  "execution": {
+    "title": "Pour le partenaire d’exécution",
+    "desc": "Livrez vos projets plus rapidement grâce à l’attribution des tâches en temps réel, un suivi transparent et une coordination fluide entre les équipes."
+  },
+
+  "alliances": {
+    "title": "Pour les alliances stratégiques",
+    "desc": "Collaborez avec XOTO pour étendre votre présence sur le marché grâce à un écosystème intégré et axé sur la croissance."
+  },
+
+  "developers": {
+    "title": "Pour les développeurs",
+    "desc": "Accédez à des acheteurs préqualifiés et accélérez les ventes grâce à des analyses basées sur les données."
+  },
+
+  "finance": {
+    "title": "Pour les institutions financières",
+    "desc": "Augmentez les conversions de prêts immobiliers grâce à des solutions intégrées de propriété et de financement."
+  }
+}

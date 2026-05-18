@@ -1,0 +1,34 @@
+{
+  "hero": {
+    "title": "Explora el futuro de la vivienda — más inteligente, verde y basada en IA.",
+    "subtitle": "Tu centro de información sobre PropTech, sostenibilidad y diseño y construcción inteligentes.",
+    "buttons": {
+      "categories": "Explorar categorías",
+      "ai": "Preguntar a Xobia AI"
+    }
+  },
+  "blogs": {
+    "title": "Últimos blogs y artículos",
+    "readMore": "Leer más",
+    "loadMore": "Cargar más",
+    "1": { "date": "04 de noviembre de 2024", "title": "Explorando los mercados inmobiliarios de lujo" },
+    "2": { "date": "16 de julio de 2024", "title": "Guía para comprar bienes raíces en áreas metropolitanas" },
+    "3": { "date": "04 de noviembre de 2024", "title": "Prácticas ecológicas en bienes raíces residenciales" },
+    "4": { "date": "20 de septiembre de 2024", "title": "Renovación de propiedades históricas con enfoque moderno" },
+    "5": { "date": "04 de noviembre de 2024", "title": "Explorando los mercados inmobiliarios de lujo" },
+    "6": { "date": "16 de julio de 2024", "title": "Guía para comprar bienes raíces en áreas metropolitanas" },
+    "7": { "date": "04 de noviembre de 2024", "title": "Explorando los mercados inmobiliarios de lujo" },
+    "8": { "date": "16 de julio de 2024", "title": "Guía para comprar bienes raíces en áreas metropolitanas" }
+  },
+  "search": {
+    "placeholder": "BUSCAR ARTÍCULOS ..."
+  },
+  "categories": {
+    "title": "Explora ideas que redefinen la vida moderna",
+    "subtitle": "Desde paisajismo inteligente hasta diseño sostenible — tendencias que moldean el futuro de los hogares en los EAU.",
+    "1": "Tendencias de paisajismo y hogares inteligentes",
+    "2": "IA y PropTech",
+    "3": "Financiación de viviendas simplificada",
+    "4": "Vida sostenible en los EAU"
+  }
+}

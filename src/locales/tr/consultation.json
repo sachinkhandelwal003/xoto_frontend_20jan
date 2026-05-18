@@ -1,0 +1,34 @@
+{
+  "title": "Ücretsiz Danışmanlık Al",
+  "description": "XOTO uzmanlarıyla iletişime geçmek, kişiye özel peyzaj danışmanlığı ve proje planlaması için basit bir form.",
+  "imageAlt": "Danışmanlık arka planı",
+
+  "form": {
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "email": "E-posta",
+    "mobile": "Telefon Numarası",
+    "message": "Mesajınız"
+  },
+
+  "buttons": {
+    "submit": "Danışmanlık Al",
+    "submitting": "Gönderiliyor..."
+  },
+
+  "errors": {
+    "firstName": "Ad gerekli",
+    "lastName": "Soyad gerekli",
+    "email": "Geçerli e-posta girin",
+    "mobile": "En az 8 haneli olmalı",
+    "message": "Mesaj gerekli",
+    "submit": "Gönderim başarısız"
+  },
+
+  "success": {
+    "title": "Teşekkürler!",
+    "message": "Danışmanlık talebiniz başarıyla gönderildi."
+  },
+
+  "privacy": "Gizliliğinize saygı duyuyoruz."
+}

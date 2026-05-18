@@ -1,0 +1,15 @@
+{
+  "showcase": {
+    "title": "Découvrez nos espaces",
+    "subtitle": "de rêve",
+    "description": "Notre portfolio illustre notre passion pour la création d'espaces exceptionnels et durables."
+  },
+  "projects": {
+    "kitchen": "Cuisine modulaire moderne",
+    "kitchenLocation": "Californie, Seaside",
+    "penthouse": "Penthouse minimaliste",
+    "penthouseLocation": "Dubai Marina, EAU",
+    "villa": "Villa de style toscan",
+    "villaLocation": "Beverly Hills, États-Unis"
+  }
+}

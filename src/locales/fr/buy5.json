@@ -1,0 +1,31 @@
+{
+  "heading": {
+    "title": "Explorer les propriétés"
+  },
+  "card": {
+    "bed": "Chambre",
+    "bath": "Salle de bain"
+  },
+  "actions": {
+    "schedule": "Planifier une visite",
+    "viewMore": "Voir plus",
+    "submit": "Planifier la visite",
+    "loading": "Planification en cours..."
+  },
+  "modal": {
+    "title": "Planifier une visite",
+    "subtitle": "Remplissez vos informations pour une visite privée."
+  },
+  "form": {
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Adresse e-mail",
+    "phone": "Numéro de téléphone",
+    "occupation": "Profession",
+    "location": "Lieu préféré"
+  },
+  "toast": {
+    "success": "Visite planifiée ! Nous vous contacterons bientôt.",
+    "error": "Échec de la planification. Veuillez réessayer."
+  }
+}

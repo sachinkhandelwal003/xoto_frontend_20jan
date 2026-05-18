@@ -1,0 +1,21 @@
+{
+  "nav": {
+    "home": "خانه",
+    "homeUpgrade": "ارتقای خانه",
+    "landscaping": "محوطه‌سازی",
+    "interiors": "طراحی داخلی",
+    "homeOwnership": "مالکیت خانه",
+    "mortgages": "وام‌های مسکن",
+    "properties": "املاک",
+    "store": "فروشگاه Xoto",
+    "knowledgeHub": "مرکز دانش",
+    "blogs": "وبلاگ‌ها",
+    "caseStudies": "مطالعات موردی",
+    "training": "آموزش",
+    "ecosystem": "اکوسیستم شرکا",
+    "about": "درباره ما",
+    "contact": "تماس با ما",
+    "login": "ورود",
+    "tagline": "قدرت‌گرفته از هوش مصنوعی. الهام‌گرفته از شما."
+  }
+}

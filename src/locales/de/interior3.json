@@ -1,0 +1,16 @@
+{
+  "title": "Beratung buchen",
+  "description": "Ein einfaches Formular, um mit XOTO-Experten für individuelle Innenarchitekturberatung in Kontakt zu treten.",
+  "form": {
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "email": "E-Mail-Adresse",
+    "mobile": "Mobilnummer",
+    "message": "Ihre Nachricht"
+  },
+  "buttons": {
+    "submit": "Kostenlose Beratung buchen",
+    "submitting": "Anfrage wird gesendet..."
+  },
+  "privacy": "Wir respektieren Ihre Privatsphäre. Ihre Daten sind sicher."
+}

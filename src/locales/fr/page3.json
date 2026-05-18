@@ -1,0 +1,34 @@
+{
+  "hero": {
+    "title": "Explorez l’avenir de l’habitat — plus intelligent, plus vert et axé sur l’IA.",
+    "subtitle": "Votre source d’informations sur la PropTech, la durabilité et le design & la construction intelligents.",
+    "buttons": {
+      "categories": "Parcourir les catégories",
+      "ai": "Demander à Xobia AI"
+    }
+  },
+  "blogs": {
+    "title": "Derniers blogs et articles",
+    "readMore": "Lire la suite",
+    "loadMore": "Charger plus",
+    "1": { "date": "04 novembre 2024", "title": "Explorer les marchés immobiliers de luxe" },
+    "2": { "date": "16 juillet 2024", "title": "Guide d’achat immobilier en zones métropolitaines" },
+    "3": { "date": "04 novembre 2024", "title": "Pratiques écologiques dans l’immobilier résidentiel" },
+    "4": { "date": "20 septembre 2024", "title": "Rénovation de propriétés historiques avec une approche moderne" },
+    "5": { "date": "04 novembre 2024", "title": "Explorer les marchés immobiliers de luxe" },
+    "6": { "date": "16 juillet 2024", "title": "Guide d’achat immobilier en zones métropolitaines" },
+    "7": { "date": "04 novembre 2024", "title": "Explorer les marchés immobiliers de luxe" },
+    "8": { "date": "16 juillet 2024", "title": "Guide d’achat immobilier en zones métropolitaines" }
+  },
+  "search": {
+    "placeholder": "RECHERCHER DES ARTICLES ..."
+  },
+  "categories": {
+    "title": "Découvrez des idées qui redéfinissent la vie moderne",
+    "subtitle": "Du paysagisme intelligent au design durable — tendances façonnant l’avenir des maisons aux ÉAU.",
+    "1": "Tendances paysagères & maisons intelligentes",
+    "2": "IA & PropTech",
+    "3": "Financement immobilier simplifié",
+    "4": "Vie durable aux ÉAU"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "heading": {
+    "title": "¿Qué estás buscando?",
+    "subtitle": "Xobia te guía en tu viaje inmobiliario perfecto con recomendaciones personalizadas."
+  },
+  "buttons": {
+    "rent": "Alquilar casa",
+    "buy": "Comprar casa",
+    "sell": "Vender casa"
+  },
+  "tabs": {
+    "rent": {
+      "title": "Alquilar casa",
+      "text": "Alquileres seleccionados con términos flexibles, listados verificados y recomendaciones inteligentes."
+    },
+    "buy": {
+      "title": "Comprar casa",
+      "text": "Explora casas premium con información detallada, recomendaciones guiadas por IA y vendedores verificados."
+    },
+    "sell": {
+      "title": "Vender casa",
+      "text": "Publica tu propiedad fácilmente con apoyo experto, información de valoración y amplio alcance de compradores."
+    }
+  }
+}

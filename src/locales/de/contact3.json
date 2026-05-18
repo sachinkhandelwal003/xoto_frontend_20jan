@@ -1,0 +1,34 @@
+{
+  "title": "Schnelle Anfrage",
+  "description": "Brauchen Sie schnelle Antworten? Hinterlassen Sie Ihre Daten unten.",
+
+  "form": {
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "email": "E-Mail-Adresse",
+    "mobile": "Handynummer",
+    "message": "Ihre Nachricht"
+  },
+
+  "buttons": {
+    "submit": "Anfrage senden",
+    "submitting": "Wird gesendet..."
+  },
+
+  "privacy": "Wir respektieren Ihre Privatsphäre.",
+
+  "validation": {
+    "firstName": "Vorname ist erforderlich",
+    "lastName": "Nachname ist erforderlich",
+    "email": "Gültige E-Mail eingeben",
+    "mobile": "Mindestens 8 Ziffern erforderlich",
+    "message": "Nachricht ist erforderlich"
+  },
+
+  "notification": {
+    "successTitle": "Danke!",
+    "successMessage": "Ihre Anfrage wurde erfolgreich gesendet.",
+    "errorTitle": "Fehler",
+    "errorMessage": "Etwas ist schiefgelaufen."
+  }
+}

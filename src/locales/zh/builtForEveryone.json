@@ -1,0 +1,12 @@
+{
+  "title": "我们的合作伙伴生态系统",
+  "cards": {
+    "commonDesc": "精英承包商网络",
+    "business": { "title": "商业合作伙伴" },
+    "contractors": { "title": "承包商" },
+    "execution": { "title": "执行合作伙伴" },
+    "strategic": { "title": "战略联盟" },
+    "developers": { "title": "开发商" },
+    "financial": { "title": "金融机构" }
+  }
+}

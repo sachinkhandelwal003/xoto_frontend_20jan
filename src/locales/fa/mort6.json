@@ -1,0 +1,25 @@
+{
+  "hero": {
+    "title": "شروع هوشمندانه وام مسکن",
+    "subtitle": "مقایسه وام‌دهندگان با راهنمایی متخصصان",
+    "primaryCta": "شروع کنید",
+    "secondaryCta": "صحبت با کارشناس"
+  },
+  "form": {
+    "heading": "اطلاعات خود را وارد کنید",
+    "firstName": "نام",
+    "lastName": "نام خانوادگی",
+    "email": "ایمیل",
+    "phone": "شماره تماس",
+    "lookingFor": "به دنبال",
+    "select": "انتخاب کنید",
+    "options": {
+      "homeLoan": "وام مسکن",
+      "refinance": "بازپرداخت",
+      "personalLoan": "وام شخصی"
+    },
+    "city": "شهر",
+    "budget": "بودجه",
+    "submit": "ارسال"
+  }
+}

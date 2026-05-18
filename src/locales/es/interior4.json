@@ -1,0 +1,13 @@
+{
+  "title": "Nuestro portafolio de servicios",
+  "services": {
+    "kitchen": "Cocinas modulares",
+    "wardrobe": "Armarios modulares",
+    "electrical": "Trabajos eléctricos",
+    "civil": "Obras civiles",
+    "lighting": "Iluminación",
+    "wall": "Diseño de paredes, pintura y papel tapiz",
+    "frushing": "Mobiliario de interiores",
+    "falsi": "Techo falso"
+  }
+}

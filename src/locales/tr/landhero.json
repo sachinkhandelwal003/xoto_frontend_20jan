@@ -1,0 +1,15 @@
+{
+  "hero": {
+    "title": "Evleri premium",
+    "subtitle": "dış mekân çözümleriyle dönüştürüyoruz"
+  },
+  "services": {
+    "design": "Peyzaj tasarımı ve uygulama",
+    "hardscape": "Zemin kaplama ve hardscape",
+    "outdoor": "Dış mekân yapıları ve yaşam alanları",
+    "pool": "Yüzme havuzları ve su öğeleri"
+  },
+  "cta": {
+    "estimate": "Ücretsiz keşif alın"
+  }
+}

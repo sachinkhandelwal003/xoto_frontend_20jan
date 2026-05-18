@@ -1,0 +1,34 @@
+{
+  "hero": {
+    "title": "Yaşamın geleceğini keşfedin — daha akıllı, daha yeşil ve yapay zekâ destekli.",
+    "subtitle": "PropTech, sürdürülebilir stratejiler ve akıllı tasarım ve inşaat için bilgi merkeziniz.",
+    "buttons": {
+      "categories": "Kategorilere Göz At",
+      "ai": "Xobia AI’ye Sor"
+    }
+  },
+  "blogs": {
+    "title": "En Son Bloglar ve Makaleler",
+    "readMore": "Devamını Oku",
+    "loadMore": "Daha Fazla Yükle",
+    "1": { "date": "04 Kasım 2024", "title": "Lüks Gayrimenkul Pazarlarını Keşfetmek" },
+    "2": { "date": "16 Temmuz 2024", "title": "Metropol Bölgelerde Gayrimenkul Satın Alma Rehberi" },
+    "3": { "date": "04 Kasım 2024", "title": "Konut Gayrimenkulünde Çevre Dostu Uygulamalar" },
+    "4": { "date": "20 Eylül 2024", "title": "Tarihi Mülklerin Modern Yenilenmesi" },
+    "5": { "date": "04 Kasım 2024", "title": "Lüks Gayrimenkul Pazarlarını Keşfetmek" },
+    "6": { "date": "16 Temmuz 2024", "title": "Metropol Bölgelerde Gayrimenkul Satın Alma Rehberi" },
+    "7": { "date": "04 Kasım 2024", "title": "Lüks Gayrimenkul Pazarlarını Keşfetmek" },
+    "8": { "date": "16 Temmuz 2024", "title": "Metropol Bölgelerde Gayrimenkul Satın Alma Rehberi" }
+  },
+  "search": {
+    "placeholder": "MAKALE ARA ..."
+  },
+  "categories": {
+    "title": "Modern Yaşamı Yeniden Tanımlayan İçgörüler",
+    "subtitle": "Akıllı peyzajdan sürdürülebilir tasarıma — BAE’de evlerin geleceğini şekillendiren trendler.",
+    "1": "Peyzaj Trendleri ve Akıllı Evler",
+    "2": "Yapay Zekâ ve PropTech",
+    "3": "Konut Finansmanı Basitleştirildi",
+    "4": "BAE’de Sürdürülebilir Yaşam"
+  }
+}

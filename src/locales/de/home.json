@@ -1,0 +1,18 @@
+{
+  "hero": {
+    "title1": "Wohnen neu definiert",
+    "title2": "Von der Hausfinanzierung bis zur Gestaltung schöner Räume",
+    "description": "Entdecken Sie intelligente Hypotheken, ausgewählte Immobilien und KI-gestützte Landschaftsgestaltung für jeden Bereich Ihres Lebens.",
+    "buttons": {
+      "design": "Meinen Raum gestalten",
+      "explore": "Häuser entdecken",
+      "loan": "Wohnkredit erhalten"
+    },
+    "features": [
+      { "line1": "Komplett-", "line2": "lösung" },
+      { "line1": "Schnelle", "line2": "Bearbeitung" },
+      { "line1": "Professionelle", "line2": "Teams" },
+      { "line1": "UAE-weite", "line2": "Präsenz" }
+    ]
+  }
+}

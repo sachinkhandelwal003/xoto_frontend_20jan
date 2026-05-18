@@ -1,0 +1,45 @@
+{
+  "heading": {
+    "title": "Offres Immobilières Chaudes",
+    "subtitle": "Découvrez des propriétés exclusives offrant le meilleur rapport qualité-prix dans les quartiers premium de Dubaï."
+  },
+  "modal": {
+    "title": "Planifier une Visite",
+    "subtitle": "Remplissez vos informations et nous organiserons une visite privée"
+  },
+  "form": {
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Adresse e-mail",
+    "phone": "Numéro de téléphone",
+    "occupation": "Profession",
+    "location": "Emplacement préféré / Communauté",
+    "contactTitle": "Comment devons-nous vous contacter ?",
+    "contact": {
+      "call": "Appel téléphonique",
+      "whatsapp": "WhatsApp",
+      "email": "E-mail"
+    },
+    "marketing": "J’accepte de recevoir des communications marketing numériques.",
+    "terms": "J’accepte les conditions générales et la politique de confidentialité."
+  },
+  "actions": {
+    "submit": "Planifier la Visite",
+    "loading": "Planification en cours..."
+  },
+  "card": {
+    "bed": "Chambre",
+    "bath": "Salle de bain",
+    "schedule": "Planifier la Visite"
+  },
+  "toast": {
+    "success": "Visite planifiée ! Nous vous contacterons bientôt.",
+    "error": "Impossible de planifier la visite. Veuillez réessayer."
+  },
+   "card": {
+    "beds": "Chambres",
+    "bathrooms": "Salles de bain",
+    "perMonth": "/mois",
+    "showDetails": "Voir les détails"
+  }
+}

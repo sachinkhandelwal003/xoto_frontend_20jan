@@ -1,0 +1,29 @@
+{
+    "title": {
+      "line1": "Tu hipoteca,",
+      "line2": "simplificada en 4 pasos"
+    },
+    "steps": {
+      "1": {
+        "label": "PASO 01",
+        "title": "Consulta y preevaluación",
+        "desc": "Evaluamos tus finanzas y sugerimos opciones."
+      },
+      "2": {
+        "label": "PASO 02",
+        "title": "Comparación de ofertas",
+        "desc": "Analizamos múltiples prestamistas para el mejor ajuste."
+      },
+      "3": {
+        "label": "PASO 03",
+        "title": "Seleccionar y aplicar",
+        "desc": "Elige la oferta, nosotros gestionamos la documentación."
+      },
+      "4": {
+        "label": "PASO 04",
+        "title": "Aprobación y desembolso",
+        "desc": "Liberación de fondos con nuestro apoyo."
+      }
+    }
+  }
+  

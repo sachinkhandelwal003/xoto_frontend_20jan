@@ -1,0 +1,16 @@
+{
+  "heading": "EcoSmart 生活方式",
+  "description": "在 XOTO，EcoSmart Living 代表着打造在美感、可持续性与现代科技之间取得完美平衡的景观设计。我们的方案融合智能自动化与环保解决方案，使户外空间更加高效、自给自足，并呈现出轻松而现代的风格。",
+  "subheading": "我们如何实现它",
+  "features": {
+    "smartIrrigation": {
+      "title": "智能灌溉",
+      "text": "基于传感器的节水灌溉系统。"
+    },
+    "solarLighting": "太阳能照明",
+    "lowWaterPlant": "低耗水植物",
+    "ecoMaterials": "环保材料",
+    "automatedControl": "自动化控制",
+    "futureReady": "面向未来的设计"
+  }
+}

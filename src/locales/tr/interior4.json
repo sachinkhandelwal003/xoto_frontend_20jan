@@ -1,0 +1,13 @@
+{
+  "title": "Hizmet Portföyümüz",
+  "services": {
+    "kitchen": "Modüler Mutfaklar",
+    "wardrobe": "Modüler Gardıroplar",
+    "electrical": "Elektrik İşleri",
+    "civil": "İnşaat İşleri",
+    "lighting": "Aydınlatma",
+    "wall": "Duvar Tasarımı, Boyama ve Duvar Kağıdı",
+    "frushing": "İç Mekan Donanımı",
+    "falsi": "Asma Tavan"
+  }
+}

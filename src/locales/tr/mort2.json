@@ -1,0 +1,11 @@
+{
+  "title": "Ev Alma Bütçenizi Anlayın",
+  "description": "Ne kadar borç alabileceğinizi görmek ve aylık ipotek ödemelerinizi tahmin etmek için yapay zeka destekli hesaplayıcılarımızı kullanın.",
+  "modes": {
+    "borrow": "Ev alma bütçenizi öğrenin",
+    "estimate": "Aylık taksitlerinizi (EMI) anlayın"
+  },
+  "imageAlt": "İpotek İllüstrasyonu",
+  "cta": "Hesapla",
+  "disclaimer": "Tahminler gösterge niteliğindedir. Kesin şartlar kredi onayına tabidir."
+}

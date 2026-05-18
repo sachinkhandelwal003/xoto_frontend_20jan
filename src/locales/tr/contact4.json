@@ -1,0 +1,40 @@
+{
+  "title": { "line1": "Ortaklık ve", "line2": "İş Birliği Formu" },
+  "subtitle": {
+    "line1": "XOTO ile iş birliği yapmak ister misiniz?",
+    "line2": "İşiniz veya projeniz hakkında bize bilgi verin."
+  },
+  "form": {
+    "organization": "Kuruluş adı",
+    "email": "İletişim e-postası",
+    "partnerType": "Ortak türü",
+    "proposal": "Teklif açıklaması"
+  },
+  "placeholders": {
+    "organization": "Kuruluş adını girin",
+    "email": "E-posta girin",
+    "proposal": "Teklifi açıklayın"
+  },
+  "options": {
+    "select": "Ortak türünü seçin",
+    "business": "İş ortakları",
+    "execution": "Uygulama ortağı",
+    "alliance": "Stratejik ittifaklar",
+    "developers": "Geliştiriciler",
+    "finance": "Finans kurumu"
+  },
+  "buttons": { "submit": "Gönder" },
+  "chat": {
+    "title": "Xobia Sohbeti (7/24 AI Destek)",
+    "description": "Sorunuz mu var? Xobia her zaman hazır.",
+    "button": "Xobia ile Sohbet Et"
+  },
+  "validation": {
+    "organization": "Kuruluş adı gereklidir.",
+    "emailRequired": "E-posta gereklidir.",
+    "emailInvalid": "Geçerli bir e-posta girin.",
+    "partnerType": "Ortak türü gereklidir.",
+    "proposal": "Açıklama gereklidir."
+  },
+  "notification": { "success": "Form başarıyla gönderildi!" }
+}
