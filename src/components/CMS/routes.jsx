@@ -90,9 +90,9 @@ import AgentLayout from "../ecommerce/B2C/AgentLayout";
 import Addleaddetails from "../ecommerce/B2C/AgentLeadDetails"
 import AgentLeadDashboard from "../ecommerce/B2C/AgentLeadCreated";
 import AgentSubscription from "../ecommerce/B2C/AgentSubscription";
-import AgentProjects from "../ecommerce/B2C/AgentProjects";
-import AgentProjectDetails from "../ecommerce/B2C/AgentProjectDetails";
-// import AgentPresentations from "../ecommerce/B2C/AgentPresentations";
+import AgentProjects from "../Grid/GridAgent/AgentProjects";
+import AgentProjectDetails from "../Grid/GridAgent/AgentProjectDetails";
+import AgentPresentations from "../ecommerce/B2C/AgentPresentations";
 import AgentSiteVisits from "../ecommerce/B2C/AgentSiteVisits";
 import AgentDeals from "../ecommerce/B2C/AgentDeals";
 import AgentCommission from "../ecommerce/B2C/AgentCommission";
@@ -272,11 +272,13 @@ import Adminfeedbacks from "../../components/footer/Adminfeedbacks";
 import Presentations from "../ecommerce/B2C/PresentationManager";
 import BankProductViewwithdocuments from "../homepage/BankProductViewwithdocuments";
 import BankProductDocuments from "../homepage/BankProductDocuments";
-import LoanEligibilitycheck from "../ecommerce/B2C/LoanEligibilitycheck";
-import ReferralLeaderboard from "../GridReferralPartner/GridDashboardpages/Referralleaderboard";
 import GridAgentLeadDetail from "../Grid/GridAgent/GridAgentLeadDetail";
 import GridAgentLeadDetailadmin from "../Grid/GridAdmin.jsx/GridAgentLeadDetailadmin";
 import GridAdvisorLeadDetail from "../Grid/AdvisorGrid/GridAdvisorLeadDetail";
+import PerfectMortgageCalculator from "../../components/homepage/MortgageCalculator";
+import PresentationsList from '../Grid/presentation/PresentationsList';
+import DealRecordAdmin from "../Grid/GridAdmin.jsx/Dealrecordadmin";
+
 
 
 
@@ -494,6 +496,7 @@ const CmsRoutes = () => {
       <Route path="track-brochures" element={<TrackBrochure />} />
       <Route path="GridAgent-lead" element={<GridAgentLead />} />
       <Route path="CreateAgent-Lead" element={<CreateAgentLead />} />
+      <Route path="presentations" element={<PresentationsList />} />
 
       <Route path="agent-lead/:id" element={<Addleaddetails />} />
       {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
@@ -592,7 +595,7 @@ const CmsRoutes = () => {
 
 <Route path="vault/agent-leads" element={<VaultAgentLeadList />} />
 <Route path="vault/lead/:id" element={<AgentsLeadFullView />} />
-<Route path="vault/lead/:id/eligibility" element={<LoanEligibilitycheck />} />
+{/* <Route path="vault/lead/:id/eligibility" element={<LoanEligibilitycheck />} /> */}
 
 <Route path="vault/lead/documents/:leadId" element={<VaultLeadDocumentUpload />} />
 
@@ -630,6 +633,9 @@ const CmsRoutes = () => {
       <Route path="/lead-detail/:id" element={<GridAgentLeadDetail />} />
       <Route path="/lead-detail-admin/:id" element={<GridAgentLeadDetailadmin />} />
      <Route path="gridAdvisorLeads/:id" element={<GridAdvisorLeadDetail />} />
+     <Route path="calculator" element={<PerfectMortgageCalculator />} />
+     <Route path="/property-management" element={<Propertymanagement />} />
+      
       
 
 
@@ -656,7 +662,7 @@ const CmsRoutes = () => {
       <Route path="/agency/deals" element={<AgencyDeals />} />
       <Route path="/agency-agent-properties" element={<AgencyAgentProperties />} />
       <Route path="/agency-profile" element={<AgencyProfile />} />
-      <Route path="/presentations" element={<Presentations />} />
+      {/* <Route path="/presentations" element={<Presentations />} /> */}
 
       {/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
       {/* Developer */}
@@ -680,7 +686,6 @@ const CmsRoutes = () => {
       <Route path="commission-scheme" element={<DeveloperCommissionScheme />} />
       <Route path="commission-scheme/:id" element={<DeveloperCommissionScheme />} />
       <Route path="/developer/view/:id" element={<DeveloperDetail />} />
-
 
       {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
       {/* <Route path="team" element={<DeveloperTeam/>}/> */}
