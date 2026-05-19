@@ -85,6 +85,8 @@ import AgentList from "./pages/Properties/AgentList";
 import AgencyList from "./pages/Properties/AgencyList";
 import DeveloperDashboard from "../ecommerce/B2C/DeveloperDashboard";
 import AgentDashboard from "../ecommerce/B2C/AgentDashboard";
+import AgentLeaderboard from "../ecommerce/B2C/AgentLeaderboard";
+import AgentAgreements from "../ecommerce/B2C/AgentAgreements";
 import VaultpartnerDashboard from "../../components/CMS/pages/VaultPartnerDashboard";
 import AgentLayout from "../ecommerce/B2C/AgentLayout";
 import Addleaddetails from "../ecommerce/B2C/AgentLeadDetails"
@@ -275,6 +277,8 @@ import GridAgentLeadDetail from "../Grid/GridAgent/GridAgentLeadDetail";
 import GridAgentLeadDetailadmin from "../Grid/GridAdmin.jsx/GridAgentLeadDetailadmin";
 import GridAdvisorLeadDetail from "../Grid/AdvisorGrid/GridAdvisorLeadDetail";
 import PerfectMortgageCalculator from "../../components/homepage/MortgageCalculator";
+import MortgageEligibilityCalculatorPage from "../../components/homepage/MortgageEligibilityCalculatorPage";
+import MortgageAffordabilityCalculatorPage from "../../components/homepage/MortgageAffordabilityCalculatorPage";
 import PresentationsList from '../Grid/presentation/PresentationsList';
 import DealRecordAdmin from "../Grid/GridAdmin.jsx/Dealrecordadmin";
 
@@ -496,6 +500,11 @@ const CmsRoutes = () => {
       <Route path="GridAgent-lead" element={<GridAgentLead />} />
       <Route path="CreateAgent-Lead" element={<CreateAgentLead />} />
       <Route path="presentations" element={<PresentationsList />} />
+      <Route path="Leaderboard" element={<AgentLeaderboard />} />
+      <Route path="leaderboard" element={<AgentLeaderboard />} />
+      <Route path="my-Agreements" element={<AgentAgreements />} />
+      <Route path="my-agreements" element={<AgentAgreements />} />
+      <Route path="agreements" element={<AgentAgreements />} />
 
       <Route path="agent-lead/:id" element={<Addleaddetails />} />
       {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
@@ -632,7 +641,11 @@ const CmsRoutes = () => {
       <Route path="/lead-detail/:id" element={<GridAgentLeadDetail />} />
       <Route path="/lead-detail-admin/:id" element={<GridAgentLeadDetailadmin />} />
      <Route path="gridAdvisorLeads/:id" element={<GridAdvisorLeadDetail />} />
-     <Route path="calculator" element={<PerfectMortgageCalculator />} />
+     <Route path="calculator" element={<PerfectMortgageCalculator initialTab="affordability" />} />
+     <Route path="mortgages/calculator" element={<PerfectMortgageCalculator initialTab="affordability" />} />
+     <Route path="mortgages/calculator/eligibility" element={<MortgageEligibilityCalculatorPage />} />
+     <Route path="mortgages/calculator/affordability" element={<MortgageAffordabilityCalculatorPage />} />
+     <Route path="mortgages/calculator/emi" element={<PerfectMortgageCalculator initialTab="mortgage" />} />
      <Route path="/property-management" element={<Propertymanagement />} />
       
       

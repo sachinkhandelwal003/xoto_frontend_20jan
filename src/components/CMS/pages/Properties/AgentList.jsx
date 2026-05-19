@@ -61,7 +61,9 @@ const AgentList = () => {
 const res = await apiService.get(`/agency/admin/agents?page=${page}&limit=${limit}`);
       const data = res?.data?.data || res?.data || res || [];
       const total = res?.data?.pagination?.totalItems || res?.data?.total || res?.total || data.length;
-      const normalized = data.map(normalizeAgent);
+      const normalized = data
+        .map(normalizeAgent)
+        .filter(agent => agent.agencyApprovalStatus === "approved");
       setAgents(normalized);
       setTotalItems(total);
     } catch {
@@ -83,6 +85,12 @@ const res = await apiService.get(`/agency/admin/agents?page=${page}&limit=${limi
 
   // ── Admin Approve ─────────────────────────────────────────────────────
   const handleAdminApprove = async (agentId) => {
+    const agent = agents.find(a => a._id === agentId || a.id === agentId);
+    if (agent?.agencyApprovalStatus !== "approved") {
+      message.warning("Agency must approve this agent before admin approval.");
+      return;
+    }
+
     try {
 await apiService.put(`/agency/admin/agents/${agentId}/approve`);
       message.success("Agent approved by admin");
@@ -105,7 +113,7 @@ await apiService.put(`/agency/admin/agents/${agentId}/approve`);
       return;
     }
     try {
-await apiService.put(`/agency/admin/agents/${agentId}/decline`, { reason: declineReason });
+await apiService.put(`/agency/admin/agents/${selectedAgentId}/decline`, { reason: declineReason });
       message.success("Agent declined");
       setDeclineModalOpen(false);
       setSelectedAgentId(null);
@@ -210,16 +218,22 @@ await apiService.put(`/agency/admin/agents/${agentId}/decline`, { reason: declin
       key: "adminApprovalStatus",
       render: (_, record) => {
         if (record.adminApprovalStatus === "pending") {
+          const canAdminApprove = record.agencyApprovalStatus === "approved";
           return (
             <Space>
-              <Button
-                size="small"
-                type="primary"
-                icon={<CheckCircleOutlined />}
-                onClick={() => handleAdminApprove(record._id)}
-              >
-                Approve
-              </Button>
+              <Tooltip title={canAdminApprove ? "Approve agent" : "Agency approval is required first"}>
+                <span>
+                  <Button
+                    size="small"
+                    type="primary"
+                    icon={<CheckCircleOutlined />}
+                    disabled={!canAdminApprove}
+                    onClick={() => handleAdminApprove(record._id)}
+                  >
+                    Approve
+                  </Button>
+                </span>
+              </Tooltip>
               <Button
                 size="small"
                 danger

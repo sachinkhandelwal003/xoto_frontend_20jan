@@ -132,10 +132,16 @@ const [verifiedEmail, setVerifiedEmail] = useState("");
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const res        = await apiService.post("/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      const uploadedUrl = res?.data?.file?.url || res?.data?.url || "";
+      const res = await apiService.upload("/upload", formData);
+      const uploadedUrl =
+        res?.file?.url ||
+        res?.url ||
+        res?.data?.file?.url ||
+        res?.data?.url ||
+        "";
+      if (!uploadedUrl) {
+        throw new Error("Upload completed but no file URL was returned");
+      }
       setUrls(prev => ({ ...prev, [field]: uploadedUrl }));
       message.success("File uploaded successfully");
     } catch {

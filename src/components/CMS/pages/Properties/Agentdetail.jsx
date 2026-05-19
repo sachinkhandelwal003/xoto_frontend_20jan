@@ -226,12 +226,17 @@ const AgentDetail = () => {
   useEffect(() => { if (agentId) fetchAgent(); }, [agentId]);
 
   const handleApprove = async () => {
+    if (agent?.agencyApprovalStatus !== "approved") {
+      message.warning("Agency must approve this agent before admin approval.");
+      return;
+    }
+
     setActionLoading(true);
     try {
       await apiService.put(`/agency/admin/agents/${agentId}/approve`);
       message.success("Agent approved successfully");
       fetchAgent();
-    } catch { message.error("Approval failed"); }
+    } catch (err) { message.error(err?.response?.data?.message || "Approval failed"); }
     finally { setActionLoading(false); }
   };
 
@@ -279,6 +284,7 @@ const AgentDetail = () => {
   const adminStatus  = agent.adminApprovalStatus  || "pending";
   const agencyStatus = agent.agencyApprovalStatus || "pending";
   const adminPending = adminStatus === "pending";
+  const canAdminApprove = agencyStatus === "approved";
   const isDeclined   = adminStatus === "declined";
   const joinedDate   = agent.createdAt
     ? new Date(agent.createdAt).toLocaleDateString("en-AE", { day: "numeric", month: "short", year: "numeric" })
@@ -310,7 +316,9 @@ const AgentDetail = () => {
               type="primary"
               icon={<CheckCircleOutlined />}
               loading={actionLoading}
+              disabled={!canAdminApprove}
               onClick={handleApprove}
+              title={canAdminApprove ? "Approve agent" : "Agency approval is required first"}
               style={{ background: T.success, borderColor: T.success, borderRadius: 8, fontWeight: 700, height: 40 }}
             >
               Approve Agent

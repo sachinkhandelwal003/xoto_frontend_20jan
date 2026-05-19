@@ -8,10 +8,25 @@ import { apiService } from '../../../../manageApi/utils/custom.apiservice';
 import logoNew from '../../../../assets/img/logoNew.png';
 import vault from "../../../../assets/img/logo/logovault.png";
 import favicon from '../../../../assets/img/logonewww.png';
-import { icon } from '@fortawesome/fontawesome-svg-core';
 
 /* --- CUSTOM LINKS CONFIGURATION --- */
 // /dashboard/superadmin/developer/property
+const MORTGAGE_CALCULATOR_LINK = {
+  title: "Calculator",
+  icon: "fas fa-calculator",
+  path: "/dashboard/{roleSlug}/mortgages/calculator/eligibility",
+  submenus: [
+    {
+      title: "Mortgage Eligibility",
+      path: "/dashboard/{roleSlug}/mortgages/calculator/eligibility",
+    },
+    {
+      title: "Affordability",
+      path: "/dashboard/{roleSlug}/mortgages/calculator/affordability",
+    },
+  ],
+};
+
 const CUSTOM_ROLE_LINKS = {
   "0": [
     {
@@ -314,21 +329,17 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-building",
       path: "/dashboard/{roleSlug}/agent-projects",
     },
-        {
-      title: "Calculator",
-      icon: "fas fa-calculator",
-      path: "/dashboard/{roleSlug}/Calculator",
-    },
+    MORTGAGE_CALCULATOR_LINK,
         {
       title: "Leaderboard",
       icon: "fas fa-users",
       path: "/dashboard/{roleSlug}/Leaderboard",
     },
-{
-  title: "Training",
-  icon: "fas fa-chalkboard-teacher",
-  path: "/dashboard/{roleSlug}/Training",
-},
+// {
+//   title: "Training",
+//   icon: "fas fa-chalkboard-teacher",
+//   path: "/dashboard/{roleSlug}/Training",
+// },
 {
   title: "My Agreements",
   icon: "fas fa-chalkboard-teacher",
@@ -489,6 +500,7 @@ const CUSTOM_ROLE_LINKS = {
     ]
   }
     ,
+    MORTGAGE_CALCULATOR_LINK,
   ],
 "21": [
     {
@@ -552,7 +564,8 @@ const CUSTOM_ROLE_LINKS = {
     title: "Property Catalogue",
     icon: "fas fa-building",
     path: "/dashboard/{roleSlug}/property-catalogue",
-  }
+  },
+  MORTGAGE_CALCULATOR_LINK,
 ],
 // Baaki purane roles ke neeche ye paste karo:
   "25": [
