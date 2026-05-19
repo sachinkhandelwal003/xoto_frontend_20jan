@@ -38,6 +38,71 @@ const STATUS_FLOW = [
   'offer_made','reserved','spa_signed','completed',
 ];
 
+
+const getInventoryList = (item) => item?.inventory || item?.listing_inventory || item?.source?.listing_inventory || [];
+const getRecordId = (value) => {
+  if (!value) return '';
+  if (typeof value === 'object') return value._id || value.id || '';
+  return value;
+};
+const getInventoryId = (unit) => getRecordId(unit);
+const getLeadPropertyIds = (lead, targetProperty) => {
+  const targetId = getRecordId(targetProperty);
+  if (targetId) return [String(targetId)];
+
+  const interestedIds = [
+    ...(lead?.matched_listings || [])
+      .filter((m) => m?.client_interested === true)
+      .map((m) => getRecordId(m?.listing_id)),
+    ...(lead?.advisor_suggestions || [])
+      .filter((s) => s?.client_reaction === 'interested')
+      .map((s) => getRecordId(s?.property_id)),
+  ].filter(Boolean).map(String);
+
+  const fallbackIds = [
+    getRecordId(lead?.source?.listing_id || lead?.source?.property_id),
+  ].filter(Boolean).map(String);
+
+  return Array.from(new Set(interestedIds.length ? interestedIds : fallbackIds));
+};
+const unitBelongsToProperties = (unit, propertyIds) => {
+  if (!propertyIds.length || !unit || typeof unit !== 'object') return true;
+  const unitPropertyId = getRecordId(unit.propertyId || unit.property_id || unit.property);
+  return !!unitPropertyId && propertyIds.includes(String(unitPropertyId));
+};
+const hasInventoryDetails = (unit) => !!(unit && typeof unit === 'object' && (
+  unit.unitNumber || unit.unitNo || unit.unit_number || unit.bedroomType || unit.bedrooms != null || unit.area || unit.price || unit.status
+));
+const getInventoryLabel = (unit) => {
+  if (!unit) return '';
+  if (typeof unit !== 'object') return 'Selected unit (details unavailable)';
+  const unitNumber = unit.unitNumber || unit.unitNo || unit.unit_number;
+  const bedroom = unit.bedroomType || (unit.bedrooms != null ? (unit.bedrooms === 0 ? 'Studio' : `${unit.bedrooms}BR`) : null);
+  const bits = [
+    unitNumber ? `Unit ${unitNumber}` : null,
+    unit.buildingName,
+    bedroom,
+    unit.area ? `${Number(unit.area).toLocaleString()} ${unit.areaUnit || 'sqft'}` : null,
+    unit.price ? `${unit.currency || 'AED'} ${Number(unit.price).toLocaleString()}` : null,
+    unit.status,
+  ].filter(Boolean);
+  return bits.join(' | ') || 'Selected unit (details unavailable)';
+};
+const InventorySummary = ({ units = [], selectedUnit }) => {
+  const visible = selectedUnit ? [selectedUnit] : units.slice(0, 3);
+  if (!visible.length) return <p className="mt-2 text-[10px] font-semibold text-gray-400">No inventory available</p>;
+  return (
+    <div className="mt-2 space-y-1.5">
+      {visible.map((unit) => (
+        <div key={getInventoryId(unit)} className="rounded-lg border border-purple-100 bg-purple-50 px-2.5 py-1.5 text-[10px] font-semibold text-purple-800">
+          {selectedUnit ? 'Interested: ' : ''}{getInventoryLabel(unit)}
+        </div>
+      ))}
+      {!selectedUnit && units.length > 3 && <p className="text-[10px] font-semibold text-gray-400">+{units.length - 3} more units</p>}
+    </div>
+  );
+};
+
 const REACTION_CONFIG = {
   interested:     { label: 'Interested',     bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0', Icon: FiThumbsUp   },
   not_interested: { label: 'Not Interested', bg: '#fef2f2', color: '#dc2626', border: '#fecaca', Icon: FiThumbsDown },
@@ -652,6 +717,8 @@ const PresentationModal = ({ lead, property: initialProperty, onClose }) => {
 const PropertyCard = ({ property, onSuggest, alreadySuggested, suggesting, onGeneratePresentation }) => {
   const price = property.price_min || property.price || 0;
   const loc   = [property.area, property.city].filter(Boolean).join(', ');
+  const inventory = getInventoryList(property);
+  const selectedUnit = property.interested_inventory_unit || null;
 
   return (
     <div className={`rounded-2xl border overflow-hidden bg-white transition-all hover:shadow-md
@@ -680,6 +747,7 @@ const PropertyCard = ({ property, onSuggest, alreadySuggested, suggesting, onGen
             {property.bathrooms > 0 && <span>· {property.bathrooms}BA</span>}
           </div>
         </div>
+        <InventorySummary units={inventory} selectedUnit={selectedUnit} />
       </div>
 
       {/* Generate Presentation */}
@@ -713,7 +781,7 @@ const SuggestModal = ({ property, leadId, onClose, onSuccess }) => {
   const handleSuggest = async () => {
     setLoading(true);
     try {
-      const res  = await apiService.post(`/gridlead/${leadId}/suggest-property`, { property_id: property._id, note: note.trim() });
+      const res  = await apiService.post(`/gridlead/${leadId}/suggest-property`, { property_id: property._id, inventory_unit_id: getInventoryId(property.interested_inventory_unit), note: note.trim() });
       const data = res?.data?.success !== undefined ? res.data : res;
       if (data?.success) { message.success('Property suggested to client'); onSuccess(); onClose(); }
       else message.error(data?.message || 'Failed to suggest property');
@@ -822,90 +890,516 @@ const ReactionModal = ({ suggestion, leadId, onClose, onSuccess }) => {
   );
 };
 
+
+  
+
 // ─── STATUS MODAL ─────────────────────────────────────────────────────────────
-const StatusModal = ({ lead, onClose, onSuccess }) => {
+// ─── STATUS MODAL (Step-by-step, English only, one status at a time) ─────────
+const REQUIRES_INVENTORY = ['reserved', 'spa_signed', 'completed'];
+
+const StatusModal = ({ lead, targetProperty, onClose, onSuccess }) => {
   const current = lead?.status || 'new';
-  const [status, setStatus] = useState(current);
-  const [notes, setNotes] = useState('');
-  const [inventoryUnitId, setInventoryUnitId] = useState(lead?.deal_record?.inventory_unit_id || '');
-  const [loading, setLoading] = useState(false);
+  const currIdx = STATUS_FLOW.indexOf(current);
 
-  const handleUpdate = async () => {
-    if (status === current) return onClose();
-    const statusesRequiringUnit = ['reserved', 'spa_signed', 'completed'];
-    if (statusesRequiringUnit.includes(status) && !inventoryUnitId) {
-      return message.warning('Inventory Unit ID is required for this status');
+  // Only the immediate NEXT status is allowed (one step at a time)
+  const nextStatus = STATUS_FLOW[currIdx + 1] || null;
+
+  const [step,             setStep]             = useState(1); // 1 | 2 | 3
+  const [status,           setStatus]           = useState(nextStatus || '');
+  const [notes,            setNotes]            = useState('');
+  const [inventoryUnitId,  setInventoryUnitId]  = useState(
+    getInventoryId(lead?.deal_record?.inventory_unit_id) || ''
+  );
+  const [fetchedInventory, setFetchedInventory] = useState([]);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [loading,          setLoading]          = useState(false);
+
+  const propertyIds    = getLeadPropertyIds(lead, targetProperty);
+  const needsInventory = REQUIRES_INVENTORY.includes(status);
+  const isAlreadyDone  = !nextStatus && current !== 'not_proceeding';
+
+  // ── Fetch inventory ───────────────────────────────────────────────────────
+  useEffect(() => {
+    let active = true;
+    if (!propertyIds.length) { setFetchedInventory([]); return; }
+    setInventoryLoading(true);
+    Promise.all(
+      propertyIds.map(pid =>
+        apiService.get(`/properties/inventory?propertyId=${pid}`).catch(() => null)
+      )
+    ).then(responses => {
+      const units = responses.flatMap(res => {
+        const payload = res?.data?.data || res?.data || res;
+        return Array.isArray(payload) ? payload : [];
+      });
+      if (active) setFetchedInventory(units);
+    }).finally(() => { if (active) setInventoryLoading(false); });
+    return () => { active = false; };
+  }, [propertyIds.join('|')]);
+
+  // ── Build inventory options ───────────────────────────────────────────────
+  const inventorySources = [
+    lead?.deal_record?.inventory_unit_id,
+    lead?.source?.inventory_unit_id,
+    ...(lead?.matched_listings    || []).map(m => m?.inventory_unit_id),
+    ...(lead?.advisor_suggestions || []).map(s => s?.inventory_unit_id),
+    ...getInventoryList(lead?.source),
+    ...(lead?.matched_listings    || []).flatMap(m => [
+      ...getInventoryList(m?.listing_id || m),
+      ...(m?.interested_inventory_unit ? [m.interested_inventory_unit] : []),
+    ]),
+    ...(lead?.advisor_suggestions || []).flatMap(s => [
+      ...getInventoryList(s?.property_id || s),
+      ...(s?.interested_inventory_unit ? [s.interested_inventory_unit] : []),
+    ]),
+    ...fetchedInventory,
+  ];
+  const inventoryById = new Map();
+  inventorySources
+    .filter(unit => unit && unitBelongsToProperties(unit, propertyIds))
+    .forEach(unit => {
+      const id = String(getInventoryId(unit));
+      if (!id) return;
+      const existing = inventoryById.get(id);
+      if (!existing || hasInventoryDetails(unit)) inventoryById.set(id, unit);
+    });
+  const inventoryOptions  = Array.from(inventoryById.values()).filter(hasInventoryDetails);
+  const selectedHasOption = inventoryOptions.some(
+    u => String(getInventoryId(u)) === String(inventoryUnitId)
+  );
+
+  // ── Step navigation ───────────────────────────────────────────────────────
+  const goNext = () => {
+    if (step === 1) {
+      if (!status) return message.warning('Please select a status to proceed');
+      setStep(needsInventory ? 2 : 3);
+    } else if (step === 2) {
+      if (!inventoryUnitId) return message.warning('Selecting an inventory unit is required');
+      setStep(3);
     }
+  };
 
+  const goBack = () => {
+    if (step === 3) setStep(needsInventory ? 2 : 1);
+    else if (step === 2) setStep(1);
+  };
+
+  // ── Submit ────────────────────────────────────────────────────────────────
+  const handleUpdate = async () => {
     setLoading(true);
     try {
       const payload = { status, notes };
-      if (statusesRequiringUnit.includes(status) || inventoryUnitId) {
-        payload.inventoryUnitId = inventoryUnitId;
-      }
-      const res = await apiService.put(`/gridlead/${lead._id}/status`, payload);
+      if (needsInventory || inventoryUnitId) payload.inventoryUnitId = inventoryUnitId;
+
+      const res  = await apiService.put(`/gridlead/${lead._id}/status`, payload);
       const data = res?.data?.success !== undefined ? res.data : res;
-      if (data?.success) { message.success(`Status updated to "${STATUS_CONFIG[status]?.label || status}"`); onSuccess(); onClose(); }
-      else message.error(data?.message || 'Update failed');
-    } catch (e) { message.error(e?.response?.data?.message || 'Update failed'); }
-    finally { setLoading(false); }
+      if (data?.success) {
+        message.success(`Status updated to "${STATUS_CONFIG[status]?.label || status}"`);
+        onSuccess();
+        onClose();
+      } else {
+        message.error(data?.message || 'Update failed');
+      }
+    } catch (e) {
+      message.error(e?.response?.data?.message || 'Update failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const currIdx = STATUS_FLOW.indexOf(current);
-  const allowed = STATUS_FLOW.filter((_, i) => i >= currIdx).concat(['not_proceeding']).filter((v, i, a) => a.indexOf(v) === i);
+  // ── Header step pills ─────────────────────────────────────────────────────
+  const headerSteps = [
+    { id: 'choose',    label: 'Select Status' },
+    ...(needsInventory ? [{ id: 'inventory', label: 'Select Unit' }] : []),
+    { id: 'confirm',   label: 'Confirm'       },
+  ];
+  const activeHeaderStep = needsInventory ? step : step === 3 ? 2 : step;
+
+  const cfg = status ? STATUS_CONFIG[status] : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="px-6 py-5 flex items-center justify-between" style={{ background: GR }}>
-          <div>
-            <h3 className="text-base font-extrabold text-white">Update Lead Status</h3>
-            <p className="text-xs text-white/70 mt-0.5">Progress can only move forward</p>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"><FiX size={16} /></button>
-        </div>
-        <div className="p-6 space-y-4">
-          <div className="flex items-center gap-3 p-3.5 rounded-xl bg-gray-50 border border-gray-100">
-            <span className="text-xs text-gray-500 font-medium">Current:</span>
-            <StatusBadge status={current} />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {allowed.map(s => {
-              const cfg = STATUS_CONFIG[s];
-              const isSelected = status === s;
-              const isCurrent  = s === current;
-              return (
-                <button key={s} onClick={() => setStatus(s)}
-                  className={`p-3 rounded-xl border-2 text-left transition-all ${isCurrent ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  style={isSelected ? { background: cfg.bg, borderColor: cfg.text, color: cfg.text } : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#374151' }}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold">{cfg?.label || s}</span>
-                    {isSelected && <FiCheckCircle size={13} />}
-                  </div>
-                </button>
-              );
-            })}
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ background: 'rgba(0,0,0,0.55)' }}
+    >
+      <div className="bg-white w-full sm:rounded-3xl sm:max-w-lg shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+
+        {/* ── Header ── */}
+        <div
+          className="px-6 py-5 flex items-start justify-between gap-4 flex-shrink-0"
+          style={{ background: GR }}
+        >
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base font-extrabold text-white leading-tight">
+              Update Lead Status
+            </h3>
+            <p className="text-xs text-white/70 mt-0.5">
+              Status moves one step at a time
+            </p>
+
+            {/* Step pills */}
+            <div className="flex items-center gap-2 mt-3">
+              {headerSteps.map((s, i) => {
+                const vs     = i + 1;
+                const done   = vs < activeHeaderStep;
+                const active = vs === activeHeaderStep;
+                return (
+                  <React.Fragment key={s.id}>
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all
+                          ${done   ? 'bg-white text-purple-700'
+                          : active ? 'bg-white/30 text-white ring-2 ring-white'
+                                   : 'bg-white/15 text-white/50'}`}
+                      >
+                        {done ? <FiCheckCircle size={11} /> : vs}
+                      </div>
+                      <span
+                        className={`text-[10px] font-bold hidden sm:block transition-all
+                          ${active ? 'text-white' : done ? 'text-white/80' : 'text-white/40'}`}
+                      >
+                        {s.label}
+                      </span>
+                    </div>
+                    {i < headerSteps.length - 1 && (
+                      <div
+                        className={`flex-1 h-px min-w-[12px] transition-all
+                          ${done ? 'bg-white/70' : 'bg-white/25'}`}
+                      />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
           </div>
 
-          {['reserved', 'spa_signed', 'completed'].includes(status) && (
-            <div className="animate-fade-in">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Inventory Unit ID <span className="text-red-500">*</span></p>
-              <input value={inventoryUnitId} onChange={e => setInventoryUnitId(e.target.value)} placeholder="Enter 24-character Unit ID"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
-              <p className="text-[10px] text-gray-400 mt-1">Required to lock the inventory unit.</p>
-            </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 flex-shrink-0 mt-0.5"
+          >
+            <FiX size={16} />
+          </button>
+        </div>
+
+        {/* ── Body ── */}
+        <div className="overflow-y-auto flex-1 p-6 space-y-4">
+
+          {/* ══ STEP 1: SELECT STATUS ══ */}
+          {step === 1 && (
+            <>
+              {/* Current status row */}
+              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-gray-50 border border-gray-100">
+                <span className="text-xs text-gray-500 font-semibold">Current Status:</span>
+                <span
+                  className="px-2.5 py-1 rounded-full text-xs font-bold"
+                  style={{
+                    background: STATUS_CONFIG[current]?.bg  || '#f3f4f6',
+                    color:      STATUS_CONFIG[current]?.text || '#374151',
+                  }}
+                >
+                  {STATUS_CONFIG[current]?.label || current}
+                </span>
+              </div>
+
+              {/* Already at final stage */}
+              {isAlreadyDone ? (
+                <div className="p-6 rounded-xl bg-gray-50 border border-gray-100 text-center">
+                  <FiCheckCircle size={30} className="mx-auto mb-2 text-green-400" />
+                  <p className="text-sm font-bold text-gray-700">Lead is already completed</p>
+                  <p className="text-xs text-gray-400 mt-1">No further status updates are available</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    Next Available Step
+                  </p>
+
+                  <div className="space-y-2">
+                    {/* The one allowed next status */}
+                    {nextStatus && (() => {
+                      const s   = nextStatus;
+                      const c   = STATUS_CONFIG[s];
+                      const sel = status === s;
+                      return (
+                        <button
+                          key={s}
+                          onClick={() => { setStatus(s); setInventoryUnitId(''); }}
+                          className="w-full p-4 rounded-xl border-2 text-left transition-all"
+                          style={
+                            sel
+                              ? { background: c.bg, borderColor: c.text, color: c.text }
+                              : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#374151' }
+                          }
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-bold">{c?.label || s}</p>
+                              {REQUIRES_INVENTORY.includes(s) && (
+                                <span
+                                  className="mt-1.5 inline-block text-[9px] font-bold px-2 py-0.5 rounded-full"
+                                  style={{ background: '#ede9fe', color: P }}
+                                >
+                                  Inventory unit required
+                                </span>
+                              )}
+                            </div>
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all
+                                ${sel ? 'border-purple-600 bg-purple-600' : 'border-gray-300'}`}
+                            >
+                              {sel && <div className="w-2 h-2 rounded-full bg-white" />}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })()}
+
+                    {/* Divider */}
+                    {nextStatus && (
+                      <div className="flex items-center gap-2 py-1">
+                        <div className="flex-1 h-px bg-gray-100" />
+                        <span className="text-[10px] text-gray-400 font-semibold">or close lead</span>
+                        <div className="flex-1 h-px bg-gray-100" />
+                      </div>
+                    )}
+
+                    {/* Not proceeding */}
+                    {current !== 'not_proceeding' && (() => {
+                      const s   = 'not_proceeding';
+                      const c   = STATUS_CONFIG[s];
+                      const sel = status === s;
+                      return (
+                        <button
+                          key={s}
+                          onClick={() => { setStatus(s); setInventoryUnitId(''); }}
+                          className="w-full p-4 rounded-xl border-2 text-left transition-all"
+                          style={
+                            sel
+                              ? { background: c.bg, borderColor: c.text, color: c.text }
+                              : { background: '#fef2f2', borderColor: '#fecaca', color: '#991b1b' }
+                          }
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-bold">{c?.label || s}</p>
+                              <p className="text-[10px] font-medium mt-0.5 opacity-70">
+                                Mark this lead as closed / lost
+                              </p>
+                            </div>
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all
+                                ${sel ? 'border-red-600 bg-red-600' : 'border-red-300'}`}
+                            >
+                              {sel && <div className="w-2 h-2 rounded-full bg-white" />}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })()}
+                  </div>
+                </>
+              )}
+            </>
           )}
 
-          <div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Note (optional)</p>
-            <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Client confirmed visit for Saturday..."
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all resize-none" />
-          </div>
+          {/* ══ STEP 2: SELECT INVENTORY ══ */}
+          {step === 2 && (
+            <>
+              <div className="flex items-center gap-2 p-3.5 rounded-xl bg-amber-50 border border-amber-200">
+                <FiAlertCircle size={15} className="text-amber-500 flex-shrink-0" />
+                <p className="text-xs font-semibold text-amber-800">
+                  <strong>{STATUS_CONFIG[status]?.label}</strong> requires an inventory unit —
+                  you cannot proceed without selecting one.
+                </p>
+              </div>
+
+              {cfg && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 font-semibold">Status:</span>
+                  <span
+                    className="px-2.5 py-1 rounded-full text-xs font-bold"
+                    style={{ background: cfg.bg, color: cfg.text }}
+                  >
+                    {cfg.label}
+                  </span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-widest mb-2">
+                  Inventory Unit <span className="text-red-500">*</span>
+                </label>
+
+                {inventoryLoading ? (
+                  <div className="flex items-center gap-2 p-4 rounded-xl bg-gray-50 border border-gray-200">
+                    <FiLoader size={14} className="animate-spin text-purple-500" />
+                    <span className="text-sm text-gray-500">Loading inventory…</span>
+                  </div>
+                ) : inventoryOptions.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-100 space-y-1">
+                    <p className="text-sm font-bold text-red-700">
+                      No inventory available for this property
+                    </p>
+                    <p className="text-xs text-red-500">
+                      Add inventory to the property first, then come back to update the status.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {inventoryOptions.map(unit => {
+                      const uid  = String(getInventoryId(unit));
+                      const isSel = String(inventoryUnitId) === uid;
+                      return (
+                        <button
+                          key={uid}
+                          onClick={() => setInventoryUnitId(uid)}
+                          className={`w-full text-left p-3.5 rounded-xl border-2 transition-all
+                            ${isSel
+                              ? 'border-purple-500 bg-purple-50'
+                              : 'border-gray-200 bg-white hover:border-purple-200 hover:bg-purple-50/40'
+                            }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <p
+                                className="text-sm font-bold truncate"
+                                style={{ color: isSel ? P : '#1f2937' }}
+                              >
+                                {getInventoryLabel(unit)}
+                              </p>
+                              {unit.status && (
+                                <p className="text-[10px] text-gray-400 font-semibold mt-0.5 uppercase">
+                                  {unit.status}
+                                </p>
+                              )}
+                            </div>
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all
+                                ${isSel ? 'border-purple-600 bg-purple-600' : 'border-gray-300'}`}
+                            >
+                              {isSel && <div className="w-2 h-2 rounded-full bg-white" />}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+
+                    {inventoryUnitId && !selectedHasOption && (
+                      <div className="p-3 rounded-xl bg-gray-50 border border-gray-200">
+                        <p className="text-xs text-gray-500 font-medium">
+                          Previously selected unit (details unavailable): {inventoryUnitId}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ══ STEP 3: CONFIRM ══ */}
+          {step === 3 && (
+            <>
+              <div className="flex items-center gap-2 p-3.5 rounded-xl bg-green-50 border border-green-200">
+                <FiCheckCircle size={15} className="text-green-500 flex-shrink-0" />
+                <p className="text-xs font-semibold text-green-800">
+                  Everything looks good — review and confirm the update.
+                </p>
+              </div>
+
+              {/* Summary */}
+              <div className="rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50">
+                  <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">
+                    Current Status
+                  </span>
+                  <span
+                    className="px-2.5 py-1 rounded-full text-xs font-bold"
+                    style={{
+                      background: STATUS_CONFIG[current]?.bg  || '#f3f4f6',
+                      color:      STATUS_CONFIG[current]?.text || '#374151',
+                    }}
+                  >
+                    {STATUS_CONFIG[current]?.label || current}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between px-4 py-3 bg-white">
+                  <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">
+                    Updating To
+                  </span>
+                  {cfg && (
+                    <span
+                      className="px-2.5 py-1 rounded-full text-xs font-bold"
+                      style={{ background: cfg.bg, color: cfg.text }}
+                    >
+                      {cfg.label}
+                    </span>
+                  )}
+                </div>
+
+                {needsInventory && inventoryUnitId && (
+                  <div className="px-4 py-3 bg-gray-50">
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">
+                      Inventory Unit
+                    </p>
+                    <p className="text-sm text-gray-800 font-semibold">
+                      {(() => {
+                        const unit = inventoryOptions.find(
+                          u => String(getInventoryId(u)) === String(inventoryUnitId)
+                        );
+                        return unit ? getInventoryLabel(unit) : inventoryUnitId;
+                      })()}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Note */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                  Note (optional)
+                </label>
+                <textarea
+                  rows={3}
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="e.g. Client confirmed visit for Saturday…"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all resize-none"
+                />
+              </div>
+            </>
+          )}
         </div>
-        <div className="px-6 pb-6 flex gap-3 justify-end">
-          <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleUpdate} loading={loading}><FiCheckCircle size={14} /> Update Status</Btn>
+
+        {/* ── Footer ── */}
+        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 flex-shrink-0">
+          {step === 1 ? (
+            <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+          ) : (
+            <Btn variant="ghost" onClick={goBack}>← Back</Btn>
+          )}
+
+          {step < 3 ? (
+            <Btn
+              variant="primary"
+              onClick={goNext}
+              disabled={
+                (step === 1 && (!status || isAlreadyDone)) ||
+                (step === 2 && (!inventoryUnitId || inventoryOptions.length === 0))
+              }
+            >
+              {step === 1 && needsInventory && status
+                ? 'Next: Select Unit →'
+                : 'Next: Confirm →'}
+            </Btn>
+          ) : (
+            <Btn variant="primary" onClick={handleUpdate} loading={loading}>
+              <FiCheckCircle size={14} /> Confirm Update
+            </Btn>
+          )}
         </div>
+
       </div>
     </div>
   );
@@ -1208,6 +1702,7 @@ const GridAdvisorLeadDetail = () => {
 
   // Modals
   const [showStatus,    setShowStatus]    = useState(false);
+  const [statusTargetProperty, setStatusTargetProperty] = useState(null);
   const [showNote,      setShowNote]      = useState(false);
   const [showReqs,      setShowReqs]      = useState(false);
   const [suggestModal,  setSuggestModal]  = useState(null);
@@ -1250,6 +1745,11 @@ const GridAdvisorLeadDetail = () => {
   const handleGeneratePresentation = (property) => {
     setSelectedProperty(property);
     setShowPresentation(true);
+  };
+
+  const openStatusModal = (property = null) => {
+    setStatusTargetProperty(property);
+    setShowStatus(true);
   };
 
   const fn      = lead?.contact_info?.name?.first_name || '';
@@ -1308,7 +1808,7 @@ const GridAdvisorLeadDetail = () => {
   return (
     <>
       {/* ── MODALS ── */}
-      {showStatus   && <StatusModal lead={lead} onClose={() => setShowStatus(false)} onSuccess={fetchLead} />}
+      {showStatus   && <StatusModal lead={lead} targetProperty={statusTargetProperty} onClose={() => { setShowStatus(false); setStatusTargetProperty(null); }} onSuccess={fetchLead} />}
       {showNote     && <NoteModal leadId={id} onClose={() => setShowNote(false)} onAdded={() => fetchLead()} />}
       {showReqs     && <UpdateReqModal lead={lead} onClose={() => setShowReqs(false)} onSuccess={handleReqsSuccess} />}
       {suggestModal && (
@@ -1354,7 +1854,7 @@ const GridAdvisorLeadDetail = () => {
                 }}>
                 {lead.classification?.charAt(0).toUpperCase() + lead.classification?.slice(1) || '—'}
               </span>
-              <Btn variant="primary" size="sm" onClick={() => setShowStatus(true)}>
+              <Btn variant="primary" size="sm" onClick={() => openStatusModal()}>
                 <FiEdit3 size={12} /> Update Status
               </Btn>
             </div>
@@ -1465,7 +1965,7 @@ const GridAdvisorLeadDetail = () => {
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Quick Actions</p>
                 <div className="space-y-2">
-                  <Btn variant="primary" size="sm" onClick={() => setShowStatus(true)} className="w-full"><FiEdit3 size={13} /> Update Lead Status</Btn>
+                  <Btn variant="primary" size="sm" onClick={() => openStatusModal()} className="w-full"><FiEdit3 size={13} /> Update Lead Status</Btn>
                   <Btn variant="ghost" size="sm" onClick={() => setShowReqs(true)} className="w-full"><FiRefreshCw size={13} /> Update Requirements</Btn>
                   <Btn variant="ghost" size="sm" onClick={() => setShowNote(true)} className="w-full"><FiFileText size={13} /> Add Note</Btn>
                   <Btn variant="ghost" size="sm" onClick={() => setActiveTab('suggest')} className="w-full"><FiSearch size={13} /> Search & Suggest Property</Btn>
@@ -1630,6 +2130,7 @@ const GridAdvisorLeadDetail = () => {
                                       </div>
                                       <ReactionPill reaction={reaction} />
                                     </div>
+                                    {s.interested_inventory_unit && <p className="text-[10px] font-semibold text-purple-700 mt-1">Unit: {getInventoryLabel(s.interested_inventory_unit)}</p>}
                                     {s.note && (
                                       <p className="text-xs text-gray-500 mt-2 bg-white rounded-lg p-2 border border-gray-100 leading-relaxed">"{s.note}"</p>
                                     )}
@@ -1663,7 +2164,7 @@ const GridAdvisorLeadDetail = () => {
                                       <p className="text-xs font-semibold text-green-800">
                                         Client is interested — progress the lead status
                                       </p>
-                                      <button onClick={() => setShowStatus(true)}
+                                      <button onClick={() => openStatusModal(prop)}
                                         className="ml-auto flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 flex-shrink-0">
                                         Progress <FiArrowRight size={11} />
                                       </button>

@@ -68,6 +68,8 @@ import TypesGallery from "./pages/estimateMaster/TypesGallery";
 import Questions from "./pages/estimateMaster/Questions";
 import CreateDeveloper from "./pages/Properties/createDeveloper";
 import Propertymanagement from "./pages/Properties/Propertymanagement";
+import ApprovalQueue from "./pages/Properties/ApprovalQueue";
+import EditReviewQueue from "./pages/Properties/EditReviewQueue";
 import Blog from "./pages/Blog/CreateBlog";
 import SubmittedQuotation from "./pages/dashboardPages/leads/quotation/SubmittedQuotation";
 import ApprovedQuotation from "./pages/dashboardPages/leads/quotation/ApprovedQuotation";
@@ -635,6 +637,8 @@ const CmsRoutes = () => {
      <Route path="gridAdvisorLeads/:id" element={<GridAdvisorLeadDetail />} />
      <Route path="calculator" element={<PerfectMortgageCalculator />} />
      <Route path="/property-management" element={<Propertymanagement />} />
+     <Route path="listings/approval-queue"    element={<ApprovalQueue />} />
+  <Route path="listings/edit-review-queue" element={<EditReviewQueue />} />
       
       
 
@@ -702,7 +706,7 @@ const CmsRoutes = () => {
 <Route path="create-advisor" element={<CreateAdvisor />} />
 <Route path="dashboard/myprofile" element={<GridAdvisorProfile />} />
 <Route path="dashboard/myprofile" element={<ReferralProfile/>} />
-<Route path="leaderboard" element={< ReferralLeaderboard />} />
+{/* <Route path="leaderboard" element={< ReferralLeaderboard />} /> */}
 <Route path="gridAdvisorLeads" element={<AdvisorLeadsPage />} />
 <Route path="property-catalogue" element={<PropertyCatalogue />} />
       {/* Grid Referral Partner   */}
