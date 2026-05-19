@@ -532,8 +532,8 @@ export default function AgencyAgentProperties() {
   const fetchProjects = async (pageNo = 1, append = false) => {
     try {
       setLoading(true);
-      const res  = await apiService.get(`/properties/agency/properties/own?page=${pageNo}&limit=20`);
-      const list = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
+      const res  = await apiService.get(`/agency/listings?page=${pageNo}&limit=20`);
+      const list = Array.isArray(res?.data?.data) ? res.data.data : [];
       if (!list.length) setHasMore(false);
       setProjects(prev => append ? [...prev, ...list] : list);
     } catch (err) { console.error(err); message.error("Failed to load properties"); }

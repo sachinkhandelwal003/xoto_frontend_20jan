@@ -291,7 +291,6 @@ const CUSTOM_ROLE_LINKS = {
   ],
   "16": [
 
-
     {
       title: "Leads", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/GridAgent-lead",
       submenus: [
@@ -339,7 +338,7 @@ const CUSTOM_ROLE_LINKS = {
     {
       title: "Projects",
       icon: "fas fa-building",
-      path: "/dashboard/{roleSlug}/developer-projects"
+      path: "/dashboard/{roleSlug}/developer-properties"
     },
     //   {
     //   title: "Global Projects",
@@ -349,7 +348,7 @@ const CUSTOM_ROLE_LINKS = {
     {
       title: "Listings",
       icon: "fas fa-layer-group",
-      path: "/dashboard/{roleSlug}/developerinventory",
+      path: "/dashboard/{roleSlug}/developer-inventory",
     },
 
   ],
@@ -684,16 +683,16 @@ const ROLE_MODULE_ORDER = {
   '5': ['Dashboard', 'Products', 'My Products', 'Inventory', 'Orders', 'Payout', 'Settings'],
   '6': ['Dashboard', 'Products', 'Projects', 'Inventory', 'Payout'],
   '7': ['Dashboard', 'My Projects', 'All Projects', 'Add Projects', 'Payout'],
-  '17': ['Dashboard', 'Property Management', 'Reports', 'Settings'],
+  '17': ['Dashboard', 'Properties', 'Inventory', 'Analytics'],
   '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '16': ['Dashboard', 'AgentLead Management'],
-  '15': ['Dashboard', 'Projects', 'Leads', 'Subscription', 'Presentations', 'Site Visits', 'Deals', 'Commission'],
+  '15': ['Dashboard', 'Agents', 'Leads', 'Listings'],
   '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners', 'Advisors', 'Mortgages'],
   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
   // '21': ['Dashboard', 'Vault Partners', 'All Leads'],
 
-  '25':['Dashboard' , 'Total leads ' , 'Active Leads' , 'Recent Leads'],
+  '25':['Dashboard' , 'Referrals', 'Leaderboard', 'Profile'],
   '21': ['Dashboard','Create Lead',  'Vault Partners', 'All Leads',],
   '24': ['Dashboard', 'My Leads', 'Property Catalogue', 'Calculator', 'Leaderboard'],
   // '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],

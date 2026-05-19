@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, Card, CardContent, TextField, Button } from '@mui/material';
 import { motion } from 'framer-motion';
+import mockupImage from '../../assets/img/homepage.png'; // Ensure this file exists
 import { FaLightbulb, FaClock, FaUserCheck } from 'react-icons/fa';
 const backgroundImageUrl = '/images/zigzag-light-bg.png';
 
@@ -42,7 +43,7 @@ const ConsultationPage = () => {
       <Box
         sx={{
           minHeight: '60vh',
-          backgroundImage: "url('https://xotostaging.s3.me-central-1.amazonaws.com/properties/1779090497420-homepage.png')",
+          backgroundImage: `url(${mockupImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
