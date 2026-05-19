@@ -65,22 +65,17 @@ const Topbar = () => {
   // Fetch profile data
   const fetchProfile = async () => {
     if (!user?.id) return;
+
+    // Only agency and referral partner have role-specific profile endpoints;
+    // every other role uses the generic /profile/get-profile-data.
+    const endpoint =
+      roleCode === '15' ? "/agency/profile" :
+      roleCode === '25' ? "/referral/profile" :
+      "/profile/get-profile-data";
+
     setProfileLoading(true);
     try {
-      let res;
-      if (roleCode === '15') {
-        res = await apiService.get("/agency/profile");
-      } else if (roleCode === '16') {
-        res = await apiService.get("/agent/profile");
-      } else if (roleCode === '6') {
-        res = await apiService.get("/vendorb2b/profile");
-      } else if (roleCode === '5') {
-        res = await apiService.get("/vendorb2c/profile");
-      } else if (roleCode === '7') {
-        res = await apiService.get("/freelancer/profile");
-      } else {
-        res = await apiService.get("/auth/profile");
-      }
+      const res = await apiService.get(endpoint);
       if (res?.data) {
         setProfileData(res.data);
       }

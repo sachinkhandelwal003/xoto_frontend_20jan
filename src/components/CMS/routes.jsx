@@ -281,7 +281,6 @@ import DealRecordAdmin from "../Grid/GridAdmin.jsx/Dealrecordadmin";
 
 
 
-
 const roleSlugMap = {
   0: "superadmin",
   1: "admin",
@@ -595,7 +594,7 @@ const CmsRoutes = () => {
 
 <Route path="vault/agent-leads" element={<VaultAgentLeadList />} />
 <Route path="vault/lead/:id" element={<AgentsLeadFullView />} />
-<Route path="vault/lead/:id/eligibility" element={<LoanEligibilitycheck />} />
+{/* <Route path="vault/lead/:id/eligibility" element={<LoanEligibilitycheck />} /> */}
 
 <Route path="vault/lead/documents/:leadId" element={<VaultLeadDocumentUpload />} />
 
