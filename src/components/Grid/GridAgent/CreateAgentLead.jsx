@@ -102,6 +102,8 @@ const PropertyMatchCard = ({ property, matchType }) => {
   const price = property.price_min || property.price || 0;
   const loc   = [property.area, property.city].filter(Boolean).join(', ');
   const mc    = MATCH_CONFIG[matchType] || MATCH_CONFIG.broad;
+  const inventory = getInventoryList(property);
+  const selectedUnit = property.interested_inventory_unit || null;
 
   return (
     <div className="border border-gray-100 rounded-xl overflow-hidden bg-white hover:shadow-md transition-shadow duration-200 group">
@@ -139,6 +141,7 @@ const PropertyMatchCard = ({ property, matchType }) => {
             {property.bedrooms > 0 ? `${property.bedrooms} BR` : property.bedroomType === 'studio' ? 'Studio' : ''}
           </div>
         </div>
+        <InventorySummary units={inventory} selectedUnit={selectedUnit} />
       </div>
     </div>
   );
@@ -277,6 +280,35 @@ const getPropertyMeta = (p) => {
   return [loc, price].filter(Boolean).join(' - ');
 };
 
+const getInventoryList = (item) => item?.inventory || item?.listing_inventory || item?.source?.listing_inventory || [];
+const getInventoryId = (unit) => unit?._id || unit?.id || unit;
+const getInventoryLabel = (unit) => {
+  if (!unit) return '';
+  const bits = [
+    unit.unitNumber ? `Unit ${unit.unitNumber}` : null,
+    unit.bedroomType || (unit.bedrooms != null ? (unit.bedrooms === 0 ? 'Studio' : `${unit.bedrooms}BR`) : null),
+    unit.area ? `${Number(unit.area).toLocaleString()} ${unit.areaUnit || 'sqft'}` : null,
+    unit.price ? `AED ${Number(unit.price).toLocaleString()}` : null,
+    unit.status,
+  ].filter(Boolean);
+  return bits.join(' | ');
+};
+const InventorySummary = ({ units = [], selectedUnit }) => {
+  const visible = selectedUnit ? [selectedUnit] : units.slice(0, 3);
+  if (!visible.length) return <p className="mt-2 text-[10px] font-semibold text-gray-400">No inventory available</p>;
+  return (
+    <div className="mt-2 space-y-1.5">
+      {visible.map((unit) => (
+        <div key={getInventoryId(unit)} className="rounded-lg border border-purple-100 bg-purple-50 px-2.5 py-1.5 text-[10px] font-semibold text-purple-800">
+          {selectedUnit ? 'Interested: ' : ''}{getInventoryLabel(unit)}
+        </div>
+      ))}
+      {!selectedUnit && units.length > 3 && <p className="text-[10px] font-semibold text-gray-400">+{units.length - 3} more units</p>}
+    </div>
+  );
+};
+
+
 // ─────────────────────────────────────────────────────────────
 // MAIN: CREATE LEAD PAGE
 // ─────────────────────────────────────────────────────────────
@@ -292,11 +324,13 @@ const CreateAgentLead = ({ navigate }) => {
     bedrooms: '', bathrooms: '',
     area_sqft_min: '', area_sqft_max: '',
     furnished: 'any', ready_by_date: '', additional_notes: '',
-    enquiry_type: '', listing_id: '',
+    enquiry_type: '', listing_id: '', inventory_unit_id: '',
   });
 
   const [locationInputs, setLocationInputs] = useState(['']);
   const [properties, setProperties]         = useState([]);
+  const [propertyInventory, setPropertyInventory] = useState([]);
+  const [loadingInventory, setLoadingInventory] = useState(false);
   const [loadingProperties, setLoadingProperties] = useState(false);
   const [errors, setErrors]       = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -329,6 +363,28 @@ const CreateAgentLead = ({ navigate }) => {
     };
     fetchProperties();
   }, []);
+
+
+  useEffect(() => {
+    const fetchInventoryForSelectedProperty = async () => {
+      if (!form.listing_id) {
+        setPropertyInventory([]);
+        setForm((prev) => ({ ...prev, inventory_unit_id: '' }));
+        return;
+      }
+      setLoadingInventory(true);
+      try {
+        const res = await apiService.get(`/properties/inventory?propertyId=${form.listing_id}`);
+        const data = res?.data?.data || res?.data || res;
+        setPropertyInventory(Array.isArray(data) ? data : []);
+      } catch {
+        setPropertyInventory([]);
+      } finally {
+        setLoadingInventory(false);
+      }
+    };
+    fetchInventoryForSelectedProperty();
+  }, [form.listing_id]);
 
   useEffect(() => {
     const hasAnyCriteria =
@@ -465,6 +521,7 @@ const CreateAgentLead = ({ navigate }) => {
         ...(form.additional_notes && { additional_notes: form.additional_notes }),
         ...(form.enquiry_type && { enquiry_type: form.enquiry_type }),
         ...(form.listing_id   && { listing_id:   form.listing_id   }),
+        ...(form.inventory_unit_id && { inventory_unit_id: form.inventory_unit_id }),
       };
 
       const res    = await apiService.post('/gridlead/agent/create-lead', payload);
@@ -689,6 +746,27 @@ const CreateAgentLead = ({ navigate }) => {
                       }
                     </div>
                   </div>
+                  {form.listing_id && (
+                    <div>
+                      <Label>Interested Inventory Unit</Label>
+                      <div className="relative">
+                        <select
+                          value={form.inventory_unit_id}
+                          onChange={(e) => set('inventory_unit_id', e.target.value)}
+                          className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-800 bg-gray-50/50 outline-none appearance-none focus:border-[#5c039b] focus:bg-white focus:ring-4 focus:ring-[#5c039b]/10 transition-all"
+                        >
+                          <option value="">{loadingInventory ? 'Loading inventory...' : 'Select interested unit (optional)'}</option>
+                          {propertyInventory.map((unit) => (
+                            <option key={getInventoryId(unit)} value={getInventoryId(unit)}>{getInventoryLabel(unit)}</option>
+                          ))}
+                        </select>
+                        {loadingInventory
+                          ? <FiLoader size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 animate-spin pointer-events-none" />
+                          : <FiChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        }
+                      </div>
+                    </div>
+                  )}
                   <div className="md:col-span-2">
                     <TextareaField
                       label="Additional Notes"
