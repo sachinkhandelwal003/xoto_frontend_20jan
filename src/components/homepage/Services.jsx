@@ -8,7 +8,7 @@ import  Buy6 from '../BuyRent/Buy6'
 import Buy4 from '../BuyRent/Buy4'
 import  Sixth from '../Service/Sixth'
 import Seventh from '../Service/Seventh'
-import Partners from '../Service/partnes'
+import Partners from '../Service/Partnes'
 import PerfectMortgageCalculator from './MortgageCalculator'
 const Service = () => {
   return (

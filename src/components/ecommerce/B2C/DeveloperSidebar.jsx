@@ -56,9 +56,6 @@ const DeveloperSidebar = ({
     {
       title: "Property Management",
       icon: "fas fa-building",
-<<<<<<< HEAD
-      to: "/dashboard/developer/property-management",
-=======
       to: "/dashboard/developer/developer-properties",
     },
     {
@@ -70,7 +67,6 @@ const DeveloperSidebar = ({
       title: "Analytics",
       icon: "fas fa-chart-line",
       to: "/dashboard/developer/analytics",
->>>>>>> b56b4f9236710773e79b3164becb68430464bfb7
     },
   ];
 

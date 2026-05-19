@@ -20,19 +20,4 @@ node_modules/
 *.njsproj
 *.sln
 *.sw?
-
-node_modules
-dist
-.vite
-*.log
-
-# media
-*.mp4
-*.mov
-
-# maps
-*.map
-
-# env
-.env
-.env.local
+dist/

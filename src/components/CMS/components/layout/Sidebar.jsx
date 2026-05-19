@@ -290,6 +290,11 @@ const CUSTOM_ROLE_LINKS = {
     },
   ],
   "16": [
+    {
+      title: "Catalogs",
+      icon: "fas fa-building",
+      path: "/dashboard/{roleSlug}/agent-projects",
+    },
 
     {
       title: "Leads", icon: "fas fa-calendar-check", path: "/dashboard/{roleSlug}/GridAgent-lead",
@@ -562,8 +567,9 @@ const CUSTOM_ROLE_LINKS = {
         },
         { 
           title: "My Referrals", 
-          path: "/dashboard/{roleSlug}/all-referrals" 
-        }
+          path: "/dashboard/{roleSlug}/total-leads" 
+        },
+
       ]
     },
     {
@@ -571,11 +577,12 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-trophy",
       path: "/dashboard/{roleSlug}/leaderboard"
     },
-    {
-      title: "Profile",
-      icon: "fas fa-user-cog",
-      path: "/dashboard/{roleSlug}/profile"
-    }
+    // {
+    //   title: "Profile",
+    //   icon: "fas fa-user",
+    //   path: "/dashboard/{roleSlug}/profile"
+    // },
+   
   ],
 
 "26": [

@@ -10,7 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ant-design/icons": "^6.1.1",
+    "@ant-design/icons": "^5.6.1",
+    "@ant-design/icons-svg": "^4.4.2",
     "@ant-design/plots": "^2.6.8",
     "@ant-design/pro-components": "^2.8.10",
     "@ant-design/pro-provider": "^2.16.2",
@@ -64,6 +65,7 @@
     "country-list-with-dial-code-and-flag": "^5.1.1",
     "country-state-city": "^3.2.1",
     "date-fns": "^4.1.0",
+    "dayjs": "^1.11.20",
     "dompurify": "^3.4.0",
     "express": "^5.1.0",
     "express-async-handler": "^1.2.0",

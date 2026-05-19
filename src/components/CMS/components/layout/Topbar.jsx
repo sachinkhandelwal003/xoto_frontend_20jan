@@ -67,10 +67,22 @@ const Topbar = () => {
     if (!user?.id) return;
     setProfileLoading(true);
     try {
-      const res = await apiService.get("profile/get-profile-data");
-      const data = res?.data?.data || res?.data || res;
-      if (data) {
-        setProfileData(data);
+      let res;
+      if (roleCode === '15') {
+        res = await apiService.get("/agency/profile");
+      } else if (roleCode === '16') {
+        res = await apiService.get("/agent/profile");
+      } else if (roleCode === '6') {
+        res = await apiService.get("/vendorb2b/profile");
+      } else if (roleCode === '5') {
+        res = await apiService.get("/vendorb2c/profile");
+      } else if (roleCode === '7') {
+        res = await apiService.get("/freelancer/profile");
+      } else {
+        res = await apiService.get("/auth/profile");
+      }
+      if (res?.data) {
+        setProfileData(res.data);
       }
     } catch (err) {
       console.error("Topbar: fetchProfile error", err);

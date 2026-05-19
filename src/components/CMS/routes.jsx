@@ -6,13 +6,13 @@ import { useSelector } from "react-redux";
 import Dashboard from "./pages/Dashboard";
 import VendorDashboard from "./pages/VendorDashboard";
 import Freelancerdashboard from "./pages/Freelancerdashboard";
-import CustomerList from "./pages/dashboardPages/customerlist";
+import CustomerList from "./pages/dashboardPages/Customerlist";
 import Modules from "./pages/modules/Modules";
 import Permission from "./pages/permission/Permission";
 import Role from "./pages/role/Role";
 import VendorB2C from "./pages/dashboardPages/managevendor/VendorB2C";
 import VendorB2CProfile from "./pages/dashboardPages/managevendor/VendorB2CProfile";
-import VendorInventory from "../ecommerce/B2C/products/vendorinventory";
+import VendorInventory from "../ecommerce/B2C/products/Vendorinventory";
 import ProductRequestB2C from "./pages/dashboardPages/manageProducts/ProductRequestB2C";
 import CategoryFreelancers from "./pages/dashboardPages/managefreelancer/freelancer/categoryandsubcategory/CategoryFreelancers";
 import Freelancers from "./pages/dashboardPages/managefreelancer/freelancer/Freelancers";
@@ -218,12 +218,12 @@ import CreateProposal from "../ecommerce/B2C/PartnerCreateproposal";
 import ProposalForm from "../ecommerce/B2C/ProposalForm";
 import AllProposals from "../ecommerce/B2C/AllProposals";
 import CreateAdvisor from "../ecommerce/B2C/VaultCreateadviosor";
-import AdvisorList from "../ecommerce/B2C/VaultAdvisorlist";
-import VaultAdvisorDetail from "../ecommerce/B2C/VaultAdvisorDetail";
-import VaultCreateMortgage from "../ecommerce/B2C/VaultCreateMortgage";
-import VaultMortgageList from "../ecommerce/B2C/VaultMortgageList";
+import AdvisorList   from "../ecommerce/B2C/VaultAdvisorlist";
+import VaultAdvisorDetail from "../ecommerce/B2C/VaultAdvisordetail";
+import VaultCreateMortgage from "../ecommerce/B2C/VaultCreatemortgage";
+import VaultMortgageList from "../ecommerce/B2C/VaultMortgagelist";
 import VaultMortgagedetail from "../ecommerce/B2C/VaultMortgagedetail";
-import MortgageOpsDashboard from "../ecommerce/B2C/MortgageOpsDashboard";
+import MortgageOpsDashboard from "../ecommerce/B2C/MortgageopsDashboard";
 import AdvisorDashboard from "../ecommerce/B2C/AdvisorDashboard";
 import IndividualLeadCreate from "../ecommerce/vault/individualpartner/IndividualLead";
 import AdvisorLeads from "../ecommerce/vault/vaultadvisor/index";
@@ -244,6 +244,7 @@ import ViewCases from "../ecommerce/vault/case/ViewCases";
 import DetailedViewCases from "../ecommerce/vault/case/DetailedViewCases";
 import ProcessCasesUpdates from "../ecommerce/vault/case/ProcessCasesUpdates";
 // import ReferralPartnerLogin from "../GridReferralPartner/ReferralPartnerLogin";
+// import ReferralPartnerLogin from "../GridReferralPartner/ReferralPartnerLogin"; dfs
 import ReferralPartnerDashboard from "./pages/ReferralPartnerDashboard"
 import TotalLeads from "../GridReferralPartner/GridDashboardpages/TotalLeads";
 import ActiveLeads from "../GridReferralPartner/GridDashboardpages/CreateReferralLead";
@@ -290,18 +291,17 @@ const roleSlugMap = {
   7: "freelancer",
   11: "accountant",
   12: "supervisor",
-  15: "agency",        
-  16: "agent",         
+  15: "agency",
+  16: "agent",
   17: "developer",
   18: "vault-admin",
-  22: "vaultagent" ,
+  22: "vaultagent",
   26: "vault-advisor",
   23: "vault-ops",
-25:"gridreferralpartner",
-  23: "vault-mortgage-ops",
+  25: "gridreferralpartner",
 
-21:"vaultpartner",
-24:"GridAdvisor"
+  21: "vaultpartner",
+  24: "GridAdvisor"
 };
 
 const dashboardMap = {
@@ -321,15 +321,10 @@ const dashboardMap = {
   26: <AdvisorDashboard />,
   23: <MortgageOpsDashboard />,
 
-25: <ReferralPartnerDashboard />,
-    12: <SupervisorDashboard />,
-    16:<AgentDashboard/>,
-    17:<DeveloperDashboard/>,
-    15:<AgencyDashboard/>,
-  18:<VaultAdminDashboard/>,
-// 21:<VaultPartnerDashboard/>
-21:<VaultpartnerDashboard/>,
-24: <GridAdvisorDashboard />
+  25: <ReferralPartnerDashboard />,
+  // 21:<VaultPartnerDashboard/>
+  21: <VaultpartnerDashboard />,
+  24: <GridAdvisorDashboard />
 };
 
 const componentMap = {
@@ -569,19 +564,20 @@ const CmsRoutes = () => {
       <Route path="leads/advisor" element={<AdvisorLeads />} />
       <Route path="leads/advisor/view/:id" element={<VaultAgentLeadDetail />} />
 
-      <Route path="leads/:leadId" element={<VaultLeadDetails />} />
-      <Route path="leads/:leadId/documents" element={<VaultLeadDocuments />} />
-      <Route path="/lead-documents/:leadId" element={<VaultAgentDocument />} />
-      <Route path="partner-leads" element={<PartnerAgentleads />} />
-      <Route path="partner/lead/:id" element={<PartnerLeadDetails />} />
-      {/* <Route path="proposals/create" element={<CreateProposal />} /> */}
-      <Route path="proposals/create/:leadId" element={<ProposalForm />} />
-      <Route path="proposals/all" element={<AllProposals />} />
-      <Route path="advisor/create" element={<GridCreateadvisor />} />
-      <Route path="advisor/list" element={<AdvisorList />} />
-      <Route path="advisor/:id" element={<VaultAdvisorDetail />} />
-      <Route path="mortgage-ops/create" element={<VaultCreateMortgage />} />
-      <Route path="create/vault-advisor" element={<VaultCreateadvisor />} />
+<Route path="leads/:leadId" element={<VaultLeadDetails />} />
+<Route path="vault/lead/:leadId/documents" element={<VaultLeadDocuments />} /> 
+<Route path="leads/:leadId/documents" element={<VaultLeadDocuments />} /> 
+<Route path="/lead-documents/:leadId"element={<VaultAgentDocument/>} />
+<Route path="partner-leads" element={<PartnerAgentleads />} />
+<Route path="partner/lead/:id"element={<PartnerLeadDetails />}/>
+{/* <Route path="proposals/create" element={<CreateProposal />} /> */}
+<Route path="proposals/create/:leadId" element={<ProposalForm />} />
+<Route path="proposals/all" element={<AllProposals />} />
+<Route path="advisor/create" element={<GridCreateadvisor />} />
+<Route path="advisor/list"   element={<AdvisorList />} />
+<Route path="advisor/:id" element={<VaultAdvisorDetail />} />
+<Route path="mortgage-ops/create" element={<VaultCreateMortgage />} />
+<Route path="create/vault-advisor" element={<VaultCreateadvisor />} />
 
       <Route path="mortgage-ops/list" element={<VaultMortgageList />} />
       <Route path="mortgage-ops/:id" element={<VaultMortgagedetail />} />
@@ -597,9 +593,11 @@ const CmsRoutes = () => {
       <Route path="mortgage-ops/case/:caseId" element={<MortgageOpsCaseDetail />} />
 
 
-      <Route path="vault/agent-leads" element={<VaultAgentLeadList />} />
-      <Route path="vault/lead/:id" element={<AgentsLeadFullView />} />
-      <Route path="vault/lead/documents/:leadId" element={<VaultLeadDocumentUpload />} />
+<Route path="vault/agent-leads" element={<VaultAgentLeadList />} />
+<Route path="vault/lead/:id" element={<AgentsLeadFullView />} />
+<Route path="vault/lead/:id/eligibility" element={<LoanEligibilitycheck />} />
+
+<Route path="vault/lead/documents/:leadId" element={<VaultLeadDocumentUpload />} />
 
 
       {/* admin */}

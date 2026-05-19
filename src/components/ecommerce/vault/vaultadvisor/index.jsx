@@ -10,7 +10,7 @@ import {
   ReloadOutlined, CheckCircleOutlined, CloseCircleOutlined,
   UploadOutlined, PhoneOutlined, EditOutlined, ClockCircleOutlined,
   WarningOutlined, UserOutlined, FileTextOutlined, DollarOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined, CalculatorOutlined
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../../../manageApi/utils/custom.apiservice";
@@ -41,25 +41,16 @@ const STATUS_CFG = {
   "Assigned": { color: "purple", bg: "#F5F0FF", text: "#6D28D9", icon: <UserOutlined />, order: 1 },
   "Contacted": { color: "orange", bg: "#FFF7ED", text: "#C2410C", icon: <PhoneOutlined />, order: 2 },
   "Qualified": { color: "geekblue", bg: "#EEF2FF", text: "#4338CA", icon: <CheckCircleOutlined />, order: 3 },
-  "Documents Complete": { color: "cyan", bg: "#ECFEFF", text: "#0E7490", icon: <CheckCircleOutlined />, order: 5 },
-  "Application Opened": { color: "volcano", bg: "#FFF5F3", text: "#C2410C", icon: <EditOutlined />, order: 6 },
+  "Collecting Documents": { color: "cyan", bg: "#ECFEFF", text: "#0E7490", icon: <UploadOutlined />, order: 4 },
+  "Application Created": { color: "volcano", bg: "#FFF5F3", text: "#C2410C", icon: <EditOutlined />, order: 6 },
   "Not Proceeding": { color: "red", bg: "#FEF2F2", text: "#B91C1C", icon: <CloseCircleOutlined />, order: 99 },
   "Disbursed": { color: "success", bg: "#ECFDF5", text: "#065F46", icon: <DollarOutlined />, order: 100 },
 };
 
-const SOURCE_CFG = {
-  website: { color: "blue", label: "Website" },
-  freelance_agent: { color: "purple", label: "Freelance Agent" },
-  partner: { color: "green", label: "Partner" },
-  admin: { color: "orange", label: "Admin" },
-};
-
 const STATUSES = Object.keys(STATUS_CFG);
-const SOURCES = Object.keys(SOURCE_CFG);
 
 const fmt = (n) => (n ? Number(n).toLocaleString("en-AE") : "—");
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
-const cap = (s) => s ? s.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "";
 
 const BUSINESS_HOURS_SLA_MS = 4 * 60 * 60 * 1000;
 
@@ -102,7 +93,7 @@ const getTimeRemaining = (assignedAt, slaDeadline) => {
   return `${minutes}m`;
 };
 
-const INIT_FILTERS = { search: "", source: "", status: "", assigned: "", fromDate: "", toDate: "" };
+const INIT_FILTERS = { search: "", status: "", eligibilityStatus: "", documentProgress: "" };
 
 // ══════════════════════════════════════════════════════════════════════════
 const AdvisorLeads = () => {
@@ -117,12 +108,12 @@ const AdvisorLeads = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [activeTab, setActiveTab] = useState("assigned");
+  const [summary, setSummary] = useState({});
 
   // ─── Filter state ────────────────────────────────────────────────────────
   const [filters, setFilters] = useState(INIT_FILTERS);
   const [applied, setApplied] = useState(INIT_FILTERS);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [dateRange, setDateRange] = useState(null);
 
   // ─── Status update modal state ──────────────────────────────────────────
   const [statusModal, setStatusModal] = useState(false);
@@ -138,7 +129,7 @@ const AdvisorLeads = () => {
     if (activeTab === "assigned") return lead.currentStatus === "Assigned";
     if (activeTab === "contacted") return lead.currentStatus === "Contacted";
     if (activeTab === "qualified") return lead.currentStatus === "Qualified";
-    if (activeTab === "collecting") return lead.currentStatus === "Collecting Documentation";
+    if (activeTab === "collecting") return lead.currentStatus === "Collecting Documents";
     if (activeTab === "disbursed") return lead.currentStatus === "Disbursed";
     if (activeTab === "all") return true;
     return true;
@@ -148,7 +139,7 @@ const AdvisorLeads = () => {
     assigned: data.filter(r => r.currentStatus === "Assigned").length,
     contacted: data.filter(r => r.currentStatus === "Contacted").length,
     qualified: data.filter(r => r.currentStatus === "Qualified").length,
-    collecting: data.filter(r => r.currentStatus === "Collecting Documentation").length,
+    collecting: data.filter(r => r.currentStatus === "Collecting Documents").length,
     disbursed: data.filter(r => r.currentStatus === "Disbursed").length,
     total: data.length
   };
@@ -159,17 +150,16 @@ const AdvisorLeads = () => {
       setLoading(true);
       const params = new URLSearchParams({ page, limit });
       if (f.search) params.set("search", f.search);
-      if (f.source) params.set("source", f.source);
       if (f.status) params.set("status", f.status);
-      if (f.assigned !== "") params.set("assigned", f.assigned);
-      if (f.fromDate) params.set("fromDate", f.fromDate);
-      if (f.toDate) params.set("toDate", f.toDate);
+      if (f.eligibilityStatus) params.set("eligibilityStatus", f.eligibilityStatus);
+      if (f.documentProgress) params.set("documentProgress", f.documentProgress);
 
       const res = await apiService.get(`/vault/lead/advisor/my-leads?${params.toString()}`);
       const list = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
-      const total = res?.data?.total || res?.data?.totalItems || res?.data?.count || list.length;
+      const total = res?.data?.total || res?.data?.totalItems || list.length;
       setData(list);
       setTotalItems(total);
+      setSummary(res?.data?.summary || {});
     } catch {
       message.error("Failed to load your leads.");
     } finally {
@@ -206,19 +196,9 @@ const AdvisorLeads = () => {
   const resetFilters = () => {
     setFilters(INIT_FILTERS);
     setApplied(INIT_FILTERS);
-    setDateRange(null);
     setCurrentPage(1);
     fetchLeads(1, itemsPerPage, INIT_FILTERS);
     setDrawerOpen(false);
-  };
-
-  const handleDateRange = (dates) => {
-    setDateRange(dates);
-    setFilters((prev) => ({
-      ...prev,
-      fromDate: dates?.[0] ? dates[0].format("YYYY-MM-DD") : "",
-      toDate: dates?.[1] ? dates[1].format("YYYY-MM-DD") : "",
-    }));
   };
 
   const handleSearchEnter = () => {
@@ -233,9 +213,16 @@ const AdvisorLeads = () => {
     else message.warning("Lead ID not available");
   };
 
+  // Navigate to Add Documents page - ONLY for Contacted leads that are eligible
   const handleAddDocs = (leadId) => {
     if (!leadId) return message.warning("Lead ID not available");
-    navigate(`/dashboard/advisor/leads/${leadId}/documents`);
+    navigate(`/dashboard/${roleSlug}/vault/lead/${leadId}/documents`);
+  };
+
+  // Navigate to Check Eligibility page
+  const handleCheckEligibility = (leadId) => {
+    if (!leadId) return message.warning("Lead ID not available");
+    navigate(`/dashboard/${roleSlug}/vault/lead/${leadId}/eligibility`);
   };
 
   // ─── Open status update modal ───────────────────────────────────────────
@@ -280,23 +267,36 @@ const AdvisorLeads = () => {
     }
   };
 
-  // ─── Handle Qualified status update (only after documents verified) ──────
+  // ─── Handle Qualified status update (only after documents verified AND eligibility checked) ──────
   const handleQualifyUpdate = async () => {
     if (!statusTarget?._id) return;
 
     // Check document verification percentage
     const docProgress = getDocumentProgress(statusTarget);
     const isReadyForQualify = docProgress === 100;
+    
+    // Check if eligibility is checked and true
+    const isEligibilityChecked = statusTarget?.eligibility?.checked === true;
+    const isEligible = statusTarget?.eligibility?.isEligible === true;
 
     if (!isReadyForQualify) {
-      message.error(`Cannot qualify: Document verification is only ${docProgress}% complete. Please upload all documents first.`);
-      setStatusModal(false);
+      message.error(`Cannot qualify: Document collection is only ${docProgress}% complete. Please upload all documents first.`);
+      return;
+    }
+
+    if (!isEligibilityChecked) {
+      message.error(`Cannot qualify: Eligibility check not performed. Please check eligibility first.`);
+      return;
+    }
+
+    if (!isEligible) {
+      message.error(`Cannot qualify: Customer is not eligible. Please review eligibility details.`);
       return;
     }
 
     setStatusLoading(true);
     try {
-      const response = await apiService.put(
+      await apiService.put(
         `/vault/lead/advisor/lead/${statusTarget._id}/status`,
         {
           status: "Qualified",
@@ -326,21 +326,168 @@ const AdvisorLeads = () => {
   };
 
   // Get document verification status
-  const getDocumentVerificationStatus = (lead) => {
-    const docCollection = lead?.documentCollection || {};
-    const uploaded = docCollection.documentsUploaded || 0;
-    const total = docCollection.totalDocumentsRequired || 7;
-    const verified = docCollection.documentsVerified || 0;
-    
-    return {
-      percentage: docCollection.collectionPercentage || 0,
-      uploaded,
-      total,
-      verified,
-      isComplete: (docCollection.collectionPercentage || 0) === 100,
-      isVerified: (docCollection.verificationPercentage || 0) === 100
-    };
+const getDocumentVerificationStatus = (lead) => {
+  const docCollection = lead?.documentCollection || {};
+  const uploaded = docCollection.documentsUploaded || 0;
+  const verified = docCollection.documentsVerified || 0;
+  const total = docCollection.totalDocumentsRequired || 7;
+  
+  return {
+    percentage: docCollection.collectionPercentage || 0,
+    verifiedPercentage: docCollection.verificationPercentage || 0,
+    uploaded,
+    verified,
+    total,
+    isComplete: (docCollection.collectionPercentage || 0) === 100,
+    isVerified: (docCollection.verificationPercentage || 0) === 100,
+    allVerified: verified === total && total > 0
   };
+};
+
+  // Get eligibility status display
+  const getEligibilityStatus = (lead) => {
+    const eligibility = lead?.eligibility || {};
+    if (!eligibility.checked) {
+      return { status: "not_checked", text: "Not Checked", color: "#9CA3AF", icon: <WarningOutlined /> };
+    }
+    if (eligibility.isEligible) {
+      return { status: "eligible", text: "Eligible", color: "#10B981", icon: <CheckCircleOutlined /> };
+    }
+    return { status: "not_eligible", text: "Not Eligible", color: "#EF4444", icon: <CloseCircleOutlined /> };
+  };
+
+  // Get action buttons based on lead status
+  // ✅ UPDATE getActionButtons function
+const getActionButtons = (lead, leadId, currentStatus) => {
+  const docStatus = getDocumentVerificationStatus(lead);
+  const eligibilityStatus = getEligibilityStatus(lead);
+  const canContact = currentStatus === "Assigned";
+  const canAddDocs = currentStatus === "Contacted" && eligibilityStatus.status === "eligible";
+  const canCheckEligibility = currentStatus === "Contacted";
+  
+  // ✅ UPDATED: canQualify requires docs to be VERIFIED (100% verification)
+ // Inside getActionButtons function, update the canQualify condition:
+const canQualify = currentStatus === "Contacted" && 
+                  docStatus.isVerified &&           // ALL documents VERIFIED by Ops
+                  eligibilityStatus.status === "eligible";
+
+  // ✅ Tooltip message for disabled qualify button
+ const getQualifyTooltip = () => {
+  if (!docStatus.isComplete) {
+    return `Cannot qualify: Document upload is only ${docStatus.percentage}% complete. Please upload all documents first.`;
+  }
+  if (docStatus.isComplete && !docStatus.isVerified) {
+    return `⚠️ Cannot qualify: All ${docStatus.total} documents are uploaded but NOT VERIFIED yet.\nPlease wait for Ops team to verify documents.\nVerified: ${docStatus.verified}/${docStatus.total}`;
+  }
+  if (!eligibilityStatus.checked) {
+    return "Cannot qualify: Please check eligibility first.";
+  }
+  if (!eligibilityStatus.eligible) {
+    return "Cannot qualify: Customer is not eligible.";
+  }
+  return "Mark lead as Qualified (after all documents verified and eligibility confirmed)";
+};
+
+  return (
+    <Space size={4} wrap>
+      {/* View Details Button */}
+      <Tooltip title="View Details">
+        <Button type="text" icon={<EyeOutlined />} onClick={() => handleViewDetail(leadId)} style={{ color: P }} size="small">
+          View
+        </Button>
+      </Tooltip>
+
+      {/* Contact Button - Only for Assigned leads */}
+      {canContact && (
+        <Tooltip title="Mark lead as Contacted (starts document collection)">
+          <Button
+            size="small"
+            icon={<PhoneOutlined />}
+            onClick={() => openStatusModal(lead, "Contacted")}
+            style={{
+              borderRadius: 6,
+              fontSize: 11,
+              fontWeight: 600,
+              color: "#C2410C",
+              borderColor: "#FED7AA",
+              background: "#FFF7ED",
+            }}
+          >
+            Contact
+          </Button>
+        </Tooltip>
+      )}
+
+      {/* Add Documents Button - ONLY for Contacted leads that are ELIGIBLE */}
+      {canAddDocs && (
+        <Tooltip title="Upload Documents for this Lead">
+          <Button
+            size="small"
+            icon={<UploadOutlined />}
+            onClick={() => handleAddDocs(leadId)}
+            style={{ background: P, borderColor: P, borderRadius: 6, fontWeight: 600, fontSize: 11, color: "white" }}
+          >
+            {docStatus.isVerified ? "✅ Docs Verified" : docStatus.isComplete ? "📄 Docs Uploaded (Pending Verification)" : `📄 Add Docs (${docStatus.percentage}%)`}
+          </Button>
+        </Tooltip>
+      )}
+
+      {/* Check Eligibility Button */}
+      {canCheckEligibility && (
+        <Tooltip 
+          title={eligibilityStatus.status === "not_checked" 
+            ? "Check customer eligibility (DBR & LTV calculation)" 
+            : eligibilityStatus.status === "eligible" 
+              ? "Customer is eligible ✓" 
+              : "Customer is not eligible ✗"}
+        >
+          <Button
+            size="small"
+            icon={<CalculatorOutlined />}
+            onClick={() => handleCheckEligibility(leadId)}
+            style={{
+              borderRadius: 6,
+              fontSize: 11,
+              fontWeight: 600,
+              background: eligibilityStatus.status === "not_checked" ? "#F59E0B" : eligibilityStatus.status === "eligible" ? "#10B981" : "#EF4444",
+              borderColor: eligibilityStatus.status === "not_checked" ? "#F59E0B" : eligibilityStatus.status === "eligible" ? "#10B981" : "#EF4444",
+              color: "white",
+            }}
+          >
+            {eligibilityStatus.status === "not_checked" 
+              ? "Check Eligibility" 
+              : eligibilityStatus.status === "eligible" 
+                ? `✓ Eligible (${lead?.eligibility?.eligibilityScore || 0}%)` 
+                : "✗ Not Eligible"}
+          </Button>
+        </Tooltip>
+      )}
+
+      {/* Qualify Button - Disabled with disclaimer when documents not verified */}
+      {currentStatus === "Contacted" && (
+        <Tooltip title={getQualifyTooltip()}>
+          <Button
+            size="small"
+            type="primary"
+            icon={<CheckCircleOutlined />}
+            onClick={() => canQualify && openStatusModal(lead, "Qualified")}
+            disabled={!canQualify}
+            style={{
+              borderRadius: 6,
+              fontSize: 11,
+              fontWeight: 600,
+              background: canQualify ? "#4338CA" : "#9CA3AF",
+              borderColor: canQualify ? "#4338CA" : "#9CA3AF",
+              opacity: canQualify ? 1 : 0.6,
+            }}
+          >
+            Qualify
+          </Button>
+        </Tooltip>
+      )}
+    </Space>
+  );
+};
 
   // ─── Table columns ─────────────────────────────────────────────────────────
   const columns = [
@@ -388,9 +535,106 @@ const AdvisorLeads = () => {
       },
     },
     {
-      key: "slaStatus",
-      title: "SLA Status",
+      key: "eligibilityStatus",
+      title: "Eligibility",
+      width: 120,
+      render: (_, r) => {
+        const eligibility = r?.eligibility || {};
+        if (!eligibility.checked) {
+          return (
+            <Tag icon={<WarningOutlined />} color="warning" style={{ borderRadius: 20 }}>
+              Not Checked
+            </Tag>
+          );
+        }
+        if (eligibility.isEligible) {
+          return (
+            <Tooltip title={`Score: ${eligibility.eligibilityScore || 0}% • Risk: ${eligibility.riskGrade || "Good"}`}>
+              <Tag icon={<CheckCircleOutlined />} color="success" style={{ borderRadius: 20 }}>
+                Eligible ({eligibility.eligibilityScore || 0}%)
+              </Tag>
+            </Tooltip>
+          );
+        }
+        return (
+          <Tooltip title={eligibility.eligibilityNotes || "Customer not eligible"}>
+            <Tag icon={<CloseCircleOutlined />} color="error" style={{ borderRadius: 20 }}>
+              Not Eligible
+            </Tag>
+          </Tooltip>
+        );
+      },
+    },
+    {
+  key: "documentProgress",
+  title: "Documents",
+  width: 160,
+  render: (_, r) => {
+    const docStatus = getDocumentVerificationStatus(r);
+    
+    // Show different colors based on status
+    let progressColor = "#9CA3AF";
+    let progressText = "";
+    
+    if (!docStatus.isComplete && docStatus.percentage > 0) {
+      progressColor = "#F59E0B"; // Orange - Uploading
+      progressText = "Uploading...";
+    } else if (docStatus.isComplete && !docStatus.isVerified) {
+      progressColor = "#3B82F6"; // Blue - Uploaded, pending verification
+      progressText = "Pending Verification";
+    } else if (docStatus.isVerified) {
+      progressColor = "#10B981"; // Green - Verified
+      progressText = "Verified ✅";
+    } else {
+      progressText = "Not Started";
+    }
+    
+    return (
+      <div style={{ width: "100%" }}>
+        <Tooltip title={`${docStatus.uploaded}/${docStatus.total} uploaded • ${docStatus.verified}/${docStatus.total} verified`}>
+          <Progress 
+            percent={docStatus.percentage} 
+            size="small" 
+            strokeColor={progressColor}
+            format={(percent) => `${percent}%`}
+          />
+        </Tooltip>
+        <div style={{ fontSize: 10, color: "#9CA3AF", textAlign: "center", marginTop: 2 }}>
+          {docStatus.isVerified ? (
+            <span style={{ color: "#10B981" }}>
+              <CheckCircleOutlined /> {docStatus.verified}/{docStatus.total} Verified
+            </span>
+          ) : docStatus.isComplete ? (
+            <span style={{ color: "#3B82F6" }}>
+              <InfoCircleOutlined /> {docStatus.uploaded}/{docStatus.total} Uploaded (Pending Verification)
+            </span>
+          ) : (
+            <span>{docStatus.uploaded}/{docStatus.total} Uploaded</span>
+          )}
+        </div>
+      </div>
+    );
+  },
+},
+    {
+      key: "currentStatus",
+      title: "Status",
       width: 140,
+      render: (_, r) => {
+        const val = r?.currentStatus;
+        if (!val) return <span style={{ color: "#D1D5DB" }}>—</span>;
+        const cfg = STATUS_CFG[val] || { bg: "#F3F4F6", text: "#374151", icon: <FileTextOutlined /> };
+        return (
+          <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: cfg.bg, color: cfg.text, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            {cfg.icon} {val}
+          </span>
+        );
+      },
+    },
+    {
+      key: "slaStatus",
+      title: "SLA",
+      width: 100,
       render: (_, r) => {
         const assigned = r?.assignedTo;
         if (!assigned?.advisorId) return <span style={{ color: "#9CA3AF" }}>—</span>;
@@ -416,150 +660,15 @@ const AdvisorLeads = () => {
       },
     },
     {
-      key: "documentProgress",
-      title: "Documents",
-      width: 140,
-      render: (_, r) => {
-        const docStatus = getDocumentVerificationStatus(r);
-        const isReady = docStatus.isComplete;
-        
-        return (
-          <div style={{ width: "100%" }}>
-            <Tooltip title={`${docStatus.uploaded}/${docStatus.total} documents uploaded`}>
-              <Progress 
-                percent={docStatus.percentage} 
-                size="small" 
-                strokeColor={docStatus.isComplete ? "#10B981" : P} 
-                format={(percent) => `${percent}%`}
-              />
-            </Tooltip>
-            <div style={{ fontSize: 10, color: "#9CA3AF", textAlign: "center", marginTop: 2 }}>
-              {docStatus.uploaded}/{docStatus.total} uploaded
-              {docStatus.isComplete && <CheckCircleOutlined style={{ color: "#10B981", marginLeft: 4 }} />}
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      key: "currentStatus",
-      title: "Status",
-      width: 140,
-      render: (_, r) => {
-        const val = r?.currentStatus;
-        if (!val) return <span style={{ color: "#D1D5DB" }}>—</span>;
-        const cfg = STATUS_CFG[val] || { bg: "#F3F4F6", text: "#374151", icon: <FileTextOutlined /> };
-        return (
-          <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: cfg.bg, color: cfg.text, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            {cfg.icon} {val}
-          </span>
-        );
-      },
-    },
-    {
-      key: "referralType",
-      title: "Referral Type",
-      width: 120,
-      render: (_, r) => {
-        const type = r?.referralType || "—";
-        const isReferralOnly = type === "Referral Only";
-        return (
-          <Tag color={isReferralOnly ? "green" : "purple"} style={{ borderRadius: 20 }}>
-            {type}
-          </Tag>
-        );
-      },
-    },
-    {
-      key: "createdAt",
-      title: "Created",
-      width: 100,
-      render: (_, r) => <div style={{ fontSize: 11, color: "#6B7280" }}>{fmtDate(r?.createdAt)}</div>,
-    },
-    {
       key: "actions",
       title: "Actions",
-      width: 200,
+      width: 320,
       align: "center",
       fixed: "right",
       render: (_, r) => {
         const leadId = r?._id;
         const currentStatus = r?.currentStatus;
-        const docStatus = getDocumentVerificationStatus(r);
-        const canQualify = docStatus.isComplete && currentStatus === "Contacted";
-        const canContact = currentStatus === "Assigned";
-        
-        return (
-          <Space size={4} wrap>
-            <Tooltip title="View Details">
-              <Button type="text" icon={<EyeOutlined />} onClick={() => handleViewDetail(leadId)} style={{ color: P }} size="small">
-                View
-              </Button>
-            </Tooltip>
-
-            {/* Contact Button - Only for Assigned leads */}
-            {canContact && (
-              <Tooltip title="Mark lead as Contacted (starts document collection)">
-                <Button
-                  size="small"
-                  icon={<PhoneOutlined />}
-                  onClick={() => openStatusModal(r, "Contacted")}
-                  style={{
-                    borderRadius: 6,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: "#C2410C",
-                    borderColor: "#FED7AA",
-                    background: "#FFF7ED",
-                  }}
-                >
-                  Contact
-                </Button>
-              </Tooltip>
-            )}
-
-            {/* Qualify Button - Only for Contacted leads with 100% documents */}
-            {currentStatus === "Contacted" && (
-              <Tooltip 
-                title={!canQualify 
-                  ? `Cannot qualify: Document collection is only ${docStatus.percentage}% complete. Please upload all documents first.` 
-                  : "Mark lead as Qualified (after all documents verified)"}
-              >
-                <Button
-                  size="small"
-                  type="primary"
-                  icon={<CheckCircleOutlined />}
-                  onClick={() => canQualify && openStatusModal(r, "Qualified")}
-                  disabled={!canQualify}
-                  style={{
-                    borderRadius: 6,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    background: canQualify ? "#4338CA" : "#9CA3AF",
-                    borderColor: canQualify ? "#4338CA" : "#9CA3AF",
-                    opacity: canQualify ? 1 : 0.6,
-                  }}
-                >
-                  Qualify
-                </Button>
-              </Tooltip>
-            )}
-
-            {/* Add Docs button - Only for Referral Only leads in Contacted status */}
-            {r?.referralType === "Referral Only" && currentStatus === "Contacted" && (
-              <Tooltip title="Upload Documents for this Lead">
-                <Button
-                  size="small"
-                  icon={<UploadOutlined />}
-                  onClick={() => handleAddDocs(leadId)}
-                  style={{ background: P, borderColor: P, borderRadius: 6, fontWeight: 600, fontSize: 11, color: "white" }}
-                >
-                  Add Docs
-                </Button>
-              </Tooltip>
-            )}
-          </Space>
-        );
+        return getActionButtons(r, leadId, currentStatus);
       },
     },
   ];
@@ -570,9 +679,6 @@ const AdvisorLeads = () => {
       <style>{`
         .vll-input .ant-input, .vll-select .ant-select-selector, .vll-date .ant-picker { border-radius: 10px !important; border-color: #E8DFF5 !important; font-size: 13px; }
         .vll-input .ant-input:focus, .vll-select .ant-select-focused .ant-select-selector, .vll-date .ant-picker-focused { border-color: ${P} !important; box-shadow: 0 0 0 3px rgba(92,3,155,0.1) !important; }
-        .vll-pill { cursor: pointer; border-radius: 20px; padding: 5px 14px; font-size: 12px; font-weight: 500; border: 1.5px solid transparent; transition: all .15s; }
-        .vll-pill:hover { border-color: ${P}; }
-        .vll-pill.active { background: ${PL}; border-color: ${P}; color: ${P}; }
         .vll-table .ant-table-thead > tr > th { background: #FAF8FF !important; color: ${P} !important; font-weight: 700 !important; border-bottom: 1px solid #EDE4FF !important; font-size: 12px !important; }
         .vll-table .ant-table-tbody > tr:hover > td { background: #F5F0FF !important; }
         .vll-table .ant-table-tbody > tr > td { border-bottom: 1px solid #F5F0FF; }
@@ -620,7 +726,7 @@ const AdvisorLeads = () => {
               <InfoCircleOutlined style={{ fontSize: 18, color: P }} />
               <span>
                 <strong>SLA Requirement:</strong> Each assigned lead <strong>MUST be contacted within 4 hours</strong> of assignment. 
-                Click <strong>"Contact"</strong> after contacting the customer, then upload documents, then <strong>"Qualify"</strong> when documents are 100% complete.
+                Click <strong>"Contact"</strong> after contacting the customer.
               </span>
             </div>
           }
@@ -646,7 +752,7 @@ const AdvisorLeads = () => {
         <div className="vll-stat" style={{ background: "white", borderRadius: 14, padding: "14px 18px", border: "1px solid #EDE9F6" }}>
           <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700 }}>Contacted</div>
           <div style={{ fontSize: 26, fontWeight: 800, color: "#C2410C", lineHeight: 1 }}>{stats.contacted}</div>
-          <div style={{ fontSize: 11, color: "#9CA3AF" }}>needs documents</div>
+          <div style={{ fontSize: 11, color: "#9CA3AF" }}>need docs & eligibility</div>
         </div>
         <div className="vll-stat" style={{ background: "white", borderRadius: 14, padding: "14px 18px", border: "1px solid #EDE9F6" }}>
           <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 700 }}>Qualified</div>
@@ -733,13 +839,18 @@ const AdvisorLeads = () => {
           <FilterGroup label="Search" icon="🔍" hint="Name, email, or phone">
             <Input placeholder="e.g. Ahmed" value={filters.search} onChange={(e) => setFilters(p => ({ ...p, search: e.target.value }))} />
           </FilterGroup>
-          <FilterGroup label="Lead Source" icon="📡" hint="Where the lead came from">
-            <Select style={{ width: "100%" }} placeholder="All Sources" value={filters.source || undefined} onChange={(v) => setFilters(p => ({ ...p, source: v || "" }))} allowClear>
-              {SOURCES.map(s => <Option key={s} value={s}>{SOURCE_CFG[s]?.label || s}</Option>)}
+          <FilterGroup label="Eligibility Status" icon="✅" hint="Filter by eligibility">
+            <Select style={{ width: "100%" }} placeholder="All" value={filters.eligibilityStatus || undefined} onChange={(v) => setFilters(p => ({ ...p, eligibilityStatus: v || "" }))} allowClear>
+              <Option value="eligible">Eligible</Option>
+              <Option value="not_eligible">Not Eligible</Option>
+              <Option value="not_checked">Not Checked</Option>
             </Select>
           </FilterGroup>
-          <FilterGroup label="Date Range" icon="📅" hint="Filter by lead creation date">
-            <RangePicker style={{ width: "100%" }} value={dateRange} onChange={handleDateRange} format="DD MMM YYYY" />
+          <FilterGroup label="Document Progress" icon="📄" hint="Filter by document completion">
+            <Select style={{ width: "100%" }} placeholder="All" value={filters.documentProgress || undefined} onChange={(v) => setFilters(p => ({ ...p, documentProgress: v || "" }))} allowClear>
+              <Option value="complete">100% Complete</Option>
+              <Option value="incomplete">Incomplete</Option>
+            </Select>
           </FilterGroup>
         </div>
       </Drawer>
@@ -808,24 +919,6 @@ const AdvisorLeads = () => {
           </div>
         )}
 
-        {/* SLA Warning for Contact */}
-        {statusTarget?.assignedTo && (
-          (() => {
-            const slaInfo = getSLAStatus(statusTarget.assignedTo.assignedAt, statusTarget.currentStatus, statusTarget.sla?.deadline);
-            const isBreached = slaInfo?.status === "breached";
-            return isBreached ? (
-              <div style={{ background: "#FEF2F2", borderRadius: 10, padding: "12px", marginBottom: 16, border: "1px solid #FECACA" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <WarningOutlined style={{ color: "#DC2626" }} />
-                  <span style={{ fontSize: 12, color: "#991B1B" }}>
-                    ⚠️ SLA ALERT: This lead is already overdue! Marking as contacted will record a breach.
-                  </span>
-                </div>
-              </div>
-            ) : null;
-          })()
-        )}
-
         {/* Notes Input */}
         <div style={{ marginBottom: 6 }}>
           <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
@@ -843,7 +936,8 @@ const AdvisorLeads = () => {
         />
       </Modal>
 
-      {/* Status Update Modal - Qualified (Only after 100% documents) */}
+      {/* Status Update Modal - Qualified */}
+          {/* Status Update Modal - Qualified */}
       <Modal
         open={statusModal && selectedStatus === "Qualified"}
         onCancel={() => !statusLoading && setStatusModal(false)}
@@ -907,22 +1001,108 @@ const AdvisorLeads = () => {
           </div>
         )}
 
-        {/* Document Verification Status */}
+        {/* ✅ UPDATED DOCUMENT VERIFICATION STATUS */}
         {statusTarget && (
-          <div style={{ background: getDocumentProgress(statusTarget) === 100 ? "#F0FDF4" : "#FEF3C7", borderRadius: 10, padding: "12px", marginBottom: 16, border: `1px solid ${getDocumentProgress(statusTarget) === 100 ? "#BBF7D0" : "#FDE68A"}` }}>
+          (() => {
+            const docStatus = getDocumentVerificationStatus(statusTarget);
+            const isAllUploaded = docStatus.isComplete;
+            const isAllVerified = docStatus.isVerified;
+            const verifiedCount = docStatus.verified || 0;
+            const totalDocs = docStatus.total;
+            
+            let bgColor = "#FEF3C7";
+            let borderColor = "#FDE68A";
+            let textColor = "#92400E";
+            let icon = <WarningOutlined style={{ color: "#D97706" }} />;
+            let message = "";
+            
+            if (!isAllUploaded) {
+              bgColor = "#FEF3C7";
+              borderColor = "#FDE68A";
+              icon = <WarningOutlined style={{ color: "#D97706" }} />;
+              message = `⚠️ Document upload is only ${docStatus.percentage}% complete. Please upload all documents first.`;
+            } else if (isAllUploaded && !isAllVerified) {
+              bgColor = "#EFF6FF";
+              borderColor = "#BFDBFE";
+              textColor = "#1E40AF";
+              icon = <InfoCircleOutlined style={{ color: "#3B82F6" }} />;
+              message = `⚠️ All ${totalDocs} documents are UPLOADED but NOT VERIFIED yet.\nPlease wait for Ops team to verify the documents.\nVerified: ${verifiedCount}/${totalDocs}`;
+            } else if (isAllVerified) {
+              bgColor = "#F0FDF4";
+              borderColor = "#BBF7D0";
+              textColor = "#065F46";
+              icon = <CheckCircleOutlined style={{ color: "#10B981" }} />;
+              message = `✅ All ${totalDocs} documents have been VERIFIED by Ops team.`;
+            }
+            
+            return (
+              <div style={{ 
+                background: bgColor, 
+                borderRadius: 10, 
+                padding: "12px", 
+                marginBottom: 16, 
+                border: `1px solid ${borderColor}`
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, whiteSpace: "pre-line" }}>
+                  {icon}
+                  <span style={{ fontSize: 12, color: textColor }}>
+                    {message}
+                  </span>
+                </div>
+                {!isAllVerified && isAllUploaded && (
+                  <div style={{ marginTop: 8 }}>
+                    <Progress 
+                      percent={docStatus.verifiedPercentage} 
+                      size="small" 
+                      strokeColor="#3B82F6"
+                      format={() => `${docStatus.verified}/${totalDocs} Verified`}
+                    />
+                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 4 }}>
+                      💡 Documents are being reviewed by our Ops team. You will be notified once verified.
+                    </div>
+                  </div>
+                )}
+                {!isAllUploaded && (
+                  <div style={{ marginTop: 8, fontSize: 11, color: "#92400E" }}>
+                    💡 Please upload all required documents first. After upload, Ops team will verify them.
+                  </div>
+                )}
+              </div>
+            );
+          })()
+        )}
+
+        {/* Eligibility Status */}
+        {statusTarget && (
+          <div style={{ 
+            background: statusTarget?.eligibility?.isEligible ? "#F0FDF4" : statusTarget?.eligibility?.checked ? "#FEF2F2" : "#FEF3C7", 
+            borderRadius: 10, 
+            padding: "12px", 
+            marginBottom: 16, 
+            border: `1px solid ${statusTarget?.eligibility?.isEligible ? "#BBF7D0" : statusTarget?.eligibility?.checked ? "#FECACA" : "#FDE68A"}`
+          }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {getDocumentProgress(statusTarget) === 100 ? (
+              {statusTarget?.eligibility?.isEligible ? (
                 <CheckCircleOutlined style={{ color: "#10B981" }} />
+              ) : statusTarget?.eligibility?.checked ? (
+                <CloseCircleOutlined style={{ color: "#EF4444" }} />
               ) : (
                 <WarningOutlined style={{ color: "#D97706" }} />
               )}
-              <span style={{ fontSize: 12, color: getDocumentProgress(statusTarget) === 100 ? "#065F46" : "#92400E" }}>
-                {getDocumentProgress(statusTarget) === 100 
-                  ? "✅ All documents have been uploaded and verified. Lead is ready for qualification!" 
-                  : `⚠️ Document collection is only ${getDocumentProgress(statusTarget)}% complete. Please upload all documents before qualifying.`
+              <span style={{ fontSize: 12, color: statusTarget?.eligibility?.isEligible ? "#065F46" : statusTarget?.eligibility?.checked ? "#991B1B" : "#92400E" }}>
+                {statusTarget?.eligibility?.isEligible 
+                  ? `✅ Customer is ELIGIBLE (Score: ${statusTarget.eligibility.eligibilityScore || 0}%)` 
+                  : statusTarget?.eligibility?.checked 
+                    ? "❌ Customer is NOT ELIGIBLE. Please review eligibility details."
+                    : "⚠️ Eligibility check not performed. Please check eligibility first."
                 }
               </span>
             </div>
+            {statusTarget?.eligibility?.eligibilityNotes && !statusTarget?.eligibility?.isEligible && (
+              <div style={{ marginTop: 8, fontSize: 11, color: "#6B7280" }}>
+                {statusTarget.eligibility.eligibilityNotes}
+              </div>
+            )}
           </div>
         )}
 

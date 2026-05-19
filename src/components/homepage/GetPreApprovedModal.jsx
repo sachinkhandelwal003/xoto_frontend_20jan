@@ -1,8 +1,8 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { FiX } from "react-icons/fi";
 import toast, { Toaster } from "react-hot-toast";
-import { Select } from "antd";
-import { Country, State, City } from "country-state-city";
+import { Select } from "antd"; 
+import { Country, State, City } from "country-state-city"; 
 
 const { Option } = Select;
 
@@ -57,18 +57,6 @@ export default function GetPreApprovedModal({ open, onClose }) {
       return a.name.localeCompare(b.name);
     });
   }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -223,33 +211,17 @@ export default function GetPreApprovedModal({ open, onClose }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}
-    >
+    <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm overflow-y-auto">
       <Toaster position="top-center" reverseOrder={false} />
+      
+<div className="flex min-h-screen items-start justify-center pt-24 pb-8 px-4">
+<div className="relative w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden text-black max-h-[85vh]">          <div className="absolute inset-0 bg-gradient-to-br from-[#f4f1ff] via-white to-[#e9fbff]" />
+<div className="relative bg-white rounded-3xl px-5 py-6 sm:px-6 sm:py-8 md:px-8 md:py-8 overflow-y-auto max-h-[85vh]">            <button onClick={onClose} className="absolute right-4 top-4 sm:right-6 sm:top-6 p-2 rounded-full hover:bg-gray-100">
+              <FiX className="text-xl" />
+            </button>
 
-      <div
-        className="relative w-full max-w-2xl max-h-[92vh] rounded-3xl shadow-2xl text-black bg-white flex flex-col overflow-hidden"
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-[#f4f1ff] via-white to-[#e9fbff] pointer-events-none" />
+            <h2 className="text-xl sm:text-2xl font-bold text-left mb-6 sm:mb-8">Let's get started</h2>
 
-        {/* Sticky header */}
-        <div className="relative z-10 flex items-center justify-between px-5 sm:px-6 md:px-8 pt-5 sm:pt-6 md:pt-7 pb-3 bg-white/80 backdrop-blur-sm border-b border-gray-100">
-          <h2 className="text-xl sm:text-2xl font-bold text-left">Let's get started</h2>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="p-2 rounded-full hover:bg-gray-100"
-          >
-            <FiX className="text-xl" />
-          </button>
-        </div>
-
-        {/* Scrollable body */}
-        <div className="relative z-10 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8">
             <div className="space-y-5 sm:space-y-6 text-sm">
               
               {/* Name & Phone Row */}
@@ -433,6 +405,7 @@ export default function GetPreApprovedModal({ open, onClose }) {
                 {loading ? "Submitting..." : "Submit"}
               </button>
             </div>
+          </div>
         </div>
       </div>
 
