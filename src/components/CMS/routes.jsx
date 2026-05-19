@@ -276,7 +276,7 @@ import GridAgentLeadDetailadmin from "../Grid/GridAdmin.jsx/GridAgentLeadDetaila
 import GridAdvisorLeadDetail from "../Grid/AdvisorGrid/GridAdvisorLeadDetail";
 import PerfectMortgageCalculator from "../../components/homepage/MortgageCalculator";
 import PresentationsList from '../Grid/presentation/PresentationsList';
-import DealRecordAdmin from "../Grid/GridAdmin.jsx/Dealrecordadmin";
+import Dealrecordspage from "../Grid/GridAdmin.jsx/Dealrecordspage";
 
 
 
@@ -634,6 +634,7 @@ const CmsRoutes = () => {
      <Route path="gridAdvisorLeads/:id" element={<GridAdvisorLeadDetail />} />
      <Route path="calculator" element={<PerfectMortgageCalculator />} />
      <Route path="/property-management" element={<Propertymanagement />} />
+     <Route path="deal-records" element={<Dealrecordspage />} />
       
       
 

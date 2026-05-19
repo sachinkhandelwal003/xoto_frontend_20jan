@@ -5,7 +5,7 @@ import {
   FiCalendar, FiMessageSquare, FiTag, FiAlertCircle, FiActivity, FiLayers,
   FiArrowLeft, FiImage, FiInfo, FiXCircle, FiCheckCircle, FiUserPlus,
   FiUsers, FiPackage, FiChevronDown, FiChevronUp, FiRefreshCw,
-  FiStar, FiAlertTriangle, FiLoader, FiX, FiEdit3
+  FiStar, FiAlertTriangle, FiLoader, FiX, FiEdit3, FiFileText
 } from 'react-icons/fi';
 import { message, Spin, Avatar, Select } from 'antd';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
@@ -488,6 +488,12 @@ const GridAgentLeadDetailadmin = () => {
   const history       = lead?.status_history || [];
   const suggestions   = lead?.advisor_suggestions || [];
   const matchedListed = lead?.matched_listings || [];
+  const canCreateDealRecord = lead?.status === 'reserved' || lead?.status === 'spa_signed';
+
+  const openDealRecordFlow = () => {
+    const base = window.location.pathname.replace(/\/lead-detail-admin\/[^/]+$/, '');
+    navigate(`${base}/deal-records?create=1&leadId=${lead._id}`);
+  };
 
   const mc = MC[matchType] || null;
   const McIcon = mc?.Icon;
@@ -563,9 +569,31 @@ const GridAgentLeadDetailadmin = () => {
                   <FiPackage size={13} /> Commission
                 </Btn>
               )}
+              {canCreateDealRecord && (
+                <Btn variant="teal" size="sm" onClick={openDealRecordFlow}>
+                  <FiFileText size={13} /> Create Deal Record
+                </Btn>
+              )}
             </div>
           </div>
         </div>
+
+        {lead.status === 'reserved' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-4">
+            <div className="flex items-center justify-between gap-3 p-4 rounded-2xl bg-indigo-50 border border-indigo-200 flex-wrap">
+              <div className="flex items-center gap-3">
+                <FiCheckCircle size={18} className="text-indigo-600 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-bold text-indigo-900">Reserved by advisor</p>
+                  <p className="text-xs text-indigo-700 mt-0.5">Admin can upload SPA documents and create the deal record from this lead.</p>
+                </div>
+              </div>
+              <Btn variant="teal" size="sm" onClick={openDealRecordFlow}>
+                <FiFileText size={13} /> Create Deal Record
+              </Btn>
+            </div>
+          </div>
+        )}
 
         {/* ── SUBMISSION BANNER ── */}
         {isSubmitted && (
