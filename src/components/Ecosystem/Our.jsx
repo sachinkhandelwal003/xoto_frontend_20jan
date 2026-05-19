@@ -8,7 +8,7 @@ import rating from "../../assets/icons/Homeicons/rating.png";
 import partner from "../../assets/img/ecosystem/finance.png";
 import vector from "../../assets/img/ecosystem/business.png";
 import dollar from "../../assets/img/ecosystem/stratagic.png";
-import finance from "../../assets/img/ecosystem/vector.png";
+import finance from "../../assets/img/ecosystem/Vector.png";
 import target from "../../assets/img/ecosystem/dev.png";
 
 const BuiltForEveryone = () => {

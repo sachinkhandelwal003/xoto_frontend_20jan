@@ -539,8 +539,8 @@ const CreateAgentLead = ({ navigate }) => {
 
               {/* Section 1: Client Info */}
               <SectionCard title="Client Information (Optional)" icon={FiUser}>
-                <InputField label="First Name" placeholder="John" icon={FiUser} value={form.first_name} onChange={(e) => set('first_name', e.target.value)} />
-                <InputField label="Last Name"  placeholder="Smith" value={form.last_name} onChange={(e) => set('last_name', e.target.value)} />
+                <InputField label="First Name" placeholder="John" required={true} icon={FiUser} value={form.first_name} onChange={(e) => set('first_name', e.target.value)} />
+                <InputField label="Last Name"  placeholder="Smith" required={true} value={form.last_name} onChange={(e) => set('last_name', e.target.value)} />
                 <div>
                   <Label>Phone Number</Label>
                   <div className="flex gap-2">
@@ -555,7 +555,7 @@ const CreateAgentLead = ({ navigate }) => {
                       ))}
                     </select>
                     <input
-                      type="tel" placeholder="50 123 4567"
+                      type="tel" placeholder="50 123 4567" required={true}
                       className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-800 bg-gray-50/50 placeholder-gray-400 outline-none focus:border-[#5c039b] focus:bg-white focus:ring-4 focus:ring-[#5c039b]/10 transition-all"
                       value={form.phone_number}
                       onChange={(e) => set('phone_number', e.target.value)}

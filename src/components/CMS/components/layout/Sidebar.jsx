@@ -85,7 +85,7 @@ const CUSTOM_ROLE_LINKS = {
   path: "/dashboard/{roleSlug}/property-list",
   icon: "fas fa-building",
   submenus: [
-    { title: "All Listings",          path: "/dashboard/{roleSlug}/admin/property" },
+    { title: "All Listings",          path: "/dashboard/{roleSlug}/property-management" },
     { title: "Approval Queue",        path: "/dashboard/{roleSlug}/listings/approval-queue" },
     { title: "Edit Review Queue",     path: "/dashboard/{roleSlug}/listings/edit-review-queue" },
     { title: "Create Rental Properties", path: "/dashboard/{roleSlug}/rental/properties" },
@@ -175,7 +175,7 @@ const CUSTOM_ROLE_LINKS = {
     path: "/dashboard/{roleSlug}/commission",
     icon: "fas fa-file-invoice-dollar",
     submenus: [
-      { title: "Deal Records",        path: "/dashboard/{roleSlug}/commission/deal-records" },
+      { title: "Deal Records",        path: "/dashboard/{roleSlug}/deal-records" },
       { title: "Commission Ledger",   path: "/dashboard/{roleSlug}/commission/ledger" },
       { title: "Partner Agreements",  path: "/dashboard/{roleSlug}/commission/agreements" },
     ]
@@ -304,52 +304,78 @@ const CUSTOM_ROLE_LINKS = {
 
       ],
     },
+        {
+      title: "My Presentations",
+      icon: "fas fa-file-powerpoint",
+      path: "/dashboard/{roleSlug}/presentations",
+    },
+        {
+      title: "Catalogs",
+      icon: "fas fa-building",
+      path: "/dashboard/{roleSlug}/agent-projects",
+    },
+        {
+      title: "Calculator",
+      icon: "fas fa-calculator",
+      path: "/dashboard/{roleSlug}/Calculator",
+    },
+        {
+      title: "Leaderboard",
+      icon: "fas fa-users",
+      path: "/dashboard/{roleSlug}/Leaderboard",
+    },
+{
+  title: "Training",
+  icon: "fas fa-chalkboard-teacher",
+  path: "/dashboard/{roleSlug}/Training",
+},
+{
+  title: "My Agreements",
+  icon: "fas fa-chalkboard-teacher",
+  path: "/dashboard/{roleSlug}/my-Agreements",
+},
+
 
 
   ],
   "10": [],
   "17": [
     {
-      title: "Properties",
+      title: "Projects",
       icon: "fas fa-building",
       path: "/dashboard/{roleSlug}/developer-properties"
     },
+    //   {
+    //   title: "Global Projects",
+    //   icon: "fas fa-building",
+    //   path: "/dashboard/{roleSlug}/property-list"
+    // },
     {
-      title: "Inventory",
+      title: "Listings",
       icon: "fas fa-layer-group",
       path: "/dashboard/{roleSlug}/developer-inventory",
     },
-    {
-      title: "Analytics",
-      icon: "fas fa-chart-line",
-      path: "/dashboard/{roleSlug}/analytics",
-    },
+
   ],
   "15": [
     {
-      title: "Agents",
-      icon: "fas fa-user-friends",
-      path: "/dashboard/{roleSlug}/agents",
+      title: "Projects", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects",
       submenus: [
-        { title: "Agent Team", path: "/dashboard/{roleSlug}/all-agents" },
-      ]
+        { title: "Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-projects" },
+        { title: "Agent Properties", icon: "fas fa-building", path: "/dashboard/{roleSlug}/agency-agent-properties" },
+
+
+      ],
     },
     {
-      title: "Leads",
-      icon: "fas fa-users",
-      path: "/dashboard/{roleSlug}/leads",
-      submenus: [
-        { title: "All Leads", path: "/dashboard/{roleSlug}/lead-management" },
-      ]
-    },
-    {
-      title: "Listings",
-      icon: "fas fa-building",
-      path: "/dashboard/{roleSlug}/listings",
-      submenus: [
-        { title: "All Listings", path: "/dashboard/{roleSlug}/agency-agent-properties" },
-      ]
-    },
+    title: "Agents",
+    icon: "fas fa-user-friends",       
+    path: "/dashboard/{roleSlug}/agents",
+    submenus: [
+      { title: "All Agents",   path: "/dashboard/{roleSlug}/all-agents" },
+    ],
+  },
+
   ],
 
   "18": [
@@ -551,11 +577,11 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-trophy",
       path: "/dashboard/{roleSlug}/leaderboard"
     },
-    {
-      title: "Profile",
-      icon: "fas fa-user",
-      path: "/dashboard/{roleSlug}/profile"
-    },
+    // {
+    //   title: "Profile",
+    //   icon: "fas fa-user",
+    //   path: "/dashboard/{roleSlug}/profile"
+    // },
    
   ],
 

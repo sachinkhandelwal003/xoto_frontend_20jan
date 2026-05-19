@@ -5,24 +5,24 @@ import LanguageDetector from "i18next-browser-languagedetector";
 /* =========================
    AR - Arabic
 ========================= */
-import arcontact4 from "./locales/ar/contact4.json";
-import arcontact1 from "./locales/ar/contact1.json";
-import arcontact3 from "./locales/ar/contact3.json";
-import arcontact from "./locales/ar/contact.json";
-import arCommon from "./locales/ar/common.json";
-import arhome from "./locales/ar/home.json";
-import arhome1 from "./locales/ar/home1.json";
-import arhome2 from "./locales/ar/home2.json";
-import arhome3 from "./locales/ar/home3.json";
-import arhome4 from "./locales/ar/home4.json";
-import arhome5 from "./locales/ar/home5.json";
-import arfooter from "./locales/ar/footer.json";
-import arInterior1 from "./locales/ar/interior1.json";
-import arInterior2 from "./locales/ar/interior2.json";
-import arInterior3 from "./locales/ar/interior3.json";
-import arInterior4 from "./locales/ar/interior4.json";
-import arInterior7 from "./locales/ar/interior7.json";
-import arbook from "./locales/ar/book.json";
+import arcontact4 from "./locales/Ar/contact4.json";
+import arcontact1 from "./locales/Ar/contact1.json";
+import arcontact3 from "./locales/Ar/contact3.json";
+import arcontact from "./locales/Ar/contact.json";
+import arCommon from "./locales/Ar/common.json";
+import arhome from "./locales/Ar/home.json";
+import arhome1 from "./locales/Ar/home1.json";
+import arhome2 from "./locales/Ar/home2.json";
+import arhome3 from "./locales/Ar/home3.json";
+import arhome4 from "./locales/Ar/home4.json";
+import arhome5 from "./locales/Ar/home5.json";
+import arfooter from "./locales/Ar/footer.json";
+import arInterior1 from "./locales/Ar/interior1.json";
+import arInterior2 from "./locales/Ar/interior2.json";
+import arInterior3 from "./locales/Ar/interior3.json";
+import arInterior4 from "./locales/Ar/interior4.json";
+import arInterior7 from "./locales/Ar/interior7.json";
+import arbook from "./locales/Ar/book.json";
 import arbuy1 from "./locales/Ar/buy1.json";
 import arbuy2 from "./locales/Ar/buy2.json";
 import arbuy3 from "./locales/Ar/buy3.json";
@@ -30,7 +30,7 @@ import arbuy4 from "./locales/Ar/buy4.json";
 import arbuy5 from "./locales/Ar/buy5.json";
 import arbuy6 from "./locales/Ar/buy6.json";
 import arbuy7 from "./locales/Ar/buy7.json";
-import ararticle1 from "./locales/ar/article1.json";
+import ararticle1 from "./locales/Ar/article1.json";
 import ararticle2 from "./locales/Ar/article2.json";
 import ararticle3 from "./locales/Ar/article3.json";
 import ararticle4 from "./locales/Ar/article4.json";
@@ -50,13 +50,13 @@ import arpartnerForm from "./locales/Ar/partnerForm.json";
 import arbuiltForEveryone from "./locales/Ar/builtForEveryone.json";
 import arCta from "./locales/Ar/cta.json";
 import arHome6 from "./locales/Ar/home6.json";
-import arMort1 from "./locales/ar/mort1.json";
-import arMort2 from "./locales/ar/mort2.json";
-import arMort3 from "./locales/ar/mort3.json";
-import arMort4 from "./locales/ar/mort4.json"; // <-- NEW
-import arMort6 from "./locales/ar/mort6.json";
-import arMort7 from "./locales/ar/mort7.json";
-import arEcommerce from "./locales/ar/ecommerce.json";
+import arMort1 from "./locales/Ar/mort1.json";
+import arMort2 from "./locales/Ar/mort2.json";
+import arMort3 from "./locales/Ar/mort3.json";
+import arMort4 from "./locales/Ar/mort4.json"; // <-- NEW
+import arMort6 from "./locales/Ar/mort6.json";
+import arMort7 from "./locales/Ar/mort7.json";
+import arEcommerce from "./locales/Ar/ecommerce.json";
 
 /* =========================
    EN - English

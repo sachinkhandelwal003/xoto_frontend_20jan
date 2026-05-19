@@ -1,12 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════════
-// GridAdvisorLeadDetail.jsx
-// Advisor ka complete lead detail page:
-//   • Smart matched properties dekhna + directly suggest karna
-//   • Manual property search karke suggest karna
-//   • Client reactions record karna (interested / not_interested / maybe)
-//   • Lead status update (flow-enforced)
-//   • Notes add karna
-//   • Status timeline
+// GridAdvisorLeadDetail.jsx — with AI Presentation Generator (fully synced)
 // ════════════════════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -17,7 +10,7 @@ import {
   FiArrowLeft, FiImage, FiInfo, FiXCircle, FiCheckCircle, FiSearch,
   FiChevronDown, FiChevronUp, FiAlertTriangle, FiFileText, FiRefreshCw,
   FiLoader, FiX, FiPlus, FiSend, FiEdit3, FiThumbsUp, FiThumbsDown,
-  FiMinus, FiZap, FiList, FiArrowRight, FiStar, FiPackage
+  FiMinus, FiZap, FiList, FiArrowRight, FiStar, FiPackage, FiEye, FiCopy,
 } from 'react-icons/fi';
 import { message, Spin } from 'antd';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
@@ -113,7 +106,6 @@ const Btn = ({ children, onClick, variant = 'primary', loading, disabled, size =
   );
 };
 
-// ─── REACTION PILL ────────────────────────────────────────────────────────────
 const ReactionPill = ({ reaction }) => {
   const cfg = REACTION_CONFIG[reaction] || REACTION_CONFIG.pending;
   const { Icon } = cfg;
@@ -125,28 +117,557 @@ const ReactionPill = ({ reaction }) => {
   );
 };
 
-// ─── PROPERTY MINI CARD (for smart matches + suggestions) ─────────────────────
-const PropertyCard = ({ property, onSuggest, alreadySuggested, suggesting, compact = false }) => {
+// ─── AI PRESENTATION MODAL ────────────────────────────────────────────────────
+// ✅ Fully synced with GridAgentLeadDetail version
+const PresentationModal = ({ lead, property: initialProperty, onClose }) => {
+  const [step,            setStep]           = useState(1);
+  const [generating,      setGenerating]     = useState(false);
+  const [saving,          setSaving]         = useState(false);
+  const [narrative,       setNarrative]      = useState(null);
+
+  // ✅ Two URLs — tracking (client) and preview (agent)
+  const [trackingUrl,     setTrackingUrl]    = useState('');
+  const [previewUrl,      setPreviewUrl]     = useState('');
+  const [copied,          setCopied]         = useState(false);
+
+  // ✅ initialProperty se start, API se full data fetch
+  const [property,        setProperty]        = useState(initialProperty);
+  const [propertyLoading, setPropertyLoading] = useState(false);
+
+  useEffect(() => {
+    if (!initialProperty?._id) return;
+    setPropertyLoading(true);
+    apiService.get(`/property/${initialProperty._id}`)
+      .then(res => {
+        const data = res?.data?.data || res?.data;
+        if (data) setProperty(data);
+      })
+      .catch(() => console.warn('Full property fetch failed'))
+      .finally(() => setPropertyLoading(false));
+  }, [initialProperty._id]);
+
+  const [settings, setSettings] = useState({
+    language: 'English', currency: 'AED', areaUnit: 'sqft', tone: 'professional',
+    sections: {
+      cover: true, projectDescription: true, developer: true,
+      unitPrices: true, paymentPlan: true, location: true, gallery: true, keyHighlights: true,
+    },
+  });
+
+  const [clientNotes, setClientNotes] = useState({
+    clientName: `${lead?.contact_info?.name?.first_name || ''} ${lead?.contact_info?.name?.last_name || ''}`.trim(),
+    budget: lead?.requirements?.budget_max
+      ? `AED ${Number(lead.requirements.budget_max).toLocaleString()}`
+      : '',
+    requirements: [
+      lead?.requirements?.property_type,
+      lead?.requirements?.bedrooms != null
+        ? (lead.requirements.bedrooms === 0 ? 'Studio' : `${lead.requirements.bedrooms} BR`)
+        : null,
+      ...(lead?.requirements?.location_preferences || []).map(l => typeof l === 'string' ? l : l.area),
+    ].filter(Boolean).join(', '),
+  });
+
+  // ✅ Fully synced buildCleanProperty — same as GridAgentLeadDetail
+  const buildCleanProperty = () => ({
+    propertyName:      property.propertyName || property.projectName || '',
+    type:              property.propertyType || 'Residential',
+    propertySubType:   property.propertySubType || '',
+    area:              property.area || property.locality || '',
+    city:              property.city || 'Dubai',
+    country:           property.country || 'UAE',
+    price:             property.price     || property.price_min || 0,
+    price_min:         property.price_min || property.price     || 0,
+    price_max:         property.price_max || 0,
+    bedrooms:          property.bedrooms     || 0,
+    bathrooms:         property.bathrooms    || 0,
+    builtUpArea:       property.builtUpArea  || 0,
+    floors:            property.floors       || property.numberOfFloors || 0,
+    furnishingStatus:  property.furnishingStatus || property.furnishing || '',
+    ownershipType:     property.ownershipType || '',
+    parkingAllocation: property.parkingAllocation || '',
+    mainLogo:          property.mainLogo || property.media?.mainLogo || '',
+
+    // ✅ Complete photo extraction — mainLogo + photos object + media object
+    photos: (() => {
+      const allPhotos = [];
+      const mainLogo = property.mainLogo || property.media?.mainLogo;
+      if (mainLogo) allPhotos.push(mainLogo);
+
+      const ph = property.photos;
+      if (ph && typeof ph === 'object' && !Array.isArray(ph)) {
+        Object.values(ph).forEach(arr => {
+          if (Array.isArray(arr)) allPhotos.push(...arr.filter(Boolean));
+        });
+      } else if (Array.isArray(ph)) {
+        allPhotos.push(...ph.filter(Boolean));
+      }
+
+      const med = property.media;
+      if (med && typeof med === 'object') {
+        ['architectureImages','interiorImages','lobbyImages','otherImages'].forEach(key => {
+          if (Array.isArray(med[key])) allPhotos.push(...med[key].filter(Boolean));
+        });
+      }
+      return [...new Set(allPhotos)];
+    })(),
+
+    developer: property.developerName || '',
+
+    // ✅ Full developerDetails extraction
+    developerDetails: (() => {
+      const dev = property.developerDetails || property.developer || {};
+      return {
+        name:        dev.name        || property.developerName || '',
+        logo:        dev.logo        || dev.mainLogo || '',
+        description: dev.description || dev.overview || '',
+        email:       dev.email       || '',
+        phone:       dev.phone       || dev.phone_number || '',
+        websiteUrl:  dev.websiteUrl  || '',
+      };
+    })(),
+
+    completionDate:       property.completionDate || '',
+    projectStatus:        property.projectStatus  || '',
+    developmentStatus:    property.developmentStatus || '',
+    constructionProgress: property.constructionProgress || 0,
+    readinessProgress:    property.readinessProgress || '',
+    serviceCharge:        property.serviceCharge || '',
+    totalUnits:           property.totalUnits    || 0,
+    soldUnits:            property.soldUnits     || 0,
+    reservedUnits:        property.reservedUnits || 0,
+    description:          property.description || property.overview || '',
+    locality:             property.locality || property.area || '',
+    location:             property.location || {},
+    proximity:            property.proximity || {},
+    isFeatured:           property.isFeatured || false,
+    saleStatus:           property.saleStatus || 'Available',
+
+    // ✅ facilities: object → readable array
+    facilities: (() => {
+      const f = property.facilities;
+      if (!f) return [];
+      if (Array.isArray(f)) return f;
+      return Object.entries(f)
+        .filter(([, v]) => v === true)
+        .map(([k]) => k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim());
+    })(),
+
+    amenities: Array.isArray(property.amenities) ? property.amenities : [],
+
+    // ✅ paymentPlan: nested stages → flat array
+    paymentPlan: (() => {
+      const pp = property.paymentPlan;
+      if (!pp || !Array.isArray(pp) || pp.length === 0) return [];
+      const flat = [];
+      pp.forEach(plan => {
+        if (plan.stages && Array.isArray(plan.stages)) {
+          plan.stages.forEach(s => flat.push({
+            milestone:   s.stage?.replace(/_/g, ' ') || '',
+            percentage:  s.percentage || 0,
+            description: s.description || '',
+          }));
+        }
+      });
+      return flat;
+    })(),
+
+    // ✅ unitTypes from inventory or unitTypes array
+    unitTypes: (() => {
+      if (Array.isArray(property.inventory) && property.inventory.length > 0) {
+        return property.inventory.map(inv => ({
+          type:  inv.unitType || '',
+          area:  inv.sqft || inv.sqm || 0,
+          price: property.price_min || property.price || 0,
+          units: inv.units || 1,
+        }));
+      }
+      if (Array.isArray(property.unitTypes) && property.unitTypes.length > 0) {
+        return property.unitTypes.map(t => ({ type: t, area: 0, price: 0 }));
+      }
+      return [];
+    })(),
+  });
+
+  // ── Step 1: Generate narrative ────────────────────────────────────────────
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      const res = await apiService.post('/presentation/generate-narrative', {
+        property: buildCleanProperty(), clientNotes, settings,
+      });
+      const data = res?.data?.success !== undefined ? res.data : res;
+      if (data?.success) { setNarrative(data.data); setStep(2); }
+      else message.error(data?.message || 'Generation failed');
+    } catch (e) { message.error(e?.response?.data?.message || 'Generation failed'); }
+    finally { setGenerating(false); }
+  };
+
+  // ── Step 2: Save → get both URLs ─────────────────────────────────────────
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await apiService.post('/presentation/save', {
+        leadId: lead._id, propertyId: property._id, property: buildCleanProperty(),
+        narrative, settings, clientNotes, agentProfile: {},
+      });
+      const data = res?.data?.success !== undefined ? res.data : res;
+      if (data?.success) {
+        setTrackingUrl(data.data.trackingUrl);
+        // ✅ Preview = tracking URL + ?preview=true (no tracking fired)
+        setPreviewUrl(data.data.trackingUrl + '?preview=true');
+        setStep(3);
+        message.success('Presentation saved!');
+      } else message.error(data?.message || 'Save failed');
+    } catch (e) { message.error(e?.response?.data?.message || 'Save failed'); }
+    finally { setSaving(false); }
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(trackingUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const waMessage = encodeURIComponent(
+    `Hi ${clientNotes.clientName}! 👋\n\nPlease find the property presentation for *${property?.propertyName}* here:\n${trackingUrl}\n\n_Powered by Xoto GRID_`
+  );
+
+  const toggleSection = (key) =>
+    setSettings(p => ({ ...p, sections: { ...p.sections, [key]: !p.sections[key] } }));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ background: 'rgba(0,0,0,0.55)' }}>
+      <div className="bg-white w-full sm:rounded-3xl sm:max-w-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+
+        {/* Header */}
+        <div className="px-6 py-5 flex items-center justify-between flex-shrink-0" style={{ background: GR }}>
+          <div>
+            <h3 className="text-base font-extrabold text-white">AI Presentation Generator</h3>
+            <p className="text-xs text-white/70 mt-0.5">
+              {step === 1 && 'Customize your presentation'}
+              {step === 2 && 'Preview AI-generated content'}
+              {step === 3 && 'Share with your client'}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              {[1, 2, 3].map(s => (
+                <div key={s} className={`w-2 h-2 rounded-full transition-all ${step >= s ? 'bg-white' : 'bg-white/30'}`} />
+              ))}
+            </div>
+            <button onClick={onClose}
+              className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30">
+              <FiX size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* ── STEP 1: CUSTOMIZE ── */}
+        {step === 1 && (
+          <div className="overflow-y-auto flex-1 p-6 space-y-5">
+
+            {propertyLoading && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 border border-blue-100">
+                <FiLoader size={13} className="animate-spin text-blue-500" />
+                <p className="text-xs text-blue-600 font-medium">Loading full property data…</p>
+              </div>
+            )}
+
+            {/* Property preview */}
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-purple-50 border border-purple-100">
+              {property.mainLogo
+                ? <img src={property.mainLogo} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="" />
+                : <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                    <FiHome size={18} style={{ color: P }} />
+                  </div>}
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-gray-900 truncate">{property.propertyName}</p>
+                <p className="text-xs text-gray-500 truncate">{[property.area, property.city].filter(Boolean).join(', ')}</p>
+              </div>
+              <div className="ml-auto flex-shrink-0">
+                <p className="text-sm font-extrabold" style={{ color: P }}>
+                  {(property.price || property.price_min) > 0
+                    ? `AED ${Number(property.price || property.price_min).toLocaleString()}`
+                    : 'On Request'}
+                </p>
+              </div>
+            </div>
+
+            {/* Client info */}
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Client Details</p>
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 font-semibold mb-1">Client Name</label>
+                  <input value={clientNotes.clientName}
+                    onChange={e => setClientNotes(p => ({ ...p, clientName: e.target.value }))}
+                    placeholder="Ahmed Ali"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 font-semibold mb-1">Budget</label>
+                    <input value={clientNotes.budget}
+                      onChange={e => setClientNotes(p => ({ ...p, budget: e.target.value }))}
+                      placeholder="AED 1,500,000"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 font-semibold mb-1">Key Requirement</label>
+                    <input value={clientNotes.requirements}
+                      onChange={e => setClientNotes(p => ({ ...p, requirements: e.target.value }))}
+                      placeholder="Sea view, 2BR..."
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Settings */}
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Presentation Settings</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 font-semibold mb-1">Language</label>
+                  <select value={settings.language}
+                    onChange={e => setSettings(p => ({ ...p, language: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none">
+                    {['English','Arabic','Hindi','Urdu','Russian'].map(l => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 font-semibold mb-1">Currency</label>
+                  <select value={settings.currency}
+                    onChange={e => setSettings(p => ({ ...p, currency: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none">
+                    {['AED','USD','GBP','EUR','INR'].map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 font-semibold mb-1">Area Unit</label>
+                  <select value={settings.areaUnit}
+                    onChange={e => setSettings(p => ({ ...p, areaUnit: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none">
+                    <option value="sqft">sqft</option>
+                    <option value="sqm">sqm</option>
+                  </select>
+                </div>
+              </div>
+              <div className="mt-3">
+                <label className="block text-xs text-gray-500 font-semibold mb-2">Tone</label>
+                <div className="flex gap-2">
+                  {['professional','luxury','friendly'].map(t => (
+                    <button key={t} onClick={() => setSettings(p => ({ ...p, tone: t }))}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold border capitalize transition-all
+                        ${settings.tone === t ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500 hover:border-purple-300'}`}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Sections toggle */}
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Include Sections</p>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries({
+                  cover:              'Cover Slide',
+                  projectDescription: 'Project Description',
+                  developer:          'Developer Info',
+                  unitPrices:         'Unit Prices',
+                  paymentPlan:        'Payment Plan',
+                  location:           'Location & Map',
+                  gallery:            'Photo Gallery',
+                  keyHighlights:      'Key Highlights',
+                }).map(([key, label]) => (
+                  <button key={key} onClick={() => toggleSection(key)}
+                    className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold transition-all text-left
+                      ${settings.sections[key] ? 'border-purple-300 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-400 bg-gray-50'}`}>
+                    <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all
+                      ${settings.sections[key] ? 'bg-purple-600' : 'bg-gray-200'}`}>
+                      {settings.sections[key] && <FiCheckCircle size={10} className="text-white" />}
+                    </div>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 2: NARRATIVE PREVIEW ── */}
+        {step === 2 && narrative && (
+          <div className="overflow-y-auto flex-1 p-6 space-y-4">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 border border-green-200">
+              <FiCheckCircle size={15} className="text-green-500 flex-shrink-0" />
+              <p className="text-xs font-semibold text-green-700">AI narrative generated — review and edit if needed</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Property Overview</label>
+              <textarea rows={3} value={narrative.propertyOverview}
+                onChange={e => setNarrative(p => ({ ...p, propertyOverview: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all resize-none" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Key Highlights</label>
+              <div className="space-y-2">
+                {(narrative.keyHighlights || []).map((h, i) => (
+                  <input key={i} value={h}
+                    onChange={e => {
+                      const updated = [...narrative.keyHighlights];
+                      updated[i] = e.target.value;
+                      setNarrative(p => ({ ...p, keyHighlights: updated }));
+                    }}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Location & Community</label>
+              <textarea rows={2} value={narrative.locationCommunity}
+                onChange={e => setNarrative(p => ({ ...p, locationCommunity: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all resize-none" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Next Steps (CTA)</label>
+              <textarea rows={2} value={narrative.nextSteps}
+                onChange={e => setNarrative(p => ({ ...p, nextSteps: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all resize-none" />
+            </div>
+
+            <button onClick={() => setStep(1)}
+              className="flex items-center gap-1.5 text-xs font-bold text-purple-600 hover:underline">
+              <FiEdit3 size={11} /> Back to customize
+            </button>
+          </div>
+        )}
+
+        {/* ── STEP 3: SHARE ── */}
+        {step === 3 && (
+          <div className="overflow-y-auto flex-1 p-6 space-y-4">
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-green-50 border border-green-200">
+              <FiCheckCircle size={20} className="text-green-500 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-green-800">Presentation ready!</p>
+                <p className="text-xs text-green-700 mt-0.5">Share the tracked link with your client</p>
+              </div>
+            </div>
+
+            {/* ✅ Tracking URL — client ke liye */}
+            <div>
+              <label className="block text-xs font-bold text-purple-600 uppercase tracking-widest mb-2">
+                🔗 Client Link (Tracked) — Share This
+              </label>
+              <div className="flex gap-2">
+                <input readOnly value={trackingUrl}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-purple-200 bg-purple-50 text-sm text-purple-700 font-medium outline-none" />
+                <button onClick={handleCopy}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all flex-shrink-0
+                    ${copied ? 'bg-green-50 border-green-300 text-green-700' : 'bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100'}`}>
+                  {copied ? '✓ Copied' : <FiCopy size={14} />}
+                </button>
+              </div>
+              <p className="text-[10px] text-purple-500 mt-1 font-medium">
+                ✓ Every open is tracked — device, time, and engagement score
+              </p>
+            </div>
+
+            {/* ✅ Preview URL — agent ke liye only (no tracking) */}
+            {previewUrl && (
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                  👁 Your Preview (Not Tracked)
+                </label>
+                <a href={previewUrl} target="_blank" rel="noreferrer"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 hover:bg-gray-100 transition-all">
+                  <FiEye size={13} /> Open Preview
+                </a>
+                <p className="text-[10px] text-gray-400 mt-1 font-medium">
+                  Only you can see this — opens without tracking
+                </p>
+              </div>
+            )}
+
+            {/* Share buttons */}
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Share Via</label>
+              <div className="grid grid-cols-2 gap-3">
+                <a href={`https://wa.me/?text=${waMessage}`} target="_blank" rel="noreferrer"
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+                  style={{ background: '#25D366' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  WhatsApp
+                </a>
+                <a href={`mailto:${lead?.contact_info?.email?.address || ''}?subject=Property Presentation — ${property?.propertyName}&body=${waMessage}`}
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all">
+                  <FiMail size={15} /> Email
+                </a>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-purple-100 bg-purple-50">
+              <p className="text-xs font-bold text-purple-700 mb-2">📊 Tracking kya karta hai:</p>
+              <ul className="space-y-1 text-xs text-purple-600">
+                <li>✓ Exact time client opens the presentation</li>
+                <li>✓ Device type (Mobile / Desktop)</li>
+                <li>✓ Number of times opened</li>
+                <li>✓ Lead engagement score +15 per view</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-100 flex gap-3 justify-between flex-shrink-0">
+          <Btn variant="ghost" onClick={onClose}>{step === 3 ? 'Close' : 'Cancel'}</Btn>
+          <div className="flex gap-2">
+            {step === 2 && <Btn variant="ghost" onClick={() => setStep(1)}>← Back</Btn>}
+            {step === 1 && (
+              <Btn variant="primary" onClick={handleGenerate} loading={generating} disabled={propertyLoading}>
+                Generate with AI →
+              </Btn>
+            )}
+            {step === 2 && (
+              <Btn variant="primary" onClick={handleSave} loading={saving}>
+                <FiCheckCircle size={14} /> Save & Get Link →
+              </Btn>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── PROPERTY CARD (with Generate Presentation button) ────────────────────────
+const PropertyCard = ({ property, onSuggest, alreadySuggested, suggesting, onGeneratePresentation }) => {
   const price = property.price_min || property.price || 0;
   const loc   = [property.area, property.city].filter(Boolean).join(', ');
 
   return (
     <div className={`rounded-2xl border overflow-hidden bg-white transition-all hover:shadow-md
       ${alreadySuggested ? 'border-purple-200 ring-1 ring-purple-100' : 'border-gray-100'}`}>
-      {!compact && (
-        <div className="h-28 bg-slate-100 relative overflow-hidden">
-          {property.mainLogo
-            ? <img src={property.mainLogo} alt={property.propertyName} className="w-full h-full object-cover" />
-            : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={28} /></div>}
-          {property.isFeatured && (
-            <span className="absolute top-2 left-2 bg-amber-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Featured</span>
-          )}
-          {alreadySuggested && (
-            <span className="absolute top-2 right-2 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase"
-              style={{ background: P, color: '#fff' }}>Suggested ✓</span>
-          )}
-        </div>
-      )}
+      <div className="h-28 bg-slate-100 relative overflow-hidden">
+        {property.mainLogo
+          ? <img src={property.mainLogo} alt={property.propertyName} className="w-full h-full object-cover" />
+          : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={28} /></div>}
+        {property.isFeatured && (
+          <span className="absolute top-2 left-2 bg-amber-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Featured</span>
+        )}
+        {alreadySuggested && (
+          <span className="absolute top-2 right-2 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase"
+            style={{ background: P, color: '#fff' }}>Suggested ✓</span>
+        )}
+      </div>
       <div className="p-3.5">
         <div className="text-sm font-bold text-gray-900 truncate leading-snug">{property.propertyName || property.title}</div>
         {loc && <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1 truncate"><FiMapPin size={10} /> {loc}</div>}
@@ -160,6 +681,16 @@ const PropertyCard = ({ property, onSuggest, alreadySuggested, suggesting, compa
           </div>
         </div>
       </div>
+
+      {/* Generate Presentation */}
+      <div className="px-3.5 pb-2">
+        <button
+          onClick={() => onGeneratePresentation(property)}
+          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 transition-all">
+          <FiFileText size={12} /> Generate Presentation
+        </button>
+      </div>
+
       <div className="px-3.5 pb-3.5">
         <Btn size="sm"
           variant={alreadySuggested ? 'ghost' : 'primary'}
@@ -174,7 +705,7 @@ const PropertyCard = ({ property, onSuggest, alreadySuggested, suggesting, compa
   );
 };
 
-// ─── SUGGEST MODAL (with note) ────────────────────────────────────────────────
+// ─── SUGGEST MODAL ────────────────────────────────────────────────────────────
 const SuggestModal = ({ property, leadId, onClose, onSuccess }) => {
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
@@ -182,23 +713,12 @@ const SuggestModal = ({ property, leadId, onClose, onSuccess }) => {
   const handleSuggest = async () => {
     setLoading(true);
     try {
-      const res  = await apiService.post(`/gridlead/${leadId}/suggest-property`, {
-        property_id: property._id,
-        note: note.trim(),
-      });
+      const res  = await apiService.post(`/gridlead/${leadId}/suggest-property`, { property_id: property._id, note: note.trim() });
       const data = res?.data?.success !== undefined ? res.data : res;
-      if (data?.success) {
-        message.success('Property suggested to client');
-        onSuccess();
-        onClose();
-      } else {
-        message.error(data?.message || 'Failed to suggest property');
-      }
-    } catch (e) {
-      message.error(e?.response?.data?.message || 'Failed to suggest property');
-    } finally {
-      setLoading(false);
-    }
+      if (data?.success) { message.success('Property suggested to client'); onSuccess(); onClose(); }
+      else message.error(data?.message || 'Failed to suggest property');
+    } catch (e) { message.error(e?.response?.data?.message || 'Failed to suggest property'); }
+    finally { setLoading(false); }
   };
 
   const price = property.price_min || property.price || 0;
@@ -211,46 +731,35 @@ const SuggestModal = ({ property, leadId, onClose, onSuccess }) => {
             <h3 className="text-base font-extrabold text-white">Suggest Property to Client</h3>
             <p className="text-xs text-white/70 mt-0.5">Add a note to explain why this property fits</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30">
-            <FiX size={16} />
-          </button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"><FiX size={16} /></button>
         </div>
         <div className="p-6 space-y-4">
-          {/* Property preview */}
           <div className="flex gap-3 p-3.5 rounded-xl border border-gray-100 bg-gray-50">
             <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-slate-200">
-              {property.mainLogo
-                ? <img src={property.mainLogo} alt="" className="w-full h-full object-cover" />
-                : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={20} /></div>}
+              {property.mainLogo ? <img src={property.mainLogo} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={20} /></div>}
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-gray-900 truncate">{property.propertyName || property.title}</p>
               <p className="text-xs text-gray-400 mt-0.5">{[property.area, property.city].filter(Boolean).join(', ')}</p>
-              <p className="text-sm font-extrabold mt-1" style={{ color: P }}>
-                {price > 0 ? `AED ${Number(price).toLocaleString()}` : 'On Request'}
-              </p>
+              <p className="text-sm font-extrabold mt-1" style={{ color: P }}>{price > 0 ? `AED ${Number(price).toLocaleString()}` : 'On Request'}</p>
             </div>
           </div>
-
           <div>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Note for Client (optional)</p>
-            <textarea rows={3} value={note} onChange={e => setNote(e.target.value)}
-              placeholder="Why this property fits their requirements..."
+            <textarea rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder="Why this property fits their requirements..."
               className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all resize-none" />
           </div>
         </div>
         <div className="px-6 pb-6 flex gap-3 justify-end">
           <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleSuggest} loading={loading}>
-            <FiSend size={14} /> Suggest Property
-          </Btn>
+          <Btn variant="primary" onClick={handleSuggest} loading={loading}><FiSend size={14} /> Suggest Property</Btn>
         </div>
       </div>
     </div>
   );
 };
 
-// ─── RECORD CLIENT REACTION MODAL ────────────────────────────────────────────
+// ─── REACTION MODAL ───────────────────────────────────────────────────────────
 const ReactionModal = ({ suggestion, leadId, onClose, onSuccess }) => {
   const [reaction, setReaction] = useState(suggestion?.client_reaction === 'pending' ? '' : suggestion?.client_reaction || '');
   const [loading, setLoading] = useState(false);
@@ -266,27 +775,16 @@ const ReactionModal = ({ suggestion, leadId, onClose, onSuccess }) => {
     setLoading(true);
     try {
       const res = await apiService.put(`/gridlead/${leadId}/suggestion-reaction`, {
-        property_id: suggestion.property_id?._id || suggestion.property_id,
-        reaction,
+        property_id: suggestion.property_id?._id || suggestion.property_id, reaction,
       });
       const data = res?.data?.success !== undefined ? res.data : res;
-      if (data?.success) {
-        message.success('Client reaction recorded');
-        onSuccess();
-        onClose();
-      } else {
-        message.error(data?.message || 'Failed to record reaction');
-      }
-    } catch (e) {
-      message.error(e?.response?.data?.message || 'Failed');
-    } finally {
-      setLoading(false);
-    }
+      if (data?.success) { message.success('Client reaction recorded'); onSuccess(); onClose(); }
+      else message.error(data?.message || 'Failed');
+    } catch (e) { message.error(e?.response?.data?.message || 'Failed'); }
+    finally { setLoading(false); }
   };
 
-  const propName = typeof suggestion.property_id === 'object'
-    ? (suggestion.property_id?.propertyName || 'Property')
-    : 'Property';
+  const propName = typeof suggestion.property_id === 'object' ? (suggestion.property_id?.propertyName || 'Property') : 'Property';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
@@ -296,9 +794,7 @@ const ReactionModal = ({ suggestion, leadId, onClose, onSuccess }) => {
             <h3 className="text-base font-extrabold text-white">Record Client Reaction</h3>
             <p className="text-xs text-white/70 mt-0.5 truncate max-w-xs">{propName}</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30">
-            <FiX size={16} />
-          </button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"><FiX size={16} /></button>
         </div>
         <div className="p-6 space-y-4">
           <p className="text-xs text-gray-500 font-medium">What was the client's response to this property?</p>
@@ -307,10 +803,8 @@ const ReactionModal = ({ suggestion, leadId, onClose, onSuccess }) => {
               const Icon = o.icon;
               return (
                 <button key={o.value} onClick={() => setReaction(o.value)}
-                  className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all`}
-                  style={reaction === o.value
-                    ? { background: o.bg, borderColor: o.border, color: o.color }
-                    : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#6b7280' }}>
+                  className="p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all"
+                  style={reaction === o.value ? { background: o.bg, borderColor: o.border, color: o.color } : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#6b7280' }}>
                   <Icon size={22} />
                   <span className="text-xs font-bold">{o.label}</span>
                   {reaction === o.value && <FiCheckCircle size={14} />}
@@ -321,46 +815,44 @@ const ReactionModal = ({ suggestion, leadId, onClose, onSuccess }) => {
         </div>
         <div className="px-6 pb-6 flex gap-3 justify-end">
           <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleSave} loading={loading} disabled={!reaction}>
-            <FiCheckCircle size={14} /> Record Reaction
-          </Btn>
+          <Btn variant="primary" onClick={handleSave} loading={loading} disabled={!reaction}><FiCheckCircle size={14} /> Record Reaction</Btn>
         </div>
       </div>
     </div>
   );
 };
 
-// ─── STATUS UPDATE MODAL ──────────────────────────────────────────────────────
+// ─── STATUS MODAL ─────────────────────────────────────────────────────────────
 const StatusModal = ({ lead, onClose, onSuccess }) => {
   const current = lead?.status || 'new';
   const [status, setStatus] = useState(current);
   const [notes, setNotes] = useState('');
+  const [inventoryUnitId, setInventoryUnitId] = useState(lead?.deal_record?.inventory_unit_id || '');
   const [loading, setLoading] = useState(false);
 
   const handleUpdate = async () => {
     if (status === current) return onClose();
+    const statusesRequiringUnit = ['reserved', 'spa_signed', 'completed'];
+    if (statusesRequiringUnit.includes(status) && !inventoryUnitId) {
+      return message.warning('Inventory Unit ID is required for this status');
+    }
+
     setLoading(true);
     try {
-      const res = await apiService.put(`/gridlead/${lead._id}/status`, { status, notes });
-      const data = res?.data?.success !== undefined ? res.data : res;
-      if (data?.success) {
-        message.success(`Status updated to "${STATUS_CONFIG[status]?.label || status}"`);
-        onSuccess();
-        onClose();
-      } else {
-        message.error(data?.message || 'Update failed');
+      const payload = { status, notes };
+      if (statusesRequiringUnit.includes(status) || inventoryUnitId) {
+        payload.inventoryUnitId = inventoryUnitId;
       }
-    } catch (e) {
-      message.error(e?.response?.data?.message || 'Update failed');
-    } finally {
-      setLoading(false);
-    }
+      const res = await apiService.put(`/gridlead/${lead._id}/status`, payload);
+      const data = res?.data?.success !== undefined ? res.data : res;
+      if (data?.success) { message.success(`Status updated to "${STATUS_CONFIG[status]?.label || status}"`); onSuccess(); onClose(); }
+      else message.error(data?.message || 'Update failed');
+    } catch (e) { message.error(e?.response?.data?.message || 'Update failed'); }
+    finally { setLoading(false); }
   };
 
-  // Build allowed options — can only go forward (or to not_proceeding)
   const currIdx = STATUS_FLOW.indexOf(current);
-  const allowed = STATUS_FLOW.filter((_, i) => i >= currIdx).concat(['not_proceeding'])
-    .filter((v, i, a) => a.indexOf(v) === i);
+  const allowed = STATUS_FLOW.filter((_, i) => i >= currIdx).concat(['not_proceeding']).filter((v, i, a) => a.indexOf(v) === i);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
@@ -368,20 +860,15 @@ const StatusModal = ({ lead, onClose, onSuccess }) => {
         <div className="px-6 py-5 flex items-center justify-between" style={{ background: GR }}>
           <div>
             <h3 className="text-base font-extrabold text-white">Update Lead Status</h3>
-            <p className="text-xs text-white/70 mt-0.5">Progress can only move forward in the workflow</p>
+            <p className="text-xs text-white/70 mt-0.5">Progress can only move forward</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30">
-            <FiX size={16} />
-          </button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"><FiX size={16} /></button>
         </div>
         <div className="p-6 space-y-4">
-          {/* Current */}
           <div className="flex items-center gap-3 p-3.5 rounded-xl bg-gray-50 border border-gray-100">
             <span className="text-xs text-gray-500 font-medium">Current:</span>
             <StatusBadge status={current} />
           </div>
-
-          {/* Status grid */}
           <div className="grid grid-cols-2 gap-2">
             {allowed.map(s => {
               const cfg = STATUS_CONFIG[s];
@@ -390,9 +877,7 @@ const StatusModal = ({ lead, onClose, onSuccess }) => {
               return (
                 <button key={s} onClick={() => setStatus(s)}
                   className={`p-3 rounded-xl border-2 text-left transition-all ${isCurrent ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  style={isSelected
-                    ? { background: cfg.bg, borderColor: cfg.text, color: cfg.text }
-                    : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#374151' }}>
+                  style={isSelected ? { background: cfg.bg, borderColor: cfg.text, color: cfg.text } : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#374151' }}>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold">{cfg?.label || s}</span>
                     {isSelected && <FiCheckCircle size={13} />}
@@ -402,56 +887,45 @@ const StatusModal = ({ lead, onClose, onSuccess }) => {
             })}
           </div>
 
+          {['reserved', 'spa_signed', 'completed'].includes(status) && (
+            <div className="animate-fade-in">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Inventory Unit ID <span className="text-red-500">*</span></p>
+              <input value={inventoryUnitId} onChange={e => setInventoryUnitId(e.target.value)} placeholder="Enter 24-character Unit ID"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
+              <p className="text-[10px] text-gray-400 mt-1">Required to lock the inventory unit.</p>
+            </div>
+          )}
+
           <div>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Note (optional)</p>
-            <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)}
-              placeholder="e.g. Client confirmed visit for Saturday..."
+            <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Client confirmed visit for Saturday..."
               className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all resize-none" />
           </div>
         </div>
         <div className="px-6 pb-6 flex gap-3 justify-end">
           <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleUpdate} loading={loading}>
-            <FiCheckCircle size={14} /> Update Status
-          </Btn>
+          <Btn variant="primary" onClick={handleUpdate} loading={loading}><FiCheckCircle size={14} /> Update Status</Btn>
         </div>
       </div>
     </div>
   );
 };
 
-// ─── ADD NOTE MODAL ───────────────────────────────────────────────────────────
+// ─── NOTE MODAL ───────────────────────────────────────────────────────────────
 const NoteModal = ({ leadId, onClose, onAdded }) => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // Advisor uses the advisor update-lead-requirements path for notes?
-  // Actually there's no dedicated advisor note endpoint in routes — advisors push notes via status update
-  // We'll simulate by calling updateMyLeadStatus with notes only (same status)
-  // OR — we can use the lead update which already pushes to notes internally
-  // Looking at the route: PUT /:id/status — includes notes in status_history + lead.notes
-  // For a pure note, we'll re-use that endpoint with current status
 
   const handleAdd = async () => {
     if (!text.trim()) return message.warning('Note text is required');
     setLoading(true);
     try {
-      // We hit the status endpoint keeping the same status, which pushes a note
-      const res = await apiService.post(`/gridlead/${leadId}/note-advisor`, { text: text.trim() });
-      // Fallback if dedicated endpoint doesn't exist — use status with note
+      const res  = await apiService.post(`/gridlead/${leadId}/note-advisor`, { text: text.trim() });
       const data = res?.data?.success !== undefined ? res.data : res;
-      if (data?.success) {
-        message.success('Note added');
-        onAdded(data.data);
-        onClose();
-      } else {
-        message.error(data?.message || 'Failed');
-      }
-    } catch {
-      message.error('Note endpoint not available — use status update with notes');
-    } finally {
-      setLoading(false);
-    }
+      if (data?.success) { message.success('Note added'); onAdded(data.data); onClose(); }
+      else message.error(data?.message || 'Failed');
+    } catch { message.error('Note endpoint not available — use status update with notes'); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -459,19 +933,14 @@ const NoteModal = ({ leadId, onClose, onAdded }) => {
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="px-6 py-5 flex items-center justify-between" style={{ background: GR }}>
           <h3 className="text-base font-extrabold text-white">Add Note</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30">
-            <FiX size={16} />
-          </button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"><FiX size={16} /></button>
         </div>
         <div className="p-6 space-y-4">
-          <textarea rows={5} value={text} autoFocus onChange={e => setText(e.target.value)}
-            placeholder="Write your note about this lead or client..."
+          <textarea rows={5} value={text} autoFocus onChange={e => setText(e.target.value)} placeholder="Write your note about this lead or client..."
             className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all resize-none" />
           <div className="flex gap-3 justify-end">
             <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-            <Btn variant="primary" onClick={handleAdd} loading={loading}>
-              <FiPlus size={14} /> Add Note
-            </Btn>
+            <Btn variant="primary" onClick={handleAdd} loading={loading}><FiPlus size={14} /> Add Note</Btn>
           </div>
         </div>
       </div>
@@ -479,130 +948,18 @@ const NoteModal = ({ leadId, onClose, onAdded }) => {
   );
 };
 
-// ─── PROPERTY SEARCH PANEL ────────────────────────────────────────────────────
-const PropertySearchPanel = ({ leadId, alreadySuggestedIds, onSuggested }) => {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [suggestingId, setSuggestingId] = useState(null);
-  const [showSuggestModal, setShowSuggestModal] = useState(null); // property obj
-  const debounceRef = useRef(null);
-
-  const search = useCallback(async (q) => {
-    if (!q.trim()) return setResults([]);
-    setLoading(true);
-    try {
-      const res = await apiService.get(`/properties?search=${encodeURIComponent(q)}&limit=8&approvalStatus=approved&listingStatus=active`);
-      const data = res?.data?.data || res?.data || [];
-      setResults(Array.isArray(data) ? data : []);
-    } catch {
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const handleInput = (e) => {
-    const val = e.target.value;
-    setQuery(val);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(val), 400);
-  };
-
-  const handleSuggestDone = () => {
-    setShowSuggestModal(null);
-    onSuggested();
-  };
-
-  return (
-    <div>
-      {showSuggestModal && (
-        <SuggestModal
-          property={showSuggestModal}
-          leadId={leadId}
-          onClose={() => setShowSuggestModal(null)}
-          onSuccess={handleSuggestDone}
-        />
-      )}
-
-      {/* Search bar */}
-      <div className="relative">
-        <FiSearch size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          value={query}
-          onChange={handleInput}
-          placeholder="Search by property name, area, or developer..."
-          className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all"
-        />
-        {loading && <FiLoader size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-purple-400 animate-spin" />}
-      </div>
-
-      {/* Results */}
-      {results.length > 0 && (
-        <div className="mt-4 space-y-2">
-          {results.map((p, i) => {
-            const price = p.price_min || p.price || 0;
-            const loc   = [p.area, p.city].filter(Boolean).join(', ');
-            const isSuggested = alreadySuggestedIds.includes(String(p._id));
-            return (
-              <div key={p._id || i}
-                className={`flex items-center gap-3 p-3 rounded-xl border transition-all hover:shadow-sm
-                  ${isSuggested ? 'border-purple-100 bg-purple-50' : 'border-gray-100 bg-white'}`}>
-                <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
-                  {p.mainLogo
-                    ? <img src={p.mainLogo} alt="" className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={18} /></div>}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-900 truncate">{p.propertyName || p.title}</p>
-                  {loc && <p className="text-xs text-gray-400 mt-0.5 truncate"><FiMapPin size={9} className="inline mr-1" />{loc}</p>}
-                  <p className="text-xs font-bold mt-1" style={{ color: P }}>
-                    {price > 0 ? `AED ${Number(price).toLocaleString()}` : 'On Request'}
-                    {p.bedrooms > 0 && ` · ${p.bedrooms}BR`}
-                  </p>
-                </div>
-                <Btn size="sm"
-                  variant={isSuggested ? 'ghost' : 'primary'}
-                  disabled={isSuggested || suggestingId === p._id}
-                  loading={suggestingId === p._id}
-                  onClick={() => !isSuggested && setShowSuggestModal(p)}>
-                  {isSuggested ? <><FiCheckCircle size={11} /> Suggested</> : <><FiSend size={11} /> Suggest</>}
-                </Btn>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {!loading && query.trim() && results.length === 0 && (
-        <div className="mt-4 text-center py-6 text-gray-400 text-sm">
-          <FiSearch size={28} className="mx-auto mb-2 opacity-30" />
-          No properties found for "{query}"
-        </div>
-      )}
-
-      {!query.trim() && (
-        <div className="mt-4 text-center py-6 text-gray-400 text-sm">
-          <FiSearch size={28} className="mx-auto mb-2 opacity-30" />
-          Search the property catalogue to suggest alternatives
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─── UPDATE REQUIREMENTS PANEL ────────────────────────────────────────────────
+// ─── UPDATE REQUIREMENTS MODAL ────────────────────────────────────────────────
 const UpdateReqModal = ({ lead, onClose, onSuccess }) => {
   const req = lead?.requirements || {};
   const [form, setForm] = useState({
-    property_type:   req.property_type    || '',
-    transaction_type: req.transaction_type || 'buy',
-    budget_min:      req.budget_min       || '',
-    budget_max:      req.budget_max       || '',
-    bedrooms:        req.bedrooms ?? '',
-    bathrooms:       req.bathrooms ?? '',
-    furnished:       req.furnished        || 'any',
-    additional_notes: req.additional_notes || '',
+    property_type:        req.property_type    || '',
+    transaction_type:     req.transaction_type || 'buy',
+    budget_min:           req.budget_min       || '',
+    budget_max:           req.budget_max       || '',
+    bedrooms:             req.bedrooms ?? '',
+    bathrooms:            req.bathrooms ?? '',
+    furnished:            req.furnished        || 'any',
+    additional_notes:     req.additional_notes || '',
     location_preferences: (req.location_preferences || []).map(l => typeof l === 'string' ? l : l.area),
   });
   const [reason, setReason] = useState('');
@@ -624,19 +981,12 @@ const UpdateReqModal = ({ lead, onClose, onSuccess }) => {
         },
         reason: reason || 'Requirements updated by advisor',
       };
-      const res = await apiService.put(`/gridlead/${lead._id}/update-requirements`, payload);
+      const res  = await apiService.put(`/gridlead/${lead._id}/update-requirements`, payload);
       const data = res?.data?.success !== undefined ? res.data : res;
-      if (data?.success) {
-        message.success('Requirements updated. Fresh matches loaded.');
-        onSuccess(data);
-      } else {
-        message.error(data?.message || 'Update failed');
-      }
-    } catch (e) {
-      message.error(e?.response?.data?.message || 'Update failed');
-    } finally {
-      setLoading(false);
-    }
+      if (data?.success) { message.success('Requirements updated. Fresh matches loaded.'); onSuccess(data); }
+      else message.error(data?.message || 'Update failed');
+    } catch (e) { message.error(e?.response?.data?.message || 'Update failed'); }
+    finally { setLoading(false); }
   };
 
   const inputCls = 'w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all';
@@ -650,35 +1000,24 @@ const UpdateReqModal = ({ lead, onClose, onSuccess }) => {
             <h3 className="text-base font-extrabold text-white">Update Requirements</h3>
             <p className="text-xs text-white/70 mt-0.5">Fresh property matches will be generated</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30">
-            <FiX size={16} />
-          </button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"><FiX size={16} /></button>
         </div>
         <div className="overflow-y-auto flex-1 p-6 space-y-5">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Property Type</label>
-              <div className="relative">
-                <select value={form.property_type} onChange={e => set('property_type', e.target.value)} className={selCls}>
-                  <option value="">Any type</option>
-                  {['Apartment','Villa','Townhouse','Penthouse','Studio','Office','Retail','Land'].map(t => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-                <FiChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            {[
+              { label: 'Property Type', key: 'property_type', options: ['','Apartment','Villa','Townhouse','Penthouse','Studio','Office','Retail','Land'] },
+              { label: 'Transaction',   key: 'transaction_type', options: ['buy','rent','invest'] },
+            ].map(({ label, key, options }) => (
+              <div key={key}>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">{label}</label>
+                <div className="relative">
+                  <select value={form[key]} onChange={e => set(key, e.target.value)} className={selCls}>
+                    {options.map(o => <option key={o} value={o}>{o === '' ? 'Any type' : o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
+                  </select>
+                  <FiChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Transaction</label>
-              <div className="relative">
-                <select value={form.transaction_type} onChange={e => set('transaction_type', e.target.value)} className={selCls}>
-                  <option value="buy">Buy</option>
-                  <option value="rent">Rent</option>
-                  <option value="invest">Invest</option>
-                </select>
-                <FiChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
+            ))}
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Min Budget (AED)</label>
               <input type="number" value={form.budget_min} placeholder="500,000" onChange={e => set('budget_min', e.target.value)} className={inputCls} />
@@ -711,7 +1050,6 @@ const UpdateReqModal = ({ lead, onClose, onSuccess }) => {
             </div>
           </div>
 
-          {/* Locations */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Location Preferences</label>
             <div className="space-y-2">
@@ -720,46 +1058,133 @@ const UpdateReqModal = ({ lead, onClose, onSuccess }) => {
                   <div className="relative flex-1">
                     <FiMapPin size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input value={loc} placeholder="e.g. Dubai Marina"
-                      onChange={e => {
-                        const locs = [...form.location_preferences];
-                        locs[i] = e.target.value;
-                        set('location_preferences', locs);
-                      }}
+                      onChange={e => { const locs = [...form.location_preferences]; locs[i] = e.target.value; set('location_preferences', locs); }}
                       className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
                   </div>
                   <button onClick={() => set('location_preferences', form.location_preferences.filter((_, idx) => idx !== i))}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-400 hover:bg-red-100 transition-colors">
+                    className="w-10 h-10 flex items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-400 hover:bg-red-100">
                     <FiX size={14} />
                   </button>
                 </div>
               ))}
               <button onClick={() => set('location_preferences', [...form.location_preferences, ''])}
-                className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors">
+                className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100">
                 <FiPlus size={13} /> Add Location
               </button>
             </div>
           </div>
-
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Additional Notes</label>
-            <textarea rows={2} value={form.additional_notes} onChange={e => set('additional_notes', e.target.value)}
-              placeholder="Special requirements…"
+            <textarea rows={2} value={form.additional_notes} onChange={e => set('additional_notes', e.target.value)} placeholder="Special requirements…"
               className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all resize-none" />
           </div>
-
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Reason for Update</label>
-            <input value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. Client increased budget"
-              className={inputCls} />
+            <input value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. Client increased budget" className={inputCls} />
           </div>
         </div>
         <div className="px-6 py-4 border-t border-gray-100 flex gap-3 justify-end flex-shrink-0">
           <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleSave} loading={loading}>
-            <FiRefreshCw size={14} /> Update & Re-match
-          </Btn>
+          <Btn variant="primary" onClick={handleSave} loading={loading}><FiRefreshCw size={14} /> Update & Re-match</Btn>
         </div>
       </div>
+    </div>
+  );
+};
+
+// ─── PROPERTY SEARCH PANEL ────────────────────────────────────────────────────
+const PropertySearchPanel = ({ leadId, alreadySuggestedIds, onSuggested, onGeneratePresentation }) => {
+  const [query,            setQuery]            = useState('');
+  const [results,          setResults]          = useState([]);
+  const [loading,          setLoading]          = useState(false);
+  const [suggestingId,     setSuggestingId]     = useState(null);
+  const [showSuggestModal, setShowSuggestModal] = useState(null);
+  const debounceRef = useRef(null);
+
+  const search = useCallback(async (q) => {
+    if (!q.trim()) return setResults([]);
+    setLoading(true);
+    try {
+      const res  = await apiService.get(`/properties?search=${encodeURIComponent(q)}&limit=8&approvalStatus=approved&listingStatus=active`);
+      const data = res?.data?.data || res?.data || [];
+      setResults(Array.isArray(data) ? data : []);
+    } catch { setResults([]); }
+    finally { setLoading(false); }
+  }, []);
+
+  const handleInput = (e) => {
+    const val = e.target.value;
+    setQuery(val);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => search(val), 400);
+  };
+
+  return (
+    <div>
+      {showSuggestModal && (
+        <SuggestModal property={showSuggestModal} leadId={leadId}
+          onClose={() => setShowSuggestModal(null)}
+          onSuccess={() => { setShowSuggestModal(null); onSuggested(); }} />
+      )}
+
+      <div className="relative">
+        <FiSearch size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input value={query} onChange={handleInput} placeholder="Search by property name, area, or developer..."
+          className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
+        {loading && <FiLoader size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-purple-400 animate-spin" />}
+      </div>
+
+      {results.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {results.map((p, i) => {
+            const price = p.price_min || p.price || 0;
+            const loc   = [p.area, p.city].filter(Boolean).join(', ');
+            const isSuggested = alreadySuggestedIds.includes(String(p._id));
+            return (
+              <div key={p._id || i}
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-all hover:shadow-sm
+                  ${isSuggested ? 'border-purple-100 bg-purple-50' : 'border-gray-100 bg-white'}`}>
+                <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
+                  {p.mainLogo ? <img src={p.mainLogo} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={18} /></div>}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-900 truncate">{p.propertyName || p.title}</p>
+                  {loc && <p className="text-xs text-gray-400 mt-0.5 truncate"><FiMapPin size={9} className="inline mr-1" />{loc}</p>}
+                  <p className="text-xs font-bold mt-1" style={{ color: P }}>
+                    {price > 0 ? `AED ${Number(price).toLocaleString()}` : 'On Request'}
+                    {p.bedrooms > 0 && ` · ${p.bedrooms}BR`}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1.5 flex-shrink-0">
+                  <button onClick={() => onGeneratePresentation(p)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 transition-all">
+                    <FiFileText size={10} /> PPT
+                  </button>
+                  <Btn size="sm" variant={isSuggested ? 'ghost' : 'primary'}
+                    disabled={isSuggested || suggestingId === p._id} loading={suggestingId === p._id}
+                    onClick={() => !isSuggested && setShowSuggestModal(p)}>
+                    {isSuggested ? <><FiCheckCircle size={11} /> Suggested</> : <><FiSend size={11} /> Suggest</>}
+                  </Btn>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {!loading && query.trim() && results.length === 0 && (
+        <div className="mt-4 text-center py-6 text-gray-400 text-sm">
+          <FiSearch size={28} className="mx-auto mb-2 opacity-30" />
+          No properties found for "{query}"
+        </div>
+      )}
+
+      {!query.trim() && (
+        <div className="mt-4 text-center py-6 text-gray-400 text-sm">
+          <FiSearch size={28} className="mx-auto mb-2 opacity-30" />
+          Search the property catalogue to suggest alternatives
+        </div>
+      )}
     </div>
   );
 };
@@ -768,7 +1193,7 @@ const UpdateReqModal = ({ lead, onClose, onSuccess }) => {
 // MAIN COMPONENT
 // ════════════════════════════════════════════════════════════════════════════
 const GridAdvisorLeadDetail = () => {
-  const { id } = useParams();
+  const { id }   = useParams();
   const navigate = useNavigate();
 
   const [lead,         setLead]         = useState(null);
@@ -779,32 +1204,30 @@ const GridAdvisorLeadDetail = () => {
   const [matchLoading, setMatchLoading] = useState(false);
   const [isNurturing,  setIsNurturing]  = useState(false);
 
-  // Active tab on right panel
-  const [activeTab, setActiveTab] = useState('matches'); // matches | suggest | suggestions
+  const [activeTab, setActiveTab] = useState('matches');
 
   // Modals
-  const [showStatus,   setShowStatus]   = useState(false);
-  const [showNote,     setShowNote]     = useState(false);
-  const [showReqs,     setShowReqs]     = useState(false);
-  const [suggestModal, setSuggestModal] = useState(null); // property obj from matches
-  const [reactionModal, setReactionModal] = useState(null); // suggestion obj
+  const [showStatus,    setShowStatus]    = useState(false);
+  const [showNote,      setShowNote]      = useState(false);
+  const [showReqs,      setShowReqs]      = useState(false);
+  const [suggestModal,  setSuggestModal]  = useState(null);
+  const [reactionModal, setReactionModal] = useState(null);
 
-  // Collapsibles
+  // Presentation modal
+  const [showPresentation, setShowPresentation] = useState(false);
+  const [selectedProperty,  setSelectedProperty]  = useState(null);
+
   const [showNotes,   setShowNotes]   = useState(true);
   const [showHistory, setShowHistory] = useState(false);
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchLead = useCallback(async () => {
     setPageLoading(true);
     try {
       const res  = await apiService.get(`/gridlead/${id}`);
       const data = res?.data?.data || res?.data;
       setLead(data);
-    } catch {
-      message.error('Failed to load lead');
-    } finally {
-      setPageLoading(false);
-    }
+    } catch { message.error('Failed to load lead'); }
+    finally { setPageLoading(false); }
   }, [id]);
 
   const fetchMatches = useCallback(async () => {
@@ -816,19 +1239,19 @@ const GridAdvisorLeadDetail = () => {
       setMatchType(payload?.matchType || '');
       setMatchNote(payload?.note || '');
       setIsNurturing(payload?.is_nurturing || false);
-    } catch {
-      setMatches([]);
-      setMatchType('none');
-    } finally {
-      setMatchLoading(false);
-    }
+    } catch { setMatches([]); setMatchType('none'); }
+    finally { setMatchLoading(false); }
   }, [id]);
 
   useEffect(() => {
     if (id) { fetchLead(); fetchMatches(); }
   }, [id, fetchLead, fetchMatches]);
 
-  // ── Derived ────────────────────────────────────────────────────────────────
+  const handleGeneratePresentation = (property) => {
+    setSelectedProperty(property);
+    setShowPresentation(true);
+  };
+
   const fn      = lead?.contact_info?.name?.first_name || '';
   const ln      = lead?.contact_info?.name?.last_name  || '';
   const phone   = lead?.contact_info?.mobile?.number   || '—';
@@ -840,14 +1263,10 @@ const GridAdvisorLeadDetail = () => {
   const hist    = lead?.status_history || [];
   const suggestions = lead?.advisor_suggestions || [];
 
-  const alreadySuggestedIds = suggestions.map(s =>
-    String(s.property_id?._id || s.property_id)
-  );
-
+  const alreadySuggestedIds = suggestions.map(s => String(s.property_id?._id || s.property_id));
   const interestedCount = suggestions.filter(s => s.client_reaction === 'interested').length;
   const pendingCount    = suggestions.filter(s => s.client_reaction === 'pending').length;
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleReqsSuccess = (data) => {
     setShowReqs(false);
     if (data?.new_matches?.data) {
@@ -859,13 +1278,10 @@ const GridAdvisorLeadDetail = () => {
   };
 
   const handleSuggestFromMatch = (property) => {
-    if (alreadySuggestedIds.includes(String(property._id))) {
-      return message.info('Already suggested to client');
-    }
+    if (alreadySuggestedIds.includes(String(property._id))) return message.info('Already suggested to client');
     setSuggestModal(property);
   };
 
-  // ── Loading ────────────────────────────────────────────────────────────────
   if (pageLoading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
       <Spin size="large" />
@@ -896,19 +1312,20 @@ const GridAdvisorLeadDetail = () => {
       {showNote     && <NoteModal leadId={id} onClose={() => setShowNote(false)} onAdded={() => fetchLead()} />}
       {showReqs     && <UpdateReqModal lead={lead} onClose={() => setShowReqs(false)} onSuccess={handleReqsSuccess} />}
       {suggestModal && (
-        <SuggestModal
-          property={suggestModal}
-          leadId={id}
+        <SuggestModal property={suggestModal} leadId={id}
           onClose={() => setSuggestModal(null)}
-          onSuccess={() => { setSuggestModal(null); fetchLead(); }}
-        />
+          onSuccess={() => { setSuggestModal(null); fetchLead(); }} />
       )}
       {reactionModal && (
-        <ReactionModal
-          suggestion={reactionModal}
-          leadId={id}
+        <ReactionModal suggestion={reactionModal} leadId={id}
           onClose={() => setReactionModal(null)}
-          onSuccess={() => { setReactionModal(null); fetchLead(); }}
+          onSuccess={() => { setReactionModal(null); fetchLead(); }} />
+      )}
+      {showPresentation && selectedProperty && (
+        <PresentationModal
+          lead={lead}
+          property={selectedProperty}
+          onClose={() => { setShowPresentation(false); setSelectedProperty(null); }}
         />
       )}
 
@@ -919,13 +1336,11 @@ const GridAdvisorLeadDetail = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <button onClick={() => navigate(-1)}
-                className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
+                className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50">
                 <FiArrowLeft size={16} />
               </button>
               <div className="min-w-0">
-                <h1 className="text-base font-extrabold text-gray-900 truncate">
-                  {`${fn} ${ln}`.trim() || 'Unknown Client'}
-                </h1>
+                <h1 className="text-base font-extrabold text-gray-900 truncate">{`${fn} ${ln}`.trim() || 'Unknown Client'}</h1>
                 <p className="text-xs text-gray-400 font-medium">Lead · {String(lead._id).slice(-8)}</p>
               </div>
             </div>
@@ -953,7 +1368,7 @@ const GridAdvisorLeadDetail = () => {
               <FiAlertTriangle size={18} className="text-amber-500 flex-shrink-0" />
               <div className="flex-1">
                 <p className="text-sm font-bold text-amber-800">Client in Nurturing Mode</p>
-                <p className="text-xs text-amber-700 mt-0.5">No exact matches found. Suggest properties manually or update requirements to find better matches.</p>
+                <p className="text-xs text-amber-700 mt-0.5">No exact matches found. Suggest properties manually or update requirements.</p>
               </div>
               <Btn variant="amber" size="sm" onClick={() => setActiveTab('suggest')}>
                 <FiSearch size={12} /> Search Properties
@@ -968,26 +1383,20 @@ const GridAdvisorLeadDetail = () => {
             {/* ── LEFT SIDEBAR ── */}
             <div className="lg:col-span-4 space-y-4">
 
-              {/* Avatar card */}
+              {/* Avatar */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-extrabold flex-shrink-0 shadow-lg"
-                    style={{ background: GR }}>
-                    {(fn?.[0] || '?').toUpperCase()}
-                  </div>
+                    style={{ background: GR }}>{(fn?.[0] || '?').toUpperCase()}</div>
                   <div className="min-w-0">
-                    <p className="text-lg font-extrabold text-gray-900 leading-tight truncate">
-                      {`${fn} ${ln}`.trim() || 'Unknown'}
-                    </p>
+                    <p className="text-lg font-extrabold text-gray-900 leading-tight truncate">{`${fn} ${ln}`.trim() || 'Unknown'}</p>
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {lead.enquiry_type && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                          style={{ background: '#ede9fe', color: '#5b21b6' }}>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase" style={{ background: '#ede9fe', color: '#5b21b6' }}>
                           {lead.enquiry_type.replace(/_/g, ' ')}
                         </span>
                       )}
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                        style={{ background: '#f5f3ff', color: P, border: '1px solid #ddd6fe' }}>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase" style={{ background: '#f5f3ff', color: P, border: '1px solid #ddd6fe' }}>
                         {lead.lead_type || 'platform'}
                       </span>
                     </div>
@@ -1006,7 +1415,7 @@ const GridAdvisorLeadDetail = () => {
               <SectionBox title="Client Requirements" icon={FiTag}
                 action={
                   <button onClick={() => setShowReqs(true)}
-                    className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors">
+                    className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100">
                     <FiEdit3 size={11} /> Edit
                   </button>
                 }>
@@ -1019,7 +1428,7 @@ const GridAdvisorLeadDetail = () => {
                       : req.budget_max ? `Up to AED ${Number(req.budget_max).toLocaleString()}` : `From AED ${Number(req.budget_min).toLocaleString()}`
                   } />
                 )}
-                {req.bedrooms  != null && <InfoRow icon={FiHome}    label="Bedrooms"    value={req.bedrooms === 0 ? 'Studio' : `${req.bedrooms} BR`} />}
+                {req.bedrooms  != null && <InfoRow icon={FiHome}    label="Bedrooms"   value={req.bedrooms === 0 ? 'Studio' : `${req.bedrooms} BR`} />}
                 {req.furnished         && <InfoRow icon={FiHome}    label="Furnishing"  value={req.furnished} />}
                 {locs.length > 0       && <InfoRow icon={FiMapPin}  label="Locations"   value={locs.join(', ')} />}
                 {req.additional_notes  && <InfoRow icon={FiMessageSquare} label="Notes" value={req.additional_notes} />}
@@ -1031,9 +1440,9 @@ const GridAdvisorLeadDetail = () => {
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Suggestion Summary</p>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { label: 'Total',        value: suggestions.length,              bg: '#f5f3ff', color: P },
-                      { label: 'Interested',   value: interestedCount,                 bg: '#f0fdf4', color: '#16a34a' },
-                      { label: 'Pending',      value: pendingCount,                    bg: '#fffbeb', color: '#d97706' },
+                      { label: 'Total',      value: suggestions.length, bg: '#f5f3ff', color: P },
+                      { label: 'Interested', value: interestedCount,    bg: '#f0fdf4', color: '#16a34a' },
+                      { label: 'Pending',    value: pendingCount,       bg: '#fffbeb', color: '#d97706' },
                     ].map((s, i) => (
                       <div key={i} className="rounded-xl p-3 text-center" style={{ background: s.bg }}>
                         <p className="text-xl font-extrabold" style={{ color: s.color }}>{s.value}</p>
@@ -1047,57 +1456,41 @@ const GridAdvisorLeadDetail = () => {
               {/* Lead meta */}
               <SectionBox title="Lead Info" icon={FiLayers} accent="#475569">
                 <InfoRow icon={FiLayers} label="Source"  value={lead.source?.channel?.replace(/_/g, ' ') || '—'} />
-                <InfoRow icon={FiClock}  label="Created" value={lead.createdAt
-                  ? new Date(lead.createdAt).toLocaleString('en-AE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                  : '—'} />
-                {lead.assigned_at && <InfoRow icon={FiCalendar} label="Assigned" value={
-                  new Date(lead.assigned_at).toLocaleString('en-AE', { day: '2-digit', month: 'short', year: 'numeric' })} />}
+                <InfoRow icon={FiClock}  label="Created" value={lead.createdAt ? new Date(lead.createdAt).toLocaleString('en-AE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—'} />
+                {lead.assigned_at && <InfoRow icon={FiCalendar} label="Assigned" value={new Date(lead.assigned_at).toLocaleString('en-AE', { day:'2-digit', month:'short', year:'numeric' })} />}
                 {lead.classification_reason && <InfoRow icon={FiAlertCircle} label="Classification" value={lead.classification_reason} />}
               </SectionBox>
 
-              {/* Actions */}
+              {/* Quick Actions */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Quick Actions</p>
                 <div className="space-y-2">
-                  <Btn variant="primary" size="sm" onClick={() => setShowStatus(true)} className="w-full">
-                    <FiEdit3 size={13} /> Update Lead Status
-                  </Btn>
-                  <Btn variant="ghost" size="sm" onClick={() => setShowReqs(true)} className="w-full">
-                    <FiRefreshCw size={13} /> Update Requirements
-                  </Btn>
-                  <Btn variant="ghost" size="sm" onClick={() => setShowNote(true)} className="w-full">
-                    <FiFileText size={13} /> Add Note
-                  </Btn>
-                  <Btn variant="ghost" size="sm" onClick={() => { setActiveTab('suggest'); }} className="w-full">
-                    <FiSearch size={13} /> Search & Suggest Property
-                  </Btn>
+                  <Btn variant="primary" size="sm" onClick={() => setShowStatus(true)} className="w-full"><FiEdit3 size={13} /> Update Lead Status</Btn>
+                  <Btn variant="ghost" size="sm" onClick={() => setShowReqs(true)} className="w-full"><FiRefreshCw size={13} /> Update Requirements</Btn>
+                  <Btn variant="ghost" size="sm" onClick={() => setShowNote(true)} className="w-full"><FiFileText size={13} /> Add Note</Btn>
+                  <Btn variant="ghost" size="sm" onClick={() => setActiveTab('suggest')} className="w-full"><FiSearch size={13} /> Search & Suggest Property</Btn>
                 </div>
               </div>
-
             </div>
 
             {/* ── RIGHT PANEL ── */}
             <div className="lg:col-span-8 space-y-5">
 
-              {/* ── TAB BAR ── */}
+              {/* Tab bar */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="flex border-b border-gray-100">
                   {[
-                    { key: 'matches',     label: 'Smart Matches',       icon: FiZap,    count: matches.length },
-                    { key: 'suggest',     label: 'Search & Suggest',    icon: FiSearch, count: null },
-                    { key: 'suggestions', label: 'My Suggestions',      icon: FiList,   count: suggestions.length },
+                    { key: 'matches',     label: 'Smart Matches',    icon: FiZap,    count: matches.length },
+                    { key: 'suggest',     label: 'Search & Suggest', icon: FiSearch, count: null },
+                    { key: 'suggestions', label: 'My Suggestions',   icon: FiList,   count: suggestions.length },
                   ].map(tab => (
-                    <button key={tab.key}
-                      onClick={() => setActiveTab(tab.key)}
+                    <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                       className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-xs font-bold transition-all border-b-2
-                        ${activeTab === tab.key
-                          ? 'border-purple-600 text-purple-700 bg-purple-50/60'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
+                        ${activeTab === tab.key ? 'border-purple-600 text-purple-700 bg-purple-50/60' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
                       <tab.icon size={14} />
                       {tab.label}
                       {tab.count != null && (
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold
-                          ${activeTab === tab.key ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activeTab === tab.key ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
                           {tab.count}
                         </span>
                       )}
@@ -1106,7 +1499,8 @@ const GridAdvisorLeadDetail = () => {
                 </div>
 
                 <div className="p-5">
-                  {/* ── TAB: SMART MATCHES ── */}
+
+                  {/* ── SMART MATCHES ── */}
                   {activeTab === 'matches' && (
                     <div>
                       <div className="flex items-center justify-between mb-4">
@@ -1117,15 +1511,9 @@ const GridAdvisorLeadDetail = () => {
                               <mc.Icon size={10} /> {mc.label}
                             </span>
                           )}
-                          {matchNote && (
-                            <span className="flex items-center gap-1.5 text-xs text-blue-600 font-medium">
-                              <FiInfo size={12} /> {matchNote}
-                            </span>
-                          )}
+                          {matchNote && <span className="flex items-center gap-1.5 text-xs text-blue-600 font-medium"><FiInfo size={12} /> {matchNote}</span>}
                         </div>
-                        <Btn variant="ghost" size="sm" onClick={fetchMatches} loading={matchLoading}>
-                          <FiRefreshCw size={12} /> Refresh
-                        </Btn>
+                        <Btn variant="ghost" size="sm" onClick={fetchMatches} loading={matchLoading}><FiRefreshCw size={12} /> Refresh</Btn>
                       </div>
 
                       {matchLoading && (
@@ -1140,15 +1528,11 @@ const GridAdvisorLeadDetail = () => {
                           <FiXCircle size={28} className="mx-auto mb-3 text-red-300" />
                           <p className="text-sm font-bold text-red-600 mb-1">No matching properties found</p>
                           <p className="text-xs text-red-700 leading-relaxed max-w-sm mx-auto">
-                            Suggest properties manually using the <strong>Search & Suggest</strong> tab, or update the client's requirements to broaden the search.
+                            Suggest properties manually using the <strong>Search & Suggest</strong> tab, or update requirements.
                           </p>
                           <div className="flex gap-2 justify-center mt-4">
-                            <Btn variant="primary" size="sm" onClick={() => setActiveTab('suggest')}>
-                              <FiSearch size={12} /> Search Properties
-                            </Btn>
-                            <Btn variant="ghost" size="sm" onClick={() => setShowReqs(true)}>
-                              <FiEdit3 size={12} /> Update Requirements
-                            </Btn>
+                            <Btn variant="primary" size="sm" onClick={() => setActiveTab('suggest')}><FiSearch size={12} /> Search Properties</Btn>
+                            <Btn variant="ghost" size="sm" onClick={() => setShowReqs(true)}><FiEdit3 size={12} /> Update Requirements</Btn>
                           </div>
                         </div>
                       )}
@@ -1156,15 +1540,14 @@ const GridAdvisorLeadDetail = () => {
                       {!matchLoading && matches.length > 0 && (
                         <>
                           <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                            These properties match the client's requirements. Click <strong>Suggest to Client</strong> on any property you'd like to present.
+                            These properties match the client's requirements. Click <strong>Suggest to Client</strong> or <strong>Generate Presentation</strong>.
                           </p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                             {matches.map((p, i) => (
-                              <PropertyCard
-                                key={p._id || i}
-                                property={p}
+                              <PropertyCard key={p._id || i} property={p}
                                 onSuggest={() => handleSuggestFromMatch(p)}
                                 alreadySuggested={alreadySuggestedIds.includes(String(p._id))}
+                                onGeneratePresentation={handleGeneratePresentation}
                               />
                             ))}
                           </div>
@@ -1173,24 +1556,23 @@ const GridAdvisorLeadDetail = () => {
                     </div>
                   )}
 
-                  {/* ── TAB: SEARCH & SUGGEST ── */}
+                  {/* ── SEARCH & SUGGEST ── */}
                   {activeTab === 'suggest' && (
                     <div>
                       <div className="mb-4">
                         <p className="text-sm font-bold text-gray-800 mb-1">Search the Property Catalogue</p>
-                        <p className="text-xs text-gray-500 leading-relaxed">
-                          Find properties that weren't in the smart matches. Search by name, area, or developer, then suggest directly to the client.
-                        </p>
+                        <p className="text-xs text-gray-500 leading-relaxed">Find properties, generate presentations, or suggest directly to the client.</p>
                       </div>
                       <PropertySearchPanel
                         leadId={id}
                         alreadySuggestedIds={alreadySuggestedIds}
                         onSuggested={() => fetchLead()}
+                        onGeneratePresentation={handleGeneratePresentation}
                       />
                     </div>
                   )}
 
-                  {/* ── TAB: MY SUGGESTIONS ── */}
+                  {/* ── MY SUGGESTIONS ── */}
                   {activeTab === 'suggestions' && (
                     <div>
                       {suggestions.length === 0 ? (
@@ -1198,13 +1580,11 @@ const GridAdvisorLeadDetail = () => {
                           <FiPackage size={32} className="mx-auto mb-3 opacity-30" />
                           <p className="text-sm font-medium">No suggestions yet</p>
                           <p className="text-xs mt-1 mb-4">Use Smart Matches or Search to suggest properties</p>
-                          <Btn variant="primary" size="sm" onClick={() => setActiveTab('matches')}>
-                            <FiZap size={12} /> View Smart Matches
-                          </Btn>
+                          <Btn variant="primary" size="sm" onClick={() => setActiveTab('matches')}><FiZap size={12} /> View Smart Matches</Btn>
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          {/* Summary strip */}
+                          {/* Summary */}
                           <div className="flex items-center gap-3 p-3.5 rounded-xl bg-gray-50 border border-gray-100 flex-wrap">
                             <span className="text-xs text-gray-500 font-medium">Client reactions:</span>
                             {[
@@ -1224,81 +1604,67 @@ const GridAdvisorLeadDetail = () => {
                             })}
                           </div>
 
-                          {/* Suggestion cards */}
                           {suggestions.map((s, i) => {
-                            const prop = s.property_id;
-                            const propName = typeof prop === 'object'
-                              ? (prop?.propertyName || prop?.title || 'Property')
-                              : `Property ID: ${String(prop).slice(-6)}`;
-                            const price = typeof prop === 'object' ? (prop?.price_min || prop?.price || 0) : 0;
-                            const loc   = typeof prop === 'object' ? [prop?.area, prop?.city].filter(Boolean).join(', ') : '';
+                            const prop     = s.property_id;
+                            const propName = typeof prop === 'object' ? (prop?.propertyName || prop?.title || 'Property') : `Property ID: ${String(prop).slice(-6)}`;
+                            const price    = typeof prop === 'object' ? (prop?.price_min || prop?.price || 0) : 0;
+                            const loc      = typeof prop === 'object' ? [prop?.area, prop?.city].filter(Boolean).join(', ') : '';
                             const reaction = s.client_reaction || 'pending';
-                            const rcfg = REACTION_CONFIG[reaction];
+                            const rcfg     = REACTION_CONFIG[reaction];
 
                             return (
-                              <div key={i}
-                                className={`rounded-2xl border overflow-hidden transition-all
-                                  ${reaction === 'interested' ? 'border-green-200 bg-green-50/30' :
-                                    reaction === 'not_interested' ? 'border-red-100' :
-                                    reaction === 'maybe' ? 'border-amber-100' : 'border-gray-100 bg-white'}`}>
+                              <div key={i} className={`rounded-2xl border overflow-hidden transition-all
+                                ${reaction === 'interested' ? 'border-green-200 bg-green-50/30' :
+                                  reaction === 'not_interested' ? 'border-red-100' :
+                                  reaction === 'maybe' ? 'border-amber-100' : 'border-gray-100 bg-white'}`}>
                                 <div className="flex gap-3 p-4">
-                                  {typeof prop === 'object' && prop?.mainLogo ? (
-                                    <img src={prop.mainLogo} alt="" className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
-                                  ) : (
-                                    <div className="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-300">
-                                      <FiImage size={20} />
-                                    </div>
-                                  )}
+                                  {typeof prop === 'object' && prop?.mainLogo
+                                    ? <img src={prop.mainLogo} alt="" className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+                                    : <div className="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-300"><FiImage size={20} /></div>}
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-start justify-between gap-2">
                                       <div className="min-w-0">
                                         <p className="text-sm font-bold text-gray-900 truncate">{propName}</p>
                                         {loc && <p className="text-xs text-gray-400 mt-0.5 truncate"><FiMapPin size={9} className="inline mr-1" />{loc}</p>}
-                                        {price > 0 && (
-                                          <p className="text-sm font-extrabold mt-1" style={{ color: P }}>
-                                            AED {Number(price).toLocaleString()}
-                                          </p>
-                                        )}
+                                        {price > 0 && <p className="text-sm font-extrabold mt-1" style={{ color: P }}>AED {Number(price).toLocaleString()}</p>}
                                       </div>
                                       <ReactionPill reaction={reaction} />
                                     </div>
                                     {s.note && (
-                                      <p className="text-xs text-gray-500 mt-2 bg-white rounded-lg p-2 border border-gray-100 leading-relaxed">
-                                        "{s.note}"
-                                      </p>
+                                      <p className="text-xs text-gray-500 mt-2 bg-white rounded-lg p-2 border border-gray-100 leading-relaxed">"{s.note}"</p>
                                     )}
-                                    <div className="flex items-center justify-between mt-3">
+                                    <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
                                       <span className="text-[10px] text-gray-400 flex items-center gap-1">
                                         <FiClock size={10} />
-                                        Suggested {s.suggested_at
-                                          ? new Date(s.suggested_at).toLocaleDateString('en-AE', { day: '2-digit', month: 'short' })
-                                          : '—'}
+                                        Suggested {s.suggested_at ? new Date(s.suggested_at).toLocaleDateString('en-AE', { day:'2-digit', month:'short' }) : '—'}
                                       </span>
-                                      {/* Update reaction button */}
-                                      <button
-                                        onClick={() => setReactionModal(s)}
-                                        className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-all"
-                                        style={{
-                                          background: rcfg.bg, color: rcfg.color,
-                                          borderColor: rcfg.border,
-                                        }}>
-                                        <FiEdit3 size={10} />
-                                        {reaction === 'pending' ? 'Record Reaction' : 'Update Reaction'}
-                                      </button>
+                                      <div className="flex gap-2">
+                                        {typeof prop === 'object' && prop?._id && (
+                                          <button onClick={() => handleGeneratePresentation(prop)}
+                                            className="flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all">
+                                            <FiFileText size={10} /> PPT
+                                          </button>
+                                        )}
+                                        <button onClick={() => setReactionModal(s)}
+                                          className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-all"
+                                          style={{ background: rcfg.bg, color: rcfg.color, borderColor: rcfg.border }}>
+                                          <FiEdit3 size={10} />
+                                          {reaction === 'pending' ? 'Record Reaction' : 'Update Reaction'}
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
 
-                                {/* Progress indicator for interested */}
                                 {reaction === 'interested' && (
                                   <div className="px-4 pb-3">
                                     <div className="flex items-center gap-2 p-2.5 rounded-xl bg-green-50 border border-green-200">
                                       <FiCheckCircle size={14} className="text-green-500 flex-shrink-0" />
                                       <p className="text-xs font-semibold text-green-800">
-                                        Client is interested — update lead status to progress (e.g. Site Visit Scheduled)
+                                        Client is interested — progress the lead status
                                       </p>
                                       <button onClick={() => setShowStatus(true)}
-                                        className="ml-auto flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors flex-shrink-0">
+                                        className="ml-auto flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 flex-shrink-0">
                                         Progress <FiArrowRight size={11} />
                                       </button>
                                     </div>
@@ -1314,28 +1680,23 @@ const GridAdvisorLeadDetail = () => {
                 </div>
               </div>
 
-              {/* ── STATUS PROGRESS BAR ── */}
+              {/* Status Progress */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Lead Progress</p>
                 <div className="flex items-center gap-1 overflow-x-auto pb-1">
                   {STATUS_FLOW.map((s, i) => {
                     const cfg = STATUS_CONFIG[s];
-                    const currIdx = STATUS_FLOW.indexOf(lead.status);
+                    const currIdx    = STATUS_FLOW.indexOf(lead.status);
                     const isCompleted = i < currIdx;
-                    const isCurrent  = i === currIdx;
-                    const isFuture   = i > currIdx;
+                    const isCurrent   = i === currIdx;
                     return (
                       <React.Fragment key={s}>
                         <div className="flex flex-col items-center gap-1 flex-shrink-0">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all
-                            ${isCompleted ? 'border-green-400 bg-green-400' :
-                              isCurrent   ? 'border-purple-600 bg-purple-600' :
-                              'border-gray-200 bg-white'}`}>
+                            ${isCompleted ? 'border-green-400 bg-green-400' : isCurrent ? 'border-purple-600 bg-purple-600' : 'border-gray-200 bg-white'}`}>
                             {isCompleted
                               ? <FiCheckCircle size={14} className="text-white" />
-                              : isCurrent
-                              ? <div className="w-3 h-3 rounded-full bg-white" />
-                              : <div className="w-2 h-2 rounded-full bg-gray-300" />}
+                              : isCurrent ? <div className="w-3 h-3 rounded-full bg-white" /> : <div className="w-2 h-2 rounded-full bg-gray-300" />}
                           </div>
                           <span className={`text-[9px] font-bold text-center leading-tight max-w-[52px]
                             ${isCurrent ? 'text-purple-700' : isCompleted ? 'text-green-600' : 'text-gray-400'}`}>
@@ -1357,10 +1718,9 @@ const GridAdvisorLeadDetail = () => {
                 )}
               </div>
 
-              {/* ── NOTES ── */}
+              {/* ── NOTES — fixed height + scroll ── */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <button
-                  className="w-full flex items-center gap-3 px-5 py-4 border-b border-gray-50 hover:bg-gray-50 transition-colors"
+                <button className="w-full flex items-center gap-3 px-5 py-4 border-b border-gray-50 hover:bg-gray-50 transition-colors"
                   onClick={() => setShowNotes(p => !p)}>
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white" style={{ background: GR }}>
                     <FiMessageSquare size={14} />
@@ -1373,49 +1733,50 @@ const GridAdvisorLeadDetail = () => {
                   </h4>
                   <div className="flex items-center gap-2">
                     <button onClick={e => { e.stopPropagation(); setShowNote(true); }}
-                      className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors">
+                      className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100">
                       <FiPlus size={11} /> Add
                     </button>
                     {showNotes ? <FiChevronUp size={14} className="text-gray-400" /> : <FiChevronDown size={14} className="text-gray-400" />}
                   </div>
                 </button>
+
                 {showNotes && (
                   <div className="p-5">
-                    {notes.length === 0
-                      ? <p className="text-center text-xs text-gray-400 py-4">No notes yet. Click Add to write one.</p>
-                      : (
-                        <div className="space-y-3">
-                          {[...notes].reverse().map((n, i) => (
-                            <div key={i} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                              <p className="text-sm text-gray-700 leading-relaxed">{n.text}</p>
-                              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-                                <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                                  {(n.author?.[0] || 'A').toUpperCase()}
-                                </span>
-                                <span className="text-xs font-bold text-gray-600">{n.author || 'Advisor'}</span>
-                                {n.author_type && (
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-200 text-gray-500 uppercase">{n.author_type}</span>
-                                )}
-                                <span className="text-xs text-gray-400 ml-auto flex items-center gap-1">
-                                  <FiClock size={10} />
-                                  {(n.created_at || n.createdAt)
-                                    ? new Date(n.created_at || n.createdAt).toLocaleDateString('en-AE', { day: '2-digit', month: 'short', year: 'numeric' })
-                                    : '—'}
-                                </span>
-                              </div>
+                    {notes.length === 0 ? (
+                      <p className="text-center text-xs text-gray-400 py-4">No notes yet. Click Add to write one.</p>
+                    ) : (
+                      /* ✅ Fixed height + scrollable notes list */
+                      <div className="max-h-72 overflow-y-auto pr-1 space-y-3 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                        {[...notes].reverse().map((n, i) => (
+                          <div key={i} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                            <p className="text-sm text-gray-700 leading-relaxed">{n.text}</p>
+                            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                              <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                                {(n.author?.[0] || 'A').toUpperCase()}
+                              </span>
+                              <span className="text-xs font-bold text-gray-600">{n.author || 'Advisor'}</span>
+                              {n.author_type && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-200 text-gray-500 uppercase">{n.author_type}</span>
+                              )}
+                              <span className="text-xs text-gray-400 ml-auto flex items-center gap-1">
+                                <FiClock size={10} />
+                                {(n.created_at || n.createdAt)
+                                  ? new Date(n.created_at || n.createdAt).toLocaleDateString('en-AE', { day:'2-digit', month:'short', year:'numeric' })
+                                  : '—'}
+                              </span>
                             </div>
-                          ))}
-                        </div>
-                      )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
-              {/* ── STATUS HISTORY ── */}
+              {/* Status History */}
               {hist.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  <button
-                    className="w-full flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors"
+                  <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors"
                     onClick={() => setShowHistory(p => !p)}>
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white" style={{ background: GR }}>
                       <FiActivity size={14} />
@@ -1433,8 +1794,7 @@ const GridAdvisorLeadDetail = () => {
                         <div className="space-y-4">
                           {[...hist].reverse().map((h, i) => (
                             <div key={i} className="relative pl-10">
-                              <div className="absolute left-0 top-2 w-8 h-8 rounded-full border-4 border-white shadow-sm flex items-center justify-center"
-                                style={{ background: P }}>
+                              <div className="absolute left-0 top-2 w-8 h-8 rounded-full border-4 border-white shadow-sm flex items-center justify-center" style={{ background: P }}>
                                 <div className="w-2 h-2 rounded-full bg-white" />
                               </div>
                               <div className="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
@@ -1442,7 +1802,7 @@ const GridAdvisorLeadDetail = () => {
                                   <StatusBadge status={h.status} />
                                   <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
                                     <FiCalendar size={10} />
-                                    {h.changed_at ? new Date(h.changed_at).toLocaleDateString('en-AE', { day: '2-digit', month: 'short' }) : '—'}
+                                    {h.changed_at ? new Date(h.changed_at).toLocaleDateString('en-AE', { day:'2-digit', month:'short' }) : '—'}
                                   </span>
                                 </div>
                                 {h.notes && <p className="text-xs text-gray-500 leading-relaxed">{h.notes}</p>}

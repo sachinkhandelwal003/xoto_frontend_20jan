@@ -88,12 +88,30 @@ const AssignModal = ({ lead, visible, onClose, onAssigned }) => {
 
   useEffect(() => {
     if (!visible) return;
+
+    // ✅ FIX 2: Reset state har baar modal open hone pe
+    setSelected('');
+    setNotes('');
+    setAdvisors([]);
+    setRecommended(null);
+
     setLoading(true);
     apiService.get(`/gridlead/${lead._id}/suggest-advisors`)
       .then(res => {
         const d = res?.data?.success !== undefined ? res.data : res;
-        setAdvisors(d?.options || []);
-        setRecommended(d?.recommended || null);
+        const opts = d?.options || [];
+        const rec  = d?.recommended || null;
+        setAdvisors(opts);
+        setRecommended(rec);
+
+        // ✅ Auto-select: current advisor ya recommended
+        const currentId = lead.assigned_to?._id?.toString() || 
+                          (typeof lead.assigned_to === 'string' ? lead.assigned_to : '');
+        if (currentId) {
+          setSelected(currentId);
+        } else if (rec?._id) {
+          setSelected(rec._id);
+        }
       })
       .catch(() => setAdvisors([]))
       .finally(() => setLoading(false));
@@ -103,15 +121,18 @@ const AssignModal = ({ lead, visible, onClose, onAssigned }) => {
     if (!selected) return message.warning('Please select an advisor');
     setSaving(true);
     try {
-      const res  = await apiService.put(`/gridlead/${lead._id}/assign`, { advisorId: selected, notes });
-      const data = res?.data?.success !== undefined ? res.data : res;
-      if (data?.success) {
-        message.success(data.message || 'Advisor assigned');
-        onAssigned();
-        onClose();
-      } else {
-        message.error(data?.message || 'Assignment failed');
-      }
+      // ✅ FIX 1: success check hatao — catch block handle karega errors
+      await apiService.put(`/gridlead/${lead._id}/assign`, { 
+        advisorId: selected, 
+        notes 
+      });
+      message.success(
+        (lead.assigned_to?._id || lead.assigned_to) 
+          ? 'Advisor reassigned successfully' 
+          : 'Advisor assigned successfully'
+      );
+      onAssigned();
+      onClose();
     } catch (e) {
       message.error(e?.response?.data?.message || 'Assignment failed');
     } finally {
@@ -159,7 +180,13 @@ const AssignModal = ({ lead, visible, onClose, onAssigned }) => {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-gray-900">{recommended.firstName} {recommended.lastName}</p>
-                      <p className="text-xs text-gray-500">{recommended.specialisation || 'General'}</p>
+                      <p className="text-xs text-gray-500">
+  {typeof recommended.specialisation === 'string'
+    ? recommended.specialisation
+    : Array.isArray(recommended.specialisation?.propertyTypes)
+      ? recommended.specialisation.propertyTypes.join(', ')
+      : 'General'}
+</p>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="text-xs font-bold" style={{ color: P }}>{recommended.leaderboard?.compositeScore || 0} pts</p>

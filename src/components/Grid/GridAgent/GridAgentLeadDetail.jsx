@@ -5,7 +5,8 @@ import {
   FiCalendar, FiMessageSquare, FiTag, FiAlertCircle, FiActivity, FiLayers,
   FiArrowLeft, FiImage, FiInfo, FiXCircle, FiCheckCircle, FiThumbsUp,
   FiThumbsDown, FiMinus, FiSend, FiEdit3, FiPlus, FiX, FiLoader,
-  FiChevronDown, FiChevronUp, FiAlertTriangle, FiFileText, FiRefreshCw
+  FiChevronDown, FiChevronUp, FiAlertTriangle, FiFileText, FiRefreshCw,
+  FiEye, FiCopy,
 } from 'react-icons/fi';
 import { message, Spin } from 'antd';
 import { apiService } from '../../../manageApi/utils/custom.apiservice';
@@ -22,13 +23,6 @@ const MC = {
   relaxed: { bg: '#fffbeb', color: '#d97706', border: '#fde68a', label: 'Relaxed Match', Icon: FiActivity },
   broad:   { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe', label: 'Broader Area',  Icon: FiMapPin },
   none:    { bg: '#fef2f2', color: '#dc2626', border: '#fecaca', label: 'No Matches',    Icon: FiXCircle },
-};
-
-const ENQUIRY_LABELS = {
-  buy: 'Buy', sell: 'Sell', rent: 'Rent', mortgage: 'Mortgage',
-  consultation: 'Consultation', enquiry: 'Enquiry', schedule_visit: 'Site Visit',
-  hot_property: 'Hot Property', partner: 'Partner', investor: 'Investor',
-  developer: 'Developer', ai_enquiry: 'AI Enquiry', general_enquiry: 'General Enquiry',
 };
 
 const isAssignmentText = (v) => {
@@ -87,10 +81,10 @@ const Btn = ({ children, onClick, variant = 'primary', loading, disabled, size =
   const base = 'flex items-center justify-center gap-2 font-bold rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:pointer-events-none';
   const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-5 py-2.5 text-sm', lg: 'px-7 py-3 text-sm' };
   const vars = {
-    primary: `text-white shadow-md hover:shadow-lg hover:-translate-y-0.5`,
-    ghost: `border border-gray-200 text-gray-600 bg-white hover:bg-gray-50`,
-    danger: `border border-red-200 text-red-600 bg-red-50 hover:bg-red-100`,
-    success: `text-white shadow-md hover:shadow-lg`,
+    primary: 'text-white shadow-md hover:shadow-lg hover:-translate-y-0.5',
+    ghost:   'border border-gray-200 text-gray-600 bg-white hover:bg-gray-50',
+    danger:  'border border-red-200 text-red-600 bg-red-50 hover:bg-red-100',
+    success: 'text-white shadow-md hover:shadow-lg',
   };
   const bg = variant === 'primary' ? GR : variant === 'success' ? 'linear-gradient(135deg,#059669,#10b981)' : '';
   return (
@@ -101,24 +95,16 @@ const Btn = ({ children, onClick, variant = 'primary', loading, disabled, size =
   );
 };
 
-// ─── PROPERTY CARD (with reaction controls) ───────────────────────────────────
-const PropertyCard = ({ property, matchType, reaction, onReact, saving }) => {
+// ─── PROPERTY CARD ────────────────────────────────────────────────────────────
+const PropertyCard = ({ property, matchType, reaction, onReact, saving, onGeneratePresentation }) => {
   const price = property.price_min || property.price || 0;
   const loc   = [property.area, property.city].filter(Boolean).join(', ');
   const mc    = MC[matchType] || MC.broad;
 
-  const reactionMap = {
-    true:  { icon: FiThumbsUp,   color: '#16a34a', bg: '#f0fdf4', label: 'Interested' },
-    false: { icon: FiThumbsDown, color: '#dc2626', bg: '#fef2f2', label: 'Not Interested' },
-    null:  { icon: FiMinus,      color: '#9ca3af', bg: '#f9fafb', label: 'No Reaction' },
-  };
-
-  const current = reactionMap[String(reaction)] || reactionMap['null'];
-
   return (
     <div className={`rounded-2xl border overflow-hidden bg-white transition-all duration-200 hover:shadow-md
       ${reaction === true ? 'border-green-200 ring-1 ring-green-200' : reaction === false ? 'border-red-100' : 'border-gray-100'}`}>
-      
+
       {/* Image */}
       <div className="h-28 bg-slate-100 relative overflow-hidden">
         {property.mainLogo ? (
@@ -136,7 +122,7 @@ const PropertyCard = ({ property, matchType, reaction, onReact, saving }) => {
       {/* Info */}
       <div className="p-3.5">
         <div className="text-sm font-bold text-gray-900 truncate leading-snug">{property.propertyName}</div>
-        {loc && <div className="text-xs text-gray-400 mt-1 flex items-center gap-1 truncate"><FiMapPin size={10}/> {loc}</div>}
+        {loc && <div className="text-xs text-gray-400 mt-1 flex items-center gap-1 truncate"><FiMapPin size={10} /> {loc}</div>}
         <div className="flex justify-between items-center mt-2.5 pt-2.5 border-t border-gray-50">
           <span className="text-sm font-extrabold" style={{ color: P }}>
             {price > 0 ? `AED ${Number(price).toLocaleString()}` : 'On Request'}
@@ -148,20 +134,587 @@ const PropertyCard = ({ property, matchType, reaction, onReact, saving }) => {
         </div>
       </div>
 
+      {/* Generate Presentation */}
+      <div className="px-3.5 pb-2">
+        <button
+          onClick={() => onGeneratePresentation(property)}
+          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 transition-all">
+          <FiFileText size={12} /> Generate Presentation
+        </button>
+      </div>
+
       {/* Reaction row */}
       <div className="px-3.5 pb-3.5 flex gap-2">
-        <button onClick={() => onReact(property._id, true)}
-          disabled={saving}
+        <button onClick={() => onReact(property._id, true)} disabled={saving}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all
             ${reaction === true ? 'bg-green-500 text-white border-green-500' : 'border-gray-200 text-gray-500 hover:border-green-400 hover:text-green-600 hover:bg-green-50'}`}>
-          <FiThumbsUp size={12}/> Interested
+          <FiThumbsUp size={12} /> Interested
         </button>
-        <button onClick={() => onReact(property._id, false)}
-          disabled={saving}
+        <button onClick={() => onReact(property._id, false)} disabled={saving}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all
             ${reaction === false ? 'bg-red-500 text-white border-red-500' : 'border-gray-200 text-gray-500 hover:border-red-400 hover:text-red-600 hover:bg-red-50'}`}>
-          <FiThumbsDown size={12}/> Not Interested
+          <FiThumbsDown size={12} /> Not Interested
         </button>
+      </div>
+    </div>
+  );
+};
+
+// ─── AI PRESENTATION MODAL ────────────────────────────────────────────────────
+// ✅ FIX: property → initialProperty so state name doesn't clash
+const PresentationModal = ({ lead, property: initialProperty, onClose }) => {
+  const [step,           setStep]       = useState(1);
+  const [generating,     setGenerating] = useState(false);
+  const [saving,         setSaving]     = useState(false);
+  const [narrative,      setNarrative]  = useState(null);
+
+  // ✅ Two URLs — tracking (client) and s3 (agent preview)
+  const [trackingUrl,    setTrackingUrl]  = useState('');
+  const [previewUrl,     setPreviewUrl]   = useState('');
+  const [copied,         setCopied]       = useState(false);
+
+  // ✅ FIX: initialProperty se start karo, API se full data fetch karo
+  const [property,        setProperty]        = useState(initialProperty);
+  const [propertyLoading, setPropertyLoading] = useState(false);
+
+  // Fetch full property data on mount
+  useEffect(() => {
+    if (!initialProperty?._id) return;
+    setPropertyLoading(true);
+    apiService.get(`/property/${initialProperty._id}`)
+      .then(res => {
+        const data = res?.data?.data || res?.data;
+        if (data) setProperty(data);
+      })
+      .catch(() => console.warn('Full property fetch failed, using partial data'))
+      .finally(() => setPropertyLoading(false));
+  }, [initialProperty._id]);
+
+  const [settings, setSettings] = useState({
+    language: 'English',
+    currency: 'AED',
+    areaUnit: 'sqft',
+    tone: 'professional',
+    sections: {
+      cover:              true,
+      projectDescription: true,
+      developer:          true,
+      unitPrices:         true,
+      paymentPlan:        true,
+      location:           true,
+      gallery:            true,
+      keyHighlights:      true,
+    },
+  });
+
+  const [clientNotes, setClientNotes] = useState({
+    clientName: `${lead?.contact_info?.name?.first_name || ''} ${lead?.contact_info?.name?.last_name || ''}`.trim(),
+    budget: lead?.requirements?.budget_max
+      ? `AED ${Number(lead.requirements.budget_max).toLocaleString()}`
+      : '',
+    requirements: [
+      lead?.requirements?.property_type,
+      lead?.requirements?.bedrooms != null
+        ? (lead.requirements.bedrooms === 0 ? 'Studio' : `${lead.requirements.bedrooms} BR`)
+        : null,
+      ...(lead?.requirements?.location_preferences || []).map(l => typeof l === 'string' ? l : l.area),
+    ].filter(Boolean).join(', '),
+  });
+
+  // ── Clean property data for backend ──────────────────────────────────────
+  const buildCleanProperty = () => ({
+    propertyName:      property.propertyName || property.projectName || '',
+    type:              property.propertyType || 'Residential',
+    propertySubType:   property.propertySubType || '',
+    area:              property.area || property.locality || '',
+    city:              property.city || 'Dubai',
+    country:           property.country || 'UAE',
+    price:             property.price     || property.price_min || 0,
+    price_min:         property.price_min || property.price     || 0,
+    price_max:         property.price_max || 0,
+    bedrooms:          property.bedrooms     || 0,
+    bathrooms:         property.bathrooms    || 0,
+    builtUpArea:       property.builtUpArea  || 0,
+    floors:            property.floors       || property.numberOfFloors || 0,
+    furnishingStatus:  property.furnishingStatus || property.furnishing || '',
+    ownershipType:     property.ownershipType || '',
+    parkingAllocation: property.parkingAllocation || '',
+    mainLogo:          property.mainLogo || property.media?.mainLogo || '',
+    photos: (() => {
+  const allPhotos = [];
+  // mainLogo as first photo
+  const mainLogo = property.mainLogo || property.media?.mainLogo;
+  if (mainLogo) allPhotos.push(mainLogo);
+  
+  // photos object se
+  const ph = property.photos;
+  if (ph && typeof ph === 'object' && !Array.isArray(ph)) {
+    Object.values(ph).forEach(arr => {
+      if (Array.isArray(arr)) allPhotos.push(...arr.filter(Boolean));
+    });
+  } else if (Array.isArray(ph)) {
+    allPhotos.push(...ph.filter(Boolean));
+  }
+
+  // media object se
+  const med = property.media;
+  if (med && typeof med === 'object') {
+    ['architectureImages','interiorImages','lobbyImages','otherImages'].forEach(key => {
+      if (Array.isArray(med[key])) allPhotos.push(...med[key].filter(Boolean));
+    });
+  }
+  return [...new Set(allPhotos)];
+})(),
+    developer:         property.developerName || '',
+    developerDetails: (() => {
+  const dev = property.developerDetails || property.developer || {};
+  return {
+    name:        dev.name        || property.developerName || '',
+    logo:        dev.logo        || dev.mainLogo || '',
+    description: dev.description || dev.overview || '',
+    email:       dev.email       || '',
+    phone:       dev.phone       || dev.phone_number || '',
+    websiteUrl:  dev.websiteUrl  || '',
+  };
+})(),
+    completionDate:    property.completionDate || '',
+    projectStatus:     property.projectStatus  || '',
+    developmentStatus: property.developmentStatus || '',
+    constructionProgress: property.constructionProgress || 0,
+    readinessProgress: property.readinessProgress || '',
+    serviceCharge:     property.serviceCharge || '',
+    totalUnits:        property.totalUnits    || 0,
+    soldUnits:         property.soldUnits     || 0,
+    reservedUnits:     property.reservedUnits || 0,
+    description:       property.description || property.overview || '',
+    locality:          property.locality || property.area || '',
+    location:          property.location || {},
+    proximity:         property.proximity || {},
+    isFeatured:        property.isFeatured || false,
+    saleStatus:        property.saleStatus || 'Available',
+
+    // facilities: object → readable array
+    facilities: (() => {
+      const f = property.facilities;
+      if (!f) return [];
+      if (Array.isArray(f)) return f;
+      return Object.entries(f)
+        .filter(([, v]) => v === true)
+        .map(([k]) => k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim());
+    })(),
+
+    amenities: Array.isArray(property.amenities) ? property.amenities : [],
+
+    // paymentPlan: nested stages → flat array
+    paymentPlan: (() => {
+      const pp = property.paymentPlan;
+      if (!pp || !Array.isArray(pp) || pp.length === 0) return [];
+      const flat = [];
+      pp.forEach(plan => {
+        if (plan.stages && Array.isArray(plan.stages)) {
+          plan.stages.forEach(s => flat.push({
+            milestone:   s.stage?.replace(/_/g, ' ') || '',
+            percentage:  s.percentage || 0,
+            description: s.description || '',
+          }));
+        }
+      });
+      return flat;
+    })(),
+
+    // unitTypes from inventory or unitTypes array
+    unitTypes: (() => {
+      if (Array.isArray(property.inventory) && property.inventory.length > 0) {
+        return property.inventory.map(inv => ({
+          type:  inv.unitType || '',
+          area:  inv.sqft || inv.sqm || 0,
+          price: property.price_min || property.price || 0,
+          units: inv.units || 1,
+        }));
+      }
+      if (Array.isArray(property.unitTypes) && property.unitTypes.length > 0) {
+        return property.unitTypes.map(t => ({ type: t, area: 0, price: 0 }));
+      }
+      return [];
+    })(),
+  });
+
+  // ── Step 1: Generate narrative ────────────────────────────────────────────
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      const res = await apiService.post('/presentation/generate-narrative', {
+        property:    buildCleanProperty(),
+        clientNotes,
+        settings,
+      });
+      const data = res?.data?.success !== undefined ? res.data : res;
+      if (data?.success) {
+        setNarrative(data.data);
+        setStep(2);
+      } else {
+        message.error(data?.message || 'Generation failed');
+      }
+    } catch (e) {
+      message.error(e?.response?.data?.message || 'Generation failed');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // ── Step 2: Save → get both URLs ─────────────────────────────────────────
+  const handleSave = async () => {
+  setSaving(true);
+  try {
+    const res = await apiService.post('/presentation/save', {
+      leadId:       lead._id,
+      propertyId:   property._id,
+      property:     buildCleanProperty(),
+      narrative,
+      settings,
+      clientNotes,
+      agentProfile: {},
+    });
+    const data = res?.data?.success !== undefined ? res.data : res;
+    if (data?.success) {
+      setTrackingUrl(data.data.trackingUrl);
+      // ✅ Preview = same tracking URL + ?preview=true (view track nahi hoga)
+      setPreviewUrl(data.data.trackingUrl + '?preview=true');
+      setStep(3);
+      message.success('Presentation saved!');
+    } else {
+      message.error(data?.message || 'Save failed');
+    }
+  } catch (e) {
+    message.error(e?.response?.data?.message || 'Save failed');
+  } finally {
+    setSaving(false);
+  }
+};
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(trackingUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const waMessage = encodeURIComponent(
+    `Hi ${clientNotes.clientName}! 👋\n\nPlease find the property presentation for *${property?.propertyName}* here:\n${trackingUrl}\n\n_Powered by Xoto GRID_`
+  );
+
+  const toggleSection = (key) =>
+    setSettings(p => ({ ...p, sections: { ...p.sections, [key]: !p.sections[key] } }));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ background: 'rgba(0,0,0,0.55)' }}>
+      <div className="bg-white w-full sm:rounded-3xl sm:max-w-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+
+        {/* Header */}
+        <div className="px-6 py-5 flex items-center justify-between flex-shrink-0" style={{ background: GR }}>
+          <div>
+            <h3 className="text-base font-extrabold text-white">AI Presentation Generator</h3>
+            <p className="text-xs text-white/70 mt-0.5">
+              {step === 1 && 'Customize your presentation'}
+              {step === 2 && 'Preview AI-generated content'}
+              {step === 3 && 'Share with your client'}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              {[1, 2, 3].map(s => (
+                <div key={s} className={`w-2 h-2 rounded-full transition-all ${step >= s ? 'bg-white' : 'bg-white/30'}`} />
+              ))}
+            </div>
+            <button onClick={onClose}
+              className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30">
+              <FiX size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* ── STEP 1: CUSTOMIZE ── */}
+        {step === 1 && (
+          <div className="overflow-y-auto flex-1 p-6 space-y-5">
+
+            {/* Property loading indicator */}
+            {propertyLoading && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 border border-blue-100">
+                <FiLoader size={13} className="animate-spin text-blue-500" />
+                <p className="text-xs text-blue-600 font-medium">Loading full property data…</p>
+              </div>
+            )}
+
+            {/* Property preview */}
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-purple-50 border border-purple-100">
+              {property.mainLogo
+                ? <img src={property.mainLogo} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="" />
+                : <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                    <FiHome size={18} style={{ color: P }} />
+                  </div>}
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-gray-900 truncate">{property.propertyName}</p>
+                <p className="text-xs text-gray-500 truncate">{[property.area, property.city].filter(Boolean).join(', ')}</p>
+              </div>
+              <div className="ml-auto flex-shrink-0">
+                <p className="text-sm font-extrabold" style={{ color: P }}>
+                  {(property.price || property.price_min) > 0
+                    ? `AED ${Number(property.price || property.price_min).toLocaleString()}`
+                    : 'On Request'}
+                </p>
+              </div>
+            </div>
+
+            {/* Client info */}
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Client Details</p>
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 font-semibold mb-1">Client Name</label>
+                  <input value={clientNotes.clientName}
+                    onChange={e => setClientNotes(p => ({ ...p, clientName: e.target.value }))}
+                    placeholder="Ahmed Ali"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 font-semibold mb-1">Budget</label>
+                    <input value={clientNotes.budget}
+                      onChange={e => setClientNotes(p => ({ ...p, budget: e.target.value }))}
+                      placeholder="AED 1,500,000"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 font-semibold mb-1">Key Requirement</label>
+                    <input value={clientNotes.requirements}
+                      onChange={e => setClientNotes(p => ({ ...p, requirements: e.target.value }))}
+                      placeholder="Sea view, 2BR..."
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Settings */}
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Presentation Settings</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 font-semibold mb-1">Language</label>
+                  <select value={settings.language}
+                    onChange={e => setSettings(p => ({ ...p, language: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none">
+                    {['English', 'Arabic', 'Hindi', 'Urdu', 'Russian'].map(l => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 font-semibold mb-1">Currency</label>
+                  <select value={settings.currency}
+                    onChange={e => setSettings(p => ({ ...p, currency: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none">
+                    {['AED', 'USD', 'GBP', 'EUR', 'INR'].map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 font-semibold mb-1">Area Unit</label>
+                  <select value={settings.areaUnit}
+                    onChange={e => setSettings(p => ({ ...p, areaUnit: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none">
+                    <option value="sqft">sqft</option>
+                    <option value="sqm">sqm</option>
+                  </select>
+                </div>
+              </div>
+              <div className="mt-3">
+                <label className="block text-xs text-gray-500 font-semibold mb-2">Tone</label>
+                <div className="flex gap-2">
+                  {['professional', 'luxury', 'friendly'].map(t => (
+                    <button key={t} onClick={() => setSettings(p => ({ ...p, tone: t }))}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold border capitalize transition-all
+                        ${settings.tone === t ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500 hover:border-purple-300'}`}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Sections toggle */}
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Include Sections</p>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries({
+                  cover:              'Cover Slide',
+                  projectDescription: 'Project Description',
+                  developer:          'Developer Info',
+                  unitPrices:         'Unit Prices',
+                  paymentPlan:        'Payment Plan',
+                  location:           'Location & Map',
+                  gallery:            'Photo Gallery',
+                  keyHighlights:      'Key Highlights',
+                }).map(([key, label]) => (
+                  <button key={key} onClick={() => toggleSection(key)}
+                    className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold transition-all text-left
+                      ${settings.sections[key] ? 'border-purple-300 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-400 bg-gray-50'}`}>
+                    <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all
+                      ${settings.sections[key] ? 'bg-purple-600' : 'bg-gray-200'}`}>
+                      {settings.sections[key] && <FiCheckCircle size={10} className="text-white" />}
+                    </div>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 2: NARRATIVE PREVIEW ── */}
+        {step === 2 && narrative && (
+          <div className="overflow-y-auto flex-1 p-6 space-y-4">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 border border-green-200">
+              <FiCheckCircle size={15} className="text-green-500 flex-shrink-0" />
+              <p className="text-xs font-semibold text-green-700">AI narrative generated — review and edit if needed</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Property Overview</label>
+              <textarea rows={3} value={narrative.propertyOverview}
+                onChange={e => setNarrative(p => ({ ...p, propertyOverview: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all resize-none" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Key Highlights</label>
+              <div className="space-y-2">
+                {(narrative.keyHighlights || []).map((h, i) => (
+                  <input key={i} value={h}
+                    onChange={e => {
+                      const updated = [...narrative.keyHighlights];
+                      updated[i] = e.target.value;
+                      setNarrative(p => ({ ...p, keyHighlights: updated }));
+                    }}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Location & Community</label>
+              <textarea rows={2} value={narrative.locationCommunity}
+                onChange={e => setNarrative(p => ({ ...p, locationCommunity: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all resize-none" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Next Steps (CTA)</label>
+              <textarea rows={2} value={narrative.nextSteps}
+                onChange={e => setNarrative(p => ({ ...p, nextSteps: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all resize-none" />
+            </div>
+
+            <button onClick={() => setStep(1)}
+              className="flex items-center gap-1.5 text-xs font-bold text-purple-600 hover:underline">
+              <FiEdit3 size={11} /> Back to customize
+            </button>
+          </div>
+        )}
+
+        {/* ── STEP 3: SHARE ── */}
+        {step === 3 && (
+          <div className="overflow-y-auto flex-1 p-6 space-y-4">
+
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-green-50 border border-green-200">
+              <FiCheckCircle size={20} className="text-green-500 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-green-800">Presentation ready!</p>
+                <p className="text-xs text-green-700 mt-0.5">Share the tracked link with your client</p>
+              </div>
+            </div>
+
+            {/* ✅ Tracking URL — client ke liye */}
+            <div>
+              <label className="block text-xs font-bold text-purple-600 uppercase tracking-widest mb-2">
+                🔗 Client Link (Tracked) — Share This
+              </label>
+              <div className="flex gap-2">
+                <input readOnly value={trackingUrl}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-purple-200 bg-purple-50 text-sm text-purple-700 font-medium outline-none" />
+                <button onClick={handleCopy}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all flex-shrink-0
+                    ${copied ? 'bg-green-50 border-green-300 text-green-700' : 'bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100'}`}>
+                  {copied ? '✓ Copied' : <FiCopy size={14} />}
+                </button>
+              </div>
+              <p className="text-[10px] text-purple-500 mt-1 font-medium">
+                ✓ Every open is tracked — device, time, and engagement score
+              </p>
+            </div>
+
+            {/* ✅ S3 Preview URL — agent ke liye only */}
+            {previewUrl && (
+  <div>
+    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+      👁 Your Preview (Not Tracked)
+    </label>
+    <a href={previewUrl} target="_blank" rel="noreferrer"
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 hover:bg-gray-100 transition-all">
+      <FiEye size={13} /> Open Preview
+    </a>
+    <p className="text-[10px] text-gray-400 mt-1 font-medium">
+      Only you can see this — opens without tracking
+    </p>
+  </div>
+)}
+
+            {/* Share buttons — tracking URL use hoga */}
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Share Via</label>
+              <div className="grid grid-cols-2 gap-3">
+                <a href={`https://wa.me/?text=${waMessage}`} target="_blank" rel="noreferrer"
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+                  style={{ background: '#25D366' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  WhatsApp
+                </a>
+                <a href={`mailto:${lead?.contact_info?.email?.address || ''}?subject=Property Presentation — ${property?.propertyName}&body=${waMessage}`}
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all">
+                  <FiMail size={15} /> Email
+                </a>
+              </div>
+            </div>
+
+            {/* Tracking info */}
+            <div className="p-4 rounded-xl border border-purple-100 bg-purple-50">
+              <p className="text-xs font-bold text-purple-700 mb-2">📊 Tracking kya karta hai:</p>
+              <ul className="space-y-1 text-xs text-purple-600">
+                <li>✓ Exact time client opens the presentation</li>
+                <li>✓ Device type (Mobile / Desktop)</li>
+                <li>✓ Number of times opened</li>
+                <li>✓ Lead engagement score +15 per view</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-100 flex gap-3 justify-between flex-shrink-0">
+          <Btn variant="ghost" onClick={onClose}>{step === 3 ? 'Close' : 'Cancel'}</Btn>
+          <div className="flex gap-2">
+            {step === 2 && <Btn variant="ghost" onClick={() => setStep(1)}>← Back</Btn>}
+            {step === 1 && (
+              <Btn variant="primary" onClick={handleGenerate} loading={generating} disabled={propertyLoading}>
+                Generate with AI →
+              </Btn>
+            )}
+            {step === 2 && (
+              <Btn variant="primary" onClick={handleSave} loading={saving}>
+                <FiCheckCircle size={14} /> Save & Get Link →
+              </Btn>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -170,22 +723,22 @@ const PropertyCard = ({ property, matchType, reaction, onReact, saving }) => {
 // ─── SUBMIT TO XOTO MODAL ────────────────────────────────────────────────────
 const SubmitModal = ({ lead, onClose, onSuccess }) => {
   const [form, setForm] = useState({
-    first_name: lead?.contact_info?.name?.first_name || '',
-    last_name:  lead?.contact_info?.name?.last_name  || '',
-    phone_number: lead?.contact_info?.mobile?.number || '',
-    country_code: lead?.contact_info?.mobile?.country_code || '+971',
-    email: lead?.contact_info?.email?.address || '',
+    first_name:      lead?.contact_info?.name?.first_name || '',
+    last_name:       lead?.contact_info?.name?.last_name  || '',
+    phone_number:    lead?.contact_info?.mobile?.number   || '',
+    country_code:    lead?.contact_info?.mobile?.country_code || '+971',
+    email:           lead?.contact_info?.email?.address   || '',
     submission_note: '',
   });
   const [loading, setLoading] = useState(false);
 
   const interestedCount = (lead?.matched_listings || []).filter(m => m.client_interested === true).length;
-  const canSubmit = interestedCount > 0;
+  const canSubmit       = interestedCount > 0;
 
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const res = await apiService.post(`/gridlead/agent/${lead._id}/submit-to-xoto`, form);
+      const res  = await apiService.post(`/gridlead/agent/${lead._id}/submit-to-xoto`, form);
       const data = res?.data?.success !== undefined ? res.data : res;
       if (data?.success) {
         message.success('Lead submitted to Xoto admin successfully!');
@@ -203,26 +756,24 @@ const SubmitModal = ({ lead, onClose, onSuccess }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
-        {/* Header */}
         <div className="px-6 py-5 flex items-center justify-between" style={{ background: GR }}>
           <div>
             <h3 className="text-base font-extrabold text-white">Submit to Xoto Admin</h3>
             <p className="text-xs text-white/70 mt-0.5">An advisor will be assigned after submission</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30">
             <FiX size={16} />
           </button>
         </div>
 
         <div className="p-6 space-y-4">
-          {/* Interested count check */}
           {!canSubmit ? (
             <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200">
               <FiAlertTriangle size={18} className="text-amber-500 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-bold text-amber-800">Client reactions required</p>
                 <p className="text-xs text-amber-700 mt-1 leading-relaxed">
-                  Client must show interest in at least 1 property before submitting. Go back and record reactions.
+                  Client must show interest in at least 1 property before submitting.
                 </p>
               </div>
             </div>
@@ -235,14 +786,10 @@ const SubmitModal = ({ lead, onClose, onSuccess }) => {
             </div>
           )}
 
-          {/* Client info confirmation */}
           <div>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Confirm Client Details</p>
             <div className="grid grid-cols-2 gap-3">
-              {[
-                { key: 'first_name', placeholder: 'First name' },
-                { key: 'last_name',  placeholder: 'Last name'  },
-              ].map(f => (
+              {[{ key: 'first_name', placeholder: 'First name' }, { key: 'last_name', placeholder: 'Last name' }].map(f => (
                 <input key={f.key} value={form[f.key]} placeholder={f.placeholder}
                   onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
@@ -285,20 +832,20 @@ const SubmitModal = ({ lead, onClose, onSuccess }) => {
 const UpdateRequirementsPanel = ({ lead, onClose, onSuccess }) => {
   const req = lead?.requirements || {};
   const [form, setForm] = useState({
-    property_type:   req.property_type    || '',
-    transaction_type: req.transaction_type || 'buy',
-    budget_min:      req.budget_min       || '',
-    budget_max:      req.budget_max       || '',
-    bedrooms:        req.bedrooms ?? '',
-    bathrooms:       req.bathrooms ?? '',
-    furnished:       req.furnished        || 'any',
-    additional_notes: req.additional_notes || '',
+    property_type:        req.property_type    || '',
+    transaction_type:     req.transaction_type || 'buy',
+    budget_min:           req.budget_min       || '',
+    budget_max:           req.budget_max       || '',
+    bedrooms:             req.bedrooms ?? '',
+    bathrooms:            req.bathrooms ?? '',
+    furnished:            req.furnished        || 'any',
+    additional_notes:     req.additional_notes || '',
     location_preferences: (req.location_preferences || []).map(l => typeof l === 'string' ? l : l.area),
   });
-  const [reason, setReason] = useState('');
+  const [reason,  setReason]  = useState('');
   const [loading, setLoading] = useState(false);
 
-  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+  const set       = (k, v) => setForm(p => ({ ...p, [k]: v }));
   const addLoc    = () => setForm(p => ({ ...p, location_preferences: [...p.location_preferences, ''] }));
   const removeLoc = (i) => setForm(p => ({ ...p, location_preferences: p.location_preferences.filter((_, idx) => idx !== i) }));
   const setLoc    = (i, v) => setForm(p => ({ ...p, location_preferences: p.location_preferences.map((l, idx) => idx === i ? v : l) }));
@@ -317,7 +864,7 @@ const UpdateRequirementsPanel = ({ lead, onClose, onSuccess }) => {
         },
         reason: reason || 'Client changed preferences',
       };
-      const res = await apiService.post(`/gridlead/agent/${lead._id}/update-requirements`, payload);
+      const res  = await apiService.post(`/gridlead/agent/${lead._id}/update-requirements`, payload);
       const data = res?.data?.success !== undefined ? res.data : res;
       if (data?.success) {
         message.success('Requirements updated. Fresh matches loaded.');
@@ -343,7 +890,7 @@ const UpdateRequirementsPanel = ({ lead, onClose, onSuccess }) => {
             <h3 className="text-base font-extrabold text-white">Update Requirements</h3>
             <p className="text-xs text-white/70 mt-0.5">Fresh property matches will be generated after saving</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"><FiX size={16}/></button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"><FiX size={16} /></button>
         </div>
 
         <div className="overflow-y-auto flex-1 p-6 space-y-5">
@@ -399,7 +946,6 @@ const UpdateRequirementsPanel = ({ lead, onClose, onSuccess }) => {
             </div>
           </div>
 
-          {/* Locations */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Location Preferences</label>
             <div className="space-y-2">
@@ -410,12 +956,12 @@ const UpdateRequirementsPanel = ({ lead, onClose, onSuccess }) => {
                     <input value={loc} placeholder="e.g. Dubai Marina" onChange={e => setLoc(i, e.target.value)}
                       className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
                   </div>
-                  {form.location_preferences.length > 0 && (
-                    <button onClick={() => removeLoc(i)} className="w-10 h-10 flex items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-400 hover:bg-red-100 transition-colors"><FiX size={14}/></button>
-                  )}
+                  <button onClick={() => removeLoc(i)} className="w-10 h-10 flex items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-400 hover:bg-red-100">
+                    <FiX size={14} />
+                  </button>
                 </div>
               ))}
-              <button onClick={addLoc} className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors">
+              <button onClick={addLoc} className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100">
                 <FiPlus size={13} /> Add Location
               </button>
             </div>
@@ -430,8 +976,7 @@ const UpdateRequirementsPanel = ({ lead, onClose, onSuccess }) => {
 
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Reason for Update</label>
-            <input value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. Client increased budget"
-              className={inputCls} />
+            <input value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. Client increased budget" className={inputCls} />
           </div>
         </div>
 
@@ -448,14 +993,14 @@ const UpdateRequirementsPanel = ({ lead, onClose, onSuccess }) => {
 
 // ─── ADD NOTE PANEL ───────────────────────────────────────────────────────────
 const NotePanel = ({ leadId, onClose, onAdded }) => {
-  const [text, setText] = useState('');
+  const [text,    setText]    = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleAdd = async () => {
     if (!text.trim()) return message.warning('Note text is required');
     setLoading(true);
     try {
-      const res = await apiService.post(`/gridlead/agent/${leadId}/note`, { text: text.trim() });
+      const res  = await apiService.post(`/gridlead/agent/${leadId}/note`, { text: text.trim() });
       const data = res?.data?.success !== undefined ? res.data : res;
       if (data?.success) {
         message.success('Note added');
@@ -476,7 +1021,7 @@ const NotePanel = ({ leadId, onClose, onAdded }) => {
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="px-6 py-5 flex items-center justify-between" style={{ background: GR }}>
           <h3 className="text-base font-extrabold text-white">Add Private Note</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"><FiX size={16}/></button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"><FiX size={16} /></button>
         </div>
         <div className="p-6 space-y-4">
           <textarea rows={5} value={text} autoFocus onChange={e => setText(e.target.value)}
@@ -496,32 +1041,32 @@ const NotePanel = ({ leadId, onClose, onAdded }) => {
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 const GridAgentLeadDetail = () => {
-  const { id } = useParams();
+  const { id }  = useParams();
   const navigate = useNavigate();
 
-  const [lead,         setLead]         = useState(null);
-  const [pageLoading,  setPageLoading]  = useState(true);
-  const [matches,      setMatches]      = useState([]);
-  const [matchType,    setMatchType]    = useState('');
-  const [matchNote,    setMatchNote]    = useState('');
-  const [matchLoading, setMatchLoading] = useState(false);
-  const [isNurturing,  setIsNurturing]  = useState(false);
-
-  // Reactions: { [listing_id]: true | false | null }
+  const [lead,          setLead]          = useState(null);
+  const [pageLoading,   setPageLoading]   = useState(true);
+  const [matches,       setMatches]       = useState([]);
+  const [matchType,     setMatchType]     = useState('');
+  const [matchNote,     setMatchNote]     = useState('');
+  const [matchLoading,  setMatchLoading]  = useState(false);
+  const [isNurturing,   setIsNurturing]   = useState(false);
   const [reactions,     setReactions]     = useState({});
   const [savingMatches, setSavingMatches] = useState(false);
   const [dirtyReactions, setDirtyReactions] = useState(false);
 
   // Modals
-  const [showSubmit,  setShowSubmit]  = useState(false);
-  const [showReqs,    setShowReqs]    = useState(false);
-  const [showNote,    setShowNote]    = useState(false);
+  const [showSubmit,       setShowSubmit]       = useState(false);
+  const [showReqs,         setShowReqs]         = useState(false);
+  const [showNote,         setShowNote]         = useState(false);
+  const [showPresentation, setShowPresentation] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
 
   // Collapsibles
   const [showHistory, setShowHistory] = useState(false);
   const [showNotes,   setShowNotes]   = useState(true);
 
-  // ── Fetch lead + matches ───────────────────────────────────────────────────
+  // ── Fetch ────────────────────────────────────────────────────────────────
   const fetchLead = useCallback(async () => {
     setPageLoading(true);
     try {
@@ -529,8 +1074,6 @@ const GridAgentLeadDetail = () => {
       const data = res?.data?.data || res?.data;
       const safe = sanitize(data);
       setLead(safe);
-
-      // Pre-populate reactions from existing matched_listings
       const initReactions = {};
       (safe?.matched_listings || []).forEach(m => {
         if (m.listing_id?._id || m.listing_id) {
@@ -539,7 +1082,6 @@ const GridAgentLeadDetail = () => {
         }
       });
       setReactions(initReactions);
-
     } catch {
       message.error('Failed to load lead details');
     } finally {
@@ -568,11 +1110,10 @@ const GridAgentLeadDetail = () => {
     if (id) { fetchLead(); fetchMatches(); }
   }, [id, fetchLead, fetchMatches]);
 
-  // ── Save reactions ─────────────────────────────────────────────────────────
+  // ── Reactions ────────────────────────────────────────────────────────────
   const handleReact = (propertyId, interested) => {
     const pid = propertyId?.toString();
     setReactions(prev => {
-      // Toggle off if clicking same state
       const newVal = prev[pid] === interested ? null : interested;
       return { ...prev, [pid]: newVal };
     });
@@ -584,17 +1125,15 @@ const GridAgentLeadDetail = () => {
     try {
       const listings = matches.map(p => ({
         listing_id:          p._id,
-        match_score:         Math.max(0, p.matchScore ?? 50),  // clamp — schema min is 0
+        match_score:         Math.max(0, p.matchScore ?? 50),
         presented_to_client: true,
         client_interested:   reactions[p._id?.toString()] ?? null,
       }));
-
       const res  = await apiService.post(`/gridlead/agent/${id}/save-matches`, { listings });
       const data = res?.data?.success !== undefined ? res.data : res;
       if (data?.success) {
         message.success(`Reactions saved — ${data.data?.interested || 0} interested, ${data.data?.not_interested || 0} not interested`);
         setDirtyReactions(false);
-        // Refresh lead to get updated matched_listings
         fetchLead();
       } else {
         message.error(data?.message || 'Failed to save reactions');
@@ -606,11 +1145,15 @@ const GridAgentLeadDetail = () => {
     }
   };
 
-  // ── Derived ────────────────────────────────────────────────────────────────
-  const interestedCount   = Object.values(reactions).filter(v => v === true).length;
+  const handleGeneratePresentation = (property) => {
+    setSelectedProperty(property);
+    setShowPresentation(true);
+  };
+
+  // ── Derived ──────────────────────────────────────────────────────────────
+  const interestedCount    = Object.values(reactions).filter(v => v === true).length;
   const notInterestedCount = Object.values(reactions).filter(v => v === false).length;
   const isSubmitted        = lead?.submitted_to_xoto;
-  const canSubmit          = !isSubmitted && interestedCount > 0;
 
   const fn    = lead?.contact_info?.name?.first_name || '';
   const ln    = lead?.contact_info?.name?.last_name  || '';
@@ -623,11 +1166,9 @@ const GridAgentLeadDetail = () => {
   const notes = (lead?.notes || []).filter(n => !isAssignmentText(n?.text || ''));
   const hist  = (lead?.status_history || []).filter(h => !isAssignmentText(h?.notes || ''));
 
-  // ── Handlers for modal callbacks ────────────────────────────────────────────
   const handleSubmitSuccess = () => { setShowSubmit(false); fetchLead(); };
   const handleReqsSuccess   = (data) => {
     setShowReqs(false);
-    // Update matches from response
     if (data?.new_matches?.data) {
       setMatches(data.new_matches.data);
       setMatchType(data.new_matches.matchType || '');
@@ -639,7 +1180,7 @@ const GridAgentLeadDetail = () => {
     setLead(prev => ({ ...prev, notes: [...(prev.notes || []), note] }));
   };
 
-  // ─── LOADING ───────────────────────────────────────────────────────────────
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (pageLoading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
       <Spin size="large" />
@@ -651,16 +1192,23 @@ const GridAgentLeadDetail = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
       <FiAlertCircle size={48} className="text-gray-300" />
       <p className="text-gray-500">Lead not found or access denied.</p>
-      <Btn variant="ghost" onClick={() => navigate(-1)}><FiArrowLeft size={14}/> Go Back</Btn>
+      <Btn variant="ghost" onClick={() => navigate(-1)}><FiArrowLeft size={14} /> Go Back</Btn>
     </div>
   );
 
-  const mc = MC[matchType] || null;
+  const mc        = MC[matchType] || null;
   const MatchIcon = mc?.Icon;
 
   return (
     <>
       {/* ── MODALS ── */}
+      {showPresentation && selectedProperty && (
+        <PresentationModal
+          lead={lead}
+          property={selectedProperty}
+          onClose={() => { setShowPresentation(false); setSelectedProperty(null); }}
+        />
+      )}
       {showSubmit && <SubmitModal lead={lead} onClose={() => setShowSubmit(false)} onSuccess={handleSubmitSuccess} />}
       {showReqs   && <UpdateRequirementsPanel lead={lead} onClose={() => setShowReqs(false)} onSuccess={handleReqsSuccess} />}
       {showNote   && <NotePanel leadId={id} onClose={() => setShowNote(false)} onAdded={handleNoteAdded} />}
@@ -672,7 +1220,7 @@ const GridAgentLeadDetail = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <button onClick={() => navigate(-1)}
-                className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
+                className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50">
                 <FiArrowLeft size={16} />
               </button>
               <div className="min-w-0">
@@ -696,7 +1244,9 @@ const GridAgentLeadDetail = () => {
               <div>
                 <p className="text-sm font-bold text-green-800">Lead submitted to Xoto Admin</p>
                 <p className="text-xs text-green-700 mt-0.5">
-                  Submitted on {lead.submitted_to_xoto_at ? new Date(lead.submitted_to_xoto_at).toLocaleString('en-AE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—'}. An advisor will be assigned shortly.
+                  Submitted on {lead.submitted_to_xoto_at
+                    ? new Date(lead.submitted_to_xoto_at).toLocaleString('en-AE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+                    : '—'}. An advisor will be assigned shortly.
                 </p>
               </div>
             </div>
@@ -706,10 +1256,10 @@ const GridAgentLeadDetail = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-            {/* ── LEFT: Info sidebar ── */}
+            {/* ── LEFT sidebar ── */}
             <div className="lg:col-span-4 space-y-4">
 
-              {/* Avatar card */}
+              {/* Avatar */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-extrabold flex-shrink-0 shadow-lg"
@@ -727,25 +1277,23 @@ const GridAgentLeadDetail = () => {
               {/* Contact */}
               <SectionBox title="Contact Info" icon={FiUser}>
                 <div className="divide-y divide-gray-50">
-                  <InfoRow icon={FiPhone}         label="Phone"   value={`${cc} ${phone}`.trim()} />
-                  {email && <InfoRow icon={FiMail} label="Email"   value={email} />}
-                  <InfoRow icon={FiMessageSquare} label="Preferred" value={lead.contact_info?.preferred_contact || '—'} />
+                  <InfoRow icon={FiPhone}         label="Phone"     value={`${cc} ${phone}`.trim()} />
+                  {email && <InfoRow icon={FiMail} label="Email"     value={email} />}
+                  <InfoRow icon={FiMessageSquare} label="Preferred"  value={lead.contact_info?.preferred_contact || '—'} />
                 </div>
               </SectionBox>
 
-              {/* Requirements summary */}
+              {/* Requirements */}
               <SectionBox title="Requirements" icon={FiTag}
-                action={
-                  !isSubmitted && (
-                    <button onClick={() => setShowReqs(true)}
-                      className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors">
-                      <FiEdit3 size={11}/> Edit
-                    </button>
-                  )
-                }>
+                action={!isSubmitted && (
+                  <button onClick={() => setShowReqs(true)}
+                    className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100">
+                    <FiEdit3 size={11} /> Edit
+                  </button>
+                )}>
                 <div className="divide-y divide-gray-50">
-                  {req.property_type    && <InfoRow icon={FiHome}       label="Type"        value={req.property_type} />}
-                  {req.transaction_type && <InfoRow icon={FiTag}        label="Transaction" value={req.transaction_type} />}
+                  {req.property_type    && <InfoRow icon={FiHome}        label="Type"        value={req.property_type} />}
+                  {req.transaction_type && <InfoRow icon={FiTag}         label="Transaction" value={req.transaction_type} />}
                   {(req.budget_min || req.budget_max) && (
                     <InfoRow icon={FiDollarSign} label="Budget" value={
                       req.budget_min && req.budget_max
@@ -753,9 +1301,9 @@ const GridAgentLeadDetail = () => {
                         : req.budget_max ? `Up to AED ${Number(req.budget_max).toLocaleString()}` : `From AED ${Number(req.budget_min).toLocaleString()}`
                     } />
                   )}
-                  {req.bedrooms != null && <InfoRow icon={FiHome} label="Bedrooms"  value={req.bedrooms === 0 ? 'Studio' : `${req.bedrooms} BR`} />}
-                  {req.furnished        && <InfoRow icon={FiHome} label="Furnishing" value={req.furnished} />}
-                  {locs.length > 0      && <InfoRow icon={FiMapPin} label="Locations" value={locs.join(', ')} />}
+                  {req.bedrooms != null && <InfoRow icon={FiHome}   label="Bedrooms"   value={req.bedrooms === 0 ? 'Studio' : `${req.bedrooms} BR`} />}
+                  {req.furnished        && <InfoRow icon={FiHome}   label="Furnishing"  value={req.furnished} />}
+                  {locs.length > 0      && <InfoRow icon={FiMapPin} label="Locations"   value={locs.join(', ')} />}
                   {req.ready_by_date    && <InfoRow icon={FiCalendar} label="Ready By" value={new Date(req.ready_by_date).toLocaleDateString('en-AE',{day:'2-digit',month:'short',year:'numeric'})} />}
                   {req.additional_notes && <InfoRow icon={FiMessageSquare} label="Notes" value={req.additional_notes} />}
                 </div>
@@ -780,86 +1328,72 @@ const GridAgentLeadDetail = () => {
                   {lead.classification_reason && <InfoRow icon={FiAlertCircle} label="Classification Reason" value={lead.classification_reason} />}
                 </div>
               </SectionBox>
-
             </div>
 
-            {/* ── RIGHT: Actions + Matches ── */}
+            {/* ── RIGHT ── */}
             <div className="lg:col-span-8 space-y-5">
 
-              {/* ── ACTION BAR ── */}
+              {/* Action bar */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Actions</p>
                 <div className="flex flex-wrap gap-2">
-                  {/* Save reactions */}
                   {dirtyReactions && !isSubmitted && (
                     <Btn variant="primary" onClick={handleSaveReactions} loading={savingMatches} size="sm">
-                      <FiCheckCircle size={13}/> Save Reactions
-                      {interestedCount > 0 && (
-                        <span className="ml-1 px-1.5 py-0.5 rounded-full bg-white/30 text-[10px] font-bold">{interestedCount}</span>
-                      )}
+                      <FiCheckCircle size={13} /> Save Reactions
+                      {interestedCount > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full bg-white/30 text-[10px] font-bold">{interestedCount}</span>}
                     </Btn>
                   )}
-
-                  {/* Submit to Xoto */}
                   {!isSubmitted ? (
-                    <Btn variant="success" onClick={() => setShowSubmit(true)} size="sm"
-                      disabled={interestedCount === 0}>
-                      <FiSend size={13}/> Submit to Xoto
+                    <Btn variant="success" onClick={() => setShowSubmit(true)} size="sm" disabled={interestedCount === 0}>
+                      <FiSend size={13} /> Submit to Xoto
                       {interestedCount === 0 && <span className="ml-1 text-[10px] opacity-70">(need interest)</span>}
                     </Btn>
                   ) : (
                     <span className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl text-green-700 bg-green-50 border border-green-200">
-                      <FiCheckCircle size={13}/> Submitted to Xoto
+                      <FiCheckCircle size={13} /> Submitted to Xoto
                     </span>
                   )}
-
-                  {/* Update requirements */}
                   {!isSubmitted && (
                     <Btn variant="ghost" onClick={() => setShowReqs(true)} size="sm">
-                      <FiEdit3 size={13}/> Update Requirements
+                      <FiEdit3 size={13} /> Update Requirements
                     </Btn>
                   )}
-
-                  {/* Add note */}
                   <Btn variant="ghost" onClick={() => setShowNote(true)} size="sm">
-                    <FiFileText size={13}/> Add Note
+                    <FiFileText size={13} /> Add Note
                   </Btn>
-
-                  {/* Refresh matches */}
                   <Btn variant="ghost" onClick={fetchMatches} loading={matchLoading} size="sm">
-                    <FiRefreshCw size={13}/> Refresh Matches
+                    <FiRefreshCw size={13} /> Refresh Matches
                   </Btn>
                 </div>
 
-                {/* Reaction summary strip */}
                 {(interestedCount > 0 || notInterestedCount > 0) && (
                   <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-50 flex-wrap">
                     <span className="text-xs text-gray-400 font-medium">Client reactions:</span>
                     {interestedCount > 0 && (
                       <span className="flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 px-2.5 py-1 rounded-lg border border-green-200">
-                        <FiThumbsUp size={11}/> {interestedCount} Interested
+                        <FiThumbsUp size={11} /> {interestedCount} Interested
                       </span>
                     )}
                     {notInterestedCount > 0 && (
                       <span className="flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-lg border border-red-100">
-                        <FiThumbsDown size={11}/> {notInterestedCount} Not Interested
+                        <FiThumbsDown size={11} /> {notInterestedCount} Not Interested
                       </span>
                     )}
                     {dirtyReactions && !savingMatches && (
                       <span className="text-xs text-amber-600 font-semibold flex items-center gap-1">
-                        <FiAlertTriangle size={11}/> Unsaved — click Save Reactions
+                        <FiAlertTriangle size={11} /> Unsaved — click Save Reactions
                       </span>
                     )}
                   </div>
                 )}
               </div>
 
-              {/* ── MATCHED PROPERTIES ── */}
+              {/* Matched Properties */}
               <SectionBox title="Matched Properties" icon={FiHome}
                 action={mc && !matchLoading && (
                   <span className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full"
                     style={{ background: mc.bg, color: mc.color, border: `1px solid ${mc.border}` }}>
-                    <MatchIcon size={10}/> {mc.label}
+                    <MatchIcon size={10} /> {mc.label}
                   </span>
                 )}>
 
@@ -880,7 +1414,7 @@ const GridAgentLeadDetail = () => {
                 {!matchLoading && (matchType === 'none' || isNurturing) && (
                   <div className="p-5 rounded-2xl bg-red-50 border border-red-100 mb-4">
                     <div className="flex items-center gap-2 text-sm font-bold text-red-600 mb-1.5">
-                      <FiXCircle size={16}/> No matching properties found
+                      <FiXCircle size={16} /> No matching properties found
                     </div>
                     <p className="text-xs text-red-700 leading-relaxed pl-6">
                       This client has been added to the nurturing list. Try updating requirements to broaden the search.
@@ -902,14 +1436,14 @@ const GridAgentLeadDetail = () => {
                           reaction={reactions[p._id?.toString()]}
                           onReact={handleReact}
                           saving={savingMatches}
+                          onGeneratePresentation={handleGeneratePresentation}
                         />
                       ))}
                     </div>
                     {!isSubmitted && matches.length > 0 && (
                       <div className="mt-5 flex justify-end">
-                        <Btn variant="primary" onClick={handleSaveReactions} loading={savingMatches}
-                          disabled={!dirtyReactions}>
-                          <FiCheckCircle size={14}/>
+                        <Btn variant="primary" onClick={handleSaveReactions} loading={savingMatches} disabled={!dirtyReactions}>
+                          <FiCheckCircle size={14} />
                           {dirtyReactions ? 'Save Reactions' : 'Reactions Saved'}
                         </Btn>
                       </div>
@@ -925,10 +1459,9 @@ const GridAgentLeadDetail = () => {
                 )}
               </SectionBox>
 
-              {/* ── NOTES ── */}
+              {/* Notes */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <button
-                  className="w-full flex items-center gap-3 px-5 py-4 border-b border-gray-50 hover:bg-gray-50 transition-colors"
+                <button className="w-full flex items-center gap-3 px-5 py-4 border-b border-gray-50 hover:bg-gray-50 transition-colors"
                   onClick={() => setShowNotes(p => !p)}>
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: P, color: '#fff' }}>
                     <FiMessageSquare size={14} />
@@ -938,50 +1471,46 @@ const GridAgentLeadDetail = () => {
                   </h4>
                   <div className="flex items-center gap-2">
                     <button onClick={e => { e.stopPropagation(); setShowNote(true); }}
-                      className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors">
-                      <FiPlus size={11}/> Add
+                      className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100">
+                      <FiPlus size={11} /> Add
                     </button>
-                    {showNotes ? <FiChevronUp size={14} className="text-gray-400"/> : <FiChevronDown size={14} className="text-gray-400"/>}
+                    {showNotes ? <FiChevronUp size={14} className="text-gray-400" /> : <FiChevronDown size={14} className="text-gray-400" />}
                   </div>
                 </button>
-
                 {showNotes && (
                   <div className="p-5">
-                    {notes.length === 0 ? (
-                      <p className="text-center text-xs text-gray-400 py-4">No notes yet. Click Add to write one.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {[...notes].reverse().map((n, i) => (
-                          <div key={i} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                            <p className="text-sm text-gray-700 leading-relaxed">{n.text}</p>
-                            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-                              <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                                {(n.author?.[0] || 'A').toUpperCase()}
-                              </span>
-                              <span className="text-xs font-bold text-gray-600">{n.author || 'Agent'}</span>
-                              {n.author_type && (
-                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-200 text-gray-500 uppercase">{n.author_type}</span>
-                              )}
-                              <span className="text-xs text-gray-400 ml-auto flex items-center gap-1">
-                                <FiClock size={10}/>
-                                {(n.created_at || n.createdAt)
-                                  ? new Date(n.created_at || n.createdAt).toLocaleDateString('en-AE',{day:'2-digit',month:'short',year:'numeric'})
-                                  : '—'}
-                              </span>
+                    {notes.length === 0
+                      ? <p className="text-center text-xs text-gray-400 py-4">No notes yet. Click Add to write one.</p>
+                      : (
+                        <div className="space-y-3">
+                          {[...notes].reverse().map((n, i) => (
+                            <div key={i} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                              <p className="text-sm text-gray-700 leading-relaxed">{n.text}</p>
+                              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                                <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                                  {(n.author?.[0] || 'A').toUpperCase()}
+                                </span>
+                                <span className="text-xs font-bold text-gray-600">{n.author || 'Agent'}</span>
+                                {n.author_type && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-200 text-gray-500 uppercase">{n.author_type}</span>}
+                                <span className="text-xs text-gray-400 ml-auto flex items-center gap-1">
+                                  <FiClock size={10} />
+                                  {(n.created_at || n.createdAt)
+                                    ? new Date(n.created_at || n.createdAt).toLocaleDateString('en-AE',{day:'2-digit',month:'short',year:'numeric'})
+                                    : '—'}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      )}
                   </div>
                 )}
               </div>
 
-              {/* ── STATUS HISTORY ── */}
+              {/* Status History */}
               {hist.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  <button
-                    className="w-full flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors"
+                  <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors"
                     onClick={() => setShowHistory(p => !p)}>
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: P, color: '#fff' }}>
                       <FiActivity size={14} />
@@ -990,7 +1519,7 @@ const GridAgentLeadDetail = () => {
                       Status Timeline
                       <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[10px]">{hist.length}</span>
                     </h4>
-                    {showHistory ? <FiChevronUp size={14} className="text-gray-400"/> : <FiChevronDown size={14} className="text-gray-400"/>}
+                    {showHistory ? <FiChevronUp size={14} className="text-gray-400" /> : <FiChevronDown size={14} className="text-gray-400" />}
                   </button>
                   {showHistory && (
                     <div className="px-5 pb-5">
@@ -1007,7 +1536,7 @@ const GridAgentLeadDetail = () => {
                                 <div className="flex items-center justify-between gap-2 mb-1.5">
                                   <StatusBadge status={h.status} />
                                   <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                                    <FiCalendar size={10}/>
+                                    <FiCalendar size={10} />
                                     {h.changed_at ? new Date(h.changed_at).toLocaleDateString('en-AE',{day:'2-digit',month:'short'}) : '—'}
                                   </span>
                                 </div>
