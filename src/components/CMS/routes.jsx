@@ -137,6 +137,7 @@ import AgencyLeadManagement from "../ecommerce/B2C/AgencyLeadManagement";
 import AgencyAgentProperties from "./pages/Properties/AgencyAgentProperties";
 // import AgencyTargets from "../ecommerce/B2C/AgencyTargets";
 import AgencyLeaderboard from "../ecommerce/B2C/AgencyLeaderboard"; 
+import AdvisorLeaderboard from "../ecommerce/B2C/AdvisorLeaderboard";
 // import AgencyIncentives from "../ecommerce/B2C/AgencyIncentives";
 // import AgencyBranches from "../ecommerce/B2C/AgencyBranches";
 // import AgencyRoles from "../ecommerce/B2C/AgencyRoles";
@@ -664,6 +665,7 @@ const CmsRoutes = () => {
       <Route path="add-property" element={<AddProperty />} />
       {/* <Route path="targets" element={<AgencyTargets />} /> */}
       <Route path="/agency-leaderboard" element={<AgencyLeaderboard />} />
+      <Route path="/advisors/leaderboard" element={<AdvisorLeaderboard />} />
       {/* <Route path="incentives" element={<AgencyIncentives />} /> */}
       {/* <Route path="branches" element={<AgencyBranches />} /> */}
       {/* <Route path="internal-roles" element={<AgencyRoles />} /> */}
@@ -709,6 +711,7 @@ const CmsRoutes = () => {
       <Route path="/recent-leads" element={<RecentLeads />} />
       <Route path="/profile" element={<ReferralPartnerProfile />} />
       <Route path="/dashboard/gridreferralpartner/leaderboard" element={<ReferralPartnerLeaderboard />} />
+      <Route path="/referral-leaderboard" element={<ReferralPartnerLeaderboard />} />
 
 
       <Route path="advisors/:id" element={<AdvisorDetail />} />

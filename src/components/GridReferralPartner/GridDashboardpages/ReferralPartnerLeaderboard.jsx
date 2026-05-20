@@ -170,7 +170,7 @@ const ReferralPartnerLeaderboard = () => {
                   </Tag>
                 </div>
                 <Text style={{ color: THEME.textMuted, fontSize: 14 }}>
-                  Keep up the great work! You're in the top {Math.round((myRank.rank / MOCK_LEADERBOARD.length) * 100)}% of partners
+                  Keep up the great work! You're in the top {Math.round((myRank.rank / leaderboard.length) * 100)}% of partners
                 </Text>
               </div>
             </div>

@@ -424,6 +424,10 @@ const CUSTOM_ROLE_LINKS = {
       title: "All Advisors", 
       path: "/dashboard/{roleSlug}/advisor/list" 
     },
+    { 
+      title: "Leaderboard", 
+      path: "/dashboard/{roleSlug}/advisors/leaderboard" 
+    },
   ],
 },
  {
@@ -592,7 +596,7 @@ const CUSTOM_ROLE_LINKS = {
     {
       title: "Leaderboard",
       icon: "fas fa-trophy",
-      path: "/dashboard/{roleSlug}/leaderboard"
+      path: "/dashboard/{roleSlug}/referral-leaderboard"
     },
     // {
     //   title: "Profile",
