@@ -136,7 +136,7 @@ import AgencyCommission from "../ecommerce/B2C/AgencyCommission";
 import AgencyLeadManagement from "../ecommerce/B2C/AgencyLeadManagement";
 import AgencyAgentProperties from "./pages/Properties/AgencyAgentProperties";
 // import AgencyTargets from "../ecommerce/B2C/AgencyTargets";
-// import AgencyLeaderboard from "../ecommerce/B2C/AgencyLeaderboard"; 
+import AgencyLeaderboard from "../ecommerce/B2C/AgencyLeaderboard"; 
 // import AgencyIncentives from "../ecommerce/B2C/AgencyIncentives";
 // import AgencyBranches from "../ecommerce/B2C/AgencyBranches";
 // import AgencyRoles from "../ecommerce/B2C/AgencyRoles";
@@ -660,10 +660,10 @@ const CmsRoutes = () => {
       <Route path="manage-agents/:id" element={<AgencyAgentDetails />} />
       <Route path="performance" element={<AgencyPerformance />} />
       <Route path="commission" element={<AgencyCommission />} />
-      <Route path="lead-management" element={<AgencyLeadManagement />} />
+      <Route path="/lead-management" element={<AgencyLeadManagement />} />
       <Route path="add-property" element={<AddProperty />} />
       {/* <Route path="targets" element={<AgencyTargets />} /> */}
-      {/* <Route path="leaderboard" element={<AgencyLeaderboard />} /> */}
+      <Route path="/agency-leaderboard" element={<AgencyLeaderboard />} />
       {/* <Route path="incentives" element={<AgencyIncentives />} /> */}
       {/* <Route path="branches" element={<AgencyBranches />} /> */}
       {/* <Route path="internal-roles" element={<AgencyRoles />} /> */}

@@ -317,6 +317,7 @@ const CUSTOM_ROLE_LINKS = {
         { title: "Leads", path: "/dashboard/{roleSlug}/GridAgent-lead" },
 
 
+
       ],
     },
         {
@@ -348,6 +349,7 @@ const CUSTOM_ROLE_LINKS = {
 
 
 
+
   ],
   "10": [],
   "17": [
@@ -370,28 +372,24 @@ const CUSTOM_ROLE_LINKS = {
   ],
   "15": [
     {
-      title: "Agents",
+      title: "Agent Team",
       icon: "fas fa-user-friends",
-      path: "/dashboard/{roleSlug}/agents",
-      submenus: [
-        { title: "Agent Team", path: "/dashboard/{roleSlug}/all-agents" },
-      ]
+      path: "/dashboard/{roleSlug}/all-agents",
     },
     {
       title: "Leads",
       icon: "fas fa-users",
-      path: "/dashboard/{roleSlug}/leads",
-      submenus: [
-        { title: "All Leads", path: "/dashboard/{roleSlug}/lead-management" },
-      ]
+      path: "/dashboard/{roleSlug}/lead-management",
     },
     {
-      title: "Listings",
-      icon: "fas fa-building",
-      path: "/dashboard/{roleSlug}/listings",
-      submenus: [
-        { title: "All Listings", path: "/dashboard/{roleSlug}/agency-agent-properties" },
-      ]
+      title: "Commission",
+      icon: "fas fa-dollar-sign",
+      path: "/dashboard/{roleSlug}/commission",
+    },
+    {
+      title: "Leaderboard",
+      icon: "fas fa-trophy",
+      path: "/dashboard/{roleSlug}/agency-leaderboard",
     },
   ],
 
@@ -670,6 +668,7 @@ const CUSTOM_ROLE_LINKS = {
 // ],
 
 
+
 };
 
 
@@ -697,9 +696,9 @@ const roleSlugMap = {
   '26': "vault-advisor",
   // '23': "vault-ops",
   
+  
    
  
-
 
 };
 
@@ -713,7 +712,7 @@ const ROLE_MODULE_ORDER = {
   '11': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '12': ['Dashboard', 'All accountant', 'Requested Projects', 'Payout'],
   '16': ['Dashboard', 'AgentLead Management'],
-  '15': ['Dashboard', 'Agents', 'Leads', 'Listings'],
+  '15': ['Dashboard','Agent Team', 'Leads', 'Commission', 'Leaderboard'],
   '18': ['Dashboard', 'Clients', 'Cases', 'Commission', 'Bank Library', 'Reports', 'Partners', 'Advisors', 'Mortgages'],
   '22': ['Dashboard', 'Clients', 'Referrals', 'Commission', 'Calculator', 'Leaderboard','Leads'],
   // '21': ['Dashboard', 'Vault Partners', 'All Leads'],
@@ -774,7 +773,7 @@ useEffect(() => {
     try {
       const response = await apiService.get('/profile/get-profile-data');
 
-         
+       
 
       const category = response?.data?.partnerCategory
         ?.toString()
@@ -795,7 +794,6 @@ useEffect(() => {
   const isPendingApproval = isFreelancer && freelancer && freelancer.status_info?.status !== 1;
 
   const navTree = useMemo(() => {
-    // Default Tree already includes "Dashboard" link
     const tree = [{ title: 'Dashboard', icon: 'fas fa-home', to: basePath, exact: true, submenus: [] }];
     if (isPendingApproval) return tree;
 
@@ -996,4 +994,4 @@ const isVaultRole = ['18', '21', '22', '23', '26'].includes(roleCode);
   );
 };
 
-export default Sidebar; 
+export default Sidebar;
