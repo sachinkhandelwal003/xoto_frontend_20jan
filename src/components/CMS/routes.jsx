@@ -186,6 +186,7 @@ import AdvisorLeadsPage from "../Grid/AdvisorGrid/Advisorleadspage";
 import PropertyCatalogue from "../Grid/AdvisorGrid/Propertycatalogue";
 import FavouriteProperty from "../Grid/Fav Property/FavouriteProperty";
 import AgentLeads from "../Grid/GridAdmin.jsx/AgentLeads";
+import CommissionDashboard from "../Grid/GridAdmin.jsx/CommissionDashboard";
 import GridAgentLead from "../Grid/GridAgent/GridAgentLead";
 import CreateAgentLead from "../Grid/GridAgent/CreateAgentLead";
 
@@ -632,6 +633,7 @@ const CmsRoutes = () => {
 
       <Route path="/GridAdmin/propertyleads" element={<PlatformLeads />} />
       <Route path="/grid/agentleads" element={<AgentLeads />} /> 
+      <Route path="/grid/commission" element={<CommissionDashboard/>}/>
       <Route path="/lead-detail/:id" element={<GridAgentLeadDetail />} />
       <Route path="/lead-detail-admin/:id" element={<GridAgentLeadDetailadmin />} />
      <Route path="gridAdvisorLeads/:id" element={<GridAdvisorLeadDetail />} />

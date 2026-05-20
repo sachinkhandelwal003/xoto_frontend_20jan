@@ -338,7 +338,7 @@ const ApprovalQueue = () => {
     } catch (e) { message.error(e?.response?.data?.message || 'Failed to approve'); }
   };
 
-  const handleRejectConfirm = async () => {
+  const handleRejectConfirm = async () => { 
     if (!rejectModal.reason.trim()) { message.error('Rejection reason is required'); return; }
     setSubmitting(true);
     try {

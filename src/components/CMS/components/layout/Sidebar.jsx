@@ -176,7 +176,7 @@ const CUSTOM_ROLE_LINKS = {
     icon: "fas fa-file-invoice-dollar",
     submenus: [
       { title: "Deal Records",        path: "/dashboard/{roleSlug}/deal-records" },
-      { title: "Commission Ledger",   path: "/dashboard/{roleSlug}/commission/ledger" },
+      { title: "Commission Ledger",   path: "/dashboard/{roleSlug}/grid/commission" },
       { title: "Partner Agreements",  path: "/dashboard/{roleSlug}/commission/agreements" },
     ]
   },
