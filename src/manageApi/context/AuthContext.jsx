@@ -1,5 +1,5 @@
 // src/context/AuthProvider.jsxfsfsd
-import React, { createContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { jwtDecode } from 'jwt-decode';
 import {
@@ -14,15 +14,14 @@ import {
 export const AuthContext = createContext();
 
 // dfsf const API_BASE = 'https://kotiboxglobaltech.online/api'; 
-const API_BASE = 'http://localhost:5000/api';
-// const API_BASE = 'https://xoto.ae/api';
+// const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'https://xoto.ae/api';
 
 
 export const AuthProvider = ({ children }) => {
   const dispatch = useDispatch();
   const { user, token, loading, error, isAuthenticated } = useSelector((state) => state.auth);
 
-  const [intervalId, setIntervalId] = useState(null);
   const hasFetchedPermissions = useRef(false);
 
   // Rehydrate auth state on app mount
