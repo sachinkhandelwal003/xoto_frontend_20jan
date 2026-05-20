@@ -72,7 +72,7 @@ const ReferralPartnerLeaderboard = () => {
     setLoading(true);
     try {
       const res = await apiService.get(`/referral/leaderboard?period=${activePeriod}`);
-      const data = res?.data?.data;
+      const data = res?.data;
       if (data?.leaderboard) {
         setLeaderboard(data.leaderboard);
         setMyRank(data.myRank || null);

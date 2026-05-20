@@ -108,15 +108,15 @@ const CUSTOM_ROLE_LINKS = {
 },
 
   /* ── Enquiry Handling ── */
-  {
-    title: "Enquiries",
-    path: "/dashboard/{roleSlug}/enquiries",
-    icon: "fas fa-inbox",
-    submenus: [
-      { title: "Enquiry Queue",   path: "/dashboard/{roleSlug}/enquiries/queue" },
-      { title: "Bulk Upload",     path: "/dashboard/{roleSlug}/enquiries/bulk-upload" },
-    ]
-  },
+  // {
+  //   title: "Enquiries",
+  //   path: "/dashboard/{roleSlug}/enquiries",
+  //   icon: "fas fa-inbox",
+  //   submenus: [
+  //     { title: "Enquiry Queue",   path: "/dashboard/{roleSlug}/enquiries/queue" },
+  //     { title: "Bulk Upload",     path: "/dashboard/{roleSlug}/enquiries/bulk-upload" },
+  //   ]
+  // },
 
   /* ── Lead Management ── */
   {
@@ -156,7 +156,7 @@ const CUSTOM_ROLE_LINKS = {
     icon: "fas fa-user-friends",
     submenus: [
       { title: "Agent List",        path: "/dashboard/{roleSlug}/agent-list" },
-      { title: "Verification Queue",path: "/dashboard/{roleSlug}/agents/verification-queue" },
+      // { title: "Verification Queue",path: "/dashboard/{roleSlug}/agents/verification-queue" },
     ]
   },
   {
@@ -166,23 +166,27 @@ const CUSTOM_ROLE_LINKS = {
     submenus: [
       { title: "Advisor List",      path: "/dashboard/{roleSlug}/advisors" },
       { title: "Create Advisor",    path: "/dashboard/{roleSlug}/advisor/create" },
-      { title: "Leaderboard",       path: "/dashboard/{roleSlug}/advisors/leaderboard" },
+      // { title: "Leaderboard",       path: "/dashboard/{roleSlug}/advisors/leaderboard" },
     ]
   },
   {
     title: "Referral Partners",
-    path: "/dashboard/{roleSlug}/referral-list",
     icon: "fas fa-handshake",
-  },
-  {
-    title: "Customers",
-    path: "/dashboard/{roleSlug}/customer-list",
-    icon: "fas fa-users",
+    path: "/dashboard/{roleSlug}/referral-partners",
     submenus: [
-      { title: "Customer List",     path: "/dashboard/{roleSlug}/customer-list" },
-      { title: "Enquiry History",   path: "/dashboard/{roleSlug}/customers/enquiry-history" },
-    ]
+      { title: "All Referral Partners", path: "/dashboard/{roleSlug}/referral-partners" },
+      { title: "Leaderboard", path: "/dashboard/{roleSlug}/referral-leaderboard" },
+    ],
   },
+  // {
+  //   title: "Customers",
+  //   path: "/dashboard/{roleSlug}/customer-list",
+  //   icon: "fas fa-users",
+  //   submenus: [
+  //     { title: "Customer List",     path: "/dashboard/{roleSlug}/customer-list" },
+  //     { title: "Enquiry History",   path: "/dashboard/{roleSlug}/customers/enquiry-history" },
+  //   ]
+  // },
 
   /* ── Commission Management ── */
   {
@@ -190,35 +194,35 @@ const CUSTOM_ROLE_LINKS = {
     path: "/dashboard/{roleSlug}/commission",
     icon: "fas fa-file-invoice-dollar",
     submenus: [
-      { title: "Deal Records",        path: "/dashboard/{roleSlug}/deal-records" },
+      // { title: "Deal Records",        path: "/dashboard/{roleSlug}/deal-records" },
       { title: "Commission Ledger",   path: "/dashboard/{roleSlug}/grid/commission" },
       { title: "Partner Agreements",  path: "/dashboard/{roleSlug}/commission/agreements" },
     ]
   },
 
   /* ── Content Management ── */
-  {
-    title: "Content Management",
-    path: "/dashboard/{roleSlug}/content",
-    icon: "fas fa-photo-video",
-    submenus: [
-      { title: "Featured Properties", path: "/dashboard/{roleSlug}/content/featured" },
-      { title: "Promo Banners",       path: "/dashboard/{roleSlug}/content/banners" },
-    ]
-  },
+  // {
+  //   title: "Content Management",
+  //   path: "/dashboard/{roleSlug}/content",
+  //   icon: "fas fa-photo-video",
+  //   submenus: [
+  //     { title: "Featured Properties", path: "/dashboard/{roleSlug}/content/featured" },
+  //     { title: "Promo Banners",       path: "/dashboard/{roleSlug}/content/banners" },
+  //   ]
+  // },
 
   /* ── Analytics ── */
-  {
-    title: "Analytics",
-    path: "/dashboard/{roleSlug}/analytics",
-    icon: "fas fa-chart-line",
-    submenus: [
-      { title: "Platform Overview",   path: "/dashboard/{roleSlug}/analytics/overview" },
-      { title: "Agent Metrics",       path: "/dashboard/{roleSlug}/analytics/agents" },
-      { title: "Developer Metrics",   path: "/dashboard/{roleSlug}/analytics/developers" },
-      { title: "Commission Metrics",  path: "/dashboard/{roleSlug}/analytics/commission" },
-    ]
-  },
+  // {
+  //   title: "Analytics",
+  //   path: "/dashboard/{roleSlug}/analytics",
+  //   icon: "fas fa-chart-line",
+  //   submenus: [
+  //     { title: "Platform Overview",   path: "/dashboard/{roleSlug}/analytics/overview" },
+  //     { title: "Agent Metrics",       path: "/dashboard/{roleSlug}/analytics/agents" },
+  //     { title: "Developer Metrics",   path: "/dashboard/{roleSlug}/analytics/developers" },
+  //     { title: "Commission Metrics",  path: "/dashboard/{roleSlug}/analytics/commission" },
+  //   ]
+  // },
 
 ],
   "2": [
