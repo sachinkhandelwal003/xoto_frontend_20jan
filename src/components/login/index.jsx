@@ -233,6 +233,26 @@ const selectedPartnerTypeRef = useRef(null);
     //   color: "#5C039B",
     //   gradient: "linear-gradient(135deg, #5C039B, #03A4F4)",
     // },
+    {
+  id: "gridadvisor",
+  value: "gridadvisor",
+  label: "Grid Advisor",
+  desc: "Xoto Internal Advisor",
+  icon: <UserOutlined style={{ fontSize: "28px" }} />,
+  color: "#0EA5E9",
+  gradient: "linear-gradient(135deg, #0EA5E9, #0284C7)",
+  type: "direct",
+},
+{
+  id: "gridreferralpartner",
+  value: "gridreferralpartner",
+  label: "Referral Partner",
+  desc: "Grid Referral Network",
+  icon: <PhoneOutlined style={{ fontSize: "28px" }} />,
+  color: "#8B5CF6",
+  gradient: "linear-gradient(135deg, #8B5CF6, #7C3AED)",
+  type: "direct",
+},
   ];
 
   const getSelectedPartner = () =>
@@ -319,7 +339,18 @@ useEffect(() => {
     if (rolePathMap[roleCode]) {
       toast.success("Welcome back! Redirecting...");
       setTimeout(() => navigate(path, { replace: true }), 1500);
-    } else {
+    } 
+    if (partnerType === "gridadvisor") {
+  toast.success("Welcome Grid Advisor!");
+  setTimeout(() => navigate("/dashboard/GridAdvisor", { replace: true }), 1500);
+  return;
+}
+
+if (partnerType === "gridreferralpartner") {
+  toast.success("Welcome Referral Partner!");
+  setTimeout(() => navigate("/dashboard/gridreferralpartner", { replace: true }), 1500);
+  return;
+}else {
       navigate("/dashboard", { replace: true });
     }
   }
@@ -392,54 +423,51 @@ const onFinish = async (values) => {
   setGeneralError("");
 
   try {
-    let endpoint = "";
 
- if (selectedPartnerType === "agent") {
-  const countryCode = values.agent_country_code || "971";
-  const rawPhone    = values.agent_phone;
-  const fullPhone   = `+${countryCode}${rawPhone}`;
+    // ── Agent ──────────────────────────────────────────────────
+    if (selectedPartnerType === "agent") {
+      const countryCode = values.agent_country_code || "971";
+      const fullPhone = `+${countryCode}${values.agent_phone}`;
+      await login("/agent/login-agent", { phone: fullPhone, password: values.password });
 
-  await login("/agent/login-agent", {
-    phone:    fullPhone,        // ✅ "+917850006052"
-    password: values.password,
-  });
-} else {
-  let endpoint = "";
-  if (selectedPartnerType === "freelancer")    endpoint = "/freelancer/login";
-  else if (selectedPartnerType === "vendor-b2c")  endpoint = "/vendor/login";
-  else if (selectedPartnerType === "developer")   endpoint = "/developer/login-developer";
-  else if (selectedPartnerType === "agency")      endpoint = "/agency/auth/login";
-  else if (selectedPartnerType === "vaultpartner")endpoint = "/vault/partner/login";
-  else if (selectedPartnerType === "vaultagent")  endpoint = "/vault/agent/login";
+    // ── Referral Partner ───────────────────────────────────────
+    } else if (selectedPartnerType === "gridreferralpartner") {
+      const countryCode = values.agent_country_code || "971";
+      const fullPhone = `+${countryCode}${values.agent_phone}`;
+      await login("/referral/login-partner", { phone: fullPhone, password: values.password });
 
-  await login(endpoint, {
-    email:    values.email,
-    password: values.password,
-  });
-}
+    // ── Grid Advisor ───────────────────────────────────────────
+    } else if (selectedPartnerType === "gridadvisor") {
+      await login("/gridadvisor/login", { email: values.email, password: values.password });
+
+    // ── Baaki sab email wale ───────────────────────────────────
+    } else {
+      let endpoint = "";
+      if      (selectedPartnerType === "freelancer")   endpoint = "/freelancer/login";
+      else if (selectedPartnerType === "vendor-b2c")   endpoint = "/vendor/login";
+      else if (selectedPartnerType === "developer")    endpoint = "/developer/login-developer";
+      else if (selectedPartnerType === "agency")       endpoint = "/agency/auth/login";
+      else if (selectedPartnerType === "vaultpartner") endpoint = "/vault/partner/login";
+      else if (selectedPartnerType === "vaultagent")   endpoint = "/vault/agent/login";
+
+      await login(endpoint, { email: values.email, password: values.password });
+    }
+
   } catch (err) {
     console.log("🔥 Backend Error Object:", err);
 
     let errorMessage = "Invalid credentials";
-
-    if (err?.response?.data?.message) {
-      errorMessage = err.response.data.message;
-    } else if (err?.data?.message) {
-      errorMessage = err.data.message;
-    } else if (typeof err === 'object' && err?.message && !err.message.includes("status code")) {
-      errorMessage = err.message;
-    } else if (typeof err === 'string') {
-      errorMessage = err;
-    }
+    if (err?.response?.data?.message)      errorMessage = err.response.data.message;
+    else if (err?.data?.message)           errorMessage = err.data.message;
+    else if (typeof err === "object" && err?.message && !err.message.includes("status code"))
+                                           errorMessage = err.message;
+    else if (typeof err === "string")      errorMessage = err;
 
     const errorStr = errorMessage.toLowerCase();
-    const isPendingOrUnapproved = errorStr.includes("not approved") || errorStr.includes("pending") || errorStr.includes("approv");
+    const isPending = errorStr.includes("not approved") || errorStr.includes("pending") || errorStr.includes("approv");
 
-    if (isPendingOrUnapproved) {
-      toast.warning(errorMessage, { position: "top-center", autoClose: 5000 });
-    } else {
-      toast.error(errorMessage, { position: "top-center" });
-    }
+    if (isPending) toast.warning(errorMessage, { position: "top-center", autoClose: 5000 });
+    else           toast.error(errorMessage, { position: "top-center" });
 
     setGeneralError(errorMessage);
   } finally {
@@ -455,6 +483,8 @@ const onFinish = async (values) => {
     else if (selectedPartnerType === "agency") navigate("/agency/registration"); 
     else if (selectedPartnerType === "vaultpartner") navigate("/vault/vault-register");
     else if (selectedPartnerType === "vaultagent") navigate("/vault/vault-register");
+    else if (selectedPartnerType === "gridreferralpartner") navigate("/referral-partner/register");
+
   };
 
   // --- RENDER CONTENT ---
@@ -793,6 +823,49 @@ onClick={() => handleSubSelect("vaultpartner")}          >
                 </div>
           </SelectionCard>
         </Col>
+        {/* Grid Advisor Card */}
+<Col xs={24} sm={12} md={8}>
+  <SelectionCard
+    $active={selectedPartnerType === "gridadvisor"}
+    $color="#0EA5E9"
+    onClick={() => handleSubSelect("gridadvisor")}
+  >
+    <div style={{
+      width: 60, height: 60, borderRadius: "50%",
+      background: "linear-gradient(135deg, #0EA5E9, #0284C7)",
+      color: "#fff", display: "flex", alignItems: "center",
+      justifyContent: "center", boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+    }}>
+      <UserOutlined style={{ fontSize: "24px" }} />
+    </div>
+    <div>
+      <div style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>Grid Advisor</div>
+      <div style={{ fontSize: 13, color: "#888" }}>Xoto Internal Advisor</div>
+    </div>
+  </SelectionCard>
+</Col>
+
+{/* Referral Partner Card */}
+<Col xs={24} sm={12} md={8}>
+  <SelectionCard
+    $active={selectedPartnerType === "gridreferralpartner"}
+    $color="#8B5CF6"
+    onClick={() => handleSubSelect("gridreferralpartner")}
+  >
+    <div style={{
+      width: 60, height: 60, borderRadius: "50%",
+      background: "linear-gradient(135deg, #8B5CF6, #7C3AED)",
+      color: "#fff", display: "flex", alignItems: "center",
+      justifyContent: "center", boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+    }}>
+      <PhoneOutlined style={{ fontSize: "24px" }} />
+    </div>
+    <div>
+      <div style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>Referral Partner</div>
+      <div style={{ fontSize: 13, color: "#888" }}>Grid Referral Network</div>
+    </div>
+  </SelectionCard>
+</Col>
       </Row>
     </motion.div>
   );
@@ -856,7 +929,7 @@ onClick={() => handleSubSelect("vaultpartner")}          >
 
       <Form form={form} layout="vertical" onFinish={onFinish} size="large">
         {/* Agent → phone input, Others → email input */}
-        {selectedPartnerType === "agent" ? (
+        {selectedPartnerType === "agent" || selectedPartnerType === "gridreferralpartner" ? (
           <Form.Item label="Phone Number" style={{ marginBottom: 0 }} required>
             <Space.Compact style={{ width: '100%' }}>
               <Form.Item
@@ -1005,7 +1078,12 @@ onClick={() => handleSubSelect("vaultpartner")}          >
               ? "#5C039B"
               : selectedPartnerType === "vaultagent"  
               ? "#5C039B"
-              : "#5C039B",
+              : selectedPartnerType === "gridadvisor"
+? "#0EA5E9"
+: selectedPartnerType === "gridreferralpartner"
+? "#8B5CF6"
+: "#5C039B",
+      
           borderRadius: 8,
           fontFamily: "Poppins, sans-serif",
         },

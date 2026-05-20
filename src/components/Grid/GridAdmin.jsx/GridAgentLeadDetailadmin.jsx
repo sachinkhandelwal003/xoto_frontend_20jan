@@ -25,6 +25,35 @@ const MC = {
   none:    { bg: '#fef2f2', color: '#dc2626', border: '#fecaca', label: 'No Matches',    Icon: FiXCircle     },
 };
 
+
+const getInventoryList = (item) => item?.inventory || item?.listing_inventory || item?.source?.listing_inventory || [];
+const getInventoryId = (unit) => unit?._id || unit?.id || unit;
+const getInventoryLabel = (unit) => {
+  if (!unit) return '';
+  const bits = [
+    unit.unitNumber ? `Unit ${unit.unitNumber}` : null,
+    unit.bedroomType || (unit.bedrooms != null ? (unit.bedrooms === 0 ? 'Studio' : `${unit.bedrooms}BR`) : null),
+    unit.area ? `${Number(unit.area).toLocaleString()} ${unit.areaUnit || 'sqft'}` : null,
+    unit.price ? `AED ${Number(unit.price).toLocaleString()}` : null,
+    unit.status,
+  ].filter(Boolean);
+  return bits.join(' | ');
+};
+const InventorySummary = ({ units = [], selectedUnit }) => {
+  const visible = selectedUnit ? [selectedUnit] : units.slice(0, 3);
+  if (!visible.length) return <p className="mt-2 text-[10px] font-semibold text-gray-400">No inventory available</p>;
+  return (
+    <div className="mt-2 space-y-1.5">
+      {visible.map((unit) => (
+        <div key={getInventoryId(unit)} className="rounded-lg border border-purple-100 bg-purple-50 px-2.5 py-1.5 text-[10px] font-semibold text-purple-800">
+          {selectedUnit ? 'Interested: ' : ''}{getInventoryLabel(unit)}
+        </div>
+      ))}
+      {!selectedUnit && units.length > 3 && <p className="text-[10px] font-semibold text-gray-400">+{units.length - 3} more units</p>}
+    </div>
+  );
+};
+
 const COMMISSION_CONFIG = {
   pending:  { bg: '#fffbeb', color: '#d97706', border: '#fde68a', label: 'Pending'  },
   approved: { bg: '#f0f9ff', color: '#0369a1', border: '#bae6fd', label: 'Approved' },
@@ -333,6 +362,8 @@ const MatchedPropertyCard = ({ property, matchType }) => {
   const loc    = [property.area, property.city].filter(Boolean).join(', ');
   const mc     = MC[matchType] || MC.broad;
   const McIcon = mc.Icon;
+  const inventory = getInventoryList(property);
+  const selectedUnit = property.interested_inventory_unit || null;
 
   return (
     <div className="flex border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
@@ -358,6 +389,7 @@ const MatchedPropertyCard = ({ property, matchType }) => {
           {property.bathrooms > 0 && <span>· {property.bathrooms}BA</span>}
           {property.builtUpArea > 0 && <span>· {property.builtUpArea} sqft</span>}
         </div>
+        <InventorySummary units={inventory} selectedUnit={selectedUnit} />
       </div>
     </div>
   );
@@ -744,6 +776,7 @@ const GridAgentLeadDetailadmin = () => {
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-gray-800 truncate">{name}</p>
                               <p className="text-xs text-gray-400">Score: {Math.max(0, m.match_score || 0)}</p>
+                              {m.interested_inventory_unit && <p className="text-[10px] font-semibold text-purple-700 mt-1">Unit: {getInventoryLabel(m.interested_inventory_unit)}</p>}
                             </div>
                             <ReactionPill reaction={m.client_interested === true ? 'interested' : m.client_interested === false ? 'not_interested' : 'pending'} />
                           </div>
@@ -773,6 +806,7 @@ const GridAgentLeadDetailadmin = () => {
                               <p className="text-sm font-semibold text-gray-800">{propName}</p>
                               <ReactionPill reaction={s.client_reaction} />
                             </div>
+                            {s.interested_inventory_unit && <p className="text-[10px] font-semibold text-purple-700 mt-1">Unit: {getInventoryLabel(s.interested_inventory_unit)}</p>}
                             {s.note && <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">{s.note}</p>}
                             <p className="text-[10px] text-gray-400 mt-2">
                               Suggested {s.suggested_at ? new Date(s.suggested_at).toLocaleDateString('en-AE',{day:'2-digit',month:'short'}) : '—'}

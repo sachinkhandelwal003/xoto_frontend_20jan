@@ -30,6 +30,35 @@ const isAssignmentText = (v) => {
   return t.includes('assigned') || t.includes('assign advisor') || t.includes('advisor');
 };
 
+
+const getInventoryList = (item) => item?.inventory || item?.listing_inventory || item?.source?.listing_inventory || [];
+const getInventoryId = (unit) => unit?._id || unit?.id || unit;
+const getInventoryLabel = (unit) => {
+  if (!unit) return '';
+  const bits = [
+    unit.unitNumber ? `Unit ${unit.unitNumber}` : null,
+    unit.bedroomType || (unit.bedrooms != null ? (unit.bedrooms === 0 ? 'Studio' : `${unit.bedrooms}BR`) : null),
+    unit.area ? `${Number(unit.area).toLocaleString()} ${unit.areaUnit || 'sqft'}` : null,
+    unit.price ? `AED ${Number(unit.price).toLocaleString()}` : null,
+    unit.status,
+  ].filter(Boolean);
+  return bits.join(' | ');
+};
+const InventorySummary = ({ units = [], selectedUnit }) => {
+  const visible = selectedUnit ? [selectedUnit] : units.slice(0, 3);
+  if (!visible.length) return <p className="mt-2 text-[10px] font-semibold text-gray-400">No inventory available</p>;
+  return (
+    <div className="mt-2 space-y-1.5">
+      {visible.map((unit) => (
+        <div key={getInventoryId(unit)} className="rounded-lg border border-purple-100 bg-purple-50 px-2.5 py-1.5 text-[10px] font-semibold text-purple-800">
+          {selectedUnit ? 'Interested: ' : ''}{getInventoryLabel(unit)}
+        </div>
+      ))}
+      {!selectedUnit && units.length > 3 && <p className="text-[10px] font-semibold text-gray-400">+{units.length - 3} more units</p>}
+    </div>
+  );
+};
+
 const sanitize = (lead) => {
   if (!lead || typeof lead !== 'object') return lead;
   const { assigned_to, assignedAdvisor, assigned_at, assigned_by, assignment_notes, ...safe } = lead;
@@ -96,10 +125,12 @@ const Btn = ({ children, onClick, variant = 'primary', loading, disabled, size =
 };
 
 // ─── PROPERTY CARD ────────────────────────────────────────────────────────────
-const PropertyCard = ({ property, matchType, reaction, onReact, saving, onGeneratePresentation }) => {
+const PropertyCard = ({ property, matchType, reaction, onReact, saving, onGeneratePresentation, selectedInventoryId, onInventoryChange }) => {
   const price = property.price_min || property.price || 0;
   const loc   = [property.area, property.city].filter(Boolean).join(', ');
   const mc    = MC[matchType] || MC.broad;
+  const inventory = getInventoryList(property);
+  const interestedUnit = property.interested_inventory_unit || inventory.find(u => getInventoryId(u) === selectedInventoryId) || null;
 
   return (
     <div className={`rounded-2xl border overflow-hidden bg-white transition-all duration-200 hover:shadow-md
@@ -132,6 +163,16 @@ const PropertyCard = ({ property, matchType, reaction, onReact, saving, onGenera
             {property.bathrooms > 0 && <span>· {property.bathrooms}BA</span>}
           </div>
         </div>
+      </div>
+
+      <div className="px-3.5 pb-2">
+        <InventorySummary units={inventory} selectedUnit={interestedUnit} />
+        {inventory.length > 0 && (
+          <select value={selectedInventoryId || ''} onChange={(e) => onInventoryChange(property._id, e.target.value)} className="mt-2 w-full rounded-xl border border-purple-100 bg-white px-3 py-2 text-xs font-semibold text-gray-700 outline-none">
+            <option value="">Select client unit</option>
+            {inventory.map(unit => <option key={getInventoryId(unit)} value={getInventoryId(unit)}>{getInventoryLabel(unit)}</option>)}
+          </select>
+        )}
       </div>
 
       {/* Generate Presentation */}
@@ -1054,6 +1095,7 @@ const GridAgentLeadDetail = () => {
   const [reactions,     setReactions]     = useState({});
   const [savingMatches, setSavingMatches] = useState(false);
   const [dirtyReactions, setDirtyReactions] = useState(false);
+  const [selectedInventoryByProperty, setSelectedInventoryByProperty] = useState({});
 
   // Modals
   const [showSubmit,       setShowSubmit]       = useState(false);
@@ -1075,13 +1117,16 @@ const GridAgentLeadDetail = () => {
       const safe = sanitize(data);
       setLead(safe);
       const initReactions = {};
+      const initInventory = {};
       (safe?.matched_listings || []).forEach(m => {
         if (m.listing_id?._id || m.listing_id) {
           const lid = m.listing_id?._id?.toString() || m.listing_id?.toString();
           initReactions[lid] = m.client_interested;
+          if (m.inventory_unit_id) initInventory[lid] = m.inventory_unit_id;
         }
       });
       setReactions(initReactions);
+      setSelectedInventoryByProperty(initInventory);
     } catch {
       message.error('Failed to load lead details');
     } finally {
@@ -1111,6 +1156,12 @@ const GridAgentLeadDetail = () => {
   }, [id, fetchLead, fetchMatches]);
 
   // ── Reactions ────────────────────────────────────────────────────────────
+  const handleInventoryChange = (propertyId, inventoryUnitId) => {
+    const pid = propertyId?.toString();
+    setSelectedInventoryByProperty(prev => ({ ...prev, [pid]: inventoryUnitId }));
+    setDirtyReactions(true);
+  };
+
   const handleReact = (propertyId, interested) => {
     const pid = propertyId?.toString();
     setReactions(prev => {
@@ -1128,6 +1179,7 @@ const GridAgentLeadDetail = () => {
         match_score:         Math.max(0, p.matchScore ?? 50),
         presented_to_client: true,
         client_interested:   reactions[p._id?.toString()] ?? null,
+        ...(selectedInventoryByProperty[p._id?.toString()] && { inventory_unit_id: selectedInventoryByProperty[p._id?.toString()] }),
       }));
       const res  = await apiService.post(`/gridlead/agent/${id}/save-matches`, { listings });
       const data = res?.data?.success !== undefined ? res.data : res;
@@ -1435,6 +1487,8 @@ const GridAgentLeadDetail = () => {
                           matchType={matchType}
                           reaction={reactions[p._id?.toString()]}
                           onReact={handleReact}
+                          selectedInventoryId={selectedInventoryByProperty[p._id?.toString()]}
+                          onInventoryChange={handleInventoryChange}
                           saving={savingMatches}
                           onGeneratePresentation={handleGeneratePresentation}
                         />

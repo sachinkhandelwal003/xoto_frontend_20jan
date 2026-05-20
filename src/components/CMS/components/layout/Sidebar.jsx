@@ -191,7 +191,7 @@ const CUSTOM_ROLE_LINKS = {
     icon: "fas fa-file-invoice-dollar",
     submenus: [
       { title: "Deal Records",        path: "/dashboard/{roleSlug}/deal-records" },
-      { title: "Commission Ledger",   path: "/dashboard/{roleSlug}/commission/ledger" },
+      { title: "Commission Ledger",   path: "/dashboard/{roleSlug}/grid/commission" },
       { title: "Partner Agreements",  path: "/dashboard/{roleSlug}/commission/agreements" },
     ]
   },
@@ -598,12 +598,6 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-trophy",
       path: "/dashboard/{roleSlug}/referral-leaderboard"
     },
-    // {
-    //   title: "Profile",
-    //   icon: "fas fa-user",
-    //   path: "/dashboard/{roleSlug}/profile"
-    // },
-   
   ],
 
 "26": [
