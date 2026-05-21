@@ -1,34 +1,56 @@
-import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   AreaChart,
   Area,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell
+  LineChart,
+  Line,
 } from "recharts";
 import {
   TeamOutlined,
   HomeOutlined,
   DollarOutlined,
   PercentageOutlined,
-  BellOutlined,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
+  FileTextOutlined,
+  PlusOutlined,
+  FireOutlined,
+  ClockCircleOutlined,
+  CheckOutlined,
 } from "@ant-design/icons";
-import { Card, Row, Col, Select, Button, Typography, Tag, Avatar, List } from "antd";
+import {
+  Card,
+  Row,
+  Col,
+  Select,
+  Button,
+  Typography,
+  Tag,
+  Avatar,
+  List,
+  Spin,
+  message,
+  Progress,
+  Table,
+  Empty,
+  Statistic,
+} from "antd";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
-// import { apiService } from '../../../manageApi/utils/custom.apiservice';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-// 💎 Floating Dark-Mode Pill Tooltip (Ultra Premium)
+// 💎 Ultra Premium Tooltip
 const UltraTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
@@ -38,10 +60,12 @@ const UltraTooltip = ({ active, payload, label }) => {
         </span>
         <div className="w-px h-6 bg-gray-600"></div>
         <div className="flex items-baseline gap-1">
-          <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#d8b4fe] to-[#c084fc]">
+          <span className="text-2xl font-black text-transparent bg-clip-text bg-linear-to-r from-[#d8b4fe] to-[#c084fc]">
             {payload[0].value}
           </span>
-          <span className="text-gray-400 text-xs ml-1">Leads</span>
+          <span className="text-gray-400 text-xs ml-1">
+            {payload[0].dataKey === "leads" ? "Leads" : "Deals"}
+          </span>
         </div>
       </div>
     );
@@ -49,7 +73,7 @@ const UltraTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-// ✨ Animated Pulsing Dot for Hover State
+// ✨ Pulsing Dot
 const PulsingDot = (props) => {
   const { cx, cy } = props;
   return (
@@ -60,308 +84,768 @@ const PulsingDot = (props) => {
   );
 };
 
+// Status badge
+const StatusBadge = ({ status }) => {
+  const statusConfig = {
+    new: { color: "blue" },
+    contacted: { color: "cyan" },
+    in_discussion: { color: "orange" },
+    site_visit_scheduled: { color: "purple" },
+    offer_made: { color: "gold" },
+    qualified: { color: "green" },
+    completed: { color: "success" },
+    not_proceeding: { color: "error" },
+  };
+  const config = statusConfig[status] || { color: "default" };
+  return <Tag color={config.color}>{status?.toUpperCase()}</Tag>;
+};
+
 const AgentDashboard = () => {
   const [timeRange, setTimeRange] = useState("7d");
-  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
+  const navigate = useNavigate();
 
-  const user = useSelector((state) => state.auth?.user);
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await apiService.get("agent/dashboard", { range: timeRange });
+      const data = res?.data;
+      if (data) {
+        setDashboardData(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch agent dashboard", err);
+      message.error("Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  }, [timeRange]);
 
   useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        // const profileRes = await apiService.get('/profile/get-profile-data');
-        // if (profileRes.data) {
-        //   setUserProfile(profileRes.data);
-        // }
-      } catch (error) {
-        console.error("Failed to load profile", error);
-      }
-    };
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
-    if (user?.id || user?._id) {
-       fetchProfileData();
-    }
-  }, [user]);
+  if (!dashboardData) {
+    return <Spin spinning={loading} />;
+  }
 
-  const getDisplayName = () => {
-    if (userProfile?.data?.first_name) {
-      return `${userProfile.data.first_name} ${userProfile.data.last_name || ''}`.trim();
-    }
-    if (user?.first_name) {
-      return `${user.first_name} ${user.last_name || ''}`.trim();
-    }
-    if (user?.name) {
-      if (typeof user.name === 'object') {
-        return `${user.name.first_name || ''} ${user.name.last_name || ''}`.trim();
-      }
-      return user.name;
-    }
-    return 'Agent';
-  };
+  const {
+    agent_name,
+    profile_completion,
+    stats,
+    active_requirement_leads,
+    active_listings,
+    presentations_generated,
+    commission_earned,
+    leads_trend = [],
+    deals_closed = [],
+    leads_preview = [],
+    activity_feed = [],
+    conversion_rate,
+    lead_status_breakdown = [],
+    monthly_leads = [],
+    recent_clients = [],
+  } = dashboardData;
 
-  const leadsTrend = [
-    { name: "Mon", leads: 3 },
-    { name: "Tue", leads: 5 },
-    { name: "Wed", leads: 4 },
-    { name: "Thu", leads: 7 },
-    { name: "Fri", leads: 9 },
-    { name: "Sat", leads: 6 },
-    { name: "Sun", leads: 12 }, // Tweaked slightly to show a nice upward curve
-  ];
-
-  const dealsClosed = [
-    { month: "Jan", deals: 1 },
-    { month: "Feb", deals: 2 },
-    { month: "Mar", deals: 3 },
-    { month: "Apr", deals: 2 },
-    { month: "May", deals: 4 },
-    { month: "Jun", deals: 3 },
-  ];
-
-  // 📌 Stats Cards
-  const stats = [
-    { label: "Active Leads", value: "18", change: 10, icon: <TeamOutlined />, color: "#5C039B", bg: "#f3e8ff" },
-    { label: "Site Visits", value: "9", change: 6, icon: <HomeOutlined />, color: "#3b82f6", bg: "#eff6ff" },
-    { label: "Deals Closed", value: "5", change: 3, icon: <DollarOutlined />, color: "#10b981", bg: "#ecfdf5" },
-    { label: "Conversion Rate", value: "27%", change: -2, icon: <PercentageOutlined />, color: "#f59e0b", bg: "#fffbeb" },
-  ];
-
-  const recentClients = [
-    { name: "Rahul Mehta", title: "Interested in 3BHK - Downtown", time: "15 mins ago" },
-    { name: "Priya Sharma", title: "Requested Call Back", time: "40 mins ago" },
-    { name: "Ali Hassan", title: "Scheduled Site Visit", time: "1 hr ago" },
-    { name: "Neha Gupta", title: "Payment Plan Discussion", time: "2 hrs ago" },
+  const kpiCards = [
+    {
+      title: "Active Requirement Leads",
+      value: active_requirement_leads,
+      icon: <TeamOutlined />,
+      color: "#5C039B",
+      bg: "#f4e8ff",
+    },
+    {
+      title: "Active Listings",
+      value: active_listings,
+      icon: <HomeOutlined />,
+      color: "#2563eb",
+      bg: "#eff6ff",
+    },
+    {
+      title: "Presentations Generated",
+      value: presentations_generated,
+      icon: <FileTextOutlined />,
+      color: "#059669",
+      bg: "#ecfdf5",
+    },
+    {
+      title: "Commission Earned",
+      value: commission_earned,
+      icon: <DollarOutlined />,
+      color: "#d97706",
+      bg: "#fffbeb",
+      muted: profile_completion < 100,
+    },
   ];
 
   return (
-    <div className="p-6 bg-[#f8fafc] min-h-screen">
-      
-      {/* 🔹 HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8">
-        <div>
-          <Title level={2} style={{ margin: 0, fontWeight: 800, color: '#0f172a' }}>
-            Welcome, {getDisplayName()} 👋
-          </Title>
-          <Text type="secondary" style={{ fontSize: '15px' }}>
-            Track your leads, visits & performance.
-          </Text>
-        </div>
+    <Spin spinning={loading}>
+      <div className="agent-dashboard min-h-screen bg-[#f6f8fb] px-3 py-4 sm:px-5 lg:px-6">
+        <style>{`
+          .agent-dashboard {
+            color: #0f172a;
+          }
 
-        <div className="flex gap-3 mt-4 md:mt-0">
-          <Select defaultValue="7d" style={{ width: 160 }} onChange={setTimeRange} size="large">
-            <Option value="7d">Last 7 Days</Option>
-            <Option value="30d">Last 30 Days</Option>
-            <Option value="90d">Last 90 Days</Option>
-          </Select>
+          .agent-dashboard .ant-card {
+            border: 1px solid #e8edf5 !important;
+            border-radius: 10px !important;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04) !important;
+            height: 100%;
+          }
 
-          <Button
-            type="primary"
-            size="large"
-            icon={<BellOutlined />}
-            style={{ 
-              background: "linear-gradient(135deg, #5C039B 0%, #9D4EDD 100%)", 
-              borderColor: "transparent", 
-              boxShadow: "0 4px 15px rgba(92,3,155,0.25)",
-              fontWeight: 600
-            }}
-          >
-            Alerts
-          </Button>
-        </div>
-      </div>
+          .agent-dashboard .ant-card-body {
+            height: 100%;
+            padding: 18px !important;
+          }
 
-      {/* 🔹 STATS */}
-      <Row gutter={[16, 16]} className="mb-8">
-        {stats.map((stat, i) => (
-          <Col xs={24} sm={12} lg={6} key={i}>
-            <Card bordered={false} className="shadow-sm rounded-2xl h-full hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
-              <div className="flex justify-between items-start">
-                <div>
-                  <Text type="secondary" style={{ fontWeight: 500 }}>{stat.label}</Text>
-                  <Title level={2} style={{ margin: '4px 0 0 0', fontWeight: 700, color: '#1e293b' }}>
-                    {stat.value}
+          .agent-dashboard .ant-row.mb-8,
+          .agent-dashboard .ant-row.mb-6 {
+            margin-bottom: 18px !important;
+          }
+
+          .agent-dashboard .ant-statistic-title {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0;
+            margin-bottom: 6px;
+          }
+
+          .agent-dashboard .ant-statistic-content {
+            line-height: 1.15;
+          }
+
+          .agent-dashboard .ant-card-head {
+            min-height: 48px;
+            border-bottom: 1px solid #edf2f7;
+            padding: 0 18px;
+          }
+
+          .agent-dashboard .ant-card-head-title {
+            padding: 13px 0;
+          }
+
+          .agent-dashboard .ant-list-item {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+          }
+
+          .agent-dashboard .ant-table {
+            font-size: 13px;
+          }
+
+          .agent-dashboard .ant-table-thead > tr > th {
+            background: #f8fafc !important;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 10px 12px !important;
+          }
+
+          .agent-dashboard .ant-table-tbody > tr > td {
+            padding: 11px 12px !important;
+          }
+
+          .agent-dashboard .dashboard-chart-card .ant-card-body {
+            display: flex;
+            flex-direction: column;
+          }
+
+          .agent-dashboard .dashboard-chart {
+            flex: 1;
+            min-height: 260px;
+          }
+
+          @media (max-width: 768px) {
+            .agent-dashboard .ant-card-body {
+              padding: 14px !important;
+            }
+
+            .agent-dashboard .ant-row.mb-8,
+            .agent-dashboard .ant-row.mb-6 {
+              margin-bottom: 14px !important;
+            }
+
+            .agent-dashboard .dashboard-mobile-stack {
+              align-items: flex-start !important;
+              flex-direction: column;
+            }
+          }
+        `}</style>
+        
+        {/* ========== WELCOME SECTION ========== */}
+        <Row gutter={[16, 16]} className="mb-6">
+          <Col xs={24} md={16}>
+            <Card className="border-0">
+              <div className="dashboard-mobile-stack flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <Title level={2} className="m-0" style={{ fontWeight: 800, color: "#0f172a" }}>
+                    Welcome back, {agent_name}
                   </Title>
+                  <Text type="secondary" style={{ fontSize: "15px", marginTop: "8px", display: "block" }}>
+                    Track leads, listings, presentations, and conversion performance.
+                  </Text>
                 </div>
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-inner"
-                  style={{ backgroundColor: stat.bg, color: stat.color }}
-                >
-                  {stat.icon}
+                <div className="flex items-center gap-3">
+                  <Select
+                    value={timeRange}
+                    onChange={setTimeRange}
+                    style={{ width: 150 }}
+                  >
+                    <Option value="7d">Last 7 Days</Option>
+                    <Option value="30d">Last 30 Days</Option>
+                    <Option value="90d">Last 90 Days</Option>
+                  </Select>
+                  <Avatar
+                    size={48}
+                    style={{
+                      backgroundColor: "#5C039B",
+                      fontSize: "20px",
+                      fontWeight: 800,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {agent_name?.charAt(0)}
+                  </Avatar>
                 </div>
-              </div>
-
-              <div className="mt-5 flex items-center gap-2">
-                <Tag
-                  color={stat.change > 0 ? "success" : "error"}
-                  icon={stat.change > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-                  style={{ borderRadius: "6px", fontWeight: 600, border: 'none' }}
-                >
-                  {Math.abs(stat.change)}%
-                </Tag>
-                <Text type="secondary" style={{ fontSize: 12, fontWeight: 500 }}>
-                  vs last period
-                </Text>
               </div>
             </Card>
           </Col>
-        ))}
-      </Row>
 
-      {/* 🔹 CHARTS */}
-      <Row gutter={[24, 24]} className="mb-8">
-        
-        {/* 🔥 ULTRA UNIQUE LEADS TREND */}
-        <Col xs={24} lg={16}>
-          <Card 
-            bordered={false} 
-            className="rounded-3xl" 
-            style={{ 
-              boxShadow: "0 10px 40px rgba(0,0,0,0.03)", 
-              background: "linear-gradient(180deg, #ffffff 0%, #faf5ff 100%)" 
-            }}
-          >
-            <div className="flex justify-between items-center mb-8 px-2">
-              <div>
-                <Title level={4} style={{ margin: 0, fontWeight: 800, color: '#0f172a' }}>Leads Velocity</Title>
-                <Text type="secondary" style={{ fontSize: '14px', fontWeight: 500 }}>7-Day traction overview</Text>
-              </div>
-              <Tag color="#5C039B" style={{ borderRadius: '20px', padding: '6px 16px', fontWeight: 600, fontSize: '13px', border: 'none', boxShadow: '0 4px 10px rgba(92,3,155,0.2)' }}>
-                +24% Growth
-              </Tag>
-            </div>
+          {/* Profile Completion */}
+          <Col xs={24} md={8}>
+            <Card className="border-0">
+              <Statistic
+                title="Profile Completion"
+                value={profile_completion}
+                suffix="%"
+                valueStyle={{ color: "#5C039B", fontSize: "26px", fontWeight: 800 }}
+              />
+              <Progress
+                percent={profile_completion}
+                strokeColor={{ "0%": "#5C039B", "100%": "#9D4EDD" }}
+                className="mt-3"
+              />
+              <Text type="secondary" style={{ fontSize: "12px", display: "block", marginTop: "6px" }}>
+                Complete your profile to unlock all features
+              </Text>
+            </Card>
+          </Col>
+        </Row>
 
-            <ResponsiveContainer width="100%" height={320}>
-              <AreaChart data={leadsTrend} margin={{ top: 20, right: 10, left: -25, bottom: 0 }}>
-                <defs>
-                  {/* 🌈 Gradient for the Line */}
-                  <linearGradient id="lineColor" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#5C039B" />
-                    <stop offset="50%" stopColor="#9D4EDD" />
-                    <stop offset="100%" stopColor="#d8b4fe" />
-                  </linearGradient>
-
-                  {/* 🌫️ Soft Area Fade */}
-                  <linearGradient id="areaFade" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#9D4EDD" stopOpacity={0.4}/>
-                    <stop offset="100%" stopColor="#9D4EDD" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-
-                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" opacity={0.7} />
-
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fill: "#64748b", fontSize: 13, fontWeight: 600 }}
-                  axisLine={false}
-                  tickLine={false}
-                  dy={15}
-                />
-                <YAxis 
-                  tick={{ fill: "#94a3b8", fontSize: 12, fontWeight: 500 }}
-                  axisLine={false}
-                  tickLine={false}
-                  dx={-10}
-                />
-
-                <Tooltip 
-                  content={<UltraTooltip />} 
-                  cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '5 5' }}
-                  offset={-40}
-                />
-
-                <Area
-                  type="natural" // Organic smooth curve
-                  dataKey="leads"
-                  stroke="url(#lineColor)"
-                  strokeWidth={5}
-                  fill="url(#areaFade)"
-                  activeDot={<PulsingDot />} // Animated hover dot
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-
-        {/* 🔥 DEALS CLOSED BAR CHART */}
-        <Col xs={24} lg={8}>
-          <Card 
-            bordered={false} 
-            className="rounded-3xl h-full" 
-            style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.02)" }}
-          >
-            <div className="mb-6 px-2">
-              <Title level={4} style={{ margin: 0, fontWeight: 800, color: '#0f172a' }}>Deals Closed</Title>
-              <Text type="secondary" style={{ fontSize: '14px', fontWeight: 500 }}>Monthly conversions</Text>
-            </div>
-            
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dealsClosed} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" opacity={0.7} />
-                <XAxis 
-                  dataKey="month" 
-                  tick={{ fill: "#64748b", fontSize: 13, fontWeight: 600 }}
-                  axisLine={false}
-                  tickLine={false}
-                  dy={10}
-                />
-                <YAxis 
-                  tick={{ fill: "#94a3b8", fontSize: 12, fontWeight: 500 }}
-                  axisLine={false}
-                  tickLine={false}
-                  dx={-10}
-                />
-                <Tooltip 
-                  cursor={{ fill: "#f1f5f9" }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', fontWeight: 600 }}
-                />
-                <Bar dataKey="deals" radius={[8, 8, 8, 8]} barSize={28}>
-                  {dealsClosed.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={index === dealsClosed.length - 1 ? "url(#lineColor)" : "#e2e8f0"} 
-                      style={{ transition: 'all 0.3s ease' }}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* 🔹 RECENT CLIENTS */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24}>
-          <Card bordered={false} className="shadow-sm rounded-3xl" title={<span style={{ fontWeight: 800, fontSize: '18px', color: '#0f172a' }}>Recent Clients</span>}>
-            <List
-              itemLayout="horizontal"
-              dataSource={recentClients}
-              renderItem={(item) => (
-                <List.Item className="hover:bg-slate-50 transition-colors rounded-xl px-4 py-3 border-b-0 mb-2">
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar size={48} style={{ backgroundColor: "#f3e8ff", color: "#5C039B", fontWeight: 800, fontSize: '18px' }}>
-                        {item.name.charAt(0)}
-                      </Avatar>
-                    }
-                    title={<Text strong style={{ fontSize: "16px", color: '#1e293b' }}>{item.title}</Text>}
-                    description={
-                      <div className="flex justify-between text-sm mt-1">
-                        <Text type="secondary" style={{ fontWeight: 500 }}>{item.name}</Text>
-                        <Text type="secondary" className="flex items-center" style={{ color: '#94a3b8', fontWeight: 500 }}>
-                           {item.time}
-                        </Text>
-                      </div>
-                    }
+        {/* ========== KEY STATS BAR ========== */}
+        <Row gutter={[16, 16]} className="mb-8">
+          {kpiCards.map((item) => (
+            <Col xs={24} sm={12} lg={6} key={item.title}>
+              <Card
+                bordered={false}
+                className="transition-all hover:-translate-y-0.5 hover:shadow-md"
+                style={{
+                  opacity: item.muted ? 0.72 : 1,
+                  pointerEvents: item.muted ? "none" : "auto",
+                }}
+              >
+                <div className="flex h-full items-start justify-between gap-3">
+                  <Statistic
+                    title={item.title}
+                    value={item.value}
+                    valueStyle={{ color: item.color, fontSize: "24px", fontWeight: 800 }}
                   />
-                </List.Item>
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-lg"
+                    style={{ backgroundColor: item.bg, color: item.color }}
+                  >
+                    {item.icon}
+                  </div>
+                </div>
+                {item.muted && (
+                  <Text type="secondary" style={{ fontSize: "11px", display: "block", marginTop: "6px" }}>
+                    Complete profile to unlock
+                  </Text>
+                )}
+              </Card>
+            </Col>
+          ))}
+        </Row>
+
+        {/* ========== MAIN CHARTS ROW ========== */}
+        <Row gutter={[24, 24]} className="mb-8">
+          
+          {/* Leads Velocity Chart */}
+          <Col xs={24} lg={16}>
+            <Card
+              bordered={false}
+              className="dashboard-chart-card"
+              style={{
+                boxShadow: "0 10px 40px rgba(0,0,0,0.03)",
+                background: "#ffffff",
+              }}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <Title level={4} style={{ margin: 0, fontWeight: 800, color: "#0f172a" }}>
+                    Leads Velocity
+                  </Title>
+                  <Text type="secondary" style={{ fontSize: "14px" }}>
+                    {timeRange === "7d"
+                      ? "7-Day traction overview"
+                      : timeRange === "30d"
+                      ? "30-Day traction overview"
+                      : "90-Day traction overview"}
+                  </Text>
+                </div>
+                <Tag
+                  color="#5C039B"
+                  style={{
+                    borderRadius: "20px",
+                    padding: "6px 16px",
+                    fontWeight: 600,
+                    fontSize: "13px",
+                    border: "none",
+                  }}
+                >
+                  Live
+                </Tag>
+              </div>
+
+              <div className="dashboard-chart">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={leads_trend} margin={{ top: 34, right: 14, left: -18, bottom: 8 }}>
+                  <defs>
+                    <linearGradient id="lineColor" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#5C039B" />
+                      <stop offset="50%" stopColor="#9D4EDD" />
+                      <stop offset="100%" stopColor="#d8b4fe" />
+                    </linearGradient>
+                    <linearGradient id="areaFade" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#9D4EDD" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#9D4EDD" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" opacity={0.7} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: "#64748b", fontSize: 13, fontWeight: 600 }}
+                    axisLine={false}
+                    tickLine={false}
+                    dy={15}
+                    interval="preserveStartEnd"
+                    minTickGap={18}
+                  />
+                  <YAxis
+                    tick={{ fill: "#94a3b8", fontSize: 12, fontWeight: 500 }}
+                    axisLine={false}
+                    tickLine={false}
+                    dx={-10}
+                    allowDecimals={false}
+                    domain={[0, (dataMax) => Math.max(1, dataMax + 1)]}
+                  />
+                  <Tooltip content={<UltraTooltip />} cursor={{ stroke: "#cbd5e1", strokeWidth: 1, strokeDasharray: "5 5" }} />
+                  <Area
+                    type="natural"
+                    dataKey="leads"
+                    stroke="url(#lineColor)"
+                    strokeWidth={5}
+                    fill="url(#areaFade)"
+                    activeDot={<PulsingDot />}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+              </div>
+            </Card>
+          </Col>
+
+          {/* Deals Closed Chart */}
+          <Col xs={24} lg={8}>
+            <Card bordered={false} className="dashboard-chart-card" style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.02)" }}>
+              <div className="mb-6">
+                <Title level={4} style={{ margin: 0, fontWeight: 800, color: "#0f172a" }}>
+                  Deals Closed
+                </Title>
+                <Text type="secondary" style={{ fontSize: "14px" }}>
+                  Monthly conversions
+                </Text>
+              </div>
+
+              <div className="dashboard-chart">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={deals_closed} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" opacity={0.7} />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fill: "#64748b", fontSize: 13, fontWeight: 600 }}
+                    axisLine={false}
+                    tickLine={false}
+                    dy={10}
+                  />
+                  <YAxis
+                    tick={{ fill: "#94a3b8", fontSize: 12, fontWeight: 500 }}
+                    axisLine={false}
+                    tickLine={false}
+                    dx={-10}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "#f1f5f9" }}
+                    contentStyle={{
+                      borderRadius: "12px",
+                      border: "none",
+                      boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+                      fontWeight: 600,
+                    }}
+                  />
+                  <Bar dataKey="deals" radius={[8, 8, 8, 8]} barSize={28}>
+                    {deals_closed.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={index === deals_closed.length - 1 ? "#5C039B" : "#e2e8f0"}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* ========== MY STATS ROW ========== */}
+        <Row gutter={[24, 24]} className="mb-8">
+          
+          {/* Lead Status Breakdown */}
+          <Col xs={24} sm={12} lg={6}>
+            <Card bordered={false} className="rounded-2xl" style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.02)" }}>
+              <Title level={4} style={{ margin: "0 0 16px 0", fontWeight: 800, color: "#0f172a" }}>
+                Lead Status
+              </Title>
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={lead_status_breakdown}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {lead_status_breakdown.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `${value} leads`} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="mt-4 flex flex-col gap-2">
+                {lead_status_breakdown.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div
+                        style={{
+                          width: "12px",
+                          height: "12px",
+                          borderRadius: "50%",
+                          backgroundColor: item.color,
+                        }}
+                      />
+                      <Text style={{ fontSize: "12px" }}>{item.status}</Text>
+                    </div>
+                    <Text strong>{item.value}</Text>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </Col>
+
+          {/* Monthly Leads Growth */}
+          <Col xs={24} sm={12} lg={9}>
+            <Card bordered={false} className="rounded-2xl" style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.02)" }}>
+              <Title level={4} style={{ margin: "0 0 16px 0", fontWeight: 800, color: "#0f172a" }}>
+                Leads Trend (Month-on-Month)
+              </Title>
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={monthly_leads} margin={{ top: 32, right: 22, left: -18, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" opacity={0.7} />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fill: "#64748b", fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: "#94a3b8", fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                    allowDecimals={false}
+                    domain={[0, (dataMax) => Math.max(1, dataMax + 1)]}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "none",
+                      boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
+                    }}
+                  />
+                  <Line
+                    type="natural"
+                    dataKey="leads"
+                    stroke="#5C039B"
+                    strokeWidth={3}
+                    dot={{ fill: "#5C039B", r: 5 }}
+                    activeDot={{ r: 7 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          </Col>
+
+          {/* Conversion Rate Card */}
+          <Col xs={24} sm={12} lg={9}>
+            <Card bordered={false} className="rounded-2xl" style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.02)" }}>
+              <Statistic
+                title="Conversion Rate"
+                value={conversion_rate}
+                suffix="%"
+                prefix={<PercentageOutlined style={{ color: "#10b981" }} />}
+                valueStyle={{ color: "#10b981", fontSize: "32px", fontWeight: 800 }}
+              />
+              <Progress
+                percent={conversion_rate}
+                strokeColor={{
+                  "0%": "#ef4444",
+                  "50%": "#f59e0b",
+                  "100%": "#10b981",
+                }}
+                size="large"
+                className="mt-6"
+              />
+              <div className="mt-8 space-y-3">
+                <div className="flex justify-between">
+                  <Text type="secondary" style={{ fontSize: "12px" }}>
+                    Total Leads:
+                  </Text>
+                  <Text strong>{stats?.total || 0}</Text>
+                </div>
+                <div className="flex justify-between">
+                  <Text type="secondary" style={{ fontSize: "12px" }}>
+                    Completed:
+                  </Text>
+                  <Text strong style={{ color: "#10b981" }}>{stats?.completed || 0}</Text>
+                </div>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* ========== MY LEADS PREVIEW ========== */}
+        <Row gutter={[24, 24]} className="mb-8">
+          <Col xs={24}>
+            <Card
+              bordered={false}
+              className="rounded-2xl"
+              style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.02)" }}
+              title={
+                <span style={{ fontWeight: 800, fontSize: "16px", color: "#0f172a" }}>
+                  My Latest Leads
+                </span>
+              }
+            >
+              {leads_preview && leads_preview.length > 0 ? (
+                <Table
+                  dataSource={leads_preview}
+                  columns={[
+                    {
+                      title: "Lead Name",
+                      dataIndex: "name",
+                      key: "name",
+                      render: (text) => <Text strong>{text}</Text>,
+                    },
+                    {
+                      title: "Type",
+                      dataIndex: "type",
+                      key: "type",
+                      render: (text) => <Text type="secondary">{text}</Text>,
+                    },
+                    {
+                      title: "Status",
+                      dataIndex: "status",
+                      key: "status",
+                      render: (status) => <StatusBadge status={status} />,
+                    },
+                    {
+                      title: "Date",
+                      dataIndex: "date",
+                      key: "date",
+                      render: (text) => <Text type="secondary" style={{ fontSize: "12px" }}>{text}</Text>,
+                    },
+                  ]}
+                  pagination={false}
+                  rowKey="id"
+                  size="small"
+                />
+              ) : (
+                <Empty description="No leads yet" />
               )}
-            />
-          </Card>
-        </Col>
-      </Row>
-      
-    </div>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* ========== ACTIVITY FEED ========== */}
+        <Row gutter={[24, 24]} className="mb-8">
+          <Col xs={24} lg={12}>
+            <Card
+              bordered={false}
+              className="rounded-2xl"
+              style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.02)" }}
+              title={
+                <span style={{ fontWeight: 800, fontSize: "16px", color: "#0f172a" }}>
+                  Recent Activity
+                </span>
+              }
+            >
+              <List
+                itemLayout="horizontal"
+                dataSource={activity_feed}
+                renderItem={(item) => (
+                  <List.Item className="border-b pb-4">
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar
+                          style={{
+                            backgroundColor: "#5C039B",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {item.icon === "team" && <TeamOutlined />}
+                          {item.icon === "file-text" && <FileTextOutlined />}
+                          {item.icon === "check" && <CheckOutlined />}
+                        </Avatar>
+                      }
+                      title={<Text strong>{item.message}</Text>}
+                      description={
+                        <Text type="secondary" style={{ fontSize: "12px" }}>
+                          <ClockCircleOutlined style={{ marginRight: "4px" }} />
+                          {item.time}
+                        </Text>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            </Card>
+          </Col>
+
+          {/* QUICK ACTIONS */}
+          <Col xs={24} lg={12}>
+            <Card
+              bordered={false}
+              className="rounded-2xl"
+              style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.02)" }}
+              title={
+                <span style={{ fontWeight: 800, fontSize: "16px", color: "#0f172a" }}>
+                  Quick Actions
+                </span>
+              }
+            >
+              <div className="space-y-3">
+                <Button
+                  size="large"
+                  block
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => navigate("/dashboard/agent/CreateAgent-Lead")}
+                  style={{
+                    background: "linear-gradient(135deg, #5C039B 0%, #9D4EDD 100%)",
+                    borderColor: "transparent",
+                    fontWeight: 600,
+                    height: "48px",
+                    borderRadius: "8px",
+                  }}
+                >
+                  Add Requirement Lead
+                </Button>
+                <Button
+                  size="large"
+                  block
+                  icon={<FireOutlined />}
+                  onClick={() => navigate("/dashboard/agent/agent-projects")}
+                  style={{
+                    fontWeight: 600,
+                    height: "48px",
+                    borderRadius: "8px",
+                    borderColor: "#3b82f6",
+                    color: "#3b82f6",
+                  }}
+                >
+                  Browse Properties
+                </Button>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* ========== RECENT CLIENTS ========== */}
+        <Row gutter={[24, 24]}>
+          <Col xs={24}>
+            <Card
+              bordered={false}
+              className="rounded-2xl"
+              style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.02)" }}
+              title={
+                <span style={{ fontWeight: 800, fontSize: "16px", color: "#0f172a" }}>
+                  Recent Clients
+                </span>
+              }
+            >
+              <List
+                itemLayout="horizontal"
+                dataSource={recent_clients}
+                renderItem={(item) => (
+                  <List.Item className="hover:bg-slate-50 transition-colors rounded-xl px-4 py-3 border-b-0 mb-2">
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar
+                          size={48}
+                          style={{
+                            backgroundColor: "#f3e8ff",
+                            color: "#5C039B",
+                            fontWeight: 800,
+                            fontSize: "18px",
+                          }}
+                        >
+                          {item.name.charAt(0)}
+                        </Avatar>
+                      }
+                      title={
+                        <Text strong style={{ fontSize: "16px", color: "#1e293b" }}>
+                          {item.title}
+                        </Text>
+                      }
+                      description={
+                        <div className="flex justify-between text-sm mt-1">
+                          <Text type="secondary" style={{ fontWeight: 500 }}>
+                            {item.name}
+                          </Text>
+                          <Text type="secondary" style={{ color: "#94a3b8", fontWeight: 500 }}>
+                            {item.time}
+                          </Text>
+                        </div>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            </Card>
+          </Col>
+        </Row>
+      </div>
+    </Spin>
   );
 };
 

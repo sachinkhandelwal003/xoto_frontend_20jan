@@ -68,6 +68,8 @@ import TypesGallery from "./pages/estimateMaster/TypesGallery";
 import Questions from "./pages/estimateMaster/Questions";
 import CreateDeveloper from "./pages/Properties/createDeveloper";
 import Propertymanagement from "./pages/Properties/Propertymanagement";
+import ApprovalQueue from "./pages/Properties/ApprovalQueue";
+import EditReviewQueue from "./pages/Properties/EditReviewQueue";
 import Blog from "./pages/Blog/CreateBlog";
 import SubmittedQuotation from "./pages/dashboardPages/leads/quotation/SubmittedQuotation";
 import ApprovedQuotation from "./pages/dashboardPages/leads/quotation/ApprovedQuotation";
@@ -85,6 +87,8 @@ import AgentList from "./pages/Properties/AgentList";
 import AgencyList from "./pages/Properties/AgencyList";
 import DeveloperDashboard from "../ecommerce/B2C/DeveloperDashboard";
 import AgentDashboard from "../ecommerce/B2C/AgentDashboard";
+import AgentLeaderboard from "../ecommerce/B2C/AgentLeaderboard";
+import AgentAgreements from "../ecommerce/B2C/AgentAgreements";
 import VaultpartnerDashboard from "../../components/CMS/pages/VaultPartnerDashboard";
 import AgentLayout from "../ecommerce/B2C/AgentLayout";
 import Addleaddetails from "../ecommerce/B2C/AgentLeadDetails"
@@ -134,7 +138,8 @@ import AgencyCommission from "../ecommerce/B2C/AgencyCommission";
 import AgencyLeadManagement from "../ecommerce/B2C/AgencyLeadManagement";
 import AgencyAgentProperties from "./pages/Properties/AgencyAgentProperties";
 // import AgencyTargets from "../ecommerce/B2C/AgencyTargets";
-// import AgencyLeaderboard from "../ecommerce/B2C/AgencyLeaderboard"; 
+import AgencyLeaderboard from "../ecommerce/B2C/AgencyLeaderboard"; 
+import AdvisorLeaderboard from "../Grid/GridAdmin.jsx/AdvisorLeaderboard";
 // import AgencyIncentives from "../ecommerce/B2C/AgencyIncentives";
 // import AgencyBranches from "../ecommerce/B2C/AgencyBranches";
 // import AgencyRoles from "../ecommerce/B2C/AgencyRoles";
@@ -179,11 +184,14 @@ import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail"
 import GridCreateadvisor from "../Create Users/GridCreateadvisor";
 import AllAdvisors from "../Create Users/Alladvisors";
 import AdvisorDetail from "../Create Users/Advisordetail";
+import AllReferralPartners from "../GridReferralPartner/Admin/AllReferralPartners";
+import ReferralPartnerDetail from "../GridReferralPartner/Admin/ReferralPartnerDetail";
 import PlatformLeads from "../Grid/GridAdmin.jsx/PlatformLeads";
 import AdvisorLeadsPage from "../Grid/AdvisorGrid/Advisorleadspage";
 import PropertyCatalogue from "../Grid/AdvisorGrid/Propertycatalogue";
 import FavouriteProperty from "../Grid/Fav Property/FavouriteProperty";
 import AgentLeads from "../Grid/GridAdmin.jsx/AgentLeads";
+import CommissionDashboard from "../Grid/GridAdmin.jsx/CommissionDashboard";
 import GridAgentLead from "../Grid/GridAgent/GridAgentLead";
 import CreateAgentLead from "../Grid/GridAgent/CreateAgentLead";
 
@@ -259,6 +267,7 @@ import AddAgent from "../Grid/grid agency/AgentCreate";
 import AllAgents from "../Grid/grid agency/AllAgents";
 import GridAdvisorDashboard from "./pages/GridAdvisorDashboard";
 import GridAdvisorProfile from "./pages/dashboardPages/Profiles/GridAdvisorProfile";
+import ReferralProfile from "./pages/dashboardPages/Profiles/ReferraProfile";
 import OpsAssignedReview from "../ecommerce/vault/case/OpsAssignedReview";
 import VaultCreateadvisor from "../ecommerce/B2C/VaultCreateadviosor";
 import AdminManagecases from "../ecommerce/vault/case/AdminManagecases";
@@ -275,6 +284,8 @@ import GridAgentLeadDetail from "../Grid/GridAgent/GridAgentLeadDetail";
 import GridAgentLeadDetailadmin from "../Grid/GridAdmin.jsx/GridAgentLeadDetailadmin";
 import GridAdvisorLeadDetail from "../Grid/AdvisorGrid/GridAdvisorLeadDetail";
 import PerfectMortgageCalculator from "../../components/homepage/MortgageCalculator";
+import MortgageEligibilityCalculatorPage from "../../components/homepage/MortgageEligibilityCalculatorPage";
+import MortgageAffordabilityCalculatorPage from "../../components/homepage/MortgageAffordabilityCalculatorPage";
 import PresentationsList from '../Grid/presentation/PresentationsList';
 import Dealrecordspage from "../Grid/GridAdmin.jsx/Dealrecordspage";
 
@@ -496,6 +507,11 @@ const CmsRoutes = () => {
       <Route path="GridAgent-lead" element={<GridAgentLead />} />
       <Route path="CreateAgent-Lead" element={<CreateAgentLead />} />
       <Route path="presentations" element={<PresentationsList />} />
+      <Route path="Leaderboard" element={<AgentLeaderboard />} />
+      <Route path="leaderboard" element={<AgentLeaderboard />} />
+      <Route path="my-Agreements" element={<AgentAgreements />} />
+      <Route path="my-agreements" element={<AgentAgreements />} />
+      <Route path="agreements" element={<AgentAgreements />} />
 
       <Route path="agent-lead/:id" element={<Addleaddetails />} />
       {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
@@ -575,6 +591,8 @@ const CmsRoutes = () => {
 <Route path="advisor/create" element={<GridCreateadvisor />} />
 <Route path="advisor/list"   element={<AdvisorList />} />
 <Route path="advisor/:id" element={<VaultAdvisorDetail />} />
+<Route path="referral-partners" element={<AllReferralPartners />} />
+<Route path="referral-partners/:id" element={<ReferralPartnerDetail />} />
 <Route path="mortgage-ops/create" element={<VaultCreateMortgage />} />
 <Route path="create/vault-advisor" element={<VaultCreateadvisor />} />
 
@@ -629,12 +647,18 @@ const CmsRoutes = () => {
 
       <Route path="/GridAdmin/propertyleads" element={<PlatformLeads />} />
       <Route path="/grid/agentleads" element={<AgentLeads />} /> 
+      <Route path="/grid/commission" element={<CommissionDashboard/>}/>
       <Route path="/lead-detail/:id" element={<GridAgentLeadDetail />} />
       <Route path="/lead-detail-admin/:id" element={<GridAgentLeadDetailadmin />} />
      <Route path="gridAdvisorLeads/:id" element={<GridAdvisorLeadDetail />} />
-     <Route path="calculator" element={<PerfectMortgageCalculator />} />
+     <Route path="calculator" element={<PerfectMortgageCalculator initialTab="affordability" />} />
+     <Route path="mortgages/calculator" element={<PerfectMortgageCalculator initialTab="affordability" />} />
+     <Route path="mortgages/calculator/eligibility" element={<MortgageEligibilityCalculatorPage />} />
+     <Route path="mortgages/calculator/affordability" element={<MortgageAffordabilityCalculatorPage />} />
+     <Route path="mortgages/calculator/emi" element={<PerfectMortgageCalculator initialTab="mortgage" />} />
      <Route path="/property-management" element={<Propertymanagement />} />
-     <Route path="deal-records" element={<Dealrecordspage />} />
+     <Route path="listings/approval-queue"    element={<ApprovalQueue />} />
+  <Route path="listings/edit-review-queue" element={<EditReviewQueue />} />
       
       
 
@@ -648,10 +672,11 @@ const CmsRoutes = () => {
       <Route path="manage-agents/:id" element={<AgencyAgentDetails />} />
       <Route path="performance" element={<AgencyPerformance />} />
       <Route path="commission" element={<AgencyCommission />} />
-      <Route path="lead-management" element={<AgencyLeadManagement />} />
+      <Route path="/lead-management" element={<AgencyLeadManagement />} />
       <Route path="add-property" element={<AddProperty />} />
       {/* <Route path="targets" element={<AgencyTargets />} /> */}
-      {/* <Route path="leaderboard" element={<AgencyLeaderboard />} /> */}
+      <Route path="/agency-leaderboard" element={<AgencyLeaderboard />} />
+      <Route path="/advisors/leaderboard" element={<AdvisorLeaderboard />} />
       {/* <Route path="incentives" element={<AgencyIncentives />} /> */}
       {/* <Route path="branches" element={<AgencyBranches />} /> */}
       {/* <Route path="internal-roles" element={<AgencyRoles />} /> */}
@@ -662,7 +687,7 @@ const CmsRoutes = () => {
       <Route path="/agency/deals" element={<AgencyDeals />} />
       <Route path="/agency-agent-properties" element={<AgencyAgentProperties />} />
       <Route path="/agency-profile" element={<AgencyProfile />} />
-      {/* <Route path="/presentations" element={<Presentations />} /> */}
+      <Route path="/presentations" element={<Presentations />} />
 
       {/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
       {/* Developer */}
@@ -690,6 +715,21 @@ const CmsRoutes = () => {
       {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
       {/* <Route path="team" element={<DeveloperTeam/>}/> */}
 
+{/* Grid Referral Partner   */}
+<Route path="/grid-referral-partner" element={<ReferralPartnerDashboard />} />
+<Route path="/total-leads" element={<TotalLeads />} />
+<Route path="/Submit-leads" element={<ActiveLeads />} />
+<Route path="/recent-leads" element={<RecentLeads />} />
+
+
+<Route path="advisors/:id" element={<AdvisorDetail />} />   
+<Route path="advisors" element={<AllAdvisors />} />         
+<Route path="create-advisor" element={<CreateAdvisor />} />
+<Route path="dashboard/myprofile" element={<GridAdvisorProfile />} />
+<Route path="dashboard/myprofile" element={<ReferralProfile/>} />
+{/* <Route path="leaderboard" element={< ReferralLeaderboard />} /> */}
+<Route path="gridAdvisorLeads" element={<AdvisorLeadsPage />} />
+<Route path="property-catalogue" element={<PropertyCatalogue />} />
       {/* Grid Referral Partner   */}
       <Route path="/grid-referral-partner" element={<ReferralPartnerDashboard />} />
       <Route path="/total-leads" element={<TotalLeads />} />
@@ -697,6 +737,7 @@ const CmsRoutes = () => {
       <Route path="/recent-leads" element={<RecentLeads />} />
       <Route path="/profile" element={<ReferralPartnerProfile />} />
       <Route path="/dashboard/gridreferralpartner/leaderboard" element={<ReferralPartnerLeaderboard />} />
+      <Route path="/referral-leaderboard" element={<ReferralPartnerLeaderboard />} />
 
 
       <Route path="advisors/:id" element={<AdvisorDetail />} />

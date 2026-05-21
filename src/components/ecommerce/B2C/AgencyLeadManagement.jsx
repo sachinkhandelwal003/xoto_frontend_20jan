@@ -25,7 +25,7 @@ const AgencyLeadManagement = () => {
     setLoading(true);
     try {
       const [leadsRes, dashboardRes] = await Promise.all([
-        apiService.get("/agency/leads"),
+        apiService.get("agency/leads"),
         apiService.get("agency/dashboard")
       ]);
       
@@ -44,10 +44,17 @@ const AgencyLeadManagement = () => {
           `${lead.contact_info.name.first_name} ${lead.contact_info.name.last_name || ""}` : 
           "Client",
         project: lead.requirements?.property_type || "Project",
-        budget: lead.requirements?.budget || "-",
-        status: lead.status || "New",
+        budget: lead.requirements?.budget_min && lead.requirements?.budget_max ? 
+          `AED ${lead.requirements.budget_min.toLocaleString()} - ${lead.requirements.budget_max.toLocaleString()}` : 
+          lead.requirements?.budget_min ? 
+            `AED ${lead.requirements.budget_min.toLocaleString()}` : 
+            lead.requirements?.budget_max ? 
+              `AED ${lead.requirements.budget_max.toLocaleString()}` : 
+              "-",
+        status: lead.status || "new",
         assignedTo: lead.created_by_agent?.first_name ? 
           `${lead.created_by_agent.first_name} ${lead.created_by_agent.last_name || ""}` : 
+          lead.created_by_agent?.fullName || 
           null,
       }));
 
@@ -92,9 +99,20 @@ const AgencyLeadManagement = () => {
       title: "Status",
       dataIndex: "status",
       render: (status) => {
-        if (status === "New") return <Tag color="blue">New</Tag>;
-        if (status === "Assigned") return <Tag color="orange">Assigned</Tag>;
-        return <Tag color="green">Closed</Tag>;
+        const statusMap = {
+          'new': { color: 'blue', label: 'New' },
+          'contacted': { color: 'cyan', label: 'Contacted' },
+          'qualified': { color: 'purple', label: 'Qualified' },
+          'in_discussion': { color: 'orange', label: 'In Discussion' },
+          'site_visit_scheduled': { color: 'geekblue', label: 'Visit Scheduled' },
+          'offer_made': { color: 'gold', label: 'Offer Made' },
+          'reserved': { color: 'volcano', label: 'Reserved' },
+          'spa_signed': { color: 'green', label: 'SPA Signed' },
+          'completed': { color: 'green', label: 'Completed' },
+          'not_proceeding': { color: 'default', label: 'Not Proceeding' },
+        };
+        const config = statusMap[status?.toLowerCase()] || { color: 'default', label: status };
+        return <Tag color={config.color}>{config.label}</Tag>;
       },
     },
     {

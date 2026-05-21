@@ -889,8 +889,14 @@ const ContactModal = ({ isOpen, onClose }) => {
 };
 
 // ─── Main Component ──────────────────────────────────────────────────────────
-export default function PerfectMortgageCalculator() {
-  const [activeTab, setActiveTab] = useState('affordability');
+export default function PerfectMortgageCalculator({
+  initialTab = 'affordability',
+  singleCalculator = false,
+  backgroundVariant = 'default',
+  heading,
+  subtitle,
+}) {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [residency, setResidency] = useState('UAE Resident');
   const [employment, setEmployment] = useState('');
   const [monthlyIncome, setMonthlyIncome] = useState(25000);
@@ -901,6 +907,22 @@ export default function PerfectMortgageCalculator() {
   const [selectedProduct, setSelectedProduct] = useState(PRODUCTS[0]);
   const [loanDuration, setLoanDuration] = useState(25);
   const [modals, setModals] = useState({ summary: false, preapproval: false, contact: false });
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  const isSeparatePage = backgroundVariant !== 'default';
+  const pageBackground =
+    backgroundVariant === 'eligibility'
+      ? 'linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 55%, #FFFFFF 100%)'
+      : backgroundVariant === 'affordability'
+        ? 'linear-gradient(135deg, #F8FAFC 0%, #ECFDF5 55%, #FFFFFF 100%)'
+        : undefined;
+  const pageHeading = heading || (activeTab === 'mortgage' ? 'Plan Your Mortgage Payments' : 'Discover Your True Buying Power');
+  const pageSubtitle = subtitle || 'Smart property financing for the UAE market.';
+  const labelClass = `${isSeparatePage ? 'text-sm' : 'text-xs'} block font-bold text-slate-500 uppercase tracking-wider mb-2`;
+  const inputGridClass = `grid ${isSeparatePage ? 'md:grid-cols-2 gap-5' : 'grid-cols-2 gap-4'}`;
 
   const openModal = (type) => setModals({ ...modals, [type]: true });
   const closeModal = (type) => setModals({ ...modals, [type]: false });
@@ -932,18 +954,23 @@ export default function PerfectMortgageCalculator() {
   };
 
   return (
-    <div className="relative  bg-[var(--color-body)] p-4 md:p-10 text-slate-800 overflow-hidden" style={{ fontFamily: '"DM Sans", sans-serif' }}>
-<img 
-  src={wave1} 
-  className="absolute bottom-0 pointer-events-none"
-  style={{ 
-    width: '100vw',
-    left: '50%',
-    transform: 'translateX(-50%) translateY(30%)',
-    minWidth: '100%'
-  }}  
-  alt="" 
-/>
+    <div
+      className={`relative p-4 md:p-10 text-slate-800 overflow-hidden ${isSeparatePage ? 'min-h-screen separate-calculator' : 'bg-[var(--color-body)]'}`}
+      style={{ fontFamily: '"DM Sans", sans-serif', background: pageBackground }}
+    >
+{!isSeparatePage && (
+  <img 
+    src={wave1} 
+    className="absolute bottom-0 pointer-events-none"
+    style={{ 
+      width: '100vw',
+      left: '50%',
+      transform: 'translateX(-50%) translateY(30%)',
+      minWidth: '100%'
+    }}  
+    alt="" 
+  />
+)}
       <Toaster position="top-center" reverseOrder={false} />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
@@ -952,26 +979,48 @@ export default function PerfectMortgageCalculator() {
         input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #7C3AED; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(124,58,237,0.4); cursor: pointer; border: 3px solid white; }
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
         .field-input { width: 100%; padding: 13px 16px; background: #F8FAFC; border: 1.5px solid #E9EEF5; border-radius: 14px; font-size: 15px; font-weight: 600; color: #1E293B; outline: none; box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit; }
+        .separate-calculator .field-input { padding: 16px 18px; border-radius: 16px; font-size: 16px; background: #FFFFFF; }
+        .separate-calculator input[type=range] { height: 8px; }
+        .separate-calculator input[type=range]::-webkit-slider-thumb { width: 24px; height: 24px; }
+        .separate-calculator input[type=range]::-moz-range-thumb { width: 24px; height: 24px; }
         .field-input:focus { border-color: #7C3AED; box-shadow: 0 0 0 3px rgba(124,58,237,0.1); }
         select.field-input { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394A3B8' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
       `}</style>
 
-      <div className="max-w-6xl mx-auto relative z-10">
+      <div className={`${isSeparatePage ? 'max-w-7xl py-6 md:py-10' : 'max-w-6xl'} mx-auto relative z-10`}>
         {/* ── FIX 1: 3-col grid, items-stretch so all columns same height ── */}
-        <div className="grid lg:grid-cols-12 gap-8 items-stretch">
+        <div className={`grid lg:grid-cols-12 ${isSeparatePage ? 'gap-8 xl:gap-10' : 'gap-8'} items-stretch`}>
           {/* Col 1 — Heading */}
-          <div className="lg:col-span-5 flex flex-col justify-center">
-            <h1 className="text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">
-              Discover Your True Buying Power
+          <div className={`${isSeparatePage ? 'lg:col-span-4' : 'lg:col-span-5'} flex flex-col justify-center`}>
+            {isSeparatePage && (
+              <div className="mb-5 inline-flex w-fit items-center rounded-full border border-purple-100 bg-white/80 px-4 py-2 text-sm font-bold text-[#5C039B] shadow-sm">
+                Xoto Mortgage Tools
+              </div>
+            )}
+            <h1 className={`${isSeparatePage ? 'text-4xl md:text-6xl' : 'text-5xl'} font-extrabold text-slate-900 leading-tight tracking-tight`}>
+              {pageHeading}
             </h1>
-            <p className="text-slate-500 mt-4 text-base font-medium leading-relaxed">
-              Smart property financing for the UAE market.
+            <p className={`${isSeparatePage ? 'text-lg max-w-xl' : 'text-base'} text-slate-500 mt-5 font-medium leading-relaxed`}>
+              {pageSubtitle}
             </p>
+            {isSeparatePage && (
+              <div className="mt-8 grid grid-cols-2 gap-4 max-w-xl">
+                <div className="rounded-2xl border border-white/80 bg-white/75 p-5 shadow-sm">
+                  <div className="text-sm font-bold uppercase tracking-wider text-slate-400">Market</div>
+                  <div className="mt-2 text-2xl font-extrabold text-slate-900">UAE</div>
+                </div>
+                <div className="rounded-2xl border border-white/80 bg-white/75 p-5 shadow-sm">
+                  <div className="text-sm font-bold uppercase tracking-wider text-slate-400">Currency</div>
+                  <div className="mt-2 text-2xl font-extrabold text-slate-900">AED</div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Col 2 — Form Card */}
-          <div className="lg:col-span-4 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+          <div className={`${isSeparatePage ? 'lg:col-span-5 p-8 md:p-10 rounded-[1.75rem] shadow-xl shadow-slate-200/70' : 'lg:col-span-4 p-8 rounded-2xl shadow-sm'} bg-white border border-slate-100`}>
             {/* Tab Toggle */}
+            {!singleCalculator && (
             <div className="flex p-1.5 bg-slate-100 rounded-[1.25rem] mb-8">
               <button onClick={() => setActiveTab('affordability')} className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'affordability' ? 'bg-white text-[#5C039B] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
                 <FaCalculator size={13} /> Buying Power
@@ -980,19 +1029,20 @@ export default function PerfectMortgageCalculator() {
                 <FaMoneyBillWave size={13} /> EMI Planner
               </button>
             </div>
+            )}
 
             {/* Buying Power Tab */}
             {activeTab === 'affordability' && (
-              <div className="space-y-5">
-                <div className="grid grid-cols-2 gap-4">
+              <div className={isSeparatePage ? 'space-y-7' : 'space-y-5'}>
+                <div className={inputGridClass}>
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Residency</label>
+                    <label className={labelClass}>Residency</label>
                     <select value={residency} onChange={e => setResidency(e.target.value)} className="field-input">
                       <option>UAE Resident</option><option>UAE National</option><option>Non-Resident</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Employment</label>
+                    <label className={labelClass}>Employment</label>
                     <select value={employment} onChange={e => setEmployment(e.target.value)} className="field-input">
                       <option value="">Select type</option>
                       <option value="salaried">Salaried</option>
@@ -1001,21 +1051,21 @@ export default function PerfectMortgageCalculator() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className={inputGridClass}>
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Monthly Income (AED)</label>
+                    <label className={labelClass}>Monthly Income (AED)</label>
                     <input type="number" value={monthlyIncome} onChange={e => setMonthlyIncome(e.target.value)} placeholder="0" className="field-input" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Monthly Debts (AED)</label>
+                    <label className={labelClass}>Monthly Debts (AED)</label>
                     <input type="number" value={monthlyDebt} onChange={e => setMonthlyDebt(e.target.value)} placeholder="Optional" className="field-input" />
                   </div>
                 </div>
 
                 <div className="pt-2">
                   <div className="flex justify-between items-center mb-3">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Loan Tenure</label>
-                    <span className="text-lg font-bold text-purple-600">{loanTenure} <span className="text-sm font-medium text-slate-400">Yrs</span></span>
+                    <label className={`${isSeparatePage ? 'text-sm' : 'text-xs'} font-bold text-slate-500 uppercase tracking-wider`}>Loan Tenure</label>
+                    <span className={`${isSeparatePage ? 'text-2xl' : 'text-lg'} font-bold text-purple-600`}>{loanTenure} <span className="text-sm font-medium text-slate-400">Yrs</span></span>
                   </div>
                   <input type="range" min={5} max={25} value={loanTenure} onChange={e => setLoanTenure(Number(e.target.value))} className="w-full" style={{ accentColor: '#7C3AED' }} />
                   <div className="flex justify-between text-xs font-medium text-slate-300 mt-2"><span>5 Yrs</span><span>25 Yrs</span></div>
@@ -1025,28 +1075,28 @@ export default function PerfectMortgageCalculator() {
 
             {/* EMI Planner Tab */}
             {activeTab === 'mortgage' && (
-              <div className="space-y-5">
+              <div className={isSeparatePage ? 'space-y-7' : 'space-y-5'}>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Select Rate Type</label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <label className={`${labelClass} mb-3`}>Select Rate Type</label>
+                  <div className={`grid grid-cols-3 ${isSeparatePage ? 'gap-4' : 'gap-3'}`}>
                     {PRODUCTS.map(p => (
                       <button key={p.id} onClick={() => setSelectedProduct(p)}
-                        style={{ padding: '14px 8px', border: selectedProduct.id === p.id ? '2px solid #7C3AED' : '1.5px solid #E9EEF5', borderRadius: 14, background: selectedProduct.id === p.id ? '#F5F0FF' : '#F8FAFC', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center', transition: 'all 0.15s' }}>
-                        <div style={{ fontSize: 17, fontWeight: 800, color: selectedProduct.id === p.id ? '#7C3AED' : '#475569', lineHeight: 1.2 }}>{p.rate}%</div>
-                        <div style={{ fontSize: 11, fontWeight: 600, color: selectedProduct.id === p.id ? '#9061F9' : '#94A3B8', marginTop: 3 }}>{p.label}</div>
+                        style={{ padding: isSeparatePage ? '18px 10px' : '14px 8px', border: selectedProduct.id === p.id ? '2px solid #7C3AED' : '1.5px solid #E9EEF5', borderRadius: 16, background: selectedProduct.id === p.id ? '#F5F0FF' : '#FFFFFF', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center', transition: 'all 0.15s' }}>
+                        <div style={{ fontSize: isSeparatePage ? 22 : 17, fontWeight: 800, color: selectedProduct.id === p.id ? '#7C3AED' : '#475569', lineHeight: 1.2 }}>{p.rate}%</div>
+                        <div style={{ fontSize: isSeparatePage ? 13 : 11, fontWeight: 700, color: selectedProduct.id === p.id ? '#9061F9' : '#94A3B8', marginTop: 5 }}>{p.label}</div>
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className={inputGridClass}>
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Property Value (AED)</label>
+                    <label className={labelClass}>Property Value (AED)</label>
                     <input type="number" value={propertyValue} onChange={e => setPropertyValue(e.target.value)} placeholder="0" className="field-input" />
                   </div>
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Downpayment</label>
+                      <label className={`${isSeparatePage ? 'text-sm' : 'text-xs'} font-bold text-slate-500 uppercase tracking-wider`}>Downpayment</label>
                       <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md">
                         {safePropVal > 0 ? ((safeDownpayment / safePropVal) * 100).toFixed(0) : 0}%
                       </span>
@@ -1057,8 +1107,8 @@ export default function PerfectMortgageCalculator() {
 
                 <div className="pt-2">
                   <div className="flex justify-between items-center mb-3">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Loan Duration</label>
-                    <span className="text-lg font-bold text-purple-600">{loanDuration} <span className="text-sm font-medium text-slate-400">Yrs</span></span>
+                    <label className={`${isSeparatePage ? 'text-sm' : 'text-xs'} font-bold text-slate-500 uppercase tracking-wider`}>Loan Duration</label>
+                    <span className={`${isSeparatePage ? 'text-2xl' : 'text-lg'} font-bold text-purple-600`}>{loanDuration} <span className="text-sm font-medium text-slate-400">Yrs</span></span>
                   </div>
                   <input type="range" min={1} max={25} value={loanDuration} onChange={e => setLoanDuration(Number(e.target.value))} className="w-full" style={{ accentColor: '#7C3AED' }} />
                   <div className="flex justify-between text-xs font-medium text-slate-300 mt-2"><span>1 Yr</span><span>25 Yrs</span></div>
@@ -1069,7 +1119,7 @@ export default function PerfectMortgageCalculator() {
 
           {/* Col 3 — Result Card */}
           <div className="lg:col-span-3">
-            <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-[2rem] p-8 text-white shadow-2xl shadow-purple-900/20 relative overflow-hidden flex flex-col justify-between h-full">
+            <div className={`bg-gradient-to-br from-purple-900 to-indigo-900 ${isSeparatePage ? 'rounded-[1.75rem] p-9 md:p-10 shadow-2xl shadow-purple-900/25' : 'rounded-[2rem] p-8 shadow-2xl shadow-purple-900/20'} text-white relative overflow-hidden flex flex-col justify-between h-full`}>
               <div className="absolute -top-20 -right-20 w-56 h-56 bg-white opacity-[0.04] rounded-full" />
               <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-white opacity-[0.03] rounded-full" />
 
@@ -1082,12 +1132,12 @@ export default function PerfectMortgageCalculator() {
                   isEligible ? (
                     <div>
                       <p className="text-purple-200 text-sm font-medium mb-1">Max Property Price</p>
-                      <h2 className="text-2xl font-bold mb-2 tracking-tight">{formatCurrency(affordability)}</h2>
+                      <h2 className={`${isSeparatePage ? 'text-4xl' : 'text-2xl'} font-bold mb-2 tracking-tight`}>{formatCurrency(affordability)}</h2>
                       <p className="text-purple-400 text-xs font-medium mb-8">Based on 50% DSR stress rate</p>
                       <div className="border-t border-purple-800/50 pt-6 justify-between items-center">
                         <div>
                           <p className="text-purple-300 text-xs font-semibold mb-1 uppercase tracking-wide">Monthly EMI</p>
-                          <p className="text-2xl font-bold">{formatCurrency(monthlyPayment)}</p>
+                          <p className={`${isSeparatePage ? 'text-3xl' : 'text-2xl'} font-bold`}>{formatCurrency(monthlyPayment)}</p>
                         </div>
                         <button onClick={() => openModal('summary')} className="bg-white/10 hover:bg-white/20 px-4 py-2.5 mt-2 rounded-xl text-sm font-semibold transition flex items-center gap-2 border border-white/10">
                           Breakdown <FaArrowRight size={11} />
@@ -1103,7 +1153,7 @@ export default function PerfectMortgageCalculator() {
                 ) : (
                   <div>
                     <p className="text-purple-200 text-sm font-medium mb-1">Monthly Installment</p>
-                    <h2 className="text-4xl font-bold mb-2 tracking-tight">{formatCurrency(monthlyEMI)}</h2>
+                    <h2 className={`${isSeparatePage ? 'text-5xl' : 'text-4xl'} font-bold mb-2 tracking-tight`}>{formatCurrency(monthlyEMI)}</h2>
                     <p className="text-purple-400 text-xs font-medium mb-8">At {selectedProduct.rate}% interest rate</p>
                     <div className="border-t border-purple-800/50 pt-6 flex flex-col gap-3">
                       <div>

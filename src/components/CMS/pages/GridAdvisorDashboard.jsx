@@ -20,19 +20,19 @@ const { TabPane } = Tabs;
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const THEME = {
-  primary:     '#5c039b',
-  primaryLight:'#f3e8ff',
-  primaryMid:  '#9333ea',
-  success:     '#16a34a',
-  successLight:'#dcfce7',
-  info:        '#0369a1',
-  infoLight:   '#e0f2fe',
-  warning:     '#b45309',
-  warningLight:'#fef3c7',
-  error:       '#b91c1c',
-  errorLight:  '#fee2e2',
-  gray:        '#64748b',
-  grayLight:   '#f8fafc',
+  primary:      '#5c039b',
+  primaryLight: '#f3e8ff',
+  primaryMid:   '#9333ea',
+  success:      '#16a34a',
+  successLight: '#dcfce7',
+  info:         '#0369a1',
+  infoLight:    '#e0f2fe',
+  warning:      '#b45309',
+  warningLight: '#fef3c7',
+  error:        '#b91c1c',
+  errorLight:   '#fee2e2',
+  gray:         '#64748b',
+  grayLight:    '#f8fafc',
 };
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
@@ -54,7 +54,7 @@ const StagePill = ({ stage }) => {
   return (
     <span style={{
       fontSize: 11, padding: '2px 10px', borderRadius: 20,
-      background: s.bg, color: s.color, fontWeight: 500, whiteSpace: 'nowrap'
+      background: s.bg, color: s.color, fontWeight: 500, whiteSpace: 'nowrap',
     }}>
       {stage?.replace('_', ' ') || 'New'}
     </span>
@@ -72,7 +72,7 @@ const BadgePill = ({ text, type }) => {
   return (
     <span style={{
       fontSize: 11, padding: '2px 8px', borderRadius: 20,
-      background: s.bg, color: s.color, fontWeight: 500
+      background: s.bg, color: s.color, fontWeight: 500,
     }}>
       {text}
     </span>
@@ -85,8 +85,35 @@ const cardStyle = {
   boxShadow: '0 1px 4px rgba(92,3,155,0.06)',
 };
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const getInitials = (name) => {
+  if (!name) return '??';
+  const parts = name.split(' ');
+  return parts.length > 1
+    ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+    : name.substring(0, 2).toUpperCase();
+};
 
+const getStageColor = (stage) => {
+  const map = {
+    'New': THEME.info,
+    'Contacted': THEME.info,
+    'Qualified': THEME.primaryMid,
+    'In Discussion': THEME.warning,
+    'Site Visit Scheduled': THEME.warning,
+    'Offer Made': THEME.primary,
+    'Reserved': THEME.primary,
+    'SPA Signed': THEME.success,
+    'Completed': THEME.success,
+    'Not Proceeding': THEME.gray,
+  };
+  return map[stage] || THEME.gray;
+};
+
+// ─── API Base URL (adjust as needed) ──────────────────────────────────────────
+// const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 const GridAdvisorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [leaderboardTab, setLeaderboardTab] = useState('weekly');
@@ -94,22 +121,128 @@ const GridAdvisorDashboard = () => {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
 
+  // ── Fetch Dashboard Data ────────────────────────────────────────────────────
   const fetchDashboard = async () => {
     try {
-      setLoading(true);
-      const res = await apiService.get('/gridadvisor/me/dashboard');
-      if (res?.data?.data) {
-        setDashboardData(res.data.data);
-      } else if (res?.data) {
-        setDashboardData(res.data);
-      }
+      // or from context
+const { data } = await apiService.get('/gridadvisor/me/dashboard');
+       const response = await apiService.get('/gridadvisor/me/dashboard');
+const { advisor, leadStats, activityFeed } = response.data;
+      setAdvisorInfo(advisor);
+
+      // Build stats cards
+      const breakdown = leadStats?.breakdown || {};
+      setStats([
+        {
+          label: 'Active Leads',
+          value: leadStats.totalActive,
+          badge: `${advisor.workload?.totalLeadsAssigned || 0} total`,
+          badgeType: 'info',
+          icon: <UserOutlined />,
+          bg: THEME.primaryLight,
+          color: THEME.primary,
+        },
+        {
+          label: 'Active Deals', 
+          value:
+            (breakdown['In Discussion'] || 0) +
+            (breakdown['Offer Made'] || 0) +
+            (breakdown['Reserved'] || 0),
+          badge: 'In progress',
+          badgeType: 'info',
+          icon: <DollarOutlined />,
+          bg: THEME.infoLight,
+          color: THEME.info,
+        },
+        {
+          label: 'Site Visits',
+          value: breakdown['Site Visit Scheduled'] || 0,
+          badge: 'Scheduled',
+          badgeType: 'warn',
+          icon: <CalendarOutlined />,
+          bg: THEME.warningLight,
+          color: THEME.warning,
+        },
+        {
+          label: 'Deals Closed',
+          value: advisor.workload?.totalDealsCompleted || 0,
+          badge: 'All time',
+          badgeType: 'up',
+          icon: <CheckCircleOutlined />,
+          bg: THEME.successLight,
+          color: THEME.success,
+        },
+        {
+          label: 'Conversion',
+          value: advisor.workload?.totalLeadsAssigned > 0
+            ? `${Math.round(
+                (advisor.workload.totalDealsCompleted / advisor.workload.totalLeadsAssigned) * 100
+              )}%`
+            : '0%',
+          badge: 'Your performance',
+          badgeType: 'info',
+          icon: <RiseOutlined />,
+          bg: THEME.primaryLight,
+          color: THEME.primary,
+        },
+        {
+          label: 'Presentations',
+          value: advisor.workload?.totalPresentationsGenerated || 0,
+          badge: 'Generated',
+          badgeType: 'info',
+          icon: <HomeOutlined />,
+          bg: THEME.successLight,
+          color: THEME.success,
+        },
+      ]);
+
+      // Pipeline chart
+      const stageOrder = [
+        'New', 'Contacted', 'Qualified', 'In Discussion',
+        'Site Visit Scheduled', 'Offer Made', 'Reserved', 'SPA Signed', 'Completed',
+      ];
+      const pipeline = stageOrder.map((stage) => ({
+        stage,
+        count: breakdown[stage] || 0,
+        color: getStageColor(stage),
+      }));
+      setPipelineStages(pipeline);
+
+      // Recent leads (table)
+      const recentLeads = (leadStats.recent || []).map((lead) => ({
+        _id: lead._id,
+        initials: getInitials(lead.customerName || ''),
+        name: lead.customerName || `Lead ${lead._id.slice(-4)}`,
+        phone: lead.customerPhone || '—',
+        property: lead.requirementsSummary || '—',
+        stage: lead.status,
+        budget: lead.budget ? `₹${lead.budget}` : '—',
+        avatarBg: '#f3e8ff',
+        avatarColor: THEME.primary,
+      }));
+      setLeads(recentLeads);
+
+      // Activity feed
+      const activityItems = (activityFeed || []).map((item) => ({
+        icon: <EditOutlined />, // you can customise based on item.type later
+        iconBg: THEME.infoLight,
+        iconColor: THEME.info,
+        text: item.message,
+        time: new Date(item.timestamp).toLocaleString(),
+      }));
+      setActivity(activityItems);
+
+      // (Optional) Activity chart data – if you add a dedicated endpoint
+      // setActivityChartData(...)
     } catch (err) {
-      console.error('Failed to fetch dashboard:', err);
+      message.error('Failed to load dashboard');
+      console.error('Dashboard fetch error:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  // ── WebSocket Connection & Event Listeners ──────────────────────────────────
   useEffect(() => {
     fetchDashboard();
   }, []);

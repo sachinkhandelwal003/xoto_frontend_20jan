@@ -105,6 +105,8 @@ import ResultsPage from "./component/Rent/ResultsPage";
 import HeroBuy from "./component/Buy/Herobuy";
 import BuyResultsPage from "./component/Buy/Buyresultspage";
 import MortgageCalculator from "./components/homepage/MortgageCalculator";
+import MortgageEligibilityCalculatorPage from "./components/homepage/MortgageEligibilityCalculatorPage";
+import MortgageAffordabilityCalculatorPage from "./components/homepage/MortgageAffordabilityCalculatorPage";
 import ProposalLink from "./components/ecommerce/vault/proposal/ProposalLink";
 import PopupManager from "./components/homepage/PopupManager";
 
@@ -273,6 +275,9 @@ function App() {
                   <Route path="/aiPlanner/demo" element={<AIPlannerDemoPage />} />
                   <Route path="/mortgages" element={<Mortgage />} />
                   <Route path="/mortgages/calculator" element={<MortgageCalculator />} />
+                  <Route path="/mortgages/calculator/eligibility" element={<MortgageEligibilityCalculatorPage />} />
+                  <Route path="/mortgages/calculator/affordability" element={<MortgageAffordabilityCalculatorPage />} />
+                  <Route path="/mortgages/calculator/emi" element={<MortgageCalculator initialTab="mortgage" />} />
 
                   <Route path="/mortgages-product" element={<MortgagesProduct />} />
                   <Route path="/mortgages-product-upload-document" element={<UploadDocuments />} />

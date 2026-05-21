@@ -72,7 +72,7 @@ const ReferralPartnerLeaderboard = () => {
     setLoading(true);
     try {
       const res = await apiService.get(`/referral/leaderboard?period=${activePeriod}`);
-      const data = res?.data?.data;
+      const data = res?.data;
       if (data?.leaderboard) {
         setLeaderboard(data.leaderboard);
         setMyRank(data.myRank || null);
@@ -170,7 +170,7 @@ const ReferralPartnerLeaderboard = () => {
                   </Tag>
                 </div>
                 <Text style={{ color: THEME.textMuted, fontSize: 14 }}>
-                  Keep up the great work! You're in the top {Math.round((myRank.rank / MOCK_LEADERBOARD.length) * 100)}% of partners
+                  Keep up the great work! You're in the top {Math.round((myRank.rank / leaderboard.length) * 100)}% of partners
                 </Text>
               </div>
             </div>

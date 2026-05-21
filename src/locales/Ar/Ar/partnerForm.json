@@ -1,0 +1,51 @@
+{
+  "hero": {
+    "titleDesktop": "انضم إلى منظومة شركاء XOTO\nاليوم",
+    "titleMobile": "انضم إلى منظومة شركاء XOTO اليوم"
+  },
+
+  "form": {
+    "firstName": {
+      "label": "الاسم الأول",
+      "placeholder": "أدخل الاسم الأول"
+    },
+    "lastName": {
+      "label": "اسم العائلة",
+      "placeholder": "أدخل اسم العائلة"
+    },
+    "email": {
+      "label": "عنوان البريد الإلكتروني",
+      "placeholder": "أدخل البريد الإلكتروني"
+    },
+    "company": {
+      "label": "الشركة",
+      "placeholder": "أدخل اسم الشركة"
+    },
+    "phone": {
+      "label": "رقم التواصل",
+      "placeholder": "أدخل الرقم"
+    },
+    "message": {
+      "label": "الرسالة",
+      "placeholder": "اكتب رسالتك"
+    },
+
+    "stakeholder": {
+      "label": "نوع الشريك",
+      "select": "اختر نوع الشريك",
+      "business": "شريك أعمال",
+      "execution": "شريك تنفيذ",
+      "developer": "مطوّر",
+      "investor": "مستثمر"
+    },
+
+    "submit": "إرسال الآن",
+    "submitting": "جارٍ الإرسال..."
+  },
+
+  "toast": {
+    "success": "شكرًا لك! تم إرسال طلب الشراكة بنجاح.",
+    "error": "فشل الإرسال. يرجى المحاولة مرة أخرى.",
+    "invalid": "يرجى تعبئة جميع الحقول بشكل صحيح"
+  }
+}
