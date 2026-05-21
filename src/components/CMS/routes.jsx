@@ -658,7 +658,8 @@ const CmsRoutes = () => {
      <Route path="mortgages/calculator/emi" element={<PerfectMortgageCalculator initialTab="mortgage" />} />
      <Route path="/property-management" element={<Propertymanagement />} />
      <Route path="listings/approval-queue"    element={<ApprovalQueue />} />
-  <Route path="listings/edit-review-queue" element={<EditReviewQueue />} />
+    <Route path="listings/edit-review-queue" element={<EditReviewQueue />} />
+    <Route path="deal-records" element={<Dealrecordspage />} />
       
       
 
