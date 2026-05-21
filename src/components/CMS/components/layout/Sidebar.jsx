@@ -156,7 +156,7 @@ const CUSTOM_ROLE_LINKS = {
     icon: "fas fa-user-friends",
     submenus: [
       { title: "Agent List",        path: "/dashboard/{roleSlug}/agent-list" },
-      { title: "Verification Queue",path: "/dashboard/{roleSlug}/agents/verification-queue" },
+      // { title: "Verification Queue",path: "/dashboard/{roleSlug}/agents/verification-queue" },
     ]
   },
   {
@@ -166,13 +166,17 @@ const CUSTOM_ROLE_LINKS = {
     submenus: [
       { title: "Advisor List",      path: "/dashboard/{roleSlug}/advisors" },
       { title: "Create Advisor",    path: "/dashboard/{roleSlug}/advisor/create" },
-      { title: "Leaderboard",       path: "/dashboard/{roleSlug}/advisors/leaderboard" },
+      // { title: "Leaderboard",       path: "/dashboard/{roleSlug}/advisors/leaderboard" },
     ]
   },
   {
     title: "Referral Partners",
-    path: "/dashboard/{roleSlug}/referral-list",
     icon: "fas fa-handshake",
+    path: "/dashboard/{roleSlug}/referral-partners",
+    submenus: [
+      { title: "All Referral Partners", path: "/dashboard/{roleSlug}/referral-partners" },
+      { title: "Leaderboard", path: "/dashboard/{roleSlug}/referral-leaderboard" },
+    ],
   },
   // {
   //   title: "Customers",
@@ -190,7 +194,7 @@ const CUSTOM_ROLE_LINKS = {
     path: "/dashboard/{roleSlug}/commission",
     icon: "fas fa-file-invoice-dollar",
     submenus: [
-      { title: "Deal Records",        path: "/dashboard/{roleSlug}/deal-records" },
+      // { title: "Deal Records",        path: "/dashboard/{roleSlug}/deal-records" },
       { title: "Commission Ledger",   path: "/dashboard/{roleSlug}/grid/commission" },
       { title: "Partner Agreements",  path: "/dashboard/{roleSlug}/commission/agreements" },
     ]

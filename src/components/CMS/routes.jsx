@@ -139,7 +139,7 @@ import AgencyLeadManagement from "../ecommerce/B2C/AgencyLeadManagement";
 import AgencyAgentProperties from "./pages/Properties/AgencyAgentProperties";
 // import AgencyTargets from "../ecommerce/B2C/AgencyTargets";
 import AgencyLeaderboard from "../ecommerce/B2C/AgencyLeaderboard"; 
-import AdvisorLeaderboard from "../ecommerce/B2C/AdvisorLeaderboard";
+import AdvisorLeaderboard from "../Grid/GridAdmin.jsx/AdvisorLeaderboard";
 // import AgencyIncentives from "../ecommerce/B2C/AgencyIncentives";
 // import AgencyBranches from "../ecommerce/B2C/AgencyBranches";
 // import AgencyRoles from "../ecommerce/B2C/AgencyRoles";
@@ -184,6 +184,8 @@ import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail"
 import GridCreateadvisor from "../Create Users/GridCreateadvisor";
 import AllAdvisors from "../Create Users/Alladvisors";
 import AdvisorDetail from "../Create Users/Advisordetail";
+import AllReferralPartners from "../GridReferralPartner/Admin/AllReferralPartners";
+import ReferralPartnerDetail from "../GridReferralPartner/Admin/ReferralPartnerDetail";
 import PlatformLeads from "../Grid/GridAdmin.jsx/PlatformLeads";
 import AdvisorLeadsPage from "../Grid/AdvisorGrid/Advisorleadspage";
 import PropertyCatalogue from "../Grid/AdvisorGrid/Propertycatalogue";
@@ -589,6 +591,8 @@ const CmsRoutes = () => {
 <Route path="advisor/create" element={<GridCreateadvisor />} />
 <Route path="advisor/list"   element={<AdvisorList />} />
 <Route path="advisor/:id" element={<VaultAdvisorDetail />} />
+<Route path="referral-partners" element={<AllReferralPartners />} />
+<Route path="referral-partners/:id" element={<ReferralPartnerDetail />} />
 <Route path="mortgage-ops/create" element={<VaultCreateMortgage />} />
 <Route path="create/vault-advisor" element={<VaultCreateadvisor />} />
 
