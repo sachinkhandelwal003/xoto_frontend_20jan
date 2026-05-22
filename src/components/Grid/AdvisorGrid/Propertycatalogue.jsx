@@ -3,7 +3,8 @@ import {
   MapPin, Bed, Bath, Square, Building2, Flame, Calendar,
   Eye, Heart, CheckCircle2, Lock, ArrowLeft, Search,
   FileText, ChevronLeft, ChevronRight, Home, Sparkles,
-  TrendingUp, Grid3X3, Plus, LayoutGrid, Layers
+  TrendingUp, Grid3X3, Plus, LayoutGrid, Layers,
+  X, Loader2, Copy, Mail
 } from "lucide-react";
 import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
@@ -60,7 +61,441 @@ const SkeletonCard = () => (
 );
 
 // ─── Property Card ────────────────────────────────────────────────────────────
-const PropertyCard = ({ property, onView }) => {
+const Btn = ({ children, onClick, variant = "primary", loading, disabled }) => {
+  const variants = {
+    primary: { background: "#6d28d9", color: "#fff", border: "none" },
+    ghost: { background: "#fff", color: "#52525b", border: "1px solid #e5e7eb" },
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || loading}
+      style={{
+        ...variants[variant],
+        borderRadius: 10,
+        padding: "10px 16px",
+        fontSize: 13,
+        fontWeight: 700,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        opacity: disabled || loading ? 0.65 : 1,
+      }}
+    >
+      {loading ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : children}
+    </button>
+  );
+};
+
+const normalizeApi = (res) => (res?.data?.success !== undefined || res?.data?.status ? res.data : res);
+
+const buildPresentationProperty = (property) => ({
+  propertyName: property.propertyName || property.projectName || "",
+  projectName: property.projectName || property.propertyName || "",
+  type: property.propertyType || "Residential",
+  propertySubType: property.propertySubType || "",
+  area: property.area || property.locality || "",
+  city: property.city || "Dubai",
+  country: property.country || "UAE",
+  price: property.price || property.price_min || 0,
+  price_min: property.price_min || property.price || 0,
+  price_max: property.price_max || 0,
+  currency: property.currency || "AED",
+  bedrooms: property.bedrooms || 0,
+  bathrooms: property.bathrooms || 0,
+  builtUpArea: property.builtUpArea || property.builtUpArea_min || 0,
+  floors: property.floors || property.numberOfFloors || 0,
+  furnishingStatus: property.furnishingStatus || property.furnishing || "",
+  ownershipType: property.ownershipType || "",
+  parkingAllocation: property.parkingAllocation || "",
+  mainLogo: property.mainLogo || property.media?.mainLogo || "",
+  photos: (() => {
+    const allPhotos = [];
+    const mainLogo = property.mainLogo || property.media?.mainLogo;
+    if (mainLogo) allPhotos.push(mainLogo);
+
+    const ph = property.photos;
+    if (ph && typeof ph === "object" && !Array.isArray(ph)) {
+      Object.values(ph).forEach((arr) => {
+        if (Array.isArray(arr)) allPhotos.push(...arr.filter(Boolean));
+      });
+    } else if (Array.isArray(ph)) {
+      allPhotos.push(...ph.filter(Boolean));
+    }
+
+    const med = property.media;
+    if (med && typeof med === "object") {
+      ["architectureImages", "interiorImages", "lobbyImages", "otherImages"].forEach((key) => {
+        if (Array.isArray(med[key])) allPhotos.push(...med[key].filter(Boolean));
+      });
+    }
+    return [...new Set(allPhotos)];
+  })(),
+  developer: property.developerName || property.developer?.name || "",
+  developerDetails: {
+    name: property.developer?.name || property.developerName || property.developerDetails?.name || "",
+    logo: property.developer?.logo || property.developerDetails?.logo || "",
+    description: property.developerDetails?.description || property.developer?.description || "",
+    email: property.developer?.email || property.developerDetails?.email || "",
+    phone: property.developer?.phone_number || property.developerDetails?.phone || "",
+    websiteUrl: property.developer?.websiteUrl || property.developerDetails?.websiteUrl || "",
+  },
+  developerName: property.developer?.name || property.developerName || "",
+  completionDate: property.completionDate || "",
+  projectStatus: property.projectStatus || "",
+  developmentStatus: property.developmentStatus || "",
+  constructionProgress: property.constructionProgress || 0,
+  readinessProgress: property.readinessProgress || "",
+  serviceCharge: property.serviceCharge || "",
+  totalUnits: property.totalUnits || 0,
+  soldUnits: property.soldUnits || property.inventoryStats?.sold || 0,
+  reservedUnits: property.reservedUnits || property.inventoryStats?.reserved || 0,
+  description: property.description || property.overview || "",
+  overview: property.overview || property.description || "",
+  locality: property.locality || property.area || "",
+  location: property.location || {},
+  proximity: property.proximity || {},
+  isFeatured: property.isFeatured || false,
+  saleStatus: property.saleStatus || "Available",
+  facilities: (() => {
+    const f = property.facilities;
+    if (!f) return [];
+    if (Array.isArray(f)) return f;
+    return Object.entries(f)
+      .filter(([, value]) => value === true)
+      .map(([key]) => key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase()).trim());
+  })(),
+  amenities: Array.isArray(property.amenities) ? property.amenities : [],
+  paymentPlan: (() => {
+    const pp = property.paymentPlan;
+    if (!Array.isArray(pp)) return [];
+    return pp.flatMap((plan) => {
+      if (Array.isArray(plan.stages)) {
+        return plan.stages.map((stage) => ({
+          milestone: stage.stage?.replace(/_/g, " ") || stage.description || "",
+          percentage: stage.percentage || 0,
+          description: stage.description || "",
+        }));
+      }
+      return plan ? [plan] : [];
+    });
+  })(),
+  unitTypes: (() => {
+    if (Array.isArray(property.inventory) && property.inventory.length > 0) {
+      return property.inventory.map((inv) => ({
+        type: inv.unitType || inv.bedroomType || "",
+        area: inv.sqft || inv.sqm || inv.area || 0,
+        price: inv.price || property.price_min || property.price || 0,
+        status: inv.status || "available",
+      }));
+    }
+    if (Array.isArray(property.unitTypes) && property.unitTypes.length > 0) {
+      return property.unitTypes.map((unit) => (
+        typeof unit === "string" ? { type: unit, area: 0, price: 0 } : unit
+      ));
+    }
+    return [];
+  })(),
+});
+
+const PresentationModal = ({ property: initialProperty, onClose }) => {
+  const [step, setStep] = useState(1);
+  const [property, setProperty] = useState(initialProperty);
+  const [propertyLoading, setPropertyLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [narrative, setNarrative] = useState(null);
+  const [trackingUrl, setTrackingUrl] = useState("");
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState("");
+
+  const [settings, setSettings] = useState({
+    language: "English",
+    currency: "AED",
+    areaUnit: "sqft",
+    tone: "professional",
+    sections: {
+      cover: true,
+      projectDescription: true,
+      developer: true,
+      unitPrices: true,
+      paymentPlan: true,
+      location: true,
+      gallery: true,
+      keyHighlights: true,
+    },
+  });
+  const [clientNotes, setClientNotes] = useState({
+    clientName: "",
+    budget: "",
+    requirements: "",
+  });
+
+  useEffect(() => {
+    if (!initialProperty?._id) return;
+    setPropertyLoading(true);
+    apiService.get(`/properties/${initialProperty._id}`)
+      .then((res) => {
+        const data = normalizeApi(res);
+        if (data?.data) setProperty(data.data);
+      })
+      .catch(() => setError("Full property fetch failed. Using catalogue data."))
+      .finally(() => setPropertyLoading(false));
+  }, [initialProperty?._id]);
+
+  const cleanProperty = buildPresentationProperty(property || {});
+
+  const toggleSection = (key) => {
+    setSettings((prev) => ({
+      ...prev,
+      sections: { ...prev.sections, [key]: !prev.sections[key] },
+    }));
+  };
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setError("");
+    try {
+      const res = await apiService.post("/presentation/generate-narrative", {
+        property: cleanProperty,
+        clientNotes,
+        settings,
+      });
+      const data = normalizeApi(res);
+      if (data?.success) {
+        setNarrative(data.data);
+        setStep(2);
+      } else {
+        setError(data?.message || "Generation failed");
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || "Generation failed");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      const res = await apiService.post("/presentation/save", {
+        propertyId: property._id,
+        property: cleanProperty,
+        narrative,
+        settings,
+        clientNotes,
+        agentProfile: {},
+      });
+      const data = normalizeApi(res);
+      if (data?.success) {
+        setTrackingUrl(data.data.trackingUrl);
+        setPreviewUrl(`${data.data.trackingUrl}?preview=true`);
+        setStep(3);
+      } else {
+        setError(data?.message || "Save failed");
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(trackingUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  const waMessage = encodeURIComponent(
+    `Hi${clientNotes.clientName ? ` ${clientNotes.clientName}` : ""},\n\nPlease find the property presentation for *${property?.propertyName || property?.projectName}* here:\n${trackingUrl}\n\n_Powered by Xoto GRID_`
+  );
+  const mailBody = encodeURIComponent(
+    `Hello${clientNotes.clientName ? ` ${clientNotes.clientName}` : ""},\n\nPlease find the property presentation here:\n${trackingUrl}\n\nBest regards`
+  );
+
+  return (
+    <div style={styles.modalOverlay}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div style={styles.modal}>
+        <div style={styles.modalHeader}>
+          <div>
+            <h3 style={{ color: "#fff", fontSize: 16, fontWeight: 800, margin: 0 }}>AI Presentation Generator</h3>
+            <p style={{ color: "rgba(255,255,255,0.72)", fontSize: 12, margin: "3px 0 0" }}>
+              {step === 1 && "Customize your presentation"}
+              {step === 2 && "Review AI content"}
+              {step === 3 && "Share with your client"}
+            </p>
+          </div>
+          <button type="button" onClick={onClose} style={styles.modalClose}><X size={16} /></button>
+        </div>
+
+        <div style={styles.modalBody}>
+          {error && <div style={styles.modalError}>{error}</div>}
+          {propertyLoading && (
+            <div style={styles.modalInfo}><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Loading full property data...</div>
+          )}
+
+          {step === 1 && (
+            <>
+              <div style={styles.modalProperty}>
+                {cleanProperty.mainLogo
+                  ? <img src={cleanProperty.mainLogo} alt="" style={styles.modalThumb} />
+                  : <div style={styles.modalThumbFallback}><Home size={20} color="#6d28d9" /></div>}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#18181b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {cleanProperty.propertyName || "Property"}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#71717a" }}>{[cleanProperty.area, cleanProperty.city].filter(Boolean).join(", ")}</div>
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Client Name</label>
+                <input value={clientNotes.clientName} onChange={(e) => setClientNotes((p) => ({ ...p, clientName: e.target.value }))} placeholder="Client name" style={styles.input} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Budget</label>
+                  <input value={clientNotes.budget} onChange={(e) => setClientNotes((p) => ({ ...p, budget: e.target.value }))} placeholder="AED 1,500,000" style={styles.input} />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Requirement</label>
+                  <input value={clientNotes.requirements} onChange={(e) => setClientNotes((p) => ({ ...p, requirements: e.target.value }))} placeholder="2BR, waterfront..." style={styles.input} />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Language</label>
+                  <select value={settings.language} onChange={(e) => setSettings((p) => ({ ...p, language: e.target.value }))} style={styles.input}>
+                    {["English", "Arabic", "Hindi", "Urdu", "Russian"].map((item) => <option key={item} value={item}>{item}</option>)}
+                  </select>
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Currency</label>
+                  <select value={settings.currency} onChange={(e) => setSettings((p) => ({ ...p, currency: e.target.value }))} style={styles.input}>
+                    {["AED", "USD", "GBP", "EUR", "INR"].map((item) => <option key={item} value={item}>{item}</option>)}
+                  </select>
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Area Unit</label>
+                  <select value={settings.areaUnit} onChange={(e) => setSettings((p) => ({ ...p, areaUnit: e.target.value }))} style={styles.input}>
+                    <option value="sqft">sqft</option>
+                    <option value="sqm">sqm</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={styles.formLabel}>Tone</label>
+                <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                  {["professional", "luxury", "friendly"].map((tone) => (
+                    <button key={tone} type="button" onClick={() => setSettings((p) => ({ ...p, tone }))}
+                      style={{ ...styles.segmentBtn, ...(settings.tone === tone ? styles.segmentBtnActive : {}) }}>
+                      {tone}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label style={styles.formLabel}>Include Sections</label>
+                <div style={styles.sectionGrid}>
+                  {Object.entries({
+                    cover: "Cover",
+                    projectDescription: "Description",
+                    developer: "Developer",
+                    unitPrices: "Prices",
+                    paymentPlan: "Payment",
+                    location: "Location",
+                    gallery: "Gallery",
+                    keyHighlights: "Highlights",
+                  }).map(([key, label]) => (
+                    <button key={key} type="button" onClick={() => toggleSection(key)}
+                      style={{ ...styles.sectionBtn, ...(settings.sections[key] ? styles.sectionBtnActive : {}) }}>
+                      <CheckCircle2 size={12} /> {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {step === 2 && narrative && (
+            <>
+              <div style={styles.modalInfo}><CheckCircle2 size={14} /> AI narrative generated. Review and edit if needed.</div>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Property Overview</label>
+                <textarea rows={4} value={narrative.propertyOverview || ""} onChange={(e) => setNarrative((p) => ({ ...p, propertyOverview: e.target.value }))} style={styles.textarea} />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Key Highlights</label>
+                {(narrative.keyHighlights || []).map((item, index) => (
+                  <input key={index} value={item} onChange={(e) => {
+                    const next = [...(narrative.keyHighlights || [])];
+                    next[index] = e.target.value;
+                    setNarrative((p) => ({ ...p, keyHighlights: next }));
+                  }} style={{ ...styles.input, marginBottom: 8 }} />
+                ))}
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Location & Community</label>
+                <textarea rows={3} value={narrative.locationCommunity || ""} onChange={(e) => setNarrative((p) => ({ ...p, locationCommunity: e.target.value }))} style={styles.textarea} />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Next Steps</label>
+                <textarea rows={2} value={narrative.nextSteps || ""} onChange={(e) => setNarrative((p) => ({ ...p, nextSteps: e.target.value }))} style={styles.textarea} />
+              </div>
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <div style={styles.readyBox}><CheckCircle2 size={20} /> Presentation ready. Share the tracked client link.</div>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Client Link</label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input readOnly value={trackingUrl} style={{ ...styles.input, flex: 1 }} />
+                  <button type="button" onClick={handleCopy} style={styles.copyBtn}>{copied ? "Copied" : <Copy size={14} />}</button>
+                </div>
+              </div>
+              {previewUrl && (
+                <a href={previewUrl} target="_blank" rel="noreferrer" style={styles.previewLink}>
+                  <Eye size={14} /> Open Preview
+                </a>
+              )}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <a href={`https://wa.me/?text=${waMessage}`} target="_blank" rel="noreferrer" style={{ ...styles.shareBtn, background: "#25D366", color: "#fff" }}>
+                  WhatsApp
+                </a>
+                <a href={`mailto:?subject=Property Presentation - ${property?.propertyName || ""}&body=${mailBody}`} style={{ ...styles.shareBtn, background: "#fff", color: "#52525b", border: "1px solid #e5e7eb" }}>
+                  <Mail size={14} /> Email
+                </a>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div style={styles.modalFooter}>
+          <Btn variant="ghost" onClick={onClose}>{step === 3 ? "Close" : "Cancel"}</Btn>
+          <div style={{ display: "flex", gap: 8 }}>
+            {step === 2 && <Btn variant="ghost" onClick={() => setStep(1)}>Back</Btn>}
+            {step === 1 && <Btn onClick={handleGenerate} loading={generating} disabled={propertyLoading}>Generate with AI</Btn>}
+            {step === 2 && <Btn onClick={handleSave} loading={saving}>Save & Get Link</Btn>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PropertyCard = ({ property, onView, onGeneratePresentation }) => {
   const thumb = getThumb(property.photos, property.mainLogo);
   const tc = typeColor(property.propertySubType);
   const [imgErr, setImgErr] = useState(false);
@@ -158,7 +593,7 @@ const PropertyCard = ({ property, onView }) => {
         </button>
         <button
           style={styles.btnPresentation}
-          onClick={(e) => { e.stopPropagation(); }}
+          onClick={(e) => { e.stopPropagation(); onGeneratePresentation(property); }}
         >
           <Sparkles size={12} style={{ marginRight: 5 }} />
           AI Presentation
@@ -169,7 +604,7 @@ const PropertyCard = ({ property, onView }) => {
 };
 
 // ─── Detail Page ──────────────────────────────────────────────────────────────
-const PropertyDetail = ({ property: p, onBack }) => {
+const PropertyDetail = ({ property: p, onBack, onGeneratePresentation }) => {
   const thumb = getThumb(p.photos, p.mainLogo);
   const allPhotos = [
     ...(p.photos?.architecture || []),
@@ -375,7 +810,10 @@ const PropertyDetail = ({ property: p, onBack }) => {
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", marginBottom: 16, lineHeight: 1.6 }}>
                 Generate a branded property presentation for your client in seconds.
               </div>
-              <button style={{ ...styles.btnPrimary, background: "#fff", color: "#6d28d9", fontWeight: 700 }}>
+              <button
+                style={{ ...styles.btnPrimary, background: "#fff", color: "#6d28d9", fontWeight: 700 }}
+                onClick={() => onGeneratePresentation(p)}
+              >
                 Generate Presentation
               </button>
             </div>
@@ -449,6 +887,7 @@ export default function PropertyCatalogue() {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState(null);
   const [selectedProp, setSelectedProp] = useState(null);
+  const [presentationProp, setPresentationProp] = useState(null);
 
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
@@ -490,7 +929,21 @@ export default function PropertyCatalogue() {
   ];
 
   if (selectedProp) {
-    return <PropertyDetail property={selectedProp} onBack={() => setSelectedProp(null)} />;
+    return (
+      <>
+        <PropertyDetail
+          property={selectedProp}
+          onBack={() => setSelectedProp(null)}
+          onGeneratePresentation={setPresentationProp}
+        />
+        {presentationProp && (
+          <PresentationModal
+            property={presentationProp}
+            onClose={() => setPresentationProp(null)}
+          />
+        )}
+      </>
+    );
   }
 
   return (
@@ -499,6 +952,9 @@ export default function PropertyCatalogue() {
         @keyframes shimmer {
           0% { background-position: -200% 0; }
           100% { background-position: 200% 0; }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
         * { box-sizing: border-box; }
         button { cursor: pointer; }
@@ -589,7 +1045,12 @@ export default function PropertyCatalogue() {
       ) : (
         <div style={styles.grid}>
           {properties.map((p) => (
-            <PropertyCard key={p._id} property={p} onView={setSelectedProp} />
+            <PropertyCard
+              key={p._id}
+              property={p}
+              onView={setSelectedProp}
+              onGeneratePresentation={setPresentationProp}
+            />
           ))}
         </div>
       )}
@@ -628,6 +1089,13 @@ export default function PropertyCatalogue() {
             </button>
           </div>
         </div>
+      )}
+
+      {presentationProp && (
+        <PresentationModal
+          property={presentationProp}
+          onClose={() => setPresentationProp(null)}
+        />
       )}
     </div>
   );
@@ -730,5 +1198,227 @@ const styles = {
     background: "#fff", fontSize: 13, cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center",
     color: "#52525b", fontWeight: 500, transition: "all 0.15s",
+  },
+  modalOverlay: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 1000,
+    background: "rgba(0,0,0,0.55)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+  },
+  modal: {
+    width: "min(680px, 100%)",
+    maxHeight: "92vh",
+    background: "#fff",
+    borderRadius: 18,
+    overflow: "hidden",
+    boxShadow: "0 24px 80px rgba(0,0,0,0.28)",
+    display: "flex",
+    flexDirection: "column",
+  },
+  modalHeader: {
+    background: "linear-gradient(135deg, #4c1d95, #6d28d9)",
+    padding: "18px 22px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+  },
+  modalClose: {
+    width: 34,
+    height: 34,
+    borderRadius: "50%",
+    border: "none",
+    background: "rgba(255,255,255,0.18)",
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalBody: {
+    padding: 22,
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+  },
+  modalFooter: {
+    padding: "14px 22px",
+    borderTop: "1px solid #f1f1f4",
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  modalError: {
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    color: "#991b1b",
+    borderRadius: 12,
+    padding: "10px 12px",
+    fontSize: 12,
+    fontWeight: 600,
+  },
+  modalInfo: {
+    background: "#f0fdf4",
+    border: "1px solid #bbf7d0",
+    color: "#166534",
+    borderRadius: 12,
+    padding: "10px 12px",
+    fontSize: 12,
+    fontWeight: 700,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+  modalProperty: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderRadius: 14,
+    background: "#faf5ff",
+    border: "1px solid #eadcff",
+  },
+  modalThumb: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    objectFit: "cover",
+    flexShrink: 0,
+  },
+  modalThumbFallback: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    background: "#f3e8ff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  formGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+  formLabel: {
+    fontSize: 11,
+    fontWeight: 800,
+    color: "#71717a",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  input: {
+    width: "100%",
+    border: "1px solid #e5e7eb",
+    borderRadius: 11,
+    padding: "10px 12px",
+    fontSize: 13,
+    color: "#18181b",
+    background: "#fafafa",
+    outline: "none",
+  },
+  textarea: {
+    width: "100%",
+    border: "1px solid #e5e7eb",
+    borderRadius: 11,
+    padding: "11px 12px",
+    fontSize: 13,
+    color: "#18181b",
+    background: "#fafafa",
+    outline: "none",
+    resize: "vertical",
+    lineHeight: 1.6,
+  },
+  segmentBtn: {
+    flex: 1,
+    border: "1px solid #e5e7eb",
+    background: "#fff",
+    color: "#71717a",
+    borderRadius: 10,
+    padding: "9px 10px",
+    fontSize: 12,
+    fontWeight: 800,
+    textTransform: "capitalize",
+  },
+  segmentBtnActive: {
+    borderColor: "#a855f7",
+    background: "#faf5ff",
+    color: "#6d28d9",
+  },
+  sectionGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: 8,
+    marginTop: 8,
+  },
+  sectionBtn: {
+    border: "1px solid #e5e7eb",
+    background: "#fafafa",
+    color: "#a1a1aa",
+    borderRadius: 10,
+    padding: "10px 12px",
+    fontSize: 12,
+    fontWeight: 700,
+    display: "flex",
+    alignItems: "center",
+    gap: 7,
+  },
+  sectionBtnActive: {
+    borderColor: "#c084fc",
+    background: "#faf5ff",
+    color: "#6d28d9",
+  },
+  readyBox: {
+    border: "1px solid #bbf7d0",
+    background: "#f0fdf4",
+    color: "#166534",
+    borderRadius: 14,
+    padding: 14,
+    fontSize: 13,
+    fontWeight: 800,
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  },
+  copyBtn: {
+    minWidth: 78,
+    border: "1px solid #c084fc",
+    background: "#faf5ff",
+    color: "#6d28d9",
+    borderRadius: 10,
+    fontSize: 12,
+    fontWeight: 800,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  previewLink: {
+    border: "1px solid #e5e7eb",
+    background: "#fafafa",
+    color: "#52525b",
+    borderRadius: 11,
+    padding: "10px 12px",
+    fontSize: 13,
+    fontWeight: 700,
+    textDecoration: "none",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+  shareBtn: {
+    borderRadius: 11,
+    padding: "11px 12px",
+    fontSize: 13,
+    fontWeight: 800,
+    textDecoration: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
 };
