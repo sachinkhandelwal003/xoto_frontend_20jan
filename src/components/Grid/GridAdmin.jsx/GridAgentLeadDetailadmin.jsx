@@ -492,7 +492,7 @@ const GridAgentLeadDetailadmin = () => {
 
   const openDealRecordFlow = () => {
     const base = window.location.pathname.replace(/\/lead-detail-admin\/[^/]+$/, '');
-    navigate(`${base}/deal-records?create=1&leadId=${lead._id}`);
+    navigate(`${base}/deal-records/create/${lead._id}`);
   };
 
   const mc = MC[matchType] || null;
@@ -978,3 +978,4 @@ const GridAgentLeadDetailadmin = () => {
 };
 
 export default GridAgentLeadDetailadmin;
+

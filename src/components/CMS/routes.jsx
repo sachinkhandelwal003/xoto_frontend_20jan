@@ -288,7 +288,7 @@ import MortgageEligibilityCalculatorPage from "../../components/homepage/Mortgag
 import MortgageAffordabilityCalculatorPage from "../../components/homepage/MortgageAffordabilityCalculatorPage";
 import PresentationsList from '../Grid/presentation/PresentationsList';
 import Dealrecordspage from "../Grid/GridAdmin.jsx/Dealrecordspage";
-
+import DealRecordDetailPage from "../Grid/GridAdmin.jsx/DealRecordDetailPage";
 
 
 
@@ -660,6 +660,9 @@ const CmsRoutes = () => {
      <Route path="listings/approval-queue"    element={<ApprovalQueue />} />
     <Route path="listings/edit-review-queue" element={<EditReviewQueue />} />
     <Route path="deal-records" element={<Dealrecordspage />} />
+    <Route path="deal-records/create/:leadId" element={<Dealrecordspage />} />
+    <Route path="deal-records/:dealId" element={<DealRecordDetailPage />} /> {/* ← ADD */}
+
       
       
 
@@ -792,3 +795,4 @@ const CmsRoutes = () => {
 };
 
 export default CmsRoutes;
+
