@@ -577,6 +577,11 @@ const CUSTOM_ROLE_LINKS = {
     icon: "fas fa-building",
     path: "/dashboard/{roleSlug}/property-catalogue",
   },
+  {
+    title: "My Presentations",
+    icon: "fas fa-file-powerpoint",
+    path: "/dashboard/{roleSlug}/presentations",
+  },
   MORTGAGE_CALCULATOR_LINK,
 ],
 // Baaki purane roles ke neeche ye paste karo:
@@ -721,7 +726,7 @@ const ROLE_MODULE_ORDER = {
 
   '25':['Dashboard' , 'Referrals', 'Leaderboard', 'Profile'],
   '21': ['Dashboard','Create Lead',  'Vault Partners', 'All Leads',],
-  '24': ['Dashboard', 'My Leads', 'Property Catalogue', 'Calculator', 'Leaderboard'],
+  '24': ['Dashboard', 'My Leads', 'Property Catalogue', 'My Presentations', 'Calculator', 'Leaderboard'],
   // '25': ['Dashboard', 'Referrals', 'Earnings', 'Profile'],
     '26': ['Dashboard', 'All Leads','Case','Proposals'],
     '23': ['Dashboard', 'Mortgage Cases'], 

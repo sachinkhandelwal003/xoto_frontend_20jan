@@ -225,7 +225,13 @@ const GridAdvisorDashboard = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={cardStyle} bodyStyle={{ padding: '18px 20px' }}>
+          <Card 
+            bordered={false} 
+            hoverable
+            style={{ ...cardStyle, cursor: 'pointer' }}
+            bodyStyle={{ padding: '18px 20px' }}
+            onClick={() => navigate('/dashboard/GridAdvisor/presentations')}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
               <Text style={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>Presentations Generated</Text>
               <div style={{
