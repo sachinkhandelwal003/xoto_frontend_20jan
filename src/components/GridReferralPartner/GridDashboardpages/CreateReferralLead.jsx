@@ -158,6 +158,7 @@ const CreateReferralLead = () => {
               form={form}
               layout="vertical"
               onFinish={handleSubmit}
+              preserve={true}
               initialValues={{
                 countryCode: '+971',
                 transactionType: 'buy',

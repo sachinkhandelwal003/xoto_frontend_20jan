@@ -669,7 +669,20 @@ export default function DeveloperAddProperty() {
                             <Option value="1BR">1BR</Option>
                             <Option value="2BR">2BR</Option>
                             <Option value="3BR">3BR</Option>
+                            <Option value="4BR">4BR</Option>
+                            <Option value="5BR">5BR</Option>
+                            <Option value="6BR">6BR</Option>
+                            <Option value="7BR">7BR</Option>
+                            <Option value="8BR+">8BR+</Option>
                             <Option value="Penthouse">Penthouse</Option>
+                            <Option value="Villa">Villa</Option>
+                            <Option value="Townhouse">Townhouse</Option>
+                            <Option value="Duplex">Duplex</Option>
+                            <Option value="Plot">Plot</Option>
+                            <Option value="Office">Office</Option>
+                            <Option value="Retail">Retail</Option>
+                            <Option value="Warehouse">Warehouse</Option>
+                            <Option value="Apartment">Apartment</Option>
                           </Select>
                         </Form.Item>
                       </Col>
