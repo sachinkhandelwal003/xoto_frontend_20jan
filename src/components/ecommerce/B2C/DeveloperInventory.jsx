@@ -156,11 +156,18 @@ const InventoryCard = ({ unit, onEdit, onAction, onView }) => {
 };
 
 // Form Fields Component
-const InventoryFormFields = ({ isEdit = false, selectedUnit = null }) => {
+const InventoryFormFields = ({ isEdit = false, selectedUnit = null, activeProperty = null }) => {
   const isResidentialUnitType = (unitType) => 
     ["apartment", "villa", "townhouse", "duplex", "penthouse", "hotel_apartment"].includes(unitType);
   
   const isPlotUnitType = (unitType) => unitType === "plot";
+
+  const propCurrency = activeProperty?.currency || "AED";
+  const propFurnishing = activeProperty?.furnishing || "unfurnished";
+  const propParking = activeProperty?.parkingSpaces ?? 0;
+  const propHasView = activeProperty?.hasView ? "Yes" : "No";
+  const propViewType = activeProperty?.viewType?.length ? activeProperty.viewType.map(toLabel).join(", ") : "None";
+  const propPaymentPlan = activeProperty?.paymentPlan?.length ? activeProperty.paymentPlan[0]?.title : "";
 
   return (
     <>
@@ -202,7 +209,12 @@ const InventoryFormFields = ({ isEdit = false, selectedUnit = null }) => {
             formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
             parser={v => v.replace(/,/g, "")} />
         </Form.Item>
-        <Form.Item name="currency" label="Currency" initialValue="AED"><Select>{CURRENCIES.map(c => <Option key={c} value={c}>{c}</Option>)}</Select></Form.Item>
+        <Form.Item name="currency" label="Currency" initialValue="inherit">
+          <Select>
+            <Option value="inherit">Inherit: Project ({propCurrency})</Option>
+            {CURRENCIES.map(c => <Option key={c} value={c}>{c}</Option>)}
+          </Select>
+        </Form.Item>
       </div>
 
       <Form.Item shouldUpdate={(prev, curr) => prev.unitType !== curr.unitType}>
@@ -213,33 +225,47 @@ const InventoryFormFields = ({ isEdit = false, selectedUnit = null }) => {
               <>
                 <div style={S.formSection}>View & Features</div>
                 <div style={S.formGrid4}>
-                  <Form.Item name="hasView" label="Has View" valuePropName="checked">
-                    <Switch />
+                  <Form.Item name="hasView" label="Has View" initialValue="inherit">
+                    <Select>
+                      <Option value="inherit">Inherit: Project ({propHasView})</Option>
+                      <Option value={true}>Yes</Option>
+                      <Option value={false}>No</Option>
+                    </Select>
                   </Form.Item>
 
                   <Form.Item shouldUpdate={(prev, curr) => prev.hasView !== curr.hasView}>
-                    {({ getFieldValue }) =>
-                      getFieldValue("hasView") ? (
+                    {({ getFieldValue }) => {
+                      const hasView = getFieldValue("hasView");
+                      const shouldShow = hasView === true || (hasView === "inherit" && activeProperty?.hasView);
+                      return shouldShow ? (
                         <Form.Item
                           name="viewType"
                           label="View Types"
                           style={{ gridColumn: "span 2" }}
                         >
-                          <Select mode="multiple" placeholder="Select" allowClear>
+                          <Select mode="multiple" placeholder={`Inherit: ${propViewType}`} allowClear>
                             {VIEW_TYPES.map(v => (
                               <Option key={v} value={v}>{toLabel(v)}</Option>
                             ))}
                           </Select>
                         </Form.Item>
-                      ) : null
-                    }
+                      ) : null;
+                    }}
                   </Form.Item>
 
-                  <Form.Item name="parkingSpaces" label="Parking"><InputNumber min={0} style={{ width: "100%" }} /></Form.Item>
+                  <Form.Item name="parkingSpaces" label="Parking">
+                    <InputNumber min={0} style={{ width: "100%" }} placeholder={`Inherit: ${propParking}`} />
+                  </Form.Item>
                 </div>
-                <div style={{ maxWidth: 240 }}>
-                  <Form.Item name="furnishing" label="Furnishing" initialValue="unfurnished">
-                    <Select>{FURNISHING.map(f => <Option key={f} value={f}>{toLabel(f)}</Option>)}</Select>
+                <div style={S.formGrid3}>
+                  <Form.Item name="furnishing" label="Furnishing" initialValue="inherit">
+                    <Select>
+                      <Option value="inherit">Inherit: Project ({toLabel(propFurnishing)})</Option>
+                      {FURNISHING.map(f => <Option key={f} value={f}>{toLabel(f)}</Option>)}
+                    </Select>
+                  </Form.Item>
+                  <Form.Item name="paymentPlan" label="Payment Plan" style={{ gridColumn: "span 2" }}>
+                    <Input placeholder={propPaymentPlan ? `Inherit: ${propPaymentPlan}` : "e.g. 50/50 Handover Plan"} />
                   </Form.Item>
                 </div>
               </>
@@ -268,6 +294,7 @@ const InventoryFormFields = ({ isEdit = false, selectedUnit = null }) => {
 export default function DeveloperInventory() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
+  const [propertiesList, setPropertiesList] = useState([]);
   const [projectId, setProjectId] = useState(null);
   const [units, setUnits] = useState([]);
   const [stats, setStats] = useState(null);
@@ -357,6 +384,7 @@ export default function DeveloperInventory() {
         (Array.isArray(res?.data) && res.data) ||
         (Array.isArray(res) && res) ||
         [];
+      setPropertiesList(list);
 
       const opts = (Array.isArray(list) ? list : [])
         .filter(p => p.propertySubType === "off_plan")
@@ -407,11 +435,13 @@ export default function DeveloperInventory() {
         area: item.area,
         areaUnit: item.areaUnit || "sqft",
         price: item.price,
-        currency: item.currency || "AED",
-        hasView: item.hasView || false,
-        viewType: item.viewType || [],
-        parkingSpaces: item.parkingSpaces || 0,
-        furnishing: item.furnishing || "unfurnished",
+        currency: item.currency,
+        hasView: item.hasView,
+        viewType: item.viewType,
+        parkingSpaces: item.parkingSpaces,
+        furnishing: item.furnishing,
+        paymentPlan: item.paymentPlan,
+        rawValues: item.rawValues,
         status: item.status,
         bookedAt: item.bookedAt,
         reservedAt: item.reservedAt,
@@ -445,8 +475,8 @@ const handleCreate = async (values) => {
   setSaving(true);
   try {
     await apiService.post("/properties/inventory", {
-      propertyId: projectId,  // ✅ Changed from projectId to propertyId
-      units: [{               // ✅ Wrap in units array
+      propertyId: projectId,
+      units: [{
         unitNumber: values.unitNumber,
         buildingName: values.buildingName || "",
         floorNumber: values.floorNumber || 0,
@@ -457,11 +487,12 @@ const handleCreate = async (values) => {
         area: values.area,
         areaUnit: values.areaUnit || "sqft",
         price: values.price,
-        currency: values.currency || "AED",
-        hasView: values.hasView || false,
-        viewType: values.viewType || [],
-        parkingSpaces: values.parkingSpaces || 0,
-        furnishing: values.furnishing || "unfurnished",
+        currency: values.currency === "inherit" ? null : values.currency,
+        hasView: values.hasView === "inherit" ? null : values.hasView,
+        viewType: (values.hasView === "inherit" || !values.viewType) ? null : values.viewType,
+        parkingSpaces: values.parkingSpaces === undefined || values.parkingSpaces === null ? null : values.parkingSpaces,
+        furnishing: values.furnishing === "inherit" ? null : values.furnishing,
+        paymentPlan: !values.paymentPlan ? null : values.paymentPlan,
         status: "available"
       }],
     });
@@ -480,10 +511,13 @@ const handleCreate = async (values) => {
   setSaving(true);
   try {
     await apiService.patch(`/properties/inventory/${selectedUnit._id}`, {
-      ...values, 
-      hasView: values.hasView || false, 
-      viewType: values.viewType || [],
-      parkingSpaces: values.parkingSpaces || 0,
+      ...values,
+      currency: values.currency === "inherit" ? null : values.currency,
+      hasView: values.hasView === "inherit" ? null : values.hasView,
+      viewType: (values.hasView === "inherit" || !values.viewType) ? null : values.viewType,
+      parkingSpaces: values.parkingSpaces === undefined || values.parkingSpaces === null ? null : values.parkingSpaces,
+      furnishing: values.furnishing === "inherit" ? null : values.furnishing,
+      paymentPlan: !values.paymentPlan ? null : values.paymentPlan,
     });
     message.success("Unit updated");
     setEditModal(false); 
@@ -516,9 +550,14 @@ const handleCreate = async (values) => {
   const openEdit = (unit) => {
     setSelectedUnit(unit);
     editForm.setFieldsValue({
-      ...unit, areaUnit: unit.areaUnit || "sqft", currency: unit.currency || "AED",
-      hasView: unit.hasView || false, viewType: unit.viewType || [], parkingSpaces: unit.parkingSpaces || 0,
-      furnishing: unit.furnishing || "unfurnished"
+      ...unit,
+      areaUnit: unit.areaUnit || "sqft",
+      currency: unit.rawValues?.currency === null || unit.rawValues?.currency === undefined ? "inherit" : unit.rawValues.currency,
+      hasView: unit.rawValues?.hasView === null || unit.rawValues?.hasView === undefined ? "inherit" : unit.rawValues.hasView,
+      viewType: unit.rawValues?.viewType || undefined,
+      parkingSpaces: unit.rawValues?.parkingSpaces === null || unit.rawValues?.parkingSpaces === undefined ? undefined : unit.rawValues.parkingSpaces,
+      furnishing: unit.rawValues?.furnishing === null || unit.rawValues?.furnishing === undefined ? "inherit" : unit.rawValues.furnishing,
+      paymentPlan: unit.rawValues?.paymentPlan || undefined
     });
     setEditModal(true);
   };
@@ -781,7 +820,7 @@ const handleCreate = async (values) => {
         footer={null} width={780} destroyOnClose
       >
         <Form form={createForm} layout="vertical" onFinish={handleCreate}>
-          <InventoryFormFields />
+          <InventoryFormFields activeProperty={propertiesList.find(p => p._id === projectId)} />
           <div style={S.modalFooter}>
             <button style={S.outlineBtn} type="button" onClick={() => { setCreateModal(false); createForm.resetFields(); }}>Cancel</button>
             <button style={{ ...S.primaryBtn, opacity: saving ? 0.7 : 1 }} type="submit" disabled={saving}>
@@ -903,7 +942,7 @@ const handleCreate = async (values) => {
         footer={null} width={780} destroyOnClose
       >
         <Form form={editForm} layout="vertical" onFinish={handleUpdate}>
-          <InventoryFormFields isEdit selectedUnit={selectedUnit} />
+          <InventoryFormFields isEdit selectedUnit={selectedUnit} activeProperty={propertiesList.find(p => p._id === projectId)} />
           <div style={S.modalFooter}>
             <button style={S.outlineBtn} type="button" onClick={() => { setEditModal(false); editForm.resetFields(); setSelectedUnit(null); }}>Cancel</button>
             <button style={{ ...S.primaryBtn, opacity: saving ? 0.7 : 1 }} type="submit" disabled={saving}>

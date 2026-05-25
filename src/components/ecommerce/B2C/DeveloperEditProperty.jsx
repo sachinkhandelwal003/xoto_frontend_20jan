@@ -146,6 +146,81 @@ export default function DeveloperEditProperty() {
   }, [id]);
 
 
+  const aggregateInventoryListings = (childUnits) => {
+    if (!Array.isArray(childUnits) || childUnits.length === 0) {
+      return [];
+    }
+
+    // Check if they are actual child units (listings) vs overview configs.
+    const isChildUnitList = childUnits.some(u => u && (u.unitNumber !== undefined || u.price !== undefined));
+    if (!isChildUnitList) {
+      return childUnits;
+    }
+
+    const groups = {};
+
+    childUnits.forEach(unit => {
+      if (!unit) return;
+
+      const ut = String(unit.unitType || "").toLowerCase();
+      const bt = String(unit.bedroomType || "").toLowerCase();
+      let category = "Apartment";
+
+      if (ut === "apartment" || ut === "hotel_apartment" || ut === "duplex") {
+        if (bt === "studio") category = "Studio";
+        else if (bt === "1bed") category = "1BR";
+        else if (bt === "2bed") category = "2BR";
+        else if (bt === "3bed") category = "3BR";
+        else if (bt === "4bed") category = "4BR";
+        else if (bt === "5bed") category = "5BR";
+        else if (bt === "6bed") category = "6BR";
+        else if (bt === "7bed") category = "7BR";
+        else if (bt === "8plus") category = "8BR+";
+        else category = "Apartment";
+      } else if (ut === "penthouse") {
+        category = "Penthouse";
+      } else if (ut) {
+        category = ut.charAt(0).toUpperCase() + ut.slice(1);
+      }
+
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(unit);
+    });
+
+    return Object.keys(groups).map(category => {
+      const unitsInGroup = groups[category];
+
+      // Calculate starting areas
+      const areas = unitsInGroup.map(u => {
+        const areaVal = Number(u.area) || 0;
+        const areaUnitVal = u.areaUnit || "sqft";
+
+        let sqftVal = 0;
+        let sqmVal = 0;
+        if (areaUnitVal === "sqm") {
+          sqmVal = areaVal;
+          sqftVal = Math.round(areaVal * 10.7639);
+        } else {
+          sqftVal = areaVal;
+          sqmVal = Math.round(areaVal * 0.092903);
+        }
+        return { sqft: sqftVal, sqm: sqmVal };
+      });
+
+      const minSqft = areas.length > 0 ? Math.min(...areas.map(a => a.sqft)) : 0;
+      const minSqm = areas.length > 0 ? Math.min(...areas.map(a => a.sqm)) : 0;
+
+      return {
+        unitType: category,
+        units: unitsInGroup.length,
+        sqft: minSqft,
+        sqm: minSqm
+      };
+    });
+  };
+
   const fetchProperty = async () => {
     try {
       setFetchLoading(true);
@@ -154,6 +229,16 @@ export default function DeveloperEditProperty() {
       const p = res?.data?.data || res?.data;
 
       if (p) {
+        const rawInventory = p.inventory || [];
+        const hasChildUnits = Array.isArray(rawInventory) && rawInventory.length > 0 && rawInventory.some(u => u && (u.unitNumber !== undefined || u.price !== undefined));
+        
+        let initialInventory = [];
+        if (hasChildUnits) {
+          initialInventory = aggregateInventoryListings(rawInventory);
+        } else {
+          initialInventory = p.inventoryConfig || [];
+        }
+
         const fieldsToSet = {
           propertyName: p.projectName || p.propertyName,
           locality: p.locality || p.area,
@@ -170,7 +255,7 @@ export default function DeveloperEditProperty() {
           longitude: p.location?.longitude || p.coordinates?.lng,
           amenities: p.amenities || [],
           floorPlans: p.floorPlans || [],
-          inventory: p.inventory || [],
+          inventory: initialInventory,
           parkingAllocation: p.parkingAllocation || "",
           parkingSpaces: p.parkingSpaces || 0,
           floors: p.floors || p.numberOfFloors,
@@ -773,7 +858,20 @@ export default function DeveloperEditProperty() {
                             <Option value="1BR">1BR</Option>
                             <Option value="2BR">2BR</Option>
                             <Option value="3BR">3BR</Option>
+                            <Option value="4BR">4BR</Option>
+                            <Option value="5BR">5BR</Option>
+                            <Option value="6BR">6BR</Option>
+                            <Option value="7BR">7BR</Option>
+                            <Option value="8BR+">8BR+</Option>
                             <Option value="Penthouse">Penthouse</Option>
+                            <Option value="Villa">Villa</Option>
+                            <Option value="Townhouse">Townhouse</Option>
+                            <Option value="Duplex">Duplex</Option>
+                            <Option value="Plot">Plot</Option>
+                            <Option value="Office">Office</Option>
+                            <Option value="Retail">Retail</Option>
+                            <Option value="Warehouse">Warehouse</Option>
+                            <Option value="Apartment">Apartment</Option>
                           </Select>
                         </Form.Item>
                       </Col>
