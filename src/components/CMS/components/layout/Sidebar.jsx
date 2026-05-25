@@ -104,6 +104,7 @@ const CUSTOM_ROLE_LINKS = {
     { title: "Approval Queue",        path: "/dashboard/{roleSlug}/listings/approval-queue" },
     { title: "Edit Review Queue",     path: "/dashboard/{roleSlug}/listings/edit-review-queue" },
     { title: "Create Rental Properties", path: "/dashboard/{roleSlug}/rental/properties" },
+     { title: "Create Property ",      path: "/dashboard/{roleSlug}/grid/createoffplan" },
   ]
 },
 
@@ -124,10 +125,12 @@ const CUSTOM_ROLE_LINKS = {
     path: "/dashboard/{roleSlug}/lead-management",
     icon: "fas fa-filter",
     submenus: [
-      { title: "All Leads",       path: "/dashboard/{roleSlug}/grid/agentleads" },
+      { title: "All Leads",       path: "/dashboard/{roleSlug}/grid/AllgridLeads" },
       { title: "Platform Leads",  path: "/dashboard/{roleSlug}/GridAdmin/propertyleads" },
       { title: "Agent Leads",     path: "/dashboard/{roleSlug}/grid/agentleads" },
-      { title: "General Leads",   path: "/dashboard/{roleSlug}/leads/general" },
+      { title: "General Leads",   path: "/dashboard/{roleSlug}/grid/generalleads" },
+      {title:"Referral Leads", path: "/dashboard/{roleSlug}//grid/referralleads"}
+     
     ]
   },
 

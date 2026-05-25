@@ -173,7 +173,7 @@ import BrochureGenerator from "../ecommerce/B2C/BrochureGenerator";
 import TrackBrochure from "../ecommerce/B2C/TrackBrochure";
 import WaitingApproval from "../ecommerce/B2C/WaitingApproval";
 import AgentDetail from "./pages/Properties/Agentdetail";
-import OnBoardingpage from "./pages/dashboardPages/OnBoardingpage";
+import DeveloperForm from "./pages/dashboardPages/DeveloperForm";
 import OnBoardingAgent from "./pages/dashboardPages/OnBoardingAgent";
 import OnBoardingAgency from "./pages/dashboardPages/OnBoardingAgency";
 import CreateSecondaryProperty from "./pages/Properties/CreateSecondaryProperty";
@@ -191,6 +191,11 @@ import AdvisorLeadsPage from "../Grid/AdvisorGrid/Advisorleadspage";
 import PropertyCatalogue from "../Grid/AdvisorGrid/Propertycatalogue";
 import FavouriteProperty from "../Grid/Fav Property/FavouriteProperty";
 import AgentLeads from "../Grid/GridAdmin.jsx/AgentLeads";
+import AddGeneralleads from "../Grid/GridAdmin.jsx/AddGeneralleads";
+import GeneralLeads from "../Grid/GridAdmin.jsx/GeneralLeads";
+import ReferralLeads from "../Grid/GridAdmin.jsx/ReferralLeads";
+import AllgridLeads from "../Grid/GridAdmin.jsx/AllgridLeads";
+import CreateOffplan from "../Grid/GridAdmin.jsx/CreateOffplan";
 import CommissionDashboard from "../Grid/GridAdmin.jsx/CommissionDashboard";
 import GridAgentLead from "../Grid/GridAgent/GridAgentLead";
 import CreateAgentLead from "../Grid/GridAgent/CreateAgentLead";
@@ -623,7 +628,7 @@ const CmsRoutes = () => {
       <Route path="/customers/list" element={<CustomerList />} />
       {/* <Route path="/agent-registration" element={<AgentRegistration />} /> */}
       <Route path="/developer-list" element={<DeveloperList />} />
-      <Route path="/onboarding/developer" element={<OnBoardingpage />} />
+      <Route path="/onboarding/developer" element={<DeveloperForm />} />
       <Route path="/onboarding/agent" element={<OnBoardingAgent />} />
       <Route path="/onboarding/agency" element={<OnBoardingAgency />} />
 
@@ -643,10 +648,15 @@ const CmsRoutes = () => {
       <Route path="/properties/:id" element={<AdminPropertyDetail />} />
       <Route path="/properties/create-offplan" element={<AdminOffPlanCreate />} />
       <Route path="developer/property/:id" element={<PropertyDetailPage />} />
-
+      
 
       <Route path="/GridAdmin/propertyleads" element={<PlatformLeads />} />
       <Route path="/grid/agentleads" element={<AgentLeads />} /> 
+      <Route path="/grid/referralleads" element={<ReferralLeads/>}/>
+      <Route path="/grid/generalleads" element={<GeneralLeads/>}/>
+      <Route path= "/grid/AllgridLeads" element={<AllgridLeads/>}/>
+      <Route path="/grid/addgenerallead" element={<AddGeneralleads/>}/>
+      <Route path="/grid/createoffplan" element={<CreateOffplan/>}/>
       <Route path="/grid/commission" element={<CommissionDashboard/>}/>
       <Route path="/lead-detail/:id" element={<GridAgentLeadDetail />} />
       <Route path="/lead-detail-admin/:id" element={<GridAgentLeadDetailadmin />} />
