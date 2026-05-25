@@ -90,6 +90,33 @@ const Topbar = () => {
     fetchProfile();
   }, [user?.id, roleCode]);
 
+useEffect(() => {
+  const handleProfilePhotoUpdate = (e) => {
+    // GridAdvisorProfile se event aata hai — profileData update karo
+    setProfileData((prev) => {
+      const current = prev?.data || prev || {};
+      const updated = { ...current, profilePhotoUrl: e.detail?.photoUrl };
+      // Agar prev mein .data nesting thi toh wahi maintain karo
+      return prev?.data ? { ...prev, data: updated } : updated;
+    });
+  };
+ 
+  window.addEventListener("gridAdvisorPhotoUpdated", handleProfilePhotoUpdate);
+  return () => window.removeEventListener("gridAdvisorPhotoUpdated", handleProfilePhotoUpdate);
+}, []);
+
+useEffect(() => {
+  const handleDeveloperLogoUpdate = (e) => {
+    setProfileData((prev) => {
+      const current = prev?.data || prev || {};
+      const updated = { ...current, logo: e.detail?.photoUrl };
+      return prev?.data ? { ...prev, data: updated } : updated;
+    });
+  };
+  window.addEventListener("developerLogoUpdated", handleDeveloperLogoUpdate);
+  return () => window.removeEventListener("developerLogoUpdated", handleDeveloperLogoUpdate);
+}, []);
+
   // ✅ Helper to safely get Name - prioritize referral partner's firstName/lastName
  const getDisplayName = () => {
   try {
@@ -155,10 +182,14 @@ const Topbar = () => {
     const reduxData = user?.data || user;
     const data = profileData?.data || profileData || reduxData;
     
-    // Check karega dono formats: profile_photo (Agent) aur profilePic (Customer), logo (Agency)
-    return data?.logo || data?.profile_photo || data?.profilePic || null;
-  };
-
+     return (
+    data?.profilePhotoUrl ||
+    data?.logo            ||
+    data?.profile_photo   ||
+    data?.profilePic      ||
+    null
+  );
+};
   /* ---------------- NOTIFICATIONS ---------------- */
   const [notifications, setNotifications] = useState([]);
   const lastCountRef = useRef(0); 
@@ -356,16 +387,18 @@ const Topbar = () => {
             <div className="flex items-center gap-2 cursor-pointer">
               
               {/* ✅ PHOTO FIX: Naya getProfilePhoto() helper laga diya */}
-              <Avatar
-                title={getDisplayName()}
-                src={getProfilePhoto()} 
-                style={{ 
-                  backgroundColor: colors?.primary || "#722ed1",
-                  verticalAlign: 'middle' 
-                }}
-              >
-                {!getProfilePhoto() && getDisplayName()?.charAt(0)?.toUpperCase()}
-              </Avatar>
+             <Avatar
+  title={getDisplayName()}
+  src={getProfilePhoto() || undefined}
+  style={{
+    backgroundColor: colors?.primary || "#722ed1",
+    verticalAlign: "middle"
+  }}
+>
+  {(
+    getDisplayName()?.trim()?.charAt(0) || "U"
+  ).toUpperCase()}
+</Avatar>
 
               <div className="hidden md:flex flex-col leading-tight">
                 <Text strong className="text-sm">

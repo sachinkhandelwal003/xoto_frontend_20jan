@@ -13,6 +13,7 @@ import {
   CalendarOutlined, HomeOutlined, DollarOutlined,
   EnvironmentOutlined, InfoCircleOutlined,
   ClockCircleOutlined, IdcardOutlined, TagOutlined,
+  ShareAltOutlined,
 } from '@ant-design/icons';
 import CustomTable from '../../CMS/pages/custom/CustomTable';
 
@@ -22,14 +23,14 @@ const PRIMARY_LIGHT = '#f3e8ff';
 
 // ─── Configs ──────────────────────────────────────────────────────────────────
 const STATUS_COLORS = {
-  new:                  { color: 'blue',     label: 'New'                   },
-  contacted:            { color: 'orange',   label: 'Contacted'             },
-  qualified:            { color: 'cyan',     label: 'Qualified'             },
-  in_discussion:        { color: 'purple',   label: 'In Discussion'         },
-  site_visit_scheduled: { color: 'geekblue', label: 'Site Visit Scheduled'  },
-  offer_made:           { color: 'gold',     label: 'Offer Made'            },
-  completed:            { color: 'success',  label: 'Completed'             },
-  not_proceeding:       { color: 'red',      label: 'Not Proceeding'        },
+  new:                  { color: 'blue',     label: 'New'                  },
+  contacted:            { color: 'orange',   label: 'Contacted'            },
+  qualified:            { color: 'cyan',     label: 'Qualified'            },
+  in_discussion:        { color: 'purple',   label: 'In Discussion'        },
+  site_visit_scheduled: { color: 'geekblue', label: 'Site Visit Scheduled' },
+  offer_made:           { color: 'gold',     label: 'Offer Made'           },
+  completed:            { color: 'success',  label: 'Completed'            },
+  not_proceeding:       { color: 'red',      label: 'Not Proceeding'       },
 };
 
 const TYPE_COLORS = {
@@ -44,13 +45,12 @@ const TYPE_COLORS = {
   investor:        { bg: '#dcfce7', color: '#166534', label: 'Investor'        },
 };
 
-// Must match ALLOWED_CHANNELS in controller
 const SOURCE_COLORS = {
-  admin_manual: { bg: '#f3f4f6', color: '#374151', label: 'Admin Manual' },
-  phone_call:   { bg: '#fef3c7', color: '#92400e', label: 'Phone Call'   },
-  whatsapp:     { bg: '#dcfce7', color: '#166534', label: 'WhatsApp'     },
-  email:        { bg: '#e0f2fe', color: '#075985', label: 'Email'        },
-  bulk_upload:  { bg: '#dbeafe', color: '#1e40af', label: 'Bulk Upload'  },
+  referral_partner: { bg: '#ede9fe', color: '#5b21b6', label: 'Referral Partner' },
+  admin_manual:     { bg: '#f3f4f6', color: '#374151', label: 'Admin Manual'     },
+  phone_call:       { bg: '#fef3c7', color: '#92400e', label: 'Phone Call'       },
+  whatsapp:         { bg: '#dcfce7', color: '#166534', label: 'WhatsApp'         },
+  email:            { bg: '#e0f2fe', color: '#075985', label: 'Email'            },
 };
 
 const PROPERTY_TYPES    = ['Apartment','Villa','Townhouse','Penthouse','Studio','Office','Retail','Land'];
@@ -90,6 +90,31 @@ const AdvisorChip = ({ advisor }) => {
       <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>
         {advisor.firstName} {advisor.lastName}
       </span>
+    </div>
+  );
+};
+
+// ─── Referred By Chip ─────────────────────────────────────────────────────────
+const ReferredByChip = ({ partner }) => {
+  if (!partner) return <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>;
+  const name = partner.name || partner.firstName
+    ? `${partner.firstName || ''} ${partner.lastName || ''}`.trim() || partner.name
+    : null;
+  if (!name && typeof partner === 'string') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        <ShareAltOutlined style={{ color: PRIMARY, fontSize: 11 }} />
+        <span style={{ fontSize: 11, color: '#9ca3af', fontFamily: 'monospace' }}>
+          {partner.slice(-8)}
+        </span>
+      </div>
+    );
+  }
+  const initials = name ? name.slice(0, 2).toUpperCase() : 'R';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <Avatar size={24} style={{ background: '#7c3aed', fontSize: 10, fontWeight: 700 }}>{initials}</Avatar>
+      <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>{name}</span>
     </div>
   );
 };
@@ -151,7 +176,7 @@ const LeadDetailDrawer = ({ lead, open, onClose }) => {
     .map(l => (typeof l === 'string' ? l : l?.area))
     .filter(Boolean);
 
-  const hasReqs = req.property_type || req.transaction_type || budgetStr || bedroomsStr || req.furnished || locs.length > 0 || req.additional_notes;
+  const hasReqs = req.property_type || req.transaction_type || budgetStr || bedroomsStr || locs.length > 0 || req.additional_notes;
 
   return (
     <Drawer
@@ -174,6 +199,12 @@ const LeadDetailDrawer = ({ lead, open, onClose }) => {
         >
           ✕
         </button>
+
+        {/* Referral badge */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.18)', borderRadius: 20, padding: '3px 10px', marginBottom: 12, fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: '0.05em' }}>
+          <ShareAltOutlined style={{ fontSize: 9 }} /> REFERRAL LEAD
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: '#fff', fontWeight: 700, flexShrink: 0 }}>
             {name.charAt(0).toUpperCase()}
@@ -200,7 +231,7 @@ const LeadDetailDrawer = ({ lead, open, onClose }) => {
       </div>
 
       {/* Body */}
-      <div style={{ padding: '20px 20px 100px', overflowY: 'auto', height: 'calc(100vh - 190px)' }}>
+      <div style={{ padding: '20px 20px 100px', overflowY: 'auto', height: 'calc(100vh - 200px)' }}>
 
         <DrawerSection title="Contact Information" icon={<UserOutlined />}>
           <DetailRow icon={<UserOutlined />}   label="Full Name" value={name} />
@@ -211,9 +242,9 @@ const LeadDetailDrawer = ({ lead, open, onClose }) => {
         </DrawerSection>
 
         <DrawerSection title="Lead Details" icon={<FileTextOutlined />}>
-          <DetailRow icon={<TagOutlined />}        label="Enquiry Type" value={<TypeTag type={lead.enquiry_type} />} />
-          <DetailRow icon={<InfoCircleOutlined />} label="Status"       value={<StatusBadge status={lead.status} />} />
-          <DetailRow icon={<GlobalOutlined />}     label="Source"       value={lead.source?.channel ? <SourceBadge source={lead.source.channel} /> : null} />
+          <DetailRow icon={<TagOutlined />}        label="Enquiry Type"    value={<TypeTag type={lead.enquiry_type} />} />
+          <DetailRow icon={<InfoCircleOutlined />} label="Status"          value={<StatusBadge status={lead.status} />} />
+          <DetailRow icon={<GlobalOutlined />}     label="Source"          value={lead.source?.channel ? <SourceBadge source={lead.source.channel} /> : null} />
           {lead.classification && (
             <DetailRow
               icon={<TagOutlined />}
@@ -225,6 +256,16 @@ const LeadDetailDrawer = ({ lead, open, onClose }) => {
               }
             />
           )}
+          {/* Referred by partner */}
+          <DetailRow
+            icon={<ShareAltOutlined />}
+            label="Referred By"
+            value={
+              lead.referred_by_partner
+                ? <ReferredByChip partner={lead.referred_by_partner} />
+                : null
+            }
+          />
           {lead.assigned_to && (
             <DetailRow
               icon={<UserOutlined />}
@@ -236,18 +277,15 @@ const LeadDetailDrawer = ({ lead, open, onClose }) => {
 
         {hasReqs && (
           <DrawerSection title="Requirements" icon={<HomeOutlined />}>
-            {req.property_type && <DetailRow icon={<HomeOutlined />}        label="Property Type" value={req.property_type} />}
-            {req.transaction_type && <DetailRow icon={<TagOutlined />}      label="Transaction"   value={req.transaction_type.charAt(0).toUpperCase() + req.transaction_type.slice(1)} />}
-            {budgetStr && <DetailRow icon={<DollarOutlined />}              label="Budget Range"  value={budgetStr} />}
-            {bedroomsStr && <DetailRow icon={<HomeOutlined />}              label="Bedrooms"      value={bedroomsStr} />}
+            {req.property_type     && <DetailRow icon={<HomeOutlined />}        label="Property Type" value={req.property_type} />}
+            {req.transaction_type  && <DetailRow icon={<TagOutlined />}         label="Transaction"   value={req.transaction_type.charAt(0).toUpperCase() + req.transaction_type.slice(1)} />}
+            {budgetStr             && <DetailRow icon={<DollarOutlined />}      label="Budget Range"  value={budgetStr} />}
+            {bedroomsStr           && <DetailRow icon={<HomeOutlined />}        label="Bedrooms"      value={bedroomsStr} />}
             {req.furnished && req.furnished !== 'any' && (
               <DetailRow icon={<InfoCircleOutlined />} label="Furnished" value={req.furnished.charAt(0).toUpperCase() + req.furnished.slice(1)} />
             )}
-            {locs.length > 0 && <DetailRow icon={<EnvironmentOutlined />}  label="Locations"     value={locs.join(', ')} />}
-            {req.additional_notes && (
-              <DetailRow icon={<FileTextOutlined />} label="Notes" value={req.additional_notes}
-                valueStyle={{ color: '#6b7280', fontStyle: 'italic' }} />
-            )}
+            {locs.length > 0       && <DetailRow icon={<EnvironmentOutlined />} label="Locations"     value={locs.join(', ')} />}
+            {req.additional_notes  && <DetailRow icon={<FileTextOutlined />}    label="Notes"         value={req.additional_notes} valueStyle={{ color: '#6b7280', fontStyle: 'italic' }} />}
           </DrawerSection>
         )}
 
@@ -364,10 +402,10 @@ const AssignModal = ({ lead, visible, onClose, onAssigned }) => {
 
           {recommended && !lead?.assigned_to && (
             <div style={{ background: '#ede9fe', border: '1px solid #c4b5fd', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: 12, color: '#5b21b6', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontWeight: 700 }}>⭐ Best Match:</span>
+              <span style={{ fontWeight: 700 }}>Best Match:</span>
               {recommended.firstName} {recommended.lastName}
               <span style={{ color: '#7c3aed', marginLeft: 4 }}>
-                (Score: {recommended.leaderboard?.compositeScore || 0} · Active Leads: {recommended.workload?.activeLeadsCount || 0})
+                (Score: {recommended.leaderboard?.compositeScore || 0} · Active: {recommended.workload?.activeLeadsCount || 0})
               </span>
             </div>
           )}
@@ -423,8 +461,8 @@ const AssignModal = ({ lead, visible, onClose, onAssigned }) => {
   );
 };
 
-// ─── Create Lead Modal ────────────────────────────────────────────────────────
-const CreateLeadModal = ({ visible, onClose, onCreated }) => {
+// ─── Create Referral Lead Modal ───────────────────────────────────────────────
+const CreateReferralLeadModal = ({ visible, onClose, onCreated }) => {
   const [form]    = Form.useForm();
   const [loading, setLoading] = useState(false);
 
@@ -432,15 +470,16 @@ const CreateLeadModal = ({ visible, onClose, onCreated }) => {
     try {
       const values = await form.validateFields();
       setLoading(true);
+
       const payload = {
-        first_name:     values.first_name,
-        last_name:      values.last_name      || '',
-        phone_number:   values.phone,
-        country_code:   values.country_code   || '+971',
-        email:          values.email          || undefined,
-        enquiry_type:   values.enquiry_type   || 'general_enquiry',
-        source_channel: values.source_channel || 'admin_manual',
-        classification: 'warm',
+        first_name:      values.first_name,
+        last_name:       values.last_name      || '',
+        phone_number:    values.phone,
+        country_code:    values.country_code   || '+971',
+        email:           values.email          || undefined,
+        enquiry_type:    values.enquiry_type   || 'general_enquiry',
+        source_channel:  values.source_channel || 'referral_partner',
+        classification:  'warm',
         requirements: {
           property_type:    values.property_type    || undefined,
           transaction_type: values.transaction_type || undefined,
@@ -451,14 +490,15 @@ const CreateLeadModal = ({ visible, onClose, onCreated }) => {
           additional_notes: values.notes       || '',
         },
       };
-      await apiService.post('/gridlead/general/create', payload);
-      message.success('Lead created successfully');
+
+      await apiService.post('/gridlead/referral/create-lead', payload);
+      message.success('Referral lead created successfully');
       form.resetFields();
       onCreated();
       onClose();
     } catch (err) {
       if (err?.errorFields) return;
-      message.error(err?.response?.data?.message || 'Failed to create lead');
+      message.error(err?.response?.data?.message || 'Failed to create referral lead');
     } finally {
       setLoading(false);
     }
@@ -467,20 +507,24 @@ const CreateLeadModal = ({ visible, onClose, onCreated }) => {
   const inp = { borderRadius: 8 };
 
   return (
-    <Modal open={visible} onCancel={onClose} footer={null} width={600}
+    <Modal
+      open={visible} onCancel={onClose} footer={null} width={600}
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: PRIMARY_LIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <PlusOutlined style={{ color: PRIMARY, fontSize: 14 }} />
+            <ShareAltOutlined style={{ color: PRIMARY, fontSize: 14 }} />
           </div>
-          <span style={{ fontWeight: 700, color: '#111827' }}>Create General Lead</span>
+          <span style={{ fontWeight: 700, color: '#111827' }}>Create Referral Lead</span>
         </div>
       }
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+
         {/* Client Info */}
         <div style={{ background: '#fafafa', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Client Information</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Client Information
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Form.Item name="first_name" label="First Name" rules={[{ required: true, message: 'Required' }]} style={{ margin: 0 }}>
               <Input placeholder="John" style={inp} />
@@ -506,14 +550,16 @@ const CreateLeadModal = ({ visible, onClose, onCreated }) => {
 
         {/* Lead Details */}
         <div style={{ background: '#fafafa', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lead Details</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Lead Details
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Form.Item name="enquiry_type" label="Enquiry Type" initialValue="general_enquiry" style={{ margin: 0 }}>
               <Select style={inp}>
                 {Object.entries(TYPE_COLORS).map(([k, v]) => <Select.Option key={k} value={k}>{v.label}</Select.Option>)}
               </Select>
             </Form.Item>
-            <Form.Item name="source_channel" label="Source" initialValue="admin_manual" style={{ margin: 0 }}>
+            <Form.Item name="source_channel" label="Source" initialValue="referral_partner" style={{ margin: 0 }}>
               <Select style={inp}>
                 {Object.entries(SOURCE_COLORS).map(([k, v]) => <Select.Option key={k} value={k}>{v.label}</Select.Option>)}
               </Select>
@@ -523,7 +569,9 @@ const CreateLeadModal = ({ visible, onClose, onCreated }) => {
 
         {/* Requirements */}
         <div style={{ background: '#fafafa', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Requirements (Optional)</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Requirements (Optional)
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Form.Item name="property_type" label="Property Type" style={{ margin: 0 }}>
               <Select placeholder="Any" allowClear style={inp}>
@@ -561,7 +609,7 @@ const CreateLeadModal = ({ visible, onClose, onCreated }) => {
           <Button onClick={onClose}>Cancel</Button>
           <Button type="primary" loading={loading} onClick={handleSubmit}
             style={{ background: PRIMARY, borderColor: PRIMARY, borderRadius: 8 }}>
-            Create Lead
+            Create Referral Lead
           </Button>
         </div>
       </Form>
@@ -569,239 +617,14 @@ const CreateLeadModal = ({ visible, onClose, onCreated }) => {
   );
 };
 
-// ─── CSV parser helper ────────────────────────────────────────────────────────
-const parseCSV = (text) => {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row');
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-  return lines.slice(1).filter(l => l.trim()).map(line => {
-    const values = [];
-    let cur = '', inQuotes = false;
-    for (const ch of line) {
-      if (ch === '"') { inQuotes = !inQuotes; }
-      else if (ch === ',' && !inQuotes) { values.push(cur.trim()); cur = ''; }
-      else { cur += ch; }
-    }
-    values.push(cur.trim());
-    const obj = {};
-    headers.forEach((h, i) => { if (values[i] !== undefined) obj[h] = values[i]; });
-    return obj;
-  });
-};
-
-// ─── Bulk Upload Modal ────────────────────────────────────────────────────────
-const BulkUploadModal = ({ visible, onClose, onUploaded }) => {
-  const [loading,   setLoading]   = useState(false);
-  const [result,    setResult]    = useState(null);
-  const [file,      setFile]      = useState(null);
-  const [preview,   setPreview]   = useState([]);   // first 3 rows preview
-  const [parseErr,  setParseErr]  = useState('');
-  const fileInputRef = React.useRef();
-
-  const handleClose = () => {
-    setResult(null); setFile(null); setPreview([]); setParseErr('');
-    onClose();
-  };
-
-  const handleFileChange = (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (!f.name.endsWith('.csv')) {
-      setParseErr('Please upload a .csv file'); setFile(null); setPreview([]); return;
-    }
-    setFile(f); setResult(null); setParseErr('');
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const rows = parseCSV(ev.target.result);
-        setPreview(rows.slice(0, 3));
-        setParseErr('');
-      } catch (err) {
-        setParseErr(err.message); setPreview([]);
-      }
-    };
-    reader.readAsText(f);
-  };
-
-  const downloadSample = () => {
-    const csv = [
-      'first_name,last_name,phone_number,country_code,email,enquiry_type,source_channel',
-      'John,Doe,501234567,+971,john@example.com,buy,admin_manual',
-      'Jane,Smith,509876543,+971,jane@example.com,rent,phone_call',
-    ].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a'); a.href = url; a.download = 'leads_sample.csv'; a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleSubmit = async () => {
-    if (!file) return message.warning('Please select a CSV file first');
-    setLoading(true); setResult(null);
-    try {
-      const text = await file.text();
-      const leads = parseCSV(text);
-      if (!leads.length) throw new Error('No data rows found in CSV');
-      const res  = await apiService.post('/gridlead/general/bulk', { leads });
-
-      // API returns: { success, summary: { created, duplicates, errors }, data: { created:[], errors:[] } }
-      // handle both direct and wrapped response
-      const body = res?.success !== undefined ? res : (res?.data || res);
-
-      const createdCount = body?.summary?.created ?? body?.created ?? 0;
-      const failedCount  = body?.summary?.errors  ?? body?.failed  ?? 0;
-      const errorList    = body?.data?.errors      || body?.errors  || [];
-
-      const summary = {
-        created: createdCount,
-        failed:  failedCount,
-        errors:  errorList.map(e => ({ row: e.index + 1, message: e.reason || JSON.stringify(e) })),
-      };
-      setResult(summary);
-
-      if (summary.created > 0) {
-        message.success(`${summary.created} lead(s) created successfully`);
-        setTimeout(() => {
-          onUploaded();   // refresh table
-          handleClose();  // close modal
-        }, 1500);        // small delay so user sees the success message
-      }
-    } catch (err) {
-      message.error(err?.response?.data?.message || err?.message || 'Bulk upload failed');
-    } finally { setLoading(false); }
-  };
-
-  return (
-    <Modal open={visible} onCancel={handleClose} footer={null} width={640}
-      title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <UploadOutlined style={{ color: '#2563eb', fontSize: 14 }} />
-          </div>
-          <span style={{ fontWeight: 700, color: '#111827' }}>Bulk Upload via CSV</span>
-        </div>
-      }
-    >
-      <div style={{ marginTop: 12 }}>
-
-        {/* Drop zone */}
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          style={{
-            border: `2px dashed ${file ? '#2563eb' : '#d1d5db'}`,
-            borderRadius: 12, padding: '28px 20px', textAlign: 'center',
-            background: file ? '#eff6ff' : '#fafafa', cursor: 'pointer',
-            transition: 'all 0.2s', marginBottom: 16,
-          }}
-        >
-          <input ref={fileInputRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleFileChange} />
-          <UploadOutlined style={{ fontSize: 32, color: file ? '#2563eb' : '#9ca3af', marginBottom: 10 }} />
-          {file ? (
-            <>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb' }}>{file.name}</div>
-              <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-                {(file.size / 1024).toFixed(1)} KB · Click to change
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>Click to select CSV file</div>
-              <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Only .csv files are supported</div>
-            </>
-          )}
-        </div>
-
-        {/* Parse error */}
-        {parseErr && (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 12, color: '#dc2626' }}>
-            ⚠️ {parseErr}
-          </div>
-        )}
-
-        {/* Preview */}
-        {preview.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-              Preview (first {preview.length} row{preview.length > 1 ? 's' : ''})
-            </div>
-            <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', fontSize: 11 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', background: '#f9fafb', padding: '8px 12px', fontWeight: 700, color: '#374151', borderBottom: '1px solid #e5e7eb' }}>
-                <span>Name</span><span>Phone</span><span>Email</span><span>Type</span>
-              </div>
-              {preview.map((row, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', padding: '8px 12px', borderBottom: i < preview.length - 1 ? '1px solid #f3f4f6' : 'none', color: '#374151' }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {[row.first_name, row.last_name].filter(Boolean).join(' ') || '—'}
-                  </span>
-                  <span>{row.phone_number || '—'}</span>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.email || '—'}</span>
-                  <span>{row.enquiry_type || '—'}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Required columns info */}
-        <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#92400e' }}>
-          <strong>Required columns:</strong> <code>first_name</code>, <code>phone_number</code>
-          &nbsp;·&nbsp;
-          <strong>Optional:</strong> <code>last_name</code>, <code>country_code</code>, <code>email</code>, <code>enquiry_type</code>, <code>source_channel</code>
-        </div>
-
-        {/* Result */}
-        {result && (
-          <div style={{ background: result.failed > 0 ? '#fff7ed' : '#f0fdf4', border: `1px solid ${result.failed > 0 ? '#fed7aa' : '#bbf7d0'}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
-            <div style={{ display: 'flex', gap: 20 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#16a34a' }}>
-                <CheckCircleFilled /> {result.created} Created
-              </span>
-              {result.failed > 0 && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#dc2626' }}>
-                  <CloseCircleOutlined /> {result.failed} Failed
-                </span>
-              )}
-            </div>
-            {result.errors?.length > 0 && (
-              <div style={{ fontSize: 11, color: '#92400e', maxHeight: 120, overflowY: 'auto', marginTop: 8 }}>
-                {result.errors.map((e, i) => (
-                  <div key={i} style={{ borderTop: '1px solid #fed7aa', paddingTop: 4, marginTop: 4 }}>
-                    Row {e.row}: {e.message || JSON.stringify(e)}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-          <Button size="small" onClick={downloadSample} style={{ fontSize: 12, color: '#2563eb', borderColor: '#2563eb', borderRadius: 8 }}>
-            Download Sample CSV
-          </Button>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <Button onClick={handleClose}>Close</Button>
-            <Button type="primary" loading={loading} onClick={handleSubmit}
-              disabled={!file || !!parseErr}
-              icon={<UploadOutlined />}
-              style={{ background: '#2563eb', borderColor: '#2563eb', borderRadius: 8 }}>
-              Upload {file && preview.length ? `(${preview.length}+ rows)` : ''}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
-const GeneralLeads = () => {
+const ReferralLeads = () => {
   const [leads,        setLeads]        = useState([]);
   const [loading,      setLoading]      = useState(false);
   const [pagination,   setPagination]   = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
   const [filters,      setFilters]      = useState({});
-  const [stats,        setStats]        = useState({ total: 0, new: 0, completed: 0, sources: 0 });
+  const [stats,        setStats]        = useState({ total: 0, new: 0, completed: 0, unassigned: 0 });
   const [showCreate,   setShowCreate]   = useState(false);
-  const [showBulk,     setShowBulk]     = useState(false);
   const [assignLead,   setAssignLead]   = useState(null);
   const [selectedLead, setSelectedLead] = useState(null);
   const [drawerOpen,   setDrawerOpen]   = useState(false);
@@ -813,30 +636,23 @@ const GeneralLeads = () => {
       const query = new URLSearchParams();
       query.set('page',  page);
       query.set('limit', limit);
-      if (extraFilters.search)         query.set('search',         extraFilters.search);
-      if (extraFilters.status)         query.set('status',         extraFilters.status);
-      if (extraFilters.type)           query.set('type',           extraFilters.type);
-      if (extraFilters.source_channel) query.set('source_channel', extraFilters.source_channel);
+      if (extraFilters.search)  query.set('search',  extraFilters.search);
+      if (extraFilters.status)  query.set('status',  extraFilters.status);
+      if (extraFilters.type)    query.set('type',    extraFilters.type);
 
-      const res = await apiService.get(`/gridlead/general?${query.toString()}`);
+      const res = await apiService.get(`/gridlead/referral/my-leads?${query.toString()}`);
 
-      // handle both shapes: res.data.data OR res.data (direct array)
-      let list, pg, backStats;
+      // handle both response shapes
+      let list, pg;
       if (res?.success !== undefined) {
-        // direct response: { success, data: [...], pagination, stats }
-        list      = Array.isArray(res.data)       ? res.data       : [];
-        pg        = res.pagination                 || {};
-        backStats = res.stats                      || {};
+        list = Array.isArray(res.data)      ? res.data      : [];
+        pg   = res.pagination               || {};
       } else if (res?.data?.success !== undefined) {
-        // wrapped response: { data: { success, data: [...], pagination, stats } }
-        list      = Array.isArray(res.data.data)  ? res.data.data  : [];
-        pg        = res.data.pagination            || {};
-        backStats = res.data.stats                 || {};
+        list = Array.isArray(res.data.data) ? res.data.data : [];
+        pg   = res.data.pagination          || {};
       } else {
-        // fallback
-        list      = Array.isArray(res?.data)       ? res.data       : [];
-        pg        = res?.pagination                 || {};
-        backStats = res?.stats                      || {};
+        list = Array.isArray(res?.data)     ? res.data      : [];
+        pg   = res?.pagination              || {};
       }
 
       setLeads(list);
@@ -847,14 +663,14 @@ const GeneralLeads = () => {
         totalPages: pg.totalPages || 1,
       });
       setStats({
-        total:     backStats.total_general || pg.total || list.length,
-        new:       list.filter(l => l.status === 'new').length,
-        completed: list.filter(l => l.status === 'completed').length,
-        sources:   new Set(list.map(l => l.source?.channel).filter(Boolean)).size,
+        total:      pg.total      || list.length,
+        new:        list.filter(l => l.status === 'new').length,
+        completed:  list.filter(l => l.status === 'completed').length,
+        unassigned: list.filter(l => !l.assigned_to).length,
       });
     } catch (err) {
       console.error('fetchLeads error:', err);
-      message.error('Failed to fetch general leads');
+      message.error('Failed to fetch referral leads');
     } finally {
       setLoading(false);
     }
@@ -927,12 +743,9 @@ const GeneralLeads = () => {
       render: (val) => <StatusBadge status={val} />,
     },
     {
-      title: 'Source',
-      key: 'source',
-      filterable: true,
-      filterKey: 'source_channel',
-      filterOptions: Object.entries(SOURCE_COLORS).map(([k, v]) => ({ value: k, label: v.label })),
-      render: (_, row) => <SourceBadge source={row.source?.channel} />,
+      title: 'Referred By',
+      key: 'referred_by_partner',
+      render: (_, row) => <ReferredByChip partner={row.referred_by_partner} />,
     },
     {
       title: 'Requirements',
@@ -970,11 +783,7 @@ const GeneralLeads = () => {
       render: (_, row) => (
         <div style={{ display: 'flex', gap: 6 }}>
           <Tooltip title="View Details">
-            <Button
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => handleView(row)}
-            />
+            <Button size="small" icon={<EyeOutlined />} onClick={() => handleView(row)} />
           </Tooltip>
           <Tooltip title={row.assigned_to ? 'Reassign Advisor' : 'Assign Advisor'}>
             <Button
@@ -993,10 +802,10 @@ const GeneralLeads = () => {
 
   // ── Stat cards ─────────────────────────────────────────────────────────────
   const statCards = [
-    { label: 'Total Leads',    value: stats.total,     bg: PRIMARY_LIGHT, color: PRIMARY,   icon: <TeamOutlined />      },
-    { label: 'New',            value: stats.new,       bg: '#dbeafe',     color: '#1d4ed8', icon: <FileTextOutlined />  },
-    { label: 'Completed',      value: stats.completed, bg: '#dcfce7',     color: '#16a34a', icon: <CheckCircleFilled /> },
-    { label: 'Unique Sources', value: stats.sources,   bg: '#fef3c7',     color: '#b45309', icon: <GlobalOutlined />    },
+    { label: 'Total Referrals', value: stats.total,      bg: PRIMARY_LIGHT, color: PRIMARY,   icon: <ShareAltOutlined /> },
+    { label: 'New',             value: stats.new,        bg: '#dbeafe',     color: '#1d4ed8', icon: <FileTextOutlined /> },
+    { label: 'Unassigned',      value: stats.unassigned, bg: '#fef3c7',     color: '#b45309', icon: <UserOutlined />     },
+    { label: 'Completed',       value: stats.completed,  bg: '#dcfce7',     color: '#16a34a', icon: <CheckCircleFilled />},
   ];
 
   return (
@@ -1005,15 +814,12 @@ const GeneralLeads = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#111827' }}>General Leads</h1>
-          <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>Website, manual and bulk-uploaded enquiries</p>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#111827' }}>Referral Leads</h1>
+          <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>Leads submitted by referral partners</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <Button icon={<ReloadOutlined />} onClick={() => fetchLeads(filters, pagination.page, pagination.limit)} style={{ borderColor: PRIMARY, color: PRIMARY }}>
             Refresh
-          </Button>
-          <Button icon={<UploadOutlined />} onClick={() => setShowBulk(true)} style={{ borderColor: '#2563eb', color: '#2563eb' }}>
-            Bulk Upload
           </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowCreate(true)} style={{ background: PRIMARY, borderColor: PRIMARY }}>
             Add Lead
@@ -1050,15 +856,10 @@ const GeneralLeads = () => {
       />
 
       {/* Modals */}
-      <CreateLeadModal
+      <CreateReferralLeadModal
         visible={showCreate}
         onClose={() => setShowCreate(false)}
         onCreated={() => fetchLeads(filters, 1, pagination.limit)}
-      />
-      <BulkUploadModal
-        visible={showBulk}
-        onClose={() => setShowBulk(false)}
-        onUploaded={() => fetchLeads(filters, 1, pagination.limit)}
       />
       <AssignModal
         lead={assignLead}
@@ -1080,4 +881,4 @@ const GeneralLeads = () => {
   );
 };
 
-export default GeneralLeads;
+export default ReferralLeads;

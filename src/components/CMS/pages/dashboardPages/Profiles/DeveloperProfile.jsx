@@ -161,24 +161,35 @@ const DeveloperProfile = () => {
     return isJpgOrPng && isLt2M;
   };
 
-  const handleImageUploadRequest = async ({ file, onSuccess, onError }) => {
-    const formData = new FormData();
-    formData.append('profilePicture', file); 
-    setImageUploading(true);
-    try {
-      await apiService.post("profile/update-profile-picture", formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      message.success("Profile picture updated successfully!");
-      onSuccess("ok");
-      getProfile(); 
-    } catch (error) {
-      onError(error);
-      message.error("Failed to upload profile picture.");
-    } finally {
-      setImageUploading(false);
-    }
-  };
+const handleImageUploadRequest = async ({ file, onSuccess, onError }) => {
+  const formData = new FormData();
+  formData.append('profilePicture', file); 
+  setImageUploading(true);
+  try {
+    await apiService.post("profile/update-profile-picture", formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    message.success("Profile picture updated successfully!");
+    onSuccess("ok");
+
+    // ✅ getProfile ke baad fresh data se event fire karo
+    const res  = await apiService.get("profile/get-profile-data");
+    const data = res?.data?.data || res?.data;
+    setProfile(data);
+
+    window.dispatchEvent(
+      new CustomEvent("developerLogoUpdated", {
+        detail: { photoUrl: data?.logo },  // ← fresh URL
+      })
+    );
+
+  } catch (error) {
+    onError(error);
+    message.error("Failed to upload profile picture.");
+  } finally {
+    setImageUploading(false);
+  }
+};
 
   const showEditModal = () => {
     form.setFieldsValue({
