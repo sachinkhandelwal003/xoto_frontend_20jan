@@ -1,6 +1,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 // DealRecordDetailPage.jsx — Full-page Deal Record Detail View
-// Replaces modal view with dedicated page route
+// Updated: full referral commission flow (pending → confirmed → paid)
+//          matches DealDetailModal logic exactly
 // ════════════════════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -22,9 +23,10 @@ const GR = `linear-gradient(135deg, ${P} 0%, ${P2} 100%)`;
 
 // ─── COMMISSION STATUS CONFIG ─────────────────────────────────────────────────
 const COM_STATUS = {
-  pending:   { label: 'Pending',   bg: '#fffbeb', text: '#92400e', border: '#fde68a', dot: '#f59e0b' },
-  confirmed: { label: 'Confirmed', bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe', dot: '#3b82f6' },
-  paid:      { label: 'Paid',      bg: '#f0fdf4', text: '#166534', border: '#bbf7d0', dot: '#22c55e' },
+  pending:        { label: 'Pending',   bg: '#fffbeb', text: '#92400e', border: '#fde68a', dot: '#f59e0b' },
+  confirmed:      { label: 'Confirmed', bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe', dot: '#3b82f6' },
+  paid:           { label: 'Paid',      bg: '#f0fdf4', text: '#166534', border: '#bbf7d0', dot: '#22c55e' },
+  not_applicable: { label: 'N/A',       bg: '#f9fafb', text: '#6b7280', border: '#e5e7eb', dot: '#9ca3af' },
 };
 
 const DEAL_TYPE = {
@@ -67,11 +69,15 @@ const Btn = ({ children, onClick, variant = 'primary', loading, disabled, size =
     danger:  'border border-red-200 text-red-600 bg-red-50 hover:bg-red-100',
     success: 'text-white shadow-md',
     amber:   'text-white shadow-md',
+    teal:    'text-white shadow-md',
+    indigo:  'text-white shadow-md',
   };
   const bgs = {
     primary: GR,
     success: 'linear-gradient(135deg,#059669,#10b981)',
     amber:   'linear-gradient(135deg,#d97706,#f59e0b)',
+    teal:    'linear-gradient(135deg,#0d9488,#14b8a6)',
+    indigo:  'linear-gradient(135deg,#4f46e5,#6366f1)',
   };
   return (
     <button className={`${base} ${sizes[size]} ${vars[variant]} ${className}`}
@@ -142,20 +148,13 @@ const EvidenceSection = ({ deal, onRefresh, isLocked }) => {
   const inp = 'w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all';
 
   const uploadEvidenceFile = async (file) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  const response = await fetch(UPLOAD_API, { method: 'POST', body: formData });
-  if (!response.ok) throw new Error('File upload failed');
-  const data = await response.json();
-  
-  return (
-    data?.file?.url ||   // ← yeh hai actual field
-    data?.url ||
-    data?.data?.url ||
-    data?.fileUrl ||
-    ''
-  );
-};
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(UPLOAD_API, { method: 'POST', body: formData });
+    if (!response.ok) throw new Error('File upload failed');
+    const data = await response.json();
+    return data?.file?.url || data?.url || data?.data?.url || data?.fileUrl || '';
+  };
 
   const handleUpload = async () => {
     const valid = docs.filter(d => d.url.trim());
@@ -235,11 +234,13 @@ const EvidenceSection = ({ deal, onRefresh, isLocked }) => {
                       className="block w-full text-sm"
                     />
                     {uploadingIndex === i && (
-                      <p className="text-xs text-purple-600 font-medium">Uploading...</p>
+                      <p className="text-xs text-purple-600 font-medium flex items-center gap-1">
+                        <FiLoader size={11} className="animate-spin" /> Uploading...
+                      </p>
                     )}
-                    {doc.url && (
-                      <a href={doc.url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 break-all">
-                        {doc.url.slice(0, 50)}...
+                    {doc.url && uploadingIndex !== i && (
+                      <a href={doc.url} target="_blank" rel="noreferrer" className="text-xs text-green-600 flex items-center gap-1 font-medium">
+                        <FiExternalLink size={10} /> View uploaded file
                       </a>
                     )}
                   </div>
@@ -290,7 +291,7 @@ const EvidenceSection = ({ deal, onRefresh, isLocked }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FLAG / UNFLAG MODAL
+// FLAG / UNFLAG PANEL
 // ═══════════════════════════════════════════════════════════════════════════
 const FlagPanel = ({ deal, onClose, onSuccess }) => {
   const [reason, setReason] = useState('');
@@ -329,9 +330,7 @@ const FlagPanel = ({ deal, onClose, onSuccess }) => {
             <p className="text-xs text-gray-400 font-medium mt-0.5">{isUnflag ? 'Clear the review flag' : 'Mark for admin review'}</p>
           </div>
         </div>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-          <FiX size={18} />
-        </button>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><FiX size={18} /></button>
       </div>
       <div className="p-6 space-y-4">
         {isUnflag ? (
@@ -402,9 +401,7 @@ const VoidPanel = ({ deal, onClose, onSuccess }) => {
             <p className="text-xs text-gray-400 font-medium mt-0.5">Super Admin only — irreversible</p>
           </div>
         </div>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-          <FiX size={18} />
-        </button>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><FiX size={18} /></button>
       </div>
       <div className="p-6 space-y-4">
         <div className="p-4 rounded-xl bg-red-50 border border-red-200 space-y-1">
@@ -469,9 +466,7 @@ const EscalatePanel = ({ deal, onClose, onSuccess }) => {
             <p className="text-xs text-gray-400 font-medium mt-0.5">Raise this deal for urgent review</p>
           </div>
         </div>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-          <FiX size={18} />
-        </button>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><FiX size={18} /></button>
       </div>
       <div className="p-6 space-y-4">
         <div className="flex items-start gap-2 p-3 rounded-xl bg-purple-50 border border-purple-100">
@@ -501,11 +496,16 @@ const DealRecordDetailPage = () => {
   const [deal, setDeal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('overview');
-  const [confirming, setConfirming] = useState(false);
-  const [paying, setPaying] = useState(false);
-  const [payingRef, setPayingRef] = useState(false);
-  const [showFlagPanel, setShowFlagPanel] = useState(false);
-  const [showVoidPanel, setShowVoidPanel] = useState(false);
+
+  // Commission lifecycle states
+  const [confirming, setConfirming]       = useState(false);
+  const [paying, setPaying]               = useState(false);
+  const [confirmingRef, setConfirmingRef] = useState(false);  // pending → confirmed
+  const [payingRef, setPayingRef]         = useState(false);  // confirmed → paid
+
+  // Inline action panels
+  const [showFlagPanel, setShowFlagPanel]         = useState(false);
+  const [showVoidPanel, setShowVoidPanel]         = useState(false);
   const [showEscalatePanel, setShowEscalatePanel] = useState(false);
 
   const fetchDeal = useCallback(async () => {
@@ -515,7 +515,7 @@ const DealRecordDetailPage = () => {
       const data = res?.data?.data || res?.data;
       if (data) setDeal(data);
       else message.error('Deal not found');
-    } catch (e) {
+    } catch {
       message.error('Failed to load deal record');
     } finally {
       setLoading(false);
@@ -526,6 +526,8 @@ const DealRecordDetailPage = () => {
     if (dealId) fetchDeal();
   }, [dealId, fetchDeal]);
 
+  // ── Commission lifecycle handlers ──────────────────────────────────────────
+
   const handleConfirm = async () => {
     const hasEvidence = deal?.evidenceDocuments?.length > 0;
     if (!hasEvidence) return message.warning('Upload evidence documents first');
@@ -533,10 +535,8 @@ const DealRecordDetailPage = () => {
     try {
       const res = await apiService.patch(`/deal-record/${deal._id}/confirm`, {});
       const data = res?.data?.success !== undefined ? res.data : res;
-      if (data?.success) {
-        message.success('Deal confirmed and locked');
-        fetchDeal();
-      } else message.error(data?.message || 'Confirm failed');
+      if (data?.success) { message.success('Deal confirmed and locked'); fetchDeal(); }
+      else message.error(data?.message || 'Confirm failed');
     } catch (e) {
       message.error(e?.response?.data?.message || 'Confirm failed');
     } finally {
@@ -544,21 +544,50 @@ const DealRecordDetailPage = () => {
     }
   };
 
-  const handlePay = async (type = 'main') => {
-    const setter = type === 'main' ? setPaying : setPayingRef;
-    const endpoint = type === 'main' ? `/deal-record/${deal._id}/pay` : `/deal-record/${deal._id}/pay-referral`;
-    setter(true);
+  const handlePay = async () => {
+    setPaying(true);
     try {
-      const res = await apiService.patch(endpoint, {});
+      const res = await apiService.patch(`/deal-record/${deal._id}/pay`, {});
       const data = res?.data?.success !== undefined ? res.data : res;
-      if (data?.success) {
-        message.success('Commission marked as paid');
-        fetchDeal();
-      } else message.error(data?.message || 'Action failed');
+      if (data?.success) { message.success('Commission marked as paid'); fetchDeal(); }
+      else message.error(data?.message || 'Action failed');
     } catch (e) {
       message.error(e?.response?.data?.message || 'Action failed');
     } finally {
-      setter(false);
+      setPaying(false);
+    }
+  };
+
+  // Confirm referral commission: pending → confirmed
+  // Requires main commissionStatus to be 'confirmed' or 'paid'
+  const handleConfirmReferral = async () => {
+    setConfirmingRef(true);
+    try {
+      const res = await apiService.patch(`/deal-record/${deal._id}/confirm-referral`, {});
+      const data = res?.data?.success !== undefined ? res.data : res;
+      if (data?.success) {
+        message.success('Referral commission confirmed — eligible for payout');
+        fetchDeal();
+      } else message.error(data?.message || 'Confirm referral failed');
+    } catch (e) {
+      message.error(e?.response?.data?.message || 'Confirm referral failed');
+    } finally {
+      setConfirmingRef(false);
+    }
+  };
+
+  // Pay referral commission: confirmed → paid
+  const handlePayReferral = async () => {
+    setPayingRef(true);
+    try {
+      const res = await apiService.patch(`/deal-record/${deal._id}/pay-referral`, {});
+      const data = res?.data?.success !== undefined ? res.data : res;
+      if (data?.success) { message.success('Referral commission marked as paid'); fetchDeal(); }
+      else message.error(data?.message || 'Action failed');
+    } catch (e) {
+      message.error(e?.response?.data?.message || 'Action failed');
+    } finally {
+      setPayingRef(false);
     }
   };
 
@@ -595,6 +624,17 @@ const DealRecordDetailPage = () => {
   const isVoided    = deal?.isVoided;
   const hasEvidence = deal?.evidenceDocuments?.length > 0;
 
+  // Referral flow flags — mirror DealDetailModal exactly
+  const canConfirmReferral =
+    deal?.referralPartnerId &&
+    deal?.referralCommissionStatus === 'pending' &&
+    ['confirmed', 'paid'].includes(deal?.commissionStatus) &&
+    deal?.commission?.referralShare > 0;
+
+  const canPayReferral =
+    deal?.referralPartnerId &&
+    deal?.referralCommissionStatus === 'confirmed';
+
   const TABS = [
     { key: 'overview',   label: 'Overview',   icon: FiLayers    },
     { key: 'commission', label: 'Commission', icon: FiDollarSign },
@@ -616,9 +656,9 @@ const DealRecordDetailPage = () => {
                 <p className="text-xl font-extrabold font-mono text-gray-900">{deal?.dealReference}</p>
                 <Pill status={deal?.commissionStatus} />
                 <Pill status={deal?.dealType} type="deal" />
-                {isLocked && <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700"><FiLock size={9}/> Locked</span>}
-                {isFlagged && <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"><FiFlag size={9}/> Flagged</span>}
-                {isVoided && <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700"><FiXCircle size={9}/> Voided</span>}
+                {isLocked     && <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700"><FiLock size={9}/> Locked</span>}
+                {isFlagged    && <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"><FiFlag size={9}/> Flagged</span>}
+                {isVoided     && <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700"><FiXCircle size={9}/> Voided</span>}
                 {deal?.isEscalated && <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700"><FiCornerUpRight size={9}/> Escalated</span>}
               </div>
               <p className="text-xs text-gray-400 mt-1">Created {fmtDate(deal?.createdAt)}</p>
@@ -654,15 +694,14 @@ const DealRecordDetailPage = () => {
       {/* ─── CONTENT ─── */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main content */}
+
+          {/* ── Main content ── */}
           <div className="lg:col-span-2 space-y-6">
 
-            {/* OVERVIEW TAB */}
+            {/* OVERVIEW */}
             {tab === 'overview' && (
               <div className="space-y-5">
-                {/* Property & Customer */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  {/* Property */}
                   <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                     <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2 bg-gray-50">
                       <FiHome size={13} style={{ color: P }} />
@@ -681,7 +720,6 @@ const DealRecordDetailPage = () => {
                     </div>
                   </div>
 
-                  {/* Customer */}
                   <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                     <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2 bg-gray-50">
                       <FiUser size={13} style={{ color: P }} />
@@ -701,7 +739,6 @@ const DealRecordDetailPage = () => {
                   </div>
                 </div>
 
-                {/* Inventory unit */}
                 {unit && (
                   <div className="p-4 rounded-xl border border-purple-100 bg-purple-50">
                     <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest mb-3">Locked Inventory Unit</p>
@@ -726,32 +763,30 @@ const DealRecordDetailPage = () => {
                   </div>
                 )}
 
-                {/* Participants */}
                 <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Deal Participants</p>
                   </div>
                   <div>
-                    {advisor && <InfoRow icon={FiAward} label="Assigned Advisor" value={typeof advisor === 'object' ? `${advisor.firstName || ''} ${advisor.lastName || ''}`.trim() || advisor.email : String(advisor).slice(-8)} />}
-                    {agent && <InfoRow icon={FiUser} label="Agent" value={typeof agent === 'object' ? `${agent.first_name || ''} ${agent.last_name || ''}`.trim() || agent.email : String(agent).slice(-8)} />}
-                    {deal?.agencyId && <InfoRow icon={FiBriefcase} label="Agency" value={typeof deal.agencyId === 'object' ? deal.agencyId.companyName || deal.agencyId.agency_name : String(deal.agencyId).slice(-8)} />}
+                    {advisor && <InfoRow icon={FiAward}          label="Assigned Advisor" value={typeof advisor === 'object' ? `${advisor.firstName || ''} ${advisor.lastName || ''}`.trim() || advisor.email : String(advisor).slice(-8)} />}
+                    {agent   && <InfoRow icon={FiUser}           label="Agent"            value={typeof agent   === 'object' ? `${agent.first_name || ''} ${agent.last_name || ''}`.trim()   || agent.email   : String(agent).slice(-8)} />}
+                    {deal?.agencyId        && <InfoRow icon={FiBriefcase}    label="Agency"           value={typeof deal.agencyId        === 'object' ? deal.agencyId.companyName        || deal.agencyId.agency_name        : String(deal.agencyId).slice(-8)} />}
                     {deal?.referralPartnerId && <InfoRow icon={FiCornerUpRight} label="Referral Partner" value={typeof deal.referralPartnerId === 'object' ? `${deal.referralPartnerId.firstName || ''} ${deal.referralPartnerId.lastName || ''}`.trim() : String(deal.referralPartnerId).slice(-8)} />}
                   </div>
                 </div>
 
-                {/* Key dates */}
                 <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Timeline</p>
                   </div>
                   <div>
-                    <InfoRow icon={FiCalendar} label="Created" value={fmtDateTime(deal?.createdAt)} />
+                    <InfoRow icon={FiCalendar}    label="Created"   value={fmtDateTime(deal?.createdAt)} />
                     {deal?.confirmedAt && <InfoRow icon={FiCheckCircle} label="Confirmed" value={fmtDateTime(deal.confirmedAt)} />}
-                    {deal?.paidAt && <InfoRow icon={FiDollarSign} label="Paid" value={fmtDateTime(deal.paidAt)} />}
+                    {deal?.paidAt      && <InfoRow icon={FiDollarSign}  label="Paid"      value={fmtDateTime(deal.paidAt)} />}
+                    {deal?.referralPaidAt && <InfoRow icon={FiCornerUpRight} label="Referral Paid" value={fmtDateTime(deal.referralPaidAt)} />}
                   </div>
                 </div>
 
-                {/* Flags & alerts */}
                 {isFlagged && (
                   <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2">
                     <FiFlag size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />
@@ -781,7 +816,7 @@ const DealRecordDetailPage = () => {
               </div>
             )}
 
-            {/* COMMISSION TAB */}
+            {/* COMMISSION */}
             {tab === 'commission' && (
               <div className="space-y-5">
                 <div className="p-5 rounded-2xl border border-purple-100 text-center" style={{ background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)' }}>
@@ -800,7 +835,6 @@ const DealRecordDetailPage = () => {
                   </div>
                   <div className="p-5 space-y-5">
                     <CommissionBar gross={com.grossAmount} xoto={com.xotoRetained} partner={com.partnerShare} referral={com.referralShare} />
-
                     <div className="grid grid-cols-2 gap-3">
                       {[
                         { l: 'Gross Commission', v: com.grossAmount,   pct: com.grossPercent,    color: '#6b7280', bg: '#f9fafb' },
@@ -814,28 +848,34 @@ const DealRecordDetailPage = () => {
                   </div>
                 </div>
 
+                {/* Referral commission status card */}
                 {deal?.referralPartnerId && (
-                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold text-gray-600">Referral Commission Status</p>
+                      <p className="text-xs font-bold text-gray-600">Referral Commission</p>
                       <Pill status={deal.referralCommissionStatus || 'not_applicable'} />
                     </div>
-                    {deal.referralPaidAt && (
-                      <p className="text-xs text-gray-400 mt-1">Paid on {fmtDate(deal.referralPaidAt)}</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                      <span>Amount: <strong className="text-gray-800">{fmt(com.referralShare)}</strong></span>
+                      {deal.referralPaidAt && <span>Paid: <strong className="text-gray-800">{fmtDate(deal.referralPaidAt)}</strong></span>}
+                    </div>
+                    {/* Helper: main commission not yet confirmed */}
+                    {deal.referralCommissionStatus === 'pending' && !['confirmed','paid'].includes(deal.commissionStatus) && (
+                      <p className="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
+                        <FiAlertCircle size={10} /> Confirm main deal commission first to unlock referral confirmation
+                      </p>
                     )}
                   </div>
                 )}
               </div>
             )}
 
-            {/* EVIDENCE TAB */}
+            {/* EVIDENCE */}
             {tab === 'evidence' && (
-              <div>
-                <EvidenceSection deal={deal} onRefresh={fetchDeal} isLocked={isLocked} />
-              </div>
+              <EvidenceSection deal={deal} onRefresh={fetchDeal} isLocked={isLocked} />
             )}
 
-            {/* HISTORY TAB */}
+            {/* HISTORY */}
             {tab === 'history' && (
               <div className="space-y-4">
                 {deal?.statusHistory?.length > 0 ? (
@@ -851,7 +891,7 @@ const DealRecordDetailPage = () => {
                             <div className="flex items-start justify-between gap-2">
                               <div>
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  {h.from && <><span className="text-xs font-bold text-gray-400 capitalize">{h.from}</span><FiArrowLeft size={10} className="text-gray-300" rotate={180}/></>}
+                                  {h.from && <><span className="text-xs font-bold text-gray-400 capitalize">{h.from}</span><FiArrowLeft size={10} className="text-gray-300 rotate-180"/></>}
                                   <span className="text-xs font-bold capitalize" style={{ color: P }}>{h.to}</span>
                                 </div>
                                 {h.note && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{h.note}</p>}
@@ -890,60 +930,93 @@ const DealRecordDetailPage = () => {
             )}
           </div>
 
-          {/* SIDEBAR */}
+          {/* ── SIDEBAR ── */}
           <div className="lg:col-span-1 space-y-4">
-            {/* Action panels */}
+
             {!isVoided && (
               <>
-                {showFlagPanel && <FlagPanel deal={deal} onClose={() => setShowFlagPanel(false)} onSuccess={fetchDeal} />}
-                {showVoidPanel && <VoidPanel deal={deal} onClose={() => setShowVoidPanel(false)} onSuccess={() => navigate(-1)} />}
+                {/* Inline action panels */}
+                {showFlagPanel     && <FlagPanel     deal={deal} onClose={() => setShowFlagPanel(false)}     onSuccess={fetchDeal} />}
+                {showVoidPanel     && <VoidPanel     deal={deal} onClose={() => setShowVoidPanel(false)}     onSuccess={() => navigate(-1)} />}
                 {showEscalatePanel && <EscalatePanel deal={deal} onClose={() => setShowEscalatePanel(false)} onSuccess={fetchDeal} />}
 
-                {/* Quick actions */}
+                {/* Management actions */}
                 <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden p-4 space-y-2">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Quick Actions</p>
                   {!isLocked && (
-                    <Btn size="sm" variant="amber" onClick={() => setShowFlagPanel(!showFlagPanel)} className="w-full justify-center">
+                    <Btn size="sm" variant="amber" onClick={() => { setShowFlagPanel(!showFlagPanel); setShowVoidPanel(false); setShowEscalatePanel(false); }} className="w-full justify-center">
                       <FiFlag size={11}/> {isFlagged ? 'Unflag' : 'Flag'}
                     </Btn>
                   )}
                   {!isLocked && !deal?.isEscalated && (
-                    <Btn size="sm" variant="ghost" onClick={() => setShowEscalatePanel(!showEscalatePanel)} className="w-full justify-center">
+                    <Btn size="sm" variant="ghost" onClick={() => { setShowEscalatePanel(!showEscalatePanel); setShowFlagPanel(false); setShowVoidPanel(false); }} className="w-full justify-center">
                       <FiCornerUpRight size={11}/> Escalate
                     </Btn>
                   )}
-                  <Btn size="sm" variant="danger" onClick={() => setShowVoidPanel(!showVoidPanel)} className="w-full justify-center">
+                  <Btn size="sm" variant="danger" onClick={() => { setShowVoidPanel(!showVoidPanel); setShowFlagPanel(false); setShowEscalatePanel(false); }} className="w-full justify-center">
                     <FiTrash2 size={11}/> Void
                   </Btn>
                 </div>
 
-                {/* Confirm & pay */}
+                {/* Confirm main deal */}
                 {!isLocked && deal?.commissionStatus === 'pending' && (
                   <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden p-4 space-y-2">
-                    <Btn variant={hasEvidence ? 'success' : 'ghost'} onClick={handleConfirm} loading={confirming} disabled={!hasEvidence} className="w-full justify-center">
+                    <Btn
+                      variant={hasEvidence ? 'success' : 'ghost'}
+                      onClick={handleConfirm}
+                      loading={confirming}
+                      disabled={!hasEvidence}
+                      className="w-full justify-center"
+                    >
                       <FiCheckCircle size={11}/> {hasEvidence ? 'Confirm Deal' : 'Upload Evidence First'}
                     </Btn>
                     {!hasEvidence && (
                       <p className="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
-                        <FiAlertCircle size={10}/> Evidence required
+                        <FiAlertCircle size={10}/> Evidence required to confirm
                       </p>
                     )}
                   </div>
                 )}
 
+                {/* Pay main commission */}
                 {deal?.commissionStatus === 'confirmed' && (
                   <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden p-4">
-                    <Btn variant="success" onClick={() => handlePay('main')} loading={paying} className="w-full justify-center">
+                    <Btn variant="success" onClick={handlePay} loading={paying} className="w-full justify-center">
                       <FiDollarSign size={11}/> Mark Paid
                     </Btn>
                   </div>
                 )}
 
-                {deal?.referralCommissionStatus === 'confirmed' && (
-                  <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden p-4">
-                    <Btn variant="ghost" onClick={() => handlePay('referral')} loading={payingRef} className="w-full justify-center">
+                {/* Confirm referral commission (pending → confirmed) */}
+                {canConfirmReferral && (
+                  <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden p-4 space-y-2">
+                    <Btn variant="indigo" onClick={handleConfirmReferral} loading={confirmingRef} className="w-full justify-center">
+                      <FiCornerUpRight size={11}/> Confirm Referral
+                    </Btn>
+                    <p className="text-[10px] text-indigo-500 font-semibold flex items-center gap-1">
+                      <FiAlertCircle size={10}/> Marks referral commission as confirmed
+                    </p>
+                  </div>
+                )}
+
+                {/* Pay referral commission (confirmed → paid) */}
+                {canPayReferral && (
+                  <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden p-4 space-y-2">
+                    <Btn variant="teal" onClick={handlePayReferral} loading={payingRef} className="w-full justify-center">
                       <FiCornerUpRight size={11}/> Pay Referral
                     </Btn>
+                    <p className="text-[10px] text-teal-600 font-semibold flex items-center gap-1">
+                      <FiAlertCircle size={10}/> Marks referral commission as paid
+                    </p>
+                  </div>
+                )}
+
+                {/* Hint: main not yet confirmed */}
+                {deal?.referralPartnerId && deal?.referralCommissionStatus === 'pending' && !['confirmed','paid'].includes(deal?.commissionStatus) && (
+                  <div className="p-3 rounded-xl bg-blue-50 border border-blue-100">
+                    <p className="text-[10px] text-blue-600 font-semibold flex items-center gap-1">
+                      <FiAlertCircle size={10}/> Confirm main deal commission first to unlock referral payout
+                    </p>
                   </div>
                 )}
               </>
@@ -952,18 +1025,24 @@ const DealRecordDetailPage = () => {
             {/* Status card */}
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden p-4">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Status</p>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 <div>
-                  <p className="text-[10px] text-gray-500 font-medium uppercase tracking-widest">Commission</p>
+                  <p className="text-[10px] text-gray-500 font-medium uppercase tracking-widest mb-1">Commission</p>
                   <Pill status={deal?.commissionStatus} />
                 </div>
                 <div>
-                  <p className="text-[10px] text-gray-500 font-medium uppercase tracking-widest">Deal Type</p>
+                  <p className="text-[10px] text-gray-500 font-medium uppercase tracking-widest mb-1">Deal Type</p>
                   <Pill status={deal?.dealType} type="deal" />
                 </div>
-                {isLocked && <div className="p-2 rounded-lg bg-green-50 border border-green-100 text-center"><p className="text-[10px] font-bold text-green-700">Locked</p></div>}
-                {isFlagged && <div className="p-2 rounded-lg bg-amber-50 border border-amber-100 text-center"><p className="text-[10px] font-bold text-amber-700">Flagged</p></div>}
-                {isVoided && <div className="p-2 rounded-lg bg-red-50 border border-red-100 text-center"><p className="text-[10px] font-bold text-red-700">Voided</p></div>}
+                {deal?.referralPartnerId && (
+                  <div>
+                    <p className="text-[10px] text-gray-500 font-medium uppercase tracking-widest mb-1">Referral Commission</p>
+                    <Pill status={deal?.referralCommissionStatus || 'not_applicable'} />
+                  </div>
+                )}
+                {isLocked   && <div className="p-2 rounded-lg bg-green-50 border border-green-100 text-center"><p className="text-[10px] font-bold text-green-700">Locked</p></div>}
+                {isFlagged  && <div className="p-2 rounded-lg bg-amber-50 border border-amber-100 text-center"><p className="text-[10px] font-bold text-amber-700">Flagged</p></div>}
+                {isVoided   && <div className="p-2 rounded-lg bg-red-50 border border-red-100 text-center"><p className="text-[10px] font-bold text-red-700">Voided</p></div>}
               </div>
             </div>
 
@@ -983,6 +1062,18 @@ const DealRecordDetailPage = () => {
                   <span className="text-gray-500">XOTO Share</span>
                   <span className="font-bold" style={{ color: P }}>{fmt(com.xotoRetained)}</span>
                 </div>
+                {com.partnerShare > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Partner Share</span>
+                    <span className="font-bold" style={{ color: P2 }}>{fmt(com.partnerShare)}</span>
+                  </div>
+                )}
+                {com.referralShare > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Referral Share</span>
+                    <span className="font-bold text-purple-400">{fmt(com.referralShare)}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
