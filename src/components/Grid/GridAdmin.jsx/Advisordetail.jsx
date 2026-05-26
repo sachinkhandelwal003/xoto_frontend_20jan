@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { notification, Modal, Input } from "antd";
-import { apiService } from "../../manageApi/utils/custom.apiservice";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
 const C = {
@@ -419,7 +419,7 @@ if (!advisor) return (
           </div>
 
           {/* ── Profile Completion Bar ── */}
-          <div style={{
+          {/* <div style={{
             ...S.card, marginBottom: 20, padding: 0,
           }}>
             <div style={{ ...S.cardBody, padding: "16px 22px" }}>
@@ -455,7 +455,7 @@ if (!advisor) return (
                 ))}
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* ── Two-col grid ── */}
           <div style={S.grid2}>

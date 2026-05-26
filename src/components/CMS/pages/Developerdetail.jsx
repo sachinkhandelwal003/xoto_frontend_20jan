@@ -25,7 +25,7 @@ const DeveloperDetail = () => {
   const [selectedDev, setSelectedDev] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(true);
 
-  // ✅ KYC states
+  // Verification states
   const [kycActionLoading, setKycActionLoading] = useState(false);
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -49,6 +49,24 @@ const DeveloperDetail = () => {
   // Labels & Helpers
   const kycTypeLabel = { passport: "Passport", emirates_id: "Emirates ID", trade_license: "Trade License" };
   const agreementTypeLabel = { main_agreement: "Main Agreement", commission_schedule: "Commission Schedule", addendum: "Addendum" };
+
+  const hasText = (value) => typeof value === "string" && value.trim().length > 0;
+  const hasValidDoc = (doc) => hasText(doc?.url) && hasText(doc?.name);
+  const visibleKycDocuments = (selectedDev?.kycDocuments || []).filter(hasValidDoc);
+  const visibleAgreementDocuments = (selectedDev?.agreementDocuments || []).filter(hasValidDoc);
+  const hasEngagementPlan = Boolean(
+    selectedDev?.engagementPlan &&
+    (
+      hasText(selectedDev.engagementPlan.type) ||
+      Number(selectedDev.engagementPlan.price || 0) > 0 ||
+      hasText(selectedDev.engagementPlan.invoiceUrl) ||
+      selectedDev.engagementPlan.paymentStatus === "paid" ||
+      selectedDev.engagementPlan.startDate ||
+      selectedDev.engagementPlan.endDate ||
+      selectedDev.engagementPlan.paymentDate
+    )
+  );
+  const shouldShowAgreementStatus = hasText(selectedDev?.agreementStatus) && selectedDev.agreementStatus !== "not_uploaded";
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "N/A";
@@ -95,10 +113,10 @@ const DeveloperDetail = () => {
     setKycActionLoading(true);
     try {
       await apiService.put(`/developer/admin/review-kyc/${selectedDev._id}`, { action: "approve" });
-      message.success("KYC Approved successfully!");
+      message.success("Verification approved successfully!");
       fetchDeveloperById(selectedDev._id);
     } catch (err) {
-      message.error("KYC approval failed.");
+      message.error("Verification approval failed.");
     } finally {
       setKycActionLoading(false);
     }
@@ -111,12 +129,12 @@ const DeveloperDetail = () => {
       await apiService.put(`/developer/admin/review-kyc/${selectedDev._id}`, {
         action: "reject", rejectionReason: rejectionReason.trim()
       });
-      message.success("KYC Rejected.");
+      message.success("Verification rejected.");
       setRejectModalVisible(false);
       setRejectionReason('');
       fetchDeveloperById(selectedDev._id);
     } catch (err) {
-      message.error("KYC rejection failed.");
+      message.error("Verification rejection failed.");
     } finally {
       setKycActionLoading(false);
     }
@@ -214,7 +232,7 @@ const DeveloperDetail = () => {
     const status = selectedDev?.agreementStatus;
     const feedback = selectedDev?.agreementFeedback;
 
-    if (status === "pending_review" && selectedDev?.agreementDocuments?.length > 0) {
+    if (status === "pending_review" && visibleAgreementDocuments.length > 0) {
       return (
         <div style={{
           background: "linear-gradient(135deg, #eff6ff, #dbeafe)", border: "1px solid #93c5fd", borderRadius: "12px",
@@ -296,9 +314,9 @@ const DeveloperDetail = () => {
               Onboarding: {selectedDev.onboardingStatus?.replace(/_/g, " ").toUpperCase()}
             </Tag>
             <Tag color={getKycStatusColor(selectedDev.kycStatus)} style={{ borderRadius: "20px", padding: "2px 12px" }}>
-              KYC: {selectedDev.kycStatus?.toUpperCase()}
+              Verification: {selectedDev.kycStatus?.toUpperCase()}
             </Tag>
-            {selectedDev.agreementStatus && (
+            {shouldShowAgreementStatus && (
               <Tag color={getAgreementStatusColor(selectedDev.agreementStatus)} style={{ borderRadius: "20px", padding: "2px 12px" }}>
                 AGR: {selectedDev.agreementStatus?.replace(/_/g, " ").toUpperCase()}
               </Tag>
@@ -313,17 +331,19 @@ const DeveloperDetail = () => {
           labelStyle={{ fontWeight: "600", color: "#4b5563", background: "#faf5ff", width: "160px" }} style={{ marginBottom: "24px" }}
         >
           <Descriptions.Item label="Email"><MailOutlined style={{ marginRight: 6, color: "#5c039b" }} />{selectedDev.email}</Descriptions.Item>
-          <Descriptions.Item label="Official Email"><MailOutlined style={{ marginRight: 6, color: "#5c039b" }} />{selectedDev.officialEmailId || "N/A"}</Descriptions.Item>
+          {hasText(selectedDev.officialEmailId) && <Descriptions.Item label="Official Email"><MailOutlined style={{ marginRight: 6, color: "#5c039b" }} />{selectedDev.officialEmailId}</Descriptions.Item>}
           <Descriptions.Item label="Phone"><PhoneOutlined style={{ marginRight: 6, color: "#5c039b" }} />{selectedDev.country_code} {selectedDev.phone_number}</Descriptions.Item>
-          <Descriptions.Item label="Authorized Person"><UserOutlined style={{ marginRight: 6, color: "#5c039b" }} />{selectedDev.authorizedPersonName || "N/A"}</Descriptions.Item>
-          <Descriptions.Item label="City / Country"><EnvironmentOutlined style={{ marginRight: 6, color: "#5c039b" }} />{selectedDev.city || "N/A"}, {selectedDev.country || "N/A"}</Descriptions.Item>
-          <Descriptions.Item label="Address">{selectedDev.address || "N/A"}</Descriptions.Item>
-          <Descriptions.Item label="Website" span={2}>
-            {selectedDev.websiteUrl ? <a href={selectedDev.websiteUrl} target="_blank" rel="noreferrer" style={{ color: "#5c039b" }}><GlobalOutlined style={{ marginRight: 6 }} />{selectedDev.websiteUrl}</a> : "N/A"}
-          </Descriptions.Item>
-          <Descriptions.Item label="Operating Years">{selectedDev.operatingYears || 0} Years</Descriptions.Item>
-          <Descriptions.Item label="TAT Days">{selectedDev.tatDays} Day(s)</Descriptions.Item>
-          <Descriptions.Item label="Description" span={2}>{selectedDev.description || "No description provided."}</Descriptions.Item>
+          {hasText(selectedDev.authorizedPersonName) && <Descriptions.Item label="Authorized Person"><UserOutlined style={{ marginRight: 6, color: "#5c039b" }} />{selectedDev.authorizedPersonName}</Descriptions.Item>}
+          {(hasText(selectedDev.city) || hasText(selectedDev.country)) && <Descriptions.Item label="City / Country"><EnvironmentOutlined style={{ marginRight: 6, color: "#5c039b" }} />{[selectedDev.city, selectedDev.country].filter(Boolean).join(", ")}</Descriptions.Item>}
+          {hasText(selectedDev.address) && <Descriptions.Item label="Address">{selectedDev.address}</Descriptions.Item>}
+          {hasText(selectedDev.websiteUrl) && (
+            <Descriptions.Item label="Website" span={2}>
+              <a href={selectedDev.websiteUrl} target="_blank" rel="noreferrer" style={{ color: "#5c039b" }}><GlobalOutlined style={{ marginRight: 6 }} />{selectedDev.websiteUrl}</a>
+            </Descriptions.Item>
+          )}
+          {Number(selectedDev.operatingYears || 0) > 0 && <Descriptions.Item label="Operating Years">{selectedDev.operatingYears} Years</Descriptions.Item>}
+          {Number(selectedDev.tatDays || 0) > 0 && <Descriptions.Item label="TAT Days">{selectedDev.tatDays} Day(s)</Descriptions.Item>}
+          {hasText(selectedDev.description) && <Descriptions.Item label="Description" span={2}>{selectedDev.description}</Descriptions.Item>}
         </Descriptions>
 
         {/* ONBOARDING & AGREEMENT */}
@@ -332,15 +352,15 @@ const DeveloperDetail = () => {
           labelStyle={{ fontWeight: "600", color: "#4b5563", background: "#faf5ff", width: "160px" }} style={{ marginBottom: "24px" }}
         >
           <Descriptions.Item label="Onboarding Status"><Tag color="purple" style={{ borderRadius: "20px" }}>{selectedDev.onboardingStatus?.replace(/_/g, " ").toUpperCase()}</Tag></Descriptions.Item>
-          <Descriptions.Item label="Agreement Signed">{selectedDev.agreementSigned ? <Tag color="green">✓ Signed</Tag> : <Tag color="red">✗ Not Signed</Tag>}</Descriptions.Item>
-          <Descriptions.Item label="Agreement Status"><Tag color={getAgreementStatusColor(selectedDev.agreementStatus)} style={{ borderRadius: "20px" }}>{selectedDev.agreementStatus?.replace(/_/g, " ").toUpperCase() || "N/A"}</Tag></Descriptions.Item>
-          <Descriptions.Item label="Agreement Verified">{selectedDev.agreementVerified ? <Tag color="green">✓ Yes</Tag> : <Tag color="orange">Pending</Tag>}</Descriptions.Item>
-          <Descriptions.Item label="Agreement Signed At"><CalendarOutlined style={{ marginRight: 6, color: "#5c039b" }} />{formatDate(selectedDev.agreementSignedAt)}</Descriptions.Item>
-          <Descriptions.Item label="KYC Reviewed At"><CalendarOutlined style={{ marginRight: 6, color: "#5c039b" }} />{formatDate(selectedDev.kycReviewedAt)}</Descriptions.Item>
+          {selectedDev.agreementSigned && <Descriptions.Item label="Agreement Signed"><Tag color="green">Signed</Tag></Descriptions.Item>}
+          {shouldShowAgreementStatus && <Descriptions.Item label="Agreement Status"><Tag color={getAgreementStatusColor(selectedDev.agreementStatus)} style={{ borderRadius: "20px" }}>{selectedDev.agreementStatus.replace(/_/g, " ").toUpperCase()}</Tag></Descriptions.Item>}
+          {selectedDev.agreementVerified && <Descriptions.Item label="Agreement Verified"><Tag color="green">Yes</Tag></Descriptions.Item>}
+          {selectedDev.agreementSignedAt && <Descriptions.Item label="Agreement Signed At"><CalendarOutlined style={{ marginRight: 6, color: "#5c039b" }} />{formatDate(selectedDev.agreementSignedAt)}</Descriptions.Item>}
+          {selectedDev.kycReviewedAt && <Descriptions.Item label="Verification Reviewed At"><CalendarOutlined style={{ marginRight: 6, color: "#5c039b" }} />{formatDate(selectedDev.kycReviewedAt)}</Descriptions.Item>}
         </Descriptions>
 
         {/* ENGAGEMENT PLAN */}
-        {selectedDev.engagementPlan && (
+        {hasEngagementPlan && (
           <>
             <Divider orientation="left" style={{ color: "#5c039b", borderColor: "#e9d5ff" }}><Space><FileDoneOutlined /> Engagement Plan</Space></Divider>
             <Descriptions bordered column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }} size="middle"
@@ -382,14 +402,14 @@ const DeveloperDetail = () => {
         </Divider>
 
         <Row gutter={[24, 16]} style={{ marginBottom: "24px" }}>
-          {/* KYC DOCUMENTS COLUMN */}
+          {/* VERIFICATION DOCUMENTS COLUMN */}
           <Col xs={24} md={12}>
             {selectedDev.kycStatus === "pending" && (
               <div style={{
                 background: "linear-gradient(135deg, #fefce8, #fffbeb)", border: "1px solid #fde68a", borderRadius: "12px",
                 padding: "14px 16px", marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px"
               }}>
-                <div><Text strong style={{ color: "#92400e", fontSize: "13px" }}>⏳ KYC Pending Review</Text></div>
+                <div><Text strong style={{ color: "#92400e", fontSize: "13px" }}>Verification Pending Review</Text></div>
                 <Space size={6}>
                   <Button size="small" type="primary" icon={<CheckOutlined />} loading={kycActionLoading} onClick={handleKycApprove}
                     style={{ background: "#059669", borderColor: "#059669", borderRadius: "6px", fontWeight: "600" }}>Approve</Button>
@@ -400,20 +420,20 @@ const DeveloperDetail = () => {
             )}
             {selectedDev.kycStatus === "approved" && (
               <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "12px", padding: "12px 16px", marginBottom: "12px" }}>
-                <Text strong style={{ color: "#166534" }}>✅ KYC Approved</Text>
+                <Text strong style={{ color: "#166534" }}>Verification Approved</Text>
               </div>
             )}
             {selectedDev.kycStatus === "rejected" && (
               <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: "12px", padding: "12px 16px", marginBottom: "12px" }}>
-                <Text strong style={{ color: "#991b1b" }}>❌ KYC Rejected</Text>
+                <Text strong style={{ color: "#991b1b" }}>Verification Rejected</Text>
               </div>
             )}
             <Card bordered style={{ borderRadius: "12px", border: "1px solid #e9d5ff" }} bodyStyle={{ padding: "16px" }}
-              title={<Space><div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#5c039b" }} /><Text strong style={{ color: "#5c039b", fontSize: "13px" }}>KYC Documents</Text></Space>}
+              title={<Space><div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#5c039b" }} /><Text strong style={{ color: "#5c039b", fontSize: "13px" }}>Verification Documents</Text></Space>}
             >
-              {selectedDev.kycDocuments?.length > 0
-                ? selectedDev.kycDocuments.map((doc) => <DocCard key={doc._id} doc={doc} typeLabel={kycTypeLabel} accentColor="#5c039b" bgColor="#faf5ff" borderColor="#e9d5ff" iconBg="#ede9fe" />)
-                : <Text type="secondary" style={{ fontSize: "13px" }}>No KYC documents uploaded.</Text>}
+              {visibleKycDocuments.length > 0
+                ? visibleKycDocuments.map((doc) => <DocCard key={doc._id || doc.url} doc={doc} typeLabel={kycTypeLabel} accentColor="#5c039b" bgColor="#faf5ff" borderColor="#e9d5ff" iconBg="#ede9fe" />)
+                : <Text type="secondary" style={{ fontSize: "13px" }}>No verification documents uploaded.</Text>}
             </Card>
           </Col>
 
@@ -423,8 +443,8 @@ const DeveloperDetail = () => {
             <Card bordered style={{ borderRadius: "12px", border: "1px solid #bfdbfe" }} bodyStyle={{ padding: "16px" }}
               title={<Space><div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#2563eb" }} /><Text strong style={{ color: "#2563eb", fontSize: "13px" }}>Agreement Documents</Text></Space>}
             >
-              {selectedDev.agreementDocuments?.length > 0
-                ? selectedDev.agreementDocuments.map((doc) => <DocCard key={doc._id} doc={doc} typeLabel={agreementTypeLabel} accentColor="#2563eb" bgColor="#eff6ff" borderColor="#bfdbfe" iconBg="#dbeafe" />)
+              {visibleAgreementDocuments.length > 0
+                ? visibleAgreementDocuments.map((doc) => <DocCard key={doc._id || doc.url} doc={doc} typeLabel={agreementTypeLabel} accentColor="#2563eb" bgColor="#eff6ff" borderColor="#bfdbfe" iconBg="#dbeafe" />)
                 : <Text type="secondary" style={{ fontSize: "13px" }}>No agreement documents uploaded.</Text>}
             </Card>
           </Col>
@@ -432,7 +452,7 @@ const DeveloperDetail = () => {
       </div>
 
       {/* MODALS */}
-      <Modal title={<Space><CloseOutlined style={{ color: "#ef4444" }} /><Text strong>Reject KYC — Provide Reason</Text></Space>}
+      <Modal title={<Space><CloseOutlined style={{ color: "#ef4444" }} /><Text strong>Reject Verification - Provide Reason</Text></Space>}
         open={rejectModalVisible} onCancel={() => { setRejectModalVisible(false); setRejectionReason(''); }} centered
         footer={[
           <Button key="cancel" onClick={() => { setRejectModalVisible(false); setRejectionReason(''); }}>Cancel</Button>,

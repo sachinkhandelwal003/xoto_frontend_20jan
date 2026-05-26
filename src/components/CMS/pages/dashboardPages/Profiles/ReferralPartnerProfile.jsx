@@ -3,8 +3,9 @@ import {
   Card, Avatar, Badge, Descriptions, Tag, Space, Row, Col, 
   Divider, Typography, Button, Modal, Form, Input, 
   message, Upload, Tooltip, Tabs, Alert, Skeleton, 
-  Steps, List
+  Steps, List, DatePicker
 } from "antd"; 
+import dayjs from "dayjs";
 import {
   UserOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined,
   GlobalOutlined, FileProtectOutlined, InfoCircleOutlined, 
@@ -81,7 +82,7 @@ const ReferralPartnerProfile = () => {
         isProfileComplete: data?.isProfileComplete,
         completionPercentage: data?.completionPercentage,
         profileCompletionSteps: data?.profileCompletionSteps,
-        logo: data?.profile_photo || data?.profilePic,
+        logo: data?.profilePhotoUrl || data?.profile_photo || data?.profilePic,
         isVerifiedByAdmin: data?.isProfileComplete
       };
       
@@ -173,7 +174,8 @@ const ReferralPartnerProfile = () => {
       firstName: profile?.firstName,
       lastName: profile?.lastName,
       email: profile?.email,
-      dateOfBirth: profile?.dateOfBirth
+      phone: profile?.phone_number || profile?.phone,
+      dateOfBirth: profile?.dateOfBirth ? dayjs(profile.dateOfBirth) : null
     });
     setIsModalVisible(true);
   };
@@ -181,7 +183,11 @@ const ReferralPartnerProfile = () => {
   const handleUpdate = async (values) => {
     setUpdating(true);
     try {
-      await apiService.put("referral/profile/basic", values);
+      const payload = {
+        ...values,
+        dateOfBirth: values.dateOfBirth ? values.dateOfBirth.format('YYYY-MM-DD') : null
+      };
+      await apiService.put("referral/profile/basic", payload);
       message.success("Profile updated successfully!");
       setIsModalVisible(false);
       getProfile(); 
@@ -356,7 +362,7 @@ const ReferralPartnerProfile = () => {
         <div className="pt-6">
           <Descriptions bordered column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }} size="middle" labelStyle={{ fontWeight: 600, background: "#FAFAFA", width: '180px' }}>
             <Descriptions.Item label={<><MailOutlined className="mr-2 text-purple-500" /> Email</>}><Text copyable className="text-gray-700">{profile?.email || "N/A"}</Text></Descriptions.Item>
-            <Descriptions.Item label={<><PhoneOutlined className="mr-2 text-purple-500" /> Phone</>}><Text className="text-gray-700">{profile?.country_code} {profile?.phone_number}</Text></Descriptions.Item>
+            <Descriptions.Item label={<><PhoneOutlined className="mr-2 text-purple-500" /> Phone</>}><Text className="text-gray-700">{profile?.phone_number || "N/A"}</Text></Descriptions.Item>
             <Descriptions.Item label={<><UserOutlined className="mr-2 text-purple-500" /> Date of Birth</>}>{profile?.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : "N/A"}</Descriptions.Item>
             <Descriptions.Item label={<><SafetyCertificateOutlined className="mr-2 text-purple-500" /> ID Verified</>}>
               {isIdVerified() ? (
@@ -506,8 +512,9 @@ const ReferralPartnerProfile = () => {
           <Row gutter={16}>
             <Col span={12}><Form.Item name="firstName" label="First Name" rules={[{ required: true, message: 'Please enter first name' }]}><Input size="large" placeholder="First Name" /></Form.Item></Col>
             <Col span={12}><Form.Item name="lastName" label="Last Name" rules={[{ required: true, message: 'Please enter last name' }]}><Input size="large" placeholder="Last Name" /></Form.Item></Col>
-            <Col span={12}><Form.Item name="email" label="Email"><Input size="large" disabled placeholder="Email" /></Form.Item></Col>
-            <Col span={12}><Form.Item name="dateOfBirth" label="Date of Birth"><Input size="large" placeholder="Date of Birth" /></Form.Item></Col>
+            <Col span={12}><Form.Item name="email" label="Email" rules={[{ required: true, message: 'Please enter email' }, { type: 'email', message: 'Please enter a valid email address' }]}><Input size="large" placeholder="Email" /></Form.Item></Col>
+            <Col span={12}><Form.Item name="phone" label="Phone Number" rules={[{ required: true, message: 'Please enter phone number' }]}><Input size="large" placeholder="Phone Number" /></Form.Item></Col>
+            <Col span={12}><Form.Item name="dateOfBirth" label="Date of Birth"><DatePicker size="large" style={{ width: '100%' }} format="YYYY-MM-DD" placeholder="Select Date of Birth" /></Form.Item></Col>
           </Row>
           <div className="flex justify-end gap-3 mt-6">
             <Button size="large" onClick={() => setIsModalVisible(false)}>Cancel</Button>

@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
-  Card, Typography, Avatar, Button, Tag, Input, Modal, Space, Row, Col, Skeleton,
-  Popconfirm, Tooltip
+  Card, Typography, Avatar, Button, Tag, Input, Modal, Row, Col, Tooltip
 } from "antd";
 import {
   UserOutlined, MailOutlined, PhoneOutlined,
-  CheckCircleOutlined, CloseCircleOutlined, FlagOutlined,
-  MoreOutlined, EnvironmentOutlined, IdcardOutlined,
-  FileTextOutlined, CalendarOutlined, TrophyOutlined,
-  TeamOutlined, PlusOutlined, DeleteOutlined, EyeOutlined
+  CheckCircleOutlined, CloseCircleOutlined, EnvironmentOutlined,
+  IdcardOutlined, FileTextOutlined, TrophyOutlined,
+  TeamOutlined, EyeOutlined
 } from "@ant-design/icons";
 import { FiSearch, FiRefreshCw } from "react-icons/fi";
 import CustomTable from "../../CMS/pages/custom/CustomTable"
@@ -17,25 +15,22 @@ import { apiService } from "../../../manageApi/utils/custom.apiservice";
 const { Title, Text } = Typography;
 
 const THEME = {
-  primary:    "#5C039B",
-  primaryBg:  "#5C039B15",
-  success:    "#10b981",
-  successBg:  "#10b98115",
-  error:      "#ef4444",
-  errorBg:    "#ef444415",
-  warning:    "#d97706",
-  warningBg:  "#d9770615",
-  info:       "#3b82f6",
-  infoBg:     "#3b82f615",
-  border:     "#f0f0f0",
-  textPrimary:"#1f2937",
-  textMuted:  "#9ca3af",
-  bg:         "#f8f9fa",
+  primary:    "#5c039b",
+  primaryBg:  "rgba(92, 3, 155, 0.08)",
+  success:    "#7c3aed",
+  successBg:  "rgba(124, 58, 237, 0.08)",
+  error:      "#c084fc",
+  errorBg:    "rgba(192, 132, 252, 0.08)",
+  border:     "#e9d5ff",
+  textPrimary:"#140D2A",
+  textMuted:  "#8a70a8",
+  bg:         "#faf5ff",
 };
 
 const AVATAR_COLORS = [
-  "#5f0f9c","#0891B2","#059669","#D97706",
-  "#DC2626","#7C3AED","#DB2777","#EA580C","#65A30D","#0284C7",
+  "#5c039b", "#7c3aed", "#8b5cf6", "#a78bfa",
+  "#c084fc", "#d8b4fe", "#6d28d9", "#5b21b6",
+  "#4c1d95", "#7e22ce"
 ];
 
 const getInitials = (name="") => name.split(" ").map((w)=>w[0]||"").join("").toUpperCase().slice(0,2);
@@ -70,193 +65,211 @@ const normalizeAgent = (a, idx, page, limit) => ({
   rera_certificate: a.rera_certificate || null,
 });
 
-const AgentAvatar = ({ name="", src, size=40, showDot=false, active=true }) => (
+const AgentAvatar = ({ name="", src, size=40 }) => (
   <div style={{ position:"relative", display:"inline-block", flexShrink:0 }}>
     {src
-      ? <img src={src} alt={name} style={{ width:size, height:size, borderRadius:"50%", objectFit:"cover", border:"3px solid #fff", boxShadow:"0 4px 12px rgba(95,15,156,.2)" }} />
-      : <div style={{ width:size, height:size, borderRadius:"50%", background:getAvatarColor(name), color:"#fff", fontWeight:700, fontSize:size*.35, display:"flex", alignItems:"center", justifyContent:"center", border:"3px solid #fff", boxShadow:"0 4px 12px rgba(95,15,156,.2)", letterSpacing:"-.5px" }}>{getInitials(name)}</div>
+      ? <Avatar src={src} size={size} style={{ border: "2px solid #ffffff" }} />
+      : <Avatar size={size} style={{ background: getAvatarColor(name), color: "#ffffff", fontWeight: 700, border: "2px solid #ffffff" }}>{getInitials(name)}</Avatar>
     }
-    {showDot && <span style={{ position:"absolute", bottom:0, right:0, width:12, height:12, borderRadius:"50%", border:"3px solid #fff", background:active?"#22c55e":"#9CA3AF", boxShadow:`0 0 0 2px ${active?"#bbf7d0":"#e5e7eb"}` }} />}
   </div>
 );
 
 const StatusPill = ({ active }) => (
-  <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"5px 12px", borderRadius:999, fontSize:11, fontWeight:700, border:"1px solid", background:active?"linear-gradient(135deg,#f0fdf4,#dcfce7)":"#f9fafb", borderColor:active?"#86efac":"#e5e7eb", color:active?"#15803d":"#6b7280" }}>
-    <span style={{ width:7, height:7, borderRadius:"50%", background:active?"#22c55e":"#9ca3af", boxShadow:active?"0 0 0 3px rgba(34,197,94,.2)":"none" }} />
+  <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"5px 12px", borderRadius:20, fontSize:11, fontWeight:700, border:"1px solid", background:active?"rgba(16, 185, 129, 0.08)":"rgba(239, 68, 68, 0.08)", borderColor:active?"rgba(16, 185, 129, 0.2)":"rgba(239, 68, 68, 0.2)", color:active?"#059669":"#dc2626" }}>
     {active ? "Active" : "Inactive"}
   </span>
 );
+
+const getSpecializationTag = (spec) => {
+  if (!spec) return <span style={{ color: "var(--pur-mid)", fontSize: 12 }}>--</span>;
+  const text = spec.trim();
+  const lower = text.toLowerCase();
+
+  let styles = {
+    background: "rgba(92, 3, 155, 0.08)",
+    color: "#5c039b",
+  };
+
+  if (lower.includes("commercial")) {
+    styles = {
+      background: "rgba(219, 39, 119, 0.08)",
+      color: "#db2777",
+    };
+  } else if (lower.includes("industrial")) {
+    styles = {
+      background: "rgba(124, 58, 237, 0.08)",
+      color: "#7c3aed",
+    };
+  } else if (lower.includes("residential")) {
+    styles = {
+      background: "rgba(92, 3, 155, 0.08)",
+      color: "#5c039b",
+    };
+  } else {
+    styles = {
+      background: "rgba(192, 132, 252, 0.08)",
+      color: "#c084fc",
+    };
+  }
+
+  return (
+    <Tag style={{ borderRadius: 20, border: "none", fontWeight: 700, fontSize: 11, padding: "3px 10px", margin: 0, ...styles }}>
+      {text}
+    </Tag>
+  );
+};
+
 
 const MiniStat = ({ icon, label, value, color }) => (
   <div
     style={{
       background:    "#fff",
-      border:        `1px solid ${THEME.border}`,
-      borderRadius:  10,
-      padding:       "14px 16px",
+      border:        `1.5px solid var(--border)`,
+      borderRadius:  12,
+      padding:       "16px 20px",
       display:       "flex",
       alignItems:    "center",
-      gap:           12,
+      gap:           16,
+      boxShadow:     "var(--sh-card)",
     }}
   >
     <div
       style={{
-        width: 38, height: 38, borderRadius: 10,
-        background: `${color}18`, color,
+        width: 44, height: 44, borderRadius: 12,
+        background: `${color}12`, color,
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 18, flexShrink: 0,
+        fontSize: 20, flexShrink: 0,
       }}
     >
       {icon}
     </div>
     <div>
-      <div style={{ fontSize: 18, fontWeight: 700, color: THEME.textPrimary, lineHeight: 1.2 }}>
+      <div style={{ fontSize: 22, fontWeight: 800, color: "var(--tx)", lineHeight: 1.2 }}>
         {value ?? 0}
       </div>
-      <div style={{ fontSize: 12, color: THEME.textMuted }}>{label}</div>
+      <div style={{ fontSize: 12, color: "var(--tx-muted)" }}>{label}</div>
     </div>
   </div>
 );
 
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  useEffect(() => {
-    const h = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, []);
-  return isMobile;
-};
+const DetailRow = ({ icon, label, value, valueStyle = {} }) => (
+  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
+    <div style={{ width: 28, height: 28, borderRadius: 7, background: 'var(--pur-soft)', color: 'var(--sb-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13 }}>
+      {icon}
+    </div>
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 1 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--tx)', fontWeight: 500, wordBreak: 'break-word', ...valueStyle }}>
+        {value ?? <span style={{ color: 'var(--pur-mid)' }}>—</span>}
+      </div>
+    </div>
+  </div>
+);
+
+const ModalSection = ({ title, icon, children }) => (
+  <div style={{ marginBottom: 20 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, paddingBottom: 8, borderBottom: `2px solid var(--pur-soft)` }}>
+      <div style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--sb-accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>
+        {icon}
+      </div>
+      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--sb-accent)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        {title}
+      </span>
+    </div>
+    {children}
+  </div>
+);
 
 const ViewAgentModal = ({ open, onClose, agent }) => {
-  const isMobile = useIsMobile();
   if (!agent) return null;
   const isActive = agent.is_active ?? agent.status ?? true;
 
-  const content = (
-    <>
-      <style>{`
-        @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.3)}}
-        .vaBanner{background:linear-gradient(135deg,#5f0f9c,#7c3aed 50%,#a855f7);padding:28px 20px 60px;position:relative;overflow:hidden}
-        .vaBanner::before{content:'';position:absolute;top:-60%;right:-15%;width:280px;height:280px;background:rgba(255,255,255,.08);border-radius:50%}
-        .vaBanner::after{content:'';position:absolute;bottom:-40%;left:-15%;width:220px;height:220px;background:rgba(255,255,255,.06);border-radius:50%}
-        .vaBadge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:700;backdrop-filter:blur(10px)}
-        .vaBadge.active{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3)}
-        .vaBadge.inactive{background:rgba(0,0,0,.2);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2)}
-        .vaStatsGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:-44px;padding:0 16px 16px;position:relative;z-index:1}
-        .vaMiniStat{background:#fff;border-radius:16px;padding:14px 10px;text-align:center;box-shadow:0 8px 24px rgba(95,15,156,.12);border:1px solid rgba(95,15,156,.08);transition:all .25s}
-        .vaMiniStat:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(95,15,156,.18)}
-        .vaMiniStatIcon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:18px}
-        .vaMiniStatValue{font-size:17px;font-weight:800;color:#0f172a;line-height:1;margin-bottom:4px}
-        .vaMiniStatLabel{font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-        .vaSection{background:#fff;border-radius:16px;margin:0 14px 12px;padding:16px 18px;box-shadow:0 2px 12px rgba(0,0,0,.04);border:1px solid #f1f5f9}
-        .vaSectionTitle{font-size:10px;font-weight:800;color:#5f0f9c;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-        .vaSectionTitle::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,#e9d5ff,transparent);border-radius:2px}
-        .vaInfoRow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed #f1f5f9}
-        .vaInfoRow:last-child{border-bottom:none;padding-bottom:0}
-        .vaInfoLabel{font-size:12px;color:#64748b;font-weight:500;display:flex;align-items:center;gap:8px}
-        .vaInfoLabelIcon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
-        .vaInfoValue{font-size:13px;font-weight:700;color:#0f172a;text-align:right;max-width:55%;overflow:hidden;text-overflow:ellipsis}
-        .vaInfoValue.empty{color:#cbd5e1;font-weight:500}
-        .vaDocCard{display:flex;align-items:center;gap:12px;padding:12px 14px;background:linear-gradient(135deg,#faf5ff,#f3e8ff);border-radius:12px;border:1px solid #e9d5ff;margin-bottom:10px;transition:all .2s}
-        .vaDocCard:last-child{margin-bottom:0}
-        .vaDocCard:hover{transform:translateX(4px);border-color:#5f0f9c}
-        .vaDocIcon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;background:#fff}
-        .vaDocInfo{flex:1;min-width:0}
-        .vaDocName{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px}
-        .vaDocMeta{font-size:11px;color:#7c3aed}
-        .vaDocLink{padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;background:linear-gradient(135deg,#5f0f9c,#7c3aed);color:#fff;border:none;cursor:pointer;text-decoration:none;box-shadow:0 4px 12px rgba(95,15,156,.3);white-space:nowrap}
-        .vaDocLink:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(95,15,156,.4)}
-        .vaFooter{padding:12px 14px 20px;display:flex;gap:10px}
-        .vaVerified{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;font-size:10px;font-weight:700;background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:#16a34a;margin-left:6px}
-      `}</style>
+  return (
+    <Modal
+      open={open}
+      onCancel={onClose}
+      closable={true}
+      width={640}
+      centered
+      footer={null}
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--pur-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <UserOutlined style={{ color: 'var(--sb-accent)', fontSize: 14 }} />
+          </div>
+          <span style={{ fontWeight: 700, color: 'var(--tx)', fontFamily: 'Sora, sans-serif' }}>Agent Profile Details</span>
+        </div>
+      }
+      styles={{
+        content: { borderRadius: 16, padding: "24px" }
+      }}
+    >
+      <div style={{ marginTop: 20 }}>
+        {/* Profile Overview Card */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px', background: 'var(--surface2)', borderRadius: 12, marginBottom: 20, border: '1px solid var(--border)' }}>
+          <AgentAvatar name={agent.name} src={agent.avatar} size={60} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--tx)', fontFamily: 'Sora, sans-serif' }}>{agent.name}</div>
+            <div style={{ fontSize: 12, color: 'var(--tx-muted)', marginTop: 2 }}>{agent.email}</div>
+          </div>
+          <div>
+            <StatusPill active={isActive} />
+          </div>
+        </div>
 
-      <div className="vaBanner">
-        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", position:"relative", zIndex:1 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-            <div style={{ position:"relative" }}>
-              <AgentAvatar name={agent.name} src={agent.avatar} size={68} />
-              <div style={{ position:"absolute", bottom:2, right:2, width:16, height:16, borderRadius:"50%", background:isActive?"#22c55e":"#94a3b8", border:"3px solid #fff" }} />
+        {/* Details Section */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <ModalSection title="Contact Info" icon={<PhoneOutlined />}>
+            <DetailRow icon={<MailOutlined />} label="Email Address" value={agent.email} />
+            <DetailRow icon={<PhoneOutlined />} label="Phone Number" value={agent.phone} />
+            <DetailRow icon={<EnvironmentOutlined />} label="Operating City" value={agent.city} />
+          </ModalSection>
+
+          <ModalSection title="Professional Details" icon={<TrophyOutlined />}>
+            <DetailRow icon={<TrophyOutlined />} label="Experience" value={agent.experience ? `${agent.experience} Years` : "—"} />
+            <DetailRow icon={<FileTextOutlined />} label="Specialization" value={agent.specialization} />
+            <DetailRow icon={<IdcardOutlined />} label="RERA License" value={agent.reraNumber ? <>{agent.reraNumber} <span style={{ color: 'var(--sb-accent)', fontWeight: 'bold' }}>✓</span></> : "Not Registered"} />
+          </ModalSection>
+        </div>
+
+        {/* Documents Section */}
+        {(agent.idProof || agent.reraCertificate) && (
+          <ModalSection title="Verified Documents" icon={<FileTextOutlined />}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
+              {agent.idProof && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--surface2)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx-sub)' }}>🪪 ID Proof Document</span>
+                  <a href={agent.idProof} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: 'var(--sb-accent)', color: '#fff', textDecoration: 'none' }}>View</a>
+                </div>
+              )}
+              {agent.reraCertificate && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--surface2)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx-sub)' }}>📜 RERA License Certificate</span>
+                  <a href={agent.reraCertificate} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: 'var(--sb-accent)', color: '#fff', textDecoration: 'none' }}>View</a>
+                </div>
+              )}
             </div>
-            <div>
-              <h2 style={{ fontSize:20, fontWeight:800, color:"#fff", margin:"0 0 8px", letterSpacing:"-.5px" }}>{agent.name}</h2>
-              <div className={`vaBadge ${isActive?"active":"inactive"}`}>
-                {isActive && <span style={{ width:7, height:7, borderRadius:"50%", background:"#4ade80", animation:"pulse 2s infinite" }} />}
-                {isActive?"Active Now":"Offline"}
-              </div>
-            </div>
-          </div>
-          <button onClick={onClose} style={{ width:32, height:32, borderRadius:"50%", border:"1px solid rgba(255,255,255,.3)", background:"rgba(255,255,255,.15)", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, position:"relative", zIndex:2 }}>✕</button>
+          </ModalSection>
+        )}
+
+        {/* Footer Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+          <Button onClick={onClose} style={{ borderRadius: 20, borderColor: 'var(--border)', color: 'var(--tx-sub)' }}>
+            Close
+          </Button>
         </div>
       </div>
-
-      <div className="vaStatsGrid">
-        {[
-          { icon:<TrophyOutlined/>, bg:"linear-gradient(135deg,#fef3c7,#fde68a)", color:"#d97706", value: agent.experience??0, label:"Years Exp." },
-          { icon:<EnvironmentOutlined/>, bg:"linear-gradient(135deg,#dbeafe,#bfdbfe)", color:"#2563eb", value: agent.city||"—", label:"Location", small:true },
-          { icon:<FileTextOutlined/>, bg: agent.specialization?"linear-gradient(135deg,#faf5ff,#f3e8ff)":"#f1f5f9", color: agent.specialization?"#5f0f9c":"#94a3b8", value: agent.specialization||"—", label:"Specialization", small:true },
-        ].map(({icon,bg,color,value,label,small})=>(
-          <div key={label} className="vaMiniStat">
-            <div className="vaMiniStatIcon" style={{ background:bg, color }}>{icon}</div>
-            <div className="vaMiniStatValue" style={{ fontSize:small?13:17 }}>{value}</div>
-            <div className="vaMiniStatLabel">{label}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="vaSection">
-        <div className="vaSectionTitle">📞 Contact Information</div>
-        {[
-          { icon:<MailOutlined/>, bg:"linear-gradient(135deg,#fef3c7,#fde68a)", color:"#d97706", label:"Email", value:agent.email },
-          { icon:<PhoneOutlined/>, bg:"linear-gradient(135deg,#dbeafe,#bfdbfe)", color:"#2563eb", label:"Phone", value:agent.phone },
-          { icon:<EnvironmentOutlined/>, bg:"linear-gradient(135deg,#fce7f3,#fbcfe8)", color:"#db2777", label:"Location", value:[agent.city,agent.country].filter(Boolean).join(", ")||null },
-        ].map(({icon,bg,color,label,value})=>(
-          <div key={label} className="vaInfoRow">
-            <div className="vaInfoLabel"><div className="vaInfoLabelIcon" style={{ background:bg, color }}>{icon}</div>{label}</div>
-            <div className={`vaInfoValue ${!value?"empty":""}`}>{value||"Not provided"}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="vaSection">
-        <div className="vaSectionTitle">💼 Professional Details</div>
-        <div className="vaInfoRow">
-          <div className="vaInfoLabel"><div className="vaInfoLabelIcon" style={{ background:"linear-gradient(135deg,#fef3c7,#fde68a)", color:"#d97706" }}><TrophyOutlined/></div>Experience</div>
-          <div className="vaInfoValue">{agent.experience!=null?`${agent.experience} Years`:"—"}</div>
-        </div>
-        <div className="vaInfoRow">
-          <div className="vaInfoLabel"><div className="vaInfoLabelIcon" style={{ background:"linear-gradient(135deg,#dcfce7,#bbf7d0)", color:"#16a34a" }}><FileTextOutlined/></div>RERA No.</div>
-          <div className={`vaInfoValue ${!agent.reraNumber?"empty":""}`}>{agent.reraNumber?<>{agent.reraNumber}<span className="vaVerified">✓</span></>:"Not registered"}</div>
-        </div>
-        <div className="vaInfoRow">
-          <div className="vaInfoLabel"><div className="vaInfoLabelIcon" style={{ background:"linear-gradient(135deg,#faf5ff,#f3e8ff)", color:"#5f0f9c" }}><CheckCircleOutlined/></div>Specialization</div>
-          <div className="vaInfoValue">{agent.specialization||"—"}</div>
-        </div>
-      </div>
-
-      {(agent.idProof||agent.reraCertificate) && (
-        <div className="vaSection">
-          <div className="vaSectionTitle">📄 Documents</div>
-          {agent.idProof && <div className="vaDocCard"><div className="vaDocIcon">🪪</div><div className="vaDocInfo"><div className="vaDocName">ID Proof</div><div className="vaDocMeta">Government issued ID</div></div><a href={agent.idProof} target="_blank" rel="noopener noreferrer" className="vaDocLink">View</a></div>}
-          {agent.reraCertificate && <div className="vaDocCard"><div className="vaDocIcon">📜</div><div className="vaDocInfo"><div className="vaDocName">RERA Certificate</div><div className="vaDocMeta">Real Estate Regulatory Agency</div></div><a href={agent.reraCertificate} target="_blank" rel="noopener noreferrer" className="vaDocLink">View</a></div>}
-        </div>
-      )}
-
-      <div className="vaFooter">
-        <Button size="large" onClick={onClose} style={{ flex:1, height:46, borderRadius:12, fontWeight:700, fontSize:14, background:"#f8fafc", border:"1px solid #e2e8f0", color:"#475569" }}>Close</Button>
-      </div>
-    </>
+    </Modal>
   );
-
-  if (isMobile) return <Modal open={open} onCancel={onClose} closable={false} centered footer={null} styles={{ content:{borderRadius:24,padding:0,overflow:"hidden",boxShadow:"0 25px 60px -12px rgba(95,15,156,.3)"} }}>{content}</Modal>;
-  return <Modal open={open} onCancel={onClose} closable={false} width={720} centered footer={null} styles={{ content:{borderRadius:24,padding:0,overflow:"hidden",boxShadow:"0 25px 60px -12px rgba(95,15,156,.3)"} }}>{content}</Modal>;
 };
 
 const AgencyAgentList = () => {
   const [agents,    setAgents]    = useState([]);
   const [loading,   setLoading]   = useState(false);
   const [search,    setSearch]    = useState("");
-  const [activeTab, setActiveTab] = useState("all");
+  const activeTab = "all";
 
   const [pagination, setPagination] = useState({
     currentPage: 1, totalPages: 1, totalResults: 0, itemsPerPage: 20,
@@ -295,11 +308,12 @@ const AgencyAgentList = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, []);
 
   useEffect(() => {
     fetchAgents(1, pagination.itemsPerPage, search, activeTab);
-  }, [activeTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSearch = (e) => {
     const val = e.target.value;
@@ -324,12 +338,12 @@ const AgencyAgentList = () => {
       key: "name", title: "Agent", sortable: true,
       render: (_, agent) => (
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <AgentAvatar name={agent.name} src={agent.avatar} size={38} showDot active={agent.is_active ?? agent.status} />
+          <AgentAvatar name={agent.name} src={agent.avatar} size={38} />
           <div>
-            <div style={{ fontSize:13, fontWeight:800, color:"#111827", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{agent.name}</div>
-            <div style={{ fontSize:11, color:"#9CA3AF", display:"flex", alignItems:"center", gap:4, marginTop:2, fontWeight:600 }}>
-              <MailOutlined style={{ fontSize:10, color:"#5f0f9c" }} />
-              <span style={{ maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{agent.email||"--"}</span>
+            <Text strong style={{ fontFamily: 'Sora, sans-serif', color: 'var(--tx)', fontSize: 13 }}>{agent.name}</Text>
+            <div style={{ fontSize:11, color:"var(--tx-muted)", display:"flex", alignItems:"center", gap:4, marginTop:2 }}>
+              <MailOutlined style={{ fontSize:10, color:"var(--sb-accent)" }} />
+              <span>{agent.email||"--"}</span>
             </div>
           </div>
         </div>
@@ -339,8 +353,8 @@ const AgencyAgentList = () => {
       key: "phone", title: "Contact",
       render: (_, agent) => (
         <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-          <div style={{ fontSize:12, color:"#374151", display:"flex", alignItems:"center", gap:5, fontWeight:600 }}>
-            <PhoneOutlined style={{ color:"#5f0f9c", fontSize:11 }} />
+          <div style={{ fontSize:12, color:"var(--tx-sub)", display:"flex", alignItems:"center", gap:5, fontWeight:600 }}>
+            <PhoneOutlined style={{ color:"var(--sb-accent)", fontSize:11 }} />
             {agent.phone ? <a href={`tel:${agent.phone}`} style={{ color:"inherit", textDecoration:"none" }}>{agent.phone}</a> : "--"}
           </div>
         </div>
@@ -350,17 +364,15 @@ const AgencyAgentList = () => {
       key: "city", title: "City", sortable: true,
       render: (_, agent) => (
         <div>
-          <div style={{ fontSize:12, color:"#374151", display:"flex", alignItems:"center", gap:5, fontWeight:600 }}>
-            <EnvironmentOutlined style={{ color:"#0891B2", fontSize:11 }} />{agent.city||"--"}
+          <div style={{ fontSize:12, color:"var(--tx-sub)", display:"flex", alignItems:"center", gap:5, fontWeight:600 }}>
+            <EnvironmentOutlined style={{ color:"var(--sb-accent)", fontSize:11 }} />{agent.city||"--"}
           </div>
         </div>
       ),
     },
     {
       key: "specialization", title: "Specialization", sortable: true,
-      render: (val, agent) => agent.specialization
-        ? <Tag style={{ borderRadius:999, border:"none", fontWeight:700, fontSize:11, padding:"3px 10px", margin:0, background:"linear-gradient(135deg,#faf5ff,#f3e8ff)", color:"#5f0f9c" }}>{agent.specialization}</Tag>
-        : <span style={{ color:"#D1D5DB", fontSize:12 }}>--</span>,
+      render: (val, agent) => getSpecializationTag(agent.specialization),
     },
     {
       key: "status", title: "Status",
@@ -373,7 +385,7 @@ const AgencyAgentList = () => {
           <Tooltip title="View Details">
             <Button type="text" size="small" icon={<EyeOutlined />}
               onClick={()=>handleView(agent)}
-              style={{ width:34, height:34, borderRadius:10, border:"1px solid #e5e7eb", color:"#5f0f9c", background:"#fff" }}
+              style={{ width:34, height:34, borderRadius:"50%", border:"1px solid var(--border)", color:"var(--sb-accent)", background:"var(--surface)" }}
             />
           </Tooltip>
         </div>
@@ -382,31 +394,142 @@ const AgencyAgentList = () => {
   ];
 
   return (
-    <div style={{ padding:"28px 24px", background:"linear-gradient(135deg,#faf5ff 0%,#f3e8ff 50%,#ede9fe 100%)", minHeight:"100vh", fontFamily:"'DM Sans',-apple-system,sans-serif" }}>
+    <div style={{ padding:"28px 24px", background:"var(--bg)", minHeight:"100vh", fontFamily:"'Inter',sans-serif" }}>
       <style>{`
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+        :root {
+          --sb-dark:    #14051f;
+          --sb-mid:     #2a1247;
+          --sb-accent:  #5c039b;
+          --bg:         #faf5ff;
+          --surface:    #FFFFFF;
+          --surface2:   #f5ebff;
+          --surface3:   #e9d5ff;
+          --border:     #e9d5ff;
+          --border2:    #d8b4fe;
+          --tx:         #140D2A;
+          --tx-sub:     #4B3D6E;
+          --tx-muted:   #8a70a8;
+          --pur-soft:   #f3e8ff;
+          --pur-mid:    #c084fc;
+          --sh-sm:  0 1px 3px rgba(92,3,155,0.07), 0 1px 2px rgba(0,0,0,0.04);
+          --sh-md:  0 4px 16px rgba(92,3,155,0.11), 0 2px 4px rgba(0,0,0,0.04);
+          --sh-lg:  0 14px 40px rgba(92,3,155,0.15), 0 4px 8px rgba(0,0,0,0.06);
+          --sh-card:0 2px 8px rgba(92,3,155,0.07);
+          --rad:    12px;
+          --rad-sm: 8px;
+          --rad-xs: 6px;
+        }
+
+        /* Customize CustomTable inside our theme */
+        .ant-table {
+          background: transparent !important;
+          font-family: 'Inter', sans-serif !important;
+        }
+        .ant-table-thead > tr > th {
+          background: var(--surface2) !important;
+          color: var(--tx-sub) !important;
+          font-weight: 600 !important;
+          font-size: 12px !important;
+          border-bottom: 1.5px solid var(--border) !important;
+        }
+        .ant-table-tbody > tr > td {
+          border-bottom: 1px solid var(--border) !important;
+          font-size: 13px !important;
+        }
+        .ant-table-tbody > tr:hover > td {
+          background: var(--pur-soft) !important;
+        }
+
+        /* Action View Button Hover */
+        .ant-btn-text:hover {
+          border-color: var(--pur-mid) !important;
+          background: var(--pur-soft) !important;
+          color: var(--sb-accent) !important;
+        }
+
+        /* Search input theme overrides */
+        .ant-input-affix-wrapper {
+          border-color: var(--border) !important;
+          border-radius: 20px !important;
+        }
+        .ant-input-affix-wrapper:focus, .ant-input-affix-wrapper-focused {
+          border-color: var(--sb-accent) !important;
+          box-shadow: 0 0 0 2px rgba(92, 3, 155, 0.1) !important;
+        }
+        .ant-input {
+          font-family: 'Inter', sans-serif !important;
+        }
+
+        /* Refresh Button theme overrides */
+        .ant-btn:not(.ant-btn-text) {
+          border-color: var(--border) !important;
+        }
+        .ant-btn:not(.ant-btn-text):hover {
+          border-color: var(--sb-accent) !important;
+          color: var(--sb-accent) !important;
+        }
+
+        /* Pagination Style overrides */
+        .ant-pagination-item {
+          border-color: var(--border) !important;
+          background: var(--surface) !important;
+          border-radius: var(--rad-sm) !important;
+        }
+        .ant-pagination-item a {
+          color: var(--tx-sub) !important;
+        }
+        .ant-pagination-item-active {
+          background: var(--sb-accent) !important;
+          border-color: var(--sb-accent) !important;
+        }
+        .ant-pagination-item-active a {
+          color: #ffffff !important;
+        }
+        .ant-pagination-prev .ant-pagination-item-link,
+        .ant-pagination-next .ant-pagination-item-link {
+          border-color: var(--border) !important;
+          background: var(--surface) !important;
+          border-radius: var(--rad-sm) !important;
+          color: var(--tx-sub) !important;
+        }
+        .ant-pagination-item:hover,
+        .ant-pagination-prev:hover .ant-pagination-item-link,
+        .ant-pagination-next:hover .ant-pagination-item-link {
+          border-color: var(--pur-mid) !important;
+          background: var(--pur-soft) !important;
+        }
+        .ant-pagination-item:hover a {
+          color: var(--sb-accent) !important;
+        }
+        .ant-pagination-disabled .ant-pagination-item-link {
+          border-color: var(--border) !important;
+          color: var(--tx-muted) !important;
+          opacity: 0.5;
+          background: var(--surface) !important;
+        }
       `}</style>
 
-      <div style={{ maxWidth:1300, margin:"0 auto" }}>
+      <div style={{ maxWidth: 1300, margin:"0 auto" }}>
         {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20, gap:10, flexWrap:"wrap", animation:"fadeUp .3s ease" }}>
           <div>
             <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
-              <div style={{ width:38, height:38, borderRadius:12, background:"linear-gradient(135deg,#5f0f9c,#7c3aed)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 6px 16px rgba(95,15,156,.3)" }}><TeamOutlined style={{ color:"#fff", fontSize:18 }} /></div>
-              <h1 style={{ fontSize:24, fontWeight:800, color:"#1e1b4b", margin:0 }}>Agent Team</h1>
+              <div style={{ width:38, height:38, borderRadius:12, background:"linear-gradient(135deg,#5c039b,#8b5cf6)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 6px 16px rgba(92,3,155,.3)" }}><TeamOutlined style={{ color:"#fff", fontSize:18 }} /></div>
+              <h1 style={{ fontSize:24, fontWeight:800, color:"var(--tx)", margin:0, fontFamily:"'Sora', sans-serif" }}>Agent Team</h1>
             </div>
-            <p style={{ fontSize:13, color:"#7c3aed", margin:0, marginLeft:48, fontWeight:500 }}>Manage and monitor your agency's real estate agents</p>
+            <p style={{ fontSize:13, color:"var(--tx-sub)", margin:0, marginLeft:48, fontWeight:500 }}>Manage and monitor your agency's real estate agents</p>
           </div>
         </div>
 
         {/* Stats */}
         <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
           {[
-            { icon: <TeamOutlined />, label: "Total Agents", value: total, color: "#5f0f9c" },
-            { icon: <CheckCircleOutlined />, label: "Active", value: active, color: "#10b981" },
-            { icon: <CloseCircleOutlined />, label: "Inactive", value: inactive, color: "#ef4444" },
+            { icon: <TeamOutlined />, label: "Total Agents", value: total, color: "var(--sb-accent)" },
+            { icon: <CheckCircleOutlined />, label: "Active", value: active, color: "var(--success)" },
+            { icon: <CloseCircleOutlined />, label: "Inactive", value: inactive, color: "var(--error)" },
           ].map((stat, idx) => (
-            <Col xs={12} sm={8} key={idx}>
+            <Col xs={24} sm={8} key={idx}>
               <MiniStat {...stat} />
             </Col>
           ))}
@@ -415,30 +538,31 @@ const AgencyAgentList = () => {
         {/* Table Card */}
         <Card
           bordered={false}
-          style={{ borderRadius: 14, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}
+          style={{ borderRadius: 14, overflow: "hidden", border: "1.5px solid var(--border)", boxShadow: "var(--sh-card)" }}
           bodyStyle={{ padding: 0 }}
         >
           <div
             style={{
               display: "flex", flexWrap: "wrap", alignItems: "center",
               justifyContent: "space-between",
-              padding: "16px 20px", borderBottom: `1px solid ${THEME.border}`, gap: 12,
+              padding: "16px 20px", borderBottom: `1px solid var(--border)`, gap: 12,
+              background: "#fff"
             }}
           >
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Input
                 placeholder="Search name, email, phone..."
-                prefix={<FiSearch style={{ color: THEME.textMuted }} />}
+                prefix={<FiSearch style={{ color: "var(--tx-muted)" }} />}
                 value={search}
                 onChange={handleSearch}
                 allowClear
                 onClear={() => { setSearch(""); fetchAgents(1, pagination.itemsPerPage, "", activeTab); }}
-                style={{ width: 260, borderRadius: 8 }}
+                style={{ width: 260, borderRadius: 20 }}
               />
               <Button
                 icon={<FiRefreshCw size={14} />}
                 onClick={() => fetchAgents(pagination.currentPage, pagination.itemsPerPage, search, activeTab)}
-                style={{ borderRadius: 8 }}
+                style={{ borderRadius: 20 }}
               >
                 Refresh
               </Button>

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { notification } from "antd";
-import { apiService } from "../../manageApi/utils/custom.apiservice";
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

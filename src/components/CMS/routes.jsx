@@ -160,6 +160,7 @@ import AdminPropertyListings from "./pages/Adminpropertylistings"
 import AdminPropertyDetail from "./pages/Adminpropertydetails";
 import AdminOffPlanCreate from "./pages/Adminoffplancreate";
 import LeadManagement from "./pages/LeadManagement";
+import AgencyLeadDetailsPage from "./pages/AgencyLeadDetailsPage";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import VerificationQueue from "./pages/VerificationQueue";
 import AgencyDashboard from "../ecommerce/B2C/AgencyDashboard";
@@ -181,9 +182,9 @@ import SecondaryPlans from "./pages/Properties/SecondaryPlans";
 import SecondaryPropertyDetail from "./pages/Properties/Secondarypropertydetail";
 
 
-import GridCreateadvisor from "../Create Users/GridCreateadvisor";
-import AllAdvisors from "../Create Users/Alladvisors";
-import AdvisorDetail from "../Create Users/Advisordetail";
+import GridCreateadvisor from "../Grid/GridAdmin.jsx/GridCreateadvisor";
+import AllAdvisors from "../Grid/GridAdmin.jsx/Alladvisors";
+import AdvisorDetail from "../Grid/GridAdmin.jsx/Advisordetail";
 import AllReferralPartners from "../GridReferralPartner/Admin/AllReferralPartners";
 import ReferralPartnerDetail from "../GridReferralPartner/Admin/ReferralPartnerDetail";
 import PlatformLeads from "../Grid/GridAdmin.jsx/PlatformLeads";
@@ -294,6 +295,7 @@ import MortgageAffordabilityCalculatorPage from "../../components/homepage/Mortg
 import PresentationsList from '../Grid/presentation/PresentationsList';
 import Dealrecordspage from "../Grid/GridAdmin.jsx/Dealrecordspage";
 import DealRecordDetailPage from "../Grid/GridAdmin.jsx/DealRecordDetailPage";
+import AgencyDealsPage from "../Grid/grid agency/Agencydealspage";
 
 
 
@@ -634,16 +636,15 @@ const CmsRoutes = () => {
 
       <Route path="/property-list" element={<AdminPropertyGrid />} />
       <Route path="/DealCommissionManager" element={<DealCommissionManager />} />
-      <Route path="/lead-management" element={<LeadManagement />} />
+      <Route path="lead-management" element={<LeadManagement />} />
+      <Route path="lead-management/:id" element={<AgencyLeadDetailsPage />} />
       <Route path="/subscription-plans" element={<SubscriptionPlans />} />
       <Route path="/verification-queue" element={<VerificationQueue />} />
       <Route path="/ai-training" element={<XobiaTrainingAdmin />} />
       <Route path="/global-settings" element={<GlobalSettings />} />
       <Route path="/marketing-hub" element={<XotoBlitzCampaigns />} />
-      {/* <Route path="/admin-chat-requests" element={<AdminChatRequests />} /> */}
-      "
       <Route path="/admin-chat-requests" element={<AdminChatRequests />} />
-      <Route path="/my-listings" element={<MyListings />} />\
+      <Route path="/my-listings" element={<MyListings />} />
       <Route path="/properties" element={<AdminPropertyListings />} />
       <Route path="/properties/:id" element={<AdminPropertyDetail />} />
       <Route path="/properties/create-offplan" element={<AdminOffPlanCreate />} />
@@ -673,7 +674,8 @@ const CmsRoutes = () => {
     <Route path="listings/edit-review-queue" element={<EditReviewQueue />} />
     <Route path="deal-records" element={<Dealrecordspage />} />
     <Route path="deal-records/create/:leadId" element={<Dealrecordspage />} />
-    <Route path="deal-records/:dealId" element={<DealRecordDetailPage />} /> {/* ← ADD */}
+    <Route path="deal-records/:dealId" element={<DealRecordDetailPage />} /> 
+    <Route path="partner/deals" element={<AgencyDealsPage />} />
 
       
       
@@ -688,22 +690,22 @@ const CmsRoutes = () => {
       <Route path="manage-agents/:id" element={<AgencyAgentDetails />} />
       <Route path="performance" element={<AgencyPerformance />} />
       <Route path="commission" element={<AgencyCommission />} />
-      <Route path="/lead-management" element={<AgencyLeadManagement />} />
+      <Route path="lead-management-legacy" element={<AgencyLeadManagement />} />
       <Route path="add-property" element={<AddProperty />} />
       {/* <Route path="targets" element={<AgencyTargets />} /> */}
-      <Route path="/agency-leaderboard" element={<AgencyLeaderboard />} />
-      <Route path="/advisors/leaderboard" element={<AdvisorLeaderboard />} />
+      <Route path="agency-leaderboard" element={<AgencyLeaderboard />} />
+      <Route path="advisors/leaderboard" element={<AdvisorLeaderboard />} />
       {/* <Route path="incentives" element={<AgencyIncentives />} /> */}
       {/* <Route path="branches" element={<AgencyBranches />} /> */}
       {/* <Route path="internal-roles" element={<AgencyRoles />} /> */}
       {/* <Route path="advanced-analytics" element={<AgencyAdvancedAnalytics />} /> */}
       {/* <Route path="profit-engine" element={<AgencyProfitEngine />} /> */}
       <Route path="subscription" element={<AgencySubscription />} />
-      <Route path="/agency-projects" element={<AgencyProjects />} />
-      <Route path="/agency/deals" element={<AgencyDeals />} />
-      <Route path="/agency-agent-properties" element={<AgencyAgentProperties />} />
-      <Route path="/agency-profile" element={<AgencyProfile />} />
-      <Route path="/presentations" element={<Presentations />} />
+      <Route path="agency-projects" element={<AgencyProjects />} />
+      <Route path="agency/deals" element={<AgencyDeals />} />
+      <Route path="agency-agent-properties" element={<AgencyAgentProperties />} />
+      <Route path="agency-profile" element={<AgencyProfile />} />
+      <Route path="presentations" element={<Presentations />} />
 
       {/* <Route path="assign-projects" element={<AgencyAssignProjects />} /> */}
       {/* Developer */}

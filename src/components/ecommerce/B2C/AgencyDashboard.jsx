@@ -4,14 +4,10 @@ import {
   TeamOutlined,
   UserOutlined,
   RiseOutlined,
-  DollarOutlined,
-  ArrowUpOutlined,
-  ArrowDownOutlined
+  DollarOutlined
 } from "@ant-design/icons";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
   CartesianGrid,
   XAxis,
   YAxis,
@@ -27,11 +23,31 @@ const { Title, Text } = Typography;
 
 /* ---------- Styles & Theme ---------- */
 
+const THEME = {
+  primary: "#5c039b",
+  primary2: "#7c3aed",
+  bg: "#faf5ff",
+  surface: "#ffffff",
+  surface2: "#f5ebff",
+  soft: "#f3e8ff",
+  border: "#e9d5ff",
+  border2: "#d8b4fe",
+  text: "#140D2A",
+  subText: "#4B3D6E",
+  muted: "#8a70a8",
+  success: "#059669",
+  successBg: "rgba(16, 185, 129, 0.08)",
+  danger: "#dc2626",
+  dangerBg: "rgba(239, 68, 68, 0.08)",
+  shadow: "0 2px 8px rgba(92, 3, 155, 0.07)"
+};
+
 const styles = {
   container: {
     minHeight: "100vh",
-    backgroundColor: "#F2EBF7",
-    padding: "24px"
+    backgroundColor: THEME.bg,
+    padding: "28px 24px",
+    fontFamily: "'Inter', sans-serif"
   },
   header: {
     marginBottom: "24px",
@@ -41,25 +57,26 @@ const styles = {
     flexWrap: "wrap"
   },
   card: {
-    borderRadius: "12px",
-    border: "none",
-    boxShadow: "0 1px 2px -2px rgba(0, 0, 0, 0.16), 0 3px 6px 0 rgba(0, 0, 0, 0.12), 0 5px 12px 4px rgba(0, 0, 0, 0.09)",
+    borderRadius: "14px",
+    border: `1.5px solid ${THEME.border}`,
+    boxShadow: THEME.shadow,
     transition: "transform 0.2s",
-    overflow: "hidden"
+    overflow: "hidden",
+    background: THEME.surface
   },
   iconContainer: (color) => ({
     width: "48px",
     height: "48px",
     borderRadius: "12px",
-    backgroundColor: `${color}20`, // 20% opacity
+    backgroundColor: color === THEME.success ? THEME.successBg : THEME.soft,
     color: color,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontSize: "24px"
   }),
-  trendUp: { color: "#64EF0A", fontSize: "12px", fontWeight: 600 },
-  trendDown: { color: "#EF4444", fontSize: "12px", fontWeight: 600 }
+  trendUp: { color: THEME.success, fontSize: "12px", fontWeight: 600 },
+  trendDown: { color: THEME.danger, fontSize: "12px", fontWeight: 600 }
 };
 
 /* ---------- Custom Tooltip ---------- */
@@ -67,8 +84,8 @@ const styles = {
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div style={{ backgroundColor: "#fff", padding: "10px", border: "1px solid #eee", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-        <p style={{ margin: 0, fontWeight: "bold" }}>{label}</p>
+      <div style={{ backgroundColor: THEME.surface, padding: "10px 12px", border: `1px solid ${THEME.border}`, borderRadius: "8px", boxShadow: THEME.shadow }}>
+        <p style={{ margin: 0, fontWeight: "bold", color: THEME.text }}>{label}</p>
         <p style={{ margin: 0, color: payload[0].color }}>
           {payload[0].name}: {payload[0].value.toLocaleString()}
         </p>
@@ -78,6 +95,13 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
+const getAgentName = (agent) =>
+  agent?.fullName ||
+  `${agent?.first_name || ""} ${agent?.last_name || ""}`.trim() ||
+  "Unnamed Agent";
+
+const formatCurrency = (value) => `AED ${(value || 0).toLocaleString()}`;
+
 export default function AgencyDashboard() {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
@@ -86,7 +110,7 @@ export default function AgencyDashboard() {
       title: "Total Agents",
       value: 0,
       icon: <TeamOutlined />,
-      color: "#5C039B",
+      color: THEME.primary,
       trend: null,
       trendStatus: null
     },
@@ -94,7 +118,7 @@ export default function AgencyDashboard() {
       title: "Active Leads",
       value: 0,
       icon: <UserOutlined />,
-      color: "#03A4F4",
+      color: THEME.primary2,
       trend: null,
       trendStatus: null
     },
@@ -102,7 +126,7 @@ export default function AgencyDashboard() {
       title: "Total Listings",
       value: 0,
       icon: <RiseOutlined />,
-      color: "#64EF0A",
+      color: THEME.success,
       trend: null,
       trendStatus: null
     },
@@ -110,14 +134,12 @@ export default function AgencyDashboard() {
       title: "Revenue Generated",
       value: "$0",
       icon: <DollarOutlined />,
-      color: "#D67A56",
+      color: THEME.primary,
       trend: null,
       trendStatus: null
     }
   ]);
 
-  const [revenueData, setRevenueData] = useState([]);
-  const [pipelineData, setPipelineData] = useState([]);
   const [topAgents, setTopAgents] = useState([]);
   const [activities, setActivities] = useState([]);
 
@@ -135,7 +157,7 @@ export default function AgencyDashboard() {
           title: "Total Agents",
           value: data.stats.active_agents || 0,
           icon: <TeamOutlined />,
-          color: "#5C039B",
+          color: THEME.primary,
           trend: null,
           trendStatus: null
         },
@@ -143,7 +165,7 @@ export default function AgencyDashboard() {
           title: "Active Leads",
           value: data.stats.active_leads || 0,
           icon: <UserOutlined />,
-          color: "#03A4F4",
+          color: THEME.primary2,
           trend: null,
           trendStatus: null
         },
@@ -151,15 +173,15 @@ export default function AgencyDashboard() {
           title: "Total Listings",
           value: data.stats.total_listings || 0,
           icon: <RiseOutlined />,
-          color: "#64EF0A",
+          color: THEME.success,
           trend: null,
           trendStatus: null
         },
         {
           title: "Revenue Generated",
-          value: `$${(data.stats.total_commission || 0).toLocaleString()}`,
+          value: formatCurrency(data.stats.total_commission),
           icon: <DollarOutlined />,
-          color: "#D67A56",
+          color: THEME.primary,
           trend: null,
           trendStatus: null
         }
@@ -167,17 +189,23 @@ export default function AgencyDashboard() {
 
       setStats(newStats);
 
-      setTopAgents(data.top_agent ? [
-        {
-          key: "1",
-          name: `${data.top_agent.first_name} ${data.top_agent.last_name}`,
-          deals: data.top_agent.totalLeads || 0,
-          revenue: `$${(data.top_agent.commissionEarned || 0).toLocaleString()}`,
-          status: "Active"
-        }
-      ] : []);
+      const rankedAgents = Array.isArray(data.top_agents) && data.top_agents.length > 0
+        ? data.top_agents
+        : data.top_agent
+          ? [data.top_agent]
+          : [];
 
-      const recentActivities = (data.recent_activity || []).map((item, idx) => {
+      setTopAgents(rankedAgents.map((agent, index) => ({
+        key: agent._id || String(index),
+        rank: index + 1,
+        name: getAgentName(agent),
+        deals: agent.totalLeads || 0,
+        converted: agent.convertedLeads || 0,
+        revenue: formatCurrency(agent.commissionEarned),
+        status: "Active"
+      })));
+
+      const recentActivities = (data.recent_activity || []).map((item) => {
         if (item.type === 'lead') {
           const leadName = item.contact_info?.name
             ? `${item.contact_info.name.first_name || ''} ${item.contact_info.name.last_name || ''}`.trim()
@@ -185,7 +213,7 @@ export default function AgencyDashboard() {
           return {
             text: `New lead: ${leadName}`,
             time: new Date(item.createdAt).toLocaleString(),
-            color: "#03A4F4"
+            color: THEME.primary2
           };
         } else if (item.type === 'listing') {
           const listingName = item.propertyName || item.projectName || 'New Listing';
@@ -195,19 +223,19 @@ export default function AgencyDashboard() {
           return {
             text: `${agentName} created listing: ${listingName}`,
             time: new Date(item.createdAt).toLocaleString(),
-            color: "#64EF0A"
+            color: THEME.success
           };
         } else if (item.first_name && item.last_name) {
           return {
             text: `${item.first_name} ${item.last_name} updated their profile`,
             time: new Date(item.updatedAt).toLocaleString(),
-            color: "#5C039B"
+            color: THEME.primary
           };
         } else {
           return {
             text: `New activity`,
             time: new Date(item.createdAt || item.updatedAt).toLocaleString(),
-            color: "#03A4F4"
+            color: THEME.primary2
           };
         }
       });
@@ -227,22 +255,34 @@ export default function AgencyDashboard() {
 
   const columns = [
     {
+      title: "#",
+      dataIndex: "rank",
+      key: "rank",
+      width: 56,
+      render: (rank) => (
+        <Tag style={{ backgroundColor: THEME.soft, color: THEME.primary, border: "none", borderRadius: 20, fontWeight: 800, margin: 0 }}>
+          {rank}
+        </Tag>
+      )
+    },
+    {
       title: "Agent",
       dataIndex: "name",
       key: "name",
       render: (name) => (
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <Avatar style={{ backgroundColor: "#5C039B" }} icon={<UserOutlined />} />
-          <Text strong style={{ color: "#020202" }}>{name}</Text>
+          <Avatar style={{ backgroundColor: THEME.primary }} icon={<UserOutlined />} />
+          <Text strong style={{ color: THEME.text }}>{name}</Text>
         </div>
       )
     },
     { title: "Deals", dataIndex: "deals", key: "deals", sorter: (a, b) => a.deals - b.deals },
+    { title: "Converted", dataIndex: "converted", key: "converted", sorter: (a, b) => a.converted - b.converted },
     { 
       title: "Revenue", 
       dataIndex: "revenue", 
       key: "revenue",
-      render: (text) => <Text strong style={{ color: "#020202" }}>{text}</Text>
+      render: (text) => <Text strong style={{ color: THEME.text }}>{text}</Text>
     },
     {
       title: "Status",
@@ -250,24 +290,65 @@ export default function AgencyDashboard() {
       key: "status",
       render: (status) =>
         status === "Active"
-          ? <Tag style={{ backgroundColor: "#64EF0A", color: "#fff", borderRadius: "4px" }}>Active</Tag>
-          : <Tag style={{ backgroundColor: "#EF4444", color: "#fff", borderRadius: "4px" }}>Inactive</Tag>
+          ? <Tag style={{ backgroundColor: THEME.successBg, color: THEME.success, border: "none", borderRadius: 20, fontWeight: 700, padding: "4px 12px" }}>Active</Tag>
+          : <Tag style={{ backgroundColor: THEME.dangerBg, color: THEME.danger, border: "none", borderRadius: 20, fontWeight: 700, padding: "4px 12px" }}>Inactive</Tag>
     }
   ];
 
   return (
     <div style={styles.container}>
+      <style>{`
+        .agency-dashboard-page .ant-card-head {
+          border-bottom: 1.5px solid ${THEME.border} !important;
+          background: ${THEME.surface} !important;
+        }
+
+        .agency-dashboard-page .ant-card-head-title {
+          color: ${THEME.text} !important;
+          font-family: 'Sora', sans-serif !important;
+          font-weight: 800 !important;
+        }
+
+        .agency-dashboard-page .ant-statistic-content {
+          color: ${THEME.text} !important;
+          font-family: 'Sora', sans-serif !important;
+        }
+
+        .agency-dashboard-page .ant-table {
+          background: transparent !important;
+        }
+
+        .agency-dashboard-page .ant-table-thead > tr > th {
+          background: ${THEME.surface2} !important;
+          color: ${THEME.subText} !important;
+          font-weight: 700 !important;
+          border-bottom: 1.5px solid ${THEME.border} !important;
+        }
+
+        .agency-dashboard-page .ant-table-tbody > tr > td {
+          border-bottom: 1px solid ${THEME.border} !important;
+        }
+
+        .agency-dashboard-page .ant-table-tbody > tr:hover > td {
+          background: ${THEME.soft} !important;
+        }
+
+        .agency-dashboard-page .ant-timeline-item-tail {
+          border-inline-start-color: ${THEME.border} !important;
+        }
+      `}</style>
       <Spin spinning={loading}>
+        <div className="agency-dashboard-page">
         {/* ---------- Header ---------- */}
         <div style={styles.header}>
           <div>
-            <Title level={2} style={{ margin: 0, color: "#5C039B" }}>Dashboard</Title>
-            <Text type="secondary" style={{ color: "#547593" }}>
+            <Title level={2} style={{ margin: 0, color: THEME.primary, fontFamily: "Sora, sans-serif", fontWeight: 800 }}>Dashboard</Title>
+            <Text style={{ color: THEME.muted, fontWeight: 500 }}>
               Welcome back, {dashboardData?.agency?.companyName || "Agency"}
             </Text>
           </div>
           <div>
-            <Tag style={{ backgroundColor: "#03A4F4", color: "#fff", padding: "5px 10px", fontSize: "14px" }}>
+            <Tag style={{ backgroundColor: THEME.soft, color: THEME.primary, border: `1px solid ${THEME.border2}`, borderRadius: 20, padding: "6px 14px", fontSize: "13px", fontWeight: 700 }}>
               {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </Tag>
           </div>
@@ -280,11 +361,11 @@ export default function AgencyDashboard() {
               <Card style={styles.card} hoverable>
                 <Row justify="space-between" align="middle">
                   <Col>
-                    <Text type="secondary" style={{ fontSize: "14px" }}>{item.title}</Text>
+                    <Text style={{ fontSize: "13px", color: THEME.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>{item.title}</Text>
                     <div style={{ marginTop: "8px" }}>
                       <Statistic
                         value={item.value}
-                        valueStyle={{ fontSize: "24px", fontWeight: "bold", margin: 0 }}
+                        valueStyle={{ fontSize: "24px", fontWeight: 800, margin: 0, color: THEME.text }}
                       />
                     </div>
                   </Col>
@@ -302,7 +383,11 @@ export default function AgencyDashboard() {
         {/* ---------- Charts ---------- */}
         <Row gutter={[16, 16]} style={{ marginTop: "24px" }}>
           <Col xs={24} lg={14}>
-            <Card title="Presentation Balance" style={styles.card} extra={<a href="#" style={{ color: "#03A4F4" }}>View Report</a>} headStyle={{ color: "#020202" }}>
+            <Card
+              title="Presentation Balance"
+              style={styles.card}
+              extra={<span style={{ color: THEME.primary, fontWeight: 700 }}>Quota: {(dashboardData?.agency?.presentationQuota || 0).toLocaleString()}</span>}
+            >
               <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={[
                   { name: 'Used', value: dashboardData?.agency?.presentationsUsed || 0 },
@@ -310,33 +395,33 @@ export default function AgencyDashboard() {
                 ]}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#5C039B" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#5C039B" stopOpacity={0}/>
+                      <stop offset="5%" stopColor={THEME.primary} stopOpacity={0.45}/>
+                      <stop offset="95%" stopColor={THEME.primary} stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F2EBF7" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                  <YAxis axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={THEME.border} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: THEME.muted, fontSize: 12 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: THEME.muted, fontSize: 12 }} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="value" stroke="#5C039B" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={3} />
+                  <Area type="monotone" dataKey="value" stroke={THEME.primary} fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={3} />
                 </AreaChart>
               </ResponsiveContainer>
             </Card>
           </Col>
 
           <Col xs={24} lg={10}>
-            <Card title="Lead Pipeline" style={styles.card} headStyle={{ color: "#020202" }}>
+            <Card title="Lead Pipeline" style={styles.card}>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={[
                   { stage: "Total Leads", count: dashboardData?.stats?.total_leads || 0 },
                   { stage: "Active", count: dashboardData?.stats?.active_leads || 0 },
                   { stage: "Closed", count: dashboardData?.stats?.total_deals || 0 }
                 ]}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F2EBF7" />
-                  <XAxis dataKey="stage" axisLine={false} tickLine={false} />
-                  <YAxis axisLine={false} tickLine={false} />
-                  <Tooltip content={<CustomTooltip />} cursor={{fill: '#F2EBF7'}} />
-                  <Bar dataKey="count" fill="#03A4F4" radius={[4, 4, 0, 0]} barSize={40} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={THEME.border} />
+                  <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fill: THEME.muted, fontSize: 12 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: THEME.muted, fontSize: 12 }} />
+                  <Tooltip content={<CustomTooltip />} cursor={{fill: THEME.soft}} />
+                  <Bar dataKey="count" fill={THEME.primary2} radius={[6, 6, 0, 0]} barSize={40} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>
@@ -346,7 +431,7 @@ export default function AgencyDashboard() {
         {/* ---------- Agents + Activity ---------- */}
         <Row gutter={[16, 16]} style={{ marginTop: "24px" }}>
           <Col xs={24} lg={14}>
-            <Card title="Top Performing Agent" style={styles.card} headStyle={{ color: "#020202" }}>
+            <Card title="Top Performing Agents" style={styles.card}>
               <Table
                 columns={columns}
                 dataSource={topAgents}
@@ -358,15 +443,15 @@ export default function AgencyDashboard() {
           </Col>
 
           <Col xs={24} lg={10}>
-            <Card title="Recent Activity" style={styles.card} headStyle={{ color: "#020202" }}>
+            <Card title="Recent Activity" style={styles.card}>
               <Timeline
                 items={activities.map((item, i) => ({
                   color: item.color,
                   children: (
                     <div key={i}>
-                      <Text strong style={{ color: "#020202" }}>{item.text}</Text>
+                      <Text strong style={{ color: THEME.text }}>{item.text}</Text>
                       <br />
-                      <Text type="secondary" style={{ fontSize: "12px", color: "#547593" }}>{item.time}</Text>
+                      <Text style={{ fontSize: "12px", color: THEME.muted }}>{item.time}</Text>
                     </div>
                   ),
                 }))}
@@ -374,6 +459,7 @@ export default function AgencyDashboard() {
             </Card>
           </Col>
         </Row>
+        </div>
       </Spin>
     </div>
   );
