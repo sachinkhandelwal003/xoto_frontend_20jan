@@ -279,311 +279,364 @@ const getUploadedUrl = (fileList) => getUploadedDoc(fileList)?.url || '';
   if (fetching) return <div style={{ textAlign: 'center', padding: 40 }}><Spin size="large" /></div>;
 
   return (
-    <div style={{ padding: "24px", background: "#f8f9fa", minHeight: "100vh" }}>
-      <div style={{ marginBottom: "24px", display: "flex", alignItems: "center", gap: "16px" }}>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}
-          style={{ border: "none", background: "#fff", boxShadow: "0 2px 4px rgba(0,0,0,0.05)", borderRadius: "8px" }} />
-        <div>
-          <Title level={3} style={{ margin: 0, color: "#1f2937" }}>
-            {isEditMode ? "Edit Developer" : "Onboard New Developer"}
-          </Title>
-          <Text type="secondary">
-            {isEditMode ? "Update developer information and documents" : "Fill in the details to register a new property developer."}
-          </Text>
-        </div>
-      </div>
-
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onFinish}
-        initialValues={{ country: "United Arab Emirates", country_code: "971" }}
-        scrollToFirstError   // ← scrolls to first field with error
-      >
-        <Row gutter={[24, 24]}>
-          {/* Left column */}
-          <Col xs={24} lg={16}>
-            <Card title={<Space><BankOutlined style={{ color: BRAND_PURPLE }} /> Basic Company Info</Space>}
-              bordered={false}
-              style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}>
-              <Row gutter={16}>
-                <Col xs={24} md={12}>
-                  <Form.Item name="name" label="Company Name"
-                    rules={[{ required: true, message: "Please enter company name" }]}>
-                    <Input placeholder="e.g. Emaar Properties" size="large" style={{ borderRadius: "8px" }} />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item name="companyName" label="Legal Company Name">
-                    <Input placeholder="If different from above" size="large" style={{ borderRadius: "8px" }} />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item name="websiteUrl" label="Website URL">
-                    <Input placeholder="https://www.example.com" size="large" style={{ borderRadius: "8px" }} />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item name="description" label="Company Description">
-                    <TextArea rows={4} placeholder="Brief description about the developer..." style={{ borderRadius: "8px" }} />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-
-            <Card title={<Space><SafetyCertificateOutlined style={{ color: BRAND_PURPLE }} /> Account Credentials</Space>}
-              bordered={false}
-              style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}>
-              <Row gutter={16}>
-                <Col xs={24} md={12}>
-                  <Form.Item name="email" label="Login Email"
-                    rules={[{ required: true, type: 'email', message: "Valid email required" }]}>
-                    <Input placeholder="developer@xoto.com" size="large" style={{ borderRadius: "8px" }} />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item name="password" label="Password"
-                    rules={isEditMode ? [] : [{ required: true, min: 6, message: "Minimum 6 characters" }]}>
-                    <Input.Password placeholder={isEditMode ? "Leave blank to keep unchanged" : "Enter secure password"}
-                      size="large" style={{ borderRadius: "8px" }} />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="Mobile Number" style={{ marginBottom: 0 }} required>
-                    <Space.Compact style={{ width: '100%' }}>
-                      <Form.Item name="country_code" noStyle rules={[{ required: true, message: 'Code is required' }]}>
-                        <Select showSearch optionFilterProp="children"
-                          className="custom-phone-select"
-                          style={{ width: '120px', height: '40px' }}
-                          popupMatchSelectWidth={300}>
-                          {countryOptions.map((item) => (
-                            <Option key={item.iso} value={item.code}>
-                              <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <img src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`}
-                                  width="20" alt={item.name} style={{ marginRight: 8, borderRadius: 2 }} />
-                                <span>+{item.code}</span>
-                              </div>
-                            </Option>
-                          ))}
-                        </Select>
-                      </Form.Item>
-                      <Form.Item name="phone" noStyle
-                        rules={[
-                          { required: true, message: "Phone number is required" },
-                          {
-                            validator: (_, value) => {
-                              if (!value) return Promise.resolve();
-                              const code = form.getFieldValue('country_code');
-                              const fullNumber = `+${code}${value}`;
-                              const phoneNumber = parsePhoneNumberFromString(fullNumber);
-                              if (phoneNumber && phoneNumber.isValid()) return Promise.resolve();
-                              return Promise.reject(new Error("Invalid mobile number"));
-                            }
-                          }
-                        ]}>
-                        <Input placeholder="Mobile Number"
-                          style={{ width: '100%', height: '40px', borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, "");
-                            form.setFieldsValue({ phone: val });
-                          }} />
-                      </Form.Item>
-                    </Space.Compact>
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item name="officialEmailId" label="Official Contact Email (Public)">
-                    <Input placeholder="info@developer.com" size="large" style={{ borderRadius: "8px" }} />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-
-            <Card title={<Space><EnvironmentOutlined style={{ color: BRAND_PURPLE }} /> Location Details</Space>}
-              bordered={false}
-              style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}>
-              <Row gutter={16}>
-                <Col xs={24} md={12}>
-                  <Form.Item name="country" label="Country" rules={[{ required: true, message: "Country is required" }]}>
-                    <Select size="large" showSearch placeholder="Select Country" optionFilterProp="children"
-                      style={{ borderRadius: "8px" }}
-                      onChange={() => form.setFieldsValue({ city: undefined })}>
-                      {Country.getAllCountries().map((c) => (
-                        <Option key={c.isoCode} value={c.name}>{c.name}</Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item name="city" label="City" rules={[{ required: true, message: "City is required" }]}>
-                    <Select size="large" showSearch placeholder="Select City" optionFilterProp="children"
-                      style={{ borderRadius: "8px" }} disabled={citiesList.length === 0}>
-                      {citiesList.map((city, idx) => (
-                        <Option key={`${city.name}-${idx}`} value={city.name}>{city.name}</Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col xs={24}>
-                  <Form.Item name="address" label="Full Address">
-                    <Input placeholder="Building, Street, Area..." size="large" style={{ borderRadius: "8px" }} />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-
-          {/* Right column */}
-          <Col xs={24} lg={8}>
-            <Card title={<Space><FileTextOutlined style={{ color: BRAND_PURPLE }} /> Legal Details</Space>}
-              bordered={false}
-              style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}>
-              <Form.Item
-  name="reraNumber"
-  label="RERA Number"
-  rules={[
-    {
-      required:true,
-      message:"RERA Number is required"
-    }
-  ]}
->
-                <Input placeholder="Enter RERA registration number" size="large" style={{ borderRadius: "8px" }} />
-              </Form.Item>
-              <Form.Item
-  name="developerLicenseNumber"
-  label="Developer License Number"
-  rules={[
-    {
-      required:true,
-      message:"Developer License Number is required"
-    }
-  ]}
->
-                <Input placeholder="License number" size="large" style={{ borderRadius: "8px" }} />
-              </Form.Item>
-              <Form.Item name="dldNumber" label="DLD Number">
-                <Input placeholder="Dubai Land Department number" size="large" style={{ borderRadius: "8px" }} />
-              </Form.Item>
-              <Form.Item name="dldRegistrationNumber" label="DLD Registration Number">
-                <Input placeholder="Registration number" size="large" style={{ borderRadius: "8px" }} />
-              </Form.Item>
-              <Form.Item
-  name="authorizedPersonName"
-  label="Authorized Person Name"
-  rules={[
-    {
-      required:true,
-      message:"Authorized Person Name is required"
-    }
-  ]}
->
-                <Input placeholder="Name of the signatory" size="large" style={{ borderRadius: "8px" }} />
-              </Form.Item>
-             <Form.Item
-  name="primaryContactName"
-  label="Primary Contact Name"
-  rules={[
-    {
-      required:true,
-      message:"Primary Contact Name is required"
-    }
-  ]}
->
-                <Input placeholder="Main contact person" size="large" style={{ borderRadius: "8px" }} />
-              </Form.Item>
-              <Form.Item name="operatingYears" label="Years of Operation">
-                <InputNumber min={0} placeholder="e.g. 10" size="large" style={{ width: "100%", borderRadius: "8px" }} />
-              </Form.Item>
-            </Card>
-
-            <Card title="Media & KYC Documents" bordered={false}
-              style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}>
-              <Form.Item name="logoUpload" label="Company Logo" valuePropName="fileList" getValueFromEvent={normFile}>
-                <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Upload Logo</Button>
-                </Upload>
-              </Form.Item>
-              <Divider style={{ margin: "16px 0" }} />
-              <Text strong style={{ display: "block", marginBottom: "8px" }}>KYC Documents</Text>
-              <Form.Item name="tradeLicense" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
-                <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Trade License</Button>
-                </Upload>
-              </Form.Item>
-              <Form.Item name="emiratesId" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
-                <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Emirates ID</Button>
-                </Upload>
-              </Form.Item>
-              <Form.Item name="passport" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "0" }}>
-                <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Passport Copy</Button>
-                </Upload>
-              </Form.Item>
-            </Card>
-
-            <Card title={<Space><FileDoneOutlined style={{ color: BRAND_PURPLE }} /> Agreement Documents</Space>}
-              bordered={false}
-              style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-              <Form.Item name="main_agreement" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
-                <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Main Agreement</Button>
-                </Upload>
-              </Form.Item>
-              <Form.Item name="commission_schedule" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
-                <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Commission Schedule</Button>
-                </Upload>
-              </Form.Item>
-              <Form.Item name="addendum" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
-                <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Addendum (If any)</Button>
-                </Upload>
-              </Form.Item>
-              <Form.Item name="other_agreement" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "0" }}>
-                <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Other Documents</Button>
-                </Upload>
-              </Form.Item>
-            </Card>
-          </Col>
-        </Row>
-
-        <div style={{
-          marginTop: "24px", padding: "16px 24px", background: "#fff",
-          borderRadius: "12px", boxShadow: "0 -2px 10px rgba(0,0,0,0.02)",
-          display: "flex", justifyContent: "flex-end", gap: "12px"
-        }}>
-          <Button size="large" onClick={() => navigate(-1)} style={{ borderRadius: "8px", fontWeight: "600" }}>
-            Cancel
-          </Button>
-          <Button type="primary" htmlType="submit" size="large" loading={loading}
-            style={{ background: BRAND_PURPLE, borderColor: BRAND_PURPLE, borderRadius: "8px", fontWeight: "600", padding: "0 32px" }}>
-            {isEditMode ? "Update Developer" : "Register Developer"}
-          </Button>
-        </div>
-      </Form>
-
-      <Modal open={previewOpen} title={previewTitle} footer={null} onCancel={() => setPreviewOpen(false)} centered>
-        <img alt="Preview" style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", borderRadius: "8px" }} src={previewImage} />
-      </Modal>
-
-      <style jsx global>{`
-        .custom-phone-select .ant-select-selector {
-          border-top-left-radius: 8px !important;
-          border-bottom-left-radius: 8px !important;
-          height: 40px !important;
-          display: flex !important;
-          align-items: center !important;
-        }
-        .custom-phone-select .ant-select-selection-item {
-          display: flex !important;
-          align-items: center !important;
-          line-height: 1 !important;
-        }
-      `}</style>
+ <div style={{ padding: "24px", background: "#f8f9fa", minHeight: "100vh" }}>
+  <div style={{ marginBottom: "24px", display: "flex", alignItems: "center", gap: "16px" }}>
+    <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}
+      style={{ border: "none", background: "#fff", boxShadow: "0 2px 4px rgba(0,0,0,0.05)", borderRadius: "8px" }} />
+    <div>
+      <Title level={3} style={{ margin: 0, color: "#1f2937" }}>
+        {isEditMode ? "Edit Developer" : "Onboard New Developer"}
+      </Title>
+      <Text type="secondary">
+        {isEditMode ? "Update developer information and documents" : "Fill in the details to register a new property developer."}
+      </Text>
     </div>
+  </div>
+
+  <Form
+    form={form}
+    layout="vertical"
+    onFinish={onFinish}
+    initialValues={{ country: "United Arab Emirates", country_code: "971" }}
+    scrollToFirstError
+  >
+    <Row gutter={[24, 24]}>
+      {/* Left column */}
+      <Col xs={24} lg={16}>
+        <Card 
+          title={<Space><BankOutlined style={{ color: BRAND_PURPLE }} /> Basic Company Info</Space>}
+          bordered={false}
+          style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}
+        >
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item 
+                name="name" 
+                label="Company Name"
+                rules={[{ required: true, message: "Please enter company name" }]}
+              >
+                <Input placeholder="e.g. Emaar Properties" size="large" style={{ borderRadius: "8px" }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item name="websiteUrl" label="Website URL">
+                <Input placeholder="https://www.example.com" size="large" style={{ borderRadius: "8px" }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item name="description" label="Company Description">
+                <TextArea rows={4} placeholder="Brief description about the developer..." style={{ borderRadius: "8px" }} />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Card>
+
+        <Card 
+          title={<Space><SafetyCertificateOutlined style={{ color: BRAND_PURPLE }} /> Account Credentials</Space>}
+          bordered={false}
+          style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}
+        >
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item 
+                name="email" 
+                label="Login Email"
+                rules={[{ required: true, type: 'email', message: "Valid email required" }]}
+              >
+                <Input placeholder="developer@xoto.com" size="large" style={{ borderRadius: "8px" }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item 
+                name="officialEmailId" 
+                label="Official Contact Email (Public)"
+              >
+                <Input placeholder="info@developer.com" size="large" style={{ borderRadius: "8px" }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item label="Mobile Number" style={{ marginBottom: 0 }} required>
+                <Space.Compact style={{ width: '100%' }}>
+                  <Form.Item name="country_code" noStyle rules={[{ required: true, message: 'Code is required' }]}>
+                    <Select 
+                      showSearch 
+                      optionFilterProp="children"
+                      className="custom-phone-select"
+                      style={{ width: '120px', height: '40px' }}
+                      popupMatchSelectWidth={300}
+                    >
+                      {countryOptions.map((item) => (
+                        <Option key={item.iso} value={item.code}>
+                          <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <img 
+                              src={`https://flagcdn.com/w20/${item.iso.toLowerCase()}.png`}
+                              width="20" 
+                              alt={item.name} 
+                              style={{ marginRight: 8, borderRadius: 2 }} 
+                            />
+                            <span>+{item.code}</span>
+                          </div>
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                  <Form.Item 
+                    name="phone" 
+                    noStyle
+                    rules={[
+                      { required: true, message: "Phone number is required" },
+                      {
+                        validator: (_, value) => {
+                          if (!value) return Promise.resolve();
+                          const code = form.getFieldValue('country_code');
+                          const fullNumber = `+${code}${value}`;
+                          const phoneNumber = parsePhoneNumberFromString(fullNumber);
+                          if (phoneNumber && phoneNumber.isValid()) return Promise.resolve();
+                          return Promise.reject(new Error("Invalid mobile number"));
+                        }
+                      }
+                    ]}
+                  >
+                    <Input 
+                      placeholder="Mobile Number"
+                      style={{ width: '100%', height: '40px', borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        form.setFieldsValue({ phone: val });
+                      }} 
+                    />
+                  </Form.Item>
+                </Space.Compact>
+              </Form.Item>
+            </Col>
+          </Row>
+        </Card>
+
+        <Card 
+          title={<Space><EnvironmentOutlined style={{ color: BRAND_PURPLE }} /> Location Details</Space>}
+          bordered={false}
+          style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}
+        >
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item 
+                name="country" 
+                label="Country" 
+                rules={[{ required: true, message: "Country is required" }]}
+              >
+                <Select 
+                  size="large" 
+                  showSearch 
+                  placeholder="Select Country" 
+                  optionFilterProp="children"
+                  style={{ borderRadius: "8px" }}
+                  onChange={() => form.setFieldsValue({ city: undefined })}
+                >
+                  {Country.getAllCountries().map((c) => (
+                    <Option key={c.isoCode} value={c.name}>{c.name}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item 
+                name="city" 
+                label="City" 
+                rules={[{ required: true, message: "City is required" }]}
+              >
+                <Select 
+                  size="large" 
+                  showSearch 
+                  placeholder="Select City" 
+                  optionFilterProp="children"
+                  style={{ borderRadius: "8px" }} 
+                  disabled={citiesList.length === 0}
+                >
+                  {citiesList.map((city, idx) => (
+                    <Option key={`${city.name}-${idx}`} value={city.name}>{city.name}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item name="address" label="Full Address">
+                <Input placeholder="Building, Street, Area..." size="large" style={{ borderRadius: "8px" }} />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Card>
+      </Col>
+
+      {/* Right column */}
+      <Col xs={24} lg={8}>
+        <Card 
+          title={<Space><FileTextOutlined style={{ color: BRAND_PURPLE }} /> Legal Details</Space>}
+          bordered={false}
+          style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}
+        >
+          <Form.Item
+            name="reraNumber"
+            label="RERA Number"
+            rules={[{ required: true, message: "RERA Number is required" }]}
+          >
+            <Input placeholder="Enter RERA registration number" size="large" style={{ borderRadius: "8px" }} />
+          </Form.Item>
+          
+          <Form.Item
+            name="developerLicenseNumber"
+            label="Developer License Number"
+            rules={[{ required: true, message: "Developer License Number is required" }]}
+          >
+            <Input placeholder="License number" size="large" style={{ borderRadius: "8px" }} />
+          </Form.Item>
+          
+          <Form.Item name="dldNumber" label="DLD Number">
+            <Input placeholder="Dubai Land Department number" size="large" style={{ borderRadius: "8px" }} />
+          </Form.Item>
+          
+          <Form.Item name="dldRegistrationNumber" label="DLD Registration Number">
+            <Input placeholder="Registration number" size="large" style={{ borderRadius: "8px" }} />
+          </Form.Item>
+          
+          <Form.Item
+            name="authorizedPersonName"
+            label="Authorized Person Name"
+            rules={[{ required: true, message: "Authorized Person Name is required" }]}
+          >
+            <Input placeholder="Name of the signatory" size="large" style={{ borderRadius: "8px" }} />
+          </Form.Item>
+          
+          <Form.Item
+            name="primaryContactName"
+            label="Primary Contact Name"
+            rules={[{ required: true, message: "Primary Contact Name is required" }]}
+          >
+            <Input placeholder="Main contact person" size="large" style={{ borderRadius: "8px" }} />
+          </Form.Item>
+          
+          <Form.Item name="operatingYears" label="Years of Operation">
+            <InputNumber 
+              min={0} 
+              placeholder="e.g. 10" 
+              size="large" 
+              style={{ width: "100%", borderRadius: "8px" }} 
+            />
+          </Form.Item>
+        </Card>
+
+        <Card 
+          title="Media & KYC Documents" 
+          bordered={false}
+          style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: "24px" }}
+        >
+          <Form.Item name="logoUpload" label="Company Logo" valuePropName="fileList" getValueFromEvent={normFile}>
+            <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
+              <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Upload Logo</Button>
+            </Upload>
+          </Form.Item>
+          
+          <Divider style={{ margin: "16px 0" }} />
+          
+          <Text strong style={{ display: "block", marginBottom: "8px" }}>KYC Documents</Text>
+          
+          <Form.Item name="tradeLicense" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
+            <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
+              <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Trade License</Button>
+            </Upload>
+          </Form.Item>
+          
+          <Form.Item name="emiratesId" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
+            <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
+              <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Emirates ID</Button>
+            </Upload>
+          </Form.Item>
+          
+          <Form.Item name="passport" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "0" }}>
+            <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
+              <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Passport Copy</Button>
+            </Upload>
+          </Form.Item>
+        </Card>
+
+        <Card 
+          title={<Space><FileDoneOutlined style={{ color: BRAND_PURPLE }} /> Agreement Documents</Space>}
+          bordered={false}
+          style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+        >
+          <Form.Item name="main_agreement" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
+            <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
+              <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Main Agreement</Button>
+            </Upload>
+          </Form.Item>
+          
+          <Form.Item name="commission_schedule" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
+            <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
+              <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Commission Schedule</Button>
+            </Upload>
+          </Form.Item>
+          
+          <Form.Item name="addendum" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "12px" }}>
+            <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
+              <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Addendum (If any)</Button>
+            </Upload>
+          </Form.Item>
+          
+          <Form.Item name="other_agreement" valuePropName="fileList" getValueFromEvent={normFile} style={{ marginBottom: "0" }}>
+            <Upload customRequest={customUploadRequest} listType="picture" maxCount={1} onPreview={handlePreview}>
+              <Button icon={<UploadOutlined />} style={{ borderRadius: "8px", width: "100%" }}>Other Documents</Button>
+            </Upload>
+          </Form.Item>
+        </Card>
+      </Col>
+    </Row>
+
+    <div style={{
+      marginTop: "24px", 
+      padding: "16px 24px", 
+      background: "#fff",
+      borderRadius: "12px", 
+      boxShadow: "0 -2px 10px rgba(0,0,0,0.02)",
+      display: "flex", 
+      justifyContent: "flex-end", 
+      gap: "12px",
+      position: "sticky",
+      bottom: 0,
+      zIndex: 10
+    }}>
+      <Button size="large" onClick={() => navigate(-1)} style={{ borderRadius: "8px", fontWeight: "600" }}>
+        Cancel
+      </Button>
+      <Button 
+        type="primary" 
+        htmlType="submit" 
+        size="large" 
+        loading={loading}
+        style={{ background: BRAND_PURPLE, borderColor: BRAND_PURPLE, borderRadius: "8px", fontWeight: "600", padding: "0 32px" }}
+      >
+        {isEditMode ? "Update Developer" : "Register Developer"}
+      </Button>
+    </div>
+  </Form>
+
+  <Modal open={previewOpen} title={previewTitle} footer={null} onCancel={() => setPreviewOpen(false)} centered>
+    <img alt="Preview" style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", borderRadius: "8px" }} src={previewImage} />
+  </Modal>
+
+  <style jsx global>{`
+    .custom-phone-select .ant-select-selector {
+      border-top-left-radius: 8px !important;
+      border-bottom-left-radius: 8px !important;
+      height: 40px !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+    .custom-phone-select .ant-select-selection-item {
+      display: flex !important;
+      align-items: center !important;
+      line-height: 1 !important;
+    }
+  `}</style>
+</div>
   );
 };
 

@@ -649,6 +649,8 @@ const CmsRoutes = () => {
       <Route path="/properties/:id" element={<AdminPropertyDetail />} />
       <Route path="/properties/create-offplan" element={<AdminOffPlanCreate />} />
       <Route path="developer/property/:id" element={<PropertyDetailPage />} />
+      <Route path="/admin/inventory" element={<DeveloperInventory />} />
+
       
 
       <Route path="/GridAdmin/propertyleads" element={<PlatformLeads />} />

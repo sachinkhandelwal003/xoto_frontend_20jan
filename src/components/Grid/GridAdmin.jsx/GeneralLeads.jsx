@@ -15,6 +15,7 @@ import {
   ClockCircleOutlined, IdcardOutlined, TagOutlined,
 } from '@ant-design/icons';
 import CustomTable from '../../CMS/pages/custom/CustomTable';
+import { useNavigate } from 'react-router-dom';
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const PRIMARY       = '#5c039b';
@@ -805,7 +806,7 @@ const GeneralLeads = () => {
   const [assignLead,   setAssignLead]   = useState(null);
   const [selectedLead, setSelectedLead] = useState(null);
   const [drawerOpen,   setDrawerOpen]   = useState(false);
-
+const navigate = useNavigate();
   // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchLeads = useCallback(async (extraFilters = {}, page = 1, limit = 10) => {
     setLoading(true);
@@ -1015,9 +1016,14 @@ const GeneralLeads = () => {
           <Button icon={<UploadOutlined />} onClick={() => setShowBulk(true)} style={{ borderColor: '#2563eb', color: '#2563eb' }}>
             Bulk Upload
           </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowCreate(true)} style={{ background: PRIMARY, borderColor: PRIMARY }}>
-            Add Lead
-          </Button>
+         <Button
+  type="primary"
+  icon={<PlusOutlined />}
+  onClick={() => navigate('/dashboard/admin/grid/addgenerallead')}
+  style={{ background: PRIMARY, borderColor: PRIMARY }}
+>
+  Add Lead
+</Button>
         </div>
       </div>
 
