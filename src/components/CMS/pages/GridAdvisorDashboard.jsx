@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, FunnelChart, Funnel, LabelList
+  CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, FunnelChart, Funnel, LabelList, Legend
 } from 'recharts';
-import { Card, Row, Col, Typography, Tag, Statistic, Spin, Badge, Avatar, List, Progress, Tabs, Button, Space } from 'antd';
+import { Card, Row, Col, Typography, Tag, Statistic, Spin, Badge, Avatar, List, Progress, Tabs, Button, Space, message } from 'antd';
 import {
   UserOutlined, HomeOutlined, DollarOutlined,
   RiseOutlined, FallOutlined, PhoneOutlined,
@@ -86,29 +86,6 @@ const cardStyle = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const getInitials = (name) => {
-  if (!name) return '??';
-  const parts = name.split(' ');
-  return parts.length > 1
-    ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-    : name.substring(0, 2).toUpperCase();
-};
-
-const getStageColor = (stage) => {
-  const map = {
-    'New': THEME.info,
-    'Contacted': THEME.info,
-    'Qualified': THEME.primaryMid,
-    'In Discussion': THEME.warning,
-    'Site Visit Scheduled': THEME.warning,
-    'Offer Made': THEME.primary,
-    'Reserved': THEME.primary,
-    'SPA Signed': THEME.success,
-    'Completed': THEME.success,
-    'Not Proceeding': THEME.gray,
-  };
-  return map[stage] || THEME.gray;
-};
 
 // ─── API Base URL (adjust as needed) ──────────────────────────────────────────
 // const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -116,7 +93,6 @@ const getStageColor = (stage) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 const GridAdvisorDashboard = () => {
   const [loading, setLoading] = useState(true);
-  const [leaderboardTab, setLeaderboardTab] = useState('weekly');
   const [dashboardData, setDashboardData] = useState(null);
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
@@ -154,7 +130,6 @@ const GridAdvisorDashboard = () => {
     );
   }
 
-  const currentLeaderboard = dashboardData?.leaderboard || [];
   const recentLeads = dashboardData?.recentLeads || [];
   const recentActivity = dashboardData?.recentActivity || [];
   const leadsByMonth = dashboardData?.charts?.leadsByMonth || [];
@@ -391,152 +366,100 @@ const GridAdvisorDashboard = () => {
         </Col>
       </Row>
 
-      {/* ── Leaderboard & My Stats ── */}
-      <Row gutter={[12, 12]}>
-        {/* Leaderboard */}
-        <Col xs={24} xl={10}>
+      {/* ── My Stats Charts ── */}
+      <Row gutter={[16, 16]}>
+        {/* Leads by Month */}
+        <Col xs={24} lg={12}>
           <Card
             bordered={false}
             style={cardStyle}
-            title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <TrophyOutlined style={{ color: THEME.primary }} />
-                <span style={{ fontSize: 15, fontWeight: 600, color: THEME.primary }}>Leaderboard</span>
-              </div>
-            }
+            title={<span style={{ fontSize: 15, fontWeight: 600, color: THEME.primary }}>Leads by Month</span>}
           >
-            <Tabs
-              activeKey={leaderboardTab}
-              onChange={setLeaderboardTab}
-              size="small"
-              style={{ marginBottom: 16 }}
-            >
-              <TabPane tab="Weekly" key="weekly" />
-              <TabPane tab="Monthly" key="monthly" />
-              <TabPane tab="Quarterly" key="quarterly" />
-              <TabPane tab="Annual" key="annual" />
-              {user?.role?.code === '0' && <TabPane tab="Trust Ranking" key="trust" />}
-            </Tabs>
-
-            <List
-              dataSource={currentLeaderboard}
-              renderItem={(item, i) => (
-                <List.Item style={{ padding: '12px 0', borderBottom: i < currentLeaderboard.length - 1 ? '1px solid #faf5ff' : 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: '50%',
-                      background: i === 0 ? '#fef3c7' : i === 1 ? '#f1f5f9' : i === 2 ? '#fed7aa' : '#f3e8ff',
-                      color: i === 0 ? '#b45309' : i === 1 ? '#64748b' : i === 2 ? '#7c2d12' : THEME.primary,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 700, fontSize: 14, flexShrink: 0
-                    }}>
-                      {i + 1}
-                    </div>
-                    <Avatar
-                      style={{ backgroundColor: THEME.primary, flexShrink: 0 }}
-                      size={40}
-                    >
-                      {item.name.split(' ').map(n => n[0]).join('')}
-                    </Avatar>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>{item.name}</div>
-                      <div style={{ fontSize: 12, color: '#6b7280' }}>
-                        Deals: {item.deals} • Conversion: {item.conversion}%
-                      </div>
-                    </div>
-                    <Tag color={THEME.primary} style={{ fontSize: 12, fontWeight: 600 }}>
-                      {item.score} pts
-                    </Tag>
-                  </div>
-                </List.Item>
-              )}
-            />
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={leadsByMonth} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0e6ff" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                <Tooltip cursor={{ fill: 'rgba(92, 3, 155, 0.05)' }} contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 16px rgba(92,3,155,0.12)' }} />
+                <Bar dataKey="leads" fill={THEME.primary} radius={[4, 4, 0, 0]} name="Leads" />
+                <Bar dataKey="closed" fill={THEME.success} radius={[4, 4, 0, 0]} name="Closed" />
+              </BarChart>
+            </ResponsiveContainer>
           </Card>
         </Col>
 
-        {/* My Stats */}
-        <Col xs={24} xl={14}>
+        {/* Commission Over Time */}
+        <Col xs={24} lg={12}>
           <Card
             bordered={false}
             style={cardStyle}
-            title={<span style={{ fontSize: 15, fontWeight: 600, color: THEME.primary }}>My Stats</span>}
+            title={<span style={{ fontSize: 15, fontWeight: 600, color: THEME.primary }}>Commission Over Time</span>}
           >
-            <Row gutter={[12, 12]}>
-              {/* Leads by Month */}
-              <Col xs={24} lg={12}>
-                <Text style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>Leads by Month</Text>
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={leadsByMonth}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0e6ff" />
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
-                    <Tooltip contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 16px rgba(92,3,155,0.12)' }} />
-                    <Bar dataKey="leads" fill={THEME.primary} radius={[4, 4, 0, 0]} name="Leads" />
-                    <Bar dataKey="closed" fill={THEME.success} radius={[4, 4, 0, 0]} name="Closed" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Col>
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={commissionOverTime} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorComm" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={THEME.success} stopOpacity={0.2} />
+                    <stop offset="95%" stopColor={THEME.success} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0e6ff" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                <Tooltip contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 16px rgba(92,3,155,0.12)' }} formatter={(val) => [`₹${val.toLocaleString()}`, 'Commission']} />
+                <Area type="monotone" dataKey="commission" stroke={THEME.success} fillOpacity={1} fill="url(#colorComm)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Card>
+        </Col>
 
-              {/* Commission Over Time */}
-              <Col xs={24} lg={12}>
-                <Text style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>Commission Over Time</Text>
-                <ResponsiveContainer width="100%" height={180}>
-                  <AreaChart data={commissionOverTime}>
-                    <defs>
-                      <linearGradient id="colorComm" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={THEME.success} stopOpacity={0.2} />
-                        <stop offset="95%" stopColor={THEME.success} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0e6ff" />
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
-                    <Tooltip contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 16px rgba(92,3,155,0.12)' }} formatter={(val) => [`₹${val.toLocaleString()}`, 'Commission']} />
-                    <Area type="monotone" dataKey="commission" stroke={THEME.success} fillOpacity={1} fill="url(#colorComm)" strokeWidth={2} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </Col>
+        {/* Lead Status Breakdown */}
+        <Col xs={24} lg={12}>
+          <Card
+            bordered={false}
+            style={cardStyle}
+            title={<span style={{ fontSize: 15, fontWeight: 600, color: THEME.primary }}>Lead Status Breakdown</span>}
+          >
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={leadStatusBreakdown}
+                  cx="50%"
+                  cy="45%"
+                  innerRadius={50}
+                  outerRadius={75}
+                  paddingAngle={4}
+                  dataKey="value"
+                >
+                  {leadStatusBreakdown.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 16px rgba(92,3,155,0.12)' }} />
+                <Legend verticalAlign="bottom" align="center" iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </Card>
+        </Col>
 
-              {/* Lead Status Breakdown */}
-              <Col xs={24} lg={12}>
-                <Text style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>Lead Status Breakdown</Text>
-                <ResponsiveContainer width="100%" height={180}>
-                  <PieChart>
-                    <Pie
-                      data={leadStatusBreakdown}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={40}
-                      outerRadius={70}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {leadStatusBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                      <LabelList dataKey="name" position="outside" fontSize={11} />
-                    </Pie>
-                    <Tooltip contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 16px rgba(92,3,155,0.12)' }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </Col>
-
-              {/* Conversion Funnel */}
-              <Col xs={24} lg={12}>
-                <Text style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>Conversion Funnel</Text>
-                <ResponsiveContainer width="100%" height={180}>
-                  <FunnelChart>
-                    <Tooltip contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 16px rgba(92,3,155,0.12)' }} />
-                    <Funnel dataKey="value" data={conversionFunnel} isAnimationActive>
-                      <LabelList position="right" fill="#374151" fontSize={12} dataKey="stage" />
-                      {conversionFunnel.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Funnel>
-                  </FunnelChart>
-                </ResponsiveContainer>
-              </Col>
-            </Row>
+        {/* Conversion Funnel */}
+        <Col xs={24} lg={12}>
+          <Card
+            bordered={false}
+            style={cardStyle}
+            title={<span style={{ fontSize: 15, fontWeight: 600, color: THEME.primary }}>Conversion Funnel</span>}
+          >
+            <ResponsiveContainer width="100%" height={220}>
+              <FunnelChart margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+                <Tooltip contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 16px rgba(92,3,155,0.12)' }} />
+                <Funnel dataKey="value" data={conversionFunnel} isAnimationActive>
+                  <LabelList position="right" fill="#374151" fontSize={11} dataKey="stage" />
+                  {conversionFunnel.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Funnel>
+              </FunnelChart>
+            </ResponsiveContainer>
           </Card>
         </Col>
       </Row>
