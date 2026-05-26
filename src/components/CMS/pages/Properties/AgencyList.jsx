@@ -387,7 +387,7 @@ const AgencyList = () => {
             <BuildOutlined />
           </div>
           <Title level={3} style={{ margin: 0, color: THEME.text, fontWeight: 700 }}>
-            Agency Management
+            Partner Management
           </Title>
         </div>
         <Text style={{ color: THEME.textLight, fontSize: 14, marginLeft: 48 }}>
