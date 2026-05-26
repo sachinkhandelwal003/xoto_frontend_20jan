@@ -391,7 +391,7 @@ const CUSTOM_ROLE_LINKS = {
     {
       title: "Commission",
       icon: "fas fa-dollar-sign",
-      path: "/dashboard/{roleSlug}/commission",
+      path: "/dashboard/{roleSlug}/partner/deals",
     },
     {
       title: "Leaderboard",
@@ -768,6 +768,10 @@ const Sidebar = () => {
       roleCode = user.role.code ? user.role.code.toString() : '0';
       displayRoleName = user.role.name || 'User';
     }
+  }
+
+  if (roleCode === '15') {
+    displayRoleName = 'Partner';
   }
 
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { notification, Modal, Input } from "antd";
-import { apiService } from "../../manageApi/utils/custom.apiservice";
-import CustomTable from "../../components/CMS/pages/custom/CustomTable"; // adjust path as needed
+import { apiService } from "../../../manageApi/utils/custom.apiservice";
+import CustomTable from "../../CMS/pages/custom/CustomTable"; // adjust path as needed
 
 // ─── Colors (same as CreateAdvisor) ──────────────────────────────────────────
 const C = {
@@ -342,29 +342,29 @@ const paginationData = responseData?.pagination || { total: 0, page: 1, limit: 1
       ],
       render: (val) => <StatusBadge status={val} />,
     },
-    {
-      key: "profileCompletion",
-      title: "Profile",
-      render: (val) => {
-        const pct = val?.percentage ?? 0;
-        const color = pct === 100 ? C.success : pct >= 50 ? C.warning : C.error;
-        return (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 90 }}>
-            <div style={{
-              flex: 1, height: 5, borderRadius: 3,
-              background: "#F1F5F9", overflow: "hidden",
-            }}>
-              <div style={{
-                width: `${pct}%`, height: "100%",
-                background: color, borderRadius: 3,
-                transition: "width 0.4s ease",
-              }} />
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 600, color }}>{pct}%</span>
-          </div>
-        );
-      },
-    },
+    // {
+    //   key: "profileCompletion",
+    //   title: "Profile",
+    //   render: (val) => {
+    //     const pct = val?.percentage ?? 0;
+    //     const color = pct === 100 ? C.success : pct >= 50 ? C.warning : C.error;
+    //     return (
+    //       <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 90 }}>
+    //         <div style={{
+    //           flex: 1, height: 5, borderRadius: 3,
+    //           background: "#F1F5F9", overflow: "hidden",
+    //         }}>
+    //           <div style={{
+    //             width: `${pct}%`, height: "100%",
+    //             background: color, borderRadius: 3,
+    //             transition: "width 0.4s ease",
+    //           }} />
+    //         </div>
+    //         <span style={{ fontSize: 11, fontWeight: 600, color }}>{pct}%</span>
+    //       </div>
+    //     );
+    //   },
+    // },
     {
       key: "actions",
       title: "Actions",
@@ -438,13 +438,13 @@ const paginationData = responseData?.pagination || { total: 0, page: 1, limit: 1
                 Manage internal advisors — view, suspend, and track performance
               </p>
             </div>
-            <button
+            {/* <button
               className="btn-create"
               style={S.btnCreate}
               onClick={() => navigate("/dashboard/{roleSlug}/create-advisor")}
             >
               <IconPlus /> New Advisor
-            </button>
+            </button> */}
           </div>
 
           {/* ── Stats ── */}

@@ -12,12 +12,12 @@ const CmsLayoutContent = ({ children }) => {
     <div className="min-h-screen bg-gray-50 text-gray-900 flex">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300">
+      <div className={`flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300
+        ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
         <Topbar />
 
-        <main className={`flex-1 overflow-y-auto pt-16 pb-6 bg-gray-300 transition-all duration-300
-          ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
-          <div className="max-w-full px-4 py-6 sm:px-6 lg:px-8 mx-auto w-full">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden pt-16 pb-6 bg-gray-300 transition-all duration-300">
+          <div className="max-w-full min-w-0 overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8 mx-auto w-full">
               {children}
            
           </div>
