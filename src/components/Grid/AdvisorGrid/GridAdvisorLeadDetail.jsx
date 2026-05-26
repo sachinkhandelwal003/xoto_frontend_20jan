@@ -38,6 +38,11 @@ const STATUS_FLOW = [
   'offer_made','reserved','spa_signed','completed',
 ];
 
+const ADVISOR_STATUS_FLOW = [
+  'new','contacted','in_discussion','site_visit_scheduled',
+  'offer_made','reserved',
+];
+
 
 const getInventoryList = (item) => item?.inventory || item?.listing_inventory || item?.source?.listing_inventory || [];
 const getRecordId = (value) => {
@@ -895,14 +900,14 @@ const ReactionModal = ({ suggestion, leadId, onClose, onSuccess }) => {
 
 // ─── STATUS MODAL ─────────────────────────────────────────────────────────────
 // ─── STATUS MODAL (Step-by-step, English only, one status at a time) ─────────
-const REQUIRES_INVENTORY = ['reserved', 'spa_signed', 'completed'];
+const REQUIRES_INVENTORY = ['reserved'];
 
 const StatusModal = ({ lead, targetProperty, onClose, onSuccess }) => {
   const current = lead?.status || 'new';
-  const currIdx = STATUS_FLOW.indexOf(current);
+  const currIdx = ADVISOR_STATUS_FLOW.indexOf(current);
 
-  // Only the immediate NEXT status is allowed (one step at a time)
-  const nextStatus = STATUS_FLOW[currIdx + 1] || null;
+  // Advisors can move the lead only up to Reserved. SPA and deal creation are admin-owned.
+  const nextStatus = ADVISOR_STATUS_FLOW[currIdx + 1] || null;
 
   const [step,             setStep]             = useState(1); // 1 | 2 | 3
   const [status,           setStatus]           = useState(nextStatus || '');
@@ -916,7 +921,8 @@ const StatusModal = ({ lead, targetProperty, onClose, onSuccess }) => {
 
   const propertyIds    = getLeadPropertyIds(lead, targetProperty);
   const needsInventory = REQUIRES_INVENTORY.includes(status);
-  const isAlreadyDone  = !nextStatus && current !== 'not_proceeding';
+  const isAdminStage   = ['reserved', 'spa_signed', 'completed'].includes(current);
+  const isAlreadyDone  = (!nextStatus || isAdminStage) && current !== 'not_proceeding';
 
   // ── Fetch inventory ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -1105,8 +1111,14 @@ const StatusModal = ({ lead, targetProperty, onClose, onSuccess }) => {
               {isAlreadyDone ? (
                 <div className="p-6 rounded-xl bg-gray-50 border border-gray-100 text-center">
                   <FiCheckCircle size={30} className="mx-auto mb-2 text-green-400" />
-                  <p className="text-sm font-bold text-gray-700">Lead is already completed</p>
-                  <p className="text-xs text-gray-400 mt-1">No further status updates are available</p>
+                  <p className="text-sm font-bold text-gray-700">
+                    {current === 'reserved' ? 'Lead reserved and sent to admin' : 'No advisor updates available'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {current === 'reserved'
+                      ? 'Admin will upload SPA documents and create the deal record.'
+                      : 'SPA and deal record steps are handled by admin.'}
+                  </p>
                 </div>
               ) : (
                 <>
@@ -2185,9 +2197,9 @@ const GridAdvisorLeadDetail = () => {
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Lead Progress</p>
                 <div className="flex items-center gap-1 overflow-x-auto pb-1">
-                  {STATUS_FLOW.map((s, i) => {
+                  {ADVISOR_STATUS_FLOW.map((s, i) => {
                     const cfg = STATUS_CONFIG[s];
-                    const currIdx    = STATUS_FLOW.indexOf(lead.status);
+                    const currIdx    = ADVISOR_STATUS_FLOW.indexOf(lead.status);
                     const isCompleted = i < currIdx;
                     const isCurrent   = i === currIdx;
                     return (
@@ -2204,7 +2216,7 @@ const GridAdvisorLeadDetail = () => {
                             {cfg?.label || s}
                           </span>
                         </div>
-                        {i < STATUS_FLOW.length - 1 && (
+                        {i < ADVISOR_STATUS_FLOW.length - 1 && (
                           <div className={`flex-1 h-0.5 mb-5 min-w-[12px] ${isCompleted ? 'bg-green-400' : 'bg-gray-100'}`} />
                         )}
                       </React.Fragment>

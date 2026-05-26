@@ -385,10 +385,43 @@ export default function DeveloperInventory() {
         (Array.isArray(res) && res) ||
         [];
       setPropertiesList(list);
+const userData = JSON.parse(localStorage.getItem("user") || "{}");
 
-      const opts = (Array.isArray(list) ? list : [])
-        .filter(p => p.propertySubType === "off_plan")
-        .map(p => ({ label: p.projectName || p.propertyName || "Untitled", value: p._id }));
+const opts = (Array.isArray(list) ? list : [])
+  .filter((p) => {
+
+    // include all property types
+    const allowedTypes = [
+      "off_plan",
+      "rental",
+      "secondary"
+    ];
+
+    const validType = allowedTypes.includes(
+      p.propertySubType
+    );
+
+    // only projects created by current admin
+    const isOwnProject =
+      p.createdBy === userData?._id ||
+      p.createdBy?._id === userData?._id;
+
+    // Admin → own properties only
+    if (userData?.role?.name === "admin") {
+      return validType && isOwnProject;
+    }
+
+    // keep previous behavior for others
+    return validType;
+  })
+  .map((p) => ({
+    label:
+      p.projectName ||
+      p.propertyName ||
+      "Untitled",
+
+    value: p._id
+  }));
 
       setProjects(opts);
 

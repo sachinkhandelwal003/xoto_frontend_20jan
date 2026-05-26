@@ -130,7 +130,13 @@ const AgentProfile = () => {
       await apiService.post("profile/update-profile-picture", formData);
       message.success(`${label} uploaded`);
       onSuccess?.("ok");
-      await fetchProfile();
+       const updatedProfile = await fetchProfile();
+       if (targetField === "profile_photo") {
+      const newPhotoUrl = updatedProfile?.profile_photo || updatedProfile?.data?.profile_photo;
+      window.dispatchEvent(new CustomEvent("gridAdvisorPhotoUpdated", {
+        detail: { photoUrl: newPhotoUrl },
+      }));
+    }
     } catch (error) {
       console.error(error);
       onError?.(error);

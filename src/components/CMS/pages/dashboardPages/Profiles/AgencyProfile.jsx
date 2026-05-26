@@ -150,27 +150,76 @@ const AgencyProfile = () => {
     return isJpgOrPng && isLt2M;
   };
 
-  const handleImageUploadRequest = async ({ file, onSuccess, onError }) => {
-    const formData = new FormData();
-    formData.append("file", file); 
-    setImageUploading(true);
-    try {
-      const uploadRes = await apiService.post("https://xoto.ae/api/upload", formData);
-      const fileUrl = uploadRes?.data?.file?.url;
-      if (!fileUrl) throw new Error("No URL returned from upload");
-      
-      await apiService.post("agency/profile/logo", { logo: fileUrl });
-      
-      message.success("Logo updated successfully!");
-      onSuccess("ok");
-      getProfile(); 
-    } catch (error) {
-      onError(error);
-      message.error("Failed to upload logo.");
-    } finally {
-      setImageUploading(false);
+ const handleImageUploadRequest = async ({
+  file,
+  onSuccess,
+  onError
+}) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  setImageUploading(true);
+
+  try {
+    const response = await apiService.post(
+      "https://xoto.ae/api/upload",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    console.log("UPLOAD RESPONSE:", response);
+
+    // different response formats handle
+    const fileUrl =
+      response?.data?.data?.url ||
+      response?.data?.file?.url ||
+      response?.data?.url ||
+      response?.file?.url ||
+      response?.url;
+
+    console.log("FILE URL:", fileUrl);
+
+    if (!fileUrl) {
+      throw new Error("URL not found");
     }
-  };
+
+    const saveResponse = await apiService.post(
+      "agency/profile/logo",
+      {
+        logo: fileUrl,
+      }
+    );
+
+    console.log("SAVE RESPONSE:", saveResponse);
+
+   await getProfile();
+
+// 🔥 Notify topbar
+window.dispatchEvent(
+  new Event("agencyProfileUpdated")
+);
+
+onSuccess("ok");
+message.success("Logo updated successfully");
+
+  } catch (error) {
+    console.log("LOGO ERROR:", error);
+
+    onError(error);
+
+    message.error(
+      error?.response?.data?.message ||
+      error?.message ||
+      "Failed to upload logo"
+    );
+  } finally {
+    setImageUploading(false);
+  }
+};
 
   const showEditModal = () => {
     form.setFieldsValue({

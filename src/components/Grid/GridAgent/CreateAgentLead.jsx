@@ -227,13 +227,47 @@ const LiveMatchPanel = ({ matches, loading, matchType, matchNote, hasFiltered })
               </div>
             )}
 
-            {matches.length > 0 && (
-              <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                {matches.map((p, i) => (
-                  <PropertyMatchCard key={p._id || i} property={p} matchType={matchType} />
-                ))}
-              </div>
-            )}
+           {matches.length > 0 && (
+<div>
+
+{/* Summary */}
+
+<div className="flex items-center justify-between mb-3 px-1">
+<div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+Showing {matches.length} Properties
+</div>
+
+<div className="text-[10px] bg-purple-50 text-purple-700 px-2 py-1 rounded-full font-bold">
+Smart AI Match
+</div>
+</div>
+
+{/* Grid */}
+
+<div className="
+grid
+grid-cols-1
+gap-3
+max-h-[650px]
+overflow-y-auto
+pr-2
+scrollbar-thin
+scrollbar-thumb-purple-200
+scrollbar-track-transparent
+">
+
+{matches.map((p,i)=>(
+<PropertyMatchCard
+key={p._id || i}
+property={p}
+matchType={matchType}
+/>
+))}
+
+</div>
+
+</div>
+)}
           </>
         )}
       </div>

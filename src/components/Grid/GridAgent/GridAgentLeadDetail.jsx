@@ -31,22 +31,76 @@ const isAssignmentText = (v) => {
 };
 
 
-const getInventoryList = (item) => item?.inventory || item?.listing_inventory || item?.source?.listing_inventory || [];
-const getInventoryId = (unit) => unit?._id || unit?.id || unit;
+const hasInventoryDetail = (unit) => {
+  if (!unit || typeof unit !== 'object') return false;
+  return Boolean(
+    unit.unitNumber || unit.unit_number || unit.unitNo || unit.unit_no || unit.number ||
+    unit.bedroomType || unit.bedroom_type || unit.bedrooms != null || unit.bedroom != null ||
+    unit.area || unit.builtUpArea || unit.built_up_area || unit.sqft || unit.size ||
+    unit.price || unit.price_min || unit.startingPrice || unit.starting_price || unit.salePrice || unit.amount ||
+    unit.status || unit.availability || unit.inventoryStatus || unit.inventory_status
+  );
+};
+const getInventoryList = (item) => {
+  const candidates = [
+    item?.listing_inventory,
+    item?.source?.listing_inventory,
+    item?.property_inventory,
+    item?.availableUnits,
+    item?.units,
+    item?.inventory,
+  ];
+
+  for (const list of candidates) {
+    if (!Array.isArray(list) || !list.length) continue;
+    const detailed = list.filter(hasInventoryDetail);
+    if (detailed.length) return detailed;
+  }
+
+  return [];
+};
+const getInventoryId = (unit) => {
+  if (!unit || typeof unit !== 'object') return unit;
+  return unit._id || unit.id || unit.inventoryId || unit.inventory_id || unit.unitId || unit.unit_id || unit.unitNumber || unit.unit_number || `${unit.unitType || unit.unit_type || 'unit'}-${unit.area || unit.builtUpArea || unit.price || ''}`;
+};
 const getInventoryLabel = (unit) => {
   if (!unit) return '';
+  if (typeof unit !== 'object') return String(unit);
+
+  const unitNumber = unit.unitNumber || unit.unit_number || unit.unitNo || unit.unit_no || unit.unit || unit.number;
+  const bedroomValue = unit.bedroomType || unit.bedroom_type || unit.bedrooms || unit.bedroom;
+  const unitType = unit.unitType || unit.unit_type || unit.type || unit.configuration || unit.propertyType;
+  const areaValue = unit.area || unit.builtUpArea || unit.built_up_area || unit.sqft || unit.size || unit.areaFrom || unit.area_from;
+  const areaUnit = unit.areaUnit || unit.area_unit || unit.builtUpAreaUnit || 'sqft';
+  const priceValue = unit.price || unit.price_min || unit.startingPrice || unit.starting_price || unit.salePrice || unit.amount;
+  const currency = unit.currency || 'AED';
+  const status = unit.status || unit.availability || unit.inventoryStatus || unit.inventory_status;
+
+  const bedroomLabel = bedroomValue != null && bedroomValue !== ''
+    ? (String(bedroomValue).toLowerCase() === 'studio' || Number(bedroomValue) === 0 ? 'Studio' : String(bedroomValue).match(/br|bed/i) ? String(bedroomValue) : `${bedroomValue}BR`)
+    : null;
+
   const bits = [
-    unit.unitNumber ? `Unit ${unit.unitNumber}` : null,
-    unit.bedroomType || (unit.bedrooms != null ? (unit.bedrooms === 0 ? 'Studio' : `${unit.bedrooms}BR`) : null),
-    unit.area ? `${Number(unit.area).toLocaleString()} ${unit.areaUnit || 'sqft'}` : null,
-    unit.price ? `AED ${Number(unit.price).toLocaleString()}` : null,
-    unit.status,
+    unitNumber ? `Unit ${unitNumber}` : null,
+    bedroomLabel || unitType,
+    areaValue ? `${Number(areaValue).toLocaleString()} ${areaUnit}` : null,
+    priceValue ? `${currency} ${Number(priceValue).toLocaleString()}` : null,
+    status,
   ].filter(Boolean);
-  return bits.join(' | ');
+
+  if (bits.length) return bits.join(' | ');
+
+  const fallback = Object.entries(unit)
+    .filter(([, value]) => value !== null && value !== undefined && value !== '' && typeof value !== 'object')
+    .slice(0, 3)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(' | ');
+
+  return fallback || 'Inventory unit';
 };
 const InventorySummary = ({ units = [], selectedUnit }) => {
   const visible = selectedUnit ? [selectedUnit] : units.slice(0, 3);
-  if (!visible.length) return <p className="mt-2 text-[10px] font-semibold text-gray-400">No inventory available</p>;
+  if (!visible.length) return null;
   return (
     <div className="mt-2 space-y-1.5">
       {visible.map((unit) => (
@@ -168,9 +222,22 @@ const PropertyCard = ({ property, matchType, reaction, onReact, saving, onGenera
       <div className="px-3.5 pb-2">
         <InventorySummary units={inventory} selectedUnit={interestedUnit} />
         {inventory.length > 0 && (
-          <select value={selectedInventoryId || ''} onChange={(e) => onInventoryChange(property._id, e.target.value)} className="mt-2 w-full rounded-xl border border-purple-100 bg-white px-3 py-2 text-xs font-semibold text-gray-700 outline-none">
-            <option value="">Select client unit</option>
-            {inventory.map(unit => <option key={getInventoryId(unit)} value={getInventoryId(unit)}>{getInventoryLabel(unit)}</option>)}
+          <select
+            value={selectedInventoryId || ''}
+            onChange={(e) => onInventoryChange(property._id, e.target.value)}
+            className="mt-2 w-full rounded-xl border border-purple-100 bg-white px-3 py-2 text-xs font-semibold text-gray-700 outline-none"
+            style={{ color: '#111827', backgroundColor: '#ffffff', colorScheme: 'light' }}
+          >
+            <option value="" style={{ color: '#111827', backgroundColor: '#ffffff' }}>Select client unit</option>
+            {inventory.map(unit => (
+              <option
+                key={getInventoryId(unit)}
+                value={getInventoryId(unit)}
+                style={{ color: '#111827', backgroundColor: '#ffffff' }}
+              >
+                {getInventoryLabel(unit)}
+              </option>
+            ))}
           </select>
         )}
       </div>
@@ -1614,3 +1681,7 @@ const GridAgentLeadDetail = () => {
 };
 
 export default GridAgentLeadDetail;
+
+
+
+

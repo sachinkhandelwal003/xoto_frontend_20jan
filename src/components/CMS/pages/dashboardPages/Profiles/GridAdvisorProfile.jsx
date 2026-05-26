@@ -75,27 +75,46 @@ const GridAdvisorProfile = () => {
     return isJpgOrPng && isLt2M;
   };
 
-  const handleImageUploadRequest = async ({ file, onSuccess, onError }) => {
-    const formData = new FormData();
-    formData.append("file", file); 
-    setImageUploading(true);
-    try {
-      const uploadRes = await apiService.post("https://xoto.ae/api/upload", formData);
-      const fileUrl = uploadRes?.data?.file?.url;
-      if (!fileUrl) throw new Error("No URL returned from upload");
-      
-      await apiService.patch("gridadvisor/me", { profilePhotoUrl: fileUrl });
-      
-      message.success("Profile photo updated successfully!");
-      onSuccess("ok");
-      getProfile(); 
-    } catch (error) {
-      onError(error);
-      message.error("Failed to upload photo.");
-    } finally {
-      setImageUploading(false);
-    }
-  };
+const handleImageUploadRequest = async ({ file, onSuccess, onError }) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  setImageUploading(true);
+  try {
+    const res  = await fetch("https://xoto.ae/api/upload", {
+      method: "POST",
+      body:   formData,
+    });
+    const data = await res.json();
+
+    const fileUrl =
+      data?.file?.url       ||
+      data?.data?.file?.url ||
+      data?.url             ||
+      data?.data?.url       ||
+      null;
+
+    if (!fileUrl) throw new Error("No URL in upload response");
+
+    await apiService.patch("gridadvisor/me", { profilePhotoUrl: fileUrl });
+
+    // ✅ YAHAN ADD KARO — patch ke baad, onSuccess se pehle
+    message.success("Profile photo updated successfully!");
+    window.dispatchEvent(
+      new CustomEvent("gridAdvisorPhotoUpdated", {
+        detail: { photoUrl: fileUrl },
+      })
+    );
+    onSuccess("ok");
+    getProfile();
+
+  } catch (error) {
+    console.error("Upload error:", error);
+    onError(error);
+    message.error("Failed to upload photo.");
+  } finally {
+    setImageUploading(false);
+  }
+};
 
   const showEditModal = () => {
     form.setFieldsValue({
