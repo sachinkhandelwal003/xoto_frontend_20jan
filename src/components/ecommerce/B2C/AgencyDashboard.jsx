@@ -100,7 +100,7 @@ const getAgentName = (agent) =>
   `${agent?.first_name || ""} ${agent?.last_name || ""}`.trim() ||
   "Unnamed Agent";
 
-const formatCurrency = (value) => `$${(value || 0).toLocaleString()}`;
+const formatCurrency = (value) => `AED ${(value || 0).toLocaleString()}`;
 
 export default function AgencyDashboard() {
   const [loading, setLoading] = useState(true);
