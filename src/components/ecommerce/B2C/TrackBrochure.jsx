@@ -14,6 +14,86 @@ import { apiService } from "../../../manageApi/utils/custom.apiservice";
 
 const { Title, Text } = Typography;
 
+const getApiBaseUrl = () => {
+  const base = import.meta.env?.VITE_API_URL || "http://localhost:5000";
+  return base.endsWith("/api") ? base : `${base}/api`;
+};
+
+const normalizePresentation = (presentation) => {
+  const apiBaseUrl = getApiBaseUrl();
+  const trackingToken = presentation?.trackingToken || presentation?.trackingId;
+  const trackingUrl =
+    presentation?.trackingUrl ||
+    presentation?.shareLink ||
+    (trackingToken ? `${apiBaseUrl}/presentation/track/${trackingToken}` : "");
+  const views = Array.isArray(presentation?.views)
+    ? presentation.views.map((view) => ({
+        ...view,
+        viewedAt: view.viewedAt || view.timestamp,
+      }))
+    : [];
+  const lastView = views[views.length - 1];
+
+  return {
+    ...presentation,
+    trackingId: trackingToken || presentation?._id,
+    shareLink: trackingUrl,
+    fileUrl:
+      presentation?.fileUrl ||
+      presentation?.s3Url ||
+      (trackingToken ? `${apiBaseUrl}/presentation/pdf/${trackingToken}` : trackingUrl),
+    viewCount: presentation?.viewCount ?? views.length,
+    lastViewedAt: presentation?.lastViewedAt || lastView?.viewedAt,
+    views,
+    propertyId: presentation?.propertyId || presentation?.property || null,
+    interestId: presentation?.interestId || {
+      conversion_stage: presentation?.status,
+      engagement_score: presentation?.engagementScore || 0,
+      conversion_probability: Math.min(presentation?.engagementScore || 0, 100),
+    },
+  };
+};
+
+const getLeadPresentations = (lead) =>
+  Array.isArray(lead?.presentations)
+    ? lead.presentations.map((presentation) =>
+        normalizePresentation({
+          ...presentation,
+          _id: presentation?._id || presentation?.presentation_id,
+          leadId: lead,
+          trackingId: presentation?.tracking_link,
+          shareLink: presentation?.tracking_link,
+          viewCount: presentation?.engagement?.view_count,
+          lastViewedAt: presentation?.engagement?.viewed_at,
+          views: presentation?.engagement?.viewed_at
+            ? [
+                {
+                  viewedAt: presentation.engagement.viewed_at,
+                  device: presentation.engagement.device_type,
+                },
+              ]
+            : [],
+        })
+      )
+    : [];
+
+const getPresentationPropertyName = (brochure, property) => {
+  const titleName = brochure?.title?.split("—")?.[0]?.trim();
+  return (
+    property?.propertyName ||
+    property?.projectName ||
+    brochure?.propertyName ||
+    titleName ||
+    "Unknown Property"
+  );
+};
+
+const getPresentationPrice = (property) =>
+  property?.price ||
+  property?.price_min ||
+  property?.priceRange?.from ||
+  null;
+
 export default function TrackBrochure() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -34,7 +114,18 @@ export default function TrackBrochure() {
   const backendBaseUrl = import.meta.env?.VITE_API_URL || "http://localhost:5000";
 
   const getImageUrl = (property) => {
-    let imageUrl = property?.image || property?.photos?.[0] || property?.mainLogo;
+    const photos = property?.photos;
+    let imageUrl = property?.image || property?.mainLogo || property?.media?.mainLogo;
+    if (!imageUrl && Array.isArray(photos)) {
+      imageUrl = photos[0];
+    }
+    if (!imageUrl && photos && typeof photos === "object") {
+      imageUrl =
+        photos.architecture?.[0] ||
+        photos.interior?.[0] ||
+        photos.lobby?.[0] ||
+        photos.other?.[0];
+    }
     if (imageUrl && !imageUrl.startsWith('http')) {
       imageUrl = `${backendBaseUrl}${imageUrl}`;
     }
@@ -51,19 +142,23 @@ export default function TrackBrochure() {
 
       try {
         setLoading(true);
-        const response = await apiService.get(`/brochure/lead/${leadId}`);
-        const list = response?.data?.data || response?.data || [];
-        setBrochures(list);
+        const response = await apiService.get("/presentation/my", { leadId, limit: 100 });
+        const list = response?.data?.data || response?.data || response?.data?.presentations || [];
+        setBrochures((Array.isArray(list) ? list : []).map(normalizePresentation));
       } catch (error) {
         console.error("Failed to fetch tracking data:", error);
-        message.error("Could not load brochure tracking data.");
+        const fallbackList = getLeadPresentations(navLead);
+        setBrochures(fallbackList);
+        if (fallbackList.length === 0) {
+          message.error("Could not load brochure tracking data.");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchTrackingData();
-  }, [leadId]);
+  }, [leadId, navLead]);
 
   // Utility: Copy link to clipboard
   const handleCopyLink = (link) => {
@@ -94,9 +189,9 @@ export default function TrackBrochure() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#f6f7fb]">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#faf5ff]">
         <Spin size="large" />
-        <Text type="secondary" className="mt-4 text-lg font-medium">Fetching tracking intelligence...</Text>
+        <Text className="mt-4 text-lg font-medium text-[#8a70a8]">Fetching tracking intelligence...</Text>
       </div>
     );
   }
@@ -104,28 +199,125 @@ export default function TrackBrochure() {
   const displayLead = brochures.length > 0 ? brochures[0].leadId : navLead;
 
   return (
-    <div className="p-6 md:p-10 space-y-6 bg-[#f6f7fb] min-h-screen">
+    <div className="agency-track-page p-6 md:p-10 space-y-6 min-h-screen">
+      <style>{`
+        .agency-track-page {
+          --agency-primary: #5c039b;
+          --agency-primary-2: #7c3aed;
+          --agency-soft: #f3e8ff;
+          --agency-bg: #faf5ff;
+          --agency-surface: #ffffff;
+          --agency-border: #e9d5ff;
+          --agency-border-strong: #d8b4fe;
+          --agency-text: #140d2a;
+          --agency-muted: #8a70a8;
+          background: var(--agency-bg);
+          color: var(--agency-text);
+          font-family: 'Inter', sans-serif;
+        }
+
+        .agency-track-header,
+        .agency-empty-state,
+        .agency-presentation-card {
+          border: 1.5px solid var(--agency-border) !important;
+          border-radius: 14px !important;
+          box-shadow: 0 2px 8px rgba(92, 3, 155, 0.07) !important;
+          background: var(--agency-surface) !important;
+        }
+
+        .agency-back-btn {
+          color: var(--agency-primary) !important;
+          font-weight: 700 !important;
+          padding-left: 0 !important;
+        }
+
+        .agency-track-title {
+          color: var(--agency-text) !important;
+          font-family: 'Sora', sans-serif !important;
+          font-weight: 800 !important;
+        }
+
+        .agency-track-stat {
+          background: var(--agency-soft) !important;
+          border: 1.5px solid var(--agency-border) !important;
+          border-radius: 14px !important;
+          box-shadow: inset 0 1px 8px rgba(92, 3, 155, 0.05) !important;
+        }
+
+        .agency-track-stat-green {
+          background: rgba(16, 185, 129, 0.08) !important;
+          border-color: rgba(16, 185, 129, 0.22) !important;
+        }
+
+        .agency-card-heading,
+        .agency-metric-column,
+        .agency-action-column {
+          border-color: var(--agency-border) !important;
+        }
+
+        .agency-track-id,
+        .agency-interaction-box,
+        .agency-log-chip {
+          background: #fbf7ff !important;
+          border: 1px solid var(--agency-border) !important;
+          color: var(--agency-text) !important;
+        }
+
+        .agency-secondary-btn {
+          border-color: var(--agency-border-strong) !important;
+          color: var(--agency-primary) !important;
+          background: var(--agency-surface) !important;
+          font-weight: 700 !important;
+        }
+
+        .agency-secondary-btn:hover {
+          border-color: var(--agency-primary) !important;
+          background: var(--agency-soft) !important;
+          color: var(--agency-primary) !important;
+        }
+
+        .agency-primary-btn {
+          background: var(--agency-primary) !important;
+          border-color: var(--agency-primary) !important;
+          color: #fff !important;
+          font-weight: 700 !important;
+        }
+
+        .agency-primary-btn:hover {
+          background: var(--agency-primary-2) !important;
+          border-color: var(--agency-primary-2) !important;
+        }
+
+        .agency-history-modal .ant-modal-content,
+        .agency-history-modal .ant-modal-header {
+          border-radius: 14px !important;
+        }
+
+        .agency-history-modal .ant-modal-body {
+          padding: 0 !important;
+        }
+      `}</style>
       
       {/* ---------------- HEADER ---------------- */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <div className="agency-track-header flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-6">
         <div>
           <Button 
             type="text" 
             icon={<ArrowLeftOutlined />} 
             onClick={() => navigate(-1)} 
-            className="mb-2 text-gray-500 hover:text-indigo-600 -ml-3 font-medium transition-colors"
+            className="agency-back-btn mb-2 -ml-3 transition-colors"
           >
             Back to Lead Details
           </Button>
-          <Title level={3} className="!mb-1 text-gray-800 flex items-center gap-3">
-            <FireOutlined className="text-volcano" /> Client Engagement Matrix
+          <Title level={3} className="agency-track-title !mb-1 flex items-center gap-3">
+            <FireOutlined className="text-[#5c039b]" /> Client Engagement Matrix
           </Title>
           {displayLead && (
              <div className="flex items-center gap-3 mt-2">
-               <Text type="secondary" className="text-base">
-                 Tracking analytics for <Text strong className="text-indigo-600 text-base">{displayLead?.name?.first_name} {displayLead?.name?.last_name}</Text>
+               <Text className="text-base text-[#8a70a8]">
+                 Tracking analytics for <Text strong className="text-[#5c039b] text-base">{displayLead?.name?.first_name} {displayLead?.name?.last_name}</Text>
                </Text>
-               <Tag color="purple" className="rounded-full px-3 py-0.5 border-none font-bold uppercase tracking-wider text-[10px] shadow-sm">
+               <Tag className="rounded-full px-3 py-0.5 border-none font-bold uppercase tracking-wider text-[10px] shadow-sm bg-[#f3e8ff] text-[#5c039b]">
                  Global Status: {displayLead?.status}
                </Tag>
              </div>
@@ -134,13 +326,13 @@ export default function TrackBrochure() {
         
         {/* Quick summary stats */}
         <div className="flex gap-4">
-          <div className="bg-indigo-50/50 px-6 py-4 rounded-2xl border border-indigo-100 text-center min-w-[130px] shadow-inner">
-            <Text type="secondary" className="text-[10px] font-extrabold uppercase tracking-widest block mb-1 text-indigo-500">Total Sent</Text>
-            <Title level={3} className="!mb-0 !text-indigo-700">{brochures.length}</Title>
+          <div className="agency-track-stat px-6 py-4 text-center min-w-[130px]">
+            <Text className="text-[10px] font-extrabold uppercase tracking-widest block mb-1 text-[#8a70a8]">Total Sent</Text>
+            <Title level={3} className="!mb-0 !text-[#5c039b]">{brochures.length}</Title>
           </div>
-          <div className="bg-emerald-50/50 px-6 py-4 rounded-2xl border border-emerald-100 text-center min-w-[130px] shadow-inner">
-            <Text type="secondary" className="text-[10px] font-extrabold uppercase tracking-widest block mb-1 text-emerald-600">Total Opens</Text>
-            <Title level={3} className="!mb-0 !text-emerald-700">
+          <div className="agency-track-stat agency-track-stat-green px-6 py-4 text-center min-w-[130px]">
+            <Text className="text-[10px] font-extrabold uppercase tracking-widest block mb-1 text-[#059669]">Total Opens</Text>
+            <Title level={3} className="!mb-0 !text-[#059669]">
               {brochures.reduce((acc, curr) => acc + (curr.viewCount || 0), 0)}
             </Title>
           </div>
@@ -150,32 +342,34 @@ export default function TrackBrochure() {
       {/* ---------------- MAIN DASHBOARD CARDS ---------------- */}
       <div className="space-y-6">
         {brochures.length === 0 ? (
-          <div className="py-24 text-center bg-white rounded-3xl shadow-sm border border-gray-100">
-            <FilePdfOutlined className="text-7xl text-gray-200 mb-5 block" />
-            <Title level={4} className="text-gray-400 !mb-2">No Brochures Found</Title>
-            <Text type="secondary" className="text-base">This lead hasn't been sent any AI property presentations yet.</Text>
+          <div className="agency-empty-state py-24 text-center">
+            <FilePdfOutlined className="text-7xl text-[#d8b4fe] mb-5 block" />
+            <Title level={4} className="!text-[#140d2a] !mb-2">No Brochures Found</Title>
+            <Text className="text-base text-[#8a70a8]">This lead hasn't been sent any AI property presentations yet.</Text>
           </div>
         ) : (
           brochures.map((brochure) => {
-            const prop = brochure.propertyId;
+            const prop = typeof brochure.propertyId === "object" ? brochure.propertyId : null;
             const interest = brochure.interestId;
             const aiMatch = interest?.ai_match;
             const imgUrl = getImageUrl(prop);
+            const propertyName = getPresentationPropertyName(brochure, prop);
+            const propertyPrice = getPresentationPrice(prop);
 
             return (
               <Card 
                 key={brochure._id} 
-                className="rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden bg-white"
+                className="agency-presentation-card transition-all duration-300 overflow-hidden"
                 bodyStyle={{ padding: '0' }}
               >
                 {/* Changed to lg:flex-row to ensure it stays horizontal on larger screens without squishing */}
                 <div className="flex flex-col lg:flex-row items-stretch">
                   
                   {/* 1. LEFT: Fixed-Width Property Image & Title */}
-                  <div className="relative w-full lg:w-80 h-64 lg:h-auto flex-shrink-0 bg-gray-100 border-r border-gray-100">
+                  <div className="relative w-full lg:w-80 h-64 lg:h-auto flex-shrink-0 bg-[#f3e8ff] border-r border-[#e9d5ff]">
                     <img 
                       src={imgUrl} 
-                      alt={prop?.propertyName} 
+                      alt={propertyName} 
                       className="w-full h-full object-cover" 
                       onError={(e) => { e.target.onerror = null; e.target.src = placeholderImg; }}
                     />
@@ -186,7 +380,7 @@ export default function TrackBrochure() {
                     {/* Top Right Match Tag */}
                     {aiMatch?.score && (
                       <div className="absolute top-4 right-4">
-                        <Tag color={aiMatch.score >= 90 ? "success" : "processing"} className="m-0 rounded-full px-3 py-1 border-white/20 shadow-lg font-bold backdrop-blur-md bg-white/90 text-gray-800">
+                        <Tag className="m-0 rounded-full px-3 py-1 border-white/20 shadow-lg font-bold backdrop-blur-md bg-white/90 text-[#5c039b]">
                           {aiMatch.score}% Match
                         </Tag>
                       </div>
@@ -194,11 +388,11 @@ export default function TrackBrochure() {
                     
                     {/* Bottom Property Info overlaid on image */}
                     <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <Title level={4} className="!mb-1 !text-white drop-shadow-md line-clamp-1" title={prop?.propertyName}>
-                        {prop?.propertyName || "Unknown Property"}
+                      <Title level={4} className="!mb-1 !text-white drop-shadow-md line-clamp-1" title={propertyName}>
+                        {propertyName}
                       </Title>
                       <Text className="text-white/90 drop-shadow-md font-medium text-sm">
-                        {prop?.price ? `${prop.price.toLocaleString()} AED` : "Price N/A"}
+                        {propertyPrice ? `${propertyPrice.toLocaleString()} AED` : "Price N/A"}
                       </Text>
                     </div>
                   </div>
@@ -207,13 +401,13 @@ export default function TrackBrochure() {
                   <div className="flex-1 p-6 flex flex-col">
                     
                     {/* Top Header Row */}
-                    <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
-                      <Text type="secondary" className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                    <div className="agency-card-heading flex justify-between items-center mb-6 pb-4 border-b">
+                      <Text className="text-xs font-bold uppercase tracking-widest text-[#8a70a8]">
                         Tracking Intelligence
                       </Text>
-                      <div className="bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 flex items-center">
-                        <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider mr-2">Track ID:</Text>
-                        <Text strong className="font-mono text-gray-700 text-xs">{brochure.trackingId}</Text>
+                      <div className="agency-track-id px-3 py-1.5 rounded-lg flex items-center">
+                        <Text className="text-[10px] uppercase font-bold tracking-wider mr-2 text-[#8a70a8]">Track ID:</Text>
+                        <Text strong className="font-mono text-[#140d2a] text-xs">{brochure.trackingId}</Text>
                       </div>
                     </div>
 
@@ -223,65 +417,64 @@ export default function TrackBrochure() {
                        {/* Column 1: Pipeline Health */}
                        <div className="flex flex-col gap-4">
                           <div>
-                            <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider block mb-1">Current Stage</Text>
-                            <Tag color="geekblue" className="rounded-md px-3 py-1 border-none font-semibold m-0 text-sm w-max">
+                            <Text className="text-[10px] uppercase font-bold tracking-wider block mb-1 text-[#8a70a8]">Current Stage</Text>
+                            <Tag className="rounded-md px-3 py-1 border-none font-semibold m-0 text-sm w-max bg-[#f3e8ff] text-[#5c039b]">
                               <CheckCircleOutlined className="mr-1"/> {formatStageString(interest?.conversion_stage)}
                             </Tag>
                           </div>
                           
                           <div className="flex gap-4 items-center">
                             <div className="flex-1">
-                              <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider block mb-1">Engagement</Text>
+                              <Text className="text-[10px] uppercase font-bold tracking-wider block mb-1 text-[#8a70a8]">Engagement</Text>
                               <div className="flex items-center gap-1.5">
-                                <FireOutlined className="text-volcano text-lg" />
-                                <Text strong className="text-lg text-gray-800">{interest?.engagement_score || 0} pts</Text>
+                                <FireOutlined className="text-[#5c039b] text-lg" />
+                                <Text strong className="text-lg text-[#140d2a]">{interest?.engagement_score || 0} pts</Text>
                               </div>
                             </div>
                             
-                            <div className="flex-1 border-l border-gray-100 pl-4">
-                              <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider block mb-1">AI Prob.</Text>
-                              <Progress percent={interest?.conversion_probability || 0} size="small" strokeColor="#4f46e5" className="m-0" />
+                            <div className="agency-metric-column flex-1 border-l pl-4">
+                              <Text className="text-[10px] uppercase font-bold tracking-wider block mb-1 text-[#8a70a8]">AI Prob.</Text>
+                              <Progress percent={interest?.conversion_probability || 0} size="small" strokeColor="#5c039b" className="m-0" />
                             </div>
                           </div>
                        </div>
 
                        {/* Column 2: Brochure Metrics */}
-                       <div className="flex flex-col gap-4 md:border-l border-gray-100 md:pl-6">
+                       <div className="agency-metric-column flex flex-col gap-4 md:border-l md:pl-6">
                         <div>
   <Text
-    className="text-[10px] uppercase font-bold tracking-wider block mb-1 text-gray-500"
+    className="text-[10px] uppercase font-bold tracking-wider block mb-1 text-[#8a70a8]"
   >
     Total Opens
   </Text>
 
   <Tag
-    color={brochure.viewCount > 0 ? "green" : "default"}
-    className="rounded-lg px-3 py-1 border-none shadow-sm m-0 font-bold text-sm"
+    className={`rounded-lg px-3 py-1 border-none shadow-sm m-0 font-bold text-sm ${brochure.viewCount > 0 ? "bg-[#dcfce7] text-[#059669]" : "bg-[#f3e8ff] text-[#8a70a8]"}`}
   >
     <EyeOutlined className="mr-1.5" />
     {brochure.viewCount || 0} Views
   </Tag>
 </div>
                           <div>
-                            <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider block mb-1 text-emerald-600">Last Interaction</Text>
+                            <Text className="text-[10px] uppercase font-bold tracking-wider block mb-1 text-[#8a70a8]">Last Interaction</Text>
                             {brochure.viewCount > 0 ? (
-                              <div className="bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 flex items-center gap-2">
-                                <ClockCircleOutlined className="text-indigo-400" />
-                                <Text strong className="text-xs text-gray-700">{formatDate(brochure.lastViewedAt)}</Text>
+                              <div className="agency-interaction-box px-3 py-2 rounded-lg flex items-center gap-2">
+                                <ClockCircleOutlined className="text-[#5c039b]" />
+                                <Text strong className="text-xs text-[#140d2a]">{formatDate(brochure.lastViewedAt)}</Text>
                               </div>
                             ) : (
-                              <Text type="secondary" className="text-xs italic">No interactions yet</Text>
+                              <Text className="text-xs italic text-[#8a70a8]">No interactions yet</Text>
                             )}
                           </div>
                        </div>
 
                        {/* Column 3: Action Buttons */}
-                       <div className="flex flex-col gap-3 justify-center md:border-l border-gray-100 md:pl-6">
+                       <div className="agency-action-column flex flex-col gap-3 justify-center md:border-l md:pl-6">
                          <Button 
                            type="dashed" 
                            icon={<CopyOutlined />} 
                            onClick={() => handleCopyLink(brochure.shareLink)}
-                           className="rounded-xl text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                           className="agency-secondary-btn rounded-xl"
                          >
                            Copy Track Link
                          </Button>
@@ -289,7 +482,7 @@ export default function TrackBrochure() {
                            icon={<LinkOutlined />} 
                            href={brochure.fileUrl} 
                            target="_blank" 
-                           className="rounded-xl"
+                           className="agency-secondary-btn rounded-xl"
                          >
                            Open Live PDF
                          </Button>
@@ -298,7 +491,7 @@ export default function TrackBrochure() {
                            icon={<RiseOutlined />}
                            onClick={() => handleViewHistory(brochure)} 
                            disabled={brochure.viewCount === 0} 
-                           className="rounded-xl bg-indigo-600 hover:bg-indigo-700 border-none shadow-sm font-medium"
+                           className="agency-primary-btn rounded-xl border-none shadow-sm"
                          >
                            View Access Logs
                          </Button>
@@ -317,11 +510,11 @@ export default function TrackBrochure() {
       <Modal
         title={
           <div className="flex items-center gap-3 py-3">
-            <Avatar size={48} className="bg-indigo-50 text-indigo-600 border border-indigo-100" icon={<EyeOutlined />} />
+            <Avatar size={48} className="bg-[#f3e8ff] text-[#5c039b] border border-[#e9d5ff]" icon={<EyeOutlined />} />
             <div>
-              <Title level={4} className="!mb-0 text-gray-800">Access History Log</Title>
-              <Text type="secondary" className="text-sm font-medium">
-                {selectedHistory?.propertyId?.propertyName}
+              <Title level={4} className="!mb-0 !text-[#140d2a]">Access History Log</Title>
+              <Text className="text-sm font-medium text-[#8a70a8]">
+                {getPresentationPropertyName(selectedHistory, selectedHistory?.propertyId)}
               </Text>
             </div>
           </div>
@@ -332,27 +525,27 @@ export default function TrackBrochure() {
         width={750}
         centered
         destroyOnClose
-        className="custom-history-modal"
+        className="agency-history-modal"
       >
         <Divider className="my-0" />
         
         {/* Modal Stats Header */}
-        <div className="bg-gray-50 p-5 border-b border-gray-100 flex flex-wrap gap-6 justify-between">
+        <div className="bg-[#fbf7ff] p-5 border-b border-[#e9d5ff] flex flex-wrap gap-6 justify-between">
           <div>
-            <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider block mb-1">First Opened</Text>
-            <Text strong className="text-gray-700">
+            <Text className="text-[10px] uppercase font-bold tracking-wider block mb-1 text-[#8a70a8]">First Opened</Text>
+            <Text strong className="text-[#140d2a]">
               {selectedHistory?.views?.length > 0 ? formatDate(selectedHistory.views[0].viewedAt) : "—"}
             </Text>
           </div>
           <div>
-            <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider block mb-1 text-indigo-500">Last Opened</Text>
-            <Text strong className="text-indigo-600">
+            <Text className="text-[10px] uppercase font-bold tracking-wider block mb-1 text-[#8a70a8]">Last Opened</Text>
+            <Text strong className="text-[#5c039b]">
               {formatDate(selectedHistory?.lastViewedAt)}
             </Text>
           </div>
           <div className="text-right">
-            <Text type="secondary" className="text-[10px] uppercase font-bold tracking-wider block mb-1 text-emerald-500">Total Opens</Text>
-            <Tag color="emerald" className="m-0 rounded-lg px-3 font-bold border-none text-emerald-600">
+            <Text className="text-[10px] uppercase font-bold tracking-wider block mb-1 text-[#059669]">Total Opens</Text>
+            <Tag className="m-0 rounded-lg px-3 font-bold border-none bg-[#dcfce7] text-[#059669]">
               {selectedHistory?.viewCount} Views
             </Tag>
           </div>
@@ -365,33 +558,33 @@ export default function TrackBrochure() {
               const isMobile = view.device?.toLowerCase().includes('mobile');
               
               return (
-                <div key={view._id} className="flex items-start gap-4 p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:border-indigo-200 transition-colors group">
+                <div key={view._id} className="flex items-start gap-4 p-4 bg-white border border-[#e9d5ff] rounded-2xl shadow-sm hover:border-[#d8b4fe] transition-colors group">
                   
-                  <div className={`p-4 rounded-xl flex-shrink-0 ${isMobile ? 'bg-blue-50 text-blue-500' : 'bg-purple-50 text-purple-500'}`}>
+                  <div className={`p-4 rounded-xl flex-shrink-0 ${isMobile ? 'bg-[#eef2ff] text-[#5c039b]' : 'bg-[#f3e8ff] text-[#5c039b]'}`}>
                     {isMobile ? <MobileOutlined className="text-2xl" /> : <DesktopOutlined className="text-2xl" />}
                   </div>
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <Text strong className="text-gray-800 text-base block">{formatDate(view.viewedAt)}</Text>
-                        <Text type="secondary" className="text-xs uppercase font-bold tracking-wider">{view.device || 'Unknown Device'}</Text>
+                        <Text strong className="text-[#140d2a] text-base block">{formatDate(view.viewedAt)}</Text>
+                        <Text className="text-xs uppercase font-bold tracking-wider text-[#8a70a8]">{view.device || 'Unknown Device'}</Text>
                       </div>
-                      <Tag className="rounded-full border-gray-200 bg-gray-50 text-gray-500 font-bold m-0">
+                      <Tag className="rounded-full border-[#e9d5ff] bg-[#f3e8ff] text-[#5c039b] font-bold m-0">
                         Log #{selectedHistory.views.length - index}
                       </Tag>
                     </div>
                     
                     <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-3">
-                      <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100 w-max">
-                        <GlobalOutlined className="text-gray-400" />
-                        <Text className="font-mono text-xs text-gray-600">{view.ip}</Text>
+                      <div className="agency-log-chip flex items-center gap-1.5 px-2.5 py-1 rounded-lg w-max">
+                        <GlobalOutlined className="text-[#8a70a8]" />
+                        <Text className="font-mono text-xs text-[#140d2a]">{view.ip}</Text>
                       </div>
                       
                       <Tooltip title={view.userAgent}>
-                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100 overflow-hidden flex-1 cursor-help">
-                          <CompassOutlined className="text-gray-400 flex-shrink-0" />
-                          <Text className="text-xs text-gray-600 truncate">{view.userAgent}</Text>
+                        <div className="agency-log-chip flex items-center gap-1.5 px-2.5 py-1 rounded-lg overflow-hidden flex-1 cursor-help">
+                          <CompassOutlined className="text-[#8a70a8] flex-shrink-0" />
+                          <Text className="text-xs text-[#140d2a] truncate">{view.userAgent}</Text>
                         </div>
                       </Tooltip>
                     </div>
@@ -405,11 +598,6 @@ export default function TrackBrochure() {
         </div>
       </Modal>
 
-      <style>{`
-        .custom-history-modal .ant-modal-body {
-          padding: 0 !important;
-        }
-      `}</style>
     </div>
   );
 }

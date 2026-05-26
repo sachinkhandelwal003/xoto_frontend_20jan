@@ -160,6 +160,7 @@ import AdminPropertyListings from "./pages/Adminpropertylistings"
 import AdminPropertyDetail from "./pages/Adminpropertydetails";
 import AdminOffPlanCreate from "./pages/Adminoffplancreate";
 import LeadManagement from "./pages/LeadManagement";
+import AgencyLeadDetailsPage from "./pages/AgencyLeadDetailsPage";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import VerificationQueue from "./pages/VerificationQueue";
 import AgencyDashboard from "../ecommerce/B2C/AgencyDashboard";
@@ -634,16 +635,15 @@ const CmsRoutes = () => {
 
       <Route path="/property-list" element={<AdminPropertyGrid />} />
       <Route path="/DealCommissionManager" element={<DealCommissionManager />} />
-      <Route path="/lead-management" element={<LeadManagement />} />
+      <Route path="lead-management" element={<LeadManagement />} />
+      <Route path="lead-management/:id" element={<AgencyLeadDetailsPage />} />
       <Route path="/subscription-plans" element={<SubscriptionPlans />} />
       <Route path="/verification-queue" element={<VerificationQueue />} />
       <Route path="/ai-training" element={<XobiaTrainingAdmin />} />
       <Route path="/global-settings" element={<GlobalSettings />} />
       <Route path="/marketing-hub" element={<XotoBlitzCampaigns />} />
-      {/* <Route path="/admin-chat-requests" element={<AdminChatRequests />} /> */}
-      "
       <Route path="/admin-chat-requests" element={<AdminChatRequests />} />
-      <Route path="/my-listings" element={<MyListings />} />\
+      <Route path="/my-listings" element={<MyListings />} />
       <Route path="/properties" element={<AdminPropertyListings />} />
       <Route path="/properties/:id" element={<AdminPropertyDetail />} />
       <Route path="/properties/create-offplan" element={<AdminOffPlanCreate />} />
@@ -686,7 +686,7 @@ const CmsRoutes = () => {
       <Route path="manage-agents/:id" element={<AgencyAgentDetails />} />
       <Route path="performance" element={<AgencyPerformance />} />
       <Route path="commission" element={<AgencyCommission />} />
-      <Route path="/lead-management" element={<AgencyLeadManagement />} />
+      <Route path="lead-management-legacy" element={<AgencyLeadManagement />} />
       <Route path="add-property" element={<AddProperty />} />
       {/* <Route path="targets" element={<AgencyTargets />} /> */}
       <Route path="/agency-leaderboard" element={<AgencyLeaderboard />} />

@@ -169,7 +169,7 @@ const CUSTOM_ROLE_LINKS = {
     submenus: [
       { title: "Advisor List",      path: "/dashboard/{roleSlug}/advisors" },
       { title: "Create Advisor",    path: "/dashboard/{roleSlug}/advisor/create" },
-      // { title: "Leaderboard",       path: "/dashboard/{roleSlug}/advisors/leaderboard" },
+      { title: "Leaderboard",       path: "/dashboard/{roleSlug}/advisors/leaderboard" },
     ]
   },
   {
