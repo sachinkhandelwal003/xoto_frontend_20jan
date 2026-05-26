@@ -264,7 +264,7 @@ const AddAgency = () => {
         />
         <div>
           <Title level={3} style={{ margin: 0, color: "#1f2937" }}>
-            Onboard New Agency
+            Onboard New Partner
           </Title>
           <Text type="secondary">Fill in the details to register a new real estate agency.</Text>
         </div>
