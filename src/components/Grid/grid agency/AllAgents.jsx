@@ -671,7 +671,7 @@ const AgencyAgentList = () => {
               <div style={{ width:38, height:38, borderRadius:12, background:"linear-gradient(135deg,#5c039b,#8b5cf6)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 6px 16px rgba(92,3,155,.3)" }}><TeamOutlined style={{ color:"#fff", fontSize:18 }} /></div>
               <h1 style={{ fontSize:24, fontWeight:800, color:"var(--tx)", margin:0, fontFamily:"'Sora', sans-serif" }}>Agent Team</h1>
             </div>
-            <p style={{ fontSize:13, color:"var(--tx-sub)", margin:0, marginLeft:48, fontWeight:500 }}>Manage and monitor your agency's real estate agents</p>
+            <p style={{ fontSize:13, color:"var(--tx-sub)", margin:0, marginLeft:48, fontWeight:500 }}>Manage and monitor your partner's real estate agents</p>
           </div>
         </div>
 
