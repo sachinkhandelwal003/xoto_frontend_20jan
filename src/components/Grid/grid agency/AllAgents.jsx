@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
-  Card, Typography, Avatar, Button, Tag, Input, Modal, Row, Col, Tooltip
+  Card, Typography, Avatar, Button, Tag, Input, Modal, Row, Col, Tooltip, Tabs, Popconfirm, message
 } from "antd";
 import {
   UserOutlined, MailOutlined, PhoneOutlined,
   CheckCircleOutlined, CloseCircleOutlined, EnvironmentOutlined,
   IdcardOutlined, FileTextOutlined, TrophyOutlined,
-  TeamOutlined, EyeOutlined
+  TeamOutlined, EyeOutlined, ClockCircleOutlined
 } from "@ant-design/icons";
 import { FiSearch, FiRefreshCw } from "react-icons/fi";
 import CustomTable from "../../CMS/pages/custom/CustomTable"
@@ -63,6 +63,8 @@ const normalizeAgent = (a, idx, page, limit) => ({
   id_proof: a.id_proof || null,
   reraCertificate: a.rera_certificate || null,
   rera_certificate: a.rera_certificate || null,
+  agencyApprovalStatus: a.agencyApprovalStatus || "pending",
+  adminApprovalStatus: a.adminApprovalStatus || "pending",
 });
 
 const AgentAvatar = ({ name="", src, size=40 }) => (
@@ -79,6 +81,16 @@ const StatusPill = ({ active }) => (
     {active ? "Active" : "Inactive"}
   </span>
 );
+
+const ApprovalStatusTag = ({ status }) => {
+  const map = {
+    approved: { color: "success", label: "Approved" },
+    declined: { color: "error", label: "Declined" },
+    pending: { color: "warning", label: "Pending" },
+  };
+  const s = map[status] || map.pending;
+  return <Tag color={s.color}>{s.label}</Tag>;
+};
 
 const getSpecializationTag = (spec) => {
   if (!spec) return <span style={{ color: "var(--pur-mid)", fontSize: 12 }}>--</span>;
@@ -182,9 +194,10 @@ const ModalSection = ({ title, icon, children }) => (
   </div>
 );
 
-const ViewAgentModal = ({ open, onClose, agent }) => {
+const ViewAgentModal = ({ open, onClose, agent, onApprove, onDecline }) => {
   if (!agent) return null;
   const isActive = agent.is_active ?? agent.status ?? true;
+  const isPending = agent.agencyApprovalStatus === "pending";
 
   return (
     <Modal
@@ -214,8 +227,9 @@ const ViewAgentModal = ({ open, onClose, agent }) => {
             <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--tx)', fontFamily: 'Sora, sans-serif' }}>{agent.name}</div>
             <div style={{ fontSize: 12, color: 'var(--tx-muted)', marginTop: 2 }}>{agent.email}</div>
           </div>
-          <div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
             <StatusPill active={isActive} />
+            <ApprovalStatusTag status={agent.agencyApprovalStatus} />
           </div>
         </div>
 
@@ -255,8 +269,38 @@ const ViewAgentModal = ({ open, onClose, agent }) => {
         )}
 
         {/* Footer Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-          <Button onClick={onClose} style={{ borderRadius: 20, borderColor: 'var(--border)', color: 'var(--tx-sub)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+          {isPending && (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <Button 
+                type="primary" 
+                icon={<CheckCircleOutlined />}
+                onClick={() => {
+                  onApprove(agent._id);
+                  onClose();
+                }}
+                style={{ background: THEME.success, borderColor: THEME.success, borderRadius: 20 }}
+              >
+                Approve Agent
+              </Button>
+              <Button 
+                icon={<CloseCircleOutlined />}
+                onClick={() => {
+                  onDecline(agent);
+                }}
+                style={{ 
+                  background: THEME.errorBg, 
+                  borderColor: THEME.error, 
+                  color: THEME.error, 
+                  borderRadius: 20,
+                  fontWeight: 600
+                }}
+              >
+                Decline Agent
+              </Button>
+            </div>
+          )}
+          <Button onClick={onClose} style={{ borderRadius: 20, borderColor: 'var(--border)', color: 'var(--tx-sub)', marginLeft: isPending ? 'auto' : 0 }}>
             Close
           </Button>
         </div>
@@ -269,7 +313,7 @@ const AgencyAgentList = () => {
   const [agents,    setAgents]    = useState([]);
   const [loading,   setLoading]   = useState(false);
   const [search,    setSearch]    = useState("");
-  const activeTab = "all";
+  const [activeTab, setActiveTab] = useState("all");
 
   const [pagination, setPagination] = useState({
     currentPage: 1, totalPages: 1, totalResults: 0, itemsPerPage: 20,
@@ -277,6 +321,9 @@ const AgencyAgentList = () => {
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState(null);
+  const [declineModalOpen, setDeclineModalOpen] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
   const searchTimeout = useRef(null);
 
@@ -308,12 +355,12 @@ const AgencyAgentList = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeTab]);
 
   useEffect(() => {
     fetchAgents(1, pagination.itemsPerPage, search, activeTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [activeTab]);
 
   const handleSearch = (e) => {
     const val = e.target.value;
@@ -329,9 +376,68 @@ const AgencyAgentList = () => {
     setViewModalOpen(true);
   };
 
+  const handleApprove = async (agentId) => {
+    try {
+      await apiService.patch(`/agency/agents/${agentId}/approve`);
+      message.success("Agent approved successfully!");
+      fetchAgents(pagination.currentPage, pagination.itemsPerPage, search, activeTab);
+    } catch (err) {
+      message.error(err?.response?.data?.message || "Failed to approve agent");
+    }
+  };
+
+  const handleDecline = async () => {
+    if (!declineReason.trim()) {
+      message.warning("Please provide a reason for declining");
+      return;
+    }
+    try {
+      await apiService.patch(`/agency/agents/${selectedAgent._id}/decline`, { reason: declineReason });
+      message.success("Agent declined successfully!");
+      setDeclineModalOpen(false);
+      setSelectedAgent(null);
+      setDeclineReason("");
+      fetchAgents(pagination.currentPage, pagination.itemsPerPage, search, activeTab);
+    } catch (err) {
+      message.error(err?.response?.data?.message || "Failed to decline agent");
+    }
+  };
+
+  const openDeclineModal = (agent) => {
+    setSelectedAgent(agent);
+    setDeclineReason("");
+    setDeclineModalOpen(true);
+  };
+
+  const handleSuspend = async (agentId) => {
+    setActionLoading(true);
+    try {
+      await apiService.patch(`/agency/agents/${agentId}/suspend`, {});
+      message.success("Agent suspended successfully!");
+      fetchAgents(pagination.currentPage, pagination.itemsPerPage, search, activeTab);
+    } catch (err) {
+      message.error(err?.response?.data?.message || "Failed to suspend agent");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnsuspend = async (agentId) => {
+    setActionLoading(true);
+    try {
+      await apiService.patch(`/agency/agents/${agentId}/unsuspend`);
+      message.success("Agent unsuspended successfully!");
+      fetchAgents(pagination.currentPage, pagination.itemsPerPage, search, activeTab);
+    } catch (err) {
+      message.error(err?.response?.data?.message || "Failed to unsuspend agent");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const total = agents.length;
-  const active = agents.filter((a)=>a.is_active ?? a.status).length;
-  const inactive = total - active;
+  const pending = agents.filter(a => a.agencyApprovalStatus === "pending").length;
+  const approved = agents.filter(a => a.agencyApprovalStatus === "approved").length;
 
   const columns = [
     {
@@ -375,19 +481,66 @@ const AgencyAgentList = () => {
       render: (val, agent) => getSpecializationTag(agent.specialization),
     },
     {
-      key: "status", title: "Status",
-      render: (_, agent) => <StatusPill active={!!(agent.is_active ?? agent.status)} />,
+      key: "agencyApproval", title: "Agency Approval",
+      render: (_, agent) => <ApprovalStatusTag status={agent.agencyApprovalStatus} />,
     },
     {
       key: "actions", title: "Actions",
       render: (_, agent) => (
-        <div style={{ display:"flex", gap:8 }}>
+        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
           <Tooltip title="View Details">
             <Button type="text" size="small" icon={<EyeOutlined />}
               onClick={()=>handleView(agent)}
               style={{ width:34, height:34, borderRadius:"50%", border:"1px solid var(--border)", color:"var(--sb-accent)", background:"var(--surface)" }}
             />
           </Tooltip>
+          {agent.agencyApprovalStatus === "pending" && (
+            <>
+              <Tooltip title="Approve Agent">
+                <Button 
+                  type="text" 
+                  size="small" 
+                  icon={<CheckCircleOutlined />}
+                  onClick={() => handleApprove(agent._id)}
+                  style={{ width:34, height:34, borderRadius:"50%", border:"1px solid #10b981", color:"#10b981", background:"rgba(16,185,129,0.08)" }}
+                />
+              </Tooltip>
+              <Tooltip title="Decline Agent">
+                <Button 
+                  type="text" 
+                  size="small" 
+                  icon={<CloseCircleOutlined />}
+                  onClick={() => openDeclineModal(agent)}
+                  style={{ width:34, height:34, borderRadius:"50%", border:"1px solid #ef4444", color:"#ef4444", background:"rgba(239,68,68,0.08)" }}
+                />
+              </Tooltip>
+            </>
+          )}
+          {agent.agencyApprovalStatus === "approved" && (
+            agent.status ? (
+              <Tooltip title="Suspend Agent">
+                <Button 
+                  type="text" 
+                  size="small" 
+                  icon={<CloseCircleOutlined />}
+                  onClick={() => handleSuspend(agent._id)}
+                  loading={actionLoading}
+                  style={{ width:34, height:34, borderRadius:"50%", border:"1px solid #d97706", color:"#d97706", background:"rgba(217,119,6,0.08)" }}
+                />
+              </Tooltip>
+            ) : (
+              <Tooltip title="Unsuspend Agent">
+                <Button 
+                  type="text" 
+                  size="small" 
+                  icon={<CheckCircleOutlined />}
+                  onClick={() => handleUnsuspend(agent._id)}
+                  loading={actionLoading}
+                  style={{ width:34, height:34, borderRadius:"50%", border:"1px solid #10b981", color:"#10b981", background:"rgba(16,185,129,0.08)" }}
+                />
+              </Tooltip>
+            )
+          )}
         </div>
       ),
     },
@@ -526,14 +679,27 @@ const AgencyAgentList = () => {
         <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
           {[
             { icon: <TeamOutlined />, label: "Total Agents", value: total, color: "var(--sb-accent)" },
-            { icon: <CheckCircleOutlined />, label: "Active", value: active, color: "var(--success)" },
-            { icon: <CloseCircleOutlined />, label: "Inactive", value: inactive, color: "var(--error)" },
+            { icon: <CheckCircleOutlined />, label: "Approved", value: approved, color: "var(--success)" },
+            { icon: <ClockCircleOutlined />, label: "Pending", value: pending, color: "#d97706" },
           ].map((stat, idx) => (
             <Col xs={24} sm={8} key={idx}>
               <MiniStat {...stat} />
             </Col>
           ))}
         </Row>
+
+        {/* Tabs */}
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          style={{ marginBottom: 20 }}
+          items={[
+            { key: 'all', label: 'All Agents' },
+            { key: 'pending', label: 'Pending Approval' },
+            { key: 'approved', label: 'Approved' },
+            { key: 'declined', label: 'Declined' },
+          ]}
+        />
 
         {/* Table Card */}
         <Card
@@ -582,7 +748,36 @@ const AgencyAgentList = () => {
         </Card>
       </div>
 
-      <ViewAgentModal open={viewModalOpen} onClose={() => setViewModalOpen(false)} agent={selectedAgent} />
+      <ViewAgentModal 
+        open={viewModalOpen} 
+        onClose={() => setViewModalOpen(false)} 
+        agent={selectedAgent}
+        onApprove={handleApprove}
+        onDecline={openDeclineModal}
+      />
+
+      {/* Decline Modal */}
+      <Modal
+        title="Decline Agent"
+        open={declineModalOpen}
+        onOk={handleDecline}
+        onCancel={() => {
+          setDeclineModalOpen(false);
+          setSelectedAgent(null);
+          setDeclineReason("");
+        }}
+        okText="Decline"
+        okButtonProps={{ danger: true }}
+      >
+        <Text>Please provide a reason for declining this agent:</Text>
+        <Input.TextArea
+          rows={4}
+          value={declineReason}
+          onChange={(e) => setDeclineReason(e.target.value)}
+          style={{ marginTop: 10 }}
+          placeholder="Reason..."
+        />
+      </Modal>
     </div>
   );
 };
