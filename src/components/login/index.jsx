@@ -787,10 +787,10 @@ onClick={() => handleSubSelect("vaultpartner")}          >
                 </div>
                 <div>
                   <div style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
-                    Agency
+                    Partner
                   </div>
                   <div style={{ fontSize: 13, color: "#888" }}>
-                    Property Agencies
+                    Property Partners
                   </div>
                 </div>
           </SelectionCard>
@@ -873,6 +873,7 @@ onClick={() => handleSubSelect("vaultpartner")}          >
   // 3. Login Form (ORIGINAL, UNCHANGED)
   const renderLoginForm = () => {
     const activePartner = getSelectedPartner();
+    const shouldShowRegister = !["agency", "developer", "gridadvisor"].includes(selectedPartnerType);
 
    return (
     <motion.div
@@ -1042,20 +1043,22 @@ onClick={() => handleSubSelect("vaultpartner")}          >
             {loading ? "Signing In..." : "Login Now"}
           </Button>
 
-          <Button
-            onClick={handleRegister}
-            block
-            style={{
-              height: 52,
-              borderRadius: 12,
-              fontWeight: "bold",
-              fontSize: "15px",
-              borderColor: activePartner?.color,
-              color: activePartner?.color,
-            }}
-          >
-            Register
-          </Button>
+          {shouldShowRegister && (
+            <Button
+              onClick={handleRegister}
+              block
+              style={{
+                height: 52,
+                borderRadius: 12,
+                fontWeight: "bold",
+                fontSize: "15px",
+                borderColor: activePartner?.color,
+                color: activePartner?.color,
+              }}
+            >
+              Register
+            </Button>
+          )}
         </div>
       </Form>
     </motion.div>
