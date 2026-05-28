@@ -227,8 +227,8 @@ export default function DeveloperAddProperty() {
     const payload = {
       developer: developerId,  // ← CHANGED: developer instead of developerId
       propertyType: values.propertyType || "Residential",
-      unitTypes: values.unitTypes || [],
-      unitType: values.unitTypes?.[0] || "apartment",
+      unitTypes: values.unitTypes ? [values.unitTypes] : [],
+      unitType: values.unitTypes || "apartment",
       propertySubType: "off_plan",
       transactionType: "sell",
       approvalStatus: saveType === "submit" ? "pending" : "draft",  // ← CHANGED: use approvalStatus
@@ -428,8 +428,8 @@ export default function DeveloperAddProperty() {
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item name="unitTypes" label="Unit Types" rules={[{ required: true, message: "Select at least one unit type" }]}>
-                  <Select mode="multiple" placeholder="Select unit types">
+                <Form.Item name="unitTypes" label="Unit Types" rules={[{ required: true, message: "Select a unit type" }]}>
+                  <Select placeholder="Select unit type">
                     <Option value="apartment">Apartment</Option>
                     <Option value="penthouse">Penthouse</Option>
                     <Option value="villa">Villa</Option>
