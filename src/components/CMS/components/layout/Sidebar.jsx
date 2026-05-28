@@ -204,6 +204,7 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-file-invoice-dollar",
       submenus: [
         { title: "Deal Records",        path: "/dashboard/{roleSlug}/deal-records" },
+        { title: "Agreements",          path: "/dashboard/{roleSlug}/admin/agreements" },
       //   { title: "Commission Ledger",   path: "/dashboard/{roleSlug}/grid/commission" },
       //   { title: "Partner Agreements",  path: "/dashboard/{roleSlug}/commission/agreements" },
       ]
@@ -357,7 +358,7 @@ const CUSTOM_ROLE_LINKS = {
 {
   title: "My Agreements",
   icon: "fas fa-chalkboard-teacher",
-  path: "/dashboard/{roleSlug}/my-Agreements",
+  path: "/dashboard/{roleSlug}/agent-agreement",
 },
 
 
@@ -381,6 +382,11 @@ const CUSTOM_ROLE_LINKS = {
       icon: "fas fa-layer-group",
       path: "/dashboard/{roleSlug}/developer-inventory",
     },
+    {
+      title: "Agreements",
+      icon: "fas fa-file",
+      path: "/dashboard/{roleSlug}/developer-agreement",
+    },
 
   ],
   "15": [
@@ -403,6 +409,11 @@ const CUSTOM_ROLE_LINKS = {
       title: "Leaderboard",
       icon: "fas fa-trophy",
       path: "/dashboard/{roleSlug}/agency-leaderboard",
+    },
+    {
+      title: "Agreement",
+      icon: "fas fa-file",
+      path: "/dashboard/{roleSlug}/agency-agreements",
     },
   ],
 

@@ -8,7 +8,7 @@ import {
   PlusOutlined, DeleteOutlined, UserOutlined, CheckCircleFilled,
   FileDoneOutlined, EyeOutlined, MailOutlined, PhoneOutlined,
   EnvironmentOutlined, TrophyOutlined, UploadOutlined, TeamOutlined,
-  ArrowLeftOutlined, ArrowRightOutlined, CheckOutlined, EditOutlined, FilterOutlined,
+  ArrowLeftOutlined, ArrowRightOutlined, CheckOutlined, EditOutlined, FilterOutlined, StopOutlined,
 } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -294,6 +294,14 @@ const AgencyManageAgents = () => {
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState(null);
+  
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  
+  const [suspendModalOpen, setSuspendModalOpen] = useState(false);
+  const [suspendReason, setSuspendReason] = useState("");
+  
+  const [actionLoading, setActionLoading] = useState(false);
 
   /* ── Fetch ── */
   const fetchAgents = useCallback(async () => {
@@ -308,15 +316,16 @@ const AgencyManageAgents = () => {
         email: a.email || "",
         phone: `${a.country_code||""} ${a.phone_number||""}`.trim(),
         role: a.role || "Agent",
-        status: a.is_active ?? a.status ?? true,
+        status: a.isActive ?? a.is_active ?? a.status ?? true,
         avatar: a.profile_photo || null,
         city: a.operating_city || "",
         country: a.country || "",
         specialization: a.specialization || "",
         experience_years: Number(a.experience_years) || 0,
-        reraNumber: a.rera_number || "",
-        idProof: a.id_proof || null,
-        reraCertificate: a.rera_certificate || null,
+        reraNumber: a.reraCardNumber || a.rera_number || "",
+        idProof: a.emiratesIdUrl || a.id_proof || null,
+        reraCertificate: a.reraCardUrl || a.rera_certificate || null,
+        agencyApprovalStatus: a.agencyApprovalStatus || "pending",
       }));
       setAgents(formatted);
       saveToStorage(formatted);
@@ -390,6 +399,76 @@ const AgencyManageAgents = () => {
     setAgents(updated); saveToStorage(updated); toast.success("Agent removed");
   };
 
+  const handleApprove = async (agent) => {
+    setActionLoading(true);
+    try {
+      await apiService.patch(`/agency/agents/${agent.id}/approve`);
+      toast.success("Agent approved successfully!");
+      fetchAgents();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to approve agent");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleOpenRejectModal = (agent) => {
+    setSelectedAgent(agent);
+    setRejectReason("");
+    setRejectModalOpen(true);
+  };
+
+  const handleReject = async () => {
+    if (!rejectReason.trim()) {
+      toast.error("Please provide a reason for rejection");
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await apiService.patch(`/agency/agents/${selectedAgent.id}/decline`, { reason: rejectReason });
+      toast.success("Agent rejected successfully!");
+      setRejectModalOpen(false);
+      fetchAgents();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to reject agent");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleOpenSuspendModal = (agent) => {
+    setSelectedAgent(agent);
+    setSuspendReason("");
+    setSuspendModalOpen(true);
+  };
+
+  const handleSuspend = async () => {
+    setActionLoading(true);
+    try {
+      await apiService.patch(`/agency/agents/${selectedAgent.id}/suspend`, { reason: suspendReason });
+      toast.success("Agent suspended successfully!");
+      setSuspendModalOpen(false);
+      fetchAgents();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to suspend agent");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnsuspend = async (agent) => {
+    setActionLoading(true);
+    try {
+      await apiService.patch(`/agency/agents/${agent.id}/unsuspend`);
+      toast.success("Agent unsuspended successfully!");
+      fetchAgents();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to unsuspend agent");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const total = agents.length;
   const active = agents.filter((a)=>a.status).length;
   const inactive = total - active;
@@ -451,6 +530,32 @@ const AgencyManageAgents = () => {
         : <span style={{ color:"#D1D5DB", fontSize:12 }}>--</span>,
     },
     {
+      key: "approvalStatus", title: "Approval Status",
+      render: (_, agent) => {
+        const getStatusStyle = (status) => {
+          switch(status) {
+            case "approved":
+              return { background: "linear-gradient(135deg,#ECFDF5,#DCFCE7)", color: "#059669", borderColor: "#86EFAC" };
+            case "declined":
+              return { background: "linear-gradient(135deg,#FEF2F2,#FEE2E2)", color: "#DC2626", borderColor: "#FCA5A5" };
+            default:
+              return { background: "linear-gradient(135deg,#FFFBEB,#FEF3C7)", color: "#D97706", borderColor: "#FDE68A" };
+          }
+        };
+        const style = getStatusStyle(agent.agencyApprovalStatus);
+        return (
+          <span style={{ 
+            display:"inline-flex", alignItems:"center", gap:"6px", 
+            padding:"5px 12px", borderRadius:"999px", fontSize:"11px", fontWeight:"700",
+            border: `1px solid ${style.borderColor}`, background: style.background, color: style.color 
+          }}>
+            {agent.agencyApprovalStatus === "approved" ? "Approved" : 
+             agent.agencyApprovalStatus === "declined" ? "Declined" : "Pending"}
+          </span>
+        );
+      }
+    },
+    {
       key: "status", title: "Status",
       filterable: true, filterKey: "status",
       filterOptions: [{ label:"Active", value:"true" }, { label:"Inactive", value:"false" }],
@@ -459,13 +564,53 @@ const AgencyManageAgents = () => {
     {
       key: "actions", title: "Actions",
       render: (_, agent) => (
-        <div style={{ display:"flex", gap:8 }}>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
           <Tooltip title="View Details">
             <Button type="text" size="small" icon={<EyeOutlined />}
               onClick={()=>{ setSelectedAgent(agent); setViewModalOpen(true); }}
               style={{ width:34, height:34, borderRadius:10, border:"1px solid #e5e7eb", color:"#5f0f9c", background:"#fff" }}
             />
           </Tooltip>
+
+          {/* Approve/Reject buttons for pending agents */}
+          {agent.agencyApprovalStatus === "pending" && (
+            <>
+              <Tooltip title="Approve">
+                <Button type="text" size="small" icon={<CheckOutlined />}
+                  onClick={()=>handleApprove(agent)}
+                  loading={actionLoading}
+                  style={{ width:34, height:34, borderRadius:10, border:"1px solid #bbf7d0", color:"#16a34a", background:"#f0fdf4" }}
+                />
+              </Tooltip>
+              <Tooltip title="Reject">
+                <Button type="text" size="small" icon={<StopOutlined />}
+                  onClick={()=>handleOpenRejectModal(agent)}
+                  style={{ width:34, height:34, borderRadius:10, border:"1px solid #fecaca", color:"#dc2626", background:"#fef2f2" }}
+                />
+              </Tooltip>
+            </>
+          )}
+
+          {/* Suspend/Unsuspend buttons for approved agents */}
+          {agent.agencyApprovalStatus === "approved" && (
+            agent.status ? (
+              <Tooltip title="Suspend">
+                <Button type="text" size="small" icon={<StopOutlined />}
+                  onClick={()=>handleOpenSuspendModal(agent)}
+                  style={{ width:34, height:34, borderRadius:10, border:"1px solid #fed7aa", color:"#d97706", background:"#fff7ed" }}
+                />
+              </Tooltip>
+            ) : (
+              <Tooltip title="Unsuspend">
+                <Button type="text" size="small" icon={<CheckOutlined />}
+                  onClick={()=>handleUnsuspend(agent)}
+                  loading={actionLoading}
+                  style={{ width:34, height:34, borderRadius:10, border:"1px solid #bbf7d0", color:"#16a34a", background:"#f0fdf4" }}
+                />
+              </Tooltip>
+            )
+          )}
+
           <Popconfirm title="Remove Agent" description="Remove this agent from your team?"
             onConfirm={()=>handleDelete(agent.id)} okText="Remove" okType="danger" cancelText="Cancel" placement="topRight"
           >
@@ -643,6 +788,79 @@ const AgencyManageAgents = () => {
 
       {/* VIEW AGENT */}
       <ViewAgentModal open={viewModalOpen} onClose={()=>setViewModalOpen(false)} agent={selectedAgent} />
+
+      {/* REJECT REASON MODAL */}
+      <Modal
+        open={rejectModalOpen}
+        onCancel={()=>setRejectModalOpen(false)}
+        title="Reject Agent"
+        centered
+        footer={null}
+      >
+        <div style={{ padding: "10px 0" }}>
+          <p style={{ color: "#6B7280", marginBottom: "16px" }}>Please provide a reason for rejecting this agent:</p>
+          <Input.TextArea
+            value={rejectReason}
+            onChange={(e)=>setRejectReason(e.target.value)}
+            placeholder="Enter rejection reason..."
+            rows={4}
+            style={{ marginBottom: "20px", borderRadius: "10px" }}
+          />
+          <div style={{ display: "flex", gap: "10px" }}>
+            <Button
+              onClick={()=>setRejectModalOpen(false)}
+              style={{ flex: 1, borderRadius: "10px" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              danger
+              onClick={handleReject}
+              loading={actionLoading}
+              style={{ flex: 1, borderRadius: "10px", background: "#dc2626" }}
+            >
+              Confirm Reject
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* SUSPEND REASON MODAL */}
+      <Modal
+        open={suspendModalOpen}
+        onCancel={()=>setSuspendModalOpen(false)}
+        title="Suspend Agent"
+        centered
+        footer={null}
+      >
+        <div style={{ padding: "10px 0" }}>
+          <p style={{ color: "#6B7280", marginBottom: "16px" }}>Please provide a reason for suspending this agent (optional):</p>
+          <Input.TextArea
+            value={suspendReason}
+            onChange={(e)=>setSuspendReason(e.target.value)}
+            placeholder="Enter suspension reason..."
+            rows={4}
+            style={{ marginBottom: "20px", borderRadius: "10px" }}
+          />
+          <div style={{ display: "flex", gap: "10px" }}>
+            <Button
+              onClick={()=>setSuspendModalOpen(false)}
+              style={{ flex: 1, borderRadius: "10px" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              onClick={handleSuspend}
+              loading={actionLoading}
+              style={{ flex: 1, borderRadius: "10px", background: "#d97706" }}
+            >
+              Confirm Suspend
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

@@ -243,7 +243,7 @@ export default function DeveloperEditProperty() {
           propertyName: p.projectName || p.propertyName,
           locality: p.locality || p.area,
           propertyType: p.propertyType || "Residential",
-          unitTypes: p.unitTypes || [],
+          unitTypes: p.unitTypes && p.unitTypes.length > 0 ? p.unitTypes[0] : (p.unitType || "apartment"),
           overview: p.overview || p.description,
           priceRangeFrom: p.priceRange?.from || p.price_min,
           priceRangeTo: p.priceRange?.to || p.price_max,
@@ -430,8 +430,8 @@ export default function DeveloperEditProperty() {
     locality: values.locality,
     area: values.locality,
     propertyType: values.propertyType || "Residential",
-    unitTypes: values.unitTypes || [],
-    unitType: values.unitTypes?.[0] || "apartment",
+    unitTypes: values.unitTypes ? [values.unitTypes] : [],
+    unitType: values.unitTypes || "apartment",
     completionDate: {
       fullDate: values.completionDate ? values.completionDate.format("YYYY-MM-DD") : null,
     },
@@ -617,8 +617,8 @@ export default function DeveloperEditProperty() {
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item name="unitTypes" label="Unit Types" rules={[{ required: true, message: "Select at least one unit type" }]}>
-                  <Select mode="multiple" placeholder="Select unit types">
+                <Form.Item name="unitTypes" label="Unit Types" rules={[{ required: true, message: "Select a unit type" }]}>
+                  <Select placeholder="Select unit type">
                     <Option value="apartment">Apartment</Option>
                     <Option value="penthouse">Penthouse</Option>
                     <Option value="villa">Villa</Option>

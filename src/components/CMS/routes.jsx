@@ -296,6 +296,10 @@ import PresentationsList from '../Grid/presentation/PresentationsList';
 import Dealrecordspage from "../Grid/GridAdmin.jsx/Dealrecordspage";
 import DealRecordDetailPage from "../Grid/GridAdmin.jsx/DealRecordDetailPage";
 import AgencyDealsPage from "../Grid/grid agency/Agencydealspage";
+import AdminAgreements from "../Grid/GridAdmin.jsx/Agreement";
+import Agreementdeveloper from "../Grid/DeveloperGrid/Agreementdeveloper";
+import Agreementagency from "../Grid/grid agency/Agreementagency";
+import Agreementagent from "../Grid/GridAgent/Agreementagent";
 
 
 
@@ -519,6 +523,7 @@ const CmsRoutes = () => {
       <Route path="my-Agreements" element={<AgentAgreements />} />
       <Route path="my-agreements" element={<AgentAgreements />} />
       <Route path="agreements" element={<AgentAgreements />} />
+      <Route path="agent-agreement" element={<Agreementagent />} />
 
       <Route path="agent-lead/:id" element={<Addleaddetails />} />
       {/* <Route path="/dashboard/agent/lead/adds" element={<Addleaddetails />} /> */}
@@ -676,6 +681,8 @@ const CmsRoutes = () => {
     <Route path="deal-records/create/:leadId" element={<Dealrecordspage />} />
     <Route path="deal-records/:dealId" element={<DealRecordDetailPage />} /> 
     <Route path="partner/deals" element={<AgencyDealsPage />} />
+    <Route path="admin/agreements" element={<AdminAgreements />} />
+    <Route path="agency-agreements" element={<Agreementagency />} />
 
       
       
@@ -729,6 +736,7 @@ const CmsRoutes = () => {
       <Route path="commission-scheme" element={<DeveloperCommissionScheme />} />
       <Route path="commission-scheme/:id" element={<DeveloperCommissionScheme />} />
       <Route path="/developer/view/:id" element={<DeveloperDetail />} />
+      <Route path="developer-agreement" element={<Agreementdeveloper />} />
 
       {/* <Route path="notifications" element={<DeveloperNotifications/>}/> */}
       {/* <Route path="team" element={<DeveloperTeam/>}/> */}

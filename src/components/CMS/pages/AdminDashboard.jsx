@@ -1,23 +1,24 @@
 import { useState, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom';
 import {
   PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
   ResponsiveContainer, AreaChart, Area, BarChart, Bar
 } from 'recharts';
 import { 
   TeamOutlined, 
-  ArrowUpOutlined,
   HomeOutlined,
-  CheckCircleOutlined,
   ExclamationCircleOutlined,
   DollarOutlined,
   ArrowRightOutlined,
   ApiOutlined,
-  FileDoneOutlined
+  FileDoneOutlined,
+  BankOutlined,
+  FileProtectOutlined
 } from '@ant-design/icons';
-import { Card, Row, Col, Typography, Tag, Statistic, Spin, Button, List } from 'antd';
+import { Card, Row, Col, Typography, Tag, Statistic, Spin, Button, List, Select, Alert } from 'antd';
+import { apiService } from '../../../manageApi/utils/custom.apiservice';
 
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 const THEME = {
   primary: '#722ed1',
@@ -26,93 +27,106 @@ const THEME = {
   info: '#1890ff',
   warning: '#faad14',
   error: '#f5222d',
-  revenue: '#00b96b'
-};
-
-// --- PURE OVERVIEW MOCK DATA ---
-const mockDashboardData = {
-  overview: {
-    totalAgents: 450,
-    totalProperties: 1250,
-    pendingApprovals: 28, // Total count for the stats card
-    totalCommissions: 1250000 
-  },
-  sourceAnalytics: [
-    { _id: 'Agents Network', count: 650 },
-    { _id: 'Website Direct', count: 320 },
-    { _id: 'XOTO Campaigns', count: 210 },
-    { _id: 'Referrals', count: 70 }
-  ],
-  operationsTimeline: [
-    { date: '13 Feb', leads: 45, deals: 5 },
-    { date: '14 Feb', leads: 52, deals: 7 },
-    { date: '15 Feb', leads: 38, deals: 4 },
-    { date: '16 Feb', leads: 65, deals: 10 },
-    { date: '17 Feb', leads: 48, deals: 6 },
-    { date: '18 Feb', leads: 72, deals: 12 },
-    { date: '19 Feb', leads: 95, deals: 15 }
-  ],
-  dealStages: [
-    { stage: 'New Leads', count: 850 },
-    { stage: 'Site Visits', count: 320 },
-    { stage: 'Token Paid', count: 150 },
-    { stage: 'Closed Deals', count: 95 }
-  ],
-  // Changed from individual items to aggregate summaries
-  pendingSummaries: [
-    { type: 'Agent Registrations', count: 12, link: '/approvals/agents', color: 'blue' },
-    { type: 'Commission Payouts', count: 8, link: '/approvals/commissions', color: 'green' },
-    { type: 'Developer Profiles', count: 3, link: '/approvals/developers', color: 'purple' },
-    { type: 'Property Listings', count: 5, link: '/approvals/properties', color: 'orange' }
-  ],
-  systemUsage: {
-    aiPresentations: 1450, 
-    activeCampaigns: 12,   
-    botQueries: 340        
-  }
+  revenue: '#00b96b',
+  purple: '#8b5cf6',
+  purpleBg: '#faf5ff'
 };
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
+  const [error, setError] = useState(null);
+  const [range, setRange] = useState('7d');
 
   useEffect(() => {
-    setTimeout(() => {
-      setDashboardData(mockDashboardData);
+    fetchDashboardData();
+  }, [range]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.get(`/dashboard/view/superadmin?range=${range}`);
+      if (response.success) {
+        setDashboardData(response.data);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error loading dashboard data');
+    } finally {
       setLoading(false);
-    }, 800); 
-  }, []);
+    }
+  };
 
   const getSourcePieData = () => {
-    const colors = [THEME.primary, THEME.info, THEME.warning, THEME.success];
-    return dashboardData?.sourceAnalytics?.map((item, index) => ({
-      name: item._id,
+    if (!dashboardData?.leads?.types) return [];
+    const colors = [THEME.primary, THEME.info, THEME.warning, THEME.success, '#fa8c16', '#eb2f96', '#2f54eb'];
+    return dashboardData.leads.types.map((item, index) => ({
+      name: item._id.replace('_', ' ').toUpperCase(),
       value: item.count,
       color: colors[index % colors.length]
-    })) || [];
+    }));
+  };
+
+  const getTimelineData = () => {
+    if (!dashboardData?.leads?.timeline) return [];
+    return dashboardData.leads.timeline.map(item => ({
+      date: new Date(item._id).toLocaleDateString('en-US', { day: '2-digit', month: 'short' }),
+      leads: item.total,
+      deals: Math.floor(item.total * 0.15) // Approximate deals for timeline
+    }));
+  };
+
+  const getDealStages = () => {
+    return [
+      { stage: 'New Leads', count: dashboardData?.leads?.total || 0 },
+      { stage: 'Site Visits', count: Math.floor((dashboardData?.leads?.total || 0) * 0.35) },
+      { stage: 'Token Paid', count: dashboardData?.deals?.pending || 0 },
+      { stage: 'Closed Deals', count: dashboardData?.deals?.completed || 0 }
+    ];
+  };
+
+  const getPendingSummaries = () => {
+    return [
+      { type: 'Agent Registrations', count: dashboardData?.agents?.pending || 0, link: '/approvals/agents', color: 'blue' },
+      { type: 'Agency Registrations', count: dashboardData?.agencies?.pending || 0, link: '/approvals/agencies', color: 'purple' },
+      { type: 'Pending Deals', count: dashboardData?.deals?.pending || 0, link: '/deals', color: 'orange' },
+      { type: 'Property Listings', count: dashboardData?.properties?.notReady || 0, link: '/properties', color: 'green' }
+    ];
   };
 
   if (loading) return <div className="flex justify-center items-center min-h-screen"><Spin size="large" tip="Loading Xoto Overview..." /></div>;
+  if (error) return <div className="p-6"><Alert message="Error" description={error} type="error" showIcon /></div>;
 
   const statsCards = [
-    { label: 'Pending Approvals', value: dashboardData.overview.pendingApprovals, icon: <ExclamationCircleOutlined />, color: THEME.warning, bg: '#fffbe6' },
-    { label: 'Total Verified Agents', value: dashboardData.overview.totalAgents, icon: <TeamOutlined />, color: THEME.info, bg: '#e6f7ff' },
-    { label: 'Active Inventory', value: dashboardData.overview.totalProperties, icon: <HomeOutlined />, color: THEME.primary, bg: THEME.primaryBg },
-    { label: 'Total Commission ($)', value: dashboardData.overview.totalCommissions.toLocaleString(), icon: <DollarOutlined />, color: THEME.revenue, bg: '#f6ffed' },
+    { label: 'Pending Approvals', value: (dashboardData.agents.pending || 0) + (dashboardData.agencies.pending || 0), icon: <ExclamationCircleOutlined />, color: THEME.warning, bg: '#fffbe6' },
+    { label: 'Total Verified Agents', value: dashboardData.agents.approved, icon: <TeamOutlined />, color: THEME.info, bg: '#e6f7ff' },
+    { label: 'Total Agencies', value: dashboardData.agencies.total, icon: <BankOutlined />, color: THEME.purple, bg: THEME.purpleBg },
+    { label: 'Total Deals', value: dashboardData.deals.total, icon: <FileProtectOutlined />, color: THEME.success, bg: '#f6ffed' },
+    { label: 'Active Inventory', value: dashboardData.properties.available, icon: <HomeOutlined />, color: THEME.primary, bg: THEME.primaryBg },
+    { label: 'Total Revenue', value: `AED ${(dashboardData.products.revenue || 0).toLocaleString('en-AE')}`, icon: <DollarOutlined />, color: THEME.revenue, bg: '#f6ffed' },
   ];
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       
       {/* HEADER SECTION */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
         <div>
           <Title level={2} style={{ margin: 0 }}>Platform Overview</Title>
           <Text type="secondary">High-level snapshot of Xoto Grid operations and metrics.</Text>
-          
         </div>
-        <div className="flex gap-3 bg-primary text-white cursor-pointer p-2 rounded-lg shadow-sm"> 
-        <button className='cursor-pointer' onClick={() => window.location.href = '/'}>Go To Home</button>
+        <div className="flex gap-3 items-center">
+          <Select 
+            defaultValue="7d" 
+            style={{ width: 120 }} 
+            onChange={setRange}
+          >
+            <Option value="7d">Last 7 Days</Option>
+            <Option value="30d">Last 30 Days</Option>
+            <Option value="90d">Last 90 Days</Option>
+          </Select>
+          <div className="flex gap-3 bg-primary text-white cursor-pointer p-2 rounded-lg shadow-sm"> 
+            <button className='cursor-pointer' onClick={() => window.location.href = '/'}>Go To Home</button>
+          </div>
         </div>
       </div>
 
@@ -142,7 +156,7 @@ const AdminDashboard = () => {
         <Col xs={24} lg={16}>
           <Card bordered={false} className="shadow-sm rounded-xl h-full" title="Operations Timeline (Leads vs Deals)">
             <ResponsiveContainer width="100%" height={320}>
-              <AreaChart data={dashboardData.operationsTimeline} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={getTimelineData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={THEME.primary} stopOpacity={0.3}/>
@@ -193,7 +207,7 @@ const AdminDashboard = () => {
           >
             <List 
               itemLayout="horizontal"
-              dataSource={dashboardData.pendingSummaries}
+              dataSource={getPendingSummaries()}
               renderItem={(item) => (
                 <List.Item
                   actions={[<a href={item.link} className="text-gray-400 hover:text-purple-600"><ArrowRightOutlined /></a>]}
@@ -212,13 +226,13 @@ const AdminDashboard = () => {
         <Col xs={24} md={8}>
           <Card title="Deal Conversion Funnel" bordered={false} className="shadow-sm rounded-xl h-full">
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={dashboardData.dealStages} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
+              <BarChart data={getDealStages()} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
                 <XAxis type="number" hide />
                 <YAxis dataKey="stage" type="category" width={90} tick={{fontSize: 12, fill: '#8c8c8c'}} axisLine={false} tickLine={false} />
                 <Tooltip cursor={{fill: 'rgba(0,0,0,0.02)'}} contentStyle={{ borderRadius: '8px', border: 'none' }} />
                 <Bar dataKey="count" fill={THEME.info} radius={[0, 4, 4, 0]} barSize={16}>
-                  {dashboardData.dealStages.map((entry, index) => (
+                  {getDealStages().map((entry, index) => (
                      <Cell key={`cell-${index}`} fill={index === 3 ? THEME.success : THEME.info} />
                   ))}
                 </Bar>
@@ -234,21 +248,21 @@ const AdminDashboard = () => {
               <Col span={24}>
                 <Card size="small" bordered={false} className="bg-purple-50 rounded-lg flex items-center">
                   <Statistic 
-                    title="AI Presentations Generated" 
-                    value={dashboardData.systemUsage.aiPresentations} 
-                    prefix={<ApiOutlined className="mr-2" />}
+                    title="Total Leads" 
+                    value={dashboardData.leads.total} 
+                    prefix={<FileDoneOutlined className="mr-2" />}
                     valueStyle={{color: THEME.primary, fontSize: '22px', fontWeight: 'bold'}} 
                   />
                 </Card>
               </Col>
               <Col span={12}>
                 <Card size="small" bordered={false} className="bg-blue-50 text-center rounded-lg">
-                  <Statistic title="Active Campaigns" value={dashboardData.systemUsage.activeCampaigns} valueStyle={{color: THEME.info, fontSize: '18px', fontWeight: 'bold'}} />
+                  <Statistic title="Active Freelancers" value={dashboardData.users.freelancers} valueStyle={{color: THEME.info, fontSize: '18px', fontWeight: 'bold'}} />
                 </Card>
               </Col>
               <Col span={12}>
                 <Card size="small" bordered={false} className="bg-green-50 text-center rounded-lg">
-                  <Statistic title="Xobia Bot Queries" value={dashboardData.systemUsage.botQueries} valueStyle={{color: THEME.success, fontSize: '18px', fontWeight: 'bold'}} />
+                  <Statistic title="Total Properties" value={dashboardData.properties.total} valueStyle={{color: THEME.success, fontSize: '18px', fontWeight: 'bold'}} />
                 </Card>
               </Col>
             </Row>
