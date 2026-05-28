@@ -325,7 +325,7 @@ const GridAgentLead = () => {
       if (extraFilters.type)           query.set('type',           extraFilters.type);
       if (extraFilters.classification) query.set('classification', extraFilters.classification);
 
-      const res       = await apiService.get(`/gridlead/agent-only?${query.toString()}`);
+      const res       = await apiService.get(`/gridlead/agent/my-leads?${query.toString()}`);
       const payload   = res?.data?.success !== undefined ? res.data : res;
       const leadsData = (payload?.data || []).map(sanitizeLeadForAgent);
       const pagData   = payload?.pagination || { page, limit, total: leadsData.length, totalPages: 1 };
