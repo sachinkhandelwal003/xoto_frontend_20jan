@@ -311,7 +311,7 @@ function App() {
                   <Route path="/proposal/view/link/:id" element={<ProposalLink />} />
 
                   <Route path="/login" element={<Login />} />
-                  {/* <Route path="/grid/login" element={<Login />} /> */}
+                   <Route path="/grid/login" element={<Login />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/user/login" element={<CustomerLogin />} />
                   <Route path="/consultation" element={<Consult />} />
