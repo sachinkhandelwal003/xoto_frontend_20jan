@@ -29,19 +29,11 @@ export const languages = [
 /* ------------------- NAV ITEMS ------------------- */
 const navItems = [
   { key: "home", path: "/" },
+  { key: "properties", path: "/Property" },
   { key: "mortgages", path: "/mortgage/services" },
   // { key: "rental", path: "/rent/search" },
-  { key: "properties", path: "/Property" },
-  {
-    key: "homeUpgrade",
-    children: [
-      { key: "interiors", path: "/services/interior" },
-      { key: "landscaping", path: "/landscaping" },
-      { key: "store", path: "/ecommerce/b2c" },
-    ],
-  },
   { key: "ecosystem", path: "/ecosystem" },
-  {
+    {
     key: "knowledgeHub",
     children: [
       { key: "calculators", path: "/mortgages/calculator" },
@@ -51,6 +43,15 @@ const navItems = [
       { key: "about", path: "/about" },
     ],
   },
+  {
+    key: "homeUpgrade",
+    children: [
+      { key: "interiors", path: "/services/interior" },
+      { key: "landscaping", path: "/landscaping" },
+      { key: "store", path: "/ecommerce/b2c" },
+    ],
+  },
+
 ];
 
 const roleSlugMap = {
