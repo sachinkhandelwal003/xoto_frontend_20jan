@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import dubaiImg from "../../assets/img/home/popup.png";
 
 const INACTIVITY_DELAY = 20000;
-// const SCROLL_THRESHOLD = 25;
 
 const PopupManager = () => {
   const navigate = useNavigate();
@@ -18,15 +17,13 @@ const PopupManager = () => {
     countryCode: "+971", phone: "", message: "",
   });
 
-const showPopup = () => {
-  if (hasShownRef.current) return; // 🚫 already shown
-
-  hasShownRef.current = true;
-  isVisibleRef.current = true;
-
-  clearTimeout(timerRef.current);
-  setPopupVisible(true);
-};
+  const showPopup = () => {
+    if (hasShownRef.current) return;
+    hasShownRef.current = true;
+    isVisibleRef.current = true;
+    clearTimeout(timerRef.current);
+    setPopupVisible(true);
+  };
 
   const startInactivityTimer = () => {
     clearTimeout(timerRef.current);
@@ -38,37 +35,35 @@ const showPopup = () => {
     if (isVisibleRef.current) return;
     startInactivityTimer();
   };
-const handleScroll = () => {
-  if (hasShownRef.current) return;
-  
-  scrollCountRef.current += 1;        // har scroll pe +1
-  
-  if (scrollCountRef.current >= 100) {  // 100 scroll ke baad} 
-    showPopup();     
-  }
-};
+
+  const handleScroll = () => {
+    if (hasShownRef.current) return;
+    scrollCountRef.current += 1;
+    if (scrollCountRef.current >= 100) {
+      showPopup();
+    }
+  };
 
   useEffect(() => {
-  const activityEvents = ["mousemove", "mousedown", "keypress", "touchstart"];
-  activityEvents.forEach((e) => window.addEventListener(e, handleActivity));
-  window.addEventListener("scroll", handleScroll);  // ✅ uncommented
-  startInactivityTimer();
-  return () => {
-    clearTimeout(timerRef.current);
-    activityEvents.forEach((e) => window.removeEventListener(e, handleActivity));
-    window.removeEventListener("scroll", handleScroll);  // ✅ uncommented
-  };
-}, []);
+    const activityEvents = ["mousemove", "mousedown", "keypress", "touchstart"];
+    activityEvents.forEach((e) => window.addEventListener(e, handleActivity));
+    window.addEventListener("scroll", handleScroll);
+    startInactivityTimer();
+    return () => {
+      clearTimeout(timerRef.current);
+      activityEvents.forEach((e) => window.removeEventListener(e, handleActivity));
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   const handleClose = () => {
-   setPopupVisible(false);
+    setPopupVisible(false);
   };
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
     handleClose();
   };
 
@@ -92,15 +87,14 @@ const handleScroll = () => {
             ✕
           </button>
 
-          {/* TOP on mobile / RIGHT on desktop: Image */}
-        <div className="w-full sm:w-[50%] sm:order-2 relative font-['DM_Sans'] h-62.5 sm:h-auto sm:min-h-120">
-  <img
-    src={dubaiImg}
-    alt="Hot Property Deals"
-    className="absolute inset-0 w-full h-full object-cover"
-  />
-  <div className="absolute inset-0 bg-black/40 sm:hidden" />
-            <div className="absolute inset-0" />
+          {/* Image Section */}
+          <div className="w-full sm:w-[50%] sm:order-2 relative h-62.5 sm:h-auto sm:min-h-120">
+            <img
+              src={dubaiImg}
+              alt="Hot Property Deals"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/40 sm:hidden" />
             <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 text-white">
               <p className="text-[28px] font-semibold uppercase leading-tight tracking-wide">
                 HOT PROPERTY DEALS
@@ -117,8 +111,8 @@ const handleScroll = () => {
             </div>
           </div>
 
-          {/* BOTTOM on mobile / LEFT on desktop: Form */}
-          <div className="w-full sm:w-[50%] sm:order-1 bg-white p-5 sm:p-8 flex flex-col justify-center font-['DM_Sans']">
+          {/* Form Section – inherits global Xoto font */}
+          <div className="w-full sm:w-[50%] sm:order-1 bg-white p-5 sm:p-8 flex flex-col justify-center">
             <h2 className="text-3xl sm:text-[40px] font-black leading-tight sm:leading-10.25 text-black flex flex-col justify-center mb-1">
               <span>Not Sure Where</span>
               <span>To Start?</span>

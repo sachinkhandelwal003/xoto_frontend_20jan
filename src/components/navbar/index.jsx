@@ -48,7 +48,7 @@ const navItems = [
     children: [
       { key: "interiors", path: "/services/interior" },
       { key: "landscaping", path: "/landscaping" },
-      { key: "store", path: "/ecommerce/b2c" },
+      // { key: "store", path: "/ecommerce/b2c" },
     ],
   },
 
