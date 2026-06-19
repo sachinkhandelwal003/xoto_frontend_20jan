@@ -83,25 +83,37 @@ const Page2 = () => {
   const selectedCountry = phoneCountryOptions.find((c) => c.code === formData.country_code);
 
   // ── Fetch properties ──────────────────────────────────────────────────────
-  useEffect(() => {
-    const fetchProperties = async () => {
-      setLoadingProperties(true);
-      try {
-        const response = await apiService.get(
-          `/property/get-all-properties?page=1&limit=30&isFeatured=false&search=${searchTerm}`
-        );
-        if (response?.success && Array.isArray(response.data)) {
-          setProperties(response.data);
-        }
-      } catch (err) {
-        console.error("API Error:", err);
-      } finally {
-        setLoadingProperties(false);
-      }
-    };
-    const t = setTimeout(fetchProperties, 500);
-    return () => clearTimeout(t);
-  }, [searchTerm]);
+  // ✅ REPLACE KARO ISSE
+useEffect(() => {
+  const fetchProperties = async () => {
+    setLoadingProperties(true);
+    try {
+      const response = await apiService.get(`/properties/hot?limit=6`);
+
+      const list =
+        (Array.isArray(response) && response) ||
+        (Array.isArray(response?.data) && response.data) ||
+        [];
+
+      // search term se client-side filter karo (kyunki hot endpoint search support nahi karta)
+      const filtered = searchTerm
+        ? list.filter(p =>
+            p.propertyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.area?.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        : list;
+
+      setProperties(filtered);
+    } catch (err) {
+      console.error("API Error:", err);
+      setProperties([]);
+    } finally {
+      setLoadingProperties(false);
+    }
+  };
+  const t = setTimeout(fetchProperties, 500);
+  return () => clearTimeout(t);
+}, [searchTerm]);
 
   // ── Close dropdown on outside click ──────────────────────────────────────
   useEffect(() => {

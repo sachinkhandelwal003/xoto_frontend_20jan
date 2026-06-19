@@ -120,9 +120,9 @@ const OurProperty = () => {
     const fetchProperties = async () => {
       try {
         setFetchLoading(true);
-const res = await apiService.get("/property/get-all-properties", {
+const res = await apiService.get("/properties/hot", {
   page: 1,
-  limit: 10,
+  limit: 6,
   isFeatured: false
 });
 
